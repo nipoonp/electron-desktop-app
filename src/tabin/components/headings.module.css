@@ -1,0 +1,67 @@
+/* base => 16px = 1em */
+
+.h1 {
+  font-size: 5em; /* 100px */
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.h2 {
+  font-size: 4em; /* 64px */
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.h3 {
+  font-size: 3em; /* 48px */
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.h4 {
+  font-size: 2em; /* 32px */
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.h5 {
+  font-size: 1.5em; /* 24px */
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.h6 {
+  font-size: 1.25em; /* 20px */
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* 880px */
+@media (max-width: 55em) {
+  .h1 {
+    font-size: 4em;
+  }
+
+  .h2 {
+    font-size: 3.5em;
+  }
+
+  .h3 {
+    font-size: 3em;
+  }
+}
+
+/* 560px */
+@media (max-width: 35em) {
+  .h1 {
+    font-size: 3.5em;
+  }
+
+  .h2 {
+    font-size: 3em;
+  }
+
+  .h3 {
+    font-size: 2.5em;
+  }
+}

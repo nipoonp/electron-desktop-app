@@ -1,0 +1,31 @@
+.dockOverlay {
+  overflow: auto;
+  z-index: 100;
+  background: rgba(31, 31, 31, 0.8);
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+}
+
+.dockBody {
+  width: 420px;
+  background-color: white;
+  float: right;
+  min-height: 100vh;
+}
+
+.dock {
+}
+
+@media (max-width: 744px) {
+  .dockBody {
+    width: 100%;
+    min-height: 100vh;
+  }
+
+  .dock {
+    min-height: 100%;
+  }
+}

@@ -1,0 +1,23 @@
+.container {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  margin-top: 128px;
+}
+
+.imagesWrapper {
+  display: flex;
+  text-align: center;
+}
+
+.dineinImage {
+  height: 250px;
+}
+
+.takeawayImage {
+  height: 250px;
+}
+
+.sizedBox {
+  width: 128px;
+}

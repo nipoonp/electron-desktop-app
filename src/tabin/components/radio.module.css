@@ -1,0 +1,51 @@
+.container {
+  display: flex;
+  align-items: center;
+}
+
+.container.disabled {
+  color: rgb(220, 220, 220);
+}
+
+.boxContainer {
+  min-height: 22px;
+  min-width: 22px;
+  height: 22px;
+  width: 22px;
+  border: 1px solid rgb(200, 200, 200);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.boxContainer.disabled {
+  border: 1px solid rgb(220, 220, 220);
+  cursor: default;
+}
+
+.box {
+  height: 80%;
+  width: 80%;
+  background-color: transparent;
+  border-radius: 50%;
+}
+
+.boxChecked {
+  background-color: var(--primary-color);
+}
+
+.input {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+.children {
+  margin-left: 12px;
+}
+
+.children.disabled {
+  color: 1px solid rgb(220, 220, 220);
+}

@@ -1,0 +1,33 @@
+.input {
+  height: 46px;
+  font-size: 16px;
+  border: 1px solid #ebebeb;
+  width: 100%;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.titleContainer {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.optional {
+  font-size: 14px;
+  margin-left: 10px;
+}
+
+.inputError {
+  border: 1px solid var(--error-color);
+  background-color: hsl(var(--error-hue), var(--error-saturation), 98%);
+}
+
+.disabled {
+  background-color: #eeeeee;
+}

@@ -1,0 +1,17 @@
+.message {
+  border-radius: 0.5px;
+  border: 1px solid hsl(0, 0%, 90%);
+  padding: 20px;
+  box-shadow: rgba(0, 0, 0, 0.0470588) 0px 4px 4px 0px;
+}
+
+.messageTitle {
+  /* font-size: 18px;
+  font-weight: 500;
+  line-height: 1.5; */
+}
+
+.messageParagraph {
+  /* line-height: 1.5; */
+  /* line-height: 1.5; */
+}

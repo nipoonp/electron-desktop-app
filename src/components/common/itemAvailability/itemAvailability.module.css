@@ -1,0 +1,79 @@
+.itemAvailabilityWrapper {
+  display: flex;
+}
+
+.itemAvailabilityTimeGroup {
+  display: flex;
+  align-items: center;
+}
+
+.itemAvailabilityDay {
+  height: 56px;
+  display: flex;
+  align-items: center;
+}
+
+.day {
+  min-width: 160px;
+  padding: 0 20px;
+}
+
+.checkboxWrapper {
+  width: 30px;
+}
+
+.checkboxText {
+  width: 100px;
+  margin-left: 20px;
+}
+
+.itemAvailabilityTimesWrapper {
+  margin-bottom: 10px;
+}
+
+.itemAvailabilityTime {
+  width: 150px;
+  margin: 5px 0;
+}
+
+.itemAvailabilityTimeDropdownSeparator {
+  padding: 0 20px;
+}
+
+.addRemoveTimeGroupIcon {
+  font-size: 20px;
+  padding: 0 20px;
+  color: var(--primary-color);
+  cursor: pointer;
+}
+
+.closedItemAvailabilityGroup {
+  height: 56px;
+}
+
+@media (max-width: 744px) {
+  .itemAvailabilityWrapper {
+    flex-wrap: wrap;
+    justify-content: left;
+    border-top: 1px solid #eeeeee;
+    margin-bottom: 20px;
+  }
+
+  .itemAvailabilityTime {
+    width: 120px;
+  }
+
+  .addRemoveTimeGroupIcon {
+    padding-right: 0px;
+  }
+
+  .day {
+    min-width: 0;
+    padding-left: 0;
+  }
+
+  .checkboxText {
+    width: 0;
+    margin-left: 15px;
+  }
+}

@@ -1,0 +1,146 @@
+.nav {
+  height: 80px;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: space-between;
+  z-index: 101;
+  /* above menu modal */
+  /* but has to be below normal modals*/
+  position: relative;
+  border-bottom: 1px solid #ebebeb;
+}
+
+.logoContainer {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+
+.links {
+  flex-shrink: 0;
+}
+
+.navContainer {
+  display: flex;
+  flex-direction: row;
+  list-style: none;
+}
+
+.navTextContainer {
+  height: 80px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border-bottom: 2px solid transparent;
+}
+
+.navTextContainer:hover {
+  border-bottom: 2px solid rgb(118, 118, 118);
+}
+
+.navTextContainerBackground {
+  height: 80px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border-bottom: 2px solid transparent;
+}
+
+.navTextContainerBackground:hover {
+  border-bottom: 2px solid rgb(118, 118, 118);
+}
+
+.navText {
+  color: #484848;
+  line-height: 1;
+  padding: 8px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.navTextBackground {
+  color: #484848;
+  line-height: 1;
+  padding: 8px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.dropDownArrow {
+  font-size: 9px;
+  margin-left: 8px;
+}
+
+.userMenuUL {
+  list-style-type: none;
+  padding: 0px;
+  margin: 0px;
+}
+
+.userMenuLI {
+  padding: 0px 16px;
+}
+
+.userMenuLiButton {
+  padding: 16px 0px;
+  border-bottom: 1px solid rgb(242, 242, 242);
+  width: 100%;
+  text-align: left;
+  color: rgb(118, 118, 118);
+  display: flex;
+  justify-content: space-between;
+}
+
+.userMenuLiButton:hover {
+  border-bottom: 1px solid rgb(150, 150, 150);
+}
+
+.Modal {
+  background-color: white;
+  width: 100%;
+  position: absolute;
+  max-height: 100vh;
+  overflow-y: auto;
+  z-index: 102;
+  /* above nav */
+}
+
+@media (max-width: 744px) {
+  .Modal {
+    height: 100vh;
+  }
+}
+
+@media (min-width: 744px) {
+  .Modal {
+    width: 568px;
+  }
+}
+
+.Overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(20, 20, 20, 0.5);
+  z-index: 102;
+  /* above nav */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.menuContainer {
+  position: absolute;
+  top: 80px;
+  left: 0px;
+  right: 0px;
+  bottom: 0px;
+  background-color: white;
+  z-index: 100;
+  /* above everything */
+}

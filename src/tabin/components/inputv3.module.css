@@ -1,0 +1,25 @@
+.label {
+  position: absolute;
+  width: 100%;
+  transform: translateY(-50%);
+  top: 50%;
+  left: 0;
+  color: #717171;
+  transition: 0.2s all;
+  cursor: text;
+  padding: 0 12px;
+  font-size: 16px;
+  letter-spacing: -0.4px;
+}
+
+/* 
+.input:focus,
+.input:valid {
+  border-color: #222222;
+} */
+
+.input:focus ~ .label,
+.input:valid ~ .label {
+  font-size: 12px;
+  top: 12px;
+}

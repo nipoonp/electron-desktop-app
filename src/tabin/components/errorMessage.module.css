@@ -1,0 +1,6 @@
+.errorMessage {
+  line-height: 1.5;
+  letter-spacing: normal;
+  color: hsl(var(--error-hue), var(--error-saturation), 40%);
+  padding: 12px 0px;
+}

@@ -1,0 +1,33 @@
+:root {
+  --airbnb-primary-color: hsl(8, 100%, 62%);
+  --primary-color: #2b318c;
+  --primary-color-black: hsl(345, 6%, 13%);
+  --primary-color-gray: hsl(0, 0%, 60%);
+  --error-color: hsla(
+    var(--error-hue),
+    var(--error-saturation),
+    var(--error-lightness),
+    var(--error-alpha)
+  );
+  --error-hue: 17;
+  --error-saturation: 100%;
+  --error-lightness: 57%;
+  --error-alpha: 1;
+  --lnk-color: hsla(
+    var(--lnk-hue),
+    var(--lnk-saturation),
+    var(--lnk-lightness),
+    var(--lnk-alpha)
+  );
+  --lnk-hue: 182;
+  --lnk-saturation: 100%;
+  --lnk-lightness: 27%;
+  --lnk-alpha: 1;
+  --landing-yellow: hsl(45, 96%, 50%);
+  --landing-yellow-hue: 45;
+  --landing-yellow-saturation: 96%;
+  --landing-yellow-lightness: 50%;
+  --landing-black: hsl(345, 6%, 13%);
+  --landing-gray-text: #888888;
+  --landing-background: #f2f2f2;
+}

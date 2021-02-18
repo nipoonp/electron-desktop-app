@@ -1,0 +1,17 @@
+/* https://medium.com/@willhowardgb/building-a-beautiful-text-input-component-in-react-f85564cc7e86 */
+/* comparable to normal hsl(0, 0%, 60%) */
+.textArea::-webkit-input-placeholder {
+  color: hsl(0, 0%, 30%);
+}
+/* comparable to normal hsl(0, 0%, 60%) */
+.textArea::-moz-placeholder {
+  color: hsl(0, 0%, 30%);
+}
+/* comparable to normal hsl(0, 0%, 60%) */
+.textArea:-ms-input-placeholder {
+  color: hsl(0, 0%, 30%);
+}
+/* comparable to normal hsl(0, 0%, 60%) */
+.textArea:-moz-placeholder {
+  color: hsl(0, 0%, 30%);
+}

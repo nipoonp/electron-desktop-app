@@ -1,0 +1,127 @@
+{
+  "name": "Tabin",
+  "description": "Tabin Self Service Kiosk",
+  "author": "Tabin",
+  "version": "0.0.9",
+  "repository": "https://github.com/nipoonp/tabin-desktop",
+  "homepage": "https://github.com/nipoonp/tabin-desktop",
+  "main": "public/electron.ts",
+  "private": true,
+  "resolutions": {
+    "apollo-client": "2.6.3"
+  },
+  "dependencies": {
+    "@aws-amplify/cli": "^3.9.0",
+    "@emotion/core": "^10.0.28",
+    "@fortawesome/fontawesome": "^1.1.8",
+    "@fortawesome/fontawesome-free-regular": "^5.0.13",
+    "@fortawesome/fontawesome-free-solid": "^5.0.13",
+    "@fortawesome/fontawesome-svg-core": "^1.2.30",
+    "@fortawesome/free-brands-svg-icons": "^5.14.0",
+    "@fortawesome/free-solid-svg-icons": "^5.14.0",
+    "@fortawesome/react-fontawesome": "^0.1.11",
+    "@react-google-maps/api": "^1.9.9",
+    "@types/googlemaps": "^3.39.11",
+    "@types/lodash.debounce": "^4.0.6",
+    "@types/papaparse": "^5.0.6",
+    "@types/react": "^16.9.43",
+    "@types/react-beautiful-dnd": "^13.0.0",
+    "@types/react-dates": "^17.1.13",
+    "@types/react-dom": "^16.9.8",
+    "@types/react-modal": "^3.10.6",
+    "@types/react-router-dom": "^5.1.5",
+    "@types/socket.io-client": "^1.4.33",
+    "@types/yup": "^0.29.3",
+    "aws-amplify": "^1.1.29",
+    "aws-amplify-react": "^2.3.10",
+    "aws-appsync": "^1.8.1",
+    "date-fns": "^2.15.0",
+    "electron-is-dev": "^1.2.0",
+    "electron-log": "^4.3.1",
+    "electron-updater": "^4.3.5",
+    "font-awesome": "^4.7.0",
+    "graphql-tag": "^2.10.1",
+    "lodash.debounce": "^4.0.8",
+    "node-thermal-printer": "^4.1.2",
+    "npm": "^6.14.7",
+    "papaparse": "^5.2.0",
+    "pure-react-carousel": "^1.27.3",
+    "react": "^16.13.1",
+    "react-apollo-hooks": "^0.4.5",
+    "react-async": "^10.0.1",
+    "react-autosuggest": "^10.0.2",
+    "react-axios": "^2.0.3",
+    "react-beautiful-dnd": "^13.0.0",
+    "react-dates": "^21.8.0",
+    "react-device-detect": "^1.13.1",
+    "react-dom": "^16.13.1",
+    "react-load-script": "0.0.6",
+    "react-modal": "^3.11.2",
+    "react-router": "^5.2.0",
+    "react-router-dom": "^5.2.0",
+    "react-script-hook": "^1.1.1",
+    "react-scripts": "^3.4.1",
+    "react-simple-keyboard": "^2.3.103",
+    "react-toastify": "^6.0.8",
+    "save": "^2.4.0",
+    "socket.io": "^2.3.0",
+    "socket.io-client": "^2.3.0",
+    "start": "^5.1.0",
+    "typescript": "^3.9.7",
+    "yup": "^0.29.1"
+  },
+  "scripts": {
+    "start:web": "react-scripts start",
+    "build:web": "PUBLIC_URL=./ react-scripts build",
+    "start:desktop": "npm run build:desktop && electron ./build/electron.js",
+    "build:desktop": "tsc -p electron/tsconfig.json",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "release-all": "electron-builder -mwl -p 'onTagOrDraft'",
+    "release": "electron-builder -mwl -p 'onTagOrDraft'",
+    "electron-dev": "concurrently \"BROWSER=none npm run start\" \"wait-on http://localhost:3000 && electron .\""
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "devDependencies": {
+    "electron": "^10.1.5",
+    "concurrently": "^5.3.0",
+    "electron-builder": "^22.9.1",
+    "wait-on": "^5.2.0"
+  },
+  "build": {
+    "appId": "com.tabin.desktop",
+    "copyright": "Copyright 2020 Zeal Private Ltd",
+    "publish": {
+      "provider": "github"
+    },
+    "mac": {
+      "category": "public.app-category.business",
+      "icon": "build/icon.icns"
+    },
+    "win": {
+      "target": "zip",
+      "icon": "build/icon.ico",
+      "certificateFile": "private/electron-tabin-desktop-development.p12",
+      "certificatePassword": "",
+      "verifyUpdateCodeSignature": false
+    },
+    "linux": {
+      "category": "Office",
+      "icon": "build/icon.png"
+    }
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

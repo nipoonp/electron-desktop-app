@@ -1,0 +1,29 @@
+.modalContainer {
+  padding: 0;
+  height: 100%;
+}
+
+.modalContent {
+  background-color: white;
+  min-height: 100%;
+}
+
+@media (min-width: 744px) {
+  .modalContainer {
+    padding: 64px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .modalContent {
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 1px 10px 0px;
+    width: 500px;
+  }
+}
+
+.closeButton {
+  display: inline-block;
+  /* font-size: 26px; */
+  padding: 20px;
+  cursor: pointer;
+}

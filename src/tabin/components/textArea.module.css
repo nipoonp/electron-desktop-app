@@ -1,0 +1,47 @@
+.textArea {
+  border: 1px solid #ebebeb;
+  width: 100%;
+  padding: 15px 10px;
+  border-radius: 4px;
+  resize: none;
+}
+
+/* https://medium.com/@willhowardgb/building-a-beautiful-text-input-component-in-react-f85564cc7e86 */
+/* comparable to normal hsl(0, 0%, 60%) */
+.textArea::-webkit-input-placeholder {
+  color: hsl(0, 0%, 30%);
+}
+/* comparable to normal hsl(0, 0%, 60%) */
+.textArea::-moz-placeholder {
+  color: hsl(0, 0%, 30%);
+}
+/* comparable to normal hsl(0, 0%, 60%) */
+.textArea:-ms-input-placeholder {
+  color: hsl(0, 0%, 30%);
+}
+/* comparable to normal hsl(0, 0%, 60%) */
+.textArea:-moz-placeholder {
+  color: hsl(0, 0%, 30%);
+}
+
+.titleContainer {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.title {
+}
+
+.optional {
+  color: hsl(0, 0%, 70%);
+}
+
+.textAreaError {
+  border: 1px solid var(--error-color);
+  background-color: hsl(var(--error-hue), var(--error-saturation), 98%);
+}
+
+.disabled {
+  background-color: #eeeeee;
+}
