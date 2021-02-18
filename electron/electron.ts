@@ -1,12 +1,12 @@
 import electron from 'electron';
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
-import { ipcMain } from 'electron';
-//@ts-ignore
-import updater = require("./updater");
-import path from 'path';
-// import isDev from 'electron-is-dev';
 
+// import isDev from 'electron-is-dev';
+import { ipcMain } from 'electron';
+import path from 'path';
+import { dialog } from "electron";
+import { autoUpdater } from "electron-updater";
 import net from "net";
 import {
   encodeCommandBuffer,
@@ -15,15 +15,14 @@ import {
 } from "./util";
 import { IOrderReceipt } from "./model";
 
-let verifoneClient = new net.Socket();
-
 let mainWindow: any;
+let verifoneClient = new net.Socket();
 
 function createWindow() {
 
-  // Check for app updates 3 seconds after launch
-  // const updater = new Updater();
-  setTimeout(updater, 3000);
+  // Check for app updates every 3 seconds after launch
+  initUpdater();
+  setInterval(checkForUpdates, 3000);
 
   // mainWindow = new BrowserWindow({width: 900, height: 680, fullscreen: true});
   mainWindow = new BrowserWindow({
@@ -40,6 +39,27 @@ function createWindow() {
   mainWindow.setMenu(null);
 
   // mainWindow.webContents.openDevTools()
+}
+
+const initUpdater = () => {
+  autoUpdater.on('update-available', () => {
+    autoUpdater.downloadUpdate();
+
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Available',
+      message: "A new update is available. Please wait while it's being downloaded.",
+      buttons: ["Okay, i'll wait"]
+    });
+  });
+
+  autoUpdater.on('update-downloaded', () => {
+    autoUpdater.quitAndInstall(false, true);
+  });
+}
+
+const checkForUpdates = () => {
+  autoUpdater.checkForUpdates();
 }
 
 app.on('ready', createWindow);
