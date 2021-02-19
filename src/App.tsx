@@ -22,6 +22,7 @@ import { SmartpayProvider } from "./context/smartpay-context";
 import { VerifoneProvider } from "./context/verifone-context";
 import { ReceiptPrinterProvider } from "./context/receiptPrinter-context";
 import { RegisterProvider } from "./context/register-context";
+import { ElectronProvider } from "./context/electron-context";
 // import { GoogleMapsProvider } from "./context/google-maps-context";
 // import { AlgoliaProvider } from "./context/algolia-context";
 // import { LocationProvider } from "./context/location-context";
@@ -176,22 +177,24 @@ const App = () => {
 
 export default () => {
   return (
-    <AuthProvider>
-      {/* <Elements stripe={stripePromise}> */}
-      {/* <LocationProvider> */}
-      {/* <GoogleMapsProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_KEY!}> */}
-      {/* <AlgoliaProvider
+    <ElectronProvider>
+      <AuthProvider>
+        {/* <Elements stripe={stripePromise}> */}
+        {/* <LocationProvider> */}
+        {/* <GoogleMapsProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_KEY!}> */}
+        {/* <AlgoliaProvider
               appID={process.env.REACT_APP_ALGOLIA_APP_ID!}
               publicKey={process.env.REACT_APP_ALGOLIA_PUBLIC_KEY!}
               restaurantIndexName={
                 process.env.REACT_APP_ALGOLIA_RESTAURANT_INDEX!
               }
             > */}
-      <App />
-      {/* </AlgoliaProvider> */}
-      {/* </GoogleMapsProvider> */}
-      {/* </LocationProvider> */}
-      {/* </Elements> */}
-    </AuthProvider>
+        <App />
+        {/* </AlgoliaProvider> */}
+        {/* </GoogleMapsProvider> */}
+        {/* </LocationProvider> */}
+        {/* </Elements> */}
+      </AuthProvider>
+    </ElectronProvider>
   );
 };

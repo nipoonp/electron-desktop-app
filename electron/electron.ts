@@ -2,7 +2,10 @@ import electron from 'electron';
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
 
-// import isDev from 'electron-is-dev';
+// Setup file logging
+// var log = require('electron-log');
+
+import isDev from 'electron-is-dev';
 import { ipcMain } from 'electron';
 import path from 'path';
 import { dialog } from "electron";
@@ -19,11 +22,6 @@ let mainWindow: any;
 let verifoneClient = new net.Socket();
 
 function createWindow() {
-
-  // Check for app updates every 3 seconds after launch
-  initUpdater();
-  setInterval(checkForUpdates, 3000);
-
   // mainWindow = new BrowserWindow({width: 900, height: 680, fullscreen: true});
   mainWindow = new BrowserWindow({
     width: 1024, height: 900, fullscreen: true, frame: false, webPreferences: {
@@ -35,6 +33,11 @@ function createWindow() {
   mainWindow.loadFile(path.join(__dirname, "index.html"));
   mainWindow.on('closed', () => { mainWindow = null });
 
+  // Check for app updates every 3 seconds after launch
+  initUpdater();
+  // checkForUpdates();
+  // setInterval(checkForUpdates, 10 * 1000);
+
   // Hide the menu bar
   mainWindow.setMenu(null);
 
@@ -42,37 +45,36 @@ function createWindow() {
 }
 
 const initUpdater = () => {
-  autoUpdater.on('update-available', () => {
-    autoUpdater.downloadUpdate();
+  autoUpdater.autoDownload = true;
 
-    dialog.showMessageBox(mainWindow, {
-      type: 'info',
-      title: 'Update Available',
-      message: "A new update is available. Please wait while it's being downloaded.",
-      buttons: ["Okay, i'll wait"]
-    });
+  autoUpdater.on('update-available', () => {
+    mainWindow.webContents.send("ELECTRON_UPDATER", "Found new update.")
+    autoUpdater.downloadUpdate();
   });
 
-  autoUpdater.on('update-downloaded', () => {
+  autoUpdater.on('update-downloaded', (info) => {
+    mainWindow.webContents.send("ELECTRON_UPDATER", `Update downloaded. Version: ${info.releaseName}. App is restarting.`);
     autoUpdater.quitAndInstall(false, true);
   });
+
+  autoUpdater.on('download-progress', (info) => {
+    mainWindow.webContents.send("ELECTRON_UPDATER", `Downloading new update... Progress: ${info.percent}%.`);
+  });
+
+  autoUpdater.on('error', (error) => {
+    mainWindow.webContents.send("ELECTRON_UPDATER", `There was an error updating. ${error}`);
+  });
 }
 
-const checkForUpdates = () => {
-  autoUpdater.checkForUpdates();
-}
+// const checkForUpdates = () => {
+//   autoUpdater.checkForUpdates();
+// }
 
-app.on('ready', createWindow);
+app.once('ready', createWindow);
 
-app.on('window-all-closed', () => {
+app.once('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
-  }
-});
-
-app.on('activate', () => {
-  if (mainWindow === null) {
-    createWindow();
   }
 });
 
