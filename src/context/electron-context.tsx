@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { boolean } from "yup";
 import { Title1Font } from "../tabin/components/fonts";
 
 const electron = window.require("electron");

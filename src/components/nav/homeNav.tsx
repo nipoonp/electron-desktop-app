@@ -105,7 +105,7 @@ export const HomeNav = (props: {
                   {status === AuthenticationStatus.SignedIn && user ? (
                     <div style={{ marginRight: "8px", display: "flex" }}>
                       <MenuLink menu={<UserMenu />}>
-                        {user.firstName}
+                        {user.firstName + " " + user.firstName}
                       </MenuLink>
                     </div>
                   ) : (

@@ -1,4 +1,4 @@
-import React, {  FunctionComponent } from "react";
+import React, { FunctionComponent } from "react";
 import {
   Router,
   Route,
@@ -203,8 +203,8 @@ const PrivateRoute: FunctionComponent<PrivateRouteProps> = ({
 
 interface PrivateRouteProps extends RouteProps {
   component:
-    | React.ComponentType<RouteComponentProps<any>>
-    | React.ComponentType<any>;
+  | React.ComponentType<RouteComponentProps<any>>
+  | React.ComponentType<any>;
 }
 
 const RegisterPrivateRoute: FunctionComponent<PrivateRouteProps> = ({
@@ -216,16 +216,16 @@ const RegisterPrivateRoute: FunctionComponent<PrivateRouteProps> = ({
   return register ? (
     <PrivateRoute {...rest} component={Component} />
   ) : (
-    <Route
-      {...rest}
-      render={(props) => (
-        <Redirect
-          to={{
-            pathname: registerListPath,
-            state: { from: props.location },
-          }}
-        />
-      )}
-    />
-  );
+      <Route
+        {...rest}
+        render={(props) => (
+          <Redirect
+            to={{
+              pathname: registerListPath,
+              state: { from: props.location },
+            }}
+          />
+        )}
+      />
+    );
 };

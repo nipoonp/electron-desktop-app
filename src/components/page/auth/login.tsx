@@ -24,7 +24,6 @@ import { Separator, Separator3 } from "../../../tabin/components/separator";
 import { Link } from "../../../tabin/components/link";
 import { useSmallScreen } from "../../../hooks/useWindowSize";
 import { useUser } from "../../../context/user-context";
-import { useTabNav } from "../../../context/tabNav-context";
 
 const logger = new Logger("Login");
 
@@ -41,11 +40,6 @@ export const Login = () => {
   const { login } = useAuth();
   const history = useHistory();
   const { isSmallScreen } = useSmallScreen();
-  const { setSelectedTab } = useTabNav();
-
-  useEffect(() => {
-    setSelectedTab("login");
-  }, []);
 
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");

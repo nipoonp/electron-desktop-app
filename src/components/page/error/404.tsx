@@ -27,40 +27,6 @@ export const NoMatch = () => {
             </H4>
             <Space4 />
             <div className={styles.bold}>Error Code: 404</div>
-            <Space4 />
-            <div className={styles.bold}>
-              Here are some helpful links instead:
-            </div>
-            {/* <Space2 />
-            <span>
-              <a href={landingPath} className={styles.link}>
-                Home
-              </a>
-            </span>
-            <Space2 />
-            <span>
-              <a href={restaurantsPath} className={styles.link}>
-                Explore
-              </a>
-            </span>
-            <Space2 />
-            <span>
-              <a href={landingBusinessPath} className={styles.link}>
-                Add your restaurant
-              </a>
-            </span>
-            <Space2 />
-            <span>
-              <a href={termsPath} className={styles.link}>
-                Terms of use
-              </a>
-            </span>
-            <Space2 />
-            <span>
-              <a href={privacyPath} className={styles.link}>
-                Privacy Policy
-              </a>
-            </span> */}
           </div>
           <img
             className={styles.illustration}

@@ -23,7 +23,7 @@ import { GrayColor, PrimaryColor } from "../../tabin/components/colors";
 import { convertCentsToDollars } from "../../util/moneyConversion";
 import { useMutation } from "react-apollo-hooks";
 import { PROCESS_ORDER } from "../../graphql/customMutations";
-import { IGET_DASHBOARD_REGISTER_PRINTER, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
+import { IGET_RESTAURANT_REGISTER_PRINTER, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
 import {
   restaurantPath,
   beginOrderPath,
@@ -52,7 +52,6 @@ import { KioskModal } from "../../tabin/components/kioskModal";
 import { KioskButton } from "../../tabin/components/kioskButton";
 import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
 import { SizedBox } from "../../tabin/components/sizedBox";
-import { OrderType } from "./orderType";
 import { KioskStepper } from "../../tabin/components/kioskStepper";
 import {
   useVerifone,
@@ -340,7 +339,7 @@ export const Checkout = () => {
     })(10);
   };
 
-  const filterPrintProducts = (products: ICartProduct[], printer: IGET_DASHBOARD_REGISTER_PRINTER) => {
+  const filterPrintProducts = (products: ICartProduct[], printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
     if (!printer.ignoreProducts || printer.ignoreProducts.items.length == 0) {
       return products;
     }
