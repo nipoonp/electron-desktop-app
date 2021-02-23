@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 import { RadioV2 } from "../../tabin/components/radiov2";
-import { HomeNav } from "../nav/homeNav";
-import { isMobile } from "react-device-detect";
 import { Space2, Space4, Space6 } from "../../tabin/components/spaces";
 import { Title3Font } from "../../tabin/components/fonts";
 import { Verifone } from "./configureNewEftpos/verifone";
@@ -17,8 +15,6 @@ export const ConfigureNewEftpos = () => {
 
   return (
     <>
-      <HomeNav />
-
       <div
         style={{
           padding: "24px",
@@ -54,8 +50,8 @@ export const ConfigureNewEftpos = () => {
         ) : eftposProvider == EftposProvider.SMARTPAY ? (
           <SmartPay />
         ) : (
-          <></>
-        )}
+              <></>
+            )}
       </div>
     </>
   );

@@ -5,11 +5,8 @@ import { InputV2 } from "../../../tabin/components/inputv2";
 import {
     Space4,
     Space2,
-    Space,
     Space6,
 } from "../../../tabin/components/spaces";
-import { isMobile } from "react-device-detect";
-import { HomeNav } from "../../nav/homeNav";
 import { FullScreenSpinner } from "../../../tabin/components/fullScreenSpinner";
 import { Title3Font } from "../../../tabin/components/fonts";
 import {

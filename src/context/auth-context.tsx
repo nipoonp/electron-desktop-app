@@ -4,20 +4,7 @@ import { Auth } from "aws-amplify";
 import { Hub, Logger } from "aws-amplify";
 import { HubCapsule } from "@aws-amplify/core/lib/Hub";
 import { ICognitoUser } from "../model/model";
-import {
-  loginPath,
-  signUpPath,
-  signUpConfirmPath,
-  forgotPasswordPath,
-  forgotPasswordResetPath,
-  newInformationRequiredPath,
-  // verifyPhonePath,
-  // verifyPhoneConfirmPath,
-  // profilePath,
-  // notifyPath,
-  // betaInvitationPath,
-  authRedirectPath,
-} from "../components/main";
+import { loginPath } from "../components/main";
 
 const logger = new Logger("AuthContext");
 
@@ -62,7 +49,6 @@ type ContextProps = {
   user?: ICognitoUser;
   email?: string;
   isAdmin: boolean;
-  setAuthRedirectPath: (currentPath: string) => void;
 };
 
 // FACTORIES
@@ -182,7 +168,6 @@ const AuthContext = React.createContext<ContextProps>({
   status: AuthenticationStatus.Unauthenticated,
   resendCode: resendCode,
   isAdmin: false,
-  setAuthRedirectPath: (currentPath: string) => {},
 });
 
 // REDUCER
@@ -209,11 +194,11 @@ type Action =
   | { type: "signOut" }
   | { type: "unconfirmedSignIn"; email: string; password: string }
   | {
-      type: "newInformationRequired";
-      user: ICognitoUser;
-      email: string;
-      password: string;
-    }
+    type: "newInformationRequired";
+    user: ICognitoUser;
+    email: string;
+    password: string;
+  }
   // | { type: "signIn_failure"; code: string }
   | { type: "unconfirmedForgotPassword"; email: string }
   | { type: "configured"; user: ICognitoUser };
@@ -475,32 +460,6 @@ function AuthProvider(props: any) {
         user: state.user,
         status: state.status,
         isAdmin: state.isAdmin,
-        setAuthRedirectPath: (currentPath: string) => {
-          const authPathIgnoreList = [
-            loginPath,
-            signUpPath,
-            signUpConfirmPath,
-            forgotPasswordPath,
-            forgotPasswordResetPath,
-            newInformationRequiredPath,
-            // verifyPhonePath,
-            // verifyPhoneConfirmPath,
-            // profilePath,
-            // notifyPath,
-            // betaInvitationPath,
-            authRedirectPath,
-            authRedirectPath + "/",
-          ];
-
-          const isIgnorePath = authPathIgnoreList.find(
-            (path) => path === currentPath
-          );
-
-          // We do not want to redirect back to an auth path ie. redirect back to login page, doesn't make sense
-          if (!isIgnorePath) {
-            sessionStorage.setItem("authRedirectPath", currentPath);
-          }
-        },
       }}
       {...props}
     />

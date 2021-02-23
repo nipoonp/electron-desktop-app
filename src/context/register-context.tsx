@@ -5,7 +5,7 @@ import { useUser } from "./user-context";
 import { IGET_USER_RESTAURANT_REGISTER } from "../graphql/customQueries";
 
 type ContextProps = {
-  register: IGET_USER_RESTAURANT_REGISTER | null;
+  register: IGET_USER_RESTAURANT_REGISTER | null | undefined;
   connectRegister: (key: string) => Promise<any>;
   disconnectRegister: (key: string) => Promise<any>;
 };
@@ -25,7 +25,7 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
   const [
     register,
     setRegister,
-  ] = useState<IGET_USER_RESTAURANT_REGISTER | null>(null);
+  ] = useState<IGET_USER_RESTAURANT_REGISTER | null>();
 
   const { user } = useUser();
 
@@ -88,7 +88,6 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
       },
     });
   };
-
 
   return (
     <RegisterContext.Provider

@@ -1,16 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import { useAuth, AuthenticationStatus } from "../../../context/auth-context";
-import { HomeNav } from "../../nav/homeNav";
 import { isMobile } from "react-device-detect";
 import { Logger } from "aws-amplify";
-import {
-  signUpPath,
-  forgotPasswordPath,
-  authRedirectPath,
-  signUpConfirmPath,
-  newInformationRequiredPath,
-} from "../../main";
 import * as yup from "yup";
 import { ButtonV2 } from "../../../tabin/components/buttonv2";
 import { BoldFont, Title2Font } from "../../../tabin/components/fonts";
@@ -18,12 +10,9 @@ import { Space2, Space3 } from "../../../tabin/components/spaces";
 import { ErrorMessage } from "../../../tabin/components/errorMessage";
 import { ServerErrorV2 } from "../../../tabin/components/serverErrorv2";
 import { InputV3 } from "../../../tabin/components/inputv3";
-import { FacebookLoginButton } from "../../../tabin/components/auth/facebookLoginButton";
-import { GoogleLoginButton } from "../../../tabin/components/auth/googleLoginButton";
-import { Separator, Separator3 } from "../../../tabin/components/separator";
-import { Link } from "../../../tabin/components/link";
+import { Separator } from "../../../tabin/components/separator";
 import { useSmallScreen } from "../../../hooks/useWindowSize";
-import { useUser } from "../../../context/user-context";
+import { beginOrderPath } from "../../main";
 
 const logger = new Logger("Login");
 
@@ -49,20 +38,11 @@ export const Login = () => {
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
-  const { user } = useUser();
   const { status } = useAuth();
 
   useEffect(() => {
     if (status === AuthenticationStatus.SignedIn) {
-      history.replace(authRedirectPath);
-    }
-
-    if (status === AuthenticationStatus.UnconfirmedSignIn) {
-      history.push(signUpConfirmPath);
-    }
-
-    if (status === AuthenticationStatus.NewInformationRequired) {
-      history.push(newInformationRequiredPath);
+      history.replace(beginOrderPath);
     }
   }, [status]);
 
@@ -76,14 +56,6 @@ export const Login = () => {
     setPassword(event.target.value);
     setPasswordError("");
     setServerError("");
-  };
-
-  const onSwitchToSignUp = () => {
-    history.push(signUpPath);
-  };
-
-  const onForgetPassword = () => {
-    history.push(forgotPasswordPath);
   };
 
   const onLogin = async () => {
@@ -120,38 +92,6 @@ export const Login = () => {
       setLoading(false);
     }
   };
-
-  const socialMediaLogin = (
-    <>
-      <FacebookLoginButton />
-      <Space2 />
-      <GoogleLoginButton />
-    </>
-  );
-
-  const orSeparator = (
-    <>
-      <div
-        style={{
-          position: "relative",
-          padding: "32px 0",
-        }}
-      >
-        <Separator />
-        <div
-          style={{
-            position: "absolute",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            backgroundColor: "white",
-            padding: "0 24px",
-          }}
-        >
-          or
-        </div>
-      </div>
-    </>
-  );
 
   const onEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -203,17 +143,6 @@ export const Login = () => {
     </>
   );
 
-  const dontHaveAnAccount = (
-    <>
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <div>Don't have an account?</div>
-        <Link onClick={onSwitchToSignUp} style={{ paddingLeft: "8px" }}>
-          Sign up
-        </Link>
-      </div>
-    </>
-  );
-
   const content = (
     <>
       <div
@@ -230,8 +159,6 @@ export const Login = () => {
       >
         <Title2Font>Log in</Title2Font>
         <Space3 />
-        {socialMediaLogin}
-        {orSeparator}
         {serverError && (
           <>
             <ServerErrorV2 message={serverError} />
@@ -244,19 +171,13 @@ export const Login = () => {
         {passwordInput}
         {passwordError && <ErrorMessage message={passwordError} />}
         <Space3 />
-        <Link onClick={onForgetPassword}>Forgot password?</Link>
-        <Space3 />
         {loginButton}
-        <Separator3 />
-        <Space2 />
-        {dontHaveAnAccount}
       </div>
     </>
   );
 
   return (
     <>
-      <HomeNav />
       <div
         style={{
           minHeight: "100vh",

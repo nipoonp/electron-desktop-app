@@ -1,16 +1,13 @@
-import React, { useState } from "react";
-import { Space4, Space6 } from "../../tabin/components/spaces";
-import { useHistory } from "react-router";
-import { Button } from "../../tabin/components/button";
+import React from "react";
+import { Space6 } from "../../tabin/components/spaces";
 import { toast } from "../../tabin/components/toast";
-import Input from "../../tabin/components/input";
 import { useUser } from "../../context/user-context";
 import { useRegister } from "../../context/register-context";
-import { HomeNav } from "../nav/homeNav";
-import { isMobile } from "react-device-detect";
-import { Separator, Separator4 } from "../../tabin/components/separator";
+import { Separator4 } from "../../tabin/components/separator";
 import { ButtonV2 } from "../../tabin/components/buttonv2";
-import { Title2Font, Title3Font } from "../../tabin/components/fonts";
+import { Title2Font } from "../../tabin/components/fonts";
+import { useHistory } from "react-router-dom";
+import { beginOrderPath } from "../main";
 
 export const RegisterList = () => {
   const history = useHistory();
@@ -28,6 +25,8 @@ export const RegisterList = () => {
   const onConnect = async (key: string) => {
     try {
       await connectRegister(key);
+
+      history.replace(beginOrderPath);
       toast.success("Register connected successfully set.");
     } catch (e) {
       toast.error(e);
@@ -45,7 +44,6 @@ export const RegisterList = () => {
 
   return (
     <>
-      <HomeNav />
       <div
         style={{
           display: "flex",

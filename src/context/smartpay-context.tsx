@@ -83,7 +83,7 @@ const SmartpayContext = React.createContext<ContextProps>({
 
 const SmartpayProvider = (props: { children: React.ReactNode }) => {
   const { user } = useUser();
-  const {register} = useRegister();
+  const { register } = useRegister();
 
   const _baseUrl: string = "https://api.smart-connect.cloud/POS";
   let _posRegisterId: string | null = register ? register.id : null;
@@ -122,7 +122,7 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
         reject("A posRegisterName has to be supplied.");
         return;
       }
-      
+
       const pairingEndpoint = _baseUrl + "/Pairing/" + pairingCode;
 
       const params = new URLSearchParams();
@@ -235,7 +235,7 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
         reject("A posRegisterName has to be supplied.");
         return;
       }
-      
+
 
       const transactionEndpoint = _baseUrl + "/Transaction";
 

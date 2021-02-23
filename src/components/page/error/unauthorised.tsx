@@ -1,22 +1,12 @@
-import React, { useState } from "react";
-import { isMobile } from "react-device-detect";
-import { HomeNav } from "../../nav/homeNav";
+import React from "react";
 import { H1, H4 } from "../../../tabin/components/headings";
-import { Space2, Space4, Space1 } from "../../../tabin/components/spaces";
-// import {
-//   landingPath,
-//   restaurantsPath,
-//   landingBusinessPath,
-//   termsPath,
-//   privacyPath
-// } from "../../main";
+import { Space2, Space4 } from "../../../tabin/components/spaces";
 
 const styles = require("./unauthorised.module.css");
 
 export default () => {
   return (
     <>
-      <HomeNav />
       <div className={styles.containerWrapper}>
         <div className={styles.container}>
           <div className={styles.content}>

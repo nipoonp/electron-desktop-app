@@ -21,13 +21,13 @@ import { useUser } from "../context/user-context";
 import { ToastContainer } from "../tabin/components/toast";
 import { RegisterList } from "./page/registerList";
 import { createBrowserHistory } from "history";
-import { useAuthRedirectURL } from "../hooks/useAuthRedirectURL";
 import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
 import { BeginOrder } from "./page/beginOrder";
 import { OrderType } from "./page/orderType";
 import { ConfigureNewEftpos } from "./page/configureNewEftpos";
 import { TableNumber } from "./page/tableNumber";
 import { useRegister } from "../context/register-context";
+import { IGET_USER_RESTAURANT_REGISTER } from "../graphql/customQueries";
 
 // reset scroll position on change of route
 // https://stackoverflow.com/a/46868707/11460922
@@ -42,24 +42,15 @@ const logger = new Logger("Main");
 Modal.setAppElement("#root");
 
 // Auth routes
-// If new auth path is added, add reference to it inside setAuthRedirectPath function in auth context
-export const authRedirectPath = "/auth_redirect";
 export const loginPath = "/login";
-export const signUpPath = "/signup";
-export const signUpConfirmPath = "/signup_confirm";
-export const forgotPasswordPath = "/forgot_password";
-export const forgotPasswordResetPath = "/forgot_password_reset";
-export const newInformationRequiredPath = "/new_information_required";
-export const landingPath = "/";
 export const registerListPath = "/register_list";
 export const configureNewEftposPath = "/configure_new_eftpos";
-export const beginOrderPath = "/begin_order";
+export const beginOrderPath = "/";
 export const orderTypePath = "/order_type";
 export const tableNumberPath = "/table_number";
 export const restaurantPath = "/restaurant";
 export const dashboardPath = "/dashboard";
 export const checkoutPath = "/checkout";
-export const createRestaurantPath = "/create_restaurant";
 export const unauthorizedPath = "/unauthorized";
 
 export default () => {
@@ -74,8 +65,6 @@ export default () => {
 };
 
 const Routes = () => {
-  useAuthRedirectURL();
-
   return (
     <Switch>
       <Route exact path={loginPath} component={Login} />
@@ -211,11 +200,32 @@ const RegisterPrivateRoute: FunctionComponent<PrivateRouteProps> = ({
   component: Component,
   ...rest
 }) => {
-  const { register } = useRegister();
+  const { user, isLoading } = useUser();
 
-  return register ? (
-    <PrivateRoute {...rest} component={Component} />
-  ) : (
+  // Assumed signed in from this point onwards
+  if (isLoading) {
+    return <FullScreenSpinner show={true} text="Loading user" />;
+  }
+
+  //----------------------------------------------------------------------------
+  //TODO: Fix this later, should be coming in from the kiosk
+  const storedRegisterKey = localStorage.getItem("registerKey");
+
+  let matchingRegister: IGET_USER_RESTAURANT_REGISTER | null = null;
+
+  user &&
+    user.restaurants.items.length > 0 &&
+    user.restaurants.items[0].registers.items.forEach((r) => {
+      if (storedRegisterKey == r.id) {
+        matchingRegister = r;
+
+        console.log(r);
+      }
+    });
+  //----------------------------------------------------------------------------
+
+  if (user && !matchingRegister) {
+    return (
       <Route
         {...rest}
         render={(props) => (
@@ -227,5 +237,9 @@ const RegisterPrivateRoute: FunctionComponent<PrivateRouteProps> = ({
           />
         )}
       />
-    );
+    )
+  }
+
+  // Route to original path
+  return <PrivateRoute {...rest} component={Component} />
 };
