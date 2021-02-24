@@ -17,7 +17,7 @@ export const ConfigureNewEftpos = () => {
     <>
       <div
         style={{
-          padding: "24px",
+          padding: "48px",
           maxWidth: "512px",
           margin: "0 auto",
         }}

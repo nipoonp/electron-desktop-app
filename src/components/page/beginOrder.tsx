@@ -16,6 +16,8 @@ import { S3Image } from "aws-amplify-react";
 import { CarouselProvider, Slider, Slide } from "pure-react-carousel";
 import "pure-react-carousel/dist/react-carousel.es.css";
 
+const styles = require("./beginOrder.module.css");
+
 export const BeginOrder = (props: {}) => {
   const { user } = useUser();
 
@@ -52,104 +54,107 @@ const BeginOrderAdvertisements = () => {
 
   return (
     <KioskPageWrapper>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "space-between",
-          position: "absolute",
-          height: "100%",
-          width: "100%",
-          backgroundColor: "#F2F2F2",
-        }}
-        onClick={() => {
-          const userRestaurantId = user.restaurants.items[0].id;
-
-          history.push(restaurantPath + "/" + userRestaurantId);
-        }}
-      >
+      <div style={{ position: "fixed", height: "100vh", width: "100vw" }}>
         <div
           style={{
-            fontSize: "84px",
-            fontWeight: 600,
-            textAlign: "center",
-            paddingTop: "40px",
-          }}
-        >
-          <div>ORDER</div>
-          <Space2 />
-          <div style={{ fontSize: "156px", color: "var(--primary-color)" }}>
-            HERE
-          </div>
-        </div>
-        <div
-          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "space-between",
             position: "absolute",
-            bottom: "-75px",
-            backgroundColor: "rgb(255, 255, 255)",
-            width: "250px",
-            height: "250px",
-            borderRadius: "50%",
-            zIndex: 1,
-            opacity: 0.8,
-            textAlign: "center",
-            paddingTop: "32px",
-            boxShadow:
-              "0 50px 100px -20px rgba(50,50,93,.25), 0 30px 60px -30px rgba(0,0,0,.3)",
+            height: "100%",
+            width: "100%",
+            backgroundColor: "#F2F2F2",
+            overflow: "hidden"
+          }}
+          onClick={() => {
+            const userRestaurantId = user.restaurants.items[0].id;
+
+            history.push(restaurantPath + "/" + userRestaurantId);
           }}
         >
-          <img
-            style={{ height: "76px" }}
-            src="https://tabin-public.s3-ap-southeast-2.amazonaws.com/images/touch-here-dark.png"
-          />
-          <Space3 />
           <div
             style={{
+              fontSize: "84px",
               fontWeight: 600,
-              fontSize: "20px",
+              textAlign: "center",
+              paddingTop: "40px",
             }}
           >
-            <div>TOUCH TO BEGIN</div>
+            <div>ORDER</div>
+            <Space2 />
+            <div style={{ fontSize: "156px", color: "var(--primary-color)" }}>
+              HERE
+          </div>
+          </div>
+          <div
+            style={{
+              position: "absolute",
+              bottom: "-75px",
+              backgroundColor: "rgb(255, 255, 255)",
+              width: "250px",
+              height: "250px",
+              borderRadius: "50%",
+              zIndex: 1,
+              opacity: 0.8,
+              textAlign: "center",
+              paddingTop: "32px",
+              boxShadow:
+                "0 50px 100px -20px rgba(50,50,93,.25), 0 30px 60px -30px rgba(0,0,0,.3)",
+            }}
+          >
+            <img
+              style={{ height: "76px" }}
+              src="https://tabin-public.s3-ap-southeast-2.amazonaws.com/images/touch-here-dark.png"
+            />
+            <Space3 />
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: "20px",
+              }}
+            >
+              <div>TOUCH TO BEGIN</div>
+            </div>
           </div>
         </div>
-      </div>
-
-      <div
-        style={{
-          pointerEvents: "none",
-        }}
-      >
-        <CarouselProvider
-          naturalSlideWidth={500}
-          naturalSlideHeight={1000}
-          totalSlides={user.restaurants.items[0].advertisements.items.length}
-          isPlaying={true}
-          isIntrinsicHeight={true}
+        <div
+          style={{
+            pointerEvents: "none",
+          }}
         >
-          <Slider>
-            {user.restaurants.items[0].advertisements.items.map(
-              (advertisement, index) => (
-                <Slide index={index}>
-                  <S3Image
-                    level="protected"
-                    imgKey={advertisement.content.key}
-                    identityId={advertisement.content.identityPoolId}
-                    theme={{
-                      photoImg: {
-                        // boxSizing: "border-box",
-                        width: "100%",
-                        height: "100vh",
-                        objectFit: "contain",
-                        padding: "332px 42px 148px 42px",
-                      },
-                    }}
-                  />
-                </Slide>
-              )
-            )}
-          </Slider>
-        </CarouselProvider>
+          <CarouselProvider
+            naturalSlideWidth={500}
+            naturalSlideHeight={1000}
+            totalSlides={user.restaurants.items[0].advertisements.items.length}
+            interval={6000}
+            isPlaying={true}
+            isIntrinsicHeight={true}
+          >
+            <Slider classNameAnimation={styles.slideAnimation}>
+              {user.restaurants.items[0].advertisements.items.map(
+                (advertisement, index) => (
+                  <Slide index={index}>
+                    <S3Image
+                      level="protected"
+                      imgKey={advertisement.content.key}
+                      identityId={advertisement.content.identityPoolId}
+                      theme={{
+                        photoImg: {
+                          // boxSizing: "border-box",
+                          width: "100%",
+                          height: "100vh",
+                          objectFit: "contain",
+                          padding: "332px 42px 148px 42px",
+                        },
+                      }}
+                    />
+                  </Slide>
+                )
+              )}
+            </Slider>
+          </CarouselProvider>
+        </div>
       </div>
     </KioskPageWrapper>
   );
@@ -166,71 +171,73 @@ const BeginOrderDefault = () => {
   return (
     <>
       <KioskPageWrapper>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            height: "100vh",
-            backgroundColor: "var(--primary-color)",
-            padding: "32px",
-            overflow: "auto",
-          }}
-        >
+        <div style={{ position: "fixed", height: "100vh", width: "100vw" }}>
           <div
             style={{
-              color: "#ffffff",
               display: "flex",
-              flex: "1",
-              alignItems: "center",
-              justifyContent: "center",
               flexDirection: "column",
+              height: "100vh",
+              backgroundColor: "var(--primary-color)",
+              padding: "32px",
+              overflow: "auto",
             }}
-            onClick={() => {
-              const userRestaurantId = user.restaurants.items[0].id;
+          >
+            <div
+              style={{
+                color: "#ffffff",
+                display: "flex",
+                flex: "1",
+                alignItems: "center",
+                justifyContent: "center",
+                flexDirection: "column",
+              }}
+              onClick={() => {
+                const userRestaurantId = user.restaurants.items[0].id;
 
-              history.push(restaurantPath + "/" + userRestaurantId);
-            }}
-          >
-            <div style={{ fontSize: "128px" }}>ORDER</div>
-            <Space6 />
-            <div style={{ fontSize: "220px", fontWeight: "bold" }}>HERE</div>
-            <Space6 />
-            <div style={{ fontSize: "128px" }}>AND PAY</div>
-            <Space size={300} />
-            <img
-              style={{ height: "128px" }}
-              src="https://tabin-public.s3-ap-southeast-2.amazonaws.com/images/touch-here.png"
-            />
-            <Space4 />
-            <Title3Font style={{ fontWeight: 400 }}>
-              Touch to get started
+                history.push(restaurantPath + "/" + userRestaurantId);
+              }}
+            >
+              <div style={{ fontSize: "128px" }}>ORDER</div>
+              <Space6 />
+              <div style={{ fontSize: "220px", fontWeight: "bold" }}>HERE</div>
+              <Space6 />
+              <div style={{ fontSize: "128px" }}>AND PAY</div>
+              <Space size={300} />
+              <img
+                style={{ height: "128px" }}
+                src="https://tabin-public.s3-ap-southeast-2.amazonaws.com/images/touch-here.png"
+              />
+              <Space4 />
+              <Title3Font style={{ fontWeight: 400 }}>
+                Touch to get started
             </Title3Font>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#ffffff",
-            }}
-          >
-            <Title2Font
+            </div>
+            <div
               style={{
-                fontWeight: 400,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#ffffff",
               }}
             >
-              Powered by
+              <Title2Font
+                style={{
+                  fontWeight: 400,
+                }}
+              >
+                Powered by
             </Title2Font>
-            <SizedBox width="6px" />
-            <Title2Font
-              style={{
-                fontSize: "30px",
-                fontWeight: 600,
-                fontStyle: "italic",
-              }}
-            >
-              TABIN
+              <SizedBox width="6px" />
+              <Title2Font
+                style={{
+                  fontSize: "30px",
+                  fontWeight: 600,
+                  fontStyle: "italic",
+                }}
+              >
+                TABIN
             </Title2Font>
+            </div>
           </div>
         </div>
       </KioskPageWrapper>

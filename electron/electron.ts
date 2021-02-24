@@ -6,7 +6,7 @@ const BrowserWindow = electron.BrowserWindow;
 // var log = require('electron-log');
 
 import isDev from 'electron-is-dev';
-import { ipcMain } from 'electron';
+import { ipcMain, Menu } from 'electron';
 import path from 'path';
 import { dialog } from "electron";
 import { autoUpdater } from "electron-updater";
@@ -137,3 +137,27 @@ verifoneClient.on("error", (error: Error) => {
 verifoneClient.on("close", (had_error: boolean) => {
   mainWindow.webContents.send("EFTPOS_CLOSE", "Connection with Verifone Eftpos ended!");
 });
+
+ipcMain.on('SHOW_CONTEXT_MENU', (event) => {
+  const template = [
+    {
+      label: 'Kiosk Mode',
+      click: () => { event.sender.send('CONTEXT_MENU_COMMAND', 'kioskMode') }
+    },
+    {
+      label: 'Configure New Eftpos & Printers',
+      click: () => { event.sender.send('CONTEXT_MENU_COMMAND', 'configureEftposAndPrinters') }
+    },
+    {
+      label: 'Configure Register',
+      click: () => { event.sender.send('CONTEXT_MENU_COMMAND', 'configureRegister') }
+    },
+    {
+      label: 'Log Out',
+      click: () => { event.sender.send('CONTEXT_MENU_COMMAND', 'logout') }
+    },
+  ]
+  //@ts-ignore
+  const menu = Menu.buildFromTemplate(template)
+  menu.popup();
+})

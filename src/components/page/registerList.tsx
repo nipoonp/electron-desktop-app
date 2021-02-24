@@ -49,7 +49,7 @@ export const RegisterList = () => {
           display: "flex",
           alignItems: "center",
           flexDirection: "column",
-          marginTop: "152px",
+          padding: "48px",
         }}
       >
         <div style={{ width: "500px" }}>

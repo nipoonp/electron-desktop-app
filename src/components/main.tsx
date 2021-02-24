@@ -1,4 +1,4 @@
-import React, { FunctionComponent } from "react";
+import React, { FunctionComponent, useEffect } from "react";
 import {
   Router,
   Route,
@@ -6,6 +6,7 @@ import {
   Redirect,
   RouteComponentProps,
   RouteProps,
+  useHistory,
 } from "react-router-dom";
 import { Restaurant } from "./page/restaurant";
 import { NoMatch } from "./page/error/404";
@@ -26,8 +27,10 @@ import { BeginOrder } from "./page/beginOrder";
 import { OrderType } from "./page/orderType";
 import { ConfigureNewEftpos } from "./page/configureNewEftpos";
 import { TableNumber } from "./page/tableNumber";
-import { useRegister } from "../context/register-context";
 import { IGET_USER_RESTAURANT_REGISTER } from "../graphql/customQueries";
+
+const electron = window.require("electron");
+const ipcRenderer = electron.ipcRenderer;
 
 // reset scroll position on change of route
 // https://stackoverflow.com/a/46868707/11460922
@@ -65,6 +68,45 @@ export default () => {
 };
 
 const Routes = () => {
+  const history = useHistory();
+  const { logout } = useAuth();
+
+  let timerId: NodeJS.Timeout;
+
+  // This is for electron, as it doesn't start at '/' route for some reason.
+  useEffect(() => {
+    history.push(beginOrderPath);
+  }, []);
+
+  useEffect(() => {
+    document.body.onmousedown = function () {
+      timerId = setTimeout(() => { ipcRenderer.send('SHOW_CONTEXT_MENU') }, 4000);
+    }
+
+    document.body.onmouseup = function () {
+      clearTimeout(timerId);
+    }
+
+    ipcRenderer.on('CONTEXT_MENU_COMMAND', (e, command) => {
+      switch (command) {
+        case "kioskMode":
+          history.push(beginOrderPath);
+          break;
+        case "configureEftposAndPrinters":
+          history.push(configureNewEftposPath);
+          break;
+        case "configureRegister":
+          history.push(registerListPath);
+          break;
+        case "logout":
+          logout();
+          break;
+        default:
+          break;
+      }
+    });
+  }, []);
+
   return (
     <Switch>
       <Route exact path={loginPath} component={Login} />
