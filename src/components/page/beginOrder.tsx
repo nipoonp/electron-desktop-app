@@ -13,6 +13,7 @@ import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
 import { Title3Font, Title2Font } from "../../tabin/components/fonts";
 import { SizedBox } from "../../tabin/components/sizedBox";
 import { S3Image } from "aws-amplify-react";
+import { getCloudFrontDomainName } from "../../private/aws-custom";
 import { CarouselProvider, Slider, Slide } from "pure-react-carousel";
 import "pure-react-carousel/dist/react-carousel.es.css";
 
@@ -135,20 +136,13 @@ const BeginOrderAdvertisements = () => {
               {user.restaurants.items[0].advertisements.items.map(
                 (advertisement, index) => (
                   <Slide index={index}>
-                    <S3Image
-                      level="protected"
-                      imgKey={advertisement.content.key}
-                      identityId={advertisement.content.identityPoolId}
-                      theme={{
-                        photoImg: {
-                          // boxSizing: "border-box",
-                          width: "100%",
-                          height: "100vh",
-                          objectFit: "contain",
-                          padding: "332px 42px 148px 42px",
-                        },
-                      }}
-                    />
+                    <img src={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${advertisement.content.key}`} style={{
+                      // boxSizing: "border-box",
+                      width: "100%",
+                      height: "100vh",
+                      objectFit: "contain",
+                      padding: "332px 42px 148px 42px",
+                    }} />
                   </Slide>
                 )
               )}

@@ -33,6 +33,7 @@ import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
 import { ICartProduct } from "../../model/model";
 import { SizedBox } from "../../tabin/components/sizedBox";
 import { isItemAvailable, isItemSoldOut } from "../../util/isItemAvailable";
+import { getCloudFrontDomainName } from "../../private/aws-custom";
 
 const styles = require("./restaurant.module.css");
 
@@ -215,19 +216,12 @@ export const Restaurant = (props: { restaurantID: string }) => {
           <div style={{ margin: "0 auto" }}>
             {product.image && (
               <>
-                <S3Image
-                  imgKey={product.image.key}
-                  identityId={product.image.identityPoolId}
-                  level="protected"
-                  theme={{
-                    photoImg: {
-                      width: "100%",
-                      height: "200px",
-                      borderRadius: "10px",
-                      objectFit: "cover",
-                    },
-                  }}
-                />
+                <img src={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`} style={{
+                  width: "100%",
+                  height: "200px",
+                  borderRadius: "10px",
+                  objectFit: "cover",
+                }} />
                 <Space2 />
               </>
             )}
@@ -390,18 +384,11 @@ export const Restaurant = (props: { restaurantID: string }) => {
 
 const RestaurantImage = (props: { image: IS3Image }) => {
   return (
-    <S3Image
-      imgKey={props.image.key}
-      identityId={props.image.identityPoolId}
-      level="protected"
-      theme={{
-        photoImg: {
-          width: "100%",
-          height: "100%",
-          padding: "42px",
-        },
-      }}
-    />
+    <img src={`${getCloudFrontDomainName()}/protected/${props.image.identityPoolId}/${props.image.key}`} style={{
+      width: "100%",
+      // height: "100%",
+      padding: "42px",
+    }} />
   );
 };
 
