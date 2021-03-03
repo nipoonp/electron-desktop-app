@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Space4,
   Space6,
@@ -8,14 +8,14 @@ import {
 } from "../../tabin/components/spaces";
 import { useHistory } from "react-router";
 import { useUser } from "../../context/user-context";
-import { restaurantPath, orderTypePath } from "../main";
+import { restaurantPath } from "../main";
 import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
 import { Title3Font, Title2Font } from "../../tabin/components/fonts";
 import { SizedBox } from "../../tabin/components/sizedBox";
-import { S3Image } from "aws-amplify-react";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
-import { CarouselProvider, Slider, Slide } from "pure-react-carousel";
 import "pure-react-carousel/dist/react-carousel.es.css";
+import { IGET_USER_RESTAURANT_ADVERTISEMENT } from "../../graphql/customQueries";
+import { number } from "yup";
 
 const styles = require("./beginOrder.module.css");
 
@@ -30,11 +30,13 @@ export const BeginOrder = (props: {}) => {
     return <div>This user is not an owner of any restaurants</div>;
   }
 
+  const ads = user && user.restaurants.items[0].advertisements.items;
+
   return (
     <>
-      {user.restaurants.items[0].advertisements.items.length > 0 ? (
+      {ads.length > 0 ? (
         <>
-          <BeginOrderAdvertisements />
+          <BeginOrderAdvertisements ads={ads} />
         </>
       ) : (
           <>
@@ -45,9 +47,25 @@ export const BeginOrder = (props: {}) => {
   );
 };
 
-const BeginOrderAdvertisements = () => {
+const BeginOrderAdvertisements = (props: { ads: IGET_USER_RESTAURANT_ADVERTISEMENT[] }) => {
   const history = useHistory();
   const { user } = useUser();
+
+  const numberOfAds = props.ads.length;
+  const [currentAd, setCurrentAd] = useState(0);
+
+  useEffect(() => {
+    if (numberOfAds <= 1) return;
+
+    const timerId = setInterval(() => {
+      setCurrentAd(prevCurrentAd => (prevCurrentAd == numberOfAds - 1) ? 0 : prevCurrentAd + 1);
+    }, 6000);
+
+    return () => {
+      clearInterval(timerId);
+    }
+  }, []);
+
 
   if (!user) {
     throw "User must log in!";
@@ -124,30 +142,28 @@ const BeginOrderAdvertisements = () => {
             pointerEvents: "none",
           }}
         >
-          <CarouselProvider
-            naturalSlideWidth={500}
-            naturalSlideHeight={1000}
-            totalSlides={user.restaurants.items[0].advertisements.items.length}
-            interval={6000}
-            isPlaying={true}
-            isIntrinsicHeight={true}
-          >
-            <Slider classNameAnimation={styles.slideAnimation}>
-              {user.restaurants.items[0].advertisements.items.map(
-                (advertisement, index) => (
-                  <Slide index={index}>
-                    <img src={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${advertisement.content.key}`} style={{
-                      // boxSizing: "border-box",
-                      width: "100%",
-                      height: "100vh",
-                      objectFit: "contain",
-                      padding: "332px 42px 148px 42px",
-                    }} />
-                  </Slide>
-                )
-              )}
-            </Slider>
-          </CarouselProvider>
+          {user.restaurants.items[0].advertisements.items.map(
+            (advertisement, index) => (
+              <div
+                className={styles.slideAnimation}
+                style={{
+                  display: currentAd == index ? "flex" : "none",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "1px solid transparent",
+                  borderRadius: "10px",
+                  position: "absolute",
+                  width: "100%",
+                  height: "100vh",
+                  objectFit: "contain",
+                  padding: "332px 42px 148px 42px",
+                }}>
+                <img src={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${advertisement.content.key}`}
+                  style={{ maxHeight: "100%", width: "100%", borderRadius: "10px" }}
+                />
+              </div>
+            )
+          )}
         </div>
       </div>
     </KioskPageWrapper>
