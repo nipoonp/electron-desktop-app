@@ -155,11 +155,10 @@ const BeginOrderAdvertisements = (props: { ads: IGET_USER_RESTAURANT_ADVERTISEME
                   position: "absolute",
                   width: "100%",
                   height: "100vh",
-                  objectFit: "contain",
                   padding: "332px 42px 148px 42px",
                 }}>
                 <img src={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${advertisement.content.key}`}
-                  style={{ maxHeight: "100%", width: "100%", borderRadius: "10px" }}
+                  style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain", borderRadius: "10px" }}
                 />
               </div>
             )

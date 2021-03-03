@@ -1,13 +1,17 @@
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "react-apollo-hooks";
 import { GET_RESTAURANT } from "../graphql/customQueries";
 
 import { Logger } from "aws-amplify";
 import { IGET_RESTAURANT } from "../graphql/customQueries";
-import { useEffect, useState } from "react";
+import { useGetRestaurantQueryFetchPolicy } from "./useGetRestaurantQueryFetchPolicy";
 
 const logger = new Logger("useGetRestaurantQuery");
 
+
 export const useGetRestaurantQuery = (restaurantID: string, skip?: boolean) => {
+  const fetchPolicy = useGetRestaurantQueryFetchPolicy();
+
   const { data: _data, error, loading, refetch, networkStatus } = useQuery(
     GET_RESTAURANT,
     {
@@ -15,7 +19,7 @@ export const useGetRestaurantQuery = (restaurantID: string, skip?: boolean) => {
         restaurantID: restaurantID,
       },
       skip: skip,
-      fetchPolicy: "network-only",
+      fetchPolicy: fetchPolicy,
       notifyOnNetworkStatusChange: true,
     }
   );
