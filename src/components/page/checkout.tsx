@@ -87,7 +87,7 @@ export const Checkout = () => {
     updateItemQuantity,
     deleteItem,
   } = useCart();
-  const { printReceipt1, printReceipt2, printReceipt3 } = useReceiptPrinter();
+  const { printReceipt } = useReceiptPrinter();
   const { user } = useUser();
   const {
     createTransaction: smartpayCreateTransaction,
@@ -364,7 +364,7 @@ export const Checkout = () => {
       const productsToPrint1 = filterPrintProducts(products, register.printers.items[0]);
 
       if (productsToPrint1.length > 0) {
-        printReceipt1({
+        printReceipt({
           printerAddress: register.printers.items[0].address,
           eftposReceipt: eftposReceipt,
           hideModifierGroupsForCustomer: true,
@@ -387,7 +387,7 @@ export const Checkout = () => {
       const productsToPrint2 = filterPrintProducts(products, register.printers.items[1]);
 
       if (productsToPrint2.length > 0) {
-        printReceipt2({
+        printReceipt({
           printerAddress: register.printers.items[1].address,
           restaurant: {
             name: restaurant.name,
@@ -408,7 +408,7 @@ export const Checkout = () => {
       const productsToPrint3 = filterPrintProducts(products, register.printers.items[2]);
 
       if (productsToPrint3.length > 0) {
-        printReceipt3({
+        printReceipt({
           printerAddress: register.printers.items[2].address,
           restaurant: {
             name: restaurant.name,

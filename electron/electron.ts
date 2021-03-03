@@ -35,7 +35,7 @@ function createWindow() {
 
   // Check for app updates every 3 seconds after launch
   initUpdater();
-  // checkForUpdates();
+  checkForUpdates();
   // setInterval(checkForUpdates, 10 * 1000);
 
   // Hide the menu bar
@@ -45,7 +45,7 @@ function createWindow() {
 }
 
 const initUpdater = () => {
-  autoUpdater.autoDownload = true;
+  // autoUpdater.autoDownload = true;
 
   autoUpdater.on('update-available', () => {
     mainWindow.webContents.send("ELECTRON_UPDATER", "Found new update.")
@@ -66,9 +66,9 @@ const initUpdater = () => {
   });
 }
 
-// const checkForUpdates = () => {
-//   autoUpdater.checkForUpdates();
-// }
+const checkForUpdates = () => {
+  autoUpdater.checkForUpdates();
+}
 
 app.once('ready', createWindow);
 
@@ -79,27 +79,11 @@ app.once('window-all-closed', () => {
 });
 
 // Webapp Receipt Printer Side
-ipcMain.on("RECEIPT_PRINTER_1_DATA", async (event: any, data: IOrderReceipt) => {
+ipcMain.on("RECEIPT_PRINTER_DATA", async (event: any, data: IOrderReceipt) => {
   try {
     await printReceipt(data);
   } catch (e) {
-    mainWindow.webContents.send("RECEIPT_PRINTER_1_ERROR", e)
-  }
-});
-
-ipcMain.on("RECEIPT_PRINTER_2_DATA", async (event: any, data: IOrderReceipt) => {
-  try {
-    await printReceipt(data);
-  } catch (e) {
-    mainWindow.webContents.send("RECEIPT_PRINTER_2_ERROR", e)
-  }
-});
-
-ipcMain.on("RECEIPT_PRINTER_3_DATA", async (event: any, data: IOrderReceipt) => {
-  try {
-    await printReceipt(data);
-  } catch (e) {
-    mainWindow.webContents.send("RECEIPT_PRINTER_3_ERROR", e)
+    mainWindow.webContents.send("RECEIPT_PRINTER_ERROR", e)
   }
 });
 

@@ -6,59 +6,31 @@ const electron = window.require("electron");
 const ipcRenderer = electron.ipcRenderer;
 
 type ContextProps = {
-  printReceipt1: (payload: IOrderReceipt) => void;
-  printReceipt2: (payload: IOrderReceipt) => void;
-  printReceipt3: (payload: IOrderReceipt) => void;
+  printReceipt: (payload: IOrderReceipt) => void;
 };
 
 const ReceiptPrinterContext = React.createContext<ContextProps>({
-  printReceipt1: (payload: IOrderReceipt) => { },
-  printReceipt2: (payload: IOrderReceipt) => { },
-  printReceipt3: (payload: IOrderReceipt) => { },
+  printReceipt: (payload: IOrderReceipt) => { }
 });
 
 const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
   useEffect(() => {
-    ipcRenderer.on("RECEIPT_PRINTER_1_ERROR", (event: any, arg: any) => {
-      console.log("RECEIPT_PRINTER_1_ERROR:", arg);
+    ipcRenderer.on("RECEIPT_PRINTER_ERROR", (event: any, arg: any) => {
+      console.log("RECEIPT_PRINTER_ERROR:", arg);
       toast.error(
         "Connection with Receipt Printer 1 failed. Please make sure it is powered on and configured correctly."
       );
     });
-
-    ipcRenderer.on("RECEIPT_PRINTER_2_ERROR", (event: any, arg: any) => {
-      console.log("RECEIPT_PRINTER_2_ERROR:", arg);
-      toast.error(
-        "Connection with Receipt Printer 2 failed. Please make sure it is powered on and configured correctly."
-      );
-    });
-
-    ipcRenderer.on("RECEIPT_PRINTER_3_ERROR", (event: any, arg: any) => {
-      console.log("RECEIPT_PRINTER_3_ERROR:", arg);
-      toast.error(
-        "Connection with Receipt Printer 3 failed. Please make sure it is powered on and configured correctly."
-      );
-    });
   }, []);
 
-  const printReceipt1 = (payload: IOrderReceipt) => {
-    ipcRenderer.send("RECEIPT_PRINTER_1_DATA", payload);
-  };
-
-  const printReceipt2 = (payload: IOrderReceipt) => {
-    ipcRenderer.send("RECEIPT_PRINTER_2_DATA", payload);
-  };
-
-  const printReceipt3 = (payload: IOrderReceipt) => {
-    ipcRenderer.send("RECEIPT_PRINTER_3_DATA", payload);
+  const printReceipt = (payload: IOrderReceipt) => {
+    ipcRenderer.send("RECEIPT_PRINTER_DATA", payload);
   };
 
   return (
     <ReceiptPrinterContext.Provider
       value={{
-        printReceipt1: printReceipt1,
-        printReceipt2: printReceipt2,
-        printReceipt3: printReceipt3,
+        printReceipt: printReceipt
       }}
       children={props.children}
     />

@@ -8,6 +8,7 @@ export const useGetRestaurantQueryFetchPolicy = () => {
         const apolloRestaurantQueryCacheTimestamp = sessionStorage.getItem("apolloRestaurantQueryCacheTimestamp");
 
         if (!apolloRestaurantQueryCacheTimestamp) {
+            sessionStorage.setItem("apolloRestaurantQueryCacheTimestamp", new Date().toISOString());
             setFetchPolicy("network-only");
         } else {
             const cacheExpiry = addHours(new Date(apolloRestaurantQueryCacheTimestamp), 6);

@@ -103,11 +103,11 @@ export const ReceiptPrinter = () => {
     register?.printers?.items[2]?.address || "192.168.1.90"
   );
 
-  const { printReceipt1, printReceipt2, printReceipt3 } = useReceiptPrinter();
+  const { printReceipt } = useReceiptPrinter();
 
   const onPrintTestReceipt = async () => {
     if (printerAddress1) {
-      printReceipt1({
+      printReceipt({
         printerAddress: printerAddress1,
         hideModifierGroupsForCustomer: true,
         eftposReceipt: "",
@@ -125,7 +125,7 @@ export const ReceiptPrinter = () => {
     }
 
     if (printerAddress2) {
-      printReceipt2({
+      printReceipt({
         printerAddress: printerAddress2,
         restaurant: {
           name: "Test Tabin Restaurant",
@@ -141,7 +141,7 @@ export const ReceiptPrinter = () => {
     }
 
     if (printerAddress3) {
-      printReceipt3({
+      printReceipt({
         printerAddress: printerAddress3,
         restaurant: {
           name: "Test Tabin Restaurant",
