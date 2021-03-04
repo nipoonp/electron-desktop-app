@@ -133,9 +133,9 @@ export const Restaurant = (props: { restaurantID: string }) => {
     return <div>Restaurant is not verified</div>;
   }
 
-  if (selectedCategory == null) {
-    return <div>No available category</div>
-  }
+  // if (selectedCategory == null) {
+  //   return <div>No available category</div>
+  // }
 
   const productModal = (
     <>
@@ -275,8 +275,8 @@ export const Restaurant = (props: { restaurantID: string }) => {
 
   const menuProducts = (
     <div style={{ width: "100%" }}>
-      {restaurant.categories.items.map((c) => {
-        if (selectedCategory != null && selectedCategory.id !== c.id) {
+      {selectedCategory && restaurant.categories.items.map((c) => {
+        if (selectedCategory.id !== c.id) {
           return;
         }
 

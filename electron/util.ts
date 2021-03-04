@@ -71,20 +71,13 @@ export const printReceipt = async (order: IOrderReceipt) => {
     let printer = new ThermalPrinter({
         type: PrinterTypes.EPSON,  // 'star' or 'epson'
         interface: `tcp://${order.printerAddress}`,
-        options: {
-            timeout: 1000
-        },
-        width: 48,                         // Number of characters in one line - default: 48
-        characterSet: 'SLOVENIA',          // Character set - default: SLOVENIA
-        removeSpecialCharacters: false,    // Removes special characters - default: false
-        lineCharacter: "-",                // Use custom character for drawing lines - default: -
     });
 
     let isConnected = await printer.isPrinterConnected();
     console.log("Printer connected:", isConnected);
 
-    // printer.alignCenter();
-    // await printer.printImage('./assets/olaii-logo-black-small.png');
+    printer.alignCenter();
+    await printer.printImage('./assets/olaii-logo-black-small.png');
     printer.alignCenter();
     printer.bold(true);
     printer.setTextSize(1, 1);
@@ -106,16 +99,16 @@ export const printReceipt = async (order: IOrderReceipt) => {
         printer.println(`Table Number: ${order.table}`);
     }
 
-    printer.newLine();
+    // printer.newLine();
 
-    printer.println("Your order number is");
-    printer.newLine();
-    printer.setTextSize(1, 1);
-    printer.println(order.number);
-    printer.newLine();
+    // printer.println("Your order number is");
+    // printer.newLine();
+    // printer.setTextSize(1, 1);
+    // printer.println(order.number);
+    // printer.newLine();
 
-    printer.setTextNormal();
-    printer.alignLeft();
+    // printer.setTextNormal();
+    // printer.alignLeft();
 
 
     order.products.forEach((product: ICartProduct) => {

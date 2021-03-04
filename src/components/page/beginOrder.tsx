@@ -145,7 +145,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_USER_RESTAURANT_ADVERTISEME
           {user.restaurants.items[0].advertisements.items.map(
             (advertisement, index) => (
               <div
-                className={styles.slideAnimation}
+                className={numberOfAds > 1 ? styles.slideAnimation : null}
                 style={{
                   display: currentAd == index ? "flex" : "none",
                   alignItems: "center",
