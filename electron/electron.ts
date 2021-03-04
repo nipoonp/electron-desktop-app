@@ -21,6 +21,8 @@ import { IOrderReceipt } from "./model";
 let mainWindow: any;
 let verifoneClient = new net.Socket();
 
+app.disableHardwareAcceleration()
+
 function createWindow() {
   // mainWindow = new BrowserWindow({width: 900, height: 680, fullscreen: true});
   mainWindow = new BrowserWindow({
@@ -48,7 +50,7 @@ const initUpdater = () => {
   // autoUpdater.autoDownload = true;
 
   autoUpdater.on('update-available', () => {
-    mainWindow.webContents.send("ELECTRON_UPDATER", "Found new update.")
+    mainWindow.webContents.send("ELECTRON_UPDATER", "Found new update. Downloading now...")
     autoUpdater.downloadUpdate();
   });
 
