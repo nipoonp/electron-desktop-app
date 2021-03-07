@@ -50,7 +50,7 @@ const getDayData = (availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS) => {
       return availability.friday;
     case 6:
       return availability.saturday;
-    case 7:
+    case 0: //0 is sunday in date-fns
       return availability.sunday;
     default:
       return [];
