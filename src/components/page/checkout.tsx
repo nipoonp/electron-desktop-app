@@ -42,7 +42,6 @@ import { Separator6 } from "../../tabin/components/separator";
 import { useUser } from "../../context/user-context";
 import { ModalV2 } from "../../tabin/components/modalv2";
 import { format } from "date-fns";
-import { KeyboardTextArea } from "../../tabin/components/keyboardTextArea";
 import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
 import {
   useSmartpay,
@@ -59,6 +58,7 @@ import {
 } from "../../context/verifone-context";
 import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
+import { TextAreaV2 } from "../../tabin/components/textAreav2";
 
 const styles = require("./checkout.module.css");
 
@@ -212,8 +212,8 @@ export const Checkout = () => {
     setShowPaymentModal(false);
   };
 
-  const onNotesChange = (value: string) => {
-    setNotes(value);
+  const onNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNotes(e.target.value);
   };
 
   // submit callback
@@ -938,10 +938,10 @@ export const Checkout = () => {
       {/* this condition is required because we cannot have two keyboards active at a time, we would have checkout and product keyboards active at a time and it would not work */}
       {/* can figure out a better way to do it in the future with refs */}
       {!showEditProductModal && (
-        <KeyboardTextArea
+        <TextAreaV2
           placeholder={"Leave a note for the restaurant"}
           value={notes}
-          onChangeKeyboard={onNotesChange}
+          onChange={onNotesChange}
         />
       )}
     </>
@@ -1005,7 +1005,7 @@ const OrderSummary = (props: {
     displayOrder: number,
     productQuantity: number
   ) => void;
-  onNotesChange: (value: string) => void;
+  onNotesChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
 }) => {
   // context
   const { products } = useCart();

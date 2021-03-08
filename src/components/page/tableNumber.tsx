@@ -5,8 +5,8 @@ import { beginOrderPath, checkoutPath } from "../main";
 import { Title2Font, Title3Font } from "../../tabin/components/fonts";
 import { useCart } from "../../context/cart-context";
 import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
-import { KeyboardInput } from "../../tabin/components/keyboardInput";
 import { Button } from "../../tabin/components/button";
+import { InputV2 } from "../../tabin/components/inputv2";
 
 export const TableNumber = () => {
   const history = useHistory();
@@ -20,8 +20,8 @@ export const TableNumber = () => {
     history.push(checkoutPath);
   };
 
-  const onChangeKeyboard = (text: string) => {
-    setTableNumber(text);
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTableNumber(e.target.value);
   };
 
   return (
@@ -43,9 +43,9 @@ export const TableNumber = () => {
           <div style={{ width: "300px" }}>
             <Title3Font>Table Number</Title3Font>
             <Space2 />
-            <KeyboardInput
-              showOnlyNumeric={true}
-              onChangeKeyboard={onChangeKeyboard}
+            <InputV2
+              type="number"
+              onChange={onChange}
               value={tableNumber ?? ""}
             />
           </div>
