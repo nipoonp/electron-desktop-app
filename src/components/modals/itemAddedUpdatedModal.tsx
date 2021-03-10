@@ -4,6 +4,7 @@ import { Space3 } from "../../tabin/components/spaces";
 import { useCart } from "../../context/cart-context";
 import { convertCentsToDollars } from "../../util/moneyConversion";
 import { KioskModal } from "../../tabin/components/kioskModal";
+import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 
 export const ItemAddedUpdatedModal = (props: {
   isOpen: boolean;
@@ -35,7 +36,7 @@ export const ItemAddedUpdatedModal = (props: {
       >
         <img
           style={{ height: "200px" }}
-          src="https://tabin-public.s3-ap-southeast-2.amazonaws.com/images/shopping-bag-success-icon.jpg"
+          src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-success-icon.jpg`}
         />
         <Space3 />
         <Title2Font>

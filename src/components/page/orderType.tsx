@@ -13,6 +13,7 @@ import { EOrderType } from "../../model/model";
 import { useCart } from "../../context/cart-context";
 import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
 import { useRegister } from "../../context/register-context";
+import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 
 const styles = require("./orderType.module.css");
 
@@ -20,7 +21,7 @@ export const OrderType = (props: {}) => {
   const history = useHistory();
   const { user } = useUser();
   const { restaurant, setOrderType, clearCart } = useCart();
-  const {register} = useRegister();
+  const { register } = useRegister();
 
   if (restaurant == null) {
     throw "Restaurant is invalid!";
@@ -50,7 +51,7 @@ export const OrderType = (props: {}) => {
             <div onClick={() => onSelectOrderType(EOrderType.DINEIN)}>
               <img
                 className={styles.dineinImage}
-                src="https://tabin-public.s3-ap-southeast-2.amazonaws.com/images/order-type-dine-in.png"
+                src={`${getPublicCloudFrontDomainName()}/images/order-type-dine-in.png`}
               />
               <Space4 />
               <BoldFont>
@@ -61,7 +62,7 @@ export const OrderType = (props: {}) => {
             <div onClick={() => onSelectOrderType(EOrderType.TAKEAWAY)}>
               <img
                 className={styles.takeawayImage}
-                src="https://tabin-public.s3-ap-southeast-2.amazonaws.com/images/order-type-take-away.png"
+                src={`${getPublicCloudFrontDomainName()}/images/order-type-take-away.png`}
               />
               <Space4 />
               <BoldFont>

@@ -1,6 +1,6 @@
 import React from "react";
 import { S3Image } from "aws-amplify-react";
-import { getCloudFrontDomainName } from "../../private/aws-custom";
+import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
 
 export const RestaurantImage = (props: {
   image?: {
@@ -34,16 +34,16 @@ export const RestaurantImage = (props: {
           borderRadius: props.borderRadius,
         }} />
       ) : (
-          <img
-            style={{
-              width: props.width,
-              height: props.height,
-              objectFit: props.objectFit || "contain",
-              borderRadius: props.borderRadius,
-            }}
-            src="https://tabin-public.s3-ap-southeast-2.amazonaws.com/images/placeholder/placeholder.jpg"
-          />
-        )}
+        <img
+          style={{
+            width: props.width,
+            height: props.height,
+            objectFit: props.objectFit || "contain",
+            borderRadius: props.borderRadius,
+          }}
+          src={`${getPublicCloudFrontDomainName()}/images/placeholder/placeholder.jpg`}
+        />
+      )}
     </>
   );
 };

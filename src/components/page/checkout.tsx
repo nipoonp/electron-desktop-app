@@ -59,6 +59,7 @@ import {
 import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { TextAreaV2 } from "../../tabin/components/textAreav2";
+import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 
 const styles = require("./checkout.module.css");
 
@@ -282,7 +283,7 @@ export const Checkout = () => {
       <div style={{ display: "flex", alignItems: "center" }}>
         <img
           style={{ height: "72px" }}
-          src="https://tabin-public.s3-ap-southeast-2.amazonaws.com/images/shopping-bag-icon.jpg"
+          src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`}
         />
         <SizedBox width="12px" />
         <Title1Font>Your Order</Title1Font>
@@ -688,7 +689,7 @@ export const Checkout = () => {
         Swipe or insert your card on the terminal to complete your payment.
       </Title4Font>
       <Space6 />
-      <img src={require("../../images/awaitingCard.gif")} height="250px" />
+      <img src={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} height="250px" />
     </>
   );
 

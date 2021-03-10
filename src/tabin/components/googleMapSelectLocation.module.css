@@ -9,6 +9,8 @@
   left: 50%;
   margin: -35px 0 0 -11px;
   background: url("https://tabin-public.s3-ap-southeast-2.amazonaws.com/images/location-icon.png");
-  background-size: 22px 40px; /* Since I used the HiDPI marker version this compensates for the 2x size */
-  pointer-events: none; /* This disables clicks on the marker. Not fully supported by all major browsers, though */
+  background-size: 22px 40px;
+  /* Since I used the HiDPI marker version this compensates for the 2x size */
+  pointer-events: none;
+  /* This disables clicks on the marker. Not fully supported by all major browsers, though */
 }

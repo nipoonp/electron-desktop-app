@@ -33,7 +33,7 @@ import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
 import { ICartProduct } from "../../model/model";
 import { SizedBox } from "../../tabin/components/sizedBox";
 import { isItemAvailable, isItemSoldOut } from "../../util/isItemAvailable";
-import { getCloudFrontDomainName } from "../../private/aws-custom";
+import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
 
 const styles = require("./restaurant.module.css");
 
@@ -314,7 +314,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
         >
           <img
             style={{ height: "52px" }}
-            src="https://tabin-public.s3-ap-southeast-2.amazonaws.com/images/shopping-bag-icon.jpg"
+            src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`}
           />
           <SizedBox width="12px" />
           <Title4Font style={{ fontWeight: 400 }}>
@@ -419,8 +419,8 @@ const Category = (props: {
         : isSelected ? (
           <BoldFont>{category.name}</BoldFont>
         ) : (
-            <NormalFont style={{ fontWeight: 300 }}>{category.name}</NormalFont>
-          )}
+          <NormalFont style={{ fontWeight: 300 }}>{category.name}</NormalFont>
+        )}
     </div>
   );
 };

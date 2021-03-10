@@ -12,7 +12,7 @@ import { restaurantPath } from "../main";
 import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
 import { Title3Font, Title2Font } from "../../tabin/components/fonts";
 import { SizedBox } from "../../tabin/components/sizedBox";
-import { getCloudFrontDomainName } from "../../private/aws-custom";
+import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import "pure-react-carousel/dist/react-carousel.es.css";
 import { IGET_USER_RESTAURANT_ADVERTISEMENT } from "../../graphql/customQueries";
 import { number } from "yup";
@@ -39,10 +39,10 @@ export const BeginOrder = (props: {}) => {
           <BeginOrderAdvertisements ads={ads} />
         </>
       ) : (
-          <>
-            <BeginOrderDefault />
-          </>
-        )}
+        <>
+          <BeginOrderDefault />
+        </>
+      )}
     </>
   );
 };
@@ -124,7 +124,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_USER_RESTAURANT_ADVERTISEME
           >
             <img
               style={{ height: "76px" }}
-              src="https://tabin-public.s3-ap-southeast-2.amazonaws.com/images/touch-here-dark.png"
+              src={`${getPublicCloudFrontDomainName()}/images/touch-here-dark.png`}
             />
             <Space3 />
             <div
@@ -214,7 +214,7 @@ const BeginOrderDefault = () => {
               <Space size={300} />
               <img
                 style={{ height: "128px" }}
-                src="https://tabin-public.s3-ap-southeast-2.amazonaws.com/images/touch-here.png"
+                src={`${getPublicCloudFrontDomainName()}/images/touch-here.png`}
               />
               <Space4 />
               <Title3Font style={{ fontWeight: 400 }}>
