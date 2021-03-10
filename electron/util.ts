@@ -77,8 +77,6 @@ export const printReceipt = async (order: IOrderReceipt) => {
     console.log("Printer connected:", isConnected);
 
     printer.alignCenter();
-    await printer.printImage('./assets/olaii-logo-black-small.png');
-    printer.alignCenter();
     printer.bold(true);
     printer.setTextSize(1, 1);
     printer.println(order.restaurant.name);
@@ -99,17 +97,16 @@ export const printReceipt = async (order: IOrderReceipt) => {
         printer.println(`Table Number: ${order.table}`);
     }
 
-    // printer.newLine();
+    printer.newLine();
 
-    // printer.println("Your order number is");
-    // printer.newLine();
-    // printer.setTextSize(1, 1);
-    // printer.println(order.number);
-    // printer.newLine();
+    printer.println("Your order number is");
+    printer.newLine();
+    printer.setTextSize(1, 1);
+    printer.println(order.number);
+    printer.newLine();
 
-    // printer.setTextNormal();
-    // printer.alignLeft();
-
+    printer.setTextNormal();
+    printer.alignLeft();
 
     order.products.forEach((product: ICartProduct) => {
         printer.drawLine();
@@ -206,7 +203,6 @@ export const printReceipt = async (order: IOrderReceipt) => {
     if (order.eftposReceipt) {
         printer.println(order.eftposReceipt);
     }
-
 
     printer.newLine();
     printer.alignCenter();
