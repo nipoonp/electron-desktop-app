@@ -320,6 +320,9 @@ export const ProductModal = (props: {
                 selectedModifierGroups.push({
                     id: mg.modifierGroup.id,
                     name: mg.modifierGroup.name,
+                    choiceDuplicate: mg.modifierGroup.choiceDuplicate,
+                    choiceMin: mg.modifierGroup.choiceMin,
+                    choiceMax: mg.modifierGroup.choiceMax,
                     hideForCustomer: mg.hideForCustomer,
                     modifiers: orderedModifiers[mg.modifierGroup.id],
                 });

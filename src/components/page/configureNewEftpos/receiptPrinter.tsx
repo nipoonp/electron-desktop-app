@@ -23,6 +23,9 @@ const TEST_PRODUCT: ICartProduct[] = [
             {
                 id: "",
                 name: "Choice of Sauce 1",
+                choiceDuplicate: 1,
+                choiceMin: 0,
+                choiceMax: 1,
                 hideForCustomer: true,
                 modifiers: [
                     {
@@ -37,6 +40,9 @@ const TEST_PRODUCT: ICartProduct[] = [
             {
                 id: "",
                 name: "Choice of Sauce 2",
+                choiceDuplicate: 1,
+                choiceMin: 0,
+                choiceMax: 1,
                 modifiers: [
                     {
                         id: "",
@@ -50,6 +56,9 @@ const TEST_PRODUCT: ICartProduct[] = [
             {
                 id: "",
                 name: "Choice of Sauce 3",
+                choiceDuplicate: 1,
+                choiceMin: 0,
+                choiceMax: 1,
                 modifiers: [
                     {
                         id: "",
@@ -63,6 +72,9 @@ const TEST_PRODUCT: ICartProduct[] = [
             {
                 id: "",
                 name: "Choice of Sauce 4",
+                choiceDuplicate: 1,
+                choiceMin: 0,
+                choiceMax: 1,
                 modifiers: [
                     {
                         id: "",
@@ -76,6 +88,9 @@ const TEST_PRODUCT: ICartProduct[] = [
             {
                 id: "",
                 name: "Choice of Sauce 5",
+                choiceDuplicate: 1,
+                choiceMin: 0,
+                choiceMax: 1,
                 modifiers: [
                     {
                         id: "",
