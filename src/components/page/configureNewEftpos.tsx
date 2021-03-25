@@ -7,52 +7,40 @@ import { SmartPay } from "./configureNewEftpos/smartpay";
 import { ReceiptPrinter } from "./configureNewEftpos/receiptPrinter";
 
 enum EftposProvider {
-  VERIFONE,
-  SMARTPAY,
+    VERIFONE,
+    SMARTPAY,
 }
 export const ConfigureNewEftpos = () => {
-  const [eftposProvider, setEftposProvider] = useState(EftposProvider.VERIFONE);
+    const [eftposProvider, setEftposProvider] = useState(EftposProvider.VERIFONE);
 
-  return (
-    <>
-      <div
-        style={{
-          padding: "48px",
-          maxWidth: "512px",
-          margin: "0 auto",
-        }}
-      >
-        <ReceiptPrinter />
-        <Space4 />
+    return (
+        <>
+            <div
+                style={{
+                    padding: "48px",
+                    maxWidth: "512px",
+                    margin: "0 auto",
+                }}
+            >
+                <ReceiptPrinter />
+                <Space4 />
 
-        <Title3Font>Select your Eftpos provider</Title3Font>
-        <Space4 />
+                <Title3Font>Select your Eftpos provider</Title3Font>
+                <Space4 />
 
-        <RadioV2
-          selected={eftposProvider == EftposProvider.VERIFONE}
-          onSelect={() => setEftposProvider(EftposProvider.VERIFONE)}
-        >
-          Verifone
-        </RadioV2>
+                <RadioV2 selected={eftposProvider == EftposProvider.VERIFONE} onSelect={() => setEftposProvider(EftposProvider.VERIFONE)}>
+                    Verifone
+                </RadioV2>
 
-        <Space2 />
-        <RadioV2
-          selected={eftposProvider == EftposProvider.SMARTPAY}
-          onSelect={() => setEftposProvider(EftposProvider.SMARTPAY)}
-        >
-          Smart Pay
-        </RadioV2>
+                <Space2 />
+                <RadioV2 selected={eftposProvider == EftposProvider.SMARTPAY} onSelect={() => setEftposProvider(EftposProvider.SMARTPAY)}>
+                    Smart Pay
+                </RadioV2>
 
-        <Space6 />
+                <Space6 />
 
-        {eftposProvider == EftposProvider.VERIFONE ? (
-          <Verifone />
-        ) : eftposProvider == EftposProvider.SMARTPAY ? (
-          <SmartPay />
-        ) : (
-              <></>
-            )}
-      </div>
-    </>
-  );
+                {eftposProvider == EftposProvider.VERIFONE ? <Verifone /> : eftposProvider == EftposProvider.SMARTPAY ? <SmartPay /> : <></>}
+            </div>
+        </>
+    );
 };

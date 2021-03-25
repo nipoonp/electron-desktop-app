@@ -8,11 +8,7 @@ import Main from "./components/main";
 import { CartProvider } from "./context/cart-context";
 import { defaultDataIdFromObject } from "apollo-cache-inmemory";
 
-import {
-  AuthProvider,
-  useAuth,
-  AuthenticationStatus,
-} from "./context/auth-context";
+import { AuthProvider, useAuth, AuthenticationStatus } from "./context/auth-context";
 
 import AWSAppSyncClient, { AUTH_TYPE } from "aws-appsync";
 import { ApolloProvider as A } from "react-apollo-hooks"; // TO REMOVE
@@ -62,109 +58,108 @@ Amplify.Logger.LOG_LEVEL = process.env.REACT_APP_LOG_LEVEL; // DEV
 // });
 
 const cognitoClient = new AWSAppSyncClient({
-  url: awsconfig.aws_appsync_graphqlEndpoint,
-  region: awsconfig.aws_appsync_region,
-  auth: {
-    type: AUTH_TYPE.AMAZON_COGNITO_USER_POOLS,
-    jwtToken: async () =>
-      (await Auth.currentSession()).getIdToken().getJwtToken(),
-  },
-  complexObjectsCredentials: () => Auth.currentCredentials(),
-  offlineConfig: {
-    keyPrefix: "private",
-  },
-  disableOffline: true,
-  // https://github.com/apollographql/apollo-client/issues/3234
-  // https://www.apollographql.com/docs/react/api/react-apollo/
-  // https://medium.com/@galen.corey/understanding-apollo-fetch-policies-705b5ad71980
-  cacheOptions: {
-    dataIdFromObject: (obj) => {
-      switch (obj.__typename) {
-        case "OrderedProduct":
-        case "OrderedModifier":
-          let objCpy = JSON.parse(JSON.stringify(obj));
-          delete objCpy.id;
-          return defaultDataIdFromObject(objCpy);
-        // return String(Math.random());
-        default:
-          return defaultDataIdFromObject(obj); // fall back to default handling
-      }
+    url: awsconfig.aws_appsync_graphqlEndpoint,
+    region: awsconfig.aws_appsync_region,
+    auth: {
+        type: AUTH_TYPE.AMAZON_COGNITO_USER_POOLS,
+        jwtToken: async () => (await Auth.currentSession()).getIdToken().getJwtToken(),
     },
-  },
+    complexObjectsCredentials: () => Auth.currentCredentials(),
+    offlineConfig: {
+        keyPrefix: "private",
+    },
+    disableOffline: true,
+    // https://github.com/apollographql/apollo-client/issues/3234
+    // https://www.apollographql.com/docs/react/api/react-apollo/
+    // https://medium.com/@galen.corey/understanding-apollo-fetch-policies-705b5ad71980
+    cacheOptions: {
+        dataIdFromObject: (obj) => {
+            switch (obj.__typename) {
+                case "OrderedProduct":
+                case "OrderedModifier":
+                    let objCpy = JSON.parse(JSON.stringify(obj));
+                    delete objCpy.id;
+                    return defaultDataIdFromObject(objCpy);
+                // return String(Math.random());
+                default:
+                    return defaultDataIdFromObject(obj); // fall back to default handling
+            }
+        },
+    },
 });
 
 const iamClient = new AWSAppSyncClient({
-  url: awsconfig.aws_appsync_graphqlEndpoint,
-  region: awsconfig.aws_appsync_region,
-  auth: {
-    // iam auth
-    type: AUTH_TYPE.AWS_IAM,
-    credentials: () => Auth.currentCredentials(),
-  },
-  offlineConfig: {
-    keyPrefix: "public",
-  },
-  disableOffline: true,
-  cacheOptions: {
-    dataIdFromObject: (obj) => {
-      switch (obj.__typename) {
-        case "OrderedProduct":
-        case "OrderedModifier":
-          let objCpy = JSON.parse(JSON.stringify(obj));
-          delete objCpy.id;
-          return defaultDataIdFromObject(objCpy);
-        // return String(Math.random());
-        default:
-          return defaultDataIdFromObject(obj); // fall back to default handling
-      }
+    url: awsconfig.aws_appsync_graphqlEndpoint,
+    region: awsconfig.aws_appsync_region,
+    auth: {
+        // iam auth
+        type: AUTH_TYPE.AWS_IAM,
+        credentials: () => Auth.currentCredentials(),
     },
-  },
+    offlineConfig: {
+        keyPrefix: "public",
+    },
+    disableOffline: true,
+    cacheOptions: {
+        dataIdFromObject: (obj) => {
+            switch (obj.__typename) {
+                case "OrderedProduct":
+                case "OrderedModifier":
+                    let objCpy = JSON.parse(JSON.stringify(obj));
+                    delete objCpy.id;
+                    return defaultDataIdFromObject(objCpy);
+                // return String(Math.random());
+                default:
+                    return defaultDataIdFromObject(obj); // fall back to default handling
+            }
+        },
+    },
 });
 
 const App = () => {
-  const { user, status } = useAuth();
+    const { user, status } = useAuth();
 
-  switch (status) {
-    case AuthenticationStatus.Loading:
-      return <h1>App: Loading user</h1>;
-    case AuthenticationStatus.SignedIn:
-      return (
-        <A client={cognitoClient}>
-          {/* <ApolloProvider client={cognitoClient}> */}
-          {/* Needs to be inside apollo */}
-          {/* Needs to be in both logged in and not logged in */}
-          {/* Otherwise other things will get complicated */}
-          <UserProvider userID={user!.username}>
-            {/* <UserModel /> */}
-            {/* <Main /> */}
-            <RegisterProvider>
-              <CartProvider>
-                <ReceiptPrinterProvider>
-                  <VerifoneProvider>
-                    <SmartpayProvider>
-                      <Main />
-                    </SmartpayProvider>
-                  </VerifoneProvider>
-                </ReceiptPrinterProvider>
-              </CartProvider>
-            </RegisterProvider>
-          </UserProvider>
-          {/* </ApolloProvider> */}
-        </A>
-      );
-    default:
-      return (
-        <A client={iamClient}>
-          {/* <ApolloProvider client={iamClient}> */}
-          <UserProvider userID={null}>
-            <CartProvider>
-              <Main />
-            </CartProvider>
-          </UserProvider>
-          {/* </ApolloProvider> */}
-        </A>
-      );
-  }
+    switch (status) {
+        case AuthenticationStatus.Loading:
+            return <h1>App: Loading user</h1>;
+        case AuthenticationStatus.SignedIn:
+            return (
+                <A client={cognitoClient}>
+                    {/* <ApolloProvider client={cognitoClient}> */}
+                    {/* Needs to be inside apollo */}
+                    {/* Needs to be in both logged in and not logged in */}
+                    {/* Otherwise other things will get complicated */}
+                    <UserProvider userID={user!.username}>
+                        {/* <UserModel /> */}
+                        {/* <Main /> */}
+                        <RegisterProvider>
+                            <CartProvider>
+                                <ReceiptPrinterProvider>
+                                    <VerifoneProvider>
+                                        <SmartpayProvider>
+                                            <Main />
+                                        </SmartpayProvider>
+                                    </VerifoneProvider>
+                                </ReceiptPrinterProvider>
+                            </CartProvider>
+                        </RegisterProvider>
+                    </UserProvider>
+                    {/* </ApolloProvider> */}
+                </A>
+            );
+        default:
+            return (
+                <A client={iamClient}>
+                    {/* <ApolloProvider client={iamClient}> */}
+                    <UserProvider userID={null}>
+                        <CartProvider>
+                            <Main />
+                        </CartProvider>
+                    </UserProvider>
+                    {/* </ApolloProvider> */}
+                </A>
+            );
+    }
 };
 
 // To best leverage Stripe’s advanced fraud functionality, include Stripe.js on every page on your site,
@@ -176,25 +171,25 @@ const App = () => {
 // const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_KEY!);
 
 export default () => {
-  return (
-    <ElectronProvider>
-      <AuthProvider>
-        {/* <Elements stripe={stripePromise}> */}
-        {/* <LocationProvider> */}
-        {/* <GoogleMapsProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_KEY!}> */}
-        {/* <AlgoliaProvider
+    return (
+        <ElectronProvider>
+            <AuthProvider>
+                {/* <Elements stripe={stripePromise}> */}
+                {/* <LocationProvider> */}
+                {/* <GoogleMapsProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_KEY!}> */}
+                {/* <AlgoliaProvider
               appID={process.env.REACT_APP_ALGOLIA_APP_ID!}
               publicKey={process.env.REACT_APP_ALGOLIA_PUBLIC_KEY!}
               restaurantIndexName={
                 process.env.REACT_APP_ALGOLIA_RESTAURANT_INDEX!
               }
             > */}
-        <App />
-        {/* </AlgoliaProvider> */}
-        {/* </GoogleMapsProvider> */}
-        {/* </LocationProvider> */}
-        {/* </Elements> */}
-      </AuthProvider>
-    </ElectronProvider>
-  );
+                <App />
+                {/* </AlgoliaProvider> */}
+                {/* </GoogleMapsProvider> */}
+                {/* </LocationProvider> */}
+                {/* </Elements> */}
+            </AuthProvider>
+        </ElectronProvider>
+    );
 };

@@ -4,10 +4,7 @@ import { Title3Font } from "../../../tabin/components/fonts";
 import { Space4, Space2 } from "../../../tabin/components/spaces";
 import { InputV2 } from "../../../tabin/components/inputv2";
 import { FullScreenSpinner } from "../../../tabin/components/fullScreenSpinner";
-import {
-    useVerifone,
-    VerifoneTransactionOutcome,
-} from "../../../context/verifone-context";
+import { useVerifone, VerifoneTransactionOutcome } from "../../../context/verifone-context";
 
 export const Verifone = () => {
     const [showSpinner, setShowSpinner] = useState(false);
@@ -21,12 +18,7 @@ export const Verifone = () => {
         setShowSpinner(true);
 
         try {
-            let { transactionOutcome } = await createTransaction(
-                amount,
-                ipAddress,
-                portNumber,
-                "TEST-CONFIGURE"
-            );
+            let { transactionOutcome } = await createTransaction(amount, ipAddress, portNumber, "TEST-CONFIGURE");
 
             // setAmount(0);
 
@@ -44,20 +36,14 @@ export const Verifone = () => {
             } else if (transactionOutcome == VerifoneTransactionOutcome.SettledOk) {
                 // Should not reach here unless your getting the settlement cutover. And this is a success code.
                 alert("Transaction Settled Ok!");
-            } else if (
-                transactionOutcome == VerifoneTransactionOutcome.HostUnavailable
-            ) {
+            } else if (transactionOutcome == VerifoneTransactionOutcome.HostUnavailable) {
                 alert("Transaction Host Unavailable!");
             } else if (transactionOutcome == VerifoneTransactionOutcome.SystemError) {
                 alert("Transaction System Error!");
-            } else if (
-                transactionOutcome == VerifoneTransactionOutcome.TransactionInProgress
-            ) {
+            } else if (transactionOutcome == VerifoneTransactionOutcome.TransactionInProgress) {
                 // You should never come in this state
                 // alert("Transaction Transaction In Progress!");
-            } else if (
-                transactionOutcome == VerifoneTransactionOutcome.TerminalBusy
-            ) {
+            } else if (transactionOutcome == VerifoneTransactionOutcome.TerminalBusy) {
                 alert("Transaction Terminal Is Busy!");
             } else {
                 alert("Transaction Failed!");
@@ -83,9 +69,7 @@ export const Verifone = () => {
                     name="ipAddress"
                     value={ipAddress}
                     placeholder="192.168.0.1"
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                        setIPAddress(event.target.value)
-                    }
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIPAddress(event.target.value)}
                 />
                 <Space4 />
                 <label>Eftpos Port Number:</label>
@@ -95,9 +79,7 @@ export const Verifone = () => {
                     name="portNumber"
                     value={portNumber}
                     placeholder="40001"
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                        setPortNumber(event.target.value)
-                    }
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPortNumber(event.target.value)}
                 />
                 <Space4 />
                 <label htmlFor="amount">Amount in cents ($1.99 = 199):</label>
@@ -107,9 +89,7 @@ export const Verifone = () => {
                     name="amount"
                     value={amount}
                     placeholder="199"
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                        setAmount(Number(event.target.value))
-                    }
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAmount(Number(event.target.value))}
                 />
                 <Space4 />
                 <ButtonV2 onClick={doTransaction}>Send Transaction</ButtonV2>

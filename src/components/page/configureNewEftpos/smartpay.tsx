@@ -2,28 +2,17 @@ import React, { useState, useEffect } from "react";
 import { ButtonV2 } from "../../../tabin/components/buttonv2";
 import { SelectV2 } from "../../../tabin/components/selectv2";
 import { InputV2 } from "../../../tabin/components/inputv2";
-import {
-    Space4,
-    Space2,
-    Space6,
-} from "../../../tabin/components/spaces";
+import { Space4, Space2, Space6 } from "../../../tabin/components/spaces";
 import { FullScreenSpinner } from "../../../tabin/components/fullScreenSpinner";
 import { Title3Font } from "../../../tabin/components/fonts";
-import {
-    SmartpayTransactionOutcome,
-    useSmartpay,
-} from "../../../context/smartpay-context";
+import { SmartpayTransactionOutcome, useSmartpay } from "../../../context/smartpay-context";
 
 export const SmartPay = () => {
     const [pairingCode, setPairingCode] = useState("");
     const [amount, setAmount] = useState(0);
     const [transactionType, setTransactionType] = useState("Card.Purchase");
     const [showSpinner, setShowSpinner] = useState(false);
-    const {
-        sendParingRequest,
-        createTransaction,
-        pollForOutcome,
-    } = useSmartpay();
+    const { sendParingRequest, createTransaction, pollForOutcome } = useSmartpay();
 
     const doPairing = async () => {
         try {
@@ -49,19 +38,14 @@ export const SmartPay = () => {
                 delayedShown = true;
 
                 // Might want to let the user know to check if everything is ok with the device
-                alert(
-                    "Transaction delayed! Check if the device is powered on and online."
-                );
+                alert("Transaction delayed! Check if the device is powered on and online.");
             }
         };
 
         try {
             let pollingUrl = await createTransaction(amount, transactionType);
 
-            let transactionOutcome: SmartpayTransactionOutcome = await pollForOutcome(
-                pollingUrl,
-                delayed
-            );
+            let transactionOutcome: SmartpayTransactionOutcome = await pollForOutcome(pollingUrl, delayed);
 
             setAmount(0);
 
@@ -71,12 +55,8 @@ export const SmartPay = () => {
                 alert("Transaction Declined!");
             } else if (transactionOutcome == SmartpayTransactionOutcome.Cancelled) {
                 alert("Transaction Cancelled!");
-            } else if (
-                transactionOutcome == SmartpayTransactionOutcome.DeviceOffline
-            ) {
-                alert(
-                    "Transaction Cancelled! Please check if the device is powered on and online."
-                );
+            } else if (transactionOutcome == SmartpayTransactionOutcome.DeviceOffline) {
+                alert("Transaction Cancelled! Please check if the device is powered on and online.");
             } else {
                 alert("Transaction Failed!");
             }
@@ -101,9 +81,7 @@ export const SmartPay = () => {
                     type="text"
                     name="pairing-code"
                     value={pairingCode}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                        setPairingCode(event.target.value)
-                    }
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPairingCode(event.target.value)}
                     placeholder="123456"
                 />
                 <Space4 />
@@ -120,9 +98,7 @@ export const SmartPay = () => {
                     name="amount"
                     value={amount}
                     placeholder="199"
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                        setAmount(Number(event.target.value))
-                    }
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAmount(Number(event.target.value))}
                 />
                 <Space4 />
 
@@ -132,9 +108,7 @@ export const SmartPay = () => {
                 <SelectV2
                     name="transaction-type"
                     value={transactionType}
-                    onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
-                        setTransactionType(event.target.value)
-                    }
+                    onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setTransactionType(event.target.value)}
                 >
                     <option value="Card.Purchase">Card.Purchase</option>
                     <option value="Card.Refund">Card.Refund</option>
@@ -145,7 +119,7 @@ export const SmartPay = () => {
 
                 <ButtonV2 onClick={doTransaction} disabled={showSpinner}>
                     Send Transaction
-        </ButtonV2>
+                </ButtonV2>
             </div>
         </>
     );
