@@ -36,6 +36,7 @@ const styles = require("./checkout.module.css");
 const logger = new Logger("checkout");
 
 enum CheckoutTransactionOutcome {
+    PayLater,
     Success,
     Delay,
     Fail,
@@ -157,7 +158,7 @@ export const Checkout = () => {
     };
 
     // submit callback
-    const processOrder = async (orderNumber: string) => {
+    const processOrder = async (paid: boolean, orderNumber: string) => {
         if (!user) {
             throw "Invalid user";
         }
@@ -184,7 +185,7 @@ export const Checkout = () => {
                 number: orderNumber,
                 table: tableNumber,
                 total: total,
-                paid: true,
+                paid: paid,
                 registerId: register.id,
             };
 
@@ -358,7 +359,7 @@ export const Checkout = () => {
         }
     };
 
-    const onSubmitOrder = async (eftposReceipt?: string) => {
+    const onSubmitOrder = async (paid: boolean, eftposReceipt?: string) => {
         const orderNumber = getOrderNumber();
         setPaymentOutcomeDelayedOrderNumber(orderNumber);
 
@@ -367,7 +368,7 @@ export const Checkout = () => {
                 printReceipts(orderNumber, eftposReceipt);
             }
 
-            await processOrder(orderNumber);
+            await processOrder(paid, orderNumber);
         } catch (e) {
             throw e.message;
         }
@@ -405,7 +406,7 @@ export const Checkout = () => {
                 setPaymentOutcome(CheckoutTransactionOutcome.Success);
 
                 try {
-                    await onSubmitOrder();
+                    await onSubmitOrder(true);
                 } catch (e) {
                     setProcessOrderError(e);
                 }
@@ -439,19 +440,21 @@ export const Checkout = () => {
                 setPaymentOutcome(CheckoutTransactionOutcome.Success);
 
                 try {
-                    await onSubmitOrder(eftposReceipt);
+                    await onSubmitOrder(true, eftposReceipt);
                 } catch (e) {
                     setProcessOrderError(e);
                 }
             } else if (transactionOutcome == VerifoneTransactionOutcome.ApprovedWithSignature) {
                 // We should not come in here if its on kiosk mode, unattended mode for Verifone
-                setPaymentOutcome(CheckoutTransactionOutcome.Success);
+                setPaymentOutcome(CheckoutTransactionOutcome.Fail);
+                setPaymentOutcomeErrorMessage("Transaction Approved With Signature Not Allowed In Kiosk Mode!");
+                // setPaymentOutcome(CheckoutTransactionOutcome.Success);
 
-                try {
-                    await onSubmitOrder();
-                } catch (e) {
-                    setProcessOrderError(e);
-                }
+                // try {
+                //     await onSubmitOrder(true);
+                // } catch (e) {
+                //     setProcessOrderError(e);
+                // }
             } else if (transactionOutcome == VerifoneTransactionOutcome.Cancelled) {
                 setPaymentOutcome(CheckoutTransactionOutcome.Fail);
                 setPaymentOutcomeErrorMessage("Transaction Cancelled!");
@@ -553,6 +556,21 @@ export const Checkout = () => {
         await doTransaction();
     };
 
+    const onClickPayLater = async () => {
+        setShowPaymentModal(true);
+
+        setPaymentOutcome(CheckoutTransactionOutcome.PayLater);
+        setPaymentOutcomeErrorMessage(null);
+        setPaymentOutcomeDelayedOrderNumber(null);
+        setPaymentOutcomeApprovedRedirectTimeLeft(10);
+
+        try {
+            await onSubmitOrder(false);
+        } catch (e) {
+            setProcessOrderError(e);
+        }
+    };
+
     const retryButtons = () => (
         <>
             <div style={{ display: "flex" }}>
@@ -583,6 +601,31 @@ export const Checkout = () => {
             <Title4Font style={{ lineHeight: "42px" }}>Swipe or insert your card on the terminal to complete your payment.</Title4Font>
             <Space6 />
             <img src={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} height="250px" />
+        </>
+    );
+
+    const paymentPayLater = () => (
+        <>
+            {/* <img
+        src={require("../../images/transaction-approved.png")}
+        height="150px"
+      />
+      <Space4 /> */}
+            <Title4Font>All Done!</Title4Font>
+            <Space4 />
+            <Title2Font>Please pay later at the counter.</Title2Font>
+            <Space6 />
+            <NormalFont>Your order number is</NormalFont>
+            <Space1 />
+            <Title1Font style={{ fontSize: "200px", lineHeight: "256px" }}>{paymentOutcomeDelayedOrderNumber}</Title1Font>
+            <Space4 />
+            <GrayColor>
+                <NormalFont>
+                    Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
+                    {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
+                    ...
+                </NormalFont>
+            </GrayColor>
         </>
     );
 
@@ -666,7 +709,9 @@ export const Checkout = () => {
             return awaitingCard();
         }
 
-        if (paymentOutcome == CheckoutTransactionOutcome.Success) {
+        if (paymentOutcome == CheckoutTransactionOutcome.PayLater) {
+            return paymentPayLater();
+        } else if (paymentOutcome == CheckoutTransactionOutcome.Success) {
             return paymentAccepted();
         } else if (paymentOutcome == CheckoutTransactionOutcome.Fail) {
             return paymentFailed();
@@ -745,34 +790,44 @@ export const Checkout = () => {
                 <Title1Font>Total: ${convertCentsToDollars(total)}</Title1Font>
             </div>
             <Space4 />
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                }}
-            >
-                <KioskButton
-                    onClick={onOrderMore}
+            <div>
+                <div
                     style={{
-                        backgroundColor: "#ffffff",
-                        color: "#484848",
-                        border: "1px solid #e0e0e0",
-                        width: "350px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                     }}
                 >
-                    <NormalFont style={{ fontSize: "22px" }}>Order More</NormalFont>
-                </KioskButton>
-                <SizedBox width="24px" />
-                <KioskButton
-                    onClick={onClickOrderButton}
-                    cy-data="add-to-order"
-                    style={{
-                        width: "350px",
-                    }}
-                >
-                    <NormalFont style={{ fontSize: "22px" }}>Complete Order</NormalFont>
-                </KioskButton>
+                    <KioskButton
+                        onClick={onOrderMore}
+                        style={{
+                            backgroundColor: "#ffffff",
+                            color: "#484848",
+                            border: "1px solid #e0e0e0",
+                            width: "350px",
+                        }}
+                    >
+                        <NormalFont style={{ fontSize: "22px" }}>Order More</NormalFont>
+                    </KioskButton>
+                    <SizedBox width="24px" />
+                    <KioskButton
+                        onClick={onClickOrderButton}
+                        cy-data="add-to-order"
+                        style={{
+                            width: "350px",
+                        }}
+                    >
+                        <NormalFont style={{ fontSize: "22px" }}>Complete Order</NormalFont>
+                    </KioskButton>
+                </div>
+                {register.enablePayLater && (
+                    <>
+                        <Space4 />
+                        <div style={{ textAlign: "center" }}>
+                            <Link onClick={onClickPayLater}>Ill pay later...</Link>
+                        </div>
+                    </>
+                )}
             </div>
             <Space4 />
             <KioskButton
