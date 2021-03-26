@@ -42,6 +42,7 @@ export interface IOrderReceipt {
     notes: string | null;
     products: ICartProduct[];
     total: number;
+    paid: boolean;
     type: EOrderType;
     number: string;
     table: string | null;

@@ -98,6 +98,14 @@ export const printReceipt = async (order: IOrderReceipt) => {
     printer.println(order.number);
     printer.newLine();
 
+    if (order.paid == false) {
+        printer.setTextNormal();
+        printer.underlineThick(true);
+        printer.println("Payment Required");
+        printer.underlineThick(true);
+        printer.newLine();
+    }
+
     printer.setTextNormal();
     printer.alignLeft();
 
