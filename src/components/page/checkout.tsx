@@ -291,7 +291,7 @@ export const Checkout = () => {
         return products;
     };
 
-    const printReceipts = (orderNumber: string, eftposReceipt?: string) => {
+    const printReceipts = (orderNumber: string, paid: boolean, eftposReceipt?: string) => {
         if (!products || products.length == 0) {
             return;
         }
@@ -311,6 +311,7 @@ export const Checkout = () => {
                     notes: notes,
                     products: productsToPrint1,
                     total: total,
+                    paid: paid,
                     type: orderType || EOrderType.TAKEAWAY,
                     number: orderNumber,
                     table: tableNumber,
@@ -331,6 +332,7 @@ export const Checkout = () => {
                     notes: notes,
                     products: productsToPrint2,
                     total: total,
+                    paid: paid,
                     type: orderType || EOrderType.TAKEAWAY,
                     number: orderNumber,
                     table: tableNumber,
@@ -351,6 +353,7 @@ export const Checkout = () => {
                     notes: notes,
                     products: productsToPrint3,
                     total: total,
+                    paid: paid,
                     type: orderType || EOrderType.TAKEAWAY,
                     number: orderNumber,
                     table: tableNumber,
@@ -365,7 +368,7 @@ export const Checkout = () => {
 
         try {
             if (register.printers && register.printers.items.length > 0) {
-                printReceipts(orderNumber, eftposReceipt);
+                printReceipts(orderNumber, paid, eftposReceipt);
             }
 
             await processOrder(paid, orderNumber);
