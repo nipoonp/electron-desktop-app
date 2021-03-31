@@ -81,7 +81,7 @@ const Routes = () => {
             clearTimeout(timerId);
         };
 
-        ipcRenderer.on("CONTEXT_MENU_COMMAND", (e, command) => {
+        ipcRenderer.on("CONTEXT_MENU_COMMAND", (e: any, command: any) => {
             switch (command) {
                 case "kioskMode":
                     history.push(beginOrderPath);
