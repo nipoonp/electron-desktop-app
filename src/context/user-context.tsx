@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import * as React from "react";
 import gql from "graphql-tag";
 import { Logger, Auth } from "aws-amplify";
 import { useMutation } from "react-apollo-hooks";

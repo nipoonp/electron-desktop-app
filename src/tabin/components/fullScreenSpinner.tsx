@@ -1,4 +1,3 @@
-import React from "react";
 import { Space2 } from "./spaces";
 import { Title3Font } from "./fonts";
 import { Spinner } from "./spinner";

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import styles from "./dock.module.css";
 import Modal from "react-modal";
 

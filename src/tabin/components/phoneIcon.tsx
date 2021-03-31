@@ -1,5 +1,3 @@
-import React from "react";
-
 export const PhoneIcon = (props: { height: string }) => {
     return (
         <svg viewBox="0 0 320 512" aria-hidden="true" focusable="false" height={props.height}>

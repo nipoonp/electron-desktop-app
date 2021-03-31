@@ -1,4 +1,3 @@
-import React from "react";
 import { NormalFont } from "./fonts";
 
 const styles = require("./errorMessage.module.css");

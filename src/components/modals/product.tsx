@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
+import * as React from "react";
 import { Title2Font, BoldFont, NormalFont, Title1Font } from "../../tabin/components/fonts";
 import { Space2, Space3, Space4, Space1, Space6, Space } from "../../tabin/components/spaces";
 import { useHistory } from "react-router";

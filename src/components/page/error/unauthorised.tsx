@@ -1,4 +1,3 @@
-import React from "react";
 import { H1, H4 } from "../../../tabin/components/headings";
 import { Space2, Space4 } from "../../../tabin/components/spaces";
 

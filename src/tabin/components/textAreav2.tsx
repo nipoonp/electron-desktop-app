@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { NormalFont } from "./fonts";
 import { InputV2Style } from "./inputv2";
 

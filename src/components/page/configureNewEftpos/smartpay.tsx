@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import * as React from "react";
 import { ButtonV2 } from "../../../tabin/components/buttonv2";
 import { SelectV2 } from "../../../tabin/components/selectv2";
 import { InputV2 } from "../../../tabin/components/inputv2";

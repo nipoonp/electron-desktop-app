@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { Spinner } from "./spinner";
 const styles = require("./button.module.css");
 

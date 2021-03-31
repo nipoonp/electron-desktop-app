@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import styles from "./headings.module.css";
 
 export const H1 = (props: IProps) => {

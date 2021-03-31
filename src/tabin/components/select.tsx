@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { ErrorMessage } from "./errorMessage";
 
 const styles = require("./select.module.css");

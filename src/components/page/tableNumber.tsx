@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { Space, Space2 } from "../../tabin/components/spaces";
 import { useHistory } from "react-router";
 import { beginOrderPath, checkoutPath } from "../main";

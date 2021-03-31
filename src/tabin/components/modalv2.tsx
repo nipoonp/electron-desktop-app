@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import ReactModal, { Props } from "react-modal";
 import { Space2 } from "./spaces";
 import { CloseIcon } from "./closeIcon";

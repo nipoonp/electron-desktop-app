@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import * as React from "react";
 import { useMutation } from "react-apollo-hooks";
 import { UPDATE_REGISTER_KEY } from "../graphql/customMutations";
 import { useUser } from "./user-context";

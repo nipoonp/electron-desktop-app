@@ -1,5 +1,3 @@
-import React from "react";
-
 export const CartIcon = (props: { height: string }) => {
   return (
     <svg

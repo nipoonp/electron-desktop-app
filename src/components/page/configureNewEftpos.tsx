@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { RadioV2 } from "../../tabin/components/radiov2";
 import { Space2, Space4, Space6 } from "../../tabin/components/spaces";
 import { Title3Font } from "../../tabin/components/fonts";

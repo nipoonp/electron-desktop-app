@@ -1,5 +1,3 @@
-import React from "react";
-
 export const CheckCircleDuoTone = (props: {
   height: string;
   color1?: string;

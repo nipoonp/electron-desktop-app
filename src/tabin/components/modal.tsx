@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import ReactModal, { Props } from "react-modal";
 import { Logger } from "aws-amplify";
 import { CloseIcon } from "./closeIcon";

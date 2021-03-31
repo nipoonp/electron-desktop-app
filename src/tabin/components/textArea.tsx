@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { BoldFont, NormalFont } from "./fonts";
 
 const styles = require("./textArea.module.css");

@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 
 export const GrayColor = (props: { children: React.ReactNode; style?: React.CSSProperties }) => {
     let style = { color: "var(--primary-color-gray)" };

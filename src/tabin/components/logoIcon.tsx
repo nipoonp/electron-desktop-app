@@ -1,5 +1,3 @@
-import React from "react";
-
 export const LogoIcon = (props: { height: string }) => {
     return (
         <svg aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 644.68 865.47" height={props.height}>

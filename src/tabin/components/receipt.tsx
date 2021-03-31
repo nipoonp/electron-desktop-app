@@ -1,5 +1,3 @@
-import React from "react";
-
 export const ReceiptIcon = (props: { height: string }) => {
     return (
         <svg

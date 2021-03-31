@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 // https://usehooks.com/useWindowSize/
 export const useWindowSize = () => {

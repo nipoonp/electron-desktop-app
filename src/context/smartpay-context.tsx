@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
+import * as React from "react";
 import axios from "axios";
 import { useUser } from "./user-context";
 import { useRegister } from "./register-context";

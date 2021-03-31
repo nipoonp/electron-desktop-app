@@ -1,4 +1,3 @@
-import React from "react";
 import { ButtonV2, IProps } from "./buttonv2";
 
 export const KioskButton = (props: IProps) => {

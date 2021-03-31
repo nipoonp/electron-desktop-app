@@ -1,4 +1,3 @@
-import React from "react";
 import { ToastContainer as _ToastContainer } from "react-toastify";
 import { toast as _toast, Slide } from "react-toastify";
 import { isMobile } from "react-device-detect";

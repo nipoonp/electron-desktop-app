@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 // https://react-google-maps-api-docs.netlify.com
 import { GoogleMap } from "@react-google-maps/api";
 import { Logger } from "aws-amplify";

@@ -1,4 +1,3 @@
-import React from "react";
 import { IProps, Checkbox } from "./checkbox";
 
 export const KioskCheckbox = (props: IProps) => {

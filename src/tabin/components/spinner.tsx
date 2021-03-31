@@ -1,6 +1,6 @@
 // https://tobiasahlin.com/spinkit/
 
-import React from "react";
+import * as React from "react";
 import styles from "./spinner.module.css";
 
 export const Spinner = (props: { spinnerDotsStyle?: React.CSSProperties; text?: string }) => {

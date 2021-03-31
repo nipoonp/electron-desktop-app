@@ -1,5 +1,3 @@
-import React from "react";
-
 export const StoreIcon = (props: { height: string }) => {
     return (
         <svg

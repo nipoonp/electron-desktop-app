@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { NormalFont } from "./fonts";
 
 const styles = require("./inputv3.module.css");

@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import * as React from "react";
 import { Title1Font } from "../tabin/components/fonts";
 
 const electron = window.require("electron");

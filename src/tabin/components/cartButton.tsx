@@ -1,4 +1,3 @@
-import React from "react";
 import { useCart } from "../../context/cart-context";
 import { CartIcon } from "./cartIcon";
 import { useSmallScreen } from "../../hooks/useWindowSize";

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { DateRangePicker as ReactDateRangePicker } from "react-dates";
 import moment from "moment";
 

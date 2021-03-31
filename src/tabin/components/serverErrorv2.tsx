@@ -1,4 +1,3 @@
-import React from "react";
 import { NormalFont } from "./fonts";
 
 export const ServerErrorV2 = (props: { message: string }) => {

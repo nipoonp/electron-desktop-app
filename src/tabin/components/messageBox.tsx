@@ -1,4 +1,3 @@
-import React from "react";
 import { Space1 } from "./spaces";
 import { Title3Font, NormalFont } from "./fonts";
 

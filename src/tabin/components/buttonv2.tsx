@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { Spinner } from "./spinner";
 
 export const ButtonV2 = (props: IProps) => {

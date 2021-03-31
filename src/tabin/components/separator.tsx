@@ -1,4 +1,3 @@
-import React from "react";
 const styles = require("./separator.module.css");
 
 export const Separator = () => {

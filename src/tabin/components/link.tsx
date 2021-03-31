@@ -1,4 +1,5 @@
-import React, { CSSProperties } from "react";
+import { CSSProperties } from "react";
+import * as React from "react";
 /** @jsx jsx */
 // when using emotion, can't use <>, instead use <React.Fragment>
 // https://github.com/emotion-js/emotion/issues/1549

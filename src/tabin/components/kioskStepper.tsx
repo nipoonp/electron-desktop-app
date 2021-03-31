@@ -1,4 +1,3 @@
-import React from "react";
 import { Stepper, IProps } from "./stepper";
 
 export const KioskStepper = (props: IProps) => {

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import * as React from "react";
 import { ButtonV2 } from "../../../tabin/components/buttonv2";
 import { Title3Font } from "../../../tabin/components/fonts";
 import { Space4, Space2 } from "../../../tabin/components/spaces";

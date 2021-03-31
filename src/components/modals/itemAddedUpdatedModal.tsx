@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { Title2Font, NormalFont } from "../../tabin/components/fonts";
 import { Space3 } from "../../tabin/components/spaces";
 import { useCart } from "../../context/cart-context";

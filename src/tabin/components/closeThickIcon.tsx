@@ -1,5 +1,3 @@
-import React from "react";
-
 export const CloseThickIcon = (props: { height: string }) => {
   return (
     <svg

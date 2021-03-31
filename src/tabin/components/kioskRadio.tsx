@@ -1,4 +1,3 @@
-import React from "react";
 import { IProps, RadioV2 } from "./radiov2";
 
 export const KioskRadio = (props: IProps) => {

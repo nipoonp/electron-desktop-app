@@ -1,5 +1,3 @@
-import React from "react";
-
 export const LocationIconFilled = (props: { height: string }) => {
     return (
         <svg

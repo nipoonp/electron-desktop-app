@@ -1,4 +1,3 @@
-import React from "react";
 const styles = require("./serverError.module.css");
 
 export const ServerError = (props: { message: string }) => {

@@ -1,4 +1,3 @@
-import React from "react";
 import { S3Image } from "aws-amplify-react";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
 

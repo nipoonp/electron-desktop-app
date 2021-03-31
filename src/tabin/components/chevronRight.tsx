@@ -1,5 +1,3 @@
-import React from "react";
-
 export const ChevronRight = (props: { height: string }) => {
   return (
     <svg

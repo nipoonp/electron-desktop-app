@@ -1,5 +1,3 @@
-import React from "react";
-
 export const CloudUploadIcon = (props: { height: string }) => {
   return (
     <svg

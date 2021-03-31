@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { isMobile } from "react-device-detect";
 
 export const Title1Font = (props: {

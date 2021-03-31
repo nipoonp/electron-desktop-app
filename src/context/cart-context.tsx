@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import * as React from "react";
 import { Logger } from "aws-amplify";
 import { ICartProduct, EOrderType } from "../model/model";
 import { IGET_RESTAURANT } from "../graphql/customQueries";

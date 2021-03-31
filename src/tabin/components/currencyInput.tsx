@@ -1,4 +1,4 @@
-import React, { CSSProperties, FC, KeyboardEvent, useCallback } from "react";
+import { CSSProperties, FC, KeyboardEvent, useCallback } from "react";
 import { InputV2Style } from "./inputv2";
 
 const VALID_FIRST = /^[1-9]{1}$/;

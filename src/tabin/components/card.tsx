@@ -1,5 +1,3 @@
-import React from "react";
-
 export const Card = (props: {
   cardBrandPFClass: string;
   cardLast4: string;

@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { Logger } from "aws-amplify";
 import { ErrorMessage } from "./errorMessage";
 
