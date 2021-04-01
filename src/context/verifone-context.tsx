@@ -76,7 +76,7 @@ const VerifoneContext = React.createContext<ContextProps>({
 });
 
 const VerifoneProvider = (props: { children: React.ReactNode }) => {
-    const interval = 1 * 1000; // 1 seconds
+    const interval = 1 * 500; // 0.5 seconds
     const timeout = 3 * 60 * 1000; // 3 minutes
     const noResponseTimeout = 10 * 1000; // 10 seconds
     let lastMessageReceived: number;

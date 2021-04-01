@@ -92,12 +92,12 @@ ipcMain.on("RECEIPT_PRINTER_DATA", async (event: any, data: IOrderReceipt) => {
 });
 
 // Webapp Side
-ipcMain.on("BROWSER_EFTPOS_CONNECT", (data: any) => {
+ipcMain.on("BROWSER_EFTPOS_CONNECT", (event: any, data: any) => {
     console.log(`Connecting to Verifone Eftpos on ${data.portNumber}:${data.ipAddress}`);
     verifoneClient.connect(data.portNumber, data.ipAddress);
 });
 
-ipcMain.on("BROWSER_DATA", (data: any) => {
+ipcMain.on("BROWSER_DATA", (event: any, data: any) => {
     verifoneClient.write(encodeCommandBuffer(data.toString()));
 });
 
