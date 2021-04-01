@@ -1,10 +1,5 @@
 import { printer as ThermalPrinter, types as PrinterTypes } from "node-thermal-printer";
-import {
-    IOrderReceipt,
-    ICartProduct,
-    ICartModifierGroup,
-    ICartModifier,
-} from "./model";
+import { IOrderReceipt, ICartProduct, ICartModifierGroup, ICartModifier } from "./model";
 
 export const calculateLRC = (str: string): string => {
     var bytes = [];
@@ -49,11 +44,9 @@ const getCurrentDate = () => {
     return `${now.getDay()}/${now.getMonth()}/${now.getFullYear()} ${now.getHours()}:${now.getMinutes()}`;
 };
 
-export const convertDollarsToCents = (price: number) =>
-    (price * 100).toFixed(0);
+export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0);
 
-export const convertCentsToDollars = (price: number) =>
-    (price / 100).toFixed(2);
+export const convertCentsToDollars = (price: number) => (price / 100).toFixed(2);
 
 const getProductTotal = (product: ICartProduct) => {
     let total = product.price;
@@ -69,7 +62,7 @@ const getProductTotal = (product: ICartProduct) => {
 
 export const printReceipt = async (order: IOrderReceipt) => {
     let printer = new ThermalPrinter({
-        type: PrinterTypes.EPSON,  // 'star' or 'epson'
+        type: PrinterTypes.EPSON, // 'star' or 'epson'
         interface: `tcp://${order.printerAddress}`,
     });
 
@@ -105,6 +98,14 @@ export const printReceipt = async (order: IOrderReceipt) => {
     printer.println(order.number);
     printer.newLine();
 
+    if (order.paid == false) {
+        printer.setTextNormal();
+        printer.underlineThick(true);
+        printer.println("Payment Required");
+        printer.underlineThick(true);
+        printer.newLine();
+    }
+
     printer.setTextNormal();
     printer.alignLeft();
 
@@ -114,8 +115,7 @@ export const printReceipt = async (order: IOrderReceipt) => {
 
         printer.tableCustom([
             {
-                text: `${product.quantity > 1 ? product.quantity + " x " : ""}${product.name
-                    }`,
+                text: `${product.quantity > 1 ? product.quantity + " x " : ""}${product.name}`,
                 align: "LEFT",
                 width: 0.75,
                 bold: true,
@@ -129,10 +129,7 @@ export const printReceipt = async (order: IOrderReceipt) => {
         ]);
 
         product.modifierGroups.forEach((modifierGroup: ICartModifierGroup) => {
-            if (
-                order.hideModifierGroupsForCustomer == true &&
-                modifierGroup.hideForCustomer == true
-            ) {
+            if (order.hideModifierGroupsForCustomer == true && modifierGroup.hideForCustomer == true) {
                 return;
             }
 
@@ -141,19 +138,13 @@ export const printReceipt = async (order: IOrderReceipt) => {
             printer.println(`${modifierGroup.name}`);
 
             modifierGroup.modifiers.forEach((modifier: ICartModifier) => {
-                const changedQuantity =
-                    modifier.quantity - modifier.preSelectedQuantity;
+                const changedQuantity = modifier.quantity - modifier.preSelectedQuantity;
                 let mStr = "";
 
-                if (
-                    changedQuantity < 0 &&
-                    Math.abs(changedQuantity) == modifier.preSelectedQuantity
-                ) {
-                    mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)} x ` : ""
-                        }${modifier.name}`;
+                if (changedQuantity < 0 && Math.abs(changedQuantity) == modifier.preSelectedQuantity) {
+                    mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)} x ` : ""}${modifier.name}`;
                 } else {
-                    mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)} x ` : ""
-                        }${modifier.name}`;
+                    mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)} x ` : ""}${modifier.name}`;
                 }
 
                 if (modifier.price > 0 && changedQuantity > 0) {
@@ -170,7 +161,6 @@ export const printReceipt = async (order: IOrderReceipt) => {
             printer.println(`Notes: ${product.notes}`);
         }
     });
-
 
     printer.drawLine();
 
@@ -216,6 +206,4 @@ export const printReceipt = async (order: IOrderReceipt) => {
     } catch (error) {
         throw error;
     }
-}
-
-
+};

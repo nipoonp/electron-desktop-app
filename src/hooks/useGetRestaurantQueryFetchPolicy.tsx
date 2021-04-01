@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import { isAfter, addHours } from "date-fns";
 
 export const useGetRestaurantQueryFetchPolicy = () => {
-    const [fetchPolicy, setFetchPolicy] = useState<"cache-first" | "cache-and-network" | "network-only" | "cache-only" | "no-cache" | "standby" | undefined>("cache-first");
+    const [fetchPolicy, setFetchPolicy] = useState<
+        "cache-first" | "cache-and-network" | "network-only" | "cache-only" | "no-cache" | "standby" | undefined
+    >("cache-first");
 
     useEffect(() => {
         const apolloRestaurantQueryCacheTimestamp = sessionStorage.getItem("apolloRestaurantQueryCacheTimestamp");
@@ -14,7 +16,6 @@ export const useGetRestaurantQueryFetchPolicy = () => {
             const cacheExpiry = addHours(new Date(apolloRestaurantQueryCacheTimestamp), 6);
             const fetchFromServer = isAfter(new Date(), cacheExpiry);
 
-
             if (fetchFromServer) {
                 sessionStorage.setItem("apolloRestaurantQueryCacheTimestamp", new Date().toISOString());
                 setFetchPolicy("network-only");
@@ -25,4 +26,4 @@ export const useGetRestaurantQueryFetchPolicy = () => {
     }, []);
 
     return fetchPolicy;
-}
+};
