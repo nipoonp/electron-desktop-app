@@ -8,9 +8,9 @@ import { useVerifone, VerifoneTransactionOutcome } from "../../../context/verifo
 
 export const Verifone = () => {
     const [showSpinner, setShowSpinner] = useState(false);
-    const [ipAddress, setIPAddress] = useState("");
-    const [portNumber, setPortNumber] = useState("");
-    const [amount, setAmount] = useState(0);
+    const [ipAddress, setIPAddress] = useState("192.168.1.251");
+    const [portNumber, setPortNumber] = useState("20001");
+    const [amount, setAmount] = useState(1);
 
     const { createTransaction } = useVerifone();
 

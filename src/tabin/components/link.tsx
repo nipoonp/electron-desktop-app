@@ -1,8 +1,8 @@
 import React, { CSSProperties } from "react";
-/** @jsx jsx */
+
 // when using emotion, can't use <>, instead use <React.Fragment>
 // https://github.com/emotion-js/emotion/issues/1549
-import { css, jsx } from "@emotion/core";
+// import { css, jsx } from "@emotion/core";
 import { NormalFont } from "./fonts";
 
 export const Link = (props: {
@@ -39,12 +39,12 @@ export const Link = (props: {
             <a href={props.href} onClick={props.onClick}>
                 <div
                     style={style}
-                    css={css`
-                        color: ${props.color ? props.color : props.destructive ? destructiveColor : defaultColor};
-                        &:hover {
-                            color: ${props.hoverColor ? props.hoverColor : props.destructive ? desctructiveHoverColor : hoverColor};
-                        }
-                    `}
+                    // css={css`
+                    //     color: ${props.color ? props.color : props.destructive ? destructiveColor : defaultColor};
+                    //     &:hover {
+                    //         color: ${props.hoverColor ? props.hoverColor : props.destructive ? desctructiveHoverColor : hoverColor};
+                    //     }
+                    // `}
                 >
                     {props.children}
                 </div>

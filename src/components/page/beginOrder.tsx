@@ -7,9 +7,7 @@ import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
 import { Title3Font, Title2Font } from "../../tabin/components/fonts";
 import { SizedBox } from "../../tabin/components/sizedBox";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
-import "pure-react-carousel/dist/react-carousel.es.css";
 import { IGET_USER_RESTAURANT_ADVERTISEMENT } from "../../graphql/customQueries";
-import { number } from "yup";
 
 const styles = require("./beginOrder.module.css");
 
