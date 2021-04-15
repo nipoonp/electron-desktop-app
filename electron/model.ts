@@ -33,6 +33,7 @@ export interface ISelectedProductModifiers {
 
 export interface IOrderReceipt {
     printerAddress: string;
+    kitchenPrinter?: boolean;
     eftposReceipt?: string;
     hideModifierGroupsForCustomer?: boolean;
     restaurant: {
