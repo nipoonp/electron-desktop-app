@@ -190,7 +190,7 @@ export const printReceipt = async (order: IOrderReceipt) => {
 
     printer.alignCenter();
 
-    if (order.eftposReceipt) {
+    if (order.eftposReceipt && order.kitchenPrinter) {
         printer.println(order.eftposReceipt);
     }
 

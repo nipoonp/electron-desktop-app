@@ -296,70 +296,30 @@ export const Checkout = () => {
             return;
         }
 
-        if (register.printers && register.printers.items[0] && register.printers.items[0].address) {
-            const productsToPrint1 = filterPrintProducts(products, register.printers.items[0]);
+        register.printers &&
+            register.printers.items.forEach((printer) => {
+                const productsToPrint = filterPrintProducts(products, printer);
 
-            if (productsToPrint1.length > 0) {
-                printReceipt({
-                    printerAddress: register.printers.items[0].address,
-                    eftposReceipt: eftposReceipt,
-                    hideModifierGroupsForCustomer: true,
-                    restaurant: {
-                        name: restaurant.name,
-                        address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
-                    },
-                    notes: notes,
-                    products: productsToPrint1,
-                    total: total,
-                    paid: paid,
-                    type: orderType || EOrderType.TAKEAWAY,
-                    number: orderNumber,
-                    table: tableNumber,
-                });
-            }
-        }
-
-        if (register.printers && register.printers.items[1] && register.printers.items[1].address) {
-            const productsToPrint2 = filterPrintProducts(products, register.printers.items[1]);
-
-            if (productsToPrint2.length > 0) {
-                printReceipt({
-                    printerAddress: register.printers.items[1].address,
-                    restaurant: {
-                        name: restaurant.name,
-                        address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
-                    },
-                    notes: notes,
-                    products: productsToPrint2,
-                    total: total,
-                    paid: paid,
-                    type: orderType || EOrderType.TAKEAWAY,
-                    number: orderNumber,
-                    table: tableNumber,
-                });
-            }
-        }
-
-        if (register.printers && register.printers.items[2] && register.printers.items[2].address) {
-            const productsToPrint3 = filterPrintProducts(products, register.printers.items[2]);
-
-            if (productsToPrint3.length > 0) {
-                printReceipt({
-                    printerAddress: register.printers.items[2].address,
-                    restaurant: {
-                        name: restaurant.name,
-                        address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
-                    },
-                    notes: notes,
-                    products: productsToPrint3,
-                    total: total,
-                    paid: paid,
-                    type: orderType || EOrderType.TAKEAWAY,
-                    number: orderNumber,
-                    table: tableNumber,
-                });
-            }
-        }
+                if (productsToPrint.length > 0) {
+                    printReceipt({
+                        printerAddress: printer.address,
+                        kitchenPrinter: printer.kitchenPrinter,
+                        eftposReceipt: eftposReceipt,
+                        hideModifierGroupsForCustomer: true,
+                        restaurant: {
+                            name: restaurant.name,
+                            address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
+                        },
+                        notes: notes,
+                        products: productsToPrint,
+                        total: total,
+                        paid: paid,
+                        type: orderType || EOrderType.TAKEAWAY,
+                        number: orderNumber,
+                        table: tableNumber,
+                    });
+                }
+            });
     };
 
     const onSubmitOrder = async (paid: boolean, eftposReceipt?: string) => {
