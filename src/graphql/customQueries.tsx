@@ -125,7 +125,6 @@ export const GET_RESTAURANT = gql`
             description
             isAcceptingOrders
             verified
-            restaurantManagerId
             address {
                 aptSuite
                 formattedAddress
@@ -341,7 +340,6 @@ export interface IGET_RESTAURANT {
     // averagePreparationTimeInMinutes: number;
     isAcceptingOrders: boolean;
     verified: boolean;
-    restaurantManagerId: string;
     address: {
         aptSuite: string;
         formattedAddress: string;
