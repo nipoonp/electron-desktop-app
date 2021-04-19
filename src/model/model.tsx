@@ -72,13 +72,3 @@ export interface IOrderReceipt {
     number: string;
     table: string | null;
 }
-
-export enum ERecommendationEventType {
-    USER = "USER",
-    ITEM = "ITEM",
-    INTERACTION = "INTERACTION",
-}
-
-export enum ERecommendationEventInteractionEventType {
-    PURCHASE = "PURCHASE",
-}

@@ -8,22 +8,14 @@ import { Link } from "../../tabin/components/link";
 import { GrayColor, PrimaryColor } from "../../tabin/components/colors";
 import { convertCentsToDollars } from "../../util/moneyConversion";
 import { useMutation } from "react-apollo-hooks";
-import { CREATE_RECOMMENDATION_EVENT, PROCESS_ORDER } from "../../graphql/customMutations";
+import { PROCESS_ORDER } from "../../graphql/customMutations";
 import { IGET_RESTAURANT_REGISTER_PRINTER, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
 import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath } from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
-import {
-    ICartProduct,
-    ISelectedProductModifiers,
-    ICartModifierGroup,
-    EOrderType,
-    ERecommendationEventType,
-    ERecommendationEventInteractionEventType,
-} from "../../model/model";
+import { ICartProduct, ISelectedProductModifiers, ICartModifierGroup, EOrderType } from "../../model/model";
 import { Separator6 } from "../../tabin/components/separator";
 import { useUser } from "../../context/user-context";
-import { ModalV2 } from "../../tabin/components/modalv2";
 import { format } from "date-fns";
 import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
 import { useSmartpay, SmartpayTransactionOutcome } from "../../context/smartpay-context";
@@ -60,12 +52,6 @@ export const Checkout = () => {
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
 
     const processOrderMutation = useMutation(PROCESS_ORDER, {
-        update: (proxy, mutationResult) => {
-            logger.debug("mutation result: ", mutationResult);
-        },
-    });
-
-    const createRecommendationEventMutation = useMutation(CREATE_RECOMMENDATION_EVENT, {
         update: (proxy, mutationResult) => {
             logger.debug("mutation result: ", mutationResult);
         },
@@ -224,29 +210,6 @@ export const Checkout = () => {
             const res = await processOrderMutation({
                 variables: variables,
             });
-
-            const timestamp = Math.floor(new Date().getTime() / 1000);
-
-            for (var i = 0; i < products.length; i++) {
-                let product = products[i];
-                const eventValue = product.price / (100 * 1000); //Assume max order value is $1000.
-
-                for (var j = 0; j < product.quantity; j++) {
-                    const res2 = await createRecommendationEventMutation({
-                        variables: {
-                            type: ERecommendationEventType.INTERACTION,
-                            interaction_userId: restaurant.restaurantManagerId,
-                            interaction_itemId: product.id,
-                            interaction_eventType: ERecommendationEventInteractionEventType.PURCHASE,
-                            interaction_eventValue: eventValue > 1000 ? 1 : eventValue,
-                            // interaction_impression: $interaction_impression,
-                            // interaction_recommendationId: $interaction_recommendationId,
-                            interaction_restaurantId: restaurant.id,
-                            interaction_timestamp: timestamp,
-                        },
-                    });
-                }
-            }
 
             logger.debug("process order mutation result: ", res);
         } catch (e) {
