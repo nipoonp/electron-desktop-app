@@ -16,7 +16,6 @@ import { ProductModal } from "../modals/product";
 import { ICartProduct, ISelectedProductModifiers, ICartModifierGroup, EOrderType } from "../../model/model";
 import { Separator6 } from "../../tabin/components/separator";
 import { useUser } from "../../context/user-context";
-import { ModalV2 } from "../../tabin/components/modalv2";
 import { format } from "date-fns";
 import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
 import { useSmartpay, SmartpayTransactionOutcome } from "../../context/smartpay-context";
