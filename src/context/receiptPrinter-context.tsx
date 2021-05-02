@@ -2,8 +2,12 @@ import React, { useEffect } from "react";
 import { IOrderReceipt } from "../model/model";
 import { toast } from "../tabin/components/toast";
 
-const electron = window.require("electron");
-const ipcRenderer = electron.ipcRenderer;
+let electron: any;
+let ipcRenderer: any;
+try {
+    electron = window.require("electron");
+    ipcRenderer = electron.ipcRenderer;
+} catch (e) {}
 
 type ContextProps = {
     printReceipt: (payload: IOrderReceipt) => void;
@@ -15,14 +19,15 @@ const ReceiptPrinterContext = React.createContext<ContextProps>({
 
 const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     useEffect(() => {
-        ipcRenderer.on("RECEIPT_PRINTER_ERROR", (event: any, arg: any) => {
-            console.log("RECEIPT_PRINTER_ERROR:", arg);
-            toast.error("Connection with Receipt Printer 1 failed. Please make sure it is powered on and configured correctly.");
-        });
+        ipcRenderer &&
+            ipcRenderer.on("RECEIPT_PRINTER_ERROR", (event: any, arg: any) => {
+                console.log("RECEIPT_PRINTER_ERROR:", arg);
+                toast.error("Connection with Receipt Printer 1 failed. Please make sure it is powered on and configured correctly.");
+            });
     }, []);
 
     const printReceipt = (payload: IOrderReceipt) => {
-        ipcRenderer.send("RECEIPT_PRINTER_DATA", payload);
+        ipcRenderer && ipcRenderer.send("RECEIPT_PRINTER_DATA", payload);
     };
 
     return (

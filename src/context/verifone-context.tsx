@@ -4,8 +4,12 @@ import { delay, getVerifoneSocketErrorMessage, getVerifoneTimeBasedTransactionId
 import { useMutation } from "react-apollo-hooks";
 import { CREATE_VERIFONE_TRANSACTION_LOG } from "../graphql/customMutations";
 
-const electron = window.require("electron");
-const ipcRenderer = electron.ipcRenderer;
+let electron: any;
+let ipcRenderer: any;
+try {
+    electron = window.require("electron");
+    ipcRenderer = electron.ipcRenderer;
+} catch (e) {}
 
 const logger = new Logger("verifoneContext");
 
@@ -94,42 +98,46 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     });
 
     useEffect(() => {
-        ipcRenderer.on("EFTPOS_CONNECT", (event: any, arg: any) => {
-            console.log("EFTPOS_CONNECT:", arg);
-            isEftposConnected = true;
-        });
+        ipcRenderer &&
+            ipcRenderer.on("EFTPOS_CONNECT", (event: any, arg: any) => {
+                console.log("EFTPOS_CONNECT:", arg);
+                isEftposConnected = true;
+            });
 
-        ipcRenderer.on("EFTPOS_DATA", (event: any, arg: any) => {
-            console.log("EFTPOS_DATA:", arg);
+        ipcRenderer &&
+            ipcRenderer.on("EFTPOS_DATA", (event: any, arg: any) => {
+                console.log("EFTPOS_DATA:", arg);
 
-            const payloadArray = arg.split(",");
-            const type = payloadArray[0];
-            const dataPayload = payloadArray.slice(1).join(",");
+                const payloadArray = arg.split(",");
+                const type = payloadArray[0];
+                const dataPayload = payloadArray.slice(1).join(",");
 
-            eftposData = {
-                type: type as VMT,
-                payload: dataPayload,
-            };
+                eftposData = {
+                    type: type as VMT,
+                    payload: dataPayload,
+                };
 
-            if (type == VMT.ReadyToPrintRequest) {
-                ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
-            } else if (type == VMT.PrintRequest) {
-                eftposReceipt = dataPayload;
-                ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
-            }
+                if (type == VMT.ReadyToPrintRequest) {
+                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
+                } else if (type == VMT.PrintRequest) {
+                    eftposReceipt = dataPayload;
+                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
+                }
 
-            lastMessageReceived = Number(new Date());
-        });
+                lastMessageReceived = Number(new Date());
+            });
 
-        ipcRenderer.on("EFTPOS_ERROR", (event: any, arg: any) => {
-            console.log("EFTPOS_ERROR:", arg);
-            eftposError = arg;
-        });
+        ipcRenderer &&
+            ipcRenderer.on("EFTPOS_ERROR", (event: any, arg: any) => {
+                console.log("EFTPOS_ERROR:", arg);
+                eftposError = arg;
+            });
 
-        ipcRenderer.on("EFTPOS_CLOSE", (event: any, arg: any) => {
-            console.log("EFTPOS_CLOSE:", arg);
-            isEftposConnected = false;
-        });
+        ipcRenderer &&
+            ipcRenderer.on("EFTPOS_CLOSE", (event: any, arg: any) => {
+                console.log("EFTPOS_CLOSE:", arg);
+                isEftposConnected = false;
+            });
     }, []);
 
     // useEffect(() => {
@@ -148,7 +156,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     //       return;
     //     }
 
-    //     ipcRenderer.send(
+    //     ipcRenderer && ipcRenderer.send(
     //       "BROWSER_DATA",
     //       `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`
     //     );
@@ -179,7 +187,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     //       console.log("Error in creating verifone transaction log", e);
     //     }
 
-    //     ipcRenderer.send(
+    //     ipcRenderer &&ipcRenderer.send(
     //       "BROWSER_DATA",
     //       `${VMT.GetReceiptRequest},${transactionId},${merchantId}`
     //     );
@@ -231,10 +239,11 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const connectToEftpos = async (ipAddress: String, portNumber: String) => {
         eftposError = "";
 
-        ipcRenderer.send("BROWSER_EFTPOS_CONNECT", {
-            ipAddress: ipAddress,
-            portNumber: portNumber,
-        });
+        ipcRenderer &&
+            ipcRenderer.send("BROWSER_EFTPOS_CONNECT", {
+                ipAddress: ipAddress,
+                portNumber: portNumber,
+            });
 
         while (!isEftposConnected) {
             await delay(interval);
@@ -244,7 +253,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     };
 
     const disconnectEftpos = async () => {
-        ipcRenderer.send("BROWSER_EFTPOS_DISCONNECT");
+        ipcRenderer && ipcRenderer.send("BROWSER_EFTPOS_DISCONNECT");
 
         while (isEftposConnected) {
             console.log("Waiting for Eftpos to disconnect...");
@@ -299,7 +308,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             }
 
             // Configure Printing -------------------------------------------------------------------------------------------------------------------------------- //
-            ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
+            ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
 
             const printingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
             while (
@@ -322,7 +331,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             }
 
             // Create A Transaction -------------------------------------------------------------------------------------------------------------------------------- //
-            ipcRenderer.send("BROWSER_DATA", `${VMT.Purchase},${transactionId},${merchantId},${amount}`);
+            ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.Purchase},${transactionId},${merchantId},${amount}`);
             // localStorage.setItem("verifoneTransactionId", transactionId.toString());
             // localStorage.setItem("verifoneMerchantId", merchantId.toString());
 
@@ -379,7 +388,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     }
                 }
 
-                ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
+                ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
             }
 
             // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
