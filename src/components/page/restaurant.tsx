@@ -3,16 +3,14 @@ import { useHistory } from "react-router";
 import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { NormalFont, BoldFont, Title3Font, Title4Font } from "../../tabin/components/fonts";
-import { GrayColor } from "../../tabin/components/colors";
 import { checkoutPath, beginOrderPath, orderTypePath } from "../main";
 import { convertCentsToDollars } from "../../util/moneyConversion";
 import { ProductModal } from "../modals/product";
+import { SearchProductModal } from "../modals/searchProductModal";
 import { IGET_RESTAURANT_PRODUCT, IGET_RESTAURANT_CATEGORY, IS3Image } from "../../graphql/customQueries";
 import { useCart } from "../../context/cart-context";
-import { Space2, Space, Space4, Space6, Space5 } from "../../tabin/components/spaces";
+import { Space2, Space5 } from "../../tabin/components/spaces";
 import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
-import { ButtonV2 } from "../../tabin/components/buttonv2";
-import { S3Image } from "aws-amplify-react";
 import { KioskButton } from "../../tabin/components/kioskButton";
 import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
 import { ICartProduct } from "../../model/model";
@@ -35,6 +33,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
     const [selectedProduct, setSelectedProduct] = useState<IGET_RESTAURANT_PRODUCT | null>(null);
     const [showProductModal, setShowProductModal] = useState(false);
     const [showItemAddedModal, setShowItemAddedModal] = useState(false);
+    const [showSearchProductModal, setShowSearchProductModal] = useState(false);
 
     React.useEffect(() => {
         if (restaurant) {
@@ -85,6 +84,10 @@ export const Restaurant = (props: { restaurantID: string }) => {
         setShowItemAddedModal(false);
     };
 
+    const onCloseSearchProductModal = () => {
+        setShowSearchProductModal(false);
+    };
+
     // displays THAT SHOULD BE IN CONTEXT
     if (getRestaurantLoading) {
         return <FullScreenSpinner show={true} text="Loading restaurant" />;
@@ -102,9 +105,18 @@ export const Restaurant = (props: { restaurantID: string }) => {
         return <div>Restaurant is not verified</div>;
     }
 
-    // if (selectedCategory == null) {
-    //   return <div>No available category</div>
-    // }
+    const onClickProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
+        setSelectedCategory(category);
+        setSelectedProduct(product);
+        setShowProductModal(true);
+    };
+
+    const onClickSearchProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
+        setSelectedCategory(category);
+        setSelectedProduct(product);
+        onCloseSearchProductModal();
+        setShowProductModal(true);
+    };
 
     const productModal = (
         <>
@@ -126,35 +138,26 @@ export const Restaurant = (props: { restaurantID: string }) => {
         <>{showItemAddedModal && <ItemAddedUpdatedModal isOpen={showItemAddedModal} onClose={onCloseItemAddedModal} isProductUpdate={false} />}</>
     );
 
+    const searchProductModal = (
+        <>
+            {showSearchProductModal && (
+                <SearchProductModal
+                    isOpen={showSearchProductModal}
+                    onClose={onCloseSearchProductModal}
+                    isProductUpdate={false}
+                    onClickSearchProduct={onClickSearchProduct}
+                />
+            )}
+        </>
+    );
+
     const modals = (
         <>
             {productModal}
             {itemAddedModal}
+            {searchProductModal}
         </>
     );
-
-    const onClickProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
-        setSelectedCategory(category);
-        setSelectedProduct(product);
-        setShowProductModal(true);
-    };
-
-    // const restaurantImage = () => {
-    //   console.log("xxx....", restaurant.image);
-    //   if (!restaurant.image) {
-    //     return <></>;
-    //   }
-
-    //   return (
-    //     <S3Image
-    //       imgKey={restaurant.image.key}
-    //       level="protected"
-    //       theme={{
-    //         photoImg: { width: "100%", height: "100%" },
-    //       }}
-    //     />
-    //   );
-    // };
 
     const productDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
@@ -222,6 +225,25 @@ export const Restaurant = (props: { restaurantID: string }) => {
                     />
                 </>
             ))}
+        </div>
+    );
+
+    const menuSearchProduct = (
+        <div
+            style={{
+                // height: "85px",
+                padding: "30px 24px",
+                backgroundColor: "#e0e0e0",
+                display: "flex",
+                alignItems: "center",
+            }}
+            onClick={() => {
+                setShowSearchProductModal(true);
+            }}
+        >
+            <img style={{ height: "24px" }} src={`${getPublicCloudFrontDomainName()}/images/search-icon.png`} />
+            <SizedBox width="10px" />
+            <div>Search</div>
         </div>
     );
 
@@ -302,6 +324,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
                             className={styles.categoriesWrapper}
                         >
                             {restaurant.image && <RestaurantImage image={restaurant.image} />}
+                            {menuSearchProduct}
                             {menuCategories}
                         </div>
                         <div
