@@ -64,8 +64,8 @@ export const KioskProductSearchField = (props: {
 };
 
 export const InputV2Style: React.CSSProperties = {
-    border: "1px solid #ebebeb",
-    borderRadius: "50px",
+    border: "1px solid rgb(224, 224, 224)",
+    borderRadius: "10px",
     padding: "16px 32px",
     lineHeight: "24px",
     transition: "border 150ms ease-out 0s !important",
