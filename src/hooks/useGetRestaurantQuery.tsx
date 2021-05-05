@@ -9,30 +9,31 @@ import { useGetRestaurantQueryFetchPolicy } from "./useGetRestaurantQueryFetchPo
 const logger = new Logger("useGetRestaurantQuery");
 
 export const useGetRestaurantQuery = (restaurantID: string, skip?: boolean) => {
-    const fetchPolicy = useGetRestaurantQueryFetchPolicy();
+    // const fetchPolicy = useGetRestaurantQueryFetchPolicy();
 
-    const { data: _data, error, loading, refetch, networkStatus } = useQuery(GET_RESTAURANT, {
+    const cachedData = useRef<IGET_RESTAURANT | null>(null);
+
+    // const { data: _data, error, loading, refetch, networkStatus } = useQuery(GET_RESTAURANT, {
+    const { data: _data, error, loading } = useQuery(GET_RESTAURANT, {
         variables: {
             restaurantID: restaurantID,
         },
         skip: skip,
-        fetchPolicy: fetchPolicy,
+        fetchPolicy: "cache-and-network",
         notifyOnNetworkStatusChange: true,
     });
 
     let data = null;
     if (!error && !loading) {
         data = _data.getRestaurant as IGET_RESTAURANT;
+        cachedData.current = data;
     }
     logger.debug("RestaurantID: ", restaurantID);
 
-    const refetching = networkStatus === 4;
+    // const refetching = networkStatus === 4;
 
-    return {
-        data,
-        error,
-        loading,
-        refetch,
-        refetching,
-    };
+    const dataReturn = cachedData.current;
+    const loadingReturn = cachedData.current ? false : loading;
+
+    return { data: dataReturn, error: error, loading: loadingReturn };
 };

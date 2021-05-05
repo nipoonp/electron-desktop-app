@@ -1,8 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Title1Font } from "../tabin/components/fonts";
 
-const electron = window.require("electron");
-const ipcRenderer = electron.ipcRenderer;
+let electron: any;
+let ipcRenderer: any;
+try {
+    electron = window.require("electron");
+    ipcRenderer = electron.ipcRenderer;
+} catch (e) {}
 
 type ContextProps = {};
 
@@ -18,10 +22,11 @@ const ElectronProvider = (props: { children: React.ReactNode }) => {
     };
 
     useEffect(() => {
-        ipcRenderer.on("ELECTRON_UPDATER", (event: any, arg: string) => {
-            console.log("ELECTRON_UPDATER:", arg);
-            setElectronUpdaterMessage(arg);
-        });
+        ipcRenderer &&
+            ipcRenderer.on("ELECTRON_UPDATER", (event: any, arg: string) => {
+                console.log("ELECTRON_UPDATER:", arg);
+                setElectronUpdaterMessage(arg);
+            });
     }, []);
 
     useEffect(() => {

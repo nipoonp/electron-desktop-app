@@ -21,8 +21,12 @@ import { ConfigureNewEftpos } from "./page/configureNewEftpos";
 import { TableNumber } from "./page/tableNumber";
 import { IGET_USER_RESTAURANT_REGISTER } from "../graphql/customQueries";
 
-const electron = window.require("electron");
-const ipcRenderer = electron.ipcRenderer;
+let electron: any;
+let ipcRenderer: any;
+try {
+    electron = window.require("electron");
+    ipcRenderer = electron.ipcRenderer;
+} catch (e) {}
 
 // reset scroll position on change of route
 // https://stackoverflow.com/a/46868707/11460922
@@ -73,7 +77,7 @@ const Routes = () => {
     useEffect(() => {
         document.body.onmousedown = function() {
             timerId = setTimeout(() => {
-                ipcRenderer.send("SHOW_CONTEXT_MENU");
+                ipcRenderer && ipcRenderer.send("SHOW_CONTEXT_MENU");
             }, 4000);
         };
 
@@ -81,24 +85,25 @@ const Routes = () => {
             clearTimeout(timerId);
         };
 
-        ipcRenderer.on("CONTEXT_MENU_COMMAND", (e: any, command: any) => {
-            switch (command) {
-                case "kioskMode":
-                    history.push(beginOrderPath);
-                    break;
-                case "configureEftposAndPrinters":
-                    history.push(configureNewEftposPath);
-                    break;
-                case "configureRegister":
-                    history.push(registerListPath);
-                    break;
-                case "logout":
-                    logout();
-                    break;
-                default:
-                    break;
-            }
-        });
+        ipcRenderer &&
+            ipcRenderer.on("CONTEXT_MENU_COMMAND", (e: any, command: any) => {
+                switch (command) {
+                    case "kioskMode":
+                        history.push(beginOrderPath);
+                        break;
+                    case "configureEftposAndPrinters":
+                        history.push(configureNewEftposPath);
+                        break;
+                    case "configureRegister":
+                        history.push(registerListPath);
+                        break;
+                    case "logout":
+                        logout();
+                        break;
+                    default:
+                        break;
+                }
+            });
     }, []);
 
     return (
