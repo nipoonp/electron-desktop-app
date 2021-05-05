@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useHistory } from "react-router";
 import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
@@ -17,6 +17,8 @@ import { ICartProduct } from "../../model/model";
 import { SizedBox } from "../../tabin/components/sizedBox";
 import { isItemAvailable, isItemSoldOut } from "../../util/isItemAvailable";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
+//@ts-ignore as it does not have the types
+import { Shake } from "reshake";
 
 const styles = require("./restaurant.module.css");
 
@@ -34,6 +36,27 @@ export const Restaurant = (props: { restaurantID: string }) => {
     const [showProductModal, setShowProductModal] = useState(false);
     const [showItemAddedModal, setShowItemAddedModal] = useState(false);
     const [showSearchProductModal, setShowSearchProductModal] = useState(false);
+
+    const [isShakeAnimationActive, setIsShakeAnimationActive] = useState(false);
+    const startShakeAfterSeconds = 30;
+    const shakeButtonDurationSeconds = 5;
+    const userOnPageDuration: React.MutableRefObject<number> = useRef(1);
+
+    useEffect(() => {
+        const ticker = setInterval(() => {
+            if (userOnPageDuration.current % startShakeAfterSeconds == 0) {
+                setIsShakeAnimationActive(true);
+            }
+
+            if (userOnPageDuration.current % startShakeAfterSeconds == shakeButtonDurationSeconds) {
+                setIsShakeAnimationActive(false);
+            }
+
+            userOnPageDuration.current++;
+        }, 1000);
+
+        return () => clearTimeout(ticker);
+    }, []);
 
     React.useEffect(() => {
         if (restaurant) {
@@ -229,22 +252,26 @@ export const Restaurant = (props: { restaurantID: string }) => {
     );
 
     const menuSearchProduct = (
-        <div
-            style={{
-                // height: "85px",
-                padding: "30px 24px",
-                backgroundColor: "#e0e0e0",
-                display: "flex",
-                alignItems: "center",
-            }}
-            onClick={() => {
-                setShowSearchProductModal(true);
-            }}
-        >
-            <img style={{ height: "24px" }} src={`${getPublicCloudFrontDomainName()}/images/search-icon.png`} />
-            <SizedBox width="10px" />
-            <div>Search</div>
-        </div>
+        <>
+            <Shake active={isShakeAnimationActive} h={5} v={5} r={3} dur={300} int={10} max={100} fixed={true} fixedStop={false} freez={false}>
+                <div
+                    style={{
+                        // height: "85px",
+                        padding: "30px 24px",
+                        backgroundColor: "#e0e0e0",
+                        display: "flex",
+                        alignItems: "center",
+                    }}
+                    onClick={() => {
+                        setShowSearchProductModal(true);
+                    }}
+                >
+                    <img style={{ height: "24px" }} src={`${getPublicCloudFrontDomainName()}/images/search-icon.png`} />
+                    <SizedBox width="10px" />
+                    <div>Search</div>
+                </div>
+            </Shake>
+        </>
     );
 
     const menuProducts = (
