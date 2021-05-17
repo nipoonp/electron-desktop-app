@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useHistory } from "react-router-dom";
@@ -29,6 +29,7 @@ import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { TextAreaV2 } from "../../tabin/components/textAreav2";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
+import { toast } from "../../tabin/components/toast";
 
 const styles = require("./checkout.module.css");
 
@@ -70,6 +71,9 @@ export const Checkout = () => {
     const [paymentOutcomeDelayedOrderNumber, setPaymentOutcomeDelayedOrderNumber] = useState<string | null>(null);
     const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(10);
     const [processOrderError, setProcessOrderError] = useState<string | null>(null);
+
+    const isUserFocusedOnEmailAddressInput = useRef(false);
+
     const { register } = useRegister();
 
     if (!register) {
@@ -261,6 +265,10 @@ export const Checkout = () => {
     const beginPaymentOutcomeApprovedTimeout = () => {
         (function myLoop(i) {
             setTimeout(() => {
+                if (isUserFocusedOnEmailAddressInput.current) {
+                    i = 30;
+                    isUserFocusedOnEmailAddressInput.current = false;
+                }
                 i--;
                 setPaymentOutcomeApprovedRedirectTimeLeft(i);
 
@@ -566,13 +574,12 @@ export const Checkout = () => {
         </>
     );
 
+    const onFocusEmailAddressInput = () => {
+        isUserFocusedOnEmailAddressInput.current = true;
+    };
+
     const paymentPayLater = () => (
         <>
-            {/* <img
-        src={require("../../images/transaction-approved.png")}
-        height="150px"
-      />
-      <Space4 /> */}
             <Title4Font>All Done!</Title4Font>
             <Space4 />
             <Title2Font>Please pay later at the counter.</Title2Font>
@@ -580,8 +587,32 @@ export const Checkout = () => {
             <NormalFont>Your order number is</NormalFont>
             <Space1 />
             <Title1Font style={{ fontSize: "200px", lineHeight: "256px" }}>{paymentOutcomeDelayedOrderNumber}</Title1Font>
+            <Separator6 />
+            <Space6 />
+            <Title3Font>Would you like to help save the planet? Get a e-receipt.</Title3Font>
             <Space4 />
-            <GrayColor>
+            <div style={{ display: "flex", alignItems: "center" }}>
+                <div style={{ flex: 1, paddingRight: "12px", width: "750px", height: "44px" }}>
+                    <TextAreaV2 placeholder={"Email Address..."} onChange={onNotesChange} value={notes || ""} onFocus={onFocusEmailAddressInput} />
+                </div>
+                <KioskButton
+                    onClick={() => {
+                        toast.success("Receipt successfully sent to your email");
+                    }}
+                    style={{ padding: "12px 24px" }}
+                >
+                    <NormalFont>Send</NormalFont>
+                </KioskButton>
+            </div>
+            <Space3 />
+            <NormalFont>
+                No, I prefer a physical copy.{" "}
+                <Link>
+                    <NormalFont>Click here to print</NormalFont>
+                </Link>{" "}
+            </NormalFont>
+            <Space3 />
+            <GrayColor style={{ marginTop: "auto" }}>
                 <NormalFont>
                     Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
                     {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
@@ -593,11 +624,6 @@ export const Checkout = () => {
 
     const paymentAccepted = () => (
         <>
-            {/* <img
-        src={require("../../images/transaction-approved.png")}
-        height="150px"
-      />
-      <Space4 /> */}
             <Title4Font>All Done!</Title4Font>
             <Space4 />
             <Title2Font>Transaction Accepted!</Title2Font>
@@ -605,8 +631,32 @@ export const Checkout = () => {
             <NormalFont>Your order number is</NormalFont>
             <Space1 />
             <Title1Font style={{ fontSize: "200px", lineHeight: "256px" }}>{paymentOutcomeDelayedOrderNumber}</Title1Font>
+            <Separator6 />
+            <Space6 />
+            <Title3Font>Would you like to help save the planet? Get a e-receipt.</Title3Font>
             <Space4 />
-            <GrayColor>
+            <div style={{ display: "flex", alignItems: "center" }}>
+                <div style={{ flex: 1, paddingRight: "12px", width: "750px", height: "44px" }}>
+                    <TextAreaV2 placeholder={"Email Address..."} onChange={onNotesChange} value={notes || ""} onFocus={onFocusEmailAddressInput} />
+                </div>
+                <KioskButton
+                    onClick={() => {
+                        toast.success("Receipt successfully sent to your email");
+                    }}
+                    style={{ padding: "12px 24px" }}
+                >
+                    <NormalFont>Send</NormalFont>
+                </KioskButton>
+            </div>
+            <Space3 />
+            <NormalFont>
+                No, I prefer a physical copy.{" "}
+                <Link>
+                    <NormalFont>Click here to print</NormalFont>
+                </Link>
+            </NormalFont>
+            <Space3 />
+            <GrayColor style={{ marginTop: "auto" }}>
                 <NormalFont>
                     Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
                     {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
@@ -694,7 +744,7 @@ export const Checkout = () => {
                         alignItems: "center",
                         flexDirection: "column",
                         textAlign: "center",
-                        padding: "128px 256px",
+                        padding: "128px 200px",
                     }}
                 >
                     {getActivePaymentModalComponent()}
