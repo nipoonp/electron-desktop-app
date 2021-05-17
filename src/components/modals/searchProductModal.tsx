@@ -23,7 +23,6 @@ interface IFilteredProduct {
 interface ISearchProductModalProps {
     isOpen: boolean;
     onClose: () => void;
-    isProductUpdate: boolean;
     onClickSearchProduct: (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => void;
 }
 

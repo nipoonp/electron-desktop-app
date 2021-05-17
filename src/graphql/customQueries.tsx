@@ -258,6 +258,7 @@ export const GET_RESTAURANT = gql`
                                 name
                                 description
                                 price
+                                totalQuantitySold
                                 soldOut
                                 soldOutDate
                                 image {
@@ -316,6 +317,7 @@ export const GET_RESTAURANT = gql`
                                                         id
                                                         name
                                                         price
+                                                        totalQuantitySold
                                                         soldOut
                                                         soldOutDate
                                                     }
@@ -462,6 +464,7 @@ export interface IGET_RESTAURANT_PRODUCT {
     name: string;
     description: string;
     price: number;
+    totalQuantitySold: number;
     soldOut: boolean;
     soldOutDate: string;
     image?: IS3Image;
@@ -500,6 +503,7 @@ export interface IGET_RESTAURANT_MODIFIER {
     id: string;
     name: string;
     price: number;
+    totalQuantitySold: number;
     soldOut: boolean;
     soldOutDate: string;
 }
