@@ -62,9 +62,14 @@ const logout = () => {
         // need to clear cognitoIdentityID in localstorage after signing out
 
         // Keep the local storage registerKey
+        const selectedRestaurantId = localStorage.getItem("selectedRestaurantId");
         const registerKey = localStorage.getItem("registerKey");
 
         localStorage.clear();
+
+        if (selectedRestaurantId) {
+            localStorage.setItem("selectedRestaurantId", selectedRestaurantId);
+        }
 
         if (registerKey) {
             localStorage.setItem("registerKey", registerKey);

@@ -8,7 +8,7 @@ import { useGetRestaurantQueryFetchPolicy } from "./useGetRestaurantQueryFetchPo
 
 const logger = new Logger("useGetRestaurantQuery");
 
-export const useGetRestaurantQuery = (restaurantID: string, skip?: boolean) => {
+export const useGetRestaurantQuery = (restaurantId: string, skip?: boolean) => {
     // const fetchPolicy = useGetRestaurantQueryFetchPolicy();
 
     const cachedData = useRef<IGET_RESTAURANT | null>(null);
@@ -16,7 +16,7 @@ export const useGetRestaurantQuery = (restaurantID: string, skip?: boolean) => {
     // const { data: _data, error, loading, refetch, networkStatus } = useQuery(GET_RESTAURANT, {
     const { data: _data, error, loading } = useQuery(GET_RESTAURANT, {
         variables: {
-            restaurantID: restaurantID,
+            restaurantId: restaurantId,
         },
         skip: skip,
         fetchPolicy: "cache-and-network",
@@ -28,7 +28,7 @@ export const useGetRestaurantQuery = (restaurantID: string, skip?: boolean) => {
         data = _data.getRestaurant as IGET_RESTAURANT;
         cachedData.current = data;
     }
-    logger.debug("RestaurantID: ", restaurantID);
+    logger.debug("RestaurantID: ", restaurantId);
 
     // const refetching = networkStatus === 4;
 

@@ -68,35 +68,13 @@ export interface IGET_USER {
     lastName: string;
     email: string;
     restaurants: {
-        items: {
-            id: string;
-            name: string;
-            advertisements: { items: IGET_USER_RESTAURANT_ADVERTISEMENT[] };
-            registers: { items: IGET_USER_RESTAURANT_REGISTER[] };
-        }[];
+        items: IGET_USER_RESTAURANT[];
     };
 }
 
-export interface IGET_USER_RESTAURANT_ADVERTISEMENT {
+export interface IGET_USER_RESTAURANT {
     id: string;
     name: string;
-    content: IS3Image;
-}
-
-export interface IGET_USER_RESTAURANT_REGISTER {
-    id: string;
-    active: boolean;
-    name: string;
-    enableTableFlags: boolean;
-    enablePayLater: boolean;
-    type: string;
-    eftposProvider: string;
-    eftposIpAddress: string;
-    eftposPortNumber: string;
-    orderNumberSuffix: string;
-    printers: {
-        items: IGET_USER_REGISTER_PRINTER[];
-    };
 }
 
 export interface IGET_USER_REGISTER_PRINTER {
@@ -118,8 +96,8 @@ export interface IGET_USER_REGISTER_PRINTER_IGNORE_PRODUCT {
 }
 
 export const GET_RESTAURANT = gql`
-    query GetRestaurant($restaurantID: ID!) {
-        getRestaurant(id: $restaurantID) {
+    query GetRestaurant($restaurantId: ID!) {
+        getRestaurant(id: $restaurantId) {
             id
             name
             description

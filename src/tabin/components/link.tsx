@@ -58,12 +58,12 @@ export const Link = (props: {
 
 export const NoWrapLink = (props: {
     children: React.ReactNode;
-    onClick?: ((event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void) | undefined;
-    href?: string | undefined;
-    style?: React.CSSProperties | undefined;
-    destructive?: boolean | undefined;
-    color?: string | undefined;
-    hoverColor?: string | undefined;
+    onClick?: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void;
+    href?: string;
+    style?: React.CSSProperties;
+    destructive?: boolean;
+    color?: string;
+    hoverColor?: string;
 }) => {
     return (
         <Link

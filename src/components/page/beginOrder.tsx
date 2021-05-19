@@ -7,22 +7,19 @@ import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
 import { Title3Font, Title2Font } from "../../tabin/components/fonts";
 import { SizedBox } from "../../tabin/components/sizedBox";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
-import { IGET_USER_RESTAURANT_ADVERTISEMENT } from "../../graphql/customQueries";
+import { IGET_RESTAURANT_ADVERTISEMENT } from "../../graphql/customQueries";
+import { useRestaurant } from "../../context/restaurant-context";
 
 const styles = require("./beginOrder.module.css");
 
 export const BeginOrder = (props: {}) => {
-    const { user } = useUser();
+    const { restaurant } = useRestaurant();
 
-    if (!user) {
-        throw "User must log in!";
+    if (!restaurant) {
+        return <div>This user has not selected any restaurant</div>;
     }
 
-    if (user.restaurants.items.length == 0) {
-        return <div>This user is not an owner of any restaurants</div>;
-    }
-
-    const ads = user && user.restaurants.items[0].advertisements.items;
+    const ads = restaurant && restaurant.advertisements.items;
 
     return (
         <>
@@ -39,12 +36,12 @@ export const BeginOrder = (props: {}) => {
     );
 };
 
-const BeginOrderAdvertisements = (props: { ads: IGET_USER_RESTAURANT_ADVERTISEMENT[] }) => {
+const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] }) => {
     const history = useHistory();
-    const { user } = useUser();
 
     const numberOfAds = props.ads.length;
     const [currentAd, setCurrentAd] = useState(0);
+    const { restaurant } = useRestaurant();
 
     useEffect(() => {
         if (numberOfAds <= 1) return;
@@ -58,8 +55,8 @@ const BeginOrderAdvertisements = (props: { ads: IGET_USER_RESTAURANT_ADVERTISEME
         };
     }, []);
 
-    if (!user) {
-        throw "User must log in!";
+    if (!restaurant) {
+        return <div>This user has not selected any restaurant</div>;
     }
 
     return (
@@ -78,9 +75,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_USER_RESTAURANT_ADVERTISEME
                         overflow: "hidden",
                     }}
                     onClick={() => {
-                        const userRestaurantId = user.restaurants.items[0].id;
-
-                        history.push(restaurantPath + "/" + userRestaurantId);
+                        history.push(restaurantPath + "/" + restaurant.id);
                     }}
                 >
                     <div
@@ -127,28 +122,31 @@ const BeginOrderAdvertisements = (props: { ads: IGET_USER_RESTAURANT_ADVERTISEME
                         pointerEvents: "none",
                     }}
                 >
-                    {user.restaurants.items[0].advertisements.items.map((advertisement, index) => (
-                        <div
-                            key={advertisement.id}
-                            className={numberOfAds > 1 ? styles.slideAnimation : null}
-                            style={{
-                                display: currentAd == index ? "flex" : "none",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                border: "1px solid transparent",
-                                borderRadius: "10px",
-                                position: "absolute",
-                                width: "100%",
-                                height: "100vh",
-                                padding: "332px 42px 148px 42px",
-                            }}
-                        >
-                            <img
-                                src={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${advertisement.content.key}`}
-                                style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain", borderRadius: "10px" }}
-                            />
-                        </div>
-                    ))}
+                    {restaurant &&
+                        restaurant.advertisements.items.map((advertisement, index) => (
+                            <div
+                                key={advertisement.id}
+                                className={numberOfAds > 1 ? styles.slideAnimation : null}
+                                style={{
+                                    display: currentAd == index ? "flex" : "none",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    border: "1px solid transparent",
+                                    borderRadius: "10px",
+                                    position: "absolute",
+                                    width: "100%",
+                                    height: "100vh",
+                                    padding: "332px 42px 148px 42px",
+                                }}
+                            >
+                                <img
+                                    src={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${
+                                        advertisement.content.key
+                                    }`}
+                                    style={{ maxHeight: "100%", maxWidth: "100%", objectFit: "contain", borderRadius: "10px" }}
+                                />
+                            </div>
+                        ))}
                 </div>
             </div>
         </KioskPageWrapper>
@@ -157,10 +155,10 @@ const BeginOrderAdvertisements = (props: { ads: IGET_USER_RESTAURANT_ADVERTISEME
 
 const BeginOrderDefault = () => {
     const history = useHistory();
-    const { user } = useUser();
+    const { restaurant } = useRestaurant();
 
-    if (!user) {
-        throw "User must log in!";
+    if (!restaurant) {
+        return <div>This user has not selected any restaurant</div>;
     }
 
     return (
@@ -187,9 +185,7 @@ const BeginOrderDefault = () => {
                                 flexDirection: "column",
                             }}
                             onClick={() => {
-                                const userRestaurantId = user.restaurants.items[0].id;
-
-                                history.push(restaurantPath + "/" + userRestaurantId);
+                                history.push(restaurantPath + "/" + restaurant.id);
                             }}
                         >
                             <div style={{ fontSize: "128px" }}>ORDER</div>
