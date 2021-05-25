@@ -8,7 +8,7 @@ import { Link } from "../../tabin/components/link";
 import { GrayColor, PrimaryColor } from "../../tabin/components/colors";
 import { convertCentsToDollars } from "../../util/moneyConversion";
 import { useMutation } from "react-apollo-hooks";
-import { PROCESS_ORDER } from "../../graphql/customMutations";
+import { CREATE_ORDER } from "../../graphql/customMutations";
 import { IGET_RESTAURANT_REGISTER_PRINTER, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
 import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath } from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/shoppingBasketIcon";
@@ -30,6 +30,7 @@ import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { TextAreaV2 } from "../../tabin/components/textAreav2";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { toast } from "../../tabin/components/toast";
+import { toLocalISOString } from "../../util/dateTime";
 
 const styles = require("./checkout.module.css");
 
@@ -52,7 +53,7 @@ export const Checkout = () => {
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
 
-    const processOrderMutation = useMutation(PROCESS_ORDER, {
+    const createOrderMutation = useMutation(CREATE_ORDER, {
         update: (proxy, mutationResult) => {
             logger.debug("mutation result: ", mutationResult);
         },
@@ -70,7 +71,7 @@ export const Checkout = () => {
     const [paymentOutcomeErrorMessage, setPaymentOutcomeErrorMessage] = useState<string | null>(null);
     const [paymentOutcomeDelayedOrderNumber, setPaymentOutcomeDelayedOrderNumber] = useState<string | null>(null);
     const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(10);
-    const [processOrderError, setProcessOrderError] = useState<string | null>(null);
+    const [createOrderError, setCreateOrderError] = useState<string | null>(null);
 
     const isUserFocusedOnEmailAddressInput = useRef(false);
 
@@ -161,7 +162,7 @@ export const Checkout = () => {
     };
 
     // submit callback
-    const processOrder = async (paid: boolean, orderNumber: string) => {
+    const createOrder = async (paid: boolean, orderNumber: string) => {
         if (!user) {
             throw "Invalid user";
         }
@@ -180,20 +181,27 @@ export const Checkout = () => {
 
         try {
             const variables = {
-                orderRestaurantId: restaurant.id,
-                orderUserId: user.id,
-                notes: notes,
-                products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
+                status: "NEW",
+                paid: paid,
                 type: orderType,
                 number: orderNumber,
                 table: tableNumber,
+                notes: notes,
                 total: total,
-                paid: paid,
                 registerId: register.id,
+                products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
+                placedAt: toLocalISOString(new Date()),
+                placedAtUtc: new Date().toISOString(),
+                orderUserId: user.id,
+                orderRestaurantId: restaurant.id,
             };
 
             if (tableNumber == null || tableNumber == "") {
                 delete variables.table;
+            }
+
+            if (notes == null || notes == "") {
+                delete variables.notes;
             }
 
             variables.products.forEach((product) => {
@@ -205,13 +213,17 @@ export const Checkout = () => {
                     delete product.image;
                 }
 
+                if (product.notes == null || product.notes == "") {
+                    delete product.notes;
+                }
+
                 if (product.category.image == null) {
                     delete product.category.image;
                 }
             });
 
             // process order
-            const res = await processOrderMutation({
+            const res = await createOrderMutation({
                 variables: variables,
             });
 
@@ -338,7 +350,7 @@ export const Checkout = () => {
                 printReceipts(orderNumber, paid, eftposReceipt);
             }
 
-            await processOrder(paid, orderNumber);
+            await createOrder(paid, orderNumber);
         } catch (e) {
             throw e.message;
         }
@@ -378,7 +390,7 @@ export const Checkout = () => {
                 try {
                     await onSubmitOrder(true);
                 } catch (e) {
-                    setProcessOrderError(e);
+                    setCreateOrderError(e);
                 }
             } else if (transactionOutcome == SmartpayTransactionOutcome.Declined) {
                 setPaymentOutcome(CheckoutTransactionOutcome.Fail);
@@ -412,7 +424,7 @@ export const Checkout = () => {
                 try {
                     await onSubmitOrder(true, eftposReceipt);
                 } catch (e) {
-                    setProcessOrderError(e);
+                    setCreateOrderError(e);
                 }
             } else if (transactionOutcome == VerifoneTransactionOutcome.ApprovedWithSignature) {
                 // We should not come in here if its on kiosk mode, unattended mode for Verifone
@@ -423,7 +435,7 @@ export const Checkout = () => {
                 // try {
                 //     await onSubmitOrder(true);
                 // } catch (e) {
-                //     setProcessOrderError(e);
+                //     setCreateOrderError(e);
                 // }
             } else if (transactionOutcome == VerifoneTransactionOutcome.Cancelled) {
                 setPaymentOutcome(CheckoutTransactionOutcome.Fail);
@@ -537,7 +549,7 @@ export const Checkout = () => {
         try {
             await onSubmitOrder(false);
         } catch (e) {
-            setProcessOrderError(e);
+            setCreateOrderError(e);
         }
     };
 
@@ -686,13 +698,13 @@ export const Checkout = () => {
         </>
     );
 
-    const processOrderFailed = () => (
+    const createOrderFailed = () => (
         <>
             <Title4Font>Oops! Something went wrong.</Title4Font>
             <Space4 />
             <NormalFont>Internal Server Error! Please contact a Tabin representative!</NormalFont>
             <Space2 />
-            <NormalFont>{processOrderError}</NormalFont>
+            <NormalFont>{createOrderError}</NormalFont>
             <Space2 />
             <KioskButton
                 style={{
@@ -713,8 +725,8 @@ export const Checkout = () => {
             return paymentFailed(paymentOutcomeErrorMessage);
         }
 
-        if (processOrderError) {
-            return processOrderFailed();
+        if (createOrderError) {
+            return createOrderFailed();
         }
 
         if (paymentOutcome == null) {
