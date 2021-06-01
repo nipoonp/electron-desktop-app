@@ -429,7 +429,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
                             }}
                             className={styles.categoriesWrapper}
                         >
-                            {restaurant.image && <RestaurantImage image={restaurant.image} />}
+                            {restaurant.logo && <RestaurantLogo image={restaurant.logo} />}
                             {menuSearchProduct}
                             {menuMostSoldCategory}
                             {menuCategories}
@@ -454,7 +454,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
     );
 };
 
-const RestaurantImage = (props: { image: IS3Object }) => {
+const RestaurantLogo = (props: { image: IS3Object }) => {
     return (
         <img
             src={`${getCloudFrontDomainName()}/protected/${props.image.identityPoolId}/${props.image.key}`}

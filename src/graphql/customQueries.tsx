@@ -137,7 +137,7 @@ export const GET_RESTAURANT = gql`
                     closingTime
                 }
             }
-            image {
+            logo {
                 key
                 bucket
                 region
@@ -325,7 +325,7 @@ export interface IGET_RESTAURANT {
         formattedAddress: string;
     };
     operatingHours: IGET_RESTAURANT_OPERATING_HOURS;
-    image?: IS3Object;
+    logo?: IS3Object;
     advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
     registers: { items: IGET_RESTAURANT_REGISTER[] };
     categories: {
