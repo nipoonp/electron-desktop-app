@@ -1,4 +1,4 @@
-import { IS3Image } from "../graphql/customQueries";
+import { IS3Object } from "../graphql/customQueries";
 
 export interface ICognitoUser {
     attributes: {
@@ -20,7 +20,7 @@ export interface ICartProduct {
     id: string;
     name: string;
     price: number;
-    image: IS3Image | null;
+    image: IS3Object | null;
     quantity: number;
     notes: string | null;
     category: ICartCategory;
@@ -30,7 +30,7 @@ export interface ICartProduct {
 export interface ICartCategory {
     id: string;
     name: string;
-    image: IS3Image | null;
+    image: IS3Object | null;
 }
 
 export interface ICartModifierGroup {

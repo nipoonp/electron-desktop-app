@@ -48,6 +48,7 @@ export const KioskPageWrapper = (props: IProps) => {
 
     return (
         <>
+            <link rel="stylesheet" type="text/css" href={"https://tabin-public.s3-ap-southeast-2.amazonaws.com/forDemoDeleteLater/test.css"} />
             {/* <h1>{`x: ${x}; y: ${y};`}</h1> */}
             <div
                 // style={{ cursor: "none" }}

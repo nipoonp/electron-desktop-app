@@ -7,7 +7,7 @@ import { checkoutPath, beginOrderPath, orderTypePath } from "../main";
 import { convertCentsToDollars } from "../../util/moneyConversion";
 import { ProductModal } from "../modals/product";
 import { SearchProductModal } from "../modals/searchProductModal";
-import { IGET_RESTAURANT_PRODUCT, IGET_RESTAURANT_CATEGORY, IS3Image } from "../../graphql/customQueries";
+import { IGET_RESTAURANT_PRODUCT, IGET_RESTAURANT_CATEGORY, IS3Object } from "../../graphql/customQueries";
 import { useCart } from "../../context/cart-context";
 import { Space2, Space5 } from "../../tabin/components/spaces";
 import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
@@ -334,6 +334,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
         <div style={{ width: "100%" }}>
             {!selectedCategory && (
                 <>
+                    <div className="hello-text">Hello</div>
                     <Title3Font style={{ fontSize: "36px" }}>Most Popular</Title3Font>
                     <Space5 />
                     <div
@@ -453,7 +454,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
     );
 };
 
-const RestaurantImage = (props: { image: IS3Image }) => {
+const RestaurantImage = (props: { image: IS3Object }) => {
     return (
         <img
             src={`${getCloudFrontDomainName()}/protected/${props.image.identityPoolId}/${props.image.key}`}

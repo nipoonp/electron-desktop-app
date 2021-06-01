@@ -325,7 +325,7 @@ export interface IGET_RESTAURANT {
         formattedAddress: string;
     };
     operatingHours: IGET_RESTAURANT_OPERATING_HOURS;
-    image?: IS3Image;
+    image?: IS3Object;
     advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
     registers: { items: IGET_RESTAURANT_REGISTER[] };
     categories: {
@@ -336,7 +336,7 @@ export interface IGET_RESTAURANT {
 export interface IGET_RESTAURANT_ADVERTISEMENT {
     id: string;
     name: string;
-    content: IS3Image;
+    content: IS3Object;
 }
 
 export interface IGET_RESTAURANT_REGISTER {
@@ -424,7 +424,7 @@ export interface IGET_RESTAURANT_CATEGORY {
     id: string;
     name: string;
     displaySequence: number;
-    image?: IS3Image;
+    image?: IS3Object;
     availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
     products: {
         items: IGET_RESTAURANT_PRODUCT_LINK[];
@@ -445,7 +445,7 @@ export interface IGET_RESTAURANT_PRODUCT {
     totalQuantitySold: number;
     soldOut: boolean;
     soldOutDate: string;
-    image?: IS3Image;
+    image?: IS3Object;
     availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
     modifierGroups: {
         items: IGET_RESTAURANT_MODIFIER_GROUP_LINK[];
@@ -486,7 +486,7 @@ export interface IGET_RESTAURANT_MODIFIER {
     soldOutDate: string;
 }
 
-export interface IS3Image {
+export interface IS3Object {
     key: string;
     bucket: string;
     region: string;
