@@ -1,9 +1,8 @@
 import React from "react";
-import { S3Image } from "aws-amplify-react";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
 
-export const RestaurantImage = (props: {
-    image?: {
+export const RestaurantLogo = (props: {
+    logo?: {
         key: string;
         bucket: string;
         region: string;
@@ -16,9 +15,9 @@ export const RestaurantImage = (props: {
 }) => {
     return (
         <>
-            {props.image ? (
+            {props.logo ? (
                 <img
-                    src={`${getCloudFrontDomainName()}/protected/${props.image.identityPoolId}/${props.image.key}`}
+                    src={`${getCloudFrontDomainName()}/protected/${props.logo.identityPoolId}/${props.logo.key}`}
                     style={{
                         width: props.width,
                         height: props.height,

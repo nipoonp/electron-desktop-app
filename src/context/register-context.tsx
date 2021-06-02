@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useMutation } from "react-apollo-hooks";
 import { UPDATE_REGISTER_KEY } from "../graphql/customMutations";
-import { useUser } from "./user-context";
-import { IGET_USER_RESTAURANT_REGISTER } from "../graphql/customQueries";
+import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
+import { useRestaurant } from "./restaurant-context";
 
 type ContextProps = {
-    register: IGET_USER_RESTAURANT_REGISTER | null | undefined;
+    register: IGET_RESTAURANT_REGISTER | null;
     connectRegister: (key: string) => Promise<any>;
     disconnectRegister: (key: string) => Promise<any>;
 };
@@ -22,42 +22,38 @@ const RegisterContext = React.createContext<ContextProps>({
 
 const RegisterProvider = (props: { children: React.ReactNode }) => {
     const [registerKey, _setRegisterKey] = useState<string | null>(null);
-    const [register, setRegister] = useState<IGET_USER_RESTAURANT_REGISTER | null>();
+    const [register, setRegister] = useState<IGET_RESTAURANT_REGISTER | null>(null);
 
-    const { user } = useUser();
+    const { restaurant } = useRestaurant();
 
     useEffect(() => {
         const storedRegisterKey = localStorage.getItem("registerKey");
 
-        let matchingRegister: IGET_USER_RESTAURANT_REGISTER | null = null;
+        let matchingRegister: IGET_RESTAURANT_REGISTER | null = null;
 
-        user &&
-            user.restaurants.items.length > 0 &&
-            user.restaurants.items[0].registers.items.forEach((r) => {
+        restaurant &&
+            restaurant.registers.items.forEach((r) => {
                 if (storedRegisterKey == r.id && r.active == true) {
                     matchingRegister = r;
-
-                    console.log(r);
                 }
             });
 
         setRegister(matchingRegister);
-    }, [user, registerKey]);
+    }, [restaurant, registerKey]);
 
     const updateRegisterKeyMutation = useMutation(UPDATE_REGISTER_KEY, {
         update: (proxy, mutationResult) => {},
     });
 
     const connectRegister = (key: string) => {
-        if (!user) throw "User is not valid";
-
         let keyValid = false;
 
-        user.restaurants.items[0].registers.items.forEach((register) => {
-            if (key == register.id && register.active == false) {
-                keyValid = true;
-            }
-        });
+        restaurant &&
+            restaurant.registers.items.forEach((register) => {
+                if (key == register.id && register.active == false) {
+                    keyValid = true;
+                }
+            });
 
         if (keyValid) {
             localStorage.setItem("registerKey", key);

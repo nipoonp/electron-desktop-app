@@ -68,35 +68,13 @@ export interface IGET_USER {
     lastName: string;
     email: string;
     restaurants: {
-        items: {
-            id: string;
-            name: string;
-            advertisements: { items: IGET_USER_RESTAURANT_ADVERTISEMENT[] };
-            registers: { items: IGET_USER_RESTAURANT_REGISTER[] };
-        }[];
+        items: IGET_USER_RESTAURANT[];
     };
 }
 
-export interface IGET_USER_RESTAURANT_ADVERTISEMENT {
+export interface IGET_USER_RESTAURANT {
     id: string;
     name: string;
-    content: IS3Image;
-}
-
-export interface IGET_USER_RESTAURANT_REGISTER {
-    id: string;
-    active: boolean;
-    name: string;
-    enableTableFlags: boolean;
-    enablePayLater: boolean;
-    type: string;
-    eftposProvider: string;
-    eftposIpAddress: string;
-    eftposPortNumber: string;
-    orderNumberSuffix: string;
-    printers: {
-        items: IGET_USER_REGISTER_PRINTER[];
-    };
 }
 
 export interface IGET_USER_REGISTER_PRINTER {
@@ -118,8 +96,8 @@ export interface IGET_USER_REGISTER_PRINTER_IGNORE_PRODUCT {
 }
 
 export const GET_RESTAURANT = gql`
-    query GetRestaurant($restaurantID: ID!) {
-        getRestaurant(id: $restaurantID) {
+    query GetRestaurant($restaurantId: ID!) {
+        getRestaurant(id: $restaurantId) {
             id
             name
             description
@@ -159,7 +137,13 @@ export const GET_RESTAURANT = gql`
                     closingTime
                 }
             }
-            image {
+            logo {
+                key
+                bucket
+                region
+                identityPoolId
+            }
+            customStyleSheet {
                 key
                 bucket
                 region
@@ -258,6 +242,7 @@ export const GET_RESTAURANT = gql`
                                 name
                                 description
                                 price
+                                totalQuantitySold
                                 soldOut
                                 soldOutDate
                                 image {
@@ -316,6 +301,7 @@ export const GET_RESTAURANT = gql`
                                                         id
                                                         name
                                                         price
+                                                        totalQuantitySold
                                                         soldOut
                                                         soldOutDate
                                                     }
@@ -345,7 +331,8 @@ export interface IGET_RESTAURANT {
         formattedAddress: string;
     };
     operatingHours: IGET_RESTAURANT_OPERATING_HOURS;
-    image?: IS3Image;
+    logo?: IS3Object;
+    customStyleSheet?: IS3Object;
     advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
     registers: { items: IGET_RESTAURANT_REGISTER[] };
     categories: {
@@ -356,7 +343,7 @@ export interface IGET_RESTAURANT {
 export interface IGET_RESTAURANT_ADVERTISEMENT {
     id: string;
     name: string;
-    content: IS3Image;
+    content: IS3Object;
 }
 
 export interface IGET_RESTAURANT_REGISTER {
@@ -444,7 +431,7 @@ export interface IGET_RESTAURANT_CATEGORY {
     id: string;
     name: string;
     displaySequence: number;
-    image?: IS3Image;
+    image?: IS3Object;
     availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
     products: {
         items: IGET_RESTAURANT_PRODUCT_LINK[];
@@ -462,9 +449,10 @@ export interface IGET_RESTAURANT_PRODUCT {
     name: string;
     description: string;
     price: number;
+    totalQuantitySold: number;
     soldOut: boolean;
     soldOutDate: string;
-    image?: IS3Image;
+    image?: IS3Object;
     availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
     modifierGroups: {
         items: IGET_RESTAURANT_MODIFIER_GROUP_LINK[];
@@ -500,11 +488,12 @@ export interface IGET_RESTAURANT_MODIFIER {
     id: string;
     name: string;
     price: number;
+    totalQuantitySold: number;
     soldOut: boolean;
     soldOutDate: string;
 }
 
-export interface IS3Image {
+export interface IS3Object {
     key: string;
     bucket: string;
     region: string;

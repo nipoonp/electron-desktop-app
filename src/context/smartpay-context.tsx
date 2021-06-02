@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import axios from "axios";
 import { useUser } from "./user-context";
 import { useRegister } from "./register-context";
+import { useRestaurant } from "./restaurant-context";
 // ******************************************************************************
 // The code below will handle the SmartConnect API endpoint communication.
 // SmartConnect API endpoints are CORS-enabled, so the calls can be made from the front-end.
@@ -76,8 +77,8 @@ const SmartpayContext = React.createContext<ContextProps>({
 });
 
 const SmartpayProvider = (props: { children: React.ReactNode }) => {
-    const { user } = useUser();
     const { register } = useRegister();
+    const { restaurant } = useRestaurant();
 
     const _baseUrl: string = "https://api.smart-connect.cloud/POS";
     let _posRegisterId: string | null = register ? register.id : null;
@@ -86,10 +87,10 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
     const _posVendorName: string = "Tabin";
 
     useEffect(() => {
-        if (user && user.restaurants.items.length > 0) {
-            _posBusinessName = user.restaurants.items[0].name;
+        if (restaurant) {
+            _posBusinessName = restaurant.name;
         }
-    }, [user]);
+    }, [restaurant]);
 
     // ======================================================
     // PAIRING REQUEST

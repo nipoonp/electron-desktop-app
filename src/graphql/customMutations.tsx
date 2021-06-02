@@ -35,32 +35,40 @@ export const UPDATE_REGISTER_KEY = gql`
     }
 `;
 
-export const PROCESS_ORDER = gql`
-    mutation processOrder(
-        $orderRestaurantId: String!
-        $orderUserId: String!
-        $notes: String
-        $products: [ProcessOrderProduct!]
+export const CREATE_ORDER = gql`
+    mutation createOrder(
+        $status: OrderStatus!
+        $paid: Boolean!
         $type: OrderType!
         $number: String!
         $table: String
+        $notes: String
         $total: Int!
-        $paid: Boolean!
-        $registerId: ID
+        $registerId: ID!
+        $products: [OrderProductInput!]
+        $placedAt: String!
+        $placedAtUtc: String!
+        $orderUserId: ID!
+        $orderRestaurantId: ID!
     ) {
-        processOrder(
+        createOrder(
             input: {
-                orderRestaurantId: $orderRestaurantId
-                orderUserId: $orderUserId
-                notes: $notes
-                products: $products
+                status: $status
+                paid: $paid
                 type: $type
                 number: $number
                 table: $table
+                notes: $notes
                 total: $total
-                paid: $paid
                 registerId: $registerId
+                products: $products
+                placedAt: $placedAt
+                placedAtUtc: $placedAtUtc
+                orderUserId: $orderUserId
+                orderRestaurantId: $orderRestaurantId
             }
-        )
+        ){
+            id
+        }
     }
 `;

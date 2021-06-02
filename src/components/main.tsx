@@ -12,6 +12,7 @@ import "react-toastify/dist/ReactToastify.min.css";
 import { Logger } from "aws-amplify";
 import { useUser } from "../context/user-context";
 import { ToastContainer } from "../tabin/components/toast";
+import { RestaurantList } from "./page/restaurantList";
 import { RegisterList } from "./page/registerList";
 import { createBrowserHistory } from "history";
 import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
@@ -19,7 +20,9 @@ import { BeginOrder } from "./page/beginOrder";
 import { OrderType } from "./page/orderType";
 import { ConfigureNewEftpos } from "./page/configureNewEftpos";
 import { TableNumber } from "./page/tableNumber";
-import { IGET_USER_RESTAURANT_REGISTER } from "../graphql/customQueries";
+import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
+import { useRestaurant } from "../context/restaurant-context";
+import { Logout } from "./page/auth/logout";
 
 let electron: any;
 let ipcRenderer: any;
@@ -42,14 +45,15 @@ Modal.setAppElement("#root");
 
 // Auth routes
 export const loginPath = "/login";
+export const restaurantListPath = "/restaurant_list";
 export const registerListPath = "/register_list";
 export const configureNewEftposPath = "/configure_new_eftpos";
 export const beginOrderPath = "/";
 export const orderTypePath = "/order_type";
 export const tableNumberPath = "/table_number";
 export const restaurantPath = "/restaurant";
-export const dashboardPath = "/dashboard";
 export const checkoutPath = "/checkout";
+export const logoutPath = "/log_out";
 export const unauthorizedPath = "/unauthorized";
 
 export default () => {
@@ -65,7 +69,6 @@ export default () => {
 
 const Routes = () => {
     const history = useHistory();
-    const { logout } = useAuth();
 
     let timerId: NodeJS.Timeout;
 
@@ -75,13 +78,13 @@ const Routes = () => {
     }, []);
 
     useEffect(() => {
-        document.body.onmousedown = function() {
+        document.body.onmousedown = () => {
             timerId = setTimeout(() => {
                 ipcRenderer && ipcRenderer.send("SHOW_CONTEXT_MENU");
-            }, 4000);
+            }, 2000);
         };
 
-        document.body.onmouseup = function() {
+        document.body.onmouseup = () => {
             clearTimeout(timerId);
         };
 
@@ -94,11 +97,14 @@ const Routes = () => {
                     case "configureEftposAndPrinters":
                         history.push(configureNewEftposPath);
                         break;
+                    case "configureRestaurant":
+                        history.push(restaurantListPath);
+                        break;
                     case "configureRegister":
                         history.push(registerListPath);
                         break;
                     case "logout":
-                        logout();
+                        history.push(logoutPath);
                         break;
                     default:
                         break;
@@ -109,13 +115,15 @@ const Routes = () => {
     return (
         <Switch>
             <Route exact path={loginPath} component={Login} />
+            <Route exact path={logoutPath} component={Logout} />
+            <PrivateRoute exact path={restaurantListPath} component={RestaurantList} />
             <PrivateRoute exact path={registerListPath} component={RegisterList} />
-            <RegisterPrivateRoute exact path={configureNewEftposPath} component={ConfigureNewEftpos} />
-            <RegisterPrivateRoute exact path={beginOrderPath} component={BeginOrder} />
-            <RegisterPrivateRoute exact path={orderTypePath} component={OrderType} />
-            <RegisterPrivateRoute exact path={tableNumberPath} component={TableNumber} />
-            <RegisterPrivateRoute exact path={checkoutPath} component={Checkout} />
-            <RegisterPrivateRoute
+            <RestaurantRegisterPrivateRoute exact path={configureNewEftposPath} component={ConfigureNewEftpos} />
+            <RestaurantRegisterPrivateRoute exact path={beginOrderPath} component={BeginOrder} />
+            <RestaurantRegisterPrivateRoute exact path={orderTypePath} component={OrderType} />
+            <RestaurantRegisterPrivateRoute exact path={tableNumberPath} component={TableNumber} />
+            <RestaurantRegisterPrivateRoute exact path={checkoutPath} component={Checkout} />
+            <RestaurantRegisterPrivateRoute
                 exact
                 path={`${restaurantPath}/:restaurantId`}
                 component={(props: RouteComponentProps<any>) => <Restaurant restaurantID={props.match.params.restaurantId} {...props} />}
@@ -196,7 +204,7 @@ const PrivateRoute: FunctionComponent<PrivateRouteProps> = ({ component: Compone
 
     // Assumed signed in from this point onwards
     if (isLoading) {
-        return <FullScreenSpinner show={true} text="Loading user" />;
+        return <FullScreenSpinner show={true} text="Loading user..." />;
     }
 
     if (!user) {
@@ -211,32 +219,49 @@ interface PrivateRouteProps extends RouteProps {
     component: React.ComponentType<RouteComponentProps<any>> | React.ComponentType<any>;
 }
 
-const RegisterPrivateRoute: FunctionComponent<PrivateRouteProps> = ({ component: Component, ...rest }) => {
-    const { user, isLoading } = useUser();
+const RestaurantRegisterPrivateRoute: FunctionComponent<PrivateRouteProps> = ({ component: Component, ...rest }) => {
+    const { user } = useUser();
+    const { restaurant, isLoading, isError } = useRestaurant();
 
-    // Assumed signed in from this point onwards
-    if (isLoading) {
-        return <FullScreenSpinner show={true} text="Loading user" />;
+    if (user && isLoading) {
+        return <FullScreenSpinner show={true} text="Loading restaurant..." />;
+    }
+
+    if (isError) {
+        return <div>There was an error loading your restaurant.</div>;
+    }
+
+    if (!restaurant) {
+        return (
+            <Route
+                {...rest}
+                render={(props) => (
+                    <Redirect
+                        to={{
+                            pathname: restaurantListPath,
+                            state: { from: props.location },
+                        }}
+                    />
+                )}
+            />
+        );
     }
 
     //----------------------------------------------------------------------------
     //TODO: Fix this later, should be coming in from the kiosk
     const storedRegisterKey = localStorage.getItem("registerKey");
 
-    let matchingRegister: IGET_USER_RESTAURANT_REGISTER | null = null;
+    let matchingRegister: IGET_RESTAURANT_REGISTER | null = null;
 
-    user &&
-        user.restaurants.items.length > 0 &&
-        user.restaurants.items[0].registers.items.forEach((r) => {
+    restaurant &&
+        restaurant.registers.items.forEach((r) => {
             if (storedRegisterKey == r.id) {
                 matchingRegister = r;
-
-                console.log(r);
             }
         });
     //----------------------------------------------------------------------------
 
-    if (user && !matchingRegister) {
+    if (!matchingRegister) {
         return (
             <Route
                 {...rest}

@@ -5,6 +5,8 @@ import React, { CSSProperties } from "react";
 // import { css, jsx } from "@emotion/core";
 import { NormalFont } from "./fonts";
 
+const styles = require("./link.module.css");
+
 export const Link = (props: {
     kioskMode?: boolean;
     children: React.ReactNode;
@@ -23,10 +25,10 @@ export const Link = (props: {
         display: "inline-block",
     };
 
-    const defaultColor = "var(--lnk-color)";
-    const hoverColor = "hsl(var(--lnk-hue), var(--lnk-saturation), 15%)";
-    const destructiveColor = "hsl(0, 100%, 70%)";
-    const desctructiveHoverColor = "hsl(0, 100%, 40%)";
+    // const defaultColor = "var(--lnk-color)";
+    // const hoverColor = "hsl(var(--lnk-hue), var(--lnk-saturation), 15%)";
+    // const destructiveColor = "hsl(0, 100%, 70%)";
+    // const desctructiveHoverColor = "hsl(0, 100%, 40%)";
 
     // props style
     let style = defaultStyle;
@@ -39,6 +41,7 @@ export const Link = (props: {
             <a href={props.href} onClick={props.onClick}>
                 <div
                     style={style}
+                    className={styles.link}
                     // css={css`
                     //     color: ${props.color ? props.color : props.destructive ? destructiveColor : defaultColor};
                     //     &:hover {
@@ -55,12 +58,12 @@ export const Link = (props: {
 
 export const NoWrapLink = (props: {
     children: React.ReactNode;
-    onClick?: ((event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void) | undefined;
-    href?: string | undefined;
-    style?: React.CSSProperties | undefined;
-    destructive?: boolean | undefined;
-    color?: string | undefined;
-    hoverColor?: string | undefined;
+    onClick?: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void;
+    href?: string;
+    style?: React.CSSProperties;
+    destructive?: boolean;
+    color?: string;
+    hoverColor?: string;
 }) => {
     return (
         <Link

@@ -60,15 +60,7 @@ const logout = () => {
     // window.analytics.reset();
     return Auth.signOut().then((data) => {
         // need to clear cognitoIdentityID in localstorage after signing out
-
-        // Keep the local storage registerKey
-        const registerKey = localStorage.getItem("registerKey");
-
         localStorage.clear();
-
-        if (registerKey) {
-            localStorage.setItem("registerKey", registerKey);
-        }
     });
 };
 
