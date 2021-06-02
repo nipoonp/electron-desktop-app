@@ -336,7 +336,6 @@ export const Restaurant = (props: { restaurantID: string }) => {
         <div style={{ width: "100%" }}>
             {!selectedCategory && (
                 <>
-                    <div className="hello-text">Hello</div>
                     <Title3Font style={{ fontSize: "36px" }}>Most Popular</Title3Font>
                     <Space5 />
                     <div
