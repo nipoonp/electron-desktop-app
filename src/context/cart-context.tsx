@@ -11,8 +11,8 @@ const initialNotes = "";
 const initialTotal = 0;
 
 type ContextProps = {
-    restaurant: IGET_RESTAURANT | null;
-    setRestaurant: (restaurant: IGET_RESTAURANT) => void;
+    // restaurant: IGET_RESTAURANT | null;
+    // setRestaurant: (restaurant: IGET_RESTAURANT) => void;
     orderType: EOrderType | null;
     setOrderType: (orderType: EOrderType) => void;
     tableNumber: string | null;
@@ -29,8 +29,8 @@ type ContextProps = {
 };
 
 const CartContext = React.createContext<ContextProps>({
-    restaurant: initialRestaurant,
-    setRestaurant: () => {},
+    // restaurant: initialRestaurant,
+    // setRestaurant: () => {},
     orderType: initialOrderType,
     setOrderType: () => {},
     tableNumber: initialTableNumber,
@@ -47,7 +47,7 @@ const CartContext = React.createContext<ContextProps>({
 });
 
 const CartProvider = (props: { children: React.ReactNode }) => {
-    const [restaurant, _setRestaurant] = useState<IGET_RESTAURANT | null>(initialRestaurant);
+    // const [restaurant, _setRestaurant] = useState<IGET_RESTAURANT | null>(initialRestaurant);
     const [orderType, _setOrderType] = useState<EOrderType | null>(initialOrderType);
     const [tableNumber, _setTableNumber] = useState<string | null>(initialTableNumber);
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
@@ -74,9 +74,9 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         return totalPrice;
     };
 
-    const setRestaurant = (restaurant: IGET_RESTAURANT) => {
-        _setRestaurant(restaurant);
-    };
+    // const setRestaurant = (restaurant: IGET_RESTAURANT) => {
+    //     _setRestaurant(restaurant);
+    // };
 
     const setOrderType = (orderType: EOrderType) => {
         _setOrderType(orderType);
@@ -142,7 +142,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     };
 
     const clearCart = () => {
-        _setRestaurant(initialRestaurant);
+        // _setRestaurant(initialRestaurant);
         _setOrderType(initialOrderType);
         _setProducts(initialProducts);
         _setNotes(initialNotes);
@@ -157,8 +157,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     return (
         <CartContext.Provider
             value={{
-                restaurant: restaurant,
-                setRestaurant: setRestaurant,
+                // restaurant: restaurant,
+                // setRestaurant: setRestaurant,
                 orderType: orderType,
                 setOrderType: setOrderType,
                 tableNumber: tableNumber,

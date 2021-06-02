@@ -19,6 +19,7 @@ import { VerifoneProvider } from "./context/verifone-context";
 import { ReceiptPrinterProvider } from "./context/receiptPrinter-context";
 import { RegisterProvider } from "./context/register-context";
 import { ElectronProvider } from "./context/electron-context";
+import { RestaurantProvider } from "./context/restaurant-context";
 // import { GoogleMapsProvider } from "./context/google-maps-context";
 // import { AlgoliaProvider } from "./context/algolia-context";
 // import { LocationProvider } from "./context/location-context";
@@ -132,17 +133,19 @@ const App = () => {
                     <UserProvider userID={user!.username}>
                         {/* <UserModel /> */}
                         {/* <Main /> */}
-                        <RegisterProvider>
-                            <CartProvider>
-                                <ReceiptPrinterProvider>
-                                    <VerifoneProvider>
-                                        <SmartpayProvider>
-                                            <Main />
-                                        </SmartpayProvider>
-                                    </VerifoneProvider>
-                                </ReceiptPrinterProvider>
-                            </CartProvider>
-                        </RegisterProvider>
+                        <RestaurantProvider>
+                            <RegisterProvider>
+                                <CartProvider>
+                                    <ReceiptPrinterProvider>
+                                        <VerifoneProvider>
+                                            <SmartpayProvider>
+                                                <Main />
+                                            </SmartpayProvider>
+                                        </VerifoneProvider>
+                                    </ReceiptPrinterProvider>
+                                </CartProvider>
+                            </RegisterProvider>
+                        </RestaurantProvider>
                     </UserProvider>
                     {/* </ApolloProvider> */}
                 </A>

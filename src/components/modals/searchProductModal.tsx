@@ -12,6 +12,7 @@ import { SizedBox } from "../../tabin/components/sizedBox";
 import { KioskProductSearchField } from "../../tabin/components/kioskProductSearchField";
 import { CloseIcon } from "../../tabin/components/closeIcon";
 import { KioskButton } from "../../tabin/components/kioskButton";
+import { useRestaurant } from "../../context/restaurant-context";
 
 const styles = require("./searchProductModal.module.css");
 
@@ -23,12 +24,11 @@ interface IFilteredProduct {
 interface ISearchProductModalProps {
     isOpen: boolean;
     onClose: () => void;
-    isProductUpdate: boolean;
     onClickSearchProduct: (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => void;
 }
 
 export const SearchProductModal = (props: ISearchProductModalProps) => {
-    const { restaurant } = useCart();
+    const { restaurant } = useRestaurant();
 
     const [searchTerm, setSearchTerm] = useState("");
     const [filteredProducts, setFilteredProducts] = useState<IFilteredProduct[]>([]);

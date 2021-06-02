@@ -7,7 +7,7 @@ import { checkoutPath, beginOrderPath, orderTypePath } from "../main";
 import { convertCentsToDollars } from "../../util/moneyConversion";
 import { ProductModal } from "../modals/product";
 import { SearchProductModal } from "../modals/searchProductModal";
-import { IGET_RESTAURANT_PRODUCT, IGET_RESTAURANT_CATEGORY, IS3Image } from "../../graphql/customQueries";
+import { IGET_RESTAURANT_PRODUCT, IGET_RESTAURANT_CATEGORY, IS3Object } from "../../graphql/customQueries";
 import { useCart } from "../../context/cart-context";
 import { Space2, Space5 } from "../../tabin/components/spaces";
 import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
@@ -19,23 +19,34 @@ import { isItemAvailable, isItemSoldOut } from "../../util/isItemAvailable";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
 //@ts-ignore as it does not have the types
 import { Shake } from "reshake";
+import { useRestaurant } from "../../context/restaurant-context";
 
 const styles = require("./restaurant.module.css");
+
+interface IMostSoldProduct {
+    category: IGET_RESTAURANT_CATEGORY;
+    product: IGET_RESTAURANT_PRODUCT;
+}
 
 export const Restaurant = (props: { restaurantID: string }) => {
     // context
     const history = useHistory();
-    const { setRestaurant, clearCart, orderType, total, products, addItem } = useCart();
+    const { clearCart, orderType, total, products, addItem } = useCart();
+    const { setRestaurant } = useRestaurant();
 
     // query
     const { data: restaurant, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(props.restaurantID);
 
     // states
     const [selectedCategory, setSelectedCategory] = useState<IGET_RESTAURANT_CATEGORY | null>(null);
-    const [selectedProduct, setSelectedProduct] = useState<IGET_RESTAURANT_PRODUCT | null>(null);
+    //selectedCategoryForProductModal is a different one so that when you either search for a product or select a most popular product it does not change the selectedCategory.
+    const [selectedCategoryForProductModal, setSelectedCategoryForProductModal] = useState<IGET_RESTAURANT_CATEGORY | null>(null);
+    const [selectedProductForProductModal, setSelectedProductForProductModal] = useState<IGET_RESTAURANT_PRODUCT | null>(null);
     const [showProductModal, setShowProductModal] = useState(false);
     const [showItemAddedModal, setShowItemAddedModal] = useState(false);
     const [showSearchProductModal, setShowSearchProductModal] = useState(false);
+
+    const [mostSoldProducts, setMostSoldProducts] = useState<IMostSoldProduct[]>([]);
 
     const [isShakeAnimationActive, setIsShakeAnimationActive] = useState(false);
     const startShakeAfterSeconds = 30;
@@ -62,14 +73,44 @@ export const Restaurant = (props: { restaurantID: string }) => {
         if (restaurant) {
             setRestaurant(restaurant);
 
-            restaurant.categories.items.every((c) => {
-                if (isItemAvailable(c.availability)) {
-                    setSelectedCategory(c);
-                    return false;
-                }
-                return true;
-            });
+            // restaurant.categories.items.every((c) => {
+            //     if (isItemAvailable(c.availability)) {
+            //         setSelectedCategory(c);
+            //         return false;
+            //     }
+            //     return true;
+            // });
         }
+    }, [restaurant]);
+
+    const compareSortFunc = (a: IMostSoldProduct, b: IMostSoldProduct) => {
+        if (a.product.totalQuantitySold > b.product.totalQuantitySold) {
+            return -1;
+        }
+        if (a.product.totalQuantitySold < b.product.totalQuantitySold) {
+            return 1;
+        }
+        return 0;
+    };
+
+    useEffect(() => {
+        if (!restaurant) return;
+
+        const newMostSoldProducts: IMostSoldProduct[] = [];
+
+        restaurant.categories.items.forEach((c) => {
+            c.products.items.forEach((p) => {
+                if (p.product.totalQuantitySold) {
+                    newMostSoldProducts.push({
+                        category: c,
+                        product: p.product,
+                    });
+                }
+            });
+        });
+
+        newMostSoldProducts.sort(compareSortFunc);
+        setMostSoldProducts(newMostSoldProducts.slice(0, 20));
     }, [restaurant]);
 
     useEffect(() => {
@@ -129,25 +170,25 @@ export const Restaurant = (props: { restaurantID: string }) => {
     }
 
     const onClickProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
-        setSelectedCategory(category);
-        setSelectedProduct(product);
+        setSelectedCategoryForProductModal(category);
+        setSelectedProductForProductModal(product);
         setShowProductModal(true);
     };
 
     const onClickSearchProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
-        setSelectedCategory(category);
-        setSelectedProduct(product);
+        setSelectedCategoryForProductModal(category);
+        setSelectedProductForProductModal(product);
         onCloseSearchProductModal();
         setShowProductModal(true);
     };
 
     const productModal = (
         <>
-            {selectedCategory && selectedProduct && restaurant && showProductModal && (
+            {selectedCategoryForProductModal && selectedProductForProductModal && restaurant && showProductModal && (
                 <ProductModal
                     isOpen={showProductModal}
-                    category={selectedCategory}
-                    product={selectedProduct}
+                    category={selectedCategoryForProductModal}
+                    product={selectedProductForProductModal}
                     onAddItem={onAddItem}
                     onClose={onCloseProductModal}
                     restaurantName={restaurant.name}
@@ -164,12 +205,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
     const searchProductModal = (
         <>
             {showSearchProductModal && (
-                <SearchProductModal
-                    isOpen={showSearchProductModal}
-                    onClose={onCloseSearchProductModal}
-                    isProductUpdate={false}
-                    onClickSearchProduct={onClickSearchProduct}
-                />
+                <SearchProductModal isOpen={showSearchProductModal} onClose={onCloseSearchProductModal} onClickSearchProduct={onClickSearchProduct} />
             )}
         </>
     );
@@ -274,6 +310,50 @@ export const Restaurant = (props: { restaurantID: string }) => {
         </>
     );
 
+    const menuMostSoldCategory = (
+        <>
+            <div
+                style={{
+                    // height: "85px",
+                    padding: "30px 24px",
+                    backgroundColor: "#e0e0e0",
+                    display: "flex",
+                    alignItems: "center",
+                    borderLeft: !selectedCategory ? "8px solid var(--primary-color)" : "none",
+                }}
+                onClick={() => {
+                    setSelectedCategory(null);
+                }}
+            >
+                <img style={{ height: "24px" }} src={`${getPublicCloudFrontDomainName()}/images/most-popular.png`} />
+                <SizedBox width="10px" />
+                <div>Most Popular</div>
+            </div>
+        </>
+    );
+
+    const menuMostSoldProducts = (
+        <div style={{ width: "100%" }}>
+            {!selectedCategory && (
+                <>
+                    <Title3Font style={{ fontSize: "36px" }}>Most Popular</Title3Font>
+                    <Space5 />
+                    <div
+                        style={{
+                            display: "grid",
+                            gridGap: "32px",
+                            gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+                        }}
+                    >
+                        {mostSoldProducts.map((mostSoldProduct) => {
+                            return productDisplay(mostSoldProduct.category, mostSoldProduct.product);
+                        })}
+                    </div>
+                </>
+            )}
+        </div>
+    );
+
     const menuProducts = (
         <div style={{ width: "100%" }}>
             {selectedCategory &&
@@ -350,8 +430,9 @@ export const Restaurant = (props: { restaurantID: string }) => {
                             }}
                             className={styles.categoriesWrapper}
                         >
-                            {restaurant.image && <RestaurantImage image={restaurant.image} />}
+                            {restaurant.logo && <RestaurantLogo image={restaurant.logo} />}
                             {menuSearchProduct}
+                            {menuMostSoldCategory}
                             {menuCategories}
                         </div>
                         <div
@@ -362,6 +443,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
                             }}
                             className={styles.productsWrapper}
                         >
+                            {menuMostSoldProducts}
                             {menuProducts}
                         </div>
                     </div>
@@ -373,7 +455,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
     );
 };
 
-const RestaurantImage = (props: { image: IS3Image }) => {
+const RestaurantLogo = (props: { image: IS3Object }) => {
     return (
         <img
             src={`${getCloudFrontDomainName()}/protected/${props.image.identityPoolId}/${props.image.key}`}

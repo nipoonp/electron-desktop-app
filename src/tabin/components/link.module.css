@@ -1,0 +1,7 @@
+.link {
+    color: var(--lnk-color);
+}
+
+.link:hover {
+    color: hsl(var(--lnk-hue), var(--lnk-saturation), 15%);
+}

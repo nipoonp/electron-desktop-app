@@ -7,10 +7,12 @@ import { useCart } from "../../context/cart-context";
 import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
 import { Button } from "../../tabin/components/button";
 import { InputV2 } from "../../tabin/components/inputv2";
+import { useRestaurant } from "../../context/restaurant-context";
 
 export const TableNumber = () => {
     const history = useHistory();
-    const { restaurant, clearCart, tableNumber, setTableNumber } = useCart();
+    const { tableNumber, setTableNumber } = useCart();
+    const { restaurant } = useRestaurant();
 
     if (restaurant == null) {
         throw "Restaurant is invalid!";

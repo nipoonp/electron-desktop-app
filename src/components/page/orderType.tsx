@@ -14,13 +14,8 @@ const styles = require("./orderType.module.css");
 
 export const OrderType = (props: {}) => {
     const history = useHistory();
-    const { user } = useUser();
-    const { restaurant, setOrderType, clearCart } = useCart();
+    const { setOrderType, clearCart } = useCart();
     const { register } = useRegister();
-
-    if (restaurant == null) {
-        throw "Restaurant is invalid!";
-    }
 
     if (!register) {
         throw "Register is not valid";
