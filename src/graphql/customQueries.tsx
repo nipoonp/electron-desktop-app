@@ -143,6 +143,12 @@ export const GET_RESTAURANT = gql`
                 region
                 identityPoolId
             }
+            customStyleSheet {
+                key
+                bucket
+                region
+                identityPoolId
+            }
             advertisements {
                 items {
                     id
@@ -326,6 +332,7 @@ export interface IGET_RESTAURANT {
     };
     operatingHours: IGET_RESTAURANT_OPERATING_HOURS;
     logo?: IS3Object;
+    customStyleSheet?: IS3Object;
     advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
     registers: { items: IGET_RESTAURANT_REGISTER[] };
     categories: {

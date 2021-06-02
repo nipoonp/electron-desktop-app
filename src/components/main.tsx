@@ -226,7 +226,7 @@ const RestaurantRegisterPrivateRoute: FunctionComponent<PrivateRouteProps> = ({ 
     }
 
     if (isError) {
-        return <div>"There was an error loading your restaurant."</div>;
+        return <div>There was an error loading your restaurant.</div>;
     }
 
     if (!restaurant) {

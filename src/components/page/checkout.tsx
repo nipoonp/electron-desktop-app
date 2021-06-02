@@ -31,6 +31,7 @@ import { TextAreaV2 } from "../../tabin/components/textAreav2";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { toast } from "../../tabin/components/toast";
 import { toLocalISOString } from "../../util/dateTime";
+import { useRestaurant } from "../../context/restaurant-context";
 
 const styles = require("./checkout.module.css");
 
@@ -47,7 +48,8 @@ enum CheckoutTransactionOutcome {
 export const Checkout = () => {
     // context
     const history = useHistory();
-    const { restaurant, orderType, products, notes, setNotes, tableNumber, clearCart, total, updateItem, updateItemQuantity, deleteItem } = useCart();
+    const { orderType, products, notes, setNotes, tableNumber, clearCart, total, updateItem, updateItemQuantity, deleteItem } = useCart();
+    const { restaurant } = useRestaurant();
     const { printReceipt } = useReceiptPrinter();
     const { user } = useUser();
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();

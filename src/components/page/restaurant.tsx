@@ -19,6 +19,7 @@ import { isItemAvailable, isItemSoldOut } from "../../util/isItemAvailable";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
 //@ts-ignore as it does not have the types
 import { Shake } from "reshake";
+import { useRestaurant } from "../../context/restaurant-context";
 
 const styles = require("./restaurant.module.css");
 
@@ -30,7 +31,8 @@ interface IMostSoldProduct {
 export const Restaurant = (props: { restaurantID: string }) => {
     // context
     const history = useHistory();
-    const { setRestaurant, clearCart, orderType, total, products, addItem } = useCart();
+    const { clearCart, orderType, total, products, addItem } = useCart();
+    const { setRestaurant } = useRestaurant();
 
     // query
     const { data: restaurant, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(props.restaurantID);
