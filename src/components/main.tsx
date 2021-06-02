@@ -22,6 +22,7 @@ import { ConfigureNewEftpos } from "./page/configureNewEftpos";
 import { TableNumber } from "./page/tableNumber";
 import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { useRestaurant } from "../context/restaurant-context";
+import { Logout } from "./page/auth/logout";
 
 let electron: any;
 let ipcRenderer: any;
@@ -52,6 +53,7 @@ export const orderTypePath = "/order_type";
 export const tableNumberPath = "/table_number";
 export const restaurantPath = "/restaurant";
 export const checkoutPath = "/checkout";
+export const logoutPath = "/log_out";
 export const unauthorizedPath = "/unauthorized";
 
 export default () => {
@@ -67,7 +69,6 @@ export default () => {
 
 const Routes = () => {
     const history = useHistory();
-    const { logout } = useAuth();
 
     let timerId: NodeJS.Timeout;
 
@@ -77,13 +78,13 @@ const Routes = () => {
     }, []);
 
     useEffect(() => {
-        document.body.onmousedown = function() {
+        document.body.onmousedown = () => {
             timerId = setTimeout(() => {
                 ipcRenderer && ipcRenderer.send("SHOW_CONTEXT_MENU");
             }, 2000);
         };
 
-        document.body.onmouseup = function() {
+        document.body.onmouseup = () => {
             clearTimeout(timerId);
         };
 
@@ -103,7 +104,7 @@ const Routes = () => {
                         history.push(registerListPath);
                         break;
                     case "logout":
-                        logout();
+                        history.push(logoutPath);
                         break;
                     default:
                         break;
@@ -114,6 +115,7 @@ const Routes = () => {
     return (
         <Switch>
             <Route exact path={loginPath} component={Login} />
+            <Route exact path={logoutPath} component={Logout} />
             <PrivateRoute exact path={restaurantListPath} component={RestaurantList} />
             <PrivateRoute exact path={registerListPath} component={RegisterList} />
             <RestaurantRegisterPrivateRoute exact path={configureNewEftposPath} component={ConfigureNewEftpos} />
