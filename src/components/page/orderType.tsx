@@ -1,20 +1,15 @@
 import React from "react";
-import { Space, Space4 } from "../../tabin/components/spaces";
 import { useHistory } from "react-router";
-import { useUser } from "../../context/user-context";
-import { beginOrderPath, checkoutPath, tableNumberPath } from "../main";
-import { Title3Font, Title2Font, BoldFont, Title1Font } from "../../tabin/components/fonts";
+import { checkoutPath, tableNumberPath } from "../main";
 import { EOrderType } from "../../model/model";
 import { useCart } from "../../context/cart-context";
 import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
 import { useRegister } from "../../context/register-context";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 
-const styles = require("./orderType.module.css");
-
 export const OrderType = (props: {}) => {
     const history = useHistory();
-    const { setOrderType, clearCart } = useCart();
+    const { setOrderType } = useCart();
     const { register } = useRegister();
 
     if (!register) {
@@ -34,24 +29,16 @@ export const OrderType = (props: {}) => {
     return (
         <>
             <KioskPageWrapper>
-                <div className={styles.container}>
-                    <Title1Font>Are you staying or going?</Title1Font>
-                    <Space size={100} />
-                    <div className={styles.imagesWrapper}>
-                        <div onClick={() => onSelectOrderType(EOrderType.DINEIN)}>
-                            <img className={styles.dineinImage} src={`${getPublicCloudFrontDomainName()}/images/order-type-dine-in.png`} />
-                            <Space4 />
-                            <BoldFont>
-                                <Title2Font>Dine In</Title2Font>
-                            </BoldFont>
+                <div className="order-type">
+                    <div className="h1 mb-6">Are you staying or going?</div>
+                    <div className="imagesWrapper">
+                        <div className="mr-6" onClick={() => onSelectOrderType(EOrderType.DINEIN)}>
+                            <img className="dineinImage mb-2" src={`${getPublicCloudFrontDomainName()}/images/order-type-dine-in.png`} />
+                            <div className="h2">Dine In</div>
                         </div>
-                        <div className={styles.sizedBox}></div>
                         <div onClick={() => onSelectOrderType(EOrderType.TAKEAWAY)}>
-                            <img className={styles.takeawayImage} src={`${getPublicCloudFrontDomainName()}/images/order-type-take-away.png`} />
-                            <Space4 />
-                            <BoldFont>
-                                <Title2Font>Takeaway</Title2Font>
-                            </BoldFont>
+                            <img className="takeawayImage mb-2" src={`${getPublicCloudFrontDomainName()}/images/order-type-take-away.png`} />
+                            <div className="h2">Takeaway</div>
                         </div>
                     </div>
                 </div>
