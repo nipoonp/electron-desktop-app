@@ -75,7 +75,7 @@ export const Checkout = () => {
     const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(10);
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
 
-    const isUserFocusedOnEmailAddressInput = useRef(false);
+    // const isUserFocusedOnEmailAddressInput = useRef(false);
 
     const { register } = useRegister();
 
@@ -279,10 +279,10 @@ export const Checkout = () => {
     const beginPaymentOutcomeApprovedTimeout = () => {
         (function myLoop(i) {
             setTimeout(() => {
-                if (isUserFocusedOnEmailAddressInput.current) {
-                    i = 30;
-                    isUserFocusedOnEmailAddressInput.current = false;
-                }
+                // if (isUserFocusedOnEmailAddressInput.current) {
+                //     i = 30;
+                //     isUserFocusedOnEmailAddressInput.current = false;
+                // }
                 i--;
                 setPaymentOutcomeApprovedRedirectTimeLeft(i);
 
@@ -588,9 +588,9 @@ export const Checkout = () => {
         </>
     );
 
-    const onFocusEmailAddressInput = () => {
-        isUserFocusedOnEmailAddressInput.current = true;
-    };
+    // const onFocusEmailAddressInput = () => {
+    //     isUserFocusedOnEmailAddressInput.current = true;
+    // };
 
     const paymentPayLater = () => (
         <>
@@ -647,7 +647,7 @@ export const Checkout = () => {
             <Title1Font style={{ fontSize: "200px", lineHeight: "256px" }}>{paymentOutcomeDelayedOrderNumber}</Title1Font>
             <Separator6 />
             <Space6 />
-            <Title3Font>Would you like to help save the planet? Get a e-receipt.</Title3Font>
+            {/* <Title3Font>Would you like to help save the planet? Get a e-receipt.</Title3Font>
             <Space4 />
             <div style={{ display: "flex", alignItems: "center" }}>
                 <div style={{ flex: 1, paddingRight: "12px", width: "750px", height: "44px" }}>
@@ -669,7 +669,7 @@ export const Checkout = () => {
                     <NormalFont>Click here to print</NormalFont>
                 </Link>
             </NormalFont>
-            <Space3 />
+            <Space3 /> */}
             <GrayColor style={{ marginTop: "auto" }}>
                 <NormalFont>
                     Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
