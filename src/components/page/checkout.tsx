@@ -32,6 +32,7 @@ import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { toast } from "../../tabin/components/toast";
 import { toLocalISOString } from "../../util/dateTime";
 import { useRestaurant } from "../../context/restaurant-context";
+import { logSlackError } from "../../util/logging";
 
 const styles = require("./checkout.module.css");
 
@@ -181,23 +182,23 @@ export const Checkout = () => {
             throw "No products have been selected";
         }
 
-        try {
-            const variables = {
-                status: "NEW",
-                paid: paid,
-                type: orderType,
-                number: orderNumber,
-                table: tableNumber,
-                notes: notes,
-                total: total,
-                registerId: register.id,
-                products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
-                placedAt: toLocalISOString(new Date()),
-                placedAtUtc: new Date().toISOString(),
-                orderUserId: user.id,
-                orderRestaurantId: restaurant.id,
-            };
+        const variables = {
+            status: "NEW",
+            paid: paid,
+            type: orderType,
+            number: orderNumber,
+            table: tableNumber,
+            notes: notes,
+            total: total,
+            registerId: register.id,
+            products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
+            placedAt: toLocalISOString(new Date()),
+            placedAtUtc: new Date().toISOString(),
+            orderUserId: user.id,
+            orderRestaurantId: restaurant.id,
+        };
 
+        try {
             if (tableNumber == null || tableNumber == "") {
                 delete variables.table;
             }
@@ -231,6 +232,12 @@ export const Checkout = () => {
 
             logger.debug("process order mutation result: ", res);
         } catch (e) {
+            await logSlackError(
+                JSON.stringify({
+                    error: e,
+                    context: variables,
+                })
+            );
             throw e;
         }
     };
