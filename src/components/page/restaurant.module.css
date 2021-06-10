@@ -13,31 +13,3 @@
     display: none;
     width: 0px;
 }
-
-/* Hide scrollbar for Chrome, Safari and Opera */
-.categoriesWrapper::-webkit-scrollbar {
-    display: none;
-    overflow: hidden;
-}
-
-/* Hide scrollbar for IE, Edge and Firefox */
-.categoriesWrapper {
-    -ms-overflow-style: none;
-    /* IE and Edge */
-    scrollbar-width: none;
-    /* Firefox */
-}
-
-/* Hide scrollbar for Chrome, Safari and Opera */
-.productsWrapper::-webkit-scrollbar {
-    display: none;
-    overflow: hidden;
-}
-
-/* Hide scrollbar for IE, Edge and Firefox */
-.productsWrapper {
-    -ms-overflow-style: none;
-    /* IE and Edge */
-    scrollbar-width: none;
-    /* Firefox */
-}

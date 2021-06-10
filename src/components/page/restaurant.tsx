@@ -384,70 +384,39 @@ export const Restaurant = (props: { restaurantID: string }) => {
     );
 
     const restaurantFooter = (
-        <div>
-            <div style={{ display: "flex", alignItems: "center" }}>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        flex: "1",
-                        fontWeight: 400,
-                    }}
-                >
-                    <img style={{ height: "52px" }} src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`} />
-                    <SizedBox width="12px" />
-                    <Title4Font style={{ fontWeight: 400 }}>Total: ${convertCentsToDollars(total)}</Title4Font>
+        <>
+            <div className="total-container">
+                <div className="total-wrapper mb-2">
+                    <img className="shopping-bag-icon mr-1" src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`} />
+                    <div className="h4 total">Total: ${convertCentsToDollars(total)}</div>
                 </div>
-                <KioskButton disabled={!products || products.length == 0} onClick={onClickCart}>
-                    <NormalFont style={{ fontSize: "22px" }}>View My Order</NormalFont>
+                <KioskButton className="view-my-order-button" disabled={!products || products.length == 0} onClick={onClickCart}>
+                    View My Order
                 </KioskButton>
             </div>
-            <Space2 />
-            <KioskButton
-                style={{
-                    backgroundColor: "#ffffff",
-                    color: "#484848",
-                    border: "1px solid #e0e0e0",
-                    padding: "12px 24px",
-                }}
-                onClick={onCancelOrder}
-            >
-                <NormalFont style={{ fontWeight: 300 }}>Cancel Order</NormalFont>
+            <KioskButton className="cancel-button" onClick={onCancelOrder}>
+                Cancel Order
             </KioskButton>
-        </div>
+        </>
     );
 
     return (
         <>
             <KioskPageWrapper>
-                <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
-                    <div style={{ display: "flex", flex: "1", overflow: "scroll" }}>
-                        <div
-                            style={{
-                                width: "300px",
-                                overflow: "scroll",
-                                borderRight: "1px solid #e0e0e0",
-                            }}
-                            className={styles.categoriesWrapper}
-                        >
+                <div className="restaurant">
+                    <div className="restaurant-container">
+                        <div className="categories-wrapper">
                             {restaurant.logo && <RestaurantLogo image={restaurant.logo} />}
                             {menuSearchProduct}
                             {menuMostSoldCategory}
                             {menuCategories}
                         </div>
-                        <div
-                            style={{
-                                overflow: "scroll",
-                                padding: "48px 32px 32px 32px",
-                                width: "100%",
-                            }}
-                            className={styles.productsWrapper}
-                        >
+                        <div className="products-wrapper">
                             {menuMostSoldProducts}
                             {menuProducts}
                         </div>
                     </div>
-                    <div style={{ padding: "24px", borderTop: "1px solid #e0e0e0" }}>{restaurantFooter}</div>
+                    <div className="footer-wrapper">{restaurantFooter}</div>
                 </div>
                 {modals}
             </KioskPageWrapper>
@@ -456,16 +425,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
 };
 
 const RestaurantLogo = (props: { image: IS3Object }) => {
-    return (
-        <img
-            src={`${getCloudFrontDomainName()}/protected/${props.image.identityPoolId}/${props.image.key}`}
-            style={{
-                width: "100%",
-                // height: "100%",
-                padding: "42px",
-            }}
-        />
-    );
+    return <img src={`${getCloudFrontDomainName()}/protected/${props.image.identityPoolId}/${props.image.key}`} className="restaurant-logo" />;
 };
 
 const Category = (props: {
@@ -480,22 +440,17 @@ const Category = (props: {
     return (
         <div
             key={category.id}
-            style={{
-                // height: "85px",
-                padding: "30px 24px",
-                borderBottom: "1px solid #e0e0e0",
-                borderLeft: isSelected ? "8px solid var(--primary-color)" : "none",
-            }}
+            className={`category ${isSelected ? "selected" : ""}`}
             onClick={() => {
                 isAvailable && onCategorySelected(category);
             }}
         >
             {!isAvailable ? (
-                <NormalFont style={{ fontWeight: 300, opacity: isAvailable ? "1" : "0.5" }}>{category.name} (UNAVAILABLE)</NormalFont>
+                <div className={`name ${isAvailable ? "available" : "unavailable"}`}>{category.name} (UNAVAILABLE)</div>
             ) : isSelected ? (
-                <BoldFont>{category.name}</BoldFont>
+                <div className="bold">{category.name}</div>
             ) : (
-                <NormalFont style={{ fontWeight: 300 }}>{category.name}</NormalFont>
+                <div className="name">{category.name}</div>
             )}
         </div>
     );

@@ -1,0 +1,110 @@
+.restaurant {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+
+    .restaurant-logo {
+        width: 100%;
+        padding: 42px;
+    }
+
+    .restaurant-container {
+        display: flex;
+        flex: 1;
+        overflow: scroll;
+    }
+
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    .categories-wrapper::-webkit-scrollbar {
+        display: none;
+        overflow: hidden;
+    }
+
+    /* Hide scrollbar for IE, Edge and Firefox */
+    .categories-wrapper {
+        -ms-overflow-style: none;
+        /* IE and Edge */
+        scrollbar-width: none;
+        /* Firefox */
+
+        width: 300px;
+        overflow: scroll;
+        border-right: 1px solid #e0e0e0;
+    }
+
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    .products-wrapper::-webkit-scrollbar {
+        display: none;
+        overflow: hidden;
+    }
+
+    /* Hide scrollbar for IE, Edge and Firefox */
+    .products-wrapper {
+        -ms-overflow-style: none;
+        /* IE and Edge */
+        scrollbar-width: none;
+        /* Firefox */
+
+        overflow: scroll;
+        padding: 48px 32px 32px 32px;
+        width: 100%;
+    }
+
+    .category {
+        padding: 30px 24px;
+        border-bottom: 1px solid #e0e0e0;
+
+        .selected {
+            border-left: 8px solid var(--primary-color);
+        }
+
+        .name {
+            font-weight: 300;
+
+            .available {
+                opacity: 1;
+            }
+
+            .unavailable {
+                opacity: 0.5;
+            }
+        }
+    }
+
+    .footer-wrapper {
+        padding: 24px;
+        border-top: 1px solid #e0e0e0;
+
+        .total-container {
+            display: flex;
+            align-items: center;
+
+            .total-wrapper {
+                display: flex;
+                align-items: center;
+                flex: 1;
+                font-weight: 400;
+
+                .shopping-bag-icon {
+                    height: 52px;
+                }
+
+                .total {
+                    font-weight: 400;
+                }
+            }
+
+            .view-my-order-button {
+                font-size: 22px;
+            }
+        }
+
+        .cancel-button {
+            background-color: #ffffff;
+            color: #484848;
+            border: 1px solid #e0e0e0;
+            padding: 12px 24px;
+            font-weight: 300;
+        }
+    }
+}
