@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useHistory } from "react-router-dom";
-import { Space, Space2, Space3, Space4, Space1, Space6 } from "../../tabin/components/spaces";
-import { Title3Font, NormalFont, Title2Font, BoldFont, Title1Font, Title4Font } from "../../tabin/components/fonts";
-import { GrayColor, PrimaryColor } from "../../tabin/components/colors";
+import { Space4 } from "../../tabin/components/spaces";
 import { convertCentsToDollars } from "../../util/moneyConversion";
 import { useMutation } from "react-apollo-hooks";
 import { CREATE_ORDER } from "../../graphql/customMutations";
@@ -13,7 +11,6 @@ import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath } from "
 import { ShoppingBasketIcon } from "../../tabin/components/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
 import { ICartProduct, ISelectedProductModifiers, ICartModifierGroup, EOrderType } from "../../model/model";
-import { Separator6 } from "../../tabin/components/separator";
 import { useUser } from "../../context/user-context";
 import { format } from "date-fns";
 import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
@@ -21,14 +18,12 @@ import { useSmartpay, SmartpayTransactionOutcome } from "../../context/smartpay-
 import { KioskModal } from "../../tabin/components/kioskModal";
 import { KioskButton } from "../../tabin/components/kioskButton";
 import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
-import { SizedBox } from "../../tabin/components/sizedBox";
 import { KioskStepper } from "../../tabin/components/kioskStepper";
 import { useVerifone, VerifoneTransactionOutcome } from "../../context/verifone-context";
 import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { TextAreaV2 } from "../../tabin/components/textAreav2";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
-import { toast } from "../../tabin/components/toast";
 import { toLocalISOString } from "../../util/dateTime";
 import { useRestaurant } from "../../context/restaurant-context";
 
@@ -548,10 +543,10 @@ export const Checkout = () => {
     const retryButtons = () => (
         <>
             <div className="retry-buttons">
-                <KioskButton className="mr-3" onClick={onConfirmTotalOrRetryTransaction}>
+                <KioskButton className="button large mr-3" onClick={onConfirmTotalOrRetryTransaction}>
                     Retry
                 </KioskButton>
-                <KioskButton className="retry-cancel-button" onClick={onClosePaymentModal}>
+                <KioskButton className="button large retry-cancel-button" onClick={onClosePaymentModal}>
                     Cancel
                 </KioskButton>
             </div>
