@@ -28,8 +28,8 @@ export const TableNumber = () => {
         <>
             <KioskPageWrapper>
                 <div className="table-number">
-                    <div className="h2 mb-6">Enter the table number you wish to dine on (click next if you are unsure)</div>
-                    <div className="mb-6" style={{ width: "300px" }}>
+                    <div className="h2 mb-12">Enter the table number you wish to dine on (click next if you are unsure)</div>
+                    <div className="mb-12" style={{ width: "300px" }}>
                         <div className="h3 mb-2">Table Number</div>
                         <InputV2 type="number" onChange={onChange} value={tableNumber ?? ""} />
                     </div>

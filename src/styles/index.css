@@ -157,6 +157,11 @@ body {
     overscroll-behavior: contain;
 }
 
+::-webkit-scrollbar {
+    display: none;
+    width: 0px;
+}
+
 .ReactModal__Body--open {
     overflow: hidden; /* prevents background page from scrolling when the modal is open */
 }

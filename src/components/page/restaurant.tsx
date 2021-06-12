@@ -21,9 +21,9 @@ import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../pr
 import { Shake } from "reshake";
 import { useRestaurant } from "../../context/restaurant-context";
 
-const styles = require("./restaurant.module.css");
+import "./restaurant.scss";
 
-interface IMostSoldProduct {
+interface IMostPopularProduct {
     category: IGET_RESTAURANT_CATEGORY;
     product: IGET_RESTAURANT_PRODUCT;
 }
@@ -46,7 +46,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
     const [showItemAddedModal, setShowItemAddedModal] = useState(false);
     const [showSearchProductModal, setShowSearchProductModal] = useState(false);
 
-    const [mostSoldProducts, setMostSoldProducts] = useState<IMostSoldProduct[]>([]);
+    const [mostPopularProducts, setMostPopularProducts] = useState<IMostPopularProduct[]>([]);
 
     const [isShakeAnimationActive, setIsShakeAnimationActive] = useState(false);
     const startShakeAfterSeconds = 30;
@@ -83,7 +83,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
         }
     }, [restaurant]);
 
-    const compareSortFunc = (a: IMostSoldProduct, b: IMostSoldProduct) => {
+    const compareSortFunc = (a: IMostPopularProduct, b: IMostPopularProduct) => {
         if (a.product.totalQuantitySold > b.product.totalQuantitySold) {
             return -1;
         }
@@ -96,12 +96,12 @@ export const Restaurant = (props: { restaurantID: string }) => {
     useEffect(() => {
         if (!restaurant) return;
 
-        const newMostSoldProducts: IMostSoldProduct[] = [];
+        const newMostPopularProducts: IMostPopularProduct[] = [];
 
         restaurant.categories.items.forEach((c) => {
             c.products.items.forEach((p) => {
                 if (p.product.totalQuantitySold) {
-                    newMostSoldProducts.push({
+                    newMostPopularProducts.push({
                         category: c,
                         product: p.product,
                     });
@@ -109,8 +109,8 @@ export const Restaurant = (props: { restaurantID: string }) => {
             });
         });
 
-        newMostSoldProducts.sort(compareSortFunc);
-        setMostSoldProducts(newMostSoldProducts.slice(0, 20));
+        newMostPopularProducts.sort(compareSortFunc);
+        setMostPopularProducts(newMostPopularProducts.slice(0, 20));
     }, [restaurant]);
 
     useEffect(() => {
@@ -225,128 +225,106 @@ export const Restaurant = (props: { restaurantID: string }) => {
         return (
             <>
                 <div
-                    style={{
-                        border: "1px solid #e0e0e0",
-                        padding: "16px",
-                        borderRadius: "10px",
-                        opacity: !isSoldOut && isAvailable ? "1" : "0.5",
-                    }}
+                    className={`product ${isSoldOut ? "sold-out" : ""} `}
                     onClick={() => !isSoldOut && isAvailable && onClickProduct(category, product)}
                 >
-                    <div style={{ margin: "0 auto" }}>
-                        {product.image && (
-                            <>
-                                <img
-                                    src={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
-                                    style={{
-                                        width: "100%",
-                                        height: "200px",
-                                        borderRadius: "10px",
-                                        objectFit: "cover",
-                                    }}
-                                />
-                                <Space2 />
-                            </>
-                        )}
-                    </div>
-
-                    <BoldFont style={{ fontSize: "18px", textAlign: "center" }}>
-                        {!isAvailable ? `${product.name} (UNAVAILABLE)` : isSoldOut ? `${product.name} (SOLD OUT)` : `${product.name}`}
-                    </BoldFont>
-
-                    {product.description && (
-                        <>
-                            <Space2 />
-                            <NormalFont style={{ fontWeight: 300, textAlign: "center" }} className={styles.description}>
-                                {product.description}
-                            </NormalFont>
-                        </>
+                    {product.image && (
+                        <img
+                            className="image mb-2"
+                            src={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                        />
                     )}
 
-                    <Space2 />
-                    <NormalFont style={{ textAlign: "center", fontSize: "18px" }}>${convertCentsToDollars(product.price)}</NormalFont>
+                    <div className="name bold">
+                        {!isAvailable ? `${product.name} (UNAVAILABLE)` : isSoldOut ? `${product.name} (SOLD OUT)` : `${product.name}`}
+                    </div>
+
+                    {product.description && <div className="description mt-2">{product.description}</div>}
+
+                    <div className="price mt-4">${convertCentsToDollars(product.price)}</div>
                 </div>
             </>
         );
     };
 
+    const Category = (props: {
+        isSelected: boolean;
+        category: IGET_RESTAURANT_CATEGORY;
+        onCategorySelected: (category: IGET_RESTAURANT_CATEGORY) => void;
+    }) => {
+        const { isSelected, category, onCategorySelected } = props;
+
+        const isAvailable = isItemAvailable(category.availability);
+
+        return (
+            <div
+                key={category.id}
+                className={`category ${isSelected ? "selected" : ""}`}
+                onClick={() => {
+                    isAvailable && onCategorySelected(category);
+                }}
+            >
+                {!isAvailable ? (
+                    <div className={`name ${isAvailable ? "available" : "unavailable"}`}>{category.name} (UNAVAILABLE)</div>
+                ) : isSelected ? (
+                    <div className="bold">{category.name}</div>
+                ) : (
+                    <div className="name">{category.name}</div>
+                )}
+            </div>
+        );
+    };
+
     const menuCategories = (
-        <div style={{ overflow: "auto" }}>
+        <>
             {restaurant.categories.items.map((c, index) => (
-                <>
-                    {index == 0 && <div style={{ borderBottom: "1px solid #e0e0e0" }}></div>}
-                    <Category
-                        isSelected={selectedCategory != null && selectedCategory.id == c.id}
-                        category={c}
-                        onCategorySelected={(category: IGET_RESTAURANT_CATEGORY) => {
-                            setSelectedCategory(category);
-                        }}
-                    />
-                </>
+                <Category
+                    isSelected={selectedCategory != null && selectedCategory.id == c.id}
+                    category={c}
+                    onCategorySelected={(category: IGET_RESTAURANT_CATEGORY) => {
+                        setSelectedCategory(category);
+                    }}
+                />
             ))}
-        </div>
+        </>
     );
 
     const menuSearchProduct = (
         <>
             <Shake active={isShakeAnimationActive} h={5} v={5} r={3} dur={300} int={10} max={100} fixed={true} fixedStop={false} freez={false}>
                 <div
-                    style={{
-                        // height: "85px",
-                        padding: "30px 24px",
-                        backgroundColor: "#e0e0e0",
-                        display: "flex",
-                        alignItems: "center",
-                    }}
+                    className="category background-grey"
                     onClick={() => {
                         setShowSearchProductModal(true);
                     }}
                 >
-                    <img style={{ height: "24px" }} src={`${getPublicCloudFrontDomainName()}/images/search-icon.png`} />
-                    <SizedBox width="10px" />
-                    <div>Search</div>
+                    <img className="icon" src={`${getPublicCloudFrontDomainName()}/images/search-icon.png`} />
+                    <div className="name">Search</div>
                 </div>
             </Shake>
         </>
     );
 
-    const menuMostSoldCategory = (
-        <>
-            <div
-                style={{
-                    // height: "85px",
-                    padding: "30px 24px",
-                    backgroundColor: "#e0e0e0",
-                    display: "flex",
-                    alignItems: "center",
-                    borderLeft: !selectedCategory ? "8px solid var(--primary-color)" : "none",
-                }}
-                onClick={() => {
-                    setSelectedCategory(null);
-                }}
-            >
-                <img style={{ height: "24px" }} src={`${getPublicCloudFrontDomainName()}/images/most-popular.png`} />
-                <SizedBox width="10px" />
-                <div>Most Popular</div>
-            </div>
-        </>
+    const menuMostPopularCategory = (
+        <div
+            className={`category background-grey ${!selectedCategory ? "selected" : ""}`}
+            onClick={() => {
+                setSelectedCategory(null);
+            }}
+        >
+            <img className="icon" src={`${getPublicCloudFrontDomainName()}/images/most-popular.png`} />
+            <div className="name">Most Popular</div>
+        </div>
     );
 
-    const menuMostSoldProducts = (
-        <div style={{ width: "100%" }}>
+    const menuMostPopularProducts = (
+        <div>
             {!selectedCategory && (
                 <>
-                    <Title3Font style={{ fontSize: "36px" }}>Most Popular</Title3Font>
-                    <Space5 />
-                    <div
-                        style={{
-                            display: "grid",
-                            gridGap: "32px",
-                            gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-                        }}
-                    >
-                        {mostSoldProducts.map((mostSoldProduct) => {
-                            return productDisplay(mostSoldProduct.category, mostSoldProduct.product);
+                    <div className="h1 mb-6">Most Popular</div>
+                    <div className="products">
+                        {mostPopularProducts.map((mostPopularProduct) => {
+                            return productDisplay(mostPopularProduct.category, mostPopularProduct.product);
                         })}
                     </div>
                 </>
@@ -355,7 +333,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
     );
 
     const menuProducts = (
-        <div style={{ width: "100%" }}>
+        <div>
             {selectedCategory &&
                 restaurant.categories.items.map((c) => {
                     if (selectedCategory.id !== c.id) {
@@ -364,15 +342,8 @@ export const Restaurant = (props: { restaurantID: string }) => {
 
                     return (
                         <>
-                            <Title3Font style={{ fontSize: "36px" }}>{c.name}</Title3Font>
-                            <Space5 />
-                            <div
-                                style={{
-                                    display: "grid",
-                                    gridGap: "32px",
-                                    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-                                }}
-                            >
+                            <div className="h1 mb-6">{c.name}</div>
+                            <div className="products">
                                 {c.products.items.map((p) => {
                                     return productDisplay(c, p.product);
                                 })}
@@ -387,10 +358,10 @@ export const Restaurant = (props: { restaurantID: string }) => {
         <>
             <div className="total-container">
                 <div className="total-wrapper mb-2">
-                    <img className="shopping-bag-icon mr-1" src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`} />
+                    <img className="shopping-bag-icon mr-2" src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`} />
                     <div className="h4 total">Total: ${convertCentsToDollars(total)}</div>
                 </div>
-                <KioskButton className="view-my-order-button" disabled={!products || products.length == 0} onClick={onClickCart}>
+                <KioskButton className="large" disabled={!products || products.length == 0} onClick={onClickCart}>
                     View My Order
                 </KioskButton>
             </div>
@@ -408,11 +379,11 @@ export const Restaurant = (props: { restaurantID: string }) => {
                         <div className="categories-wrapper">
                             {restaurant.logo && <RestaurantLogo image={restaurant.logo} />}
                             {menuSearchProduct}
-                            {menuMostSoldCategory}
+                            {menuMostPopularCategory}
                             {menuCategories}
                         </div>
                         <div className="products-wrapper">
-                            {menuMostSoldProducts}
+                            {menuMostPopularProducts}
                             {menuProducts}
                         </div>
                     </div>
@@ -426,32 +397,4 @@ export const Restaurant = (props: { restaurantID: string }) => {
 
 const RestaurantLogo = (props: { image: IS3Object }) => {
     return <img src={`${getCloudFrontDomainName()}/protected/${props.image.identityPoolId}/${props.image.key}`} className="restaurant-logo" />;
-};
-
-const Category = (props: {
-    isSelected: boolean;
-    category: IGET_RESTAURANT_CATEGORY;
-    onCategorySelected: (category: IGET_RESTAURANT_CATEGORY) => void;
-}) => {
-    const { isSelected, category, onCategorySelected } = props;
-
-    const isAvailable = isItemAvailable(category.availability);
-
-    return (
-        <div
-            key={category.id}
-            className={`category ${isSelected ? "selected" : ""}`}
-            onClick={() => {
-                isAvailable && onCategorySelected(category);
-            }}
-        >
-            {!isAvailable ? (
-                <div className={`name ${isAvailable ? "available" : "unavailable"}`}>{category.name} (UNAVAILABLE)</div>
-            ) : isSelected ? (
-                <div className="bold">{category.name}</div>
-            ) : (
-                <div className="name">{category.name}</div>
-            )}
-        </div>
-    );
 };

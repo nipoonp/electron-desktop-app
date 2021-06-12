@@ -48,14 +48,67 @@
         overflow: scroll;
         padding: 48px 32px 32px 32px;
         width: 100%;
+
+        .products {
+            display: grid;
+            grid-gap: 32px;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+
+            .product {
+                border: 1px solid #e0e0e0;
+                padding: 16px;
+                border-radius: 10px;
+                opacity: 1;
+
+                &.sold-out {
+                    opacity: 0.5;
+                }
+
+                .image {
+                    width: 100%;
+                    height: 200px;
+                    border-radius: 10px;
+                    object-fit: cover;
+                }
+
+                .name {
+                    font-size: 18px;
+                    text-align: center;
+                }
+
+                .description {
+                    min-height: 3em;
+                    line-height: 1.5em;
+                    white-space: normal;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                    font-weight: 300;
+                    text-align: center;
+                }
+
+                .price {
+                    text-align: center;
+                    font-size: 18px;
+                }
+            }
+        }
     }
 
     .category {
         padding: 30px 24px;
-        border-bottom: 1px solid #e0e0e0;
+        border-top: 1px solid #e0e0e0;
+        display: flex;
+        align-items: center;
 
-        .selected {
+        &.selected {
             border-left: 8px solid var(--primary-color);
+        }
+
+        &.background-grey {
+            background-color: #e0e0e0;
         }
 
         .name {
@@ -68,6 +121,11 @@
             .unavailable {
                 opacity: 0.5;
             }
+        }
+
+        .icon {
+            height: 24px;
+            margin-right: 10px;
         }
     }
 
@@ -93,17 +151,13 @@
                     font-weight: 400;
                 }
             }
-
-            .view-my-order-button {
-                font-size: 22px;
-            }
         }
 
         .cancel-button {
             background-color: #ffffff;
             color: #484848;
             border: 1px solid #e0e0e0;
-            padding: 12px 24px;
+            padding: 16px 30px;
             font-weight: 300;
         }
     }

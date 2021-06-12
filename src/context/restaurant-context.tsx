@@ -4,9 +4,6 @@ import { IGET_RESTAURANT, IGET_USER_RESTAURANT } from "../graphql/customQueries"
 import { useGetRestaurantQuery } from "../hooks/useGetRestaurantQuery";
 import { getCloudFrontDomainName } from "../private/aws-custom";
 import "./../styles/kiosk.scss";
-import "./../components/page/restaurant.scss";
-import "./../components/page/beginOrder.scss";
-import "./../components/page/orderType.scss";
 
 type ContextProps = {
     selectRestaurant: (id: string | null) => void;

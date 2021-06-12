@@ -33,7 +33,7 @@ import { toast } from "../../tabin/components/toast";
 import { toLocalISOString } from "../../util/dateTime";
 import { useRestaurant } from "../../context/restaurant-context";
 
-const styles = require("./checkout.module.css");
+import "./checkout.scss";
 
 const logger = new Logger("checkout");
 
@@ -234,16 +234,6 @@ export const Checkout = () => {
             throw e;
         }
     };
-
-    const title = (
-        <>
-            <div style={{ display: "flex", alignItems: "center" }}>
-                <img style={{ height: "72px" }} src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`} />
-                <SizedBox width="12px" />
-                <Title1Font>Your Order</Title1Font>
-            </div>
-        </>
-    );
 
     const orderSummary = (
         <OrderSummary
@@ -810,139 +800,85 @@ export const Checkout = () => {
         history.push(`/restaurant/${restaurant.id}`);
     };
 
-    const checkoutFooter = (
-        <div>
-            <div style={{ textAlign: "center" }}>
-                <Title1Font>Total: ${convertCentsToDollars(total)}</Title1Font>
-            </div>
-            <Space4 />
-            <div>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                    }}
-                >
-                    <KioskButton
-                        onClick={onOrderMore}
-                        style={{
-                            backgroundColor: "#ffffff",
-                            color: "#484848",
-                            border: "1px solid #e0e0e0",
-                            width: "350px",
-                        }}
-                    >
-                        <NormalFont style={{ fontSize: "22px" }}>Order More</NormalFont>
-                    </KioskButton>
-                    <SizedBox width="24px" />
-                    <KioskButton
-                        onClick={onClickOrderButton}
-                        cy-data="add-to-order"
-                        style={{
-                            width: "350px",
-                        }}
-                    >
-                        <NormalFont style={{ fontSize: "22px" }}>Complete Order</NormalFont>
-                    </KioskButton>
-                </div>
-                {register.enablePayLater && (
-                    <>
-                        <Space4 />
-                        <div style={{ textAlign: "center" }}>
-                            <Link onClick={onClickPayLater}>Ill pay later...</Link>
-                        </div>
-                    </>
-                )}
-            </div>
-            <Space4 />
-            <KioskButton
-                style={{
-                    backgroundColor: "#ffffff",
-                    color: "#484848",
-                    border: "1px solid #e0e0e0",
-                    padding: "12px 24px",
-                }}
-                onClick={onCancelOrder}
-            >
-                <NormalFont style={{ fontWeight: 300 }}>Cancel Order</NormalFont>
-            </KioskButton>
+    const title = (
+        <div className="title mb-6">
+            <img className="image mr-2" src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`} />
+            <div className="h1">Your Order</div>
         </div>
     );
 
     const restaurantOrderType = (
-        <div
-            style={{
-                display: "grid",
-                gridTemplateColumns: "1fr auto",
-                alignItems: "center",
-            }}
-        >
-            <Title3Font>Order Type: {orderType}</Title3Font>
+        <div className="order-type mb-2">
+            <div className="h3">Order Type: {orderType}</div>
             <Link onClick={onUpdateOrderType}>Change</Link>
         </div>
     );
 
     const restaurantTableNumber = (
-        <div
-            style={{
-                display: "grid",
-                gridTemplateColumns: "1fr auto",
-                alignItems: "center",
-            }}
-        >
-            <Title3Font>Table Number: {tableNumber}</Title3Font>
+        <div className="table-number">
+            <div className="h3">Table Number: {tableNumber}</div>
             <Link onClick={onUpdateTableNumber}>Change</Link>
         </div>
     );
 
     const restaurantNotes = (
         <>
-            <Title2Font>Special instructions</Title2Font>
-            <Space3 />
-            {/* this condition is required because we cannot have two keyboards active at a time, we would have checkout and product keyboards active at a time and it would not work */}
-            {/* can figure out a better way to do it in the future with refs */}
-            {!showEditProductModal && <TextAreaV2 placeholder={"Leave a note for the restaurant"} value={notes} onChange={onNotesChange} />}
+            <div className="h2 mb-3">Special instructions</div>
+            <TextAreaV2 placeholder={"Leave a note for the restaurant"} value={notes} onChange={onNotesChange} />
         </>
     );
 
-    const content = (
+    const order = (
         <>
-            <Space size={84} />
+            <div className="mt-10"></div>
             {title}
-            <Space6 />
             {restaurantOrderType}
-            <Space2 />
-            {tableNumber && (
-                <>
-                    {restaurantTableNumber}
-                    <Space4 />
-                </>
-            )}
-            <Separator6 />
+            {tableNumber && <div className="mb-4">{restaurantTableNumber}</div>}
+            <div className="separator-6"></div>
             {orderSummary}
             {restaurantNotes}
         </>
     );
 
+    const checkoutFooter = (
+        <div>
+            <div className="h1 text-center mb-4">Total: ${convertCentsToDollars(total)}</div>
+            <div>
+                <div className="checkout-buttons-container">
+                    <KioskButton onClick={onOrderMore} className="button large mr-3 order-more-button">
+                        Order More
+                    </KioskButton>
+                    <KioskButton onClick={onClickOrderButton} className="button large complete-order-button">
+                        Complete Order
+                    </KioskButton>
+                </div>
+                {register.enablePayLater && (
+                    <>
+                        <Space4 />
+                        <div style={{ textAlign: "center" }}>
+                            <Link onClick={onClickPayLater}>Pay at counter...</Link>
+                        </div>
+                    </>
+                )}
+            </div>
+            <Space4 />
+            <KioskButton className="cancel-button" onClick={onCancelOrder}>
+                Cancel Order
+            </KioskButton>
+        </div>
+    );
+
     return (
         <>
             <KioskPageWrapper>
-                <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
-                    <div style={{ display: "flex", flex: "1", overflow: "scroll" }}>
-                        <div
-                            style={{
-                                overflow: "scroll",
-                                padding: "0 84px 84px 84px",
-                                width: "100%",
-                            }}
-                            className={styles.checkoutContentWrapper}
-                        >
+                <div className="checkout">
+                    <div className="order-wrapper">
+                        <div className="order">
                             {(!products || products.length == 0) && cartEmptyDisplay}
-                            {products && products.length > 0 && content}
+                            {products && products.length > 0 && order}
                         </div>
                     </div>
-                    {products && products.length > 0 && <div style={{ padding: "24px", borderTop: "1px solid #e0e0e0" }}>{checkoutFooter}</div>}
+                    {products && products.length > 0 && <div className="footer">{checkoutFooter}</div>}
                 </div>
                 {modalsAndSpinners}
             </KioskPageWrapper>
@@ -976,10 +912,7 @@ const OrderSummary = (props: {
                     // using index as key because products can be duplicated
                     if (product) {
                         return (
-                            <div
-                                key={index}
-                                // onClick={() => props.onEditProduct(product, index)}
-                            >
+                            <div key={index}>
                                 <OrderItem
                                     product={product}
                                     displayOrder={index}
@@ -995,11 +928,7 @@ const OrderSummary = (props: {
         </>
     );
 
-    return (
-        <>
-            <div>{orderItems}</div>
-        </>
-    );
+    return <>{orderItems}</>;
 };
 
 const OrderItem = (props: {

@@ -7,6 +7,8 @@ import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
 import { useRegister } from "../../context/register-context";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 
+import "./orderType.scss";
+
 export const OrderType = (props: {}) => {
     const history = useHistory();
     const { setOrderType } = useCart();
@@ -30,14 +32,14 @@ export const OrderType = (props: {}) => {
         <>
             <KioskPageWrapper>
                 <div className="order-type">
-                    <div className="h1 mb-6">Are you staying or going?</div>
+                    <div className="h1 mb-12">Are you staying or going?</div>
                     <div className="imagesWrapper">
-                        <div className="mr-6" onClick={() => onSelectOrderType(EOrderType.DINEIN)}>
-                            <img className="dineinImage mb-2" src={`${getPublicCloudFrontDomainName()}/images/order-type-dine-in.png`} />
+                        <div className="mr-12" onClick={() => onSelectOrderType(EOrderType.DINEIN)}>
+                            <img className="dineinImage mb-4" src={`${getPublicCloudFrontDomainName()}/images/order-type-dine-in.png`} />
                             <div className="h2">Dine In</div>
                         </div>
                         <div onClick={() => onSelectOrderType(EOrderType.TAKEAWAY)}>
-                            <img className="takeawayImage mb-2" src={`${getPublicCloudFrontDomainName()}/images/order-type-take-away.png`} />
+                            <img className="takeawayImage mb-4" src={`${getPublicCloudFrontDomainName()}/images/order-type-take-away.png`} />
                             <div className="h2">Takeaway</div>
                         </div>
                     </div>
