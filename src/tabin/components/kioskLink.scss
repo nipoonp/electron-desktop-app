@@ -1,0 +1,10 @@
+.link {
+    color: var(--lnk-color);
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.link:hover {
+    color: hsl(var(--lnk-hue), var(--lnk-saturation), 15%);
+}

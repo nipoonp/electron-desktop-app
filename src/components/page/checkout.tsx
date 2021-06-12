@@ -4,7 +4,6 @@ import { useCart } from "../../context/cart-context";
 import { useHistory } from "react-router-dom";
 import { Space, Space2, Space3, Space4, Space1, Space6 } from "../../tabin/components/spaces";
 import { Title3Font, NormalFont, Title2Font, BoldFont, Title1Font, Title4Font } from "../../tabin/components/fonts";
-import { Link } from "../../tabin/components/link";
 import { GrayColor, PrimaryColor } from "../../tabin/components/colors";
 import { convertCentsToDollars } from "../../util/moneyConversion";
 import { useMutation } from "react-apollo-hooks";
@@ -34,6 +33,7 @@ import { toLocalISOString } from "../../util/dateTime";
 import { useRestaurant } from "../../context/restaurant-context";
 
 import "./checkout.scss";
+import { KioskLink } from "../../tabin/components/kioskLink";
 
 const logger = new Logger("checkout");
 
@@ -547,34 +547,21 @@ export const Checkout = () => {
 
     const retryButtons = () => (
         <>
-            <div style={{ display: "flex" }}>
-                <div>
-                    <KioskButton onClick={onConfirmTotalOrRetryTransaction}>
-                        <NormalFont>Retry</NormalFont>
-                    </KioskButton>
-                </div>
-                <div style={{ width: "24px" }}></div>
-                <div>
-                    <KioskButton
-                        onClick={onClosePaymentModal}
-                        style={{
-                            backgroundColor: "#ffffff",
-                            color: "#484848",
-                            border: "1px solid #e0e0e0",
-                        }}
-                    >
-                        <NormalFont>Cancel</NormalFont>
-                    </KioskButton>
-                </div>
+            <div className="retry-buttons">
+                <KioskButton className="mr-3" onClick={onConfirmTotalOrRetryTransaction}>
+                    Retry
+                </KioskButton>
+                <KioskButton className="retry-cancel-button" onClick={onClosePaymentModal}>
+                    Cancel
+                </KioskButton>
             </div>
         </>
     );
 
     const awaitingCard = () => (
         <>
-            <Title4Font style={{ lineHeight: "42px" }}>Swipe or insert your card on the terminal to complete your payment.</Title4Font>
-            <Space6 />
-            <img src={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} height="250px" />
+            <div className="h4 mb-6 awaiting-card-text">Swipe or insert your card on the terminal to complete your payment.</div>
+            <img className="awaiting-card-image" src={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} />
         </>
     );
 
@@ -584,15 +571,11 @@ export const Checkout = () => {
 
     const paymentPayLater = () => (
         <>
-            <Title4Font>All Done!</Title4Font>
-            <Space4 />
-            <Title2Font>Please pay later at the counter.</Title2Font>
-            <Space6 />
-            <NormalFont>Your order number is</NormalFont>
-            <Space1 />
-            <Title1Font style={{ fontSize: "200px", lineHeight: "256px" }}>{paymentOutcomeDelayedOrderNumber}</Title1Font>
-            <Separator6 />
-            <Space6 />
+            <div className="h4 mb-4">All Done!</div>
+            <div className="h2 mb-6">Please pay later at the counter.</div>
+            <div className="mb-1">Your order number is</div>
+            <div className="order-number h1">{paymentOutcomeDelayedOrderNumber}</div>
+            <div className="separator-6 mb-6"></div>
             {/* <Title3Font>Would you like to help save the planet? Get a e-receipt.</Title3Font>
             <Space4 />
             <div style={{ display: "flex", alignItems: "center" }}>
@@ -616,27 +599,21 @@ export const Checkout = () => {
                 </Link>{" "}
             </NormalFont>
             <Space3 /> */}
-            <GrayColor style={{ marginTop: "auto" }}>
-                <NormalFont>
-                    Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
-                    {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
-                    ...
-                </NormalFont>
-            </GrayColor>
+            <div className="redirecting-in-text text-grey">
+                Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
+                {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
+                ...
+            </div>
         </>
     );
 
     const paymentAccepted = () => (
         <>
-            <Title4Font>All Done!</Title4Font>
-            <Space4 />
-            <Title2Font>Transaction Accepted!</Title2Font>
-            <Space6 />
-            <NormalFont>Your order number is</NormalFont>
-            <Space1 />
-            <Title1Font style={{ fontSize: "200px", lineHeight: "256px" }}>{paymentOutcomeDelayedOrderNumber}</Title1Font>
-            <Separator6 />
-            <Space6 />
+            <div className="h4 mb-4">All Done!</div>
+            <div className="h2 mb-6">Transaction Accepted!</div>
+            <div className="mb-1">Your order number is</div>
+            <div className="h1">{paymentOutcomeDelayedOrderNumber}</div>
+            <div className="separator-6 mb-6"></div>
             {/* <Title3Font>Would you like to help save the planet? Get a e-receipt.</Title3Font>
             <Space4 />
             <div style={{ display: "flex", alignItems: "center" }}>
@@ -660,54 +637,31 @@ export const Checkout = () => {
                 </Link>
             </NormalFont>
             <Space3 /> */}
-            <GrayColor style={{ marginTop: "auto" }}>
-                <NormalFont>
-                    Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
-                    {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
-                    ...
-                </NormalFont>
-            </GrayColor>
+            <div className="redirecting-in-text text-grey">
+                Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
+                {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
+                ...
+            </div>
         </>
     );
 
-    const paymentDelayed = () => (
-        <>
-            <Title4Font>Transaction delayed! Check if the device is powered on and online.</Title4Font>
-        </>
-    );
+    const paymentDelayed = () => <div className="h4">Transaction delayed! Check if the device is powered on and online.</div>;
 
     const paymentFailed = (errorMessage?: string) => (
         <>
-            <Title4Font>Oops! Something went wrong.</Title4Font>
-            {errorMessage && (
-                <>
-                    <Space4 />
-                    <Title2Font>{errorMessage}</Title2Font>
-                </>
-            )}
-            <Space6 />
+            <div className="h4">Oops! Something went wrong.</div>
+            {errorMessage && <div className="h2 mt-4 mb-6">{errorMessage}</div>}
             {retryButtons()}
         </>
     );
 
     const createOrderFailed = () => (
         <>
-            <Title4Font>Oops! Something went wrong.</Title4Font>
-            <Space4 />
-            <NormalFont>Internal Server Error! Please contact a Tabin representative!</NormalFont>
-            <Space2 />
-            <NormalFont>{createOrderError}</NormalFont>
-            <Space2 />
-            <KioskButton
-                style={{
-                    backgroundColor: "#ffffff",
-                    color: "#484848",
-                    border: "1px solid #e0e0e0",
-                    padding: "12px 24px",
-                }}
-                onClick={onCancelOrder}
-            >
-                <NormalFont style={{ fontWeight: 300 }}>Issue Fixed? Restart</NormalFont>
+            <div className="h4 mb-4">Oops! Something went wrong.</div>
+            <div className="mb-2">Internal Server Error! Please contact a Tabin representative!</div>
+            <div className="mb-2">{createOrderError}</div>
+            <KioskButton className="issue-fixed-button" onClick={onCancelOrder}>
+                Issue Fixed? Restart
             </KioskButton>
         </>
     );
@@ -741,18 +695,7 @@ export const Checkout = () => {
     const paymentModal = (
         <>
             <KioskModal isOpen={showPaymentModal}>
-                <div
-                    style={{
-                        height: "100vh",
-                        display: "flex",
-                        alignItems: "center",
-                        flexDirection: "column",
-                        textAlign: "center",
-                        padding: "128px 200px",
-                    }}
-                >
-                    {getActivePaymentModalComponent()}
-                </div>
+                <div className="payment-modal">{getActivePaymentModalComponent()}</div>
             </KioskModal>
         </>
     );
@@ -768,23 +711,12 @@ export const Checkout = () => {
 
     const cartEmptyDisplay = (
         <>
-            <div
-                style={{
-                    height: "100vh",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexDirection: "column",
-                }}
-            >
-                <GrayColor style={{ color: "hsl(0,0%,80%)" }}>
+            <div className="cart-empty">
+                <div className="icon mb-3">
                     <ShoppingBasketIcon height={"72px"}></ShoppingBasketIcon>
-                </GrayColor>
-                <Space3 />
-                <Title1Font style={{ textAlign: "center" }}>Empty cart</Title1Font>
-                <Space3 />
-                <Title3Font style={{ textAlign: "center", fontWeight: 400 }}>Show some love and start ordering!</Title3Font>
-                <Space6 />
+                </div>
+                <div className="h1 center mb-3">Empty cart</div>
+                <div className="h3 center mb-6">Show some love and start ordering!</div>
                 <KioskButton
                     onClick={() => {
                         history.push(restaurantPath + "/" + restaurant!.id);
@@ -810,14 +742,14 @@ export const Checkout = () => {
     const restaurantOrderType = (
         <div className="order-type mb-2">
             <div className="h3">Order Type: {orderType}</div>
-            <Link onClick={onUpdateOrderType}>Change</Link>
+            <KioskLink onClick={onUpdateOrderType}>Change</KioskLink>
         </div>
     );
 
     const restaurantTableNumber = (
         <div className="table-number">
             <div className="h3">Table Number: {tableNumber}</div>
-            <Link onClick={onUpdateTableNumber}>Change</Link>
+            <KioskLink onClick={onUpdateTableNumber}>Change</KioskLink>
         </div>
     );
 
@@ -853,12 +785,9 @@ export const Checkout = () => {
                     </KioskButton>
                 </div>
                 {register.enablePayLater && (
-                    <>
-                        <Space4 />
-                        <div style={{ textAlign: "center" }}>
-                            <Link onClick={onClickPayLater}>Pay at counter...</Link>
-                        </div>
-                    </>
+                    <KioskLink className="pay-later-link mt-4" onClick={onClickPayLater}>
+                        Pay at counter...
+                    </KioskLink>
                 )}
             </div>
             <Space4 />
@@ -920,7 +849,7 @@ const OrderSummary = (props: {
                                     onUpdateProductQuantity={props.onUpdateProductQuantity}
                                     onRemoveProduct={props.onRemoveProduct}
                                 />
-                                <Separator6 />
+                                <div className="separator-6"></div>
                             </div>
                         );
                     }
@@ -961,22 +890,9 @@ const OrderItem = (props: {
         />
     );
 
-    const price = (
-        <PrimaryColor>
-            <Title2Font>${convertCentsToDollars(itemPrice)}</Title2Font>
-        </PrimaryColor>
-    );
-
     return (
         <>
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "auto 1fr auto",
-                    gridColumnGap: "32px",
-                    alignItems: "center",
-                }}
-            >
+            <div className="order-item">
                 {quantity}
                 <OrderItemDetails
                     name={props.product.name}
@@ -984,19 +900,10 @@ const OrderItem = (props: {
                     modifierGroups={props.product.modifierGroups}
                     onEditProduct={() => props.onEditProduct(props.product, props.displayOrder)}
                 />
-                <div style={{ textAlign: "center" }}>
-                    {price}
-                    <Space2 />
-                    <KioskButton
-                        style={{
-                            backgroundColor: "#ffffff",
-                            color: "#484848",
-                            border: "1px solid #e0e0e0",
-                            padding: "6px 18px",
-                        }}
-                        onClick={() => props.onRemoveProduct(props.displayOrder)}
-                    >
-                        <NormalFont style={{ fontWeight: 300 }}>Remove</NormalFont>
+                <div className="text-center">
+                    <div className="h2 text-primary mb-2">${convertCentsToDollars(itemPrice)}</div>
+                    <KioskButton className="remove-button" onClick={() => props.onRemoveProduct(props.displayOrder)}>
+                        Remove
                     </KioskButton>
                 </div>
             </div>
@@ -1023,30 +930,18 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
         return mStr;
     };
 
-    // displays
-
     const editButton = (
         <>
-            <KioskButton
-                style={{
-                    backgroundColor: "#ffffff",
-                    color: "#484848",
-                    border: "1px solid #e0e0e0",
-                    padding: "6px 18px",
-                    display: "inline-block",
-                    marginLeft: "12px",
-                }}
-                onClick={() => props.onEditProduct()}
-            >
-                <NormalFont style={{ fontWeight: 300 }}>Edit</NormalFont>
+            <KioskButton className="edit-button" onClick={() => props.onEditProduct()}>
+                Edit
             </KioskButton>
         </>
     );
 
     const nameDisplay = (
-        <Title2Font>
-            {props.name} {editButton}
-        </Title2Font>
+        <div className="name-edit-button">
+            <div className="h2 mr-2">{props.name}</div> {editButton}
+        </div>
     );
 
     const modifiersDisplay = (
@@ -1055,12 +950,11 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
                 <>
                     {!mg.hideForCustomer && (
                         <>
-                            <Space1 />
-                            <BoldFont key={mg.id}>{mg.name}</BoldFont>
-                            {mg.modifiers.map((m, index2) => (
-                                <>
-                                    <NormalFont key={m.id}>{modifierString(m.preSelectedQuantity, m.quantity, m.name, m.price)}</NormalFont>
-                                </>
+                            <div className="text-bold mt-1" key={mg.id}>
+                                {mg.name}
+                            </div>
+                            {mg.modifiers.map((m) => (
+                                <div key={m.id}>{modifierString(m.preSelectedQuantity, m.quantity, m.name, m.price)}</div>
                             ))}
                         </>
                     )}
@@ -1069,26 +963,10 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
         </>
     );
 
-    const notesDisplay = (
-        <>
-            {props.notes && (
-                <>
-                    <GrayColor>
-                        <NormalFont>Notes: {props.notes}</NormalFont>
-                    </GrayColor>
-                </>
-            )}
-        </>
-    );
+    const notesDisplay = <>{props.notes && <div className="text-grey">Notes: {props.notes}</div>}</>;
 
     return (
-        <div
-            style={{
-                display: "grid",
-                gridAutoRows: "auto" /* shrink to min size*/,
-                gridRowGap: "4px",
-            }}
-        >
+        <div className="detail">
             {nameDisplay}
             {modifiersDisplay}
             {notesDisplay}

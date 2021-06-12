@@ -235,7 +235,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
                         />
                     )}
 
-                    <div className="name bold">
+                    <div className="name text-bold">
                         {!isAvailable ? `${product.name} (UNAVAILABLE)` : isSoldOut ? `${product.name} (SOLD OUT)` : `${product.name}`}
                     </div>
 
@@ -267,7 +267,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
                 {!isAvailable ? (
                     <div className={`name ${isAvailable ? "available" : "unavailable"}`}>{category.name} (UNAVAILABLE)</div>
                 ) : isSelected ? (
-                    <div className="bold">{category.name}</div>
+                    <div className="text-bold">{category.name}</div>
                 ) : (
                     <div className="name">{category.name}</div>
                 )}

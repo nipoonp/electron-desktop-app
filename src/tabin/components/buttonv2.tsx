@@ -32,7 +32,7 @@ export const ButtonV2 = (props: IProps) => {
     }
 
     return (
-        <button className={props.className} style={style} onClick={props.onClick} disabled={props.disabled} cy-data={props.cyData}>
+        <button className={props.className} style={style} onClick={props.onClick} disabled={props.disabled}>
             {props.loading ? <Spinner /> : props.children}
         </button>
     );
@@ -43,7 +43,6 @@ export interface IProps {
     onClick?: () => void;
     disabled?: boolean;
     children: React.ReactNode;
-    cyData?: string;
     style?: React.CSSProperties;
     className?: string;
 }

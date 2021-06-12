@@ -13,7 +13,6 @@ export default (props: {
     value?: string | number | string[];
     onChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void;
     error?: string | null;
-    cyData?: string;
 }) => {
     return (
         <>
@@ -25,7 +24,6 @@ export default (props: {
             )}
             <div className={`${styles.selectContainer}`}>
                 <select
-                    cy-data={props.cyData ? props.cyData : ""}
                     className={`${styles.select} ${props.disabled ? styles.disabled : ""} ${props.error ? styles.selectError : ""} ${
                         props.className ? props.className : ""
                     }`}

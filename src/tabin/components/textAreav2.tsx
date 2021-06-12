@@ -14,7 +14,6 @@ export const TextAreaV2 = (props: {
     error?: boolean;
     placeholder?: string;
     disabled?: boolean;
-    cyData?: string;
     style?: React.CSSProperties;
 }) => {
     // default style
@@ -49,7 +48,6 @@ export const TextAreaV2 = (props: {
     return (
         <NormalFont>
             <textarea
-                cy-data={props.cyData}
                 className={styles.textarea} // for placeholder
                 rows={props.rows ? props.rows : 1}
                 placeholder={props.placeholder}

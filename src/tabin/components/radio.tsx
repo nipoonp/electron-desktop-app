@@ -10,7 +10,6 @@ export const Radio = (props: {
     checked?: boolean;
     onSelect: () => void;
     disabled?: boolean;
-    cyData?: string;
     error?: string;
     style?: React.CSSProperties;
     // name: string;
@@ -25,11 +24,7 @@ export const Radio = (props: {
 
     return (
         <>
-            <div
-                cy-data={props.cyData ? props.cyData : ""}
-                className={`${styles.container} ${props.disabled ? styles.disabled : ""}`}
-                style={{ ...props.style }}
-            >
+            <div className={`${styles.container} ${props.disabled ? styles.disabled : ""}`} style={{ ...props.style }}>
                 <div className={`${styles.boxContainer} ${props.disabled ? styles.disabled : ""}`} onClick={onClick}>
                     <div className={`${styles.box} ${props.checked && !props.disabled && styles.boxChecked}`} />
                 </div>

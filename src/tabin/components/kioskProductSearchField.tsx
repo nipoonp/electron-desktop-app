@@ -13,7 +13,6 @@ export const KioskProductSearchField = (props: {
     error?: string;
     placeholder?: string;
     disabled?: boolean;
-    cyData?: string;
     style?: React.CSSProperties;
 }) => {
     // just for naming
@@ -47,7 +46,6 @@ export const KioskProductSearchField = (props: {
     return (
         <>
             <input
-                cy-data={props.cyData}
                 className={className}
                 placeholder={props.placeholder}
                 name={props.name}

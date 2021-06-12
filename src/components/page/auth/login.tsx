@@ -102,7 +102,6 @@ export const Login = () => {
     const emailInput = (
         <>
             <InputV3
-                cy-data="login-username"
                 name="email"
                 label="Email"
                 type="text"
@@ -117,7 +116,6 @@ export const Login = () => {
     const passwordInput = (
         <>
             <InputV3
-                cy-data="login-password"
                 name="password"
                 label="Password"
                 type="password"
@@ -131,7 +129,7 @@ export const Login = () => {
 
     const loginButton = (
         <>
-            <ButtonV2 cyData="login-button" style={{ borderRadius: "8px", width: "100%" }} disabled={loading} onClick={onLogin} loading={loading}>
+            <ButtonV2 style={{ borderRadius: "8px", width: "100%" }} disabled={loading} onClick={onLogin} loading={loading}>
                 <BoldFont>LOG IN</BoldFont>
             </ButtonV2>
         </>

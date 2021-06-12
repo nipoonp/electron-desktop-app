@@ -14,7 +14,6 @@ export const InputV3 = (props: {
     error?: boolean;
     // placeholder?: string;
     disabled?: boolean;
-    cyData?: string;
     style?: React.CSSProperties;
 }) => {
     // just for naming
@@ -51,7 +50,6 @@ export const InputV3 = (props: {
             <div style={InputContainerV3Style}>
                 <input
                     id={props.name}
-                    cy-data={props.cyData}
                     className={className}
                     // placeholder={props.placeholder}
                     name={props.name}

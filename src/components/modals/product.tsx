@@ -446,7 +446,6 @@ export const ProductModal = (props: {
                 <SizedBox width="24px" />
                 <KioskButton
                     onClick={onSubmit}
-                    cy-data="add-to-order"
                     style={{
                         width: "350px",
                     }}
@@ -579,35 +578,33 @@ export const ModifierGroup = (props: {
             <Space2 />
             <NormalFont>({getSelectInstructions()})</NormalFont>
             <Space2 />
-            <div cy-data="modifier-group">
-                {props.modifierGroup.modifiers.items.map((m) => (
-                    <>
-                        <Modifier
-                            modifierGroupName={props.modifierGroup.name}
-                            radio={props.modifierGroup.choiceMin !== 0 && props.modifierGroup.choiceMax === 1}
-                            modifier={m.modifier}
-                            choiceDuplicate={props.modifierGroup.choiceDuplicate}
-                            onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                props.onCheckingModifier(selectedModifier, m.preSelectedQuantity);
-                            }}
-                            onUnCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                props.onUnCheckingModifier(selectedModifier, m.preSelectedQuantity);
-                            }}
-                            onChangeModifierQuantity={(selectedModifier: IGET_RESTAURANT_MODIFIER, quantity: number) => {
-                                props.onChangeModifierQuantity(selectedModifier, m.preSelectedQuantity, quantity);
-                            }}
-                            onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                props.onSelectRadioModifier(selectedModifier, m.preSelectedQuantity);
-                            }}
-                            modifierQuantity={modifierQuantity(m.modifier)}
-                            checked={isModifierSelected(m.modifier)}
-                            maxReached={isMaxReached(props.modifierGroup.choiceMax, props.selectedModifiers)}
-                            soldOut={isItemSoldOut(m.modifier.soldOut, m.modifier.soldOutDate)}
-                            disabled={props.disabled || isModifierDisabled(m.modifier)}
-                        />
-                    </>
-                ))}
-            </div>
+            {props.modifierGroup.modifiers.items.map((m) => (
+                <>
+                    <Modifier
+                        modifierGroupName={props.modifierGroup.name}
+                        radio={props.modifierGroup.choiceMin !== 0 && props.modifierGroup.choiceMax === 1}
+                        modifier={m.modifier}
+                        choiceDuplicate={props.modifierGroup.choiceDuplicate}
+                        onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
+                            props.onCheckingModifier(selectedModifier, m.preSelectedQuantity);
+                        }}
+                        onUnCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
+                            props.onUnCheckingModifier(selectedModifier, m.preSelectedQuantity);
+                        }}
+                        onChangeModifierQuantity={(selectedModifier: IGET_RESTAURANT_MODIFIER, quantity: number) => {
+                            props.onChangeModifierQuantity(selectedModifier, m.preSelectedQuantity, quantity);
+                        }}
+                        onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
+                            props.onSelectRadioModifier(selectedModifier, m.preSelectedQuantity);
+                        }}
+                        modifierQuantity={modifierQuantity(m.modifier)}
+                        checked={isModifierSelected(m.modifier)}
+                        maxReached={isMaxReached(props.modifierGroup.choiceMax, props.selectedModifiers)}
+                        soldOut={isItemSoldOut(m.modifier.soldOut, m.modifier.soldOutDate)}
+                        disabled={props.disabled || isModifierDisabled(m.modifier)}
+                    />
+                </>
+            ))}
         </>
     );
 };
@@ -674,24 +671,18 @@ const Modifier = (props: {
     const showCheckbox = !showRadio && !showStepper && !showCollapsedStepper;
 
     // displays
-    const radio = (
-        <div cy-data="modifier">
-            <KioskRadio selected={props.checked} onSelect={onSelectRadioModifier} disabled={props.disabled} />
-        </div>
-    );
+    const radio = <KioskRadio selected={props.checked} onSelect={onSelectRadioModifier} disabled={props.disabled} />;
 
     const stepper = (
-        <div cy-data="modifier">
-            <KioskStepper
-                count={stepperCount}
-                setCount={setStepperCount}
-                min={0}
-                max={props.maxReached ? stepperCount : props.choiceDuplicate}
-                onUpdate={onChangeModifierQuantity}
-                disabled={props.disabled}
-                size={stepperHeight}
-            />
-        </div>
+        <KioskStepper
+            count={stepperCount}
+            setCount={setStepperCount}
+            min={0}
+            max={props.maxReached ? stepperCount : props.choiceDuplicate}
+            onUpdate={onChangeModifierQuantity}
+            disabled={props.disabled}
+            size={stepperHeight}
+        />
     );
 
     const collapsedStepper = (
@@ -713,9 +704,7 @@ const Modifier = (props: {
     );
 
     const checkbox = (
-        <div cy-data="modifier">
-            <KioskCheckbox onCheck={onCheckingModifier} onUnCheck={onUnCheckingModifier} checked={props.checked} disabled={props.disabled} />
-        </div>
+        <KioskCheckbox onCheck={onCheckingModifier} onUnCheck={onUnCheckingModifier} checked={props.checked} disabled={props.disabled} />
     );
 
     return (

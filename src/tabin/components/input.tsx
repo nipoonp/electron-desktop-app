@@ -17,7 +17,6 @@ export default (props: {
     className?: string;
     placeholder?: string;
     disabled?: boolean;
-    cyData?: string;
     min?: string;
     max?: string;
 }) => {
@@ -31,7 +30,6 @@ export default (props: {
             )}
             <input
                 autoFocus={props.autoFocus}
-                cy-data={props.cyData ? props.cyData : ""}
                 className={`${styles.input} ${props.error ? styles.inputError : ""} ${props.className ? props.className : ""} ${
                     props.disabled ? styles.disabled : ""
                 }`}

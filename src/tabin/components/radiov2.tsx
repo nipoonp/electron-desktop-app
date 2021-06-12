@@ -35,7 +35,6 @@ export const RadioV2 = (props: IProps) => {
                         ...props.radioStyle,
                     }}
                     onClick={onClick}
-                    cy-data={props.cyData}
                 >
                     <div
                         style={{
@@ -57,7 +56,6 @@ export interface IProps {
     selected: boolean;
     onSelect: () => void;
     disabled?: boolean;
-    cyData?: string;
     style?: React.CSSProperties;
     radioStyle?: React.CSSProperties;
 }

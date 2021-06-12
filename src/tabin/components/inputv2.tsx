@@ -13,7 +13,6 @@ export const InputV2 = (props: {
     error?: string;
     placeholder?: string;
     disabled?: boolean;
-    cyData?: string;
     style?: React.CSSProperties;
 }) => {
     // just for naming
@@ -48,7 +47,6 @@ export const InputV2 = (props: {
         <>
             <NormalFont>
                 <input
-                    cy-data={props.cyData}
                     className={className}
                     placeholder={props.placeholder}
                     name={props.name}
