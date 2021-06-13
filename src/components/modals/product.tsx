@@ -17,9 +17,9 @@ import { KioskButton } from "../../tabin/components/kioskButton";
 import { KioskStepper } from "../../tabin/components/kioskStepper";
 import { KioskCheckbox } from "../../tabin/components/kioskCheckbox";
 import { KioskRadio } from "../../tabin/components/kioskRadio";
-import { TextAreaV2 } from "../../tabin/components/textAreav2";
 
 import "./product.scss";
+import { TextArea } from "../../tabin/components/textArea";
 
 const logger = new Logger("productModal");
 
@@ -407,7 +407,7 @@ export const ProductModal = (props: {
     const productNotes = (
         <>
             <div className="h2 mb-3">Special instructions</div>
-            <TextAreaV2 placeholder={"Leave a note for the kitchen"} onChange={onNotesChange} value={notes || ""} />
+            <TextArea placeholder={"Leave a note for the kitchen"} onChange={onNotesChange} value={notes || ""} />
         </>
     );
 

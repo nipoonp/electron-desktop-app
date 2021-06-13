@@ -3,7 +3,6 @@ import { useUser } from "./user-context";
 import { IGET_RESTAURANT, IGET_USER_RESTAURANT } from "../graphql/customQueries";
 import { useGetRestaurantQuery } from "../hooks/useGetRestaurantQuery";
 import { getCloudFrontDomainName } from "../private/aws-custom";
-import "./../styles/kiosk.scss";
 
 type ContextProps = {
     selectRestaurant: (id: string | null) => void;

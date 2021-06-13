@@ -33,7 +33,6 @@
         "react-async": "^10.0.1",
         "react-axios": "^2.0.5",
         "react-dates": "^21.8.0",
-        "react-device-detect": "^1.17.0",
         "react-dom": "^16.13.1",
         "react-load-script": "0.0.6",
         "react-modal": "^3.12.1",

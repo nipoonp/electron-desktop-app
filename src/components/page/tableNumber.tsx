@@ -3,8 +3,8 @@ import { useHistory } from "react-router";
 import { checkoutPath } from "../main";
 import { useCart } from "../../context/cart-context";
 import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
-import { Button } from "../../tabin/components/button";
-import { InputV2 } from "../../tabin/components/inputv2";
+import { KioskButton } from "../../tabin/components/kioskButton";
+import { KioskInput } from "../../tabin/components/kioskInput";
 import { useRestaurant } from "../../context/restaurant-context";
 
 export const TableNumber = () => {
@@ -31,9 +31,9 @@ export const TableNumber = () => {
                     <div className="h2 mb-12">Enter the table number you wish to dine on (click next if you are unsure)</div>
                     <div className="mb-12" style={{ width: "300px" }}>
                         <div className="h3 mb-2">Table Number</div>
-                        <InputV2 type="number" onChange={onChange} value={tableNumber ?? ""} />
+                        <KioskInput type="number" onChange={onChange} value={tableNumber ?? ""} />
                     </div>
-                    <Button onClick={onNext}>Next</Button>
+                    <KioskButton onClick={onNext}>Next</KioskButton>
                 </div>
             </KioskPageWrapper>
         </>

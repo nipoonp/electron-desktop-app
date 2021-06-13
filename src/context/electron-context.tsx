@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { Title1Font } from "../tabin/components/fonts";
 
 let electron: any;
 let ipcRenderer: any;
@@ -42,7 +41,7 @@ const ElectronProvider = (props: { children: React.ReactNode }) => {
     const NoInternetConnection = () => {
         return (
             <div style={{ padding: "64px 48px", textAlign: "center" }}>
-                <Title1Font>Lost connection with the internet. Please check for any issues...</Title1Font>
+                <div className="h1">Lost connection with the internet. Please check for any issues...</div>
             </div>
         );
     };
@@ -50,7 +49,7 @@ const ElectronProvider = (props: { children: React.ReactNode }) => {
     const UpdaterMessage = () => {
         return (
             <div style={{ padding: "64px 48px", textAlign: "center" }}>
-                <Title1Font>{electronUpdaterMessage}</Title1Font>
+                <div className="h1">{electronUpdaterMessage}</div>
             </div>
         );
     };

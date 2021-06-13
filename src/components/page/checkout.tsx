@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useHistory } from "react-router-dom";
-import { Space4 } from "../../tabin/components/spaces";
 import { convertCentsToDollars } from "../../util/moneyConversion";
 import { useMutation } from "react-apollo-hooks";
 import { CREATE_ORDER } from "../../graphql/customMutations";
@@ -22,13 +21,13 @@ import { KioskStepper } from "../../tabin/components/kioskStepper";
 import { useVerifone, VerifoneTransactionOutcome } from "../../context/verifone-context";
 import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
-import { TextAreaV2 } from "../../tabin/components/textAreav2";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { toLocalISOString } from "../../util/dateTime";
 import { useRestaurant } from "../../context/restaurant-context";
 
 import "./checkout.scss";
 import { KioskLink } from "../../tabin/components/kioskLink";
+import { TextArea } from "../../tabin/components/textArea";
 
 const logger = new Logger("checkout");
 
@@ -751,7 +750,7 @@ export const Checkout = () => {
     const restaurantNotes = (
         <>
             <div className="h2 mb-3">Special instructions</div>
-            <TextAreaV2 placeholder={"Leave a note for the restaurant"} value={notes} onChange={onNotesChange} />
+            <TextArea placeholder={"Leave a note for the restaurant"} value={notes} onChange={onNotesChange} />
         </>
     );
 
@@ -770,7 +769,7 @@ export const Checkout = () => {
     const checkoutFooter = (
         <div>
             <div className="h1 text-center mb-4">Total: ${convertCentsToDollars(total)}</div>
-            <div>
+            <div className="mb-4">
                 <div className="checkout-buttons-container">
                     <KioskButton onClick={onOrderMore} className="button large mr-3 order-more-button">
                         Order More
@@ -785,7 +784,6 @@ export const Checkout = () => {
                     </KioskLink>
                 )}
             </div>
-            <Space4 />
             <KioskButton className="cancel-button" onClick={onCancelOrder}>
                 Cancel Order
             </KioskButton>

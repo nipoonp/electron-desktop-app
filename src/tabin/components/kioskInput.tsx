@@ -1,14 +1,13 @@
 import React from "react";
-import { ErrorMessage } from "./errorMessage";
 
-const styles = require("./input.module.css");
+import "./kioskInput.scss";
 
-export default (props: {
+export const KioskInput = (props: {
     autoFocus?: boolean;
+    onKeyPress?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
     onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
     onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;
-    title?: string;
-    showOptionalInTitle?: boolean;
+    label?: string;
     value?: string | number | string[];
     name?: string;
     type?: string;
@@ -22,20 +21,14 @@ export default (props: {
 }) => {
     return (
         <>
-            {props.title && (
-                <div className={styles.titleContainer}>
-                    <span className={styles.title}>{props.title}</span>
-                    {props.showOptionalInTitle && <span className={styles.optional}>(optional)</span>}
-                </div>
-            )}
+            {props.label && <div className="text-bold mb-2">{props.label}</div>}
             <input
                 autoFocus={props.autoFocus}
-                className={`${styles.input} ${props.error ? styles.inputError : ""} ${props.className ? props.className : ""} ${
-                    props.disabled ? styles.disabled : ""
-                }`}
+                className={`input ${props.error ? "error" : ""} ${props.disabled ? "disabled" : ""} ${props.className ? props.className : ""} `}
                 placeholder={props.placeholder}
                 name={props.name}
                 type={props.type}
+                onKeyPress={props.onKeyPress}
                 onChange={props.onChange}
                 onBlur={props.onBlur}
                 value={props.value}
@@ -45,7 +38,7 @@ export default (props: {
             >
                 {props.children && props.children}
             </input>
-            {props.error && <ErrorMessage message={props.error} />}
+            {props.error && <div className="text-error">{props.error}</div>}
         </>
     );
 };

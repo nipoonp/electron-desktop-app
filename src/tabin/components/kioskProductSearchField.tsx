@@ -1,6 +1,4 @@
 import React from "react";
-import { NormalFont } from "./fonts";
-import { ErrorMessage } from "./errorMessage";
 
 const styles = require("./kioskProductSearchField.module.css");
 
@@ -19,7 +17,7 @@ export const KioskProductSearchField = (props: {
     const className = styles.input;
 
     // default style
-    let defaultStyle = InputV2Style;
+    let defaultStyle = KioskInputStyle;
 
     // disabled style && error style
     if (props.disabled) {
@@ -56,12 +54,12 @@ export const KioskProductSearchField = (props: {
                 disabled={props.disabled}
                 style={style}
             ></input>
-            {props.error && <ErrorMessage message={props.error} />}
+            {/* {props.error && <ErrorMessage message={props.error} />} */}
         </>
     );
 };
 
-export const InputV2Style: React.CSSProperties = {
+export const KioskInputStyle: React.CSSProperties = {
     border: "1px solid rgb(224, 224, 224)",
     borderRadius: "10px",
     padding: "16px 32px",

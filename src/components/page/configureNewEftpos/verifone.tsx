@@ -1,10 +1,8 @@
 import React, { useState } from "react";
-import { ButtonV2 } from "../../../tabin/components/buttonv2";
-import { Title3Font } from "../../../tabin/components/fonts";
-import { Space4, Space2 } from "../../../tabin/components/spaces";
-import { InputV2 } from "../../../tabin/components/inputv2";
+import { KioskInput } from "../../../tabin/components/kioskInput";
 import { FullScreenSpinner } from "../../../tabin/components/fullScreenSpinner";
 import { useVerifone, VerifoneTransactionOutcome } from "../../../context/verifone-context";
+import { KioskButton } from "../../../tabin/components/kioskButton";
 
 export const Verifone = () => {
     const [showSpinner, setShowSpinner] = useState(false);
@@ -60,39 +58,35 @@ export const Verifone = () => {
         <>
             <FullScreenSpinner show={showSpinner} />
             <div>
-                <Title3Font>Send a Transaction</Title3Font>
-                <Space4 />
-                <label>Eftpos IP Address:</label>
-                <Space2 />
-                <InputV2
+                <div className="h3 mb-4">Send a Transaction</div>
+                <KioskInput
+                    className="mb-2"
                     type="text"
+                    label="Eftpos IP Address:"
                     name="ipAddress"
                     value={ipAddress}
                     placeholder="192.168.0.1"
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIPAddress(event.target.value)}
                 />
-                <Space4 />
-                <label>Eftpos Port Number:</label>
-                <Space2 />
-                <InputV2
+                <KioskInput
+                    className="mb-2"
                     type="text"
+                    label="Eftpos Port Number:"
                     name="portNumber"
                     value={portNumber}
                     placeholder="40001"
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPortNumber(event.target.value)}
                 />
-                <Space4 />
-                <label htmlFor="amount">Amount in cents ($1.99 = 199):</label>
-                <Space2 />
-                <InputV2
+                <KioskInput
+                    className="mb-4"
                     type="text"
+                    label="Amount in cents ($1.99 = 199):"
                     name="amount"
                     value={amount}
                     placeholder="199"
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAmount(Number(event.target.value))}
                 />
-                <Space4 />
-                <ButtonV2 onClick={doTransaction}>Send Transaction</ButtonV2>
+                <KioskButton onClick={doTransaction}>Send Transaction</KioskButton>
             </div>
         </>
     );

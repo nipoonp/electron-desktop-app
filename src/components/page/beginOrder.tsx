@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Space4, Space6, Space, Space2, Space3 } from "../../tabin/components/spaces";
 import { useHistory } from "react-router";
-import { useUser } from "../../context/user-context";
 import { restaurantPath } from "../main";
 import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
-import { Title3Font, Title2Font } from "../../tabin/components/fonts";
-import { SizedBox } from "../../tabin/components/sizedBox";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { IGET_RESTAURANT_ADVERTISEMENT } from "../../graphql/customQueries";
 import { useRestaurant } from "../../context/restaurant-context";

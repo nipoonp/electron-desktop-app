@@ -1,3 +1,20 @@
+.textArea {
+    border: 1px solid #ebebeb;
+    width: 100%;
+    padding: 15px 10px;
+    border-radius: 4px;
+    resize: none;
+
+    .error {
+        border: 1px solid var(--error-color);
+        background-color: hsl(var(--error-hue), var(--error-saturation), 98%);
+    }
+
+    .disabled {
+        background-color: #eeeeee;
+    }
+}
+
 /* https://medium.com/@willhowardgb/building-a-beautiful-text-input-component-in-react-f85564cc7e86 */
 /* comparable to normal hsl(0, 0%, 60%) */
 .textArea::-webkit-input-placeholder {

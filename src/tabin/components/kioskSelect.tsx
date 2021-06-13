@@ -1,11 +1,10 @@
 import React from "react";
-import { ErrorMessage } from "./errorMessage";
 
-const styles = require("./select.module.css");
+import "./kioskSelect.scss";
 
-export default (props: {
+export const KioskSelect = (props: {
     className?: string;
-    title?: string;
+    label?: string;
     showOptionalInTitle?: boolean;
     name?: string;
     disabled?: boolean;
@@ -16,17 +15,10 @@ export default (props: {
 }) => {
     return (
         <>
-            {props.title && (
-                <div className={styles.titleContainer}>
-                    <span className={styles.title}>{props.title}</span>
-                    {props.showOptionalInTitle && <span className={styles.optional}>(optional)</span>}
-                </div>
-            )}
-            <div className={`${styles.selectContainer}`}>
+            {props.label && <div className="text-bold mb-2">{props.label}</div>}
+            <div className="select-container">
                 <select
-                    className={`${styles.select} ${props.disabled ? styles.disabled : ""} ${props.error ? styles.selectError : ""} ${
-                        props.className ? props.className : ""
-                    }`}
+                    className={`select ${props.disabled ? "disabled" : ""} ${props.error ? "error" : ""} ${props.className ? props.className : ""}`}
                     name={props.name}
                     value={props.value}
                     onChange={props.onChange}
@@ -34,7 +26,7 @@ export default (props: {
                 >
                     {props.children}
                 </select>
-                <span className={styles.selectArrow}>
+                <span className="arrow">
                     <svg
                         viewBox="0 0 18 18"
                         role="presentation"
@@ -51,7 +43,7 @@ export default (props: {
                     </svg>
                 </span>
             </div>
-            {props.error && <ErrorMessage message={props.error} />}
+            {props.error && <div className="text-error">{props.error}</div>}
         </>
     );
 };

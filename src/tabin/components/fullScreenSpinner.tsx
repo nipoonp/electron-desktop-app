@@ -1,6 +1,4 @@
 import React from "react";
-import { Space2 } from "./spaces";
-import { Title3Font } from "./fonts";
 import { Spinner } from "./spinner";
 
 export const FullScreenSpinner = (props: { show: boolean; text?: string }) => {
@@ -36,12 +34,7 @@ export const FullScreenSpinner = (props: { show: boolean; text?: string }) => {
                                 width: "15px",
                             }}
                         />
-                        {props.text && (
-                            <>
-                                <Space2 />
-                                <Title3Font style={{ fontWeight: 500 }}>{props.text}</Title3Font>
-                            </>
-                        )}
+                        {props.text && <div className="h3 mt-2">{props.text}</div>}
                     </div>
                 </div>
             )}

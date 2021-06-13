@@ -1,11 +1,9 @@
 import React, { useState } from "react";
-import { ButtonV2 } from "../../../tabin/components/buttonv2";
-import { Title3Font } from "../../../tabin/components/fonts";
-import { Space4, Space2 } from "../../../tabin/components/spaces";
-import { InputV2 } from "../../../tabin/components/inputv2";
+import { KioskInput } from "../../../tabin/components/kioskInput";
 import { useReceiptPrinter } from "../../../context/receiptPrinter-context";
 import { EOrderType, ICartProduct } from "../../../model/model";
 import { useRegister } from "../../../context/register-context";
+import { KioskButton } from "../../../tabin/components/kioskButton";
 
 const TEST_PRODUCT: ICartProduct[] = [
     {
@@ -172,43 +170,38 @@ export const ReceiptPrinter = () => {
     return (
         <>
             <div>
-                <Title3Font>Configure your Receipt Printer(s)</Title3Font>
-                <Space4 />
-                <label>Bluetooth Printer Address 1:</label>
-                <Space2 />
-                <InputV2
+                <div className="h2 mb-4">Configure your Receipt Printer(s)</div>
+                <KioskInput
+                    className="mb-4"
+                    label="Bluetooth Printer Address 1:"
                     type="text"
                     name="printerMacAddress"
                     value={printerAddress1}
                     placeholder="00:04:61:02:AA:FF"
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPrinterAddress1(event.target.value)}
                 />
-                <Space4 />
-                <Title3Font>Configure your Receipt Printer(s)</Title3Font>
-                <Space4 />
-                <label>Bluetooth Printer Address 2:</label>
-                <Space2 />
-                <InputV2
+
+                <KioskInput
+                    className="mb-4"
+                    label="Bluetooth Printer Address 2:"
                     type="text"
                     name="printerMacAddress"
                     value={printerAddress2}
                     placeholder="00:04:61:02:AA:FF"
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPrinterAddress2(event.target.value)}
                 />
-                <Space4 />
-                <Title3Font>Configure your Receipt Printer(s)</Title3Font>
-                <Space4 />
-                <label>Bluetooth Printer Address 3:</label>
-                <Space2 />
-                <InputV2
+
+                <KioskInput
+                    className="mb-4"
+                    label="Bluetooth Printer Address 3:"
                     type="text"
                     name="printerMacAddress"
                     value={printerAddress3}
                     placeholder="00:04:61:02:AA:FF"
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPrinterAddress3(event.target.value)}
                 />
-                <Space4 />
-                <ButtonV2 onClick={onPrintTestReceipt}>Print Test Receipt(s)</ButtonV2>
+
+                <KioskButton onClick={onPrintTestReceipt}>Print Test Receipt(s)</KioskButton>
             </div>
         </>
     );

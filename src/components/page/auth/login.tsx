@@ -1,18 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useHistory } from "react-router-dom";
 import { useAuth, AuthenticationStatus } from "../../../context/auth-context";
-import { isMobile } from "react-device-detect";
 import { Logger } from "aws-amplify";
 import * as yup from "yup";
-import { ButtonV2 } from "../../../tabin/components/buttonv2";
-import { BoldFont, Title2Font } from "../../../tabin/components/fonts";
-import { Space2, Space3 } from "../../../tabin/components/spaces";
-import { ErrorMessage } from "../../../tabin/components/errorMessage";
-import { ServerErrorV2 } from "../../../tabin/components/serverErrorv2";
-import { InputV3 } from "../../../tabin/components/inputv3";
-import { Separator } from "../../../tabin/components/separator";
-import { useSmallScreen } from "../../../hooks/useWindowSize";
 import { beginOrderPath } from "../../main";
+import { KioskButton } from "../../../tabin/components/kioskButton";
+import { KioskInput } from "../../../tabin/components/kioskInput";
+
+import "./login.scss";
 
 const logger = new Logger("Login");
 
@@ -28,7 +23,6 @@ const passwordSchema = yup
 export const Login = () => {
     const { login } = useAuth();
     const history = useHistory();
-    const { isSmallScreen } = useSmallScreen();
 
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState("");
@@ -101,86 +95,54 @@ export const Login = () => {
 
     const emailInput = (
         <>
-            <InputV3
+            <KioskInput
                 name="email"
                 label="Email"
                 type="text"
                 onChange={onChangeEmail}
                 onKeyPress={onEnter}
                 value={email}
-                error={emailError ? true : false}
+                className={emailError ? "error" : ""}
+                error={emailError}
             />
         </>
     );
 
     const passwordInput = (
         <>
-            <InputV3
+            <KioskInput
                 name="password"
                 label="Password"
                 type="password"
                 onChange={onChangePassword}
                 onKeyPress={onEnter}
                 value={password}
-                error={passwordError ? true : false}
+                className={passwordError ? "error" : ""}
+                error={passwordError}
             />
         </>
     );
 
     const loginButton = (
         <>
-            <ButtonV2 style={{ borderRadius: "8px", width: "100%" }} disabled={loading} onClick={onLogin} loading={loading}>
-                <BoldFont>LOG IN</BoldFont>
-            </ButtonV2>
-        </>
-    );
-
-    const content = (
-        <>
-            <div
-                style={
-                    !isSmallScreen
-                        ? {
-                              padding: "24px",
-                              margin: "0 auto",
-                              width: "448px",
-                              border: "1px solid #e4e4e4",
-                          }
-                        : {}
-                }
-            >
-                <Title2Font>Log in</Title2Font>
-                <Space3 />
-                {serverError && (
-                    <>
-                        <ServerErrorV2 message={serverError} />
-                        <Space3 />
-                    </>
-                )}
-                {emailInput}
-                {emailError && <ErrorMessage message={emailError} />}
-                <Space2 />
-                {passwordInput}
-                {passwordError && <ErrorMessage message={passwordError} />}
-                <Space3 />
-                {loginButton}
-            </div>
+            <KioskButton disabled={loading} onClick={onLogin} loading={loading}>
+                LOG IN
+            </KioskButton>
         </>
     );
 
     return (
         <>
-            <div
-                style={{
-                    minHeight: "100vh",
-                    maxWidth: "1080px",
-                    margin: "auto",
-                    padding: "24px",
-                    paddingTop: isSmallScreen ? "24px" : "40px",
-                    paddingBottom: isMobile ? "80px" : "unset", // for tab nav
-                }}
-            >
-                {content}
+            <div className="login">
+                <div className="h2 mb-3">Log in</div>
+                {serverError && <div className="text-error mb-3">{passwordError}</div>}
+                {emailInput}
+                {emailError && <div className="text-error mb-2 mt-2">{emailError}</div>}
+                <div className="mb-2"></div>
+                {passwordInput}
+                {passwordError && <div className="text-error mb-2 mt-2">{passwordError}</div>}
+                <div className="mb-3"></div>
+                {loginButton}
             </div>
         </>
     );

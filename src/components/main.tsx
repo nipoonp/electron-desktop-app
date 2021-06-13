@@ -24,6 +24,8 @@ import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { useRestaurant } from "../context/restaurant-context";
 import { Logout } from "./page/auth/logout";
 
+import "./../styles/app.scss";
+
 let electron: any;
 let ipcRenderer: any;
 try {

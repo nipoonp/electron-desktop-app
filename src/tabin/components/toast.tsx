@@ -1,13 +1,9 @@
 import React from "react";
 import { ToastContainer as _ToastContainer } from "react-toastify";
 import { toast as _toast, Slide } from "react-toastify";
-import { isMobile } from "react-device-detect";
 import { CheckIcon } from "./checkIcon";
-import { TimesIcon } from "./timesIcon";
 import { TimesCircleIcon } from "./timesCircleIcon";
-import { NormalFont } from "./fonts";
 import { CloseThickIcon } from "./closeThickIcon";
-import { BlackColor } from "./colors";
 
 const styles = require("./toast.module.css");
 
@@ -18,12 +14,12 @@ export const ToastContainer = () => {
                 top: "0",
                 right: "0",
                 padding: "12px",
-                width: isMobile ? "100%" : "400px",
+                width: "400px",
             }}
             transition={Slide}
             hideProgressBar
             draggablePercent={60}
-            position={isMobile ? "top-center" : "top-right"}
+            position={"top-right"}
             draggable={false}
             autoClose={2000}
             closeOnClick={false}
@@ -70,7 +66,7 @@ const CustomToast = (props: {
         </div>
     );
 
-    const messageDisplay = <NormalFont>{props.message}</NormalFont>;
+    const messageDisplay = <div>{props.message}</div>;
 
     const iconDisplay = (
         <>
@@ -92,7 +88,7 @@ const CustomToast = (props: {
                     borderLeft: "5px solid" + color,
                 }}
             >
-                <BlackColor>
+                <div>
                     {floatingCloseButton}
                     <div
                         style={{
@@ -105,7 +101,7 @@ const CustomToast = (props: {
                         {iconDisplay}
                         {messageDisplay}
                     </div>
-                </BlackColor>
+                </div>
             </div>
         </>
     );

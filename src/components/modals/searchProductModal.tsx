@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 import { KioskModal } from "../../tabin/components/kioskModal";
-import { BoldFont, NormalFont, Title2Font, Title3Font } from "../../tabin/components/fonts";
-import { Space, Space2, Space4, Space5, Space6 } from "../../tabin/components/spaces";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
 import { isItemAvailable, isItemSoldOut } from "../../util/isItemAvailable";
 import { convertCentsToDollars } from "../../util/moneyConversion";
@@ -134,8 +132,8 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
                     </KioskButton>
                 </div>
                 <div className="h2 mb-6">What do you feel like eating today?</div>
-                <KioskProductSearchField name="name" type="text" placeholder="Search..." onChange={onChange} />
-                <Space6 />
+                {/* <KioskProductSearchField name="name" type="text" placeholder="Search..." onChange={onChange} />
+                <Space6 /> */}
                 {searchTerm != "" && filteredProducts.length == 0 ? <div className="text-bold">No results found</div> : <>{menuProducts}</>}
                 <div className="mb-12"></div>
             </div>
