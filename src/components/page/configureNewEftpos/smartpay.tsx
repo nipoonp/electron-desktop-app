@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { ButtonV2 } from "../../../tabin/components/buttonv2";
-import { SelectV2 } from "../../../tabin/components/selectv2";
-import { InputV2 } from "../../../tabin/components/inputv2";
-import { Space4, Space2, Space6 } from "../../../tabin/components/spaces";
+import React, { useState } from "react";
+import { Input } from "../../../tabin/components/input";
 import { FullScreenSpinner } from "../../../tabin/components/fullScreenSpinner";
-import { Title3Font } from "../../../tabin/components/fonts";
 import { SmartpayTransactionOutcome, useSmartpay } from "../../../context/smartpay-context";
+import { Button } from "../../../tabin/components/button";
+import { Select } from "../../../tabin/components/select";
 
 export const SmartPay = () => {
     const [pairingCode, setPairingCode] = useState("");
@@ -72,40 +70,37 @@ export const SmartPay = () => {
         <>
             <FullScreenSpinner show={showSpinner} />
             <div>
-                <Title3Font>Pair to a device</Title3Font>
-                <Space4 />
+                <div className="h3 mb-4">Pair to a device</div>
 
-                <label htmlFor="pairing-code">Pairing Code:</label>
-                <Space2 />
-                <InputV2
+                <label htmlFor="pairing-code"></label>
+                <Input
+                    className="mb-4"
                     type="text"
+                    label="Pairing Code:"
                     name="pairing-code"
                     value={pairingCode}
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPairingCode(event.target.value)}
                     placeholder="123456"
                 />
-                <Space4 />
-                <ButtonV2 onClick={doPairing}>Pair to Device</ButtonV2>
+                <Button className="mb-6" onClick={doPairing}>
+                    Pair to Device
+                </Button>
 
-                <Space6 />
-
-                <Title3Font>Send a Transaction</Title3Font>
-                <Space4 />
-                <label htmlFor="amount">Amount in cents ($1.99 = 199):</label>
-                <Space2 />
-                <InputV2
+                <div className="h3 mb-4">Send a Transaction</div>
+                <label htmlFor="amount"></label>
+                <Input
+                    className="mb-4"
                     type="number"
+                    label="Amount in cents ($1.99 = 199):"
                     name="amount"
                     value={amount}
                     placeholder="199"
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAmount(Number(event.target.value))}
                 />
-                <Space4 />
 
-                <label htmlFor="transaction-type">Transaction Type:</label>
-                <Space2 />
-
-                <SelectV2
+                <Select
+                    className="mb-4"
+                    label="Transaction Type:"
                     name="transaction-type"
                     value={transactionType}
                     onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setTransactionType(event.target.value)}
@@ -114,12 +109,11 @@ export const SmartPay = () => {
                     <option value="Card.Refund">Card.Refund</option>
                     <option value="QR.Merchant.Purchase">QR.Merchant.Purchase</option>
                     <option value="QR.Refund">QR.Refund</option>
-                </SelectV2>
-                <Space4 />
+                </Select>
 
-                <ButtonV2 onClick={doTransaction} disabled={showSpinner}>
+                <Button onClick={doTransaction} disabled={showSpinner}>
                     Send Transaction
-                </ButtonV2>
+                </Button>
             </div>
         </>
     );

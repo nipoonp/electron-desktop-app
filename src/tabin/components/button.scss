@@ -1,0 +1,20 @@
+.button {
+    color: white;
+    background-color: var(--primary-color);
+    display: flex;
+    justify-content: center;
+    padding: 16px 24px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.button.disabled {
+    cursor: default;
+    background-image: none;
+    background-color: hsl(0, 0%, 70%);
+}
+
+.button.large {
+    font-size: 22px;
+    padding: 24px 48px;
+}

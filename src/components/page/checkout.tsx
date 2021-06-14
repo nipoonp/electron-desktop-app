@@ -1,40 +1,34 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useHistory } from "react-router-dom";
-import { Space, Space2, Space3, Space4, Space1, Space6 } from "../../tabin/components/spaces";
-import { Title3Font, NormalFont, Title2Font, BoldFont, Title1Font, Title4Font } from "../../tabin/components/fonts";
-import { Link } from "../../tabin/components/link";
-import { GrayColor, PrimaryColor } from "../../tabin/components/colors";
-import { convertCentsToDollars } from "../../util/moneyConversion";
+import { convertCentsToDollars } from "../../util/util";
 import { useMutation } from "react-apollo-hooks";
 import { CREATE_ORDER } from "../../graphql/customMutations";
 import { IGET_RESTAURANT_REGISTER_PRINTER, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
 import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath } from "../main";
-import { ShoppingBasketIcon } from "../../tabin/components/shoppingBasketIcon";
+import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
 import { ICartProduct, ISelectedProductModifiers, ICartModifierGroup, EOrderType } from "../../model/model";
-import { Separator6 } from "../../tabin/components/separator";
 import { useUser } from "../../context/user-context";
 import { format } from "date-fns";
-import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
+import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { useSmartpay, SmartpayTransactionOutcome } from "../../context/smartpay-context";
-import { KioskModal } from "../../tabin/components/kioskModal";
-import { KioskButton } from "../../tabin/components/kioskButton";
+import { Modal } from "../../tabin/components/modal";
+import { Button } from "../../tabin/components/button";
 import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
-import { SizedBox } from "../../tabin/components/sizedBox";
-import { KioskStepper } from "../../tabin/components/kioskStepper";
+import { Stepper } from "../../tabin/components/stepper";
 import { useVerifone, VerifoneTransactionOutcome } from "../../context/verifone-context";
 import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
-import { TextAreaV2 } from "../../tabin/components/textAreav2";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
-import { toast } from "../../tabin/components/toast";
-import { toLocalISOString } from "../../util/dateTime";
+import { toLocalISOString } from "../../util/util";
 import { useRestaurant } from "../../context/restaurant-context";
 import { logSlackError } from "../../util/logging";
 
-const styles = require("./checkout.module.css");
+import "./checkout.scss";
+import { Link } from "../../tabin/components/link";
+import { TextArea } from "../../tabin/components/textArea";
 
 const logger = new Logger("checkout");
 
@@ -241,16 +235,6 @@ export const Checkout = () => {
             throw e;
         }
     };
-
-    const title = (
-        <>
-            <div style={{ display: "flex", alignItems: "center" }}>
-                <img style={{ height: "72px" }} src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`} />
-                <SizedBox width="12px" />
-                <Title1Font>Your Order</Title1Font>
-            </div>
-        </>
-    );
 
     const orderSummary = (
         <OrderSummary
@@ -564,34 +548,21 @@ export const Checkout = () => {
 
     const retryButtons = () => (
         <>
-            <div style={{ display: "flex" }}>
-                <div>
-                    <KioskButton onClick={onConfirmTotalOrRetryTransaction}>
-                        <NormalFont>Retry</NormalFont>
-                    </KioskButton>
-                </div>
-                <div style={{ width: "24px" }}></div>
-                <div>
-                    <KioskButton
-                        onClick={onClosePaymentModal}
-                        style={{
-                            backgroundColor: "#ffffff",
-                            color: "#484848",
-                            border: "1px solid #e0e0e0",
-                        }}
-                    >
-                        <NormalFont>Cancel</NormalFont>
-                    </KioskButton>
-                </div>
+            <div className="retry-buttons">
+                <Button className="button large mr-3" onClick={onConfirmTotalOrRetryTransaction}>
+                    Retry
+                </Button>
+                <Button className="button large retry-cancel-button" onClick={onClosePaymentModal}>
+                    Cancel
+                </Button>
             </div>
         </>
     );
 
     const awaitingCard = () => (
         <>
-            <Title4Font style={{ lineHeight: "42px" }}>Swipe or insert your card on the terminal to complete your payment.</Title4Font>
-            <Space6 />
-            <img src={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} height="250px" />
+            <div className="h4 mb-6 awaiting-card-text">Swipe or insert your card on the terminal to complete your payment.</div>
+            <img className="awaiting-card-image" src={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} />
         </>
     );
 
@@ -601,29 +572,25 @@ export const Checkout = () => {
 
     const paymentPayLater = () => (
         <>
-            <Title4Font>All Done!</Title4Font>
-            <Space4 />
-            <Title2Font>Please pay later at the counter.</Title2Font>
-            <Space6 />
-            <NormalFont>Your order number is</NormalFont>
-            <Space1 />
-            <Title1Font style={{ fontSize: "200px", lineHeight: "256px" }}>{paymentOutcomeDelayedOrderNumber}</Title1Font>
-            <Separator6 />
-            <Space6 />
+            <div className="h4 mb-4">All Done!</div>
+            <div className="h2 mb-6">Please pay later at the counter.</div>
+            <div className="mb-1">Your order number is</div>
+            <div className="order-number h1">{paymentOutcomeDelayedOrderNumber}</div>
+            <div className="separator-6 mb-6"></div>
             {/* <Title3Font>Would you like to help save the planet? Get a e-receipt.</Title3Font>
             <Space4 />
             <div style={{ display: "flex", alignItems: "center" }}>
                 <div style={{ flex: 1, paddingRight: "12px", width: "750px", height: "44px" }}>
                     <TextAreaV2 placeholder={"Email Address..."} onChange={onNotesChange} value={notes || ""} onFocus={onFocusEmailAddressInput} />
                 </div>
-                <KioskButton
+                <Button
                     onClick={() => {
                         toast.success("Receipt successfully sent to your email");
                     }}
                     style={{ padding: "12px 24px" }}
                 >
                     <NormalFont>Send</NormalFont>
-                </KioskButton>
+                </Button>
             </div>
             <Space3 />
             <NormalFont>
@@ -633,41 +600,35 @@ export const Checkout = () => {
                 </Link>{" "}
             </NormalFont>
             <Space3 /> */}
-            <GrayColor style={{ marginTop: "auto" }}>
-                <NormalFont>
-                    Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
-                    {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
-                    ...
-                </NormalFont>
-            </GrayColor>
+            <div className="redirecting-in-text text-grey">
+                Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
+                {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
+                ...
+            </div>
         </>
     );
 
     const paymentAccepted = () => (
         <>
-            <Title4Font>All Done!</Title4Font>
-            <Space4 />
-            <Title2Font>Transaction Accepted!</Title2Font>
-            <Space6 />
-            <NormalFont>Your order number is</NormalFont>
-            <Space1 />
-            <Title1Font style={{ fontSize: "200px", lineHeight: "256px" }}>{paymentOutcomeDelayedOrderNumber}</Title1Font>
-            <Separator6 />
-            <Space6 />
+            <div className="h4 mb-4">All Done!</div>
+            <div className="h2 mb-6">Transaction Accepted!</div>
+            <div className="mb-1">Your order number is</div>
+            <div className="h1">{paymentOutcomeDelayedOrderNumber}</div>
+            <div className="separator-6 mb-6"></div>
             {/* <Title3Font>Would you like to help save the planet? Get a e-receipt.</Title3Font>
             <Space4 />
             <div style={{ display: "flex", alignItems: "center" }}>
                 <div style={{ flex: 1, paddingRight: "12px", width: "750px", height: "44px" }}>
                     <TextAreaV2 placeholder={"Email Address..."} onChange={onNotesChange} value={notes || ""} onFocus={onFocusEmailAddressInput} />
                 </div>
-                <KioskButton
+                <Button
                     onClick={() => {
                         toast.success("Receipt successfully sent to your email");
                     }}
                     style={{ padding: "12px 24px" }}
                 >
                     <NormalFont>Send</NormalFont>
-                </KioskButton>
+                </Button>
             </div>
             <Space3 />
             <NormalFont>
@@ -677,55 +638,32 @@ export const Checkout = () => {
                 </Link>
             </NormalFont>
             <Space3 /> */}
-            <GrayColor style={{ marginTop: "auto" }}>
-                <NormalFont>
-                    Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
-                    {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
-                    ...
-                </NormalFont>
-            </GrayColor>
+            <div className="redirecting-in-text text-grey">
+                Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
+                {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
+                ...
+            </div>
         </>
     );
 
-    const paymentDelayed = () => (
-        <>
-            <Title4Font>Transaction delayed! Check if the device is powered on and online.</Title4Font>
-        </>
-    );
+    const paymentDelayed = () => <div className="h4">Transaction delayed! Check if the device is powered on and online.</div>;
 
     const paymentFailed = (errorMessage?: string) => (
         <>
-            <Title4Font>Oops! Something went wrong.</Title4Font>
-            {errorMessage && (
-                <>
-                    <Space4 />
-                    <Title2Font>{errorMessage}</Title2Font>
-                </>
-            )}
-            <Space6 />
+            <div className="h4">Oops! Something went wrong.</div>
+            {errorMessage && <div className="h2 mt-4 mb-6">{errorMessage}</div>}
             {retryButtons()}
         </>
     );
 
     const createOrderFailed = () => (
         <>
-            <Title4Font>Oops! Something went wrong.</Title4Font>
-            <Space4 />
-            <NormalFont>Internal Server Error! Please contact a Tabin representative!</NormalFont>
-            <Space2 />
-            <NormalFont>{createOrderError}</NormalFont>
-            <Space2 />
-            <KioskButton
-                style={{
-                    backgroundColor: "#ffffff",
-                    color: "#484848",
-                    border: "1px solid #e0e0e0",
-                    padding: "12px 24px",
-                }}
-                onClick={onCancelOrder}
-            >
-                <NormalFont style={{ fontWeight: 300 }}>Issue Fixed? Restart</NormalFont>
-            </KioskButton>
+            <div className="h4 mb-4">Oops! Something went wrong.</div>
+            <div className="mb-2">Internal Server Error! Please contact a Tabin representative!</div>
+            <div className="mb-2">{createOrderError}</div>
+            <Button className="issue-fixed-button" onClick={onCancelOrder}>
+                Issue Fixed? Restart
+            </Button>
         </>
     );
 
@@ -757,20 +695,9 @@ export const Checkout = () => {
 
     const paymentModal = (
         <>
-            <KioskModal isOpen={showPaymentModal}>
-                <div
-                    style={{
-                        height: "100vh",
-                        display: "flex",
-                        alignItems: "center",
-                        flexDirection: "column",
-                        textAlign: "center",
-                        padding: "128px 200px",
-                    }}
-                >
-                    {getActivePaymentModalComponent()}
-                </div>
-            </KioskModal>
+            <Modal isOpen={showPaymentModal}>
+                <div className="payment-modal">{getActivePaymentModalComponent()}</div>
+            </Modal>
         </>
     );
 
@@ -785,30 +712,19 @@ export const Checkout = () => {
 
     const cartEmptyDisplay = (
         <>
-            <div
-                style={{
-                    height: "100vh",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexDirection: "column",
-                }}
-            >
-                <GrayColor style={{ color: "hsl(0,0%,80%)" }}>
+            <div className="cart-empty">
+                <div className="icon mb-3">
                     <ShoppingBasketIcon height={"72px"}></ShoppingBasketIcon>
-                </GrayColor>
-                <Space3 />
-                <Title1Font style={{ textAlign: "center" }}>Empty cart</Title1Font>
-                <Space3 />
-                <Title3Font style={{ textAlign: "center", fontWeight: 400 }}>Show some love and start ordering!</Title3Font>
-                <Space6 />
-                <KioskButton
+                </div>
+                <div className="h1 center mb-3">Empty cart</div>
+                <div className="h3 center mb-6">Show some love and start ordering!</div>
+                <Button
                     onClick={() => {
                         history.push(restaurantPath + "/" + restaurant!.id);
                     }}
                 >
                     Back To Menu
-                </KioskButton>
+                </Button>
             </div>
         </>
     );
@@ -817,142 +733,84 @@ export const Checkout = () => {
         history.push(`/restaurant/${restaurant.id}`);
     };
 
-    const checkoutFooter = (
-        <div>
-            <div style={{ textAlign: "center" }}>
-                <Title1Font>Total: ${convertCentsToDollars(total)}</Title1Font>
-            </div>
-            <Space4 />
-            <div>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                    }}
-                >
-                    <KioskButton
-                        onClick={onOrderMore}
-                        style={{
-                            backgroundColor: "#ffffff",
-                            color: "#484848",
-                            border: "1px solid #e0e0e0",
-                            width: "350px",
-                        }}
-                    >
-                        <NormalFont style={{ fontSize: "22px" }}>Order More</NormalFont>
-                    </KioskButton>
-                    <SizedBox width="24px" />
-                    <KioskButton
-                        onClick={onClickOrderButton}
-                        cy-data="add-to-order"
-                        style={{
-                            width: "350px",
-                        }}
-                    >
-                        <NormalFont style={{ fontSize: "22px" }}>Complete Order</NormalFont>
-                    </KioskButton>
-                </div>
-                {register.enablePayLater && (
-                    <>
-                        <Space4 />
-                        <div style={{ textAlign: "center" }}>
-                            <Link onClick={onClickPayLater}>Ill pay later...</Link>
-                        </div>
-                    </>
-                )}
-            </div>
-            <Space4 />
-            <KioskButton
-                style={{
-                    backgroundColor: "#ffffff",
-                    color: "#484848",
-                    border: "1px solid #e0e0e0",
-                    padding: "12px 24px",
-                }}
-                onClick={onCancelOrder}
-            >
-                <NormalFont style={{ fontWeight: 300 }}>Cancel Order</NormalFont>
-            </KioskButton>
+    const title = (
+        <div className="title mb-6">
+            <img className="image mr-2" src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`} />
+            <div className="h1">Your Order</div>
         </div>
     );
 
     const restaurantOrderType = (
-        <div
-            style={{
-                display: "grid",
-                gridTemplateColumns: "1fr auto",
-                alignItems: "center",
-            }}
-        >
-            <Title3Font>Order Type: {orderType}</Title3Font>
+        <div className="checkout-order-type mb-2">
+            <div className="h3">Order Type: {orderType}</div>
             <Link onClick={onUpdateOrderType}>Change</Link>
         </div>
     );
 
     const restaurantTableNumber = (
-        <div
-            style={{
-                display: "grid",
-                gridTemplateColumns: "1fr auto",
-                alignItems: "center",
-            }}
-        >
-            <Title3Font>Table Number: {tableNumber}</Title3Font>
+        <div className="checkout-table-number">
+            <div className="h3">Table Number: {tableNumber}</div>
             <Link onClick={onUpdateTableNumber}>Change</Link>
         </div>
     );
 
     const restaurantNotes = (
         <>
-            <Title2Font>Special instructions</Title2Font>
-            <Space3 />
-            {/* this condition is required because we cannot have two keyboards active at a time, we would have checkout and product keyboards active at a time and it would not work */}
-            {/* can figure out a better way to do it in the future with refs */}
-            {!showEditProductModal && <TextAreaV2 placeholder={"Leave a note for the restaurant"} value={notes} onChange={onNotesChange} />}
+            <div className="h2 mb-3">Special instructions</div>
+            <TextArea placeholder={"Leave a note for the restaurant"} value={notes} onChange={onNotesChange} />
         </>
     );
 
-    const content = (
+    const order = (
         <>
-            <Space size={84} />
+            <div className="mt-10"></div>
             {title}
-            <Space6 />
             {restaurantOrderType}
-            <Space2 />
-            {tableNumber && (
-                <>
-                    {restaurantTableNumber}
-                    <Space4 />
-                </>
-            )}
-            <Separator6 />
+            {tableNumber && <div className="mb-4">{restaurantTableNumber}</div>}
+            <div className="separator-6"></div>
             {orderSummary}
             {restaurantNotes}
         </>
     );
 
+    const checkoutFooter = (
+        <div>
+            <div className="h1 text-center mb-4">Total: ${convertCentsToDollars(total)}</div>
+            <div className="mb-4">
+                <div className="checkout-buttons-container">
+                    <Button onClick={onOrderMore} className="button large mr-3 order-more-button">
+                        Order More
+                    </Button>
+                    <Button onClick={onClickOrderButton} className="button large complete-order-button">
+                        Complete Order
+                    </Button>
+                </div>
+                {register.enablePayLater && (
+                    <Link className="pay-later-link mt-4" onClick={onClickPayLater}>
+                        Pay at counter...
+                    </Link>
+                )}
+            </div>
+            <Button className="cancel-button" onClick={onCancelOrder}>
+                Cancel Order
+            </Button>
+        </div>
+    );
+
     return (
         <>
-            <KioskPageWrapper>
-                <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
-                    <div style={{ display: "flex", flex: "1", overflow: "scroll" }}>
-                        <div
-                            style={{
-                                overflow: "scroll",
-                                padding: "0 84px 84px 84px",
-                                width: "100%",
-                            }}
-                            className={styles.checkoutContentWrapper}
-                        >
+            <PageWrapper>
+                <div className="checkout">
+                    <div className="order-wrapper">
+                        <div className="order">
                             {(!products || products.length == 0) && cartEmptyDisplay}
-                            {products && products.length > 0 && content}
+                            {products && products.length > 0 && order}
                         </div>
                     </div>
-                    {products && products.length > 0 && <div style={{ padding: "24px", borderTop: "1px solid #e0e0e0" }}>{checkoutFooter}</div>}
+                    {products && products.length > 0 && <div className="footer">{checkoutFooter}</div>}
                 </div>
                 {modalsAndSpinners}
-            </KioskPageWrapper>
+            </PageWrapper>
         </>
     );
 };
@@ -983,10 +841,7 @@ const OrderSummary = (props: {
                     // using index as key because products can be duplicated
                     if (product) {
                         return (
-                            <div
-                                key={index}
-                                // onClick={() => props.onEditProduct(product, index)}
-                            >
+                            <div key={index}>
                                 <OrderItem
                                     product={product}
                                     displayOrder={index}
@@ -994,7 +849,7 @@ const OrderSummary = (props: {
                                     onUpdateProductQuantity={props.onUpdateProductQuantity}
                                     onRemoveProduct={props.onRemoveProduct}
                                 />
-                                <Separator6 />
+                                <div className="separator-6"></div>
                             </div>
                         );
                     }
@@ -1002,11 +857,7 @@ const OrderSummary = (props: {
         </>
     );
 
-    return (
-        <>
-            <div>{orderItems}</div>
-        </>
-    );
+    return <>{orderItems}</>;
 };
 
 const OrderItem = (props: {
@@ -1031,7 +882,7 @@ const OrderItem = (props: {
 
     // displays
     const quantity = (
-        <KioskStepper
+        <Stepper
             count={props.product.quantity}
             min={1}
             onUpdate={(count: number) => props.onUpdateProductQuantity(props.displayOrder, count)}
@@ -1039,22 +890,9 @@ const OrderItem = (props: {
         />
     );
 
-    const price = (
-        <PrimaryColor>
-            <Title2Font>${convertCentsToDollars(itemPrice)}</Title2Font>
-        </PrimaryColor>
-    );
-
     return (
         <>
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "auto 1fr auto",
-                    gridColumnGap: "32px",
-                    alignItems: "center",
-                }}
-            >
+            <div className="order-item">
                 {quantity}
                 <OrderItemDetails
                     name={props.product.name}
@@ -1062,20 +900,11 @@ const OrderItem = (props: {
                     modifierGroups={props.product.modifierGroups}
                     onEditProduct={() => props.onEditProduct(props.product, props.displayOrder)}
                 />
-                <div style={{ textAlign: "center" }}>
-                    {price}
-                    <Space2 />
-                    <KioskButton
-                        style={{
-                            backgroundColor: "#ffffff",
-                            color: "#484848",
-                            border: "1px solid #e0e0e0",
-                            padding: "6px 18px",
-                        }}
-                        onClick={() => props.onRemoveProduct(props.displayOrder)}
-                    >
-                        <NormalFont style={{ fontWeight: 300 }}>Remove</NormalFont>
-                    </KioskButton>
+                <div className="text-center">
+                    <div className="h2 text-primary mb-2">${convertCentsToDollars(itemPrice)}</div>
+                    <Button className="remove-button" onClick={() => props.onRemoveProduct(props.displayOrder)}>
+                        Remove
+                    </Button>
                 </div>
             </div>
         </>
@@ -1101,30 +930,18 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
         return mStr;
     };
 
-    // displays
-
     const editButton = (
         <>
-            <KioskButton
-                style={{
-                    backgroundColor: "#ffffff",
-                    color: "#484848",
-                    border: "1px solid #e0e0e0",
-                    padding: "6px 18px",
-                    display: "inline-block",
-                    marginLeft: "12px",
-                }}
-                onClick={() => props.onEditProduct()}
-            >
-                <NormalFont style={{ fontWeight: 300 }}>Edit</NormalFont>
-            </KioskButton>
+            <Button className="edit-button" onClick={() => props.onEditProduct()}>
+                Edit
+            </Button>
         </>
     );
 
     const nameDisplay = (
-        <Title2Font>
-            {props.name} {editButton}
-        </Title2Font>
+        <div className="name-edit-button">
+            <div className="h2 mr-2">{props.name}</div> {editButton}
+        </div>
     );
 
     const modifiersDisplay = (
@@ -1133,12 +950,11 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
                 <>
                     {!mg.hideForCustomer && (
                         <>
-                            <Space1 />
-                            <BoldFont key={mg.id}>{mg.name}</BoldFont>
-                            {mg.modifiers.map((m, index2) => (
-                                <>
-                                    <NormalFont key={m.id}>{modifierString(m.preSelectedQuantity, m.quantity, m.name, m.price)}</NormalFont>
-                                </>
+                            <div className="text-bold mt-1" key={mg.id}>
+                                {mg.name}
+                            </div>
+                            {mg.modifiers.map((m) => (
+                                <div key={m.id}>{modifierString(m.preSelectedQuantity, m.quantity, m.name, m.price)}</div>
                             ))}
                         </>
                     )}
@@ -1147,26 +963,10 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
         </>
     );
 
-    const notesDisplay = (
-        <>
-            {props.notes && (
-                <>
-                    <GrayColor>
-                        <NormalFont>Notes: {props.notes}</NormalFont>
-                    </GrayColor>
-                </>
-            )}
-        </>
-    );
+    const notesDisplay = <>{props.notes && <div className="text-grey">Notes: {props.notes}</div>}</>;
 
     return (
-        <div
-            style={{
-                display: "grid",
-                gridAutoRows: "auto" /* shrink to min size*/,
-                gridRowGap: "4px",
-            }}
-        >
+        <div className="detail">
             {nameDisplay}
             {modifiersDisplay}
             {notesDisplay}

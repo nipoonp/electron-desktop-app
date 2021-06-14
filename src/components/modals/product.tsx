@@ -1,34 +1,27 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Title2Font, BoldFont, NormalFont, Title1Font } from "../../tabin/components/fonts";
-import { Space2, Space3, Space4, Space1, Space6, Space } from "../../tabin/components/spaces";
-import { useHistory } from "react-router";
+import React, { useState, useEffect } from "react";
 import { useUser } from "../../context/user-context";
-import { useCart } from "../../context/cart-context";
 import { ICartModifier, ISelectedProductModifiers, ICartProduct, ICartModifierGroup } from "../../model/model";
 import { Logger } from "aws-amplify";
 import { toast } from "../../tabin/components/toast";
-import { isItemSoldOut } from "../../util/isItemAvailable";
-import { convertCentsToDollars } from "../../util/moneyConversion";
-import { MessageBox } from "../../tabin/components/messageBox";
-import { ErrorColor, GrayColor } from "../../tabin/components/colors";
-import { PlusIcon } from "../../tabin/components/plusIcon";
+import { isItemSoldOut } from "../../util/util";
+import { convertCentsToDollars } from "../../util/util";
+import { PlusIcon } from "../../tabin/components/icons/plusIcon";
 import {
     IGET_RESTAURANT_PRODUCT,
     IGET_RESTAURANT_MODIFIER_GROUP,
     IGET_RESTAURANT_MODIFIER,
     IGET_RESTAURANT_CATEGORY,
 } from "../../graphql/customQueries";
-import { KioskModal } from "../../tabin/components/kioskModal";
-import { KioskButton } from "../../tabin/components/kioskButton";
-import { SizedBox } from "../../tabin/components/sizedBox";
-import { KioskStepper } from "../../tabin/components/kioskStepper";
-import { KioskCheckbox } from "../../tabin/components/kioskCheckbox";
-import { KioskRadio } from "../../tabin/components/kioskRadio";
-import { Separator6 } from "../../tabin/components/separator";
-import { TextAreaV2 } from "../../tabin/components/textAreav2";
+import { Modal } from "../../tabin/components/modal";
+import { Button } from "../../tabin/components/button";
+import { Stepper } from "../../tabin/components/stepper";
+import { Checkbox } from "../../tabin/components/checkbox";
+import { Radio } from "../../tabin/components/radio";
+
+import "./product.scss";
+import { TextArea } from "../../tabin/components/textArea";
 
 const logger = new Logger("productModal");
-const styles = require("./product.module.css");
 
 export const ProductModal = (props: {
     //
@@ -403,7 +396,7 @@ export const ProductModal = (props: {
                                 error={error[mg.modifierGroup.id]}
                                 disabled={!user || !props.restaurantIsAcceptingOrders}
                             />
-                            <Separator6 />
+                            <div className="separator-6"></div>
                         </>
                     )}
                 </>
@@ -413,99 +406,46 @@ export const ProductModal = (props: {
 
     const productNotes = (
         <>
-            <Title2Font>Special instructions</Title2Font>
-            <Space3 />
-            <TextAreaV2 placeholder={"Leave a note for the kitchen"} onChange={onNotesChange} value={notes || ""} />
+            <div className="h2 mb-3">Special instructions</div>
+            <TextArea placeholder={"Leave a note for the kitchen"} onChange={onNotesChange} value={notes || ""} />
         </>
     );
 
-    const quantityAndAddToCartButton = (
+    const footer = (
         <>
-            <div style={{ width: "140px", margin: "0 auto" }}>
-                <KioskStepper count={quantity} min={1} onUpdate={onUpdateQuantity} size={48} />
+            <div className="stepper mb-4">
+                <Stepper count={quantity} min={1} onUpdate={onUpdateQuantity} size={48} />
             </div>
-            <Space4 />
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                }}
-            >
-                <KioskButton
-                    onClick={onModalClose}
-                    style={{
-                        backgroundColor: "#ffffff",
-                        color: "#484848",
-                        border: "1px solid #e0e0e0",
-                        width: "350px",
-                    }}
-                >
-                    <NormalFont style={{ fontSize: "22px" }}>Cancel</NormalFont>
-                </KioskButton>
-                <SizedBox width="24px" />
-                <KioskButton
-                    onClick={onSubmit}
-                    cy-data="add-to-order"
-                    style={{
-                        width: "350px",
-                    }}
-                >
-                    <NormalFont style={{ fontSize: "22px" }}>
-                        {props.editProduct ? "Update Item " : "Add To Order "} ${convertCentsToDollars(totalDisplayPrice)}
-                    </NormalFont>
-                </KioskButton>
+            <div className="footer-buttons-container">
+                <Button className="button large mr-3 cancel-button" onClick={onModalClose}>
+                    Cancel
+                </Button>
+                <Button className="button large add-update-order-button" onClick={onSubmit}>
+                    {props.editProduct ? "Update Item " : "Add To Order "} ${convertCentsToDollars(totalDisplayPrice)}
+                </Button>
             </div>
         </>
     );
 
     const content = (
         <>
-            <div style={{ flex: "1", padding: "0 84px 84px 84px", overflow: "scroll" }} className={styles.container}>
-                <Space size={84} />
-                <Title1Font>{props.product.name}</Title1Font>
-                <Space4 />
-                {props.product.description && (
-                    <>
-                        <NormalFont
-                            style={{
-                                whiteSpace: "pre-line",
-                                fontWeight: 300,
-                                fontSize: "18px",
-                            }}
-                        >
-                            {props.product.description}
-                        </NormalFont>
-                    </>
-                )}
-                <Separator6 />
+            <div className="product">
+                <div className="mt-11" />
+                <div className="h1 mb-4">{props.product.name}</div>
+                {props.product.description && <div className="description">{props.product.description}</div>}
+                <div className="separator-6"></div>
                 {modifierGroups}
                 {user && productNotes}
             </div>
-            <div
-                style={{
-                    padding: "24px",
-                    borderTop: "1px solid rgb(224, 224, 224)",
-                }}
-            >
-                {quantityAndAddToCartButton}
-            </div>
+            <div className="footer">{footer}</div>
         </>
     );
 
     return (
         <>
-            <KioskModal isOpen={props.isOpen} onRequestClose={onModalClose}>
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        height: "100%",
-                    }}
-                >
-                    {content}
-                </div>
-            </KioskModal>
+            <Modal isOpen={props.isOpen} onRequestClose={onModalClose}>
+                <div className="product-modal">{content}</div>
+            </Modal>
         </>
     );
 };
@@ -566,48 +506,36 @@ export const ModifierGroup = (props: {
 
     return (
         <>
-            <Title2Font>{props.modifierGroup.name}</Title2Font>
-            {props.error && (
+            <div className="h2 mb-2">{props.modifierGroup.name}</div>
+            {props.error && <div className="text-error mb-2">{props.error}</div>}
+            <div className="mb-2">({getSelectInstructions()})</div>
+            {props.modifierGroup.modifiers.items.map((m) => (
                 <>
-                    <Space2 />
-                    <NormalFont>
-                        <ErrorColor>{props.error}</ErrorColor>
-                    </NormalFont>
-                    <Space1 />
+                    <Modifier
+                        modifierGroupName={props.modifierGroup.name}
+                        radio={props.modifierGroup.choiceMin !== 0 && props.modifierGroup.choiceMax === 1}
+                        modifier={m.modifier}
+                        choiceDuplicate={props.modifierGroup.choiceDuplicate}
+                        onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
+                            props.onCheckingModifier(selectedModifier, m.preSelectedQuantity);
+                        }}
+                        onUnCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
+                            props.onUnCheckingModifier(selectedModifier, m.preSelectedQuantity);
+                        }}
+                        onChangeModifierQuantity={(selectedModifier: IGET_RESTAURANT_MODIFIER, quantity: number) => {
+                            props.onChangeModifierQuantity(selectedModifier, m.preSelectedQuantity, quantity);
+                        }}
+                        onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
+                            props.onSelectRadioModifier(selectedModifier, m.preSelectedQuantity);
+                        }}
+                        modifierQuantity={modifierQuantity(m.modifier)}
+                        checked={isModifierSelected(m.modifier)}
+                        maxReached={isMaxReached(props.modifierGroup.choiceMax, props.selectedModifiers)}
+                        soldOut={isItemSoldOut(m.modifier.soldOut, m.modifier.soldOutDate)}
+                        disabled={props.disabled || isModifierDisabled(m.modifier)}
+                    />
                 </>
-            )}
-            <Space2 />
-            <NormalFont>({getSelectInstructions()})</NormalFont>
-            <Space2 />
-            <div cy-data="modifier-group">
-                {props.modifierGroup.modifiers.items.map((m) => (
-                    <>
-                        <Modifier
-                            modifierGroupName={props.modifierGroup.name}
-                            radio={props.modifierGroup.choiceMin !== 0 && props.modifierGroup.choiceMax === 1}
-                            modifier={m.modifier}
-                            choiceDuplicate={props.modifierGroup.choiceDuplicate}
-                            onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                props.onCheckingModifier(selectedModifier, m.preSelectedQuantity);
-                            }}
-                            onUnCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                props.onUnCheckingModifier(selectedModifier, m.preSelectedQuantity);
-                            }}
-                            onChangeModifierQuantity={(selectedModifier: IGET_RESTAURANT_MODIFIER, quantity: number) => {
-                                props.onChangeModifierQuantity(selectedModifier, m.preSelectedQuantity, quantity);
-                            }}
-                            onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                props.onSelectRadioModifier(selectedModifier, m.preSelectedQuantity);
-                            }}
-                            modifierQuantity={modifierQuantity(m.modifier)}
-                            checked={isModifierSelected(m.modifier)}
-                            maxReached={isMaxReached(props.modifierGroup.choiceMax, props.selectedModifiers)}
-                            soldOut={isItemSoldOut(m.modifier.soldOut, m.modifier.soldOutDate)}
-                            disabled={props.disabled || isModifierDisabled(m.modifier)}
-                        />
-                    </>
-                ))}
-            </div>
+            ))}
         </>
     );
 };
@@ -674,96 +602,80 @@ const Modifier = (props: {
     const showCheckbox = !showRadio && !showStepper && !showCollapsedStepper;
 
     // displays
-    const radio = (
-        <div cy-data="modifier">
-            <KioskRadio selected={props.checked} onSelect={onSelectRadioModifier} disabled={props.disabled} />
-        </div>
+
+    const modifierChildren = (
+        <>
+            {props.soldOut ? (
+                <>
+                    <div className="text-bold text-grey">{props.modifier.name} (SOLD OUT)</div>
+                    {props.modifier.price > 0 && <div className="text-bold text-grey">{"$" + convertCentsToDollars(props.modifier.price)}</div>}
+                </>
+            ) : (
+                <div>
+                    {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)})`}
+                </div>
+            )}
+        </>
     );
 
     const stepper = (
-        <div cy-data="modifier">
-            <KioskStepper
-                count={stepperCount}
-                setCount={setStepperCount}
-                min={0}
-                max={props.maxReached ? stepperCount : props.choiceDuplicate}
-                onUpdate={onChangeModifierQuantity}
-                disabled={props.disabled}
-                size={stepperHeight}
-            />
-        </div>
+        <Stepper
+            className="pt-2 pb-2"
+            count={stepperCount}
+            setCount={setStepperCount}
+            min={0}
+            max={props.maxReached ? stepperCount : props.choiceDuplicate}
+            onUpdate={onChangeModifierQuantity}
+            disabled={props.disabled}
+            size={stepperHeight}
+        >
+            {modifierChildren}
+        </Stepper>
     );
 
     const collapsedStepper = (
-        <div
-            onClick={onDisplayModifierStepper}
-            style={{
-                // cursor: "pointer",
-                border: "1px solid #c8c8c8",
-                borderRadius: "50%",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                height: String(stepperHeight) + "px",
-                width: String(stepperHeight) + "px",
-            }}
-        >
-            <PlusIcon height={String(stepperHeight / 1.8) + "px"} />
+        <div className="collapsed-stepper-container pt-2 pb-2" onClick={onDisplayModifierStepper}>
+            <div
+                className="collapsed-stepper"
+                style={{
+                    height: String(stepperHeight) + "px",
+                    width: String(stepperHeight) + "px",
+                }}
+            >
+                <PlusIcon height={String(stepperHeight / 1.8) + "px"} />
+            </div>
+            <div className="collapsed-stepper-children">{modifierChildren}</div>
         </div>
     );
 
     const checkbox = (
-        <div cy-data="modifier">
-            <KioskCheckbox onCheck={onCheckingModifier} onUnCheck={onUnCheckingModifier} checked={props.checked} disabled={props.disabled} />
-        </div>
+        <Checkbox
+            className="pt-2 pb-2"
+            onCheck={onCheckingModifier}
+            onUnCheck={onUnCheckingModifier}
+            checked={props.checked}
+            disabled={props.disabled}
+        >
+            {modifierChildren}
+        </Checkbox>
+    );
+
+    const radio = (
+        <Radio className="pt-2 pb-2" selected={props.checked} onSelect={onSelectRadioModifier} disabled={props.disabled}>
+            {modifierChildren}
+        </Radio>
     );
 
     return (
         <>
-            <div
-                style={{
-                    color: props.disabled ? "hsl(0,0%,50%)" : "inherit",
-                }}
-            >
-                <Space3 />
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: "auto 1fr auto",
-                        gridColumnGap: "16px",
-                        alignItems: "center",
-                    }}
-                >
-                    {showRadio && radio}
+            <div className="modifier">
+                {showRadio && radio}
 
-                    {showStepper && stepper}
+                {showStepper && stepper}
 
-                    {showCollapsedStepper && collapsedStepper}
+                {showCollapsedStepper && collapsedStepper}
 
-                    {showCheckbox && checkbox}
-
-                    {props.soldOut ? (
-                        <>
-                            <GrayColor>
-                                <NormalFont>{props.modifier.name} (SOLD OUT)</NormalFont>
-                            </GrayColor>
-                            {props.modifier.price > 0 && (
-                                <>
-                                    <GrayColor>
-                                        <BoldFont>{"$" + convertCentsToDollars(props.modifier.price)}</BoldFont>
-                                    </GrayColor>
-                                </>
-                            )}
-                        </>
-                    ) : (
-                        <>
-                            <NormalFont>
-                                {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)})`}
-                            </NormalFont>
-                        </>
-                    )}
-                </div>
-                <Space3 />
+                {showCheckbox && checkbox}
             </div>
         </>
     );

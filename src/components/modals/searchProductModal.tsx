@@ -1,20 +1,14 @@
 import React, { useState } from "react";
-import { KioskModal } from "../../tabin/components/kioskModal";
-import { InputV3 } from "../../tabin/components/inputv3";
-import { useCart } from "../../context/cart-context";
-import { BoldFont, NormalFont, Title2Font, Title3Font } from "../../tabin/components/fonts";
-import { Space, Space2, Space4, Space5, Space6 } from "../../tabin/components/spaces";
+import { Modal } from "../../tabin/components/modal";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
-import { isItemAvailable, isItemSoldOut } from "../../util/isItemAvailable";
-import { convertCentsToDollars } from "../../util/moneyConversion";
+import { isItemAvailable, isItemSoldOut } from "../../util/util";
+import { convertCentsToDollars } from "../../util/util";
 import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
-import { SizedBox } from "../../tabin/components/sizedBox";
-import { KioskProductSearchField } from "../../tabin/components/kioskProductSearchField";
-import { CloseIcon } from "../../tabin/components/closeIcon";
-import { KioskButton } from "../../tabin/components/kioskButton";
+import { Button } from "../../tabin/components/button";
 import { useRestaurant } from "../../context/restaurant-context";
 
-const styles = require("./searchProductModal.module.css");
+import "./searchProductModal.scss";
+import { Input } from "../../tabin/components/input";
 
 interface IFilteredProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -94,61 +88,34 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
         return (
             <>
                 <div
-                    style={{
-                        border: "1px solid #e0e0e0",
-                        padding: "16px",
-                        borderRadius: "10px",
-                        opacity: !isSoldOut && isAvailable ? "1" : "0.5",
-                    }}
+                    className={`product ${isSoldOut ? "sold-out" : ""} `}
                     onClick={() => !isSoldOut && isAvailable && onClickProduct(category, product)}
                 >
                     <div style={{ margin: "0 auto" }}>
                         {product.image && (
-                            <>
-                                <img
-                                    src={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
-                                    style={{
-                                        width: "100%",
-                                        height: "200px",
-                                        borderRadius: "10px",
-                                        objectFit: "cover",
-                                    }}
-                                />
-                                <Space2 />
-                            </>
+                            <img
+                                className="image mb-2"
+                                src={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                            />
                         )}
                     </div>
 
-                    <BoldFont style={{ fontSize: "18px", textAlign: "center" }}>
+                    <div className="name text-bold">
                         {formatProductName(product.name)}
                         {!isAvailable ? `(UNAVAILABLE)` : isSoldOut ? ` (SOLD OUT)` : ""}
-                    </BoldFont>
+                    </div>
 
-                    {product.description && (
-                        <>
-                            <Space2 />
-                            <NormalFont style={{ fontWeight: 300, textAlign: "center" }} className={styles.description}>
-                                {product.description}
-                            </NormalFont>
-                        </>
-                    )}
+                    {product.description && <div className="description mt-2">{product.description}</div>}
 
-                    <Space2 />
-                    <NormalFont style={{ textAlign: "center", fontSize: "18px" }}>${convertCentsToDollars(product.price)}</NormalFont>
+                    <div className="price mt-4">${convertCentsToDollars(product.price)}</div>
                 </div>
             </>
         );
     };
 
     const menuProducts = (
-        <div style={{ width: "100%" }}>
-            <div
-                style={{
-                    display: "grid",
-                    gridGap: "32px",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
-                }}
-            >
+        <div className="products-wrapper">
+            <div className="products">
                 {filteredProducts.map((filteredProduct) => {
                     return <>{productDisplay(filteredProduct.category, filteredProduct.product)}</>;
                 })}
@@ -158,52 +125,25 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
 
     const content = (
         <>
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    flexDirection: "column",
-                    width: "100%",
-                }}
-            >
-                <div style={{ position: "absolute", top: "32px", right: "32px" }}>
-                    <KioskButton
-                        style={{
-                            backgroundColor: "#ffffff",
-                            color: "#484848",
-                            border: "1px solid #e0e0e0",
-                            padding: "12px 24px",
-                        }}
-                        onClick={onModalClose}
-                    >
-                        <NormalFont style={{ fontWeight: 300 }}>Close</NormalFont>
-                    </KioskButton>
+            <div className="content">
+                <div className="close-button-wrapper">
+                    <Button className="close-button" onClick={onModalClose}>
+                        Close
+                    </Button>
                 </div>
-                <Title2Font>What do you feel like eating today?</Title2Font>
-                <Space6 />
-                <KioskProductSearchField name="name" type="text" placeholder="Search..." onChange={onChange} />
-                <Space6 />
-                {searchTerm != "" && filteredProducts.length == 0 ? <BoldFont>No results found</BoldFont> : <>{menuProducts}</>}
-                <Space size={84} />
+                <div className="h1 mb-6">What do you feel like eating today?</div>
+                <Input className="product-search-field mb-6" name="name" type="text" placeholder="Search..." onChange={onChange} />
+                {searchTerm != "" && filteredProducts.length == 0 ? <div className="text-bold">No results found</div> : <>{menuProducts}</>}
+                <div className="mb-12"></div>
             </div>
         </>
     );
 
     return (
         <>
-            <KioskModal isOpen={props.isOpen} onRequestClose={onModalClose}>
-                <div
-                    style={{
-                        padding: "84px",
-                        display: "flex",
-                        flexDirection: "column",
-                        height: "100%",
-                        position: "relative",
-                    }}
-                >
-                    {content}
-                </div>
-            </KioskModal>
+            <Modal isOpen={props.isOpen} onRequestClose={onModalClose}>
+                <div className="search-product-modal">{content}</div>
+            </Modal>
         </>
     );
 };

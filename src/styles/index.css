@@ -136,7 +136,6 @@ textarea {
 svg {
 }
 /* ------------------------------------------------------------------- */
-/* @import url('https://fonts.googleapis.com/css?family=Montserrat&display=swap'); */
 
 body {
     font-family: "Open Sans", -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif;
@@ -155,6 +154,11 @@ body {
                                 supported by Chrome, Edge, Opera and Firefox */
     /* This removes the drag back on chromium kiosk mode */
     overscroll-behavior: contain;
+}
+
+::-webkit-scrollbar {
+    display: none;
+    width: 0px;
 }
 
 .ReactModal__Body--open {
