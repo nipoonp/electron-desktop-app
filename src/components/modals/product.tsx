@@ -3,8 +3,8 @@ import { useUser } from "../../context/user-context";
 import { ICartModifier, ISelectedProductModifiers, ICartProduct, ICartModifierGroup } from "../../model/model";
 import { Logger } from "aws-amplify";
 import { toast } from "../../tabin/components/toast";
-import { isItemSoldOut } from "../../util/isItemAvailable";
-import { convertCentsToDollars } from "../../util/moneyConversion";
+import { isItemSoldOut } from "../../util/util";
+import { convertCentsToDollars } from "../../util/util";
 import { PlusIcon } from "../../tabin/components/icons/plusIcon";
 import {
     IGET_RESTAURANT_PRODUCT,

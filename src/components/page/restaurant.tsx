@@ -3,7 +3,7 @@ import { useHistory } from "react-router";
 import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { checkoutPath, beginOrderPath, orderTypePath } from "../main";
-import { convertCentsToDollars } from "../../util/moneyConversion";
+import { convertCentsToDollars } from "../../util/util";
 import { ProductModal } from "../modals/product";
 import { SearchProductModal } from "../modals/searchProductModal";
 import { IGET_RESTAURANT_PRODUCT, IGET_RESTAURANT_CATEGORY, IS3Object } from "../../graphql/customQueries";
@@ -12,7 +12,7 @@ import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { Button } from "../../tabin/components/button";
 import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
 import { ICartProduct } from "../../model/model";
-import { isItemAvailable, isItemSoldOut } from "../../util/isItemAvailable";
+import { isItemAvailable, isItemSoldOut } from "../../util/util";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
 //@ts-ignore as it does not have the types
 import { Shake } from "reshake";

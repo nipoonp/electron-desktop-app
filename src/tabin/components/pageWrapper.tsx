@@ -3,11 +3,7 @@ import { useHistory } from "react-router";
 import { beginOrderPath } from "../../components/main";
 import { useCart } from "../../context/cart-context";
 
-const styles = require("./pageWrapper.module.css");
-
 export const PageWrapper = (props: IProps) => {
-    const [x, setX] = useState();
-    const [y, setY] = useState();
     const history = useHistory();
     const { clearCart } = useCart();
 
@@ -17,22 +13,6 @@ export const PageWrapper = (props: IProps) => {
     const resetUserInactiveSecondsCounter = () => {
         userInactiveSecondsCounter.current = 0;
     };
-
-    useEffect(() => {
-        const update = (e: any) => {
-            setX(e.x);
-            setY(e.y);
-            resetUserInactiveSecondsCounter();
-        };
-
-        window.addEventListener("mousemove", update);
-        window.addEventListener("touchmove", update);
-
-        return () => {
-            window.removeEventListener("mousemove", update);
-            window.removeEventListener("touchmove", update);
-        };
-    }, [setX, setY]);
 
     useEffect(() => {
         const ticker = setInterval(() => {
@@ -48,16 +28,13 @@ export const PageWrapper = (props: IProps) => {
 
     return (
         <>
-            {/* <h1>{`x: ${x}; y: ${y};`}</h1> */}
             <div
-                // style={{ cursor: "none" }}
                 onClick={() => {
                     resetUserInactiveSecondsCounter();
                 }}
             >
                 {props.children}
             </div>
-            {/* <div className={`${styles.cursor}`} style={{ left: x, top: y }}></div> */}
         </>
     );
 };

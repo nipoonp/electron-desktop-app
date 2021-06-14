@@ -11,6 +11,17 @@
         flex-direction: column;
         width: 100%;
 
+        .product-search-field {
+            border: 1px solid rgb(236, 236, 236);
+            border-radius: 6px;
+            padding: 16px 32px;
+            height: 56px;
+            line-height: 24px;
+            width: 100%;
+            background-color: white;
+            box-shadow: rgb(226, 226, 226) 0px 0px 16px 0px;
+        }
+
         .close-button-wrapper {
             position: absolute;
             top: 32px;

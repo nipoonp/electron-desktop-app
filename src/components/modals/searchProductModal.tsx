@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { Modal } from "../../tabin/components/modal";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
-import { isItemAvailable, isItemSoldOut } from "../../util/isItemAvailable";
-import { convertCentsToDollars } from "../../util/moneyConversion";
+import { isItemAvailable, isItemSoldOut } from "../../util/util";
+import { convertCentsToDollars } from "../../util/util";
 import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
-import { ProductSearchField } from "../../tabin/components/productSearchField";
 import { Button } from "../../tabin/components/button";
 import { useRestaurant } from "../../context/restaurant-context";
 
 import "./searchProductModal.scss";
+import { Input } from "../../tabin/components/input";
 
 interface IFilteredProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -131,9 +131,8 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
                         Close
                     </Button>
                 </div>
-                <div className="h2 mb-6">What do you feel like eating today?</div>
-                {/* <ProductSearchField name="name" type="text" placeholder="Search..." onChange={onChange} />
-                <Space6 /> */}
+                <div className="h1 mb-6">What do you feel like eating today?</div>
+                <Input className="product-search-field mb-6" name="name" type="text" placeholder="Search..." onChange={onChange} />
                 {searchTerm != "" && filteredProducts.length == 0 ? <div className="text-bold">No results found</div> : <>{menuProducts}</>}
                 <div className="mb-12"></div>
             </div>

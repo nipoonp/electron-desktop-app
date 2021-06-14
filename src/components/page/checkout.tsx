@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useHistory } from "react-router-dom";
-import { convertCentsToDollars } from "../../util/moneyConversion";
+import { convertCentsToDollars } from "../../util/util";
 import { useMutation } from "react-apollo-hooks";
 import { CREATE_ORDER } from "../../graphql/customMutations";
 import { IGET_RESTAURANT_REGISTER_PRINTER, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
@@ -22,7 +22,7 @@ import { useVerifone, VerifoneTransactionOutcome } from "../../context/verifone-
 import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
-import { toLocalISOString } from "../../util/dateTime";
+import { toLocalISOString } from "../../util/util";
 import { useRestaurant } from "../../context/restaurant-context";
 
 import "./checkout.scss";
@@ -734,14 +734,14 @@ export const Checkout = () => {
     );
 
     const restaurantOrderType = (
-        <div className="order-type mb-2">
+        <div className="checkout-order-type mb-2">
             <div className="h3">Order Type: {orderType}</div>
             <Link onClick={onUpdateOrderType}>Change</Link>
         </div>
     );
 
     const restaurantTableNumber = (
-        <div className="table-number">
+        <div className="checkout-table-number">
             <div className="h3">Table Number: {tableNumber}</div>
             <Link onClick={onUpdateTableNumber}>Change</Link>
         </div>

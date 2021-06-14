@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useCart } from "../../context/cart-context";
-import { convertCentsToDollars } from "../../util/moneyConversion";
+import { convertCentsToDollars } from "../../util/util";
 import { Modal } from "../../tabin/components/modal";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 
