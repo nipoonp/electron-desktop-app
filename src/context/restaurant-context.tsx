@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useUser } from "./user-context";
 import { IGET_RESTAURANT, IGET_USER_RESTAURANT } from "../graphql/customQueries";
 import { useGetRestaurantQuery } from "../hooks/useGetRestaurantQuery";
+import { getCloudFrontDomainName } from "../private/aws-custom";
 
 type ContextProps = {
     selectRestaurant: (id: string | null) => void;
@@ -59,9 +60,9 @@ const C = (props: {
                         <link
                             rel="stylesheet"
                             type="text/css"
-                            href={
-                                "https://d2nmoln0sb0cri.cloudfront.net/protected/ap-southeast-2:c487e089-90ac-44dc-b07e-15913b161eae/2021-05-02_00:01:27.858-test.css"
-                            }
+                            href={`${getCloudFrontDomainName()}/protected/${restaurant.customStyleSheet.identityPoolId}/${
+                                restaurant.customStyleSheet.key
+                            }`}
                         />
                     )}
                 </>

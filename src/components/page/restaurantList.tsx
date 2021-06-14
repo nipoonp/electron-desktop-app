@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Space6 } from "../../tabin/components/spaces";
-import { Separator4 } from "../../tabin/components/separator";
-import { ButtonV2 } from "../../tabin/components/buttonv2";
-import { Title2Font } from "../../tabin/components/fonts";
 import { useHistory } from "react-router-dom";
 import { useRestaurant } from "../../context/restaurant-context";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { beginOrderPath } from "../main";
 import { useRegister } from "../../context/register-context";
 import { toast } from "../../tabin/components/toast";
+import { Button } from "../../tabin/components/button";
+
+import "./restaurantList.scss";
 
 export const RestaurantList = () => {
     const history = useHistory();
@@ -48,49 +47,39 @@ export const RestaurantList = () => {
         <>
             {!userRestaurants && <FullScreenSpinner show={true} text={"Loading user"} />}
             {showFullScreenSpinner && <FullScreenSpinner show={true} />}
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    flexDirection: "column",
-                    padding: "48px",
-                }}
-            >
-                <div style={{ width: "500px" }}>
-                    <Title2Font>Select a restaurant to access</Title2Font>
-                    <Space6 />
-                    {userRestaurants &&
-                        userRestaurants.map((userRestaurant, index) => (
-                            <>
-                                {index != 0 && <Separator4 />}
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                    <div>{userRestaurant.name}</div>
-                                    {storedSelectedRestaurantId == userRestaurant.id ? (
-                                        <>
-                                            <ButtonV2
-                                                onClick={() => {
-                                                    onDisconnect();
-                                                }}
-                                            >
-                                                {"Disconnect"}
-                                            </ButtonV2>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <ButtonV2
-                                                onClick={() => {
-                                                    onConnect(userRestaurant.id);
-                                                }}
-                                                disabled={restaurant ? true : false}
-                                            >
-                                                {"Use"}
-                                            </ButtonV2>
-                                        </>
-                                    )}
-                                </div>
-                            </>
-                        ))}
-                </div>
+            <div className="restaurant-list">
+                <div className="h2 mb-6">Select a restaurant to access</div>
+                {userRestaurants &&
+                    userRestaurants.map((userRestaurant, index) => (
+                        <>
+                            {index != 0 && <div className="separator-4"></div>}
+                            <div className="restaurant-list-item">
+                                <div>{userRestaurant.name}</div>
+                                {storedSelectedRestaurantId == userRestaurant.id ? (
+                                    <>
+                                        <Button
+                                            onClick={() => {
+                                                onDisconnect();
+                                            }}
+                                        >
+                                            Disconnect
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Button
+                                            onClick={() => {
+                                                onConnect(userRestaurant.id);
+                                            }}
+                                            disabled={restaurant ? true : false}
+                                        >
+                                            Use
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
+                        </>
+                    ))}
             </div>
         </>
     );

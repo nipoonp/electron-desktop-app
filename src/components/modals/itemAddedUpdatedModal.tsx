@@ -1,10 +1,10 @@
 import React, { useEffect } from "react";
-import { Title2Font, NormalFont } from "../../tabin/components/fonts";
-import { Space3 } from "../../tabin/components/spaces";
 import { useCart } from "../../context/cart-context";
-import { convertCentsToDollars } from "../../util/moneyConversion";
-import { KioskModal } from "../../tabin/components/kioskModal";
+import { convertCentsToDollars } from "../../util/util";
+import { Modal } from "../../tabin/components/modal";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
+
+import "./itemAddedUpdatedModal.scss";
 
 export const ItemAddedUpdatedModal = (props: { isOpen: boolean; onClose: () => void; isProductUpdate: boolean }) => {
     const { total } = useCart();
@@ -21,40 +21,20 @@ export const ItemAddedUpdatedModal = (props: { isOpen: boolean; onClose: () => v
 
     const content = (
         <>
-            <div
-                style={{
-                    height: "100vh",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexDirection: "column",
-                }}
-            >
-                <img style={{ height: "200px" }} src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-success-icon.jpg`} />
-                <Space3 />
-                <Title2Font>Item {props.isProductUpdate ? "Updated" : "Added"}</Title2Font>
-                <Space3 />
-                <NormalFont>Your total has been updated</NormalFont>
-                <Space3 />
-                <Title2Font>${convertCentsToDollars(total)}</Title2Font>
+            <div className="content">
+                <img className="image mb-3" src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-success-icon.jpg`} />
+                <div className="h2 mb-3">Item {props.isProductUpdate ? "Updated" : "Added"}</div>
+                <div className="mb-3">Your total has been updated</div>
+                <div className="h2">${convertCentsToDollars(total)}</div>
             </div>
         </>
     );
 
     return (
         <>
-            <KioskModal isOpen={props.isOpen} onRequestClose={onModalClose}>
-                <div
-                    style={{
-                        padding: "0 78px 78px 78px",
-                        display: "flex",
-                        flexDirection: "column",
-                        height: "100%",
-                    }}
-                >
-                    {content}
-                </div>
-            </KioskModal>
+            <Modal isOpen={props.isOpen} onRequestClose={onModalClose}>
+                <div className="item-added-updated-modal">{content}</div>
+            </Modal>
         </>
     );
 };

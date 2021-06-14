@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { RadioV2 } from "../../tabin/components/radiov2";
-import { Space2, Space4, Space6 } from "../../tabin/components/spaces";
-import { Title3Font } from "../../tabin/components/fonts";
 import { Verifone } from "./configureNewEftpos/verifone";
 import { SmartPay } from "./configureNewEftpos/smartpay";
 import { ReceiptPrinter } from "./configureNewEftpos/receiptPrinter";
+import { Radio } from "../../tabin/components/radio";
+
+import "./configureNewEftpos.scss";
 
 enum EftposProvider {
     VERIFONE,
@@ -15,29 +15,26 @@ export const ConfigureNewEftpos = () => {
 
     return (
         <>
-            <div
-                style={{
-                    padding: "48px",
-                    maxWidth: "512px",
-                    margin: "0 auto",
-                }}
-            >
+            <div className="configure-new-eftpos">
                 <ReceiptPrinter />
-                <Space4 />
 
-                <Title3Font>Select your Eftpos provider</Title3Font>
-                <Space4 />
+                <div className="h2 mb-4 mt-4">Select your Eftpos provider</div>
 
-                <RadioV2 selected={eftposProvider == EftposProvider.VERIFONE} onSelect={() => setEftposProvider(EftposProvider.VERIFONE)}>
+                <Radio
+                    className="mb-2"
+                    selected={eftposProvider == EftposProvider.VERIFONE}
+                    onSelect={() => setEftposProvider(EftposProvider.VERIFONE)}
+                >
                     Verifone
-                </RadioV2>
+                </Radio>
 
-                <Space2 />
-                <RadioV2 selected={eftposProvider == EftposProvider.SMARTPAY} onSelect={() => setEftposProvider(EftposProvider.SMARTPAY)}>
+                <Radio
+                    className="mb-6"
+                    selected={eftposProvider == EftposProvider.SMARTPAY}
+                    onSelect={() => setEftposProvider(EftposProvider.SMARTPAY)}
+                >
                     Smart Pay
-                </RadioV2>
-
-                <Space6 />
+                </Radio>
 
                 {eftposProvider == EftposProvider.VERIFONE ? <Verifone /> : eftposProvider == EftposProvider.SMARTPAY ? <SmartPay /> : <></>}
             </div>
