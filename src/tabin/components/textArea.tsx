@@ -20,7 +20,7 @@ export const TextArea = (props: {
             {props.label && <div className="text-bold mb-2">{props.label}</div>}
             <textarea
                 rows={props.rows ? props.rows : 1}
-                className={`textarea ${props.error ? "error" : ""} ${props.disabled ? "disabled" : ""} ${props.className ? props.className : ""} `}
+                className={`textArea ${props.error ? "error" : ""} ${props.disabled ? "disabled" : ""} ${props.className ? props.className : ""}`}
                 placeholder={props.placeholder}
                 name={props.name}
                 onChange={props.onChange}

@@ -18,18 +18,23 @@
         }
 
         .modifier {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
-            grid-column-gap: 16px;
-            align-items: center;
-
-            .collapsedStepper {
-                cursor: pointer;
-                border: 1px solid #c8c8c8;
-                border-radius: 50%;
+            .collapsed-stepper-container {
                 display: flex;
-                justify-content: center;
                 align-items: center;
+
+                .collapsed-stepper {
+                    cursor: pointer;
+                    border: 1px solid #c8c8c8;
+                    border-radius: 50%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+
+                .collapsed-stepper-children {
+                    margin-left: 12px;
+                    line-height: 1.25;
+                }
             }
         }
     }

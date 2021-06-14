@@ -1,73 +1,22 @@
 import React from "react";
 
+import "./kioskRadio.scss";
+
 export const KioskRadio = (props: IProps) => {
-    const propDuplicate = { ...props };
-
-    if (props.style) {
-        propDuplicate.style = {
-            // cursor: "none",
-            ...props.style,
-        };
-
-        propDuplicate.radioStyle = {
-            height: "28px",
-            width: "28px",
-            ...props.radioStyle,
-        };
-    } else {
-        // propDuplicate.style = { cursor: "none" };
-        propDuplicate.radioStyle = { height: "28px", width: "28px" };
-    }
-
-    return <RadioV2 {...propDuplicate} />;
-};
-
-const RadioV2 = (props: IProps) => {
-    // callbacks
     const onClick = () => {
         if (!props.disabled) {
             props.onSelect();
         }
     };
 
-    // constants
-    const borderColor = "#c8c8c8";
-    const disabledBorderColor = "#dcdcdc";
-
     return (
         <>
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    cursor: props.disabled ? "default" : "pointer",
-                    ...props.style,
-                }}
-            >
-                <div
-                    style={{
-                        height: "22px",
-                        width: "22px",
-                        border: "1px solid",
-                        borderColor: props.disabled ? disabledBorderColor : borderColor,
-                        borderRadius: "50%",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        ...props.radioStyle,
-                    }}
-                    onClick={onClick}
-                >
-                    <div
-                        style={{
-                            height: "80%",
-                            width: "80%",
-                            backgroundColor: props.selected ? "var(--primary-color)" : "transparent",
-                            borderRadius: "50%",
-                        }}
-                    />
+            <div className={`radio-container ${props.className}`} onClick={onClick}>
+                <div className={`radio ${props.disabled ? "disabled" : ""}`}>
+                    <div className={`dot ${props.selected ? "selected" : ""}`} />
                 </div>
-                {props.children && <div style={{ marginLeft: "12px", lineHeight: "1.25" }}>{props.children}</div>}
+                {props.children && <div className="radio-children">{props.children}</div>}
+                {/* {props.error && <ErrorMessage message={props.error} />} */}
             </div>
         </>
     );
@@ -75,10 +24,11 @@ const RadioV2 = (props: IProps) => {
 
 export interface IProps {
     children?: React.ReactNode;
-    selected: boolean;
+    selected?: boolean;
     onSelect: () => void;
     disabled?: boolean;
+    error?: string;
     style?: React.CSSProperties;
-    radioStyle?: React.CSSProperties;
     className?: string;
+    // boxStyle?: React.CSSProperties;
 }

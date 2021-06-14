@@ -1,9 +1,9 @@
 import React from "react";
 import { ToastContainer as _ToastContainer } from "react-toastify";
 import { toast as _toast, Slide } from "react-toastify";
-import { CheckIcon } from "./checkIcon";
-import { TimesCircleIcon } from "./timesCircleIcon";
-import { CloseThickIcon } from "./closeThickIcon";
+import { CheckIcon } from "./icons/checkIcon";
+import { TimesCircleIcon } from "./icons/timesCircleIcon";
+import { CloseThickIcon } from "./icons/closeThickIcon";
 
 const styles = require("./toast.module.css");
 

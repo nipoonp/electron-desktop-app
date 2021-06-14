@@ -1,23 +1,10 @@
 import React from "react";
-import { PlusIcon } from "./plusIcon";
-import { MinusIcon } from "./minusIcon";
+import { PlusIcon } from "./icons/plusIcon";
+import { MinusIcon } from "./icons/minusIcon";
+
+import "./kioskStepper.scss";
 
 export const KioskStepper = (props: IProps) => {
-    const propDuplicate = { ...props };
-
-    if (props.buttonStyle) {
-        propDuplicate.buttonStyle = {
-            // cursor: "none",
-            ...props.buttonStyle,
-        };
-    } else {
-        // propDuplicate.buttonStyle = { cursor: "none" };
-    }
-
-    return <Stepper {...propDuplicate} />;
-};
-
-export const Stepper = (props: IProps) => {
     const iconHeight = String(props.size / 1.8) + "px";
     const borderHeight = String(props.size) + "px";
 
@@ -56,37 +43,13 @@ export const Stepper = (props: IProps) => {
         props.onIncrement && props.onIncrement(cnt);
     };
 
-    // default style
-    let defaultStyle: React.CSSProperties = {
-        display: "grid",
-        alignItems: "center",
-        gridTemplateColumns: "auto 1fr auto",
-        gridColumnGap: "8px",
-    };
-
-    // props style
-    let style = defaultStyle;
-    if (props.style) {
-        style = { ...style, ...props.style };
-    }
-
     const minusButtonDisabled = props.count === props.min || props.disabled;
 
     const minusButton = (
         <div
+            className={`stepper-button ${minusButtonDisabled ? "disabled" : ""}`}
+            style={{ height: borderHeight, width: borderHeight }}
             onClick={onMinusClick}
-            style={{
-                border: minusButtonDisabled ? "1px solid #dcdcdc" : "1px solid #c8c8c8",
-                color: minusButtonDisabled ? "#dcdcdc" : "",
-                borderRadius: "50%",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                cursor: "pointer",
-                width: borderHeight,
-                height: borderHeight,
-                ...props.buttonStyle,
-            }}
         >
             <MinusIcon height={iconHeight} />
         </div>
@@ -96,19 +59,9 @@ export const Stepper = (props: IProps) => {
 
     const plusButton = (
         <div
+            className={`stepper-button ${plusButtonDisabled ? "disabled" : ""}`}
+            style={{ height: borderHeight, width: borderHeight }}
             onClick={onPlusClick}
-            style={{
-                border: plusButtonDisabled ? "1px solid #dcdcdc" : "1px solid #c8c8c8",
-                color: plusButtonDisabled ? "#dcdcdc" : "",
-                borderRadius: "50%",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                cursor: "pointer",
-                width: borderHeight,
-                height: borderHeight,
-                ...props.buttonStyle,
-            }}
         >
             <PlusIcon height={iconHeight} />
         </div>
@@ -116,24 +69,28 @@ export const Stepper = (props: IProps) => {
 
     return (
         <>
-            <div style={style}>
-                {minusButton}
-                <div
-                    style={{
-                        textAlign: "center",
-                        padding: `0 ${props.size / (1.8 * 4)}px`,
-                        fontSize: props.size / 1.8,
-                    }}
-                >
-                    {props.count}
+            <div className="stepper-container">
+                <div className={`stepper ${props.className}`} style={props.style}>
+                    {minusButton}
+                    <div
+                        style={{
+                            textAlign: "center",
+                            padding: `0 ${props.size / (1.8 * 4)}px`,
+                            fontSize: props.size / 1.8,
+                        }}
+                    >
+                        {props.count}
+                    </div>
+                    {plusButton}
                 </div>
-                {plusButton}
+                {props.children && <div className="stepper-children">{props.children}</div>}
             </div>
         </>
     );
 };
 
 export interface IProps {
+    children?: React.ReactNode;
     count: number;
     setCount?: (count: number) => void;
     allowNegative?: boolean; // default false
@@ -145,5 +102,5 @@ export interface IProps {
     disabled?: boolean;
     size: number; // pixels
     style?: React.CSSProperties;
-    buttonStyle?: React.CSSProperties;
+    className?: string;
 }

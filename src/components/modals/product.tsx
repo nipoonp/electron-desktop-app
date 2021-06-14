@@ -5,7 +5,7 @@ import { Logger } from "aws-amplify";
 import { toast } from "../../tabin/components/toast";
 import { isItemSoldOut } from "../../util/isItemAvailable";
 import { convertCentsToDollars } from "../../util/moneyConversion";
-import { PlusIcon } from "../../tabin/components/plusIcon";
+import { PlusIcon } from "../../tabin/components/icons/plusIcon";
 import {
     IGET_RESTAURANT_PRODUCT,
     IGET_RESTAURANT_MODIFIER_GROUP,
@@ -602,10 +602,25 @@ const Modifier = (props: {
     const showCheckbox = !showRadio && !showStepper && !showCollapsedStepper;
 
     // displays
-    const radio = <KioskRadio selected={props.checked} onSelect={onSelectRadioModifier} disabled={props.disabled} />;
+
+    const modifierChildren = (
+        <>
+            {props.soldOut ? (
+                <>
+                    <div className="text-bold text-grey">{props.modifier.name} (SOLD OUT)</div>
+                    {props.modifier.price > 0 && <div className="text-bold text-grey">{"$" + convertCentsToDollars(props.modifier.price)}</div>}
+                </>
+            ) : (
+                <div>
+                    {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)})`}
+                </div>
+            )}
+        </>
+    );
 
     const stepper = (
         <KioskStepper
+            className="pt-2 pb-2"
             count={stepperCount}
             setCount={setStepperCount}
             min={0}
@@ -613,29 +628,47 @@ const Modifier = (props: {
             onUpdate={onChangeModifierQuantity}
             disabled={props.disabled}
             size={stepperHeight}
-        />
+        >
+            {modifierChildren}
+        </KioskStepper>
     );
 
     const collapsedStepper = (
-        <div
-            className="collapsedStepper"
-            onClick={onDisplayModifierStepper}
-            style={{
-                height: String(stepperHeight) + "px",
-                width: String(stepperHeight) + "px",
-            }}
-        >
-            <PlusIcon height={String(stepperHeight / 1.8) + "px"} />
+        <div className="collapsed-stepper-container pt-2 pb-2" onClick={onDisplayModifierStepper}>
+            <div
+                className="collapsed-stepper"
+                style={{
+                    height: String(stepperHeight) + "px",
+                    width: String(stepperHeight) + "px",
+                }}
+            >
+                <PlusIcon height={String(stepperHeight / 1.8) + "px"} />
+            </div>
+            <div className="collapsed-stepper-children">{modifierChildren}</div>
         </div>
     );
 
     const checkbox = (
-        <KioskCheckbox onCheck={onCheckingModifier} onUnCheck={onUnCheckingModifier} checked={props.checked} disabled={props.disabled} />
+        <KioskCheckbox
+            className="pt-2 pb-2"
+            onCheck={onCheckingModifier}
+            onUnCheck={onUnCheckingModifier}
+            checked={props.checked}
+            disabled={props.disabled}
+        >
+            {modifierChildren}
+        </KioskCheckbox>
+    );
+
+    const radio = (
+        <KioskRadio className="pt-2 pb-2" selected={props.checked} onSelect={onSelectRadioModifier} disabled={props.disabled}>
+            {modifierChildren}
+        </KioskRadio>
     );
 
     return (
         <>
-            <div className="modifier mt-3 mb-3">
+            <div className="modifier">
                 {showRadio && radio}
 
                 {showStepper && stepper}
@@ -643,17 +676,6 @@ const Modifier = (props: {
                 {showCollapsedStepper && collapsedStepper}
 
                 {showCheckbox && checkbox}
-
-                {props.soldOut ? (
-                    <>
-                        <div className="text-bold text-grey">{props.modifier.name} (SOLD OUT)</div>
-                        {props.modifier.price > 0 && <div className="text-bold text-grey">{"$" + convertCentsToDollars(props.modifier.price)}</div>}
-                    </>
-                ) : (
-                    <div>
-                        {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)})`}
-                    </div>
-                )}
             </div>
         </>
     );
