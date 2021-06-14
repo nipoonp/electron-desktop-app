@@ -1,8 +1,8 @@
 import React from "react";
 
-import "./kioskSelect.scss";
+import "./select.scss";
 
-export const KioskSelect = (props: {
+export const Select = (props: {
     className?: string;
     label?: string;
     showOptionalInTitle?: boolean;

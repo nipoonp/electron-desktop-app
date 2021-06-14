@@ -1,9 +1,9 @@
 import React from "react";
 import { Spinner } from "./spinner";
 
-import "./kioskButton.scss";
+import "./button.scss";
 
-export const KioskButton = (props: IProps) => {
+export const Button = (props: IProps) => {
     return (
         <button
             className={`button ${props.disabled ? "disabled" : ""} ${props.className}`}

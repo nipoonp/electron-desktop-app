@@ -4,8 +4,8 @@ import { useAuth, AuthenticationStatus } from "../../../context/auth-context";
 import { Logger } from "aws-amplify";
 import * as yup from "yup";
 import { beginOrderPath } from "../../main";
-import { KioskButton } from "../../../tabin/components/kioskButton";
-import { KioskInput } from "../../../tabin/components/kioskInput";
+import { Button } from "../../../tabin/components/button";
+import { Input } from "../../../tabin/components/input";
 
 import "./login.scss";
 
@@ -95,7 +95,7 @@ export const Login = () => {
 
     const emailInput = (
         <>
-            <KioskInput
+            <Input
                 name="email"
                 label="Email"
                 type="text"
@@ -110,7 +110,7 @@ export const Login = () => {
 
     const passwordInput = (
         <>
-            <KioskInput
+            <Input
                 name="password"
                 label="Password"
                 type="password"
@@ -125,9 +125,9 @@ export const Login = () => {
 
     const loginButton = (
         <>
-            <KioskButton disabled={loading} onClick={onLogin} loading={loading}>
+            <Button disabled={loading} onClick={onLogin} loading={loading}>
                 LOG IN
-            </KioskButton>
+            </Button>
         </>
     );
 

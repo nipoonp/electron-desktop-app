@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { KioskInput } from "../../../tabin/components/kioskInput";
+import { Input } from "../../../tabin/components/input";
 import { FullScreenSpinner } from "../../../tabin/components/fullScreenSpinner";
 import { useVerifone, VerifoneTransactionOutcome } from "../../../context/verifone-context";
-import { KioskButton } from "../../../tabin/components/kioskButton";
+import { Button } from "../../../tabin/components/button";
 
 export const Verifone = () => {
     const [showSpinner, setShowSpinner] = useState(false);
@@ -59,7 +59,7 @@ export const Verifone = () => {
             <FullScreenSpinner show={showSpinner} />
             <div>
                 <div className="h3 mb-4">Send a Transaction</div>
-                <KioskInput
+                <Input
                     className="mb-2"
                     type="text"
                     label="Eftpos IP Address:"
@@ -68,7 +68,7 @@ export const Verifone = () => {
                     placeholder="192.168.0.1"
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIPAddress(event.target.value)}
                 />
-                <KioskInput
+                <Input
                     className="mb-2"
                     type="text"
                     label="Eftpos Port Number:"
@@ -77,7 +77,7 @@ export const Verifone = () => {
                     placeholder="40001"
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPortNumber(event.target.value)}
                 />
-                <KioskInput
+                <Input
                     className="mb-4"
                     type="text"
                     label="Amount in cents ($1.99 = 199):"
@@ -86,7 +86,7 @@ export const Verifone = () => {
                     placeholder="199"
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAmount(Number(event.target.value))}
                 />
-                <KioskButton onClick={doTransaction}>Send Transaction</KioskButton>
+                <Button onClick={doTransaction}>Send Transaction</Button>
             </div>
         </>
     );

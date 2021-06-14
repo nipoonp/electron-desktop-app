@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router";
 import { restaurantPath } from "../main";
-import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
+import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { IGET_RESTAURANT_ADVERTISEMENT } from "../../graphql/customQueries";
 import { useRestaurant } from "../../context/restaurant-context";
@@ -56,7 +56,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
     }
 
     return (
-        <KioskPageWrapper>
+        <PageWrapper>
             <div className="begin-order">
                 <div
                     className="wrapper"
@@ -90,7 +90,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
                         ))}
                 </div>
             </div>
-        </KioskPageWrapper>
+        </PageWrapper>
     );
 };
 
@@ -104,7 +104,7 @@ const BeginOrderDefault = () => {
 
     return (
         <>
-            <KioskPageWrapper>
+            <PageWrapper>
                 <div className="begin-order-default">
                     <div className="container">
                         <div
@@ -125,7 +125,7 @@ const BeginOrderDefault = () => {
                         </div>
                     </div>
                 </div>
-            </KioskPageWrapper>
+            </PageWrapper>
         </>
     );
 };

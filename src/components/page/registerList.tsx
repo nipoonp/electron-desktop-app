@@ -5,7 +5,7 @@ import { useHistory } from "react-router-dom";
 import { beginOrderPath } from "../main";
 import { useRestaurant } from "../../context/restaurant-context";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { KioskButton } from "../../tabin/components/kioskButton";
+import { Button } from "../../tabin/components/button";
 
 import "./registerList.scss";
 
@@ -55,24 +55,24 @@ export const RegisterList = () => {
                             <div>{reg.name}</div>
                             {register && register.id == reg.id ? (
                                 <>
-                                    <KioskButton
+                                    <Button
                                         onClick={() => {
                                             onDisconnect(reg.id);
                                         }}
                                     >
                                         Disconnect
-                                    </KioskButton>
+                                    </Button>
                                 </>
                             ) : (
                                 <>
-                                    <KioskButton
+                                    <Button
                                         disabled={reg.active}
                                         onClick={() => {
                                             onConnect(reg.id);
                                         }}
                                     >
                                         {reg.active ? "Unavailable" : "Use"}
-                                    </KioskButton>
+                                    </Button>
                                 </>
                             )}
                         </div>

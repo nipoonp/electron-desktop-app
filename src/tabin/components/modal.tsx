@@ -1,7 +1,7 @@
 import React from "react";
 import ReactModal, { Props } from "react-modal";
 
-export const KioskModal = (
+export const Modal = (
     props: Props & {
         children: React.ReactNode;
     }

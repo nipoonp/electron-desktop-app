@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { KioskInput } from "../../../tabin/components/kioskInput";
+import { Input } from "../../../tabin/components/input";
 import { FullScreenSpinner } from "../../../tabin/components/fullScreenSpinner";
 import { SmartpayTransactionOutcome, useSmartpay } from "../../../context/smartpay-context";
-import { KioskButton } from "../../../tabin/components/kioskButton";
-import { KioskSelect } from "../../../tabin/components/kioskSelect";
+import { Button } from "../../../tabin/components/button";
+import { Select } from "../../../tabin/components/select";
 
 export const SmartPay = () => {
     const [pairingCode, setPairingCode] = useState("");
@@ -73,7 +73,7 @@ export const SmartPay = () => {
                 <div className="h3 mb-4">Pair to a device</div>
 
                 <label htmlFor="pairing-code"></label>
-                <KioskInput
+                <Input
                     className="mb-4"
                     type="text"
                     label="Pairing Code:"
@@ -82,13 +82,13 @@ export const SmartPay = () => {
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPairingCode(event.target.value)}
                     placeholder="123456"
                 />
-                <KioskButton className="mb-6" onClick={doPairing}>
+                <Button className="mb-6" onClick={doPairing}>
                     Pair to Device
-                </KioskButton>
+                </Button>
 
                 <div className="h3 mb-4">Send a Transaction</div>
                 <label htmlFor="amount"></label>
-                <KioskInput
+                <Input
                     className="mb-4"
                     type="number"
                     label="Amount in cents ($1.99 = 199):"
@@ -98,7 +98,7 @@ export const SmartPay = () => {
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAmount(Number(event.target.value))}
                 />
 
-                <KioskSelect
+                <Select
                     className="mb-4"
                     label="Transaction Type:"
                     name="transaction-type"
@@ -109,11 +109,11 @@ export const SmartPay = () => {
                     <option value="Card.Refund">Card.Refund</option>
                     <option value="QR.Merchant.Purchase">QR.Merchant.Purchase</option>
                     <option value="QR.Refund">QR.Refund</option>
-                </KioskSelect>
+                </Select>
 
-                <KioskButton onClick={doTransaction} disabled={showSpinner}>
+                <Button onClick={doTransaction} disabled={showSpinner}>
                     Send Transaction
-                </KioskButton>
+                </Button>
             </div>
         </>
     );

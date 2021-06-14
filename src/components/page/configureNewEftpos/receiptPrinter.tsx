@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { KioskInput } from "../../../tabin/components/kioskInput";
+import { Input } from "../../../tabin/components/input";
 import { useReceiptPrinter } from "../../../context/receiptPrinter-context";
 import { EOrderType, ICartProduct } from "../../../model/model";
 import { useRegister } from "../../../context/register-context";
-import { KioskButton } from "../../../tabin/components/kioskButton";
+import { Button } from "../../../tabin/components/button";
 
 const TEST_PRODUCT: ICartProduct[] = [
     {
@@ -171,7 +171,7 @@ export const ReceiptPrinter = () => {
         <>
             <div>
                 <div className="h2 mb-4">Configure your Receipt Printer(s)</div>
-                <KioskInput
+                <Input
                     className="mb-4"
                     label="Bluetooth Printer Address 1:"
                     type="text"
@@ -181,7 +181,7 @@ export const ReceiptPrinter = () => {
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPrinterAddress1(event.target.value)}
                 />
 
-                <KioskInput
+                <Input
                     className="mb-4"
                     label="Bluetooth Printer Address 2:"
                     type="text"
@@ -191,7 +191,7 @@ export const ReceiptPrinter = () => {
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPrinterAddress2(event.target.value)}
                 />
 
-                <KioskInput
+                <Input
                     className="mb-4"
                     label="Bluetooth Printer Address 3:"
                     type="text"
@@ -201,7 +201,7 @@ export const ReceiptPrinter = () => {
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPrinterAddress3(event.target.value)}
                 />
 
-                <KioskButton onClick={onPrintTestReceipt}>Print Test Receipt(s)</KioskButton>
+                <Button onClick={onPrintTestReceipt}>Print Test Receipt(s)</Button>
             </div>
         </>
     );

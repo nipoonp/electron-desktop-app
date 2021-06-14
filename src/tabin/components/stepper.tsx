@@ -2,9 +2,9 @@ import React from "react";
 import { PlusIcon } from "./icons/plusIcon";
 import { MinusIcon } from "./icons/minusIcon";
 
-import "./kioskStepper.scss";
+import "./stepper.scss";
 
-export const KioskStepper = (props: IProps) => {
+export const Stepper = (props: IProps) => {
     const iconHeight = String(props.size / 1.8) + "px";
     const borderHeight = String(props.size) + "px";
 

@@ -3,9 +3,9 @@ import { useHistory } from "react-router";
 import { beginOrderPath } from "../../components/main";
 import { useCart } from "../../context/cart-context";
 
-const styles = require("./kioskPageWrapper.module.css");
+const styles = require("./pageWrapper.module.css");
 
-export const KioskPageWrapper = (props: IProps) => {
+export const PageWrapper = (props: IProps) => {
     const [x, setX] = useState();
     const [y, setY] = useState();
     const history = useHistory();

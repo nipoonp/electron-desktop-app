@@ -5,7 +5,7 @@ import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { beginOrderPath } from "../main";
 import { useRegister } from "../../context/register-context";
 import { toast } from "../../tabin/components/toast";
-import { KioskButton } from "../../tabin/components/kioskButton";
+import { Button } from "../../tabin/components/button";
 
 import "./restaurantList.scss";
 
@@ -57,24 +57,24 @@ export const RestaurantList = () => {
                                 <div>{userRestaurant.name}</div>
                                 {storedSelectedRestaurantId == userRestaurant.id ? (
                                     <>
-                                        <KioskButton
+                                        <Button
                                             onClick={() => {
                                                 onDisconnect();
                                             }}
                                         >
                                             Disconnect
-                                        </KioskButton>
+                                        </Button>
                                     </>
                                 ) : (
                                     <>
-                                        <KioskButton
+                                        <Button
                                             onClick={() => {
                                                 onConnect(userRestaurant.id);
                                             }}
                                             disabled={restaurant ? true : false}
                                         >
                                             Use
-                                        </KioskButton>
+                                        </Button>
                                     </>
                                 )}
                             </div>

@@ -12,11 +12,11 @@ import {
     IGET_RESTAURANT_MODIFIER,
     IGET_RESTAURANT_CATEGORY,
 } from "../../graphql/customQueries";
-import { KioskModal } from "../../tabin/components/kioskModal";
-import { KioskButton } from "../../tabin/components/kioskButton";
-import { KioskStepper } from "../../tabin/components/kioskStepper";
-import { KioskCheckbox } from "../../tabin/components/kioskCheckbox";
-import { KioskRadio } from "../../tabin/components/kioskRadio";
+import { Modal } from "../../tabin/components/modal";
+import { Button } from "../../tabin/components/button";
+import { Stepper } from "../../tabin/components/stepper";
+import { Checkbox } from "../../tabin/components/checkbox";
+import { Radio } from "../../tabin/components/radio";
 
 import "./product.scss";
 import { TextArea } from "../../tabin/components/textArea";
@@ -414,15 +414,15 @@ export const ProductModal = (props: {
     const footer = (
         <>
             <div className="stepper mb-4">
-                <KioskStepper count={quantity} min={1} onUpdate={onUpdateQuantity} size={48} />
+                <Stepper count={quantity} min={1} onUpdate={onUpdateQuantity} size={48} />
             </div>
             <div className="footer-buttons-container">
-                <KioskButton className="button large mr-3 cancel-button" onClick={onModalClose}>
+                <Button className="button large mr-3 cancel-button" onClick={onModalClose}>
                     Cancel
-                </KioskButton>
-                <KioskButton className="button large add-update-order-button" onClick={onSubmit}>
+                </Button>
+                <Button className="button large add-update-order-button" onClick={onSubmit}>
                     {props.editProduct ? "Update Item " : "Add To Order "} ${convertCentsToDollars(totalDisplayPrice)}
-                </KioskButton>
+                </Button>
             </div>
         </>
     );
@@ -443,9 +443,9 @@ export const ProductModal = (props: {
 
     return (
         <>
-            <KioskModal isOpen={props.isOpen} onRequestClose={onModalClose}>
+            <Modal isOpen={props.isOpen} onRequestClose={onModalClose}>
                 <div className="product-modal">{content}</div>
-            </KioskModal>
+            </Modal>
         </>
     );
 };
@@ -507,7 +507,7 @@ export const ModifierGroup = (props: {
     return (
         <>
             <div className="h2 mb-2">{props.modifierGroup.name}</div>
-            {props.error && <div className="text-error mb-1">{props.error}</div>}
+            {props.error && <div className="text-error mb-2">{props.error}</div>}
             <div className="mb-2">({getSelectInstructions()})</div>
             {props.modifierGroup.modifiers.items.map((m) => (
                 <>
@@ -619,7 +619,7 @@ const Modifier = (props: {
     );
 
     const stepper = (
-        <KioskStepper
+        <Stepper
             className="pt-2 pb-2"
             count={stepperCount}
             setCount={setStepperCount}
@@ -630,7 +630,7 @@ const Modifier = (props: {
             size={stepperHeight}
         >
             {modifierChildren}
-        </KioskStepper>
+        </Stepper>
     );
 
     const collapsedStepper = (
@@ -649,7 +649,7 @@ const Modifier = (props: {
     );
 
     const checkbox = (
-        <KioskCheckbox
+        <Checkbox
             className="pt-2 pb-2"
             onCheck={onCheckingModifier}
             onUnCheck={onUnCheckingModifier}
@@ -657,13 +657,13 @@ const Modifier = (props: {
             disabled={props.disabled}
         >
             {modifierChildren}
-        </KioskCheckbox>
+        </Checkbox>
     );
 
     const radio = (
-        <KioskRadio className="pt-2 pb-2" selected={props.checked} onSelect={onSelectRadioModifier} disabled={props.disabled}>
+        <Radio className="pt-2 pb-2" selected={props.checked} onSelect={onSelectRadioModifier} disabled={props.disabled}>
             {modifierChildren}
-        </KioskRadio>
+        </Radio>
     );
 
     return (

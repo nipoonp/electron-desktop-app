@@ -7,17 +7,17 @@ import { useMutation } from "react-apollo-hooks";
 import { CREATE_ORDER } from "../../graphql/customMutations";
 import { IGET_RESTAURANT_REGISTER_PRINTER, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
 import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath } from "../main";
-import { ShoppingBasketIcon } from "../../tabin/components/shoppingBasketIcon";
+import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
 import { ICartProduct, ISelectedProductModifiers, ICartModifierGroup, EOrderType } from "../../model/model";
 import { useUser } from "../../context/user-context";
 import { format } from "date-fns";
-import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
+import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { useSmartpay, SmartpayTransactionOutcome } from "../../context/smartpay-context";
-import { KioskModal } from "../../tabin/components/kioskModal";
-import { KioskButton } from "../../tabin/components/kioskButton";
+import { Modal } from "../../tabin/components/modal";
+import { Button } from "../../tabin/components/button";
 import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
-import { KioskStepper } from "../../tabin/components/kioskStepper";
+import { Stepper } from "../../tabin/components/stepper";
 import { useVerifone, VerifoneTransactionOutcome } from "../../context/verifone-context";
 import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
@@ -26,7 +26,7 @@ import { toLocalISOString } from "../../util/dateTime";
 import { useRestaurant } from "../../context/restaurant-context";
 
 import "./checkout.scss";
-import { KioskLink } from "../../tabin/components/kioskLink";
+import { Link } from "../../tabin/components/link";
 import { TextArea } from "../../tabin/components/textArea";
 
 const logger = new Logger("checkout");
@@ -542,12 +542,12 @@ export const Checkout = () => {
     const retryButtons = () => (
         <>
             <div className="retry-buttons">
-                <KioskButton className="button large mr-3" onClick={onConfirmTotalOrRetryTransaction}>
+                <Button className="button large mr-3" onClick={onConfirmTotalOrRetryTransaction}>
                     Retry
-                </KioskButton>
-                <KioskButton className="button large retry-cancel-button" onClick={onClosePaymentModal}>
+                </Button>
+                <Button className="button large retry-cancel-button" onClick={onClosePaymentModal}>
                     Cancel
-                </KioskButton>
+                </Button>
             </div>
         </>
     );
@@ -576,14 +576,14 @@ export const Checkout = () => {
                 <div style={{ flex: 1, paddingRight: "12px", width: "750px", height: "44px" }}>
                     <TextAreaV2 placeholder={"Email Address..."} onChange={onNotesChange} value={notes || ""} onFocus={onFocusEmailAddressInput} />
                 </div>
-                <KioskButton
+                <Button
                     onClick={() => {
                         toast.success("Receipt successfully sent to your email");
                     }}
                     style={{ padding: "12px 24px" }}
                 >
                     <NormalFont>Send</NormalFont>
-                </KioskButton>
+                </Button>
             </div>
             <Space3 />
             <NormalFont>
@@ -614,14 +614,14 @@ export const Checkout = () => {
                 <div style={{ flex: 1, paddingRight: "12px", width: "750px", height: "44px" }}>
                     <TextAreaV2 placeholder={"Email Address..."} onChange={onNotesChange} value={notes || ""} onFocus={onFocusEmailAddressInput} />
                 </div>
-                <KioskButton
+                <Button
                     onClick={() => {
                         toast.success("Receipt successfully sent to your email");
                     }}
                     style={{ padding: "12px 24px" }}
                 >
                     <NormalFont>Send</NormalFont>
-                </KioskButton>
+                </Button>
             </div>
             <Space3 />
             <NormalFont>
@@ -654,9 +654,9 @@ export const Checkout = () => {
             <div className="h4 mb-4">Oops! Something went wrong.</div>
             <div className="mb-2">Internal Server Error! Please contact a Tabin representative!</div>
             <div className="mb-2">{createOrderError}</div>
-            <KioskButton className="issue-fixed-button" onClick={onCancelOrder}>
+            <Button className="issue-fixed-button" onClick={onCancelOrder}>
                 Issue Fixed? Restart
-            </KioskButton>
+            </Button>
         </>
     );
 
@@ -688,9 +688,9 @@ export const Checkout = () => {
 
     const paymentModal = (
         <>
-            <KioskModal isOpen={showPaymentModal}>
+            <Modal isOpen={showPaymentModal}>
                 <div className="payment-modal">{getActivePaymentModalComponent()}</div>
-            </KioskModal>
+            </Modal>
         </>
     );
 
@@ -711,13 +711,13 @@ export const Checkout = () => {
                 </div>
                 <div className="h1 center mb-3">Empty cart</div>
                 <div className="h3 center mb-6">Show some love and start ordering!</div>
-                <KioskButton
+                <Button
                     onClick={() => {
                         history.push(restaurantPath + "/" + restaurant!.id);
                     }}
                 >
                     Back To Menu
-                </KioskButton>
+                </Button>
             </div>
         </>
     );
@@ -736,14 +736,14 @@ export const Checkout = () => {
     const restaurantOrderType = (
         <div className="order-type mb-2">
             <div className="h3">Order Type: {orderType}</div>
-            <KioskLink onClick={onUpdateOrderType}>Change</KioskLink>
+            <Link onClick={onUpdateOrderType}>Change</Link>
         </div>
     );
 
     const restaurantTableNumber = (
         <div className="table-number">
             <div className="h3">Table Number: {tableNumber}</div>
-            <KioskLink onClick={onUpdateTableNumber}>Change</KioskLink>
+            <Link onClick={onUpdateTableNumber}>Change</Link>
         </div>
     );
 
@@ -771,28 +771,28 @@ export const Checkout = () => {
             <div className="h1 text-center mb-4">Total: ${convertCentsToDollars(total)}</div>
             <div className="mb-4">
                 <div className="checkout-buttons-container">
-                    <KioskButton onClick={onOrderMore} className="button large mr-3 order-more-button">
+                    <Button onClick={onOrderMore} className="button large mr-3 order-more-button">
                         Order More
-                    </KioskButton>
-                    <KioskButton onClick={onClickOrderButton} className="button large complete-order-button">
+                    </Button>
+                    <Button onClick={onClickOrderButton} className="button large complete-order-button">
                         Complete Order
-                    </KioskButton>
+                    </Button>
                 </div>
                 {register.enablePayLater && (
-                    <KioskLink className="pay-later-link mt-4" onClick={onClickPayLater}>
+                    <Link className="pay-later-link mt-4" onClick={onClickPayLater}>
                         Pay at counter...
-                    </KioskLink>
+                    </Link>
                 )}
             </div>
-            <KioskButton className="cancel-button" onClick={onCancelOrder}>
+            <Button className="cancel-button" onClick={onCancelOrder}>
                 Cancel Order
-            </KioskButton>
+            </Button>
         </div>
     );
 
     return (
         <>
-            <KioskPageWrapper>
+            <PageWrapper>
                 <div className="checkout">
                     <div className="order-wrapper">
                         <div className="order">
@@ -803,7 +803,7 @@ export const Checkout = () => {
                     {products && products.length > 0 && <div className="footer">{checkoutFooter}</div>}
                 </div>
                 {modalsAndSpinners}
-            </KioskPageWrapper>
+            </PageWrapper>
         </>
     );
 };
@@ -875,7 +875,7 @@ const OrderItem = (props: {
 
     // displays
     const quantity = (
-        <KioskStepper
+        <Stepper
             count={props.product.quantity}
             min={1}
             onUpdate={(count: number) => props.onUpdateProductQuantity(props.displayOrder, count)}
@@ -895,9 +895,9 @@ const OrderItem = (props: {
                 />
                 <div className="text-center">
                     <div className="h2 text-primary mb-2">${convertCentsToDollars(itemPrice)}</div>
-                    <KioskButton className="remove-button" onClick={() => props.onRemoveProduct(props.displayOrder)}>
+                    <Button className="remove-button" onClick={() => props.onRemoveProduct(props.displayOrder)}>
                         Remove
-                    </KioskButton>
+                    </Button>
                 </div>
             </div>
         </>
@@ -925,9 +925,9 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
 
     const editButton = (
         <>
-            <KioskButton className="edit-button" onClick={() => props.onEditProduct()}>
+            <Button className="edit-button" onClick={() => props.onEditProduct()}>
                 Edit
-            </KioskButton>
+            </Button>
         </>
     );
 

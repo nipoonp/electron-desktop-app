@@ -8,8 +8,8 @@ import { ProductModal } from "../modals/product";
 import { SearchProductModal } from "../modals/searchProductModal";
 import { IGET_RESTAURANT_PRODUCT, IGET_RESTAURANT_CATEGORY, IS3Object } from "../../graphql/customQueries";
 import { useCart } from "../../context/cart-context";
-import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
-import { KioskButton } from "../../tabin/components/kioskButton";
+import { PageWrapper } from "../../tabin/components/pageWrapper";
+import { Button } from "../../tabin/components/button";
 import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
 import { ICartProduct } from "../../model/model";
 import { isItemAvailable, isItemSoldOut } from "../../util/isItemAvailable";
@@ -358,19 +358,19 @@ export const Restaurant = (props: { restaurantID: string }) => {
                     <img className="shopping-bag-icon mr-2" src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`} />
                     <div className="h4 total">Total: ${convertCentsToDollars(total)}</div>
                 </div>
-                <KioskButton className="large" disabled={!products || products.length == 0} onClick={onClickCart}>
+                <Button className="large" disabled={!products || products.length == 0} onClick={onClickCart}>
                     View My Order
-                </KioskButton>
+                </Button>
             </div>
-            <KioskButton className="cancel-button" onClick={onCancelOrder}>
+            <Button className="cancel-button" onClick={onCancelOrder}>
                 Cancel Order
-            </KioskButton>
+            </Button>
         </>
     );
 
     return (
         <>
-            <KioskPageWrapper>
+            <PageWrapper>
                 <div className="restaurant">
                     <div className="restaurant-container">
                         <div className="categories-wrapper">
@@ -387,7 +387,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
                     <div className="footer-wrapper">{restaurantFooter}</div>
                 </div>
                 {modals}
-            </KioskPageWrapper>
+            </PageWrapper>
         </>
     );
 };

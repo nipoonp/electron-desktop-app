@@ -1,7 +1,7 @@
 import React from "react";
-import "./kioskLink.scss";
+import "./link.scss";
 
-export const KioskLink = (props: {
+export const Link = (props: {
     children: React.ReactNode;
     onClick?: (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>) => void;
     href?: string;

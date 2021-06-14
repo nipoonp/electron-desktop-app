@@ -1,8 +1,8 @@
 import React from "react";
 
-import "./kioskCheckbox.scss";
+import "./checkbox.scss";
 
-export const KioskCheckbox = (props: IProps) => {
+export const Checkbox = (props: IProps) => {
     const onClick = (e: React.MouseEvent<HTMLInputElement, MouseEvent>) => {
         if (!props.disabled) {
             props.checked ? props.onUnCheck && props.onUnCheck() : props.onCheck();

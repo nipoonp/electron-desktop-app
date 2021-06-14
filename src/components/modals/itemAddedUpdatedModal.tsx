@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useCart } from "../../context/cart-context";
 import { convertCentsToDollars } from "../../util/moneyConversion";
-import { KioskModal } from "../../tabin/components/kioskModal";
+import { Modal } from "../../tabin/components/modal";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 
 import "./itemAddedUpdatedModal.scss";
@@ -32,9 +32,9 @@ export const ItemAddedUpdatedModal = (props: { isOpen: boolean; onClose: () => v
 
     return (
         <>
-            <KioskModal isOpen={props.isOpen} onRequestClose={onModalClose}>
+            <Modal isOpen={props.isOpen} onRequestClose={onModalClose}>
                 <div className="item-added-updated-modal">{content}</div>
-            </KioskModal>
+            </Modal>
         </>
     );
 };

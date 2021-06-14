@@ -3,7 +3,7 @@ import { useHistory } from "react-router";
 import { checkoutPath, tableNumberPath } from "../main";
 import { EOrderType } from "../../model/model";
 import { useCart } from "../../context/cart-context";
-import { KioskPageWrapper } from "../../tabin/components/kioskPageWrapper";
+import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { useRegister } from "../../context/register-context";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 
@@ -30,7 +30,7 @@ export const OrderType = (props: {}) => {
 
     return (
         <>
-            <KioskPageWrapper>
+            <PageWrapper>
                 <div className="order-type">
                     <div className="h1 mb-12">Are you staying or going?</div>
                     <div className="imagesWrapper">
@@ -44,7 +44,7 @@ export const OrderType = (props: {}) => {
                         </div>
                     </div>
                 </div>
-            </KioskPageWrapper>
+            </PageWrapper>
         </>
     );
 };

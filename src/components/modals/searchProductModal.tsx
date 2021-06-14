@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { KioskModal } from "../../tabin/components/kioskModal";
+import { Modal } from "../../tabin/components/modal";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
 import { isItemAvailable, isItemSoldOut } from "../../util/isItemAvailable";
 import { convertCentsToDollars } from "../../util/moneyConversion";
 import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
-import { KioskProductSearchField } from "../../tabin/components/kioskProductSearchField";
-import { KioskButton } from "../../tabin/components/kioskButton";
+import { ProductSearchField } from "../../tabin/components/productSearchField";
+import { Button } from "../../tabin/components/button";
 import { useRestaurant } from "../../context/restaurant-context";
 
 import "./searchProductModal.scss";
@@ -127,12 +127,12 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
         <>
             <div className="content">
                 <div className="close-button-wrapper">
-                    <KioskButton className="close-button" onClick={onModalClose}>
+                    <Button className="close-button" onClick={onModalClose}>
                         Close
-                    </KioskButton>
+                    </Button>
                 </div>
                 <div className="h2 mb-6">What do you feel like eating today?</div>
-                {/* <KioskProductSearchField name="name" type="text" placeholder="Search..." onChange={onChange} />
+                {/* <ProductSearchField name="name" type="text" placeholder="Search..." onChange={onChange} />
                 <Space6 /> */}
                 {searchTerm != "" && filteredProducts.length == 0 ? <div className="text-bold">No results found</div> : <>{menuProducts}</>}
                 <div className="mb-12"></div>
@@ -142,9 +142,9 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
 
     return (
         <>
-            <KioskModal isOpen={props.isOpen} onRequestClose={onModalClose}>
+            <Modal isOpen={props.isOpen} onRequestClose={onModalClose}>
                 <div className="search-product-modal">{content}</div>
-            </KioskModal>
+            </Modal>
         </>
     );
 };

@@ -1,8 +1,8 @@
 import React from "react";
 
-const styles = require("./kioskProductSearchField.module.css");
+const styles = require("./productSearchField.module.css");
 
-export const KioskProductSearchField = (props: {
+export const ProductSearchField = (props: {
     onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
     onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;
     value?: string | number | string[];

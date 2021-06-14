@@ -1,8 +1,8 @@
 import React from "react";
 
-import "./kioskRadio.scss";
+import "./radio.scss";
 
-export const KioskRadio = (props: IProps) => {
+export const Radio = (props: IProps) => {
     const onClick = () => {
         if (!props.disabled) {
             props.onSelect();

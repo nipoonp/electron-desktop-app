@@ -1,8 +1,8 @@
 import React from "react";
 
-import "./kioskInput.scss";
+import "./input.scss";
 
-export const KioskInput = (props: {
+export const Input = (props: {
     autoFocus?: boolean;
     onKeyPress?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
     onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
