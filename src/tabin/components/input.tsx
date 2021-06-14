@@ -38,7 +38,7 @@ export const Input = (props: {
             >
                 {props.children && props.children}
             </input>
-            {props.error && <div className="text-error">{props.error}</div>}
+            {props.error && <div className="text-error mt-2">{props.error}</div>}
         </>
     );
 };
