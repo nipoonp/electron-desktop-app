@@ -126,21 +126,19 @@ export const Login = () => {
     const loginButton = (
         <>
             <Button disabled={loading} onClick={onLogin} loading={loading}>
-                LOG IN
+                Log In
             </Button>
         </>
     );
 
     return (
         <>
-            <div className="login">
-                <div className="h2 mb-3">Log in</div>
-                {serverError && <div className="text-error mb-3">{passwordError}</div>}
+            <div className="login mt-6">
+                <div className="h2 mb-3">Log In</div>
+                {serverError && <div className="text-error mb-3">{serverError}</div>}
                 {emailInput}
-                {emailError && <div className="text-error mb-2 mt-2">{emailError}</div>}
                 <div className="mb-2"></div>
                 {passwordInput}
-                {passwordError && <div className="text-error mb-2 mt-2">{passwordError}</div>}
                 <div className="mb-3"></div>
                 {loginButton}
             </div>
