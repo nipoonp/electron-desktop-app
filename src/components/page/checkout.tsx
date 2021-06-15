@@ -160,37 +160,88 @@ export const Checkout = () => {
 
     // submit callback
     const createOrder = async (paid: boolean, orderNumber: string) => {
+        const now = new Date();
+
         if (!user) {
+            await logSlackError(
+                JSON.stringify({
+                    error: "Invalid user",
+                    context: { orderRestaurantId: restaurant.id },
+                })
+            );
             throw "Invalid user";
         }
 
         if (!orderType) {
+            await logSlackError(
+                JSON.stringify({
+                    error: "Invalid order type",
+                    context: { orderRestaurantId: restaurant.id },
+                })
+            );
             throw "Invalid order type";
         }
 
         if (!restaurant) {
+            await logSlackError(
+                JSON.stringify({
+                    error: "Invalid restaurant",
+                    context: { orderRestaurantId: restaurant },
+                })
+            );
             throw "Invalid restaurant";
         }
 
         if (!products || products.length == 0) {
+            await logSlackError(
+                JSON.stringify({
+                    error: "No products have been selected",
+                    context: { orderRestaurantId: restaurant.id },
+                })
+            );
             throw "No products have been selected";
         }
 
-        const variables = {
-            status: "NEW",
-            paid: paid,
-            type: orderType,
-            number: orderNumber,
-            table: tableNumber,
-            notes: notes,
-            total: total,
-            registerId: register.id,
-            products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
-            placedAt: toLocalISOString(new Date()),
-            placedAtUtc: new Date().toISOString(),
-            orderUserId: user.id,
-            orderRestaurantId: restaurant.id,
-        };
+        let variables;
+        try {
+            variables = {
+                status: "NEW",
+                paid: paid,
+                type: orderType,
+                number: orderNumber,
+                table: tableNumber,
+                notes: notes,
+                total: total,
+                registerId: register.id,
+                products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
+                placedAt: toLocalISOString(now),
+                placedAtUtc: now.toISOString(),
+                orderUserId: user.id,
+                orderRestaurantId: restaurant.id,
+            };
+        } catch (e) {
+            await logSlackError(
+                JSON.stringify({
+                    error: "No products have been selected",
+                    context: {
+                        status: "NEW",
+                        paid: paid,
+                        type: orderType,
+                        number: orderNumber,
+                        table: tableNumber,
+                        notes: notes,
+                        total: total,
+                        registerId: register.id,
+                        products: JSON.stringify(products), // copy obj so we can mutate it later
+                        placedAt: now,
+                        placedAtUtc: now,
+                        orderUserId: user.id,
+                        orderRestaurantId: restaurant.id,
+                    },
+                })
+            );
+            throw "Error in createOrderMutation input";
+        }
 
         try {
             if (tableNumber == null || tableNumber == "") {
@@ -786,9 +837,9 @@ export const Checkout = () => {
                     </Button>
                 </div>
                 {register.enablePayLater && (
-                    <Link className="pay-later-link mt-4" onClick={onClickPayLater}>
-                        Pay at counter...
-                    </Link>
+                    <div className="pay-later-link mt-4">
+                        <Link onClick={onClickPayLater}>Pay at counter...</Link>
+                    </div>
                 )}
             </div>
             <Button className="cancel-button" onClick={onCancelOrder}>
