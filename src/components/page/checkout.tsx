@@ -25,10 +25,11 @@ import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { toLocalISOString } from "../../util/util";
 import { useRestaurant } from "../../context/restaurant-context";
 import { logSlackError } from "../../util/logging";
-
-import "./checkout.scss";
+import { UpSellProductModal } from "../modals/upSellProduct";
 import { Link } from "../../tabin/components/link";
 import { TextArea } from "../../tabin/components/textArea";
+
+import "./checkout.scss";
 
 const logger = new Logger("checkout");
 
@@ -69,6 +70,7 @@ export const Checkout = () => {
     const [paymentOutcomeDelayedOrderNumber, setPaymentOutcomeDelayedOrderNumber] = useState<string | null>(null);
     const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(10);
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
+    const [showUpSellProductModal, setShowUpSellProductModal] = useState(false);
 
     // const isUserFocusedOnEmailAddressInput = useRef(false);
 
@@ -79,12 +81,18 @@ export const Checkout = () => {
     }
 
     useEffect(() => {
-        if (showEditProductModal || showPaymentModal) {
+        if (showEditProductModal || showPaymentModal || showUpSellProductModal) {
             document.body.style.overflow = "hidden";
         } else {
             document.body.style.overflow = "unset";
         }
-    }, [showEditProductModal, showPaymentModal]);
+    }, [showEditProductModal, showPaymentModal, showUpSellProductModal]);
+
+    useEffect(() => {
+        setTimeout(() => {
+            setShowUpSellProductModal(true);
+        }, 1000);
+    }, []);
 
     if (!restaurant) {
         history.push(beginOrderPath);
@@ -120,6 +128,10 @@ export const Checkout = () => {
     const onCloseEditProductModal = () => {
         setProductToEdit(null);
         setShowEditProductModal(false);
+    };
+
+    const onCloseUpSellProductModal = () => {
+        setShowUpSellProductModal(false);
     };
 
     const onCloseItemUpdatedModal = () => {
@@ -567,6 +579,10 @@ export const Checkout = () => {
         );
     };
 
+    const upSellProductModal = () => {
+        return <UpSellProductModal isOpen={showUpSellProductModal} onClose={onCloseUpSellProductModal} onAddItem={onAddItem} />;
+    };
+
     const itemUpdatedModal = (
         <>
             {showItemUpdatedModal && <ItemAddedUpdatedModal isOpen={showItemUpdatedModal} onClose={onCloseItemUpdatedModal} isProductUpdate={true} />}
@@ -755,6 +771,12 @@ export const Checkout = () => {
     const modalsAndSpinners = (
         <>
             {/* <FullScreenSpinner show={loading} text={loadingMessage} /> */}
+
+            {restaurant &&
+                restaurant.upSellCrossSell &&
+                restaurant.upSellCrossSell.custom &&
+                restaurant.upSellCrossSell.custom.items.length > 0 &&
+                upSellProductModal()}
             {editProductModal()}
             {paymentModal}
             {itemUpdatedModal}

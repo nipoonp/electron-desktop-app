@@ -161,6 +161,66 @@ export const GET_RESTAURANT = gql`
                     }
                 }
             }
+            upSellCrossSell {
+                id
+                custom {
+                    items {
+                        id
+                        name
+                        description
+                        price
+                        totalQuantitySold
+                        soldOut
+                        soldOutDate
+                        image {
+                            key
+                            bucket
+                            region
+                            identityPoolId
+                        }
+                        availability {
+                            monday {
+                                startTime
+                                endTime
+                            }
+                            tuesday {
+                                startTime
+                                endTime
+                            }
+                            wednesday {
+                                startTime
+                                endTime
+                            }
+                            thursday {
+                                startTime
+                                endTime
+                            }
+                            friday {
+                                startTime
+                                endTime
+                            }
+                            saturday {
+                                startTime
+                                endTime
+                            }
+                            sunday {
+                                startTime
+                                endTime
+                            }
+                        }
+                        categories {
+                            items {
+                                id
+                                displaySequence
+                                category {
+                                    id
+                                    name
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             registers {
                 items {
                     id
@@ -334,6 +394,7 @@ export interface IGET_RESTAURANT {
     logo?: IS3Object;
     customStyleSheet?: IS3Object;
     advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
+    upSellCrossSell: IGET_DASHBOARD_UP_SELL_CROSS_SELL;
     registers: { items: IGET_RESTAURANT_REGISTER[] };
     categories: {
         items: IGET_RESTAURANT_CATEGORY[];
@@ -378,6 +439,37 @@ export interface IGET_RESTAURANT_REGISTER_PRINTER_IGNORE_PRODUCT {
         id: string;
         name: string;
     };
+}
+
+export interface IGET_DASHBOARD_UP_SELL_CROSS_SELL {
+    id: string;
+    custom: {
+        items: IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT[];
+    };
+}
+
+export interface IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    totalQuantitySold: number;
+    soldOut: boolean;
+    soldOutDate: string;
+    image?: IS3Object;
+    availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
+    categories: {
+        items: {
+            id: string;
+            displaySequence: string;
+            category: IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT_CATEGORY;
+        }[];
+    };
+}
+
+export interface IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT_CATEGORY {
+    id: string;
+    name: string;
 }
 
 export interface IGET_RESTAURANT_OPERATING_HOURS {
