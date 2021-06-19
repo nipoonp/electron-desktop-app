@@ -4,6 +4,7 @@ import "./textArea.scss";
 
 export const TextArea = (props: {
     onChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
+    onFocus?: (event: React.FocusEvent<HTMLTextAreaElement>) => void;
     onBlur?: (event: React.FocusEvent<HTMLTextAreaElement>) => void;
     label?: string;
     rows?: number;
@@ -25,6 +26,7 @@ export const TextArea = (props: {
                 name={props.name}
                 onChange={props.onChange}
                 onBlur={props.onBlur}
+                onFocus={props.onFocus}
                 value={props.value}
                 disabled={props.disabled}
             />

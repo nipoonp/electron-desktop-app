@@ -355,7 +355,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
         <>
             <div className="total-container">
                 <div className="total-wrapper mb-2">
-                    <img className="shopping-bag-icon mr-2" src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`} />
+                    <img className="shopping-bag-icon mr-2" src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.png`} />
                     <div className="h4 total">Total: ${convertCentsToDollars(total)}</div>
                 </div>
                 <Button className="large" disabled={!products || products.length == 0} onClick={onClickCart}>
