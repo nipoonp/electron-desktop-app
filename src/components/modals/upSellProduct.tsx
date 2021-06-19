@@ -15,9 +15,11 @@ import { getCloudFrontDomainName } from "../../private/aws-custom";
 
 import "./upSellProduct.scss";
 import { useRestaurant } from "../../context/restaurant-context";
+import { useCart } from "../../context/cart-context";
 
-export const UpSellProductModal = (props: { isOpen: boolean; onAddItem?: (product: ICartProduct) => void; onClose: () => void }) => {
+export const UpSellProductModal = (props: { isOpen: boolean; onAddItem: () => void; onClose: () => void }) => {
     const { restaurant } = useRestaurant();
+    const { addItem } = useCart();
 
     if (!restaurant) throw "Restaurant is invalid";
 
@@ -28,20 +30,42 @@ export const UpSellProductModal = (props: { isOpen: boolean; onAddItem?: (produc
         props.onClose();
     };
 
-    const addToOrder = (
-        category: IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT_CATEGORY,
-        product: IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT
-    ) => {
-        // const productToOrder: ICartProduct = {
-        //     id: product.id,
-        //     name: product.name,
-        //     price: product.price,
-        //     quantity: 1,
-        //     notes: null,
-        //     modifierGroups: [],
-        // };
-        // props.onAddItem && props.onAddItem(productToOrder);
-    };
+    const onAddToOrder = () =>
+        // category: IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT_CATEGORY,
+        // product: IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT
+        {
+            // const productToOrder: ICartProduct = {
+            //     id: product.id,
+            //     name: product.name,
+            //     price: product.price,
+            //     quantity: 1,
+            //     notes: null,
+            //     modifierGroups: [],
+            // };
+            // props.onAddItem && props.onAddItem(productToOrder);
+
+            addItem({
+                id: "31df659c-d3a4-459a-a373-fdddc08c502c",
+                name: "Coke",
+                image: {
+                    bucket: "tabin223725-dev",
+                    identityPoolId: "ap-southeast-2:de90f0a4-8492-410c-8720-7a494ad92f91",
+                    key: "2021-05-16_13:00:19.370-share-a-coke-its-coming_1200xx1440-811-0-0.jpeg",
+                    region: "ap-southeast-2",
+                },
+                price: 500,
+                quantity: 1,
+                notes: null,
+                category: {
+                    id: "1bd955dd-85c3-4541-915e-17073a17bfaf",
+                    name: "UpSell",
+                    image: null,
+                },
+                modifierGroups: [],
+            });
+
+            props.onAddItem();
+        };
 
     const productDisplay = (
         category: IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT_CATEGORY,
@@ -52,7 +76,8 @@ export const UpSellProductModal = (props: { isOpen: boolean; onAddItem?: (produc
 
         return (
             <>
-                <div className={`product ${isSoldOut ? "sold-out" : ""} `} onClick={() => !isSoldOut && isAvailable && addToOrder(category, product)}>
+                {/* <div className={`product ${isSoldOut ? "sold-out" : ""} `} onClick={() => !isSoldOut && isAvailable && addToOrder(category, product)}> */}
+                <div className={`product ${isSoldOut ? "sold-out" : ""} `}>
                     {product.image && (
                         <img
                             className="image mb-2"
@@ -87,7 +112,7 @@ export const UpSellProductModal = (props: { isOpen: boolean; onAddItem?: (produc
             <div className="content">
                 <div className="h1 mb-6 text-center">Feeling Thirsty?</div>
                 {/* <img className="image mb-6" src="https://media.bizj.us/view/img/2902221/share-a-coke-its-coming*1200xx1440-811-0-0.jpg" /> */}
-                <MainImage upSellCrossSellProducts={upSellCrossSellProducts} onNoThankYou={onModalClose} />
+                <MainImage upSellCrossSellProducts={upSellCrossSellProducts} onNoThankYou={onModalClose} onAddToOrder={onAddToOrder} />
 
                 <div className="h1 mb-6 text-center">You May Also Like</div>
 
@@ -105,7 +130,11 @@ export const UpSellProductModal = (props: { isOpen: boolean; onAddItem?: (produc
     );
 };
 
-const MainImage = (props: { upSellCrossSellProducts: IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT[]; onNoThankYou: () => void }) => {
+const MainImage = (props: {
+    upSellCrossSellProducts: IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT[];
+    onNoThankYou: () => void;
+    onAddToOrder: () => void;
+}) => {
     const productsWithImages: IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT[] = [];
 
     props.upSellCrossSellProducts.forEach((product) => {
@@ -120,9 +149,13 @@ const MainImage = (props: { upSellCrossSellProducts: IGET_DASHBOARD_UP_SELL_CROS
         <>
             {randomProduct.image && (
                 <>
-                    <img
+                    {/* <img
                         className="main-image mb-4"
                         src={`${getCloudFrontDomainName()}/protected/${randomProduct.image.identityPoolId}/${randomProduct.image.key}`}
+                    /> */}
+                    <img
+                        className="main-image mb-4"
+                        src={`https://d2nmoln0sb0cri.cloudfront.net/protected/ap-southeast-2:de90f0a4-8492-410c-8720-7a494ad92f91/2021-05-16_13:00:19.370-share-a-coke-its-coming_1200xx1440-811-0-0.jpeg`}
                     />
                     <div className="button-container mb-12">
                         <Button className="button large no-thank-you-button mr-3" onClick={props.onNoThankYou}>
@@ -131,6 +164,7 @@ const MainImage = (props: { upSellCrossSellProducts: IGET_DASHBOARD_UP_SELL_CROS
                         <Button
                             className="button large add-to-order-button"
                             // onClick={() => addToOrder(randomProduct.categories.items[3].products.items[0].product)}
+                            onClick={props.onAddToOrder}
                         >
                             Add To Order
                         </Button>
