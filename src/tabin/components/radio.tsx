@@ -1,6 +1,6 @@
 import React from "react";
 
-import "./radio.scss";
+import "./radio.css";
 
 export const Radio = (props: IProps) => {
     const onClick = () => {

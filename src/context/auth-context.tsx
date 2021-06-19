@@ -272,6 +272,7 @@ function AuthProvider(props: any) {
 
                 const isAdmin = checkIfUserIsAdmin(user);
 
+                //@ts-ignore
                 dispatch({ type: "signIn", user: user, isAdmin: isAdmin });
                 break;
             case "signUp":

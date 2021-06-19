@@ -1,7 +1,7 @@
 import React from "react";
 import { Spinner } from "./spinner";
 
-import "./button.scss";
+import "./button.css";
 
 export const Button = (props: IProps) => {
     return (

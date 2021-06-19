@@ -1,6 +1,6 @@
 import React from "react";
 
-import "./textArea.scss";
+import "./textArea.css";
 
 export const TextArea = (props: {
     onChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;

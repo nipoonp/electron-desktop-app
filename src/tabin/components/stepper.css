@@ -1,0 +1,26 @@
+.stepper-container {
+    display: flex;
+    align-items: center;
+}
+.stepper-container .stepper {
+    display: grid;
+    align-items: center;
+    grid-template-columns: auto 1fr auto;
+    grid-column-gap: 8px;
+}
+.stepper-container .stepper .stepper-button {
+    border: 1px solid #c8c8c8;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+.stepper-container .stepper .stepper-button.disabled {
+    border: 1px solid #dcdcdc;
+    color: #dcdcdc;
+}
+.stepper-container .stepper-children {
+    margin-left: 12px;
+    line-height: 1.25;
+}

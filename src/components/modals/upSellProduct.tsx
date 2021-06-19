@@ -13,7 +13,7 @@ import { convertCentsToDollars } from "../../util/util";
 import { ModalV2 } from "../../tabin/components/modalv2";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
 
-import "./upSellProduct.scss";
+import "./upSellProduct.css";
 import { useRestaurant } from "../../context/restaurant-context";
 import { useCart } from "../../context/cart-context";
 

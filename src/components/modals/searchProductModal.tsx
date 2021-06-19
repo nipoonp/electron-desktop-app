@@ -7,7 +7,7 @@ import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql
 import { Button } from "../../tabin/components/button";
 import { useRestaurant } from "../../context/restaurant-context";
 
-import "./searchProductModal.scss";
+import "./searchProductModal.css";
 import { Input } from "../../tabin/components/input";
 
 interface IFilteredProduct {

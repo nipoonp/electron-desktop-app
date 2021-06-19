@@ -1,0 +1,32 @@
+.radio-container {
+    display: flex;
+    align-items: center;
+}
+.radio-container .radio {
+    min-height: 28px;
+    min-width: 28px;
+    height: 28px;
+    width: 28px;
+    border: 1px solid #c8c8c8;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+.radio-container .radio.disabled {
+    border: 1px solid #dbdbdb;
+}
+.radio-container .radio .dot {
+    height: 80%;
+    width: 80%;
+    background-color: transparent;
+    border-radius: 50%;
+}
+.radio-container .radio .dot.selected {
+    background-color: var(--primary-color);
+}
+.radio-container .radio-children {
+    margin-left: 12px;
+    line-height: 1.25;
+}

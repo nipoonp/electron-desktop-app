@@ -1,0 +1,13 @@
+.register-list {
+    display: flex;
+    flex-direction: column;
+    padding: 48px;
+    width: 700px;
+    margin: auto;
+}
+.register-list .register-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}

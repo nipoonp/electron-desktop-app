@@ -1,0 +1,62 @@
+.product-modal {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    /* Hide scrollbar for Chrome, Safari and Opera */
+}
+.product-modal .product {
+    flex: 1;
+    padding: 0 84px 84px 84px;
+    overflow: scroll;
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+}
+.product-modal .product .description {
+    white-space: pre-line;
+    font-weight: 300;
+    font-size: 18px;
+}
+.product-modal .product .modifier .collapsed-stepper-container {
+    display: flex;
+    align-items: center;
+}
+.product-modal .product .modifier .collapsed-stepper-container .collapsed-stepper {
+    cursor: pointer;
+    border: 1px solid #c8c8c8;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.product-modal .product .modifier .collapsed-stepper-container .collapsed-stepper-children {
+    margin-left: 12px;
+    line-height: 1.25;
+}
+.product-modal .product::-webkit-scrollbar {
+    display: none;
+}
+.product-modal .footer {
+    padding: 24px;
+    border-top: 1px solid #e0e0e0;
+}
+.product-modal .footer .stepper {
+    width: 140px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.product-modal .footer .footer-buttons-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.product-modal .footer .add-update-order-button {
+    width: 350px;
+}
+.product-modal .footer .cancel-button {
+    background-color: #fff;
+    color: #484848;
+    border: 1px solid #e0e0e0;
+    width: 350px;
+}

@@ -1,6 +1,6 @@
 import React from "react";
 
-import "./select.scss";
+import "./select.css";
 
 export const Select = (props: {
     className?: string;

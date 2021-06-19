@@ -4,7 +4,7 @@ import { convertCentsToDollars } from "../../util/util";
 import { Modal } from "../../tabin/components/modal";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 
-import "./itemAddedUpdatedModal.scss";
+import "./itemAddedUpdatedModal.css";
 
 export const ItemAddedUpdatedModal = (props: { isOpen: boolean; onClose: () => void; isProductUpdate: boolean }) => {
     const { total } = useCart();

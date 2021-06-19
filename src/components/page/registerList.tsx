@@ -7,7 +7,7 @@ import { useRestaurant } from "../../context/restaurant-context";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { Button } from "../../tabin/components/button";
 
-import "./registerList.scss";
+import "./registerList.css";
 
 export const RegisterList = () => {
     const history = useHistory();

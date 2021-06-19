@@ -6,7 +6,7 @@ import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../pr
 import { IGET_RESTAURANT_ADVERTISEMENT } from "../../graphql/customQueries";
 import { useRestaurant } from "../../context/restaurant-context";
 
-import "./beginOrder.scss";
+import "./beginOrder.css";
 
 export const BeginOrder = (props: {}) => {
     const { restaurant } = useRestaurant();
