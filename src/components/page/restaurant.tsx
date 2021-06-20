@@ -181,7 +181,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
 
     const productModal = (
         <>
-            {selectedCategoryForProductModal && selectedProductForProductModal && restaurant && showProductModal && (
+            {selectedCategoryForProductModal && selectedProductForProductModal && showProductModal && (
                 <ProductModal
                     isOpen={showProductModal}
                     category={selectedCategoryForProductModal}

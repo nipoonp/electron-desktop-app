@@ -11,15 +11,13 @@ import { useRef } from "react";
 
 interface IUpSellProductModalProps {
     isOpen: boolean;
-    onAddItem: () => void;
+    onSelectUpSellCrossSellProduct: (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => void;
     onClose: () => void;
     upSellCrossSaleProductItems: IMatchingUpSellCrossSellItem[];
 }
 
 export const UpSellProductModal = (props: IUpSellProductModalProps) => {
-    const { isOpen, onAddItem, onClose, upSellCrossSaleProductItems } = { ...props };
-
-    console.log("xxx...", props);
+    const { onSelectUpSellCrossSellProduct, upSellCrossSaleProductItems } = { ...props };
 
     const randomItem = useRef(upSellCrossSaleProductItems[Math.floor(Math.random() * upSellCrossSaleProductItems.length)]);
 
@@ -28,7 +26,9 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
         props.onClose();
     };
 
-    const onAddToOrder = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {};
+    const onAddToOrder = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
+        onSelectUpSellCrossSellProduct(category, product);
+    };
 
     const productDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);

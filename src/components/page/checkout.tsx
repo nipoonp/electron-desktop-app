@@ -44,7 +44,7 @@ enum CheckoutTransactionOutcome {
 export const Checkout = () => {
     // context
     const history = useHistory();
-    const { orderType, products, notes, setNotes, tableNumber, clearCart, total, updateItem, updateItemQuantity, deleteItem } = useCart();
+    const { orderType, products, notes, setNotes, tableNumber, clearCart, total, updateItem, updateItemQuantity, deleteItem, addItem } = useCart();
     const { restaurant } = useRestaurant();
     const { printReceipt } = useReceiptPrinter();
     const { user } = useUser();
@@ -58,10 +58,13 @@ export const Checkout = () => {
     });
 
     // state
+    const [selectedCategoryForProductModal, setSelectedCategoryForProductModal] = useState<IGET_RESTAURANT_CATEGORY | null>(null);
+    const [selectedProductForProductModal, setSelectedProductForProductModal] = useState<IGET_RESTAURANT_PRODUCT | null>(null);
     const [productToEdit, setProductToEdit] = useState<{
         product: ICartProduct;
         displayOrder: number;
     } | null>(null);
+    const [showProductModal, setShowProductModal] = useState(false);
     const [showEditProductModal, setShowEditProductModal] = useState(false);
     const [showItemUpdatedModal, setShowItemUpdatedModal] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -81,12 +84,12 @@ export const Checkout = () => {
     }
 
     useEffect(() => {
-        if (showEditProductModal || showPaymentModal || showUpSellProductModal) {
+        if (showProductModal || showEditProductModal || showPaymentModal || showUpSellProductModal) {
             document.body.style.overflow = "hidden";
         } else {
             document.body.style.overflow = "unset";
         }
-    }, [showEditProductModal, showPaymentModal, showUpSellProductModal]);
+    }, [showProductModal, showEditProductModal, showPaymentModal, showUpSellProductModal]);
 
     useEffect(() => {
         setTimeout(() => {
@@ -108,21 +111,16 @@ export const Checkout = () => {
     };
 
     // callbacks
-    const onAddItem = () => {
-        if (!restaurant) {
-            throw "Cart restaurant is null!";
-        }
-
-        logger.debug("Routing to ", restaurantPath + "/" + restaurant.id);
-        history.push(restaurantPath + "/" + restaurant.id);
-    };
-
     const onUpdateTableNumber = () => {
         history.push(tableNumberPath);
     };
 
     const onUpdateOrderType = () => {
         history.push(orderTypePath);
+    };
+
+    const onCloseProductModal = () => {
+        setShowProductModal(false);
     };
 
     const onCloseEditProductModal = () => {
@@ -136,6 +134,18 @@ export const Checkout = () => {
 
     const onCloseItemUpdatedModal = () => {
         setShowItemUpdatedModal(false);
+    };
+
+    const onAddItem = (product: ICartProduct) => {
+        addItem(product);
+    };
+
+    const onSelectUpSellCrossSellProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
+        setSelectedCategoryForProductModal(category);
+        setSelectedProductForProductModal(product);
+
+        setShowUpSellProductModal(false);
+        setShowProductModal(true);
     };
 
     const onEditProduct = (product: ICartProduct, displayOrder: number) => {
@@ -301,7 +311,6 @@ export const Checkout = () => {
 
     const orderSummary = (
         <OrderSummary
-            onAddItem={onAddItem}
             onNotesChange={onNotesChange}
             onEditProduct={onEditProduct}
             onUpdateProductQuantity={onUpdateProductQuantity}
@@ -577,6 +586,20 @@ export const Checkout = () => {
         );
     };
 
+    const productModal = () => {
+        if (selectedCategoryForProductModal && selectedProductForProductModal && showProductModal) {
+            return (
+                <ProductModal
+                    isOpen={showProductModal}
+                    category={selectedCategoryForProductModal}
+                    product={selectedProductForProductModal}
+                    onAddItem={onAddItem}
+                    onClose={onCloseProductModal}
+                />
+            );
+        }
+    };
+
     const upSellProductModal = () => {
         if (restaurant && restaurant.upSellCrossSell && restaurant.upSellCrossSell.custom && restaurant.upSellCrossSell.custom.items.length > 0) {
             const upSellCrossSaleProductItems: IMatchingUpSellCrossSellItem[] = [];
@@ -599,7 +622,7 @@ export const Checkout = () => {
                     isOpen={showUpSellProductModal}
                     onClose={onCloseUpSellProductModal}
                     upSellCrossSaleProductItems={upSellCrossSaleProductItems}
-                    onAddItem={onAddItem}
+                    onSelectUpSellCrossSellProduct={onSelectUpSellCrossSellProduct}
                 />
             );
         }
@@ -795,6 +818,7 @@ export const Checkout = () => {
             {/* <FullScreenSpinner show={loading} text={loadingMessage} /> */}
 
             {upSellProductModal()}
+            {productModal()}
             {editProductModal()}
             {paymentModal}
             {itemUpdatedModal}
@@ -907,7 +931,6 @@ export const Checkout = () => {
 };
 
 const OrderSummary = (props: {
-    onAddItem: () => void;
     onEditProduct: (product: ICartProduct, displayOrder: number) => void;
     onRemoveProduct: (displayOrder: number) => void;
     onUpdateProductQuantity: (displayOrder: number, productQuantity: number) => void;
