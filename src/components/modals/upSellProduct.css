@@ -54,6 +54,7 @@
     padding: 16px;
     border-radius: 10px;
     opacity: 1;
+    cursor: pointer;
 }
 .up-sell-cross-sell .content .products .product.sold-out {
     opacity: 0.5;

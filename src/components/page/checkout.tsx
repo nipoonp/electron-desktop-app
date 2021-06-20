@@ -141,11 +141,43 @@ export const Checkout = () => {
     };
 
     const onSelectUpSellCrossSellProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
-        setSelectedCategoryForProductModal(category);
-        setSelectedProductForProductModal(product);
+        if (product.modifierGroups && product.modifierGroups.items.length > 0) {
+            setSelectedCategoryForProductModal(category);
+            setSelectedProductForProductModal(product);
+
+            setShowProductModal(true);
+        } else {
+            addItem({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                image: product.image
+                    ? {
+                          key: product.image.key,
+                          region: product.image.region,
+                          bucket: product.image.bucket,
+                          identityPoolId: product.image.identityPoolId,
+                      }
+                    : null,
+                quantity: 1,
+                notes: null,
+                category: {
+                    id: category.id,
+                    name: category.name,
+                    image: category.image
+                        ? {
+                              key: category.image.key,
+                              region: category.image.region,
+                              bucket: category.image.bucket,
+                              identityPoolId: category.image.identityPoolId,
+                          }
+                        : null,
+                },
+                modifierGroups: [],
+            });
+        }
 
         setShowUpSellProductModal(false);
-        setShowProductModal(true);
     };
 
     const onEditProduct = (product: ICartProduct, displayOrder: number) => {
