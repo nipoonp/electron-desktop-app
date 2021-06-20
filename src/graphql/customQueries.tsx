@@ -394,7 +394,7 @@ export interface IGET_RESTAURANT {
     logo?: IS3Object;
     customStyleSheet?: IS3Object;
     advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
-    upSellCrossSell: IGET_DASHBOARD_UP_SELL_CROSS_SELL;
+    upSellCrossSell?: IGET_DASHBOARD_UP_SELL_CROSS_SELL;
     registers: { items: IGET_RESTAURANT_REGISTER[] };
     categories: {
         items: IGET_RESTAURANT_CATEGORY[];

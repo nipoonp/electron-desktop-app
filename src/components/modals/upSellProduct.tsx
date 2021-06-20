@@ -23,7 +23,9 @@ export const UpSellProductModal = (props: { isOpen: boolean; onAddItem: () => vo
 
     if (!restaurant) throw "Restaurant is invalid";
 
-    const upSellCrossSellProducts = restaurant.upSellCrossSell.custom.items;
+    const upSellCrossSellProducts = restaurant.upSellCrossSell && restaurant.upSellCrossSell.custom.items;
+
+    if (!upSellCrossSellProducts) return <div>upSellCrossSellProducts Invalid!</div>;
 
     // callbacks
     const onModalClose = () => {
