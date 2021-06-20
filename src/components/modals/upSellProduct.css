@@ -6,12 +6,14 @@
 }
 .up-sell-cross-sell .content {
     flex: 1;
-    padding: 68px;
     overflow: scroll;
     -ms-overflow-style: none;
     /* IE and Edge */
     scrollbar-width: none;
     /* Firefox */
+}
+.up-sell-cross-sell .content .main-image-container {
+    padding: 68px 68px 0 68px;
 }
 .up-sell-cross-sell .content .main-image {
     width: 100%;
@@ -33,12 +35,18 @@
     width: 250px;
     font-size: 22px;
 }
+
+.up-sell-cross-sell .content .you-may-also-like-container {
+    padding-bottom: 68px;
+    margin: 0 24px;
+}
+
 .up-sell-cross-sell .content .products {
     width: 100%;
     display: grid;
-    grid-gap: calc(20px / 2);
+    grid-gap: 24px;
     grid-auto-flow: column;
-    grid-auto-columns: calc(50% - 20px * 2);
+    grid-auto-columns: calc(50% - 40px * 2);
     overflow-x: scroll;
 }
 .up-sell-cross-sell .content .products .product {

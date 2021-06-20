@@ -9,7 +9,7 @@ import { IGET_RESTAURANT_REGISTER_PRINTER, IGET_RESTAURANT_CATEGORY, IGET_RESTAU
 import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath } from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
-import { ICartProduct, ISelectedProductModifiers, ICartModifierGroup, EOrderType } from "../../model/model";
+import { ICartProduct, ISelectedProductModifiers, ICartModifierGroup, EOrderType, IMatchingUpSellCrossSellItem } from "../../model/model";
 import { useUser } from "../../context/user-context";
 import { format } from "date-fns";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -580,7 +580,31 @@ export const Checkout = () => {
     };
 
     const upSellProductModal = () => {
-        return <UpSellProductModal isOpen={showUpSellProductModal} onClose={onCloseUpSellProductModal} onAddItem={onAddItem} />;
+        if (restaurant && restaurant.upSellCrossSell && restaurant.upSellCrossSell.custom && restaurant.upSellCrossSell.custom.items.length > 0) {
+            const upSellCrossSaleProductItems: IMatchingUpSellCrossSellItem[] = [];
+
+            const menuCategories = restaurant.categories.items;
+            const upSellCrossSellProducts = restaurant.upSellCrossSell.custom.items;
+
+            menuCategories.forEach((category) => {
+                category.products.items.forEach((p) => {
+                    upSellCrossSellProducts.forEach((upSellProduct) => {
+                        if (p.product.id === upSellProduct.id) {
+                            upSellCrossSaleProductItems.push({ category: category, product: p.product });
+                        }
+                    });
+                });
+            });
+
+            return (
+                <UpSellProductModal
+                    isOpen={showUpSellProductModal}
+                    onClose={onCloseUpSellProductModal}
+                    upSellCrossSaleProductItems={upSellCrossSaleProductItems}
+                    onAddItem={onAddItem}
+                />
+            );
+        }
     };
 
     const itemUpdatedModal = (
@@ -772,11 +796,7 @@ export const Checkout = () => {
         <>
             {/* <FullScreenSpinner show={loading} text={loadingMessage} /> */}
 
-            {restaurant &&
-                restaurant.upSellCrossSell &&
-                restaurant.upSellCrossSell.custom &&
-                restaurant.upSellCrossSell.custom.items.length > 0 &&
-                upSellProductModal()}
+            {upSellProductModal()}
             {editProductModal()}
             {paymentModal}
             {itemUpdatedModal}

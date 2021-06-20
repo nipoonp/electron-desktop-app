@@ -1,4 +1,4 @@
-import { IS3Object } from "../graphql/customQueries";
+import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object } from "../graphql/customQueries";
 
 export interface ICognitoUser {
     attributes: {
@@ -71,4 +71,9 @@ export interface IOrderReceipt {
     type: EOrderType;
     number: string;
     table: string | null;
+}
+
+export interface IMatchingUpSellCrossSellItem {
+    category: IGET_RESTAURANT_CATEGORY;
+    product: IGET_RESTAURANT_PRODUCT;
 }
