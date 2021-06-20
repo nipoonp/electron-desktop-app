@@ -31,9 +31,6 @@ export const ProductModal = (props: {
     onAddItem?: (product: ICartProduct) => void;
     onUpdateItem?: (index: number, product: ICartProduct) => void;
     onClose: () => void;
-    // restaurantIsOpen: boolean;
-    restaurantIsAcceptingOrders: boolean;
-    restaurantName: string;
 
     // edit product
     editProduct?: {
@@ -394,7 +391,7 @@ export const ProductModal = (props: {
                                 }
                                 selectedModifiers={orderedModifiers[mg.modifierGroup.id] || []}
                                 error={error[mg.modifierGroup.id]}
-                                disabled={!user || !props.restaurantIsAcceptingOrders}
+                                disabled={false}
                             />
                             <div className="separator-6"></div>
                         </>

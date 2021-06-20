@@ -81,9 +81,9 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
         const isAvailable = isItemAvailable(product.availability);
 
-        function onClickProduct(category: any, product: any) {
+        const onClickProduct = (category: any, product: any) => {
             props.onClickSearchProduct(category, product);
-        }
+        };
 
         return (
             <>

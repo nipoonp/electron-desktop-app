@@ -188,8 +188,6 @@ export const Restaurant = (props: { restaurantID: string }) => {
                     product={selectedProductForProductModal}
                     onAddItem={onAddItem}
                     onClose={onCloseProductModal}
-                    restaurantName={restaurant.name}
-                    restaurantIsAcceptingOrders={restaurant.isAcceptingOrders}
                 />
             )}
         </>

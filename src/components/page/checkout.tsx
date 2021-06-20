@@ -567,8 +567,6 @@ export const Checkout = () => {
                 isOpen={showEditProductModal}
                 onClose={onCloseEditProductModal}
                 onUpdateItem={onUpdateItem}
-                restaurantIsAcceptingOrders={true}
-                restaurantName={"doesn't matter if both restaurantOpen && restaurantIsAcceptingOrders are true"}
                 editProduct={{
                     orderedModifiers: orderedModifiers,
                     quantity: productToEdit.product.quantity,
