@@ -7,7 +7,7 @@ import { Button } from "../../tabin/components/button";
 import { Input } from "../../tabin/components/input";
 import { useRestaurant } from "../../context/restaurant-context";
 
-import "./tableNumber.css";
+import "./tableNumber.scss";
 
 export const TableNumber = () => {
     const history = useHistory();

@@ -5,7 +5,7 @@ import { convertCentsToDollars } from "../../util/util";
 import { ModalV2 } from "../../tabin/components/modalv2";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
 
-import "./upSellProduct.css";
+import "./upSellProduct.scss";
 import { IMatchingUpSellCrossSellItem } from "../../model/model";
 import { useRef } from "react";
 

@@ -7,7 +7,7 @@ import { useRegister } from "../../context/register-context";
 import { toast } from "../../tabin/components/toast";
 import { Button } from "../../tabin/components/button";
 
-import "./restaurantList.css";
+import "./restaurantList.scss";
 
 export const RestaurantList = () => {
     const history = useHistory();

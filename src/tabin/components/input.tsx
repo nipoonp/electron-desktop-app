@@ -1,6 +1,6 @@
 import React from "react";
 
-import "./input.css";
+import "./input.scss";
 
 export const Input = (props: {
     autoFocus?: boolean;

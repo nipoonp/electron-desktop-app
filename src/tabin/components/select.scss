@@ -1,0 +1,33 @@
+.select-container {
+    height: 46px;
+    border: 1px solid #ebebeb;
+    position: relative;
+    border-radius: 4px;
+
+    .select {
+        font-size: 16px;
+        padding: 10px;
+        padding-right: 40px;
+        width: 100%;
+        height: 100%;
+        border-radius: 4px;
+        background-color: white;
+
+        &.disabled {
+            background-color: #ebebeb;
+            color: #9d9d9d;
+        }
+
+        .arrow {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            pointer-events: none; /* pass through */
+        }
+
+        &.error {
+            border: 1px solid var(--error-color);
+            background-color: hsl(var(--error-hue), var(--error-saturation), 98%);
+        }
+    }
+}

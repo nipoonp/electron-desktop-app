@@ -2,7 +2,7 @@ import React from "react";
 import { PlusIcon } from "./icons/plusIcon";
 import { MinusIcon } from "./icons/minusIcon";
 
-import "./stepper.css";
+import "./stepper.scss";
 
 export const Stepper = (props: IProps) => {
     const iconHeight = String(props.size / 1.8) + "px";

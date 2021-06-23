@@ -1,6 +1,6 @@
 import React from "react";
 
-import "./checkbox.css";
+import "./checkbox.scss";
 
 export const Checkbox = (props: IProps) => {
     const onClick = (e: React.MouseEvent<HTMLInputElement, MouseEvent>) => {

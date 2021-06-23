@@ -1,0 +1,14 @@
+.restaurant-list {
+    display: flex;
+    flex-direction: column;
+    padding: 48px;
+    width: 700px;
+    margin: auto;
+
+    .restaurant-list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+}

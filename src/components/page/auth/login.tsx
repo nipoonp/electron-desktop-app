@@ -7,7 +7,7 @@ import { beginOrderPath } from "../../main";
 import { Button } from "../../../tabin/components/button";
 import { Input } from "../../../tabin/components/input";
 
-import "./login.css";
+import "./login.scss";
 
 const logger = new Logger("Login");
 

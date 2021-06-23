@@ -1,5 +1,5 @@
 import React from "react";
-import "./link.css";
+import "./link.scss";
 
 export const Link = (props: {
     children: React.ReactNode;

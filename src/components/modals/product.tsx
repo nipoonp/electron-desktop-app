@@ -18,7 +18,7 @@ import { Stepper } from "../../tabin/components/stepper";
 import { Checkbox } from "../../tabin/components/checkbox";
 import { Radio } from "../../tabin/components/radio";
 
-import "./product.css";
+import "./product.scss";
 import { TextArea } from "../../tabin/components/textArea";
 
 const logger = new Logger("productModal");

@@ -7,7 +7,7 @@ import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { useRegister } from "../../context/register-context";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 
-import "./orderType.css";
+import "./orderType.scss";
 
 export const OrderType = (props: {}) => {
     const history = useHistory();

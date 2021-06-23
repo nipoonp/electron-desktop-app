@@ -18,7 +18,7 @@ import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../pr
 import { Shake } from "reshake";
 import { useRestaurant } from "../../context/restaurant-context";
 
-import "./restaurant.css";
+import "./restaurant.scss";
 
 interface IMostPopularProduct {
     category: IGET_RESTAURANT_CATEGORY;

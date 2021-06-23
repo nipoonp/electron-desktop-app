@@ -6,28 +6,31 @@
     border-radius: 4px;
     resize: none;
     background-color: #f7f7f7;
+
+    .error {
+        border: 1px solid var(--error-color);
+        background-color: hsl(var(--error-hue), var(--error-saturation), 98%);
+    }
+
+    .disabled {
+        background-color: #eeeeee;
+    }
 }
-.textArea .error {
-    border: 1px solid var(--error-color);
-    background-color: #fafafa;
-}
-.textArea .disabled {
-    background-color: #eee;
-}
+
 /* https://medium.com/@willhowardgb/building-a-beautiful-text-input-component-in-react-f85564cc7e86 */
 /* comparable to normal hsl(0, 0%, 60%) */
 .textArea::-webkit-input-placeholder {
-    color: #4d4d4d;
+    color: hsl(0, 0%, 30%);
 }
 /* comparable to normal hsl(0, 0%, 60%) */
 .textArea::-moz-placeholder {
-    color: #4d4d4d;
+    color: hsl(0, 0%, 30%);
 }
 /* comparable to normal hsl(0, 0%, 60%) */
 .textArea:-ms-input-placeholder {
-    color: #4d4d4d;
+    color: hsl(0, 0%, 30%);
 }
 /* comparable to normal hsl(0, 0%, 60%) */
 .textArea:-moz-placeholder {
-    color: #4d4d4d;
+    color: hsl(0, 0%, 30%);
 }

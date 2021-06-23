@@ -29,7 +29,7 @@ import { UpSellProductModal } from "../modals/upSellProduct";
 import { Link } from "../../tabin/components/link";
 import { TextArea } from "../../tabin/components/textArea";
 
-import "./checkout.css";
+import "./checkout.scss";
 
 const logger = new Logger("checkout");
 

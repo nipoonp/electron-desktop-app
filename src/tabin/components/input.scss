@@ -1,0 +1,22 @@
+.input {
+    font-size: 16px;
+    border: 1px solid #e0e0e0;
+    width: 100%;
+    padding: 12px 16px;
+    line-height: 24px;
+    border-radius: 4px;
+    background-color: #f7f7f7;
+
+    &.error {
+        border: 1px solid var(--error-color);
+        background-color: hsl(var(--error-hue), var(--error-saturation), 98%);
+    }
+
+    &.disabled {
+        background-color: #eeeeee;
+    }
+}
+
+.input::placeholder {
+    color: hsl(0, 0%, 20%);
+}

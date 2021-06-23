@@ -4,7 +4,7 @@ import { SmartPay } from "./configureNewEftpos/smartpay";
 import { ReceiptPrinter } from "./configureNewEftpos/receiptPrinter";
 import { Radio } from "../../tabin/components/radio";
 
-import "./configureNewEftpos.css";
+import "./configureNewEftpos.scss";
 
 enum EftposProvider {
     VERIFONE,
