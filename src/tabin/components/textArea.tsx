@@ -1,5 +1,3 @@
-import React from "react";
-
 import "./textArea.scss";
 
 export const TextArea = (props: {

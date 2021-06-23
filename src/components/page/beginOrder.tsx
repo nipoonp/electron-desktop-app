@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useHistory } from "react-router";
 import { restaurantPath } from "../main";
 import { PageWrapper } from "../../tabin/components/pageWrapper";

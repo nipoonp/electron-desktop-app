@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+
 import { useHistory } from "react-router-dom";
 import { useAuth, AuthenticationStatus } from "../../../context/auth-context";
 import { Logger } from "aws-amplify";

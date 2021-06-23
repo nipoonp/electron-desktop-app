@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "../../context/user-context";
 import { ICartModifier, ISelectedProductModifiers, ICartProduct, ICartModifierGroup } from "../../model/model";
 import { Logger } from "aws-amplify";

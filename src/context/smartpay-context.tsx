@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
+import { createContext, useContext, useEffect } from "react";
+
 import axios from "axios";
-import { useUser } from "./user-context";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
 // ******************************************************************************
@@ -58,7 +58,7 @@ type ContextProps = {
     pollForOutcome: (pollingUrl: string, delayed: () => void) => Promise<SmartpayTransactionOutcome>;
 };
 
-const SmartpayContext = React.createContext<ContextProps>({
+const SmartpayContext = createContext<ContextProps>({
     sendParingRequest: (pairingCode: string) => {
         return new Promise(() => {
             console.log("");
@@ -438,7 +438,7 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
 };
 
 const useSmartpay = () => {
-    const context = React.useContext(SmartpayContext);
+    const context = useContext(SmartpayContext);
     if (context === undefined) {
         throw new Error(`useSmartpay must be used within a SmartpayProvider`);
     }

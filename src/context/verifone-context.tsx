@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
+
 import { Logger } from "aws-amplify";
 import { delay, getVerifoneSocketErrorMessage, getVerifoneTimeBasedTransactionId } from "../model/util";
 import { useMutation } from "react-apollo-hooks";
@@ -71,7 +72,7 @@ type ContextProps = {
     createTransaction: (amount: number, ipAddress: string, portNumber: string, restaurantId: string) => Promise<VerifoneTransactionOutcomeResult>;
 };
 
-const VerifoneContext = React.createContext<ContextProps>({
+const VerifoneContext = createContext<ContextProps>({
     createTransaction: (amount: number, ipAddress: string, portNumber: string, restaurantId: string) => {
         return new Promise(() => {
             console.log("");
@@ -447,7 +448,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 };
 
 const useVerifone = () => {
-    const context = React.useContext(VerifoneContext);
+    const context = useContext(VerifoneContext);
 
     if (context === undefined) {
         throw new Error(`useVerifone must be used within a VerifoneContext`);

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Verifone } from "./configureNewEftpos/verifone";
 import { SmartPay } from "./configureNewEftpos/smartpay";
 import { ReceiptPrinter } from "./configureNewEftpos/receiptPrinter";

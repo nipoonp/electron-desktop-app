@@ -1,4 +1,3 @@
-import React from "react";
 import Amplify, { Auth } from "aws-amplify";
 import awsconfig from "./aws-exports";
 import Main from "./components/main";

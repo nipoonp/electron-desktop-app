@@ -1,5 +1,3 @@
-import React from "react";
-
 import "./select.scss";
 
 export const Select = (props: {

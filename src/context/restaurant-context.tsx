@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
+
 import { useUser } from "./user-context";
 import { IGET_RESTAURANT, IGET_USER_RESTAURANT } from "../graphql/customQueries";
 import { useGetRestaurantQuery } from "../hooks/useGetRestaurantQuery";
@@ -13,7 +14,7 @@ type ContextProps = {
     isError: boolean;
 };
 
-const RestaurantContext = React.createContext<ContextProps>({
+const RestaurantContext = createContext<ContextProps>({
     selectRestaurant: (id: string | null) => {},
     userRestaurants: null,
     restaurant: null,
@@ -125,7 +126,7 @@ const RestaurantProvider = (props: { children: React.ReactNode }) => {
 };
 
 const useRestaurant = () => {
-    const context = React.useContext(RestaurantContext);
+    const context = useContext(RestaurantContext);
     if (context === undefined) {
         throw new Error(`useRestaurant must be used within a RestaurantProvider`);
     }

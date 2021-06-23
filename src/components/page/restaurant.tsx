@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
 import { useHistory } from "react-router";
 import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
@@ -66,7 +67,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
         return () => clearTimeout(ticker);
     }, []);
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (restaurant) {
             setRestaurant(restaurant);
 

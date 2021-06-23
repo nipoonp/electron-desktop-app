@@ -1,5 +1,3 @@
-import React from "react";
-
 import "./checkbox.scss";
 
 export const Checkbox = (props: IProps) => {

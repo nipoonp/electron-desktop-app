@@ -1,7 +1,6 @@
-import React, { useState } from "react";
-import { Logger } from "aws-amplify";
+import { createContext, useContext, useState } from "react";
+
 import { ICartProduct, EOrderType } from "../model/model";
-import { IGET_RESTAURANT } from "../graphql/customQueries";
 
 const initialRestaurant = null;
 const initialOrderType = null;
@@ -28,7 +27,7 @@ type ContextProps = {
     total: number;
 };
 
-const CartContext = React.createContext<ContextProps>({
+const CartContext = createContext<ContextProps>({
     // restaurant: initialRestaurant,
     // setRestaurant: () => {},
     orderType: initialOrderType,
@@ -179,7 +178,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 };
 
 const useCart = () => {
-    const context = React.useContext(CartContext);
+    const context = useContext(CartContext);
     if (context === undefined) {
         throw new Error(`useCart must be used within a CartProvider`);
     }

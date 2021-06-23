@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
+
 import { useMutation } from "react-apollo-hooks";
 import { UPDATE_REGISTER_KEY } from "../graphql/customMutations";
 import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
@@ -10,7 +11,7 @@ type ContextProps = {
     disconnectRegister: (key: string) => Promise<any>;
 };
 
-const RegisterContext = React.createContext<ContextProps>({
+const RegisterContext = createContext<ContextProps>({
     register: null,
     connectRegister: (key: string) => {
         return new Promise(() => {});
@@ -95,7 +96,7 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
 };
 
 const useRegister = () => {
-    const context = React.useContext(RegisterContext);
+    const context = useContext(RegisterContext);
     if (context === undefined) {
         throw new Error(`useRegister must be used within a RegisterProvider`);
     }

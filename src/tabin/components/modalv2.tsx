@@ -1,4 +1,3 @@
-import React from "react";
 import ReactModal, { Props } from "react-modal";
 import { CloseIcon } from "./icons/closeIcon";
 

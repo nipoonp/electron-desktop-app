@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useCart } from "../../context/cart-context";
 import { convertCentsToDollars } from "../../util/util";
 import { Modal } from "../../tabin/components/modal";

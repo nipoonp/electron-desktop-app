@@ -1,5 +1,3 @@
-import React from "react";
-
 import "./radio.scss";
 
 export const Radio = (props: IProps) => {
