@@ -5,13 +5,15 @@ import { ReceiptPrinter } from "./configureNewEftpos/receiptPrinter";
 import { Radio } from "../../tabin/components/radio";
 
 import "./configureNewEftpos.scss";
+import { Windcave } from "./configureNewEftpos/windcave";
 
 enum EftposProvider {
     VERIFONE,
     SMARTPAY,
+    WINDCAVE,
 }
 export const ConfigureNewEftpos = () => {
-    const [eftposProvider, setEftposProvider] = useState(EftposProvider.VERIFONE);
+    const [eftposProvider, setEftposProvider] = useState(EftposProvider.WINDCAVE);
 
     return (
         <>
@@ -29,14 +31,30 @@ export const ConfigureNewEftpos = () => {
                 </Radio>
 
                 <Radio
-                    className="mb-6"
+                    className="mb-2"
                     selected={eftposProvider == EftposProvider.SMARTPAY}
                     onSelect={() => setEftposProvider(EftposProvider.SMARTPAY)}
                 >
                     Smart Pay
                 </Radio>
 
-                {eftposProvider == EftposProvider.VERIFONE ? <Verifone /> : eftposProvider == EftposProvider.SMARTPAY ? <SmartPay /> : <></>}
+                <Radio
+                    className="mb-6"
+                    selected={eftposProvider == EftposProvider.WINDCAVE}
+                    onSelect={() => setEftposProvider(EftposProvider.WINDCAVE)}
+                >
+                    Windcave
+                </Radio>
+
+                {eftposProvider == EftposProvider.VERIFONE ? (
+                    <Verifone />
+                ) : eftposProvider == EftposProvider.SMARTPAY ? (
+                    <SmartPay />
+                ) : eftposProvider == EftposProvider.WINDCAVE ? (
+                    <Windcave />
+                ) : (
+                    <></>
+                )}
             </div>
         </>
     );

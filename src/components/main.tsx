@@ -120,7 +120,7 @@ const Routes = () => {
             <PrivateRoute exact path={restaurantListPath} component={RestaurantList} />
             <PrivateRoute exact path={registerListPath} component={RegisterList} />
             <RestaurantRegisterPrivateRoute exact path={configureNewEftposPath} component={ConfigureNewEftpos} />
-            <RestaurantRegisterPrivateRoute exact path={beginOrderPath} component={BeginOrder} />
+            <RestaurantRegisterPrivateRoute exact path={beginOrderPath} component={ConfigureNewEftpos} />
             <RestaurantRegisterPrivateRoute exact path={orderTypePath} component={OrderType} />
             <RestaurantRegisterPrivateRoute exact path={tableNumberPath} component={TableNumber} />
             <RestaurantRegisterPrivateRoute exact path={checkoutPath} component={Checkout} />
