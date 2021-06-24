@@ -3,7 +3,7 @@ import { useState, useEffect, createContext, useContext } from "react";
 import { Logger } from "aws-amplify";
 import { delay, getVerifoneSocketErrorMessage, getVerifoneTimeBasedTransactionId } from "../model/util";
 import { useMutation } from "react-apollo-hooks";
-import { CREATE_VERIFONE_TRANSACTION_LOG } from "../graphql/customMutations";
+import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
 
 let electron: any;
 let ipcRenderer: any;
@@ -94,7 +94,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     };
     let eftposReceipt: string = "";
 
-    const createVerifoneTransactionLogMutation = useMutation(CREATE_VERIFONE_TRANSACTION_LOG, {
+    const createEftposTransactionLogMutation = useMutation(CREATE_EFTPOS_TRANSACTION_LOG, {
         update: (proxy, mutationResult) => {},
     });
 
@@ -174,14 +174,15 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     //     }
 
     //     try {
-    //       await createVerifoneTransactionLogMutation({
+    //       await createEftposTransactionLogMutation({
     //         variables: {
+    //           eftposProvider: "VERIFONE",
     //           transactionId: transactionId,
     //           merchantId: merchantId,
     //           type: eftposData.type,
     //           payload: eftposData.payload,
     //           restaurantId: "UNFINISHED-TRANSACTION",
-    //           timestampEpoch: Number(Math.floor(currDate / 1000)),
+    //           expiry: Number(Math.floor(currDate / 1000)),
     //         },
     //       });
     //     } catch (e) {
@@ -215,14 +216,15 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     //     }
 
     //     try {
-    //       await createVerifoneTransactionLogMutation({
+    //       await createEftposTransactionLogMutation({
     //         variables: {
+    //           eftposProvider: "VERIFONE",
     //           transactionId: transactionId,
     //           merchantId: merchantId,
     //           type: eftposData.type,
     //           payload: eftposData.payload,
     //           restaurantId: "UNFINISHED-TRANSACTION",
-    //           timestampEpoch: Number(Math.floor(currDate / 1000)),
+    //           expiry: Number(Math.floor(currDate / 1000)),
     //         },
     //       });
     //     } catch (e) {
@@ -362,15 +364,16 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 }
 
                 try {
-                    await createVerifoneTransactionLogMutation({
+                    await createEftposTransactionLogMutation({
                         variables: {
+                            eftposProvider: "VERIFONE",
                             transactionId: transactionId,
                             merchantId: merchantId,
                             amount: amount,
                             type: eftposData.type,
                             payload: eftposData.payload,
                             restaurantId: restaurantId,
-                            timestampEpoch: Number(Math.floor(loopDate / 1000) + 2592000), // Add 30 days to timeStamp for DynamoDB TTL
+                            expiry: Number(Math.floor(loopDate / 1000) + 2592000), // Add 30 days to timeStamp for DynamoDB TTL
                         },
                     });
                 } catch (e) {

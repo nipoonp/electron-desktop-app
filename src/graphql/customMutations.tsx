@@ -1,24 +1,26 @@
 import gql from "graphql-tag";
 
-export const CREATE_VERIFONE_TRANSACTION_LOG = gql`
-    mutation createVerifoneTransactionLog(
-        $transactionId: Int!
-        $merchantId: Int!
-        $amount: Int!
-        $type: String!
+export const CREATE_EFTPOS_TRANSACTION_LOG = gql`
+    mutation createEftposTransactionLog(
+        $eftposProvider: EftposProvider!
+        $transactionId: Int
+        $merchantId: Int
+        $amount: Int
+        $type: String
         $payload: String!
         $restaurantId: ID!
-        $timestampEpoch: Int!
+        $expiry: Int!
     ) {
-        createVerifoneTransactionLog(
+        createEftposTransactionLog(
             input: {
+                eftposProvider: $eftposProvider
                 transactionId: $transactionId
                 merchantId: $merchantId
                 amount: $amount
                 type: $type
                 payload: $payload
                 restaurantId: $restaurantId
-                timestampEpoch: $timestampEpoch
+                expiry: $expiry
             }
         ) {
             id
@@ -67,7 +69,7 @@ export const CREATE_ORDER = gql`
                 orderUserId: $orderUserId
                 orderRestaurantId: $orderRestaurantId
             }
-        ){
+        ) {
             id
         }
     }

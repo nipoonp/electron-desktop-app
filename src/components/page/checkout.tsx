@@ -31,6 +31,7 @@ import { Link } from "../../tabin/components/link";
 import { TextArea } from "../../tabin/components/textArea";
 
 import "./checkout.scss";
+import { useWindcave, WindcaveTransactionOutcome, WindcaveTransactionOutcomeResult } from "../../context/windcave-context";
 
 const logger = new Logger("checkout");
 
@@ -51,6 +52,7 @@ export const Checkout = () => {
     const { user } = useUser();
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
+    const { createTransaction: windcaveCreateTransaction, pollForOutcome: windcavePollForOutcome } = useWindcave();
 
     const createOrderMutation = useMutation(CREATE_ORDER, {
         update: (proxy, mutationResult) => {
@@ -461,6 +463,8 @@ export const Checkout = () => {
             await doTransactionSmartpay();
         } else if (register.eftposProvider == "VERIFONE") {
             await doTransactionVerifone();
+        } else if (register.eftposProvider == "WINDCAVE") {
+            await doTransactionWindcave();
         }
     };
 
@@ -499,6 +503,34 @@ export const Checkout = () => {
             } else if (transactionOutcome == SmartpayTransactionOutcome.DeviceOffline) {
                 setPaymentOutcome(CheckoutTransactionOutcome.Fail);
                 setPaymentOutcomeErrorMessage("Transaction Cancelled! Please check if the device is powered on and online.");
+            } else {
+                setPaymentOutcome(CheckoutTransactionOutcome.Fail);
+            }
+        } catch (errorMessage) {
+            setPaymentOutcomeErrorMessage(errorMessage);
+        }
+    };
+
+    const doTransactionWindcave = async () => {
+        try {
+            const txnRef = await windcaveCreateTransaction(register.windcaveStationId, total, "Purchase");
+
+            let transactionOutcome: WindcaveTransactionOutcomeResult = await windcavePollForOutcome(register.windcaveStationId, txnRef);
+
+            if (transactionOutcome.transactionOutcome == WindcaveTransactionOutcome.Accepted) {
+                setPaymentOutcome(CheckoutTransactionOutcome.Success);
+
+                try {
+                    await onSubmitOrder(true, transactionOutcome.eftposReceipt);
+                } catch (e) {
+                    setCreateOrderError(e);
+                }
+            } else if (transactionOutcome.transactionOutcome == WindcaveTransactionOutcome.Declined) {
+                setPaymentOutcome(CheckoutTransactionOutcome.Fail);
+                setPaymentOutcomeErrorMessage("Transaction Declined! Please try again.");
+            } else if (transactionOutcome.transactionOutcome == WindcaveTransactionOutcome.Cancelled) {
+                setPaymentOutcome(CheckoutTransactionOutcome.Fail);
+                setPaymentOutcomeErrorMessage("Transaction Cancelled!");
             } else {
                 setPaymentOutcome(CheckoutTransactionOutcome.Fail);
             }

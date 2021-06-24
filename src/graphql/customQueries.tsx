@@ -35,6 +35,7 @@ export const GET_USER = gql`
                             eftposProvider
                             eftposIpAddress
                             eftposPortNumber
+                            windcaveStationId
                             orderNumberSuffix
                             printers {
                                 items {
@@ -187,6 +188,7 @@ export const GET_RESTAURANT = gql`
                     eftposProvider
                     eftposIpAddress
                     eftposPortNumber
+                    windcaveStationId
                     orderNumberSuffix
                     printers {
                         items {
@@ -372,6 +374,7 @@ export interface IGET_RESTAURANT_REGISTER {
     eftposProvider: string;
     eftposIpAddress: string;
     eftposPortNumber: string;
+    windcaveStationId: string;
     orderNumberSuffix: string;
     printers: {
         items: IGET_RESTAURANT_REGISTER_PRINTER[];
