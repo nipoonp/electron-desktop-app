@@ -12,8 +12,7 @@ export enum WindcaveTransactionOutcome {
     Accepted,
     Declined,
     Cancelled,
-    Failed, //Completed with signature
-    TransactionInProgress,
+    Failed,
 }
 
 export enum EWindcaveStatus {
@@ -93,13 +92,10 @@ interface IWindcaveStatusResponse {
         Complete?: {
             _text?: string;
         };
-        DL1?: {
-            _text?: string;
-        };
-        DL2?: {
-            _text?: string;
-        };
         Rcpt?: {
+            _text?: string;
+        };
+        ReCo?: {
             _text?: string;
         };
         Result?: {
@@ -135,20 +131,28 @@ const windcaveResponseCodeMessages = {
     PM: "Txn type not allowed",
     PO: "Invalid Station Id. Please check if the device is powered on and online.",
     TQ: "HIT Start Failed— connection lost, ensure the terminal has performed a Logon to the Windcave HOST.",
+    VB: "Transaction timed out. Please check if the device is powered on correctly and online.",
+    VW: "Transaction cancelled. Please try again.",
+    V6: "Card read error. Please try again.",
+    PH: "User Error",
 };
 
+const ACTION: string = "doScrHIT";
+const USER: string = "TabinHIT_Dev";
+const KEY: string = "6b06b931c1942fa4222903055c9ac749c77fa4b86471d91b2909da74a69d928c";
+
 type ContextProps = {
-    createTransaction: (stationId: string, amount: number, transactionType: string) => Promise<string>;
-    pollForOutcome: (stationId: string, txnRef: string) => Promise<WindcaveTransactionOutcomeResult>;
+    createTransaction: (stationId: string, amount: number, transactionType: string, action?: string, user?: string, key?: string) => Promise<string>;
+    pollForOutcome: (stationId: string, txnRef: string, action?: string, user?: string, key?: string) => Promise<WindcaveTransactionOutcomeResult>;
 };
 
 const WindcaveContext = createContext<ContextProps>({
-    createTransaction: (stationId: string, amount: number, transactionType: string) => {
+    createTransaction: (stationId: string, amount: number, transactionType: string, action?: string, user?: string, key?: string) => {
         return new Promise(() => {
             console.log("");
         });
     },
-    pollForOutcome: (stationId: string, txnRef: string) => {
+    pollForOutcome: (stationId: string, txnRef: string, action?: string, user?: string, key?: string) => {
         return new Promise(() => {
             console.log("");
         });
@@ -159,17 +163,20 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
 
     const _baseUrl: string = "https://uat.windcave.com/pxmi3/pos.aspx";
-
-    const action = "doScrHIT";
-    const user = "TabinHIT_Dev";
-    const key = "6b06b931c1942fa4222903055c9ac749c77fa4b86471d91b2909da74a69d928c";
     const currency = "NZD";
 
     const createEftposTransactionLogMutation = useMutation(CREATE_EFTPOS_TRANSACTION_LOG, {
         update: (proxy, mutationResult) => {},
     });
 
-    const createTransaction = (stationId: string, amount: number, transactionType: string): Promise<string> => {
+    const createTransaction = (
+        stationId: string,
+        amount: number,
+        transactionType: string,
+        action: string = ACTION,
+        user: string = USER,
+        key: string = KEY
+    ): Promise<string> => {
         return new Promise(async (resolve, reject) => {
             if (!amount) {
                 reject("The amount has to be supplied");
@@ -283,9 +290,15 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         });
     };
 
-    const pollForOutcome = (stationId: string, txnRef: string): Promise<WindcaveTransactionOutcomeResult> => {
+    const pollForOutcome = (
+        stationId: string,
+        txnRef: string,
+        action: string = ACTION,
+        user: string = USER,
+        key: string = KEY
+    ): Promise<WindcaveTransactionOutcomeResult> => {
         const interval = 2 * 1000; // 2 seconds
-        const timeout = 10 * 60 * 1000; // 10 minutes
+        const timeout = 30 * 60 * 1000; // 10 minutes
 
         const endTime = Number(new Date()) + timeout;
 
@@ -348,15 +361,28 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                                 //Accepted
                                 transactionOutcome = WindcaveTransactionOutcome.Accepted;
                             } else if (res.Scr.Result.AP._text === "0") {
-                                //Declined
-                                if (res.Scr.DL2 && res.Scr.DL2._text && res.Scr.DL2._text.includes("CANCELLED")) {
-                                    //No other way to find out if txn is cancelled, expect to read the display on the Eftpos
+                                //Declined or some other issue
+
+                                if (
+                                    (res.Scr.Result && res.Scr.Result.RC && res.Scr.Result.RC._text === "VW") ||
+                                    (res.Scr.ReCo && res.Scr.ReCo._text === "VW")
+                                ) {
                                     transactionOutcome = WindcaveTransactionOutcome.Cancelled;
-                                } else {
+                                } else if (
+                                    (res.Scr.Result && res.Scr.Result.RC && res.Scr.Result.RC._text === "76") ||
+                                    (res.Scr.ReCo && res.Scr.ReCo._text === "76")
+                                ) {
                                     transactionOutcome = WindcaveTransactionOutcome.Declined;
+                                } else if (transactionComplete && res.Scr.ReCo && res.Scr.ReCo._text) {
+                                    reject(windcaveResponseCodeMessages[res.Scr.ReCo._text] || "Unknown error");
+                                    return;
+                                } else if (transactionComplete && res.Scr.Result && res.Scr.Result.RC && res.Scr.Result.RC._text) {
+                                    reject(windcaveResponseCodeMessages[res.Scr.Result.RC._text] || "Unknown error");
+                                    return;
                                 }
                             }
 
+                            //Fail any transaction approved with signature
                             if (
                                 res.Scr.StatusId &&
                                 res.Scr.TxnStatusId &&

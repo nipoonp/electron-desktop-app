@@ -6,6 +6,9 @@ import { Button } from "../../../tabin/components/button";
 import { useWindcave, WindcaveTransactionOutcome, WindcaveTransactionOutcomeResult } from "../../../context/windcave-context";
 
 export const Windcave = () => {
+    const [action, setAction] = useState("doScrHIT");
+    const [user, setUser] = useState("TabinHIT_Dev");
+    const [key, setKey] = useState("6b06b931c1942fa4222903055c9ac749c77fa4b86471d91b2909da74a69d928c");
     const [stationId, setStationId] = useState("3801585856");
     const [amount, setAmount] = useState(199);
 
@@ -16,9 +19,9 @@ export const Windcave = () => {
         setShowSpinner(true);
 
         try {
-            const txnRef = await createTransaction(stationId, amount, "Purchase");
+            const txnRef = await createTransaction(stationId, amount, "Purchase", action, user, key);
 
-            let transactionOutcome: WindcaveTransactionOutcomeResult = await pollForOutcome(stationId, txnRef);
+            let transactionOutcome: WindcaveTransactionOutcomeResult = await pollForOutcome(stationId, txnRef, action, user, key);
 
             setAmount(199);
 
@@ -44,6 +47,37 @@ export const Windcave = () => {
             <FullScreenSpinner show={showSpinner} />
             <div>
                 <div className="h3 mb-4">Send a Transaction</div>
+
+                <label htmlFor="action"></label>
+                <Input
+                    className="mb-4"
+                    label="Action"
+                    name="action"
+                    value={action}
+                    placeholder="doScrHIT"
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAction(event.target.value)}
+                />
+
+                <label htmlFor="user"></label>
+                <Input
+                    className="mb-4"
+                    label="user"
+                    name="user"
+                    value={user}
+                    placeholder="TabinHIT_Dev"
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setUser(event.target.value)}
+                />
+
+                <label htmlFor="key"></label>
+                <Input
+                    className="mb-4"
+                    label="key"
+                    name="key"
+                    value={key}
+                    placeholder="6b06b931c1942fa4222903055c9ac749c77fa4b86471d91b2909da74a69d928c"
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setKey(event.target.value)}
+                />
+
                 <label htmlFor="stationId"></label>
                 <Input
                     className="mb-4"
