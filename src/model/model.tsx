@@ -49,6 +49,11 @@ export interface ICartModifier {
     price: number;
     preSelectedQuantity: number;
     quantity: number;
+    productModifier?: ICartProductModifier;
+}
+
+export interface ICartProductModifier {
+    id: string;
 }
 
 export interface ISelectedProductModifiers {

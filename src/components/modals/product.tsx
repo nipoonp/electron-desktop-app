@@ -74,6 +74,7 @@ export const ProductModal = (props: {
                             price: modifierLink.modifier.price,
                             preSelectedQuantity: modifierLink.preSelectedQuantity,
                             quantity: modifierLink.preSelectedQuantity,
+                            productModifier: modifierLink.modifier.productModifier ? { id: modifierLink.modifier.productModifier.id } : undefined,
                         }),
                     });
                 }
@@ -124,6 +125,7 @@ export const ProductModal = (props: {
                 price: selectedModifier.price,
                 preSelectedQuantity: preSelectedModifierQuantity,
                 quantity: 1,
+                productModifier: selectedModifier.productModifier ? { id: selectedModifier.productModifier.id } : undefined,
             }),
         });
 
@@ -156,6 +158,7 @@ export const ProductModal = (props: {
                     price: selectedModifier.price,
                     preSelectedQuantity: preSelectedModifierQuantity,
                     quantity: 0,
+                    productModifier: selectedModifier.productModifier ? { id: selectedModifier.productModifier.id } : undefined,
                 }),
             });
 
@@ -195,6 +198,7 @@ export const ProductModal = (props: {
                     price: selectedModifier.price,
                     preSelectedQuantity: preSelectedModifierQuantity,
                     quantity: quantity,
+                    productModifier: selectedModifier.productModifier ? { id: selectedModifier.productModifier.id } : undefined,
                 }),
             });
 
