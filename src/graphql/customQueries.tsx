@@ -321,6 +321,41 @@ export const GET_RESTAURANT = gql`
                                                         totalQuantitySold
                                                         soldOut
                                                         soldOutDate
+                                                        productModifier {
+                                                            id
+                                                            soldOut
+                                                            soldOutDate
+                                                            availability {
+                                                                monday {
+                                                                    startTime
+                                                                    endTime
+                                                                }
+                                                                tuesday {
+                                                                    startTime
+                                                                    endTime
+                                                                }
+                                                                wednesday {
+                                                                    startTime
+                                                                    endTime
+                                                                }
+                                                                thursday {
+                                                                    startTime
+                                                                    endTime
+                                                                }
+                                                                friday {
+                                                                    startTime
+                                                                    endTime
+                                                                }
+                                                                saturday {
+                                                                    startTime
+                                                                    endTime
+                                                                }
+                                                                sunday {
+                                                                    startTime
+                                                                    endTime
+                                                                }
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
@@ -528,6 +563,14 @@ export interface IGET_RESTAURANT_MODIFIER {
     totalQuantitySold: number;
     soldOut: boolean;
     soldOutDate: string;
+    productModifier: IGET_DASHBOARD_MODIFIER_PRODUCT_MODIFIER;
+}
+
+export interface IGET_DASHBOARD_MODIFIER_PRODUCT_MODIFIER {
+    id: string;
+    soldOut: boolean;
+    soldOutDate: string;
+    availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
 }
 
 export interface IS3Object {

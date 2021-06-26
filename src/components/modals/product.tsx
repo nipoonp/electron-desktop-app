@@ -3,7 +3,7 @@ import { useUser } from "../../context/user-context";
 import { ICartModifier, ISelectedProductModifiers, ICartProduct, ICartModifierGroup } from "../../model/model";
 import { Logger } from "aws-amplify";
 import { toast } from "../../tabin/components/toast";
-import { isItemSoldOut } from "../../util/util";
+import { isItemAvailable, isItemSoldOut } from "../../util/util";
 import { convertCentsToDollars } from "../../util/util";
 import { PlusIcon } from "../../tabin/components/icons/plusIcon";
 import {
@@ -476,19 +476,29 @@ export const ModifierGroup = (props: {
         return m ? m.quantity : 0;
     };
 
-    const isModifierSelected = (modifier: IGET_RESTAURANT_MODIFIER) => {
+    const checkModifierSelected = (modifier: IGET_RESTAURANT_MODIFIER) => {
         let m = props.selectedModifiers.find((selectedModifier) => selectedModifier.id === modifier.id && selectedModifier.quantity > 0);
         return m ? true : false;
     };
 
-    const isModifierDisabled = (modifier: IGET_RESTAURANT_MODIFIER) => {
+    const checkModifierSoldOutAndAvailable = (modifier: IGET_RESTAURANT_MODIFIER) => {
+        if (modifier.productModifier) {
+            const isSoldOut = isItemSoldOut(modifier.productModifier.soldOut, modifier.productModifier.soldOutDate);
+            const isAvailable = isItemAvailable(modifier.productModifier.availability);
+
+            return isSoldOut && isAvailable;
+        } else {
+            return isItemSoldOut(modifier.soldOut, modifier.soldOutDate);
+        }
+    };
+
+    const checkMaxReached = (modifier: IGET_RESTAURANT_MODIFIER) => {
         return (
-            isItemSoldOut(modifier.soldOut, modifier.soldOutDate) ||
-            (!(props.modifierGroup.choiceMin === 1 && props.modifierGroup.choiceMax === 1) &&
-                isMaxReached(props.modifierGroup.choiceMax, props.selectedModifiers) &&
-                props.selectedModifiers.find((selectedModifier) => {
-                    return selectedModifier.id === modifier.id;
-                }) === undefined)
+            !(props.modifierGroup.choiceMin === 1 && props.modifierGroup.choiceMax === 1) &&
+            isMaxReached(props.modifierGroup.choiceMax, props.selectedModifiers) &&
+            props.selectedModifiers.find((selectedModifier) => {
+                return selectedModifier.id === modifier.id;
+            }) === undefined
         );
     };
 
@@ -506,8 +516,10 @@ export const ModifierGroup = (props: {
             <div className="h2 mb-2">{props.modifierGroup.name}</div>
             {props.error && <div className="text-error mb-2">{props.error}</div>}
             <div className="mb-2">({getSelectInstructions()})</div>
-            {props.modifierGroup.modifiers.items.map((m) => (
-                <>
+            {props.modifierGroup.modifiers.items.map((m) => {
+                const isModifierSoldOutAndAvailable = checkModifierSoldOutAndAvailable(m.modifier);
+
+                return (
                     <Modifier
                         modifierGroupName={props.modifierGroup.name}
                         radio={props.modifierGroup.choiceMin !== 0 && props.modifierGroup.choiceMax === 1}
@@ -526,13 +538,13 @@ export const ModifierGroup = (props: {
                             props.onSelectRadioModifier(selectedModifier, m.preSelectedQuantity);
                         }}
                         modifierQuantity={modifierQuantity(m.modifier)}
-                        checked={isModifierSelected(m.modifier)}
+                        checked={checkModifierSelected(m.modifier)}
                         maxReached={isMaxReached(props.modifierGroup.choiceMax, props.selectedModifiers)}
-                        soldOut={isItemSoldOut(m.modifier.soldOut, m.modifier.soldOutDate)}
-                        disabled={props.disabled || isModifierDisabled(m.modifier)}
+                        soldOut={isModifierSoldOutAndAvailable}
+                        disabled={props.disabled || isModifierSoldOutAndAvailable || checkMaxReached(m.modifier)}
                     />
-                </>
-            ))}
+                );
+            })}
         </>
     );
 };
@@ -599,18 +611,16 @@ const Modifier = (props: {
     const showCheckbox = !showRadio && !showStepper && !showCollapsedStepper;
 
     // displays
-
     const modifierChildren = (
         <>
             {props.soldOut ? (
-                <>
-                    <div className="text-bold text-grey">{props.modifier.name} (SOLD OUT)</div>
-                    {props.modifier.price > 0 && <div className="text-bold text-grey">{"$" + convertCentsToDollars(props.modifier.price)}</div>}
-                </>
+                <span className="text-grey">
+                    {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)}) (SOLD OUT)`}
+                </span>
             ) : (
-                <div>
+                <span>
                     {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)})`}
-                </div>
+                </span>
             )}
         </>
     );
