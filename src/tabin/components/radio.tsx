@@ -13,7 +13,7 @@ export const Radio = (props: IProps) => {
                 <div className={`radio ${props.disabled ? "disabled" : ""}`}>
                     <div className={`dot ${props.selected ? "selected" : ""}`} />
                 </div>
-                {props.children && <div className="radio-children">{props.children}</div>}
+                {props.children && <div className="radio-children ml-3">{props.children}</div>}
                 {/* {props.error && <ErrorMessage message={props.error} />} */}
             </div>
         </>

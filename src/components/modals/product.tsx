@@ -20,6 +20,8 @@ import { Radio } from "../../tabin/components/radio";
 
 import "./product.scss";
 import { TextArea } from "../../tabin/components/textArea";
+import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
+import { CachedImage } from "../../tabin/components/cachedImage";
 
 const logger = new Logger("productModal");
 
@@ -617,15 +619,25 @@ const Modifier = (props: {
     // displays
     const modifierChildren = (
         <>
-            {props.soldOut ? (
-                <span className="text-grey">
-                    {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)}) (SOLD OUT)`}
-                </span>
-            ) : (
-                <span>
-                    {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)})`}
-                </span>
-            )}
+            <div className={`modifier ${props.soldOut ? "sold-out" : ""} `}>
+                {props.modifier.image && (
+                    <CachedImage
+                        url={`${getCloudFrontDomainName()}/protected/${props.modifier.image.identityPoolId}/${props.modifier.image.key}`}
+                        className="image mr-3"
+                        alt="product-image"
+                    />
+                )}
+
+                {props.soldOut ? (
+                    <div>
+                        {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)}) (SOLD OUT)`}
+                    </div>
+                ) : (
+                    <div>
+                        {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)})`}
+                    </div>
+                )}
+            </div>
         </>
     );
 
@@ -655,7 +667,7 @@ const Modifier = (props: {
             >
                 <PlusIcon height={String(stepperHeight / 1.8) + "px"} />
             </div>
-            <div className="collapsed-stepper-children">{modifierChildren}</div>
+            <div className="collapsed-stepper-children ml-3">{modifierChildren}</div>
         </div>
     );
 
@@ -679,7 +691,7 @@ const Modifier = (props: {
 
     return (
         <>
-            <div className="modifier">
+            <div className="modifier-wrapper">
                 {showRadio && radio}
 
                 {showStepper && stepper}
