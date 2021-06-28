@@ -77,6 +77,14 @@ export const ProductModal = (props: {
                             preSelectedQuantity: modifierLink.preSelectedQuantity,
                             quantity: modifierLink.preSelectedQuantity,
                             productModifier: modifierLink.modifier.productModifier ? { id: modifierLink.modifier.productModifier.id } : undefined,
+                            image: modifierLink.modifier.image
+                                ? {
+                                      key: modifierLink.modifier.image.key,
+                                      region: modifierLink.modifier.image.region,
+                                      bucket: modifierLink.modifier.image.bucket,
+                                      identityPoolId: modifierLink.modifier.image.identityPoolId,
+                                  }
+                                : null,
                         }),
                     });
                 }
@@ -128,6 +136,14 @@ export const ProductModal = (props: {
                 preSelectedQuantity: preSelectedModifierQuantity,
                 quantity: 1,
                 productModifier: selectedModifier.productModifier ? { id: selectedModifier.productModifier.id } : undefined,
+                image: selectedModifier.image
+                    ? {
+                          key: selectedModifier.image.key,
+                          region: selectedModifier.image.region,
+                          bucket: selectedModifier.image.bucket,
+                          identityPoolId: selectedModifier.image.identityPoolId,
+                      }
+                    : null,
             }),
         });
 
@@ -161,6 +177,14 @@ export const ProductModal = (props: {
                     preSelectedQuantity: preSelectedModifierQuantity,
                     quantity: 0,
                     productModifier: selectedModifier.productModifier ? { id: selectedModifier.productModifier.id } : undefined,
+                    image: selectedModifier.image
+                        ? {
+                              key: selectedModifier.image.key,
+                              region: selectedModifier.image.region,
+                              bucket: selectedModifier.image.bucket,
+                              identityPoolId: selectedModifier.image.identityPoolId,
+                          }
+                        : null,
                 }),
             });
 
@@ -201,6 +225,14 @@ export const ProductModal = (props: {
                     preSelectedQuantity: preSelectedModifierQuantity,
                     quantity: quantity,
                     productModifier: selectedModifier.productModifier ? { id: selectedModifier.productModifier.id } : undefined,
+                    image: selectedModifier.image
+                        ? {
+                              key: selectedModifier.image.key,
+                              region: selectedModifier.image.region,
+                              bucket: selectedModifier.image.bucket,
+                              identityPoolId: selectedModifier.image.identityPoolId,
+                          }
+                        : null,
                 }),
             });
 

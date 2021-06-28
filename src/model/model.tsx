@@ -50,6 +50,7 @@ export interface ICartModifier {
     preSelectedQuantity: number;
     quantity: number;
     productModifier?: ICartProductModifier;
+    image: IS3Object | null;
 }
 
 export interface ICartProductModifier {
