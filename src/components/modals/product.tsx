@@ -62,36 +62,40 @@ export const ProductModal = (props: {
 
         let newOrderedModifiers: ISelectedProductModifiers = {};
 
-        props.product.modifierGroups.items.forEach((modifierGroupLink) => {
-            modifierGroupLink.modifierGroup.modifiers.items.map((modifierLink) => {
-                if (modifierLink.preSelectedQuantity) {
-                    if (newOrderedModifiers[modifierGroupLink.modifierGroup.id] === undefined) {
-                        newOrderedModifiers[modifierGroupLink.modifierGroup.id] = [];
-                    }
+        props.product.modifierGroups &&
+            props.product.modifierGroups.items.forEach((modifierGroupLink) => {
+                modifierGroupLink.modifierGroup.modifiers &&
+                    modifierGroupLink.modifierGroup.modifiers.items.map((modifierLink) => {
+                        if (modifierLink.preSelectedQuantity) {
+                            if (newOrderedModifiers[modifierGroupLink.modifierGroup.id] === undefined) {
+                                newOrderedModifiers[modifierGroupLink.modifierGroup.id] = [];
+                            }
 
-                    newOrderedModifiers = Object.assign({}, newOrderedModifiers, {
-                        [modifierGroupLink.modifierGroup.id]: newOrderedModifiers[modifierGroupLink.modifierGroup.id].concat({
-                            id: modifierLink.modifier.id,
-                            name: modifierLink.modifier.name,
-                            price: modifierLink.modifier.price,
-                            preSelectedQuantity: modifierLink.preSelectedQuantity,
-                            quantity: modifierLink.preSelectedQuantity,
-                            productModifier: modifierLink.modifier.productModifier ? { id: modifierLink.modifier.productModifier.id } : undefined,
-                            image: modifierLink.modifier.image
-                                ? {
-                                      key: modifierLink.modifier.image.key,
-                                      region: modifierLink.modifier.image.region,
-                                      bucket: modifierLink.modifier.image.bucket,
-                                      identityPoolId: modifierLink.modifier.image.identityPoolId,
-                                  }
-                                : null,
-                        }),
+                            newOrderedModifiers = Object.assign({}, newOrderedModifiers, {
+                                [modifierGroupLink.modifierGroup.id]: newOrderedModifiers[modifierGroupLink.modifierGroup.id].concat({
+                                    id: modifierLink.modifier.id,
+                                    name: modifierLink.modifier.name,
+                                    price: modifierLink.modifier.price,
+                                    preSelectedQuantity: modifierLink.preSelectedQuantity,
+                                    quantity: modifierLink.preSelectedQuantity,
+                                    productModifier: modifierLink.modifier.productModifier
+                                        ? { id: modifierLink.modifier.productModifier.id }
+                                        : undefined,
+                                    image: modifierLink.modifier.image
+                                        ? {
+                                              key: modifierLink.modifier.image.key,
+                                              region: modifierLink.modifier.image.region,
+                                              bucket: modifierLink.modifier.image.bucket,
+                                              identityPoolId: modifierLink.modifier.image.identityPoolId,
+                                          }
+                                        : null,
+                                }),
+                            });
+                        }
                     });
-                }
-            });
 
-            setOrderedModifiers(newOrderedModifiers);
-        });
+                setOrderedModifiers(newOrderedModifiers);
+            });
     }, []);
 
     useEffect(() => {
@@ -270,69 +274,70 @@ export const ProductModal = (props: {
         let error: { [modifierGroupId: string]: string } = {};
 
         // TODO: Refactor into functions
-        props.product.modifierGroups.items.map((mg) => {
-            const choiceMin = mg.modifierGroup.choiceMin;
-            const choiceMax = mg.modifierGroup.choiceMax;
-            const choiceDuplicate = mg.modifierGroup.choiceDuplicate;
+        props.product.modifierGroups &&
+            props.product.modifierGroups.items.map((mg) => {
+                const choiceMin = mg.modifierGroup.choiceMin;
+                const choiceMax = mg.modifierGroup.choiceMax;
+                const choiceDuplicate = mg.modifierGroup.choiceDuplicate;
 
-            let orderedModifiersLength = 0;
+                let orderedModifiersLength = 0;
 
-            // Check if selected modifier quantity is less than choiceDuplicate
-            // If logic in other places is all correct, the code should never really reach inside this condition. This check is just for backup.
-            if (orderedModifiers[mg.modifierGroup.id]) {
-                orderedModifiers[mg.modifierGroup.id].forEach((m) => {
-                    orderedModifiersLength += m.quantity;
+                // Check if selected modifier quantity is less than choiceDuplicate
+                // If logic in other places is all correct, the code should never really reach inside this condition. This check is just for backup.
+                if (orderedModifiers[mg.modifierGroup.id]) {
+                    orderedModifiers[mg.modifierGroup.id].forEach((m) => {
+                        orderedModifiersLength += m.quantity;
 
-                    if (m.quantity > choiceDuplicate) {
-                        Object.assign(error, {
-                            [mg.modifierGroup.id]:
-                                "Please select at most " +
-                                choiceDuplicate +
-                                " of the same " +
-                                (choiceDuplicate === 1 ? "modifier" : "modifiers") +
-                                " for " +
-                                mg.modifierGroup.name,
-                        });
+                        if (m.quantity > choiceDuplicate) {
+                            Object.assign(error, {
+                                [mg.modifierGroup.id]:
+                                    "Please select at most " +
+                                    choiceDuplicate +
+                                    " of the same " +
+                                    (choiceDuplicate === 1 ? "modifier" : "modifiers") +
+                                    " for " +
+                                    mg.modifierGroup.name,
+                            });
+                            return;
+                        }
+                    });
+                }
+
+                // Check if number of selected modifiers is more than choiceMin
+                if (choiceMin > 0) {
+                    if (orderedModifiers[mg.modifierGroup.id] === undefined || orderedModifiersLength < choiceMin) {
+                        if (choiceMin === 1 && choiceMax === 1) {
+                            Object.assign(error, {
+                                [mg.modifierGroup.id]: "Please select an option for " + mg.modifierGroup.name,
+                            });
+                        } else if (choiceMin === choiceMax) {
+                            Object.assign(error, {
+                                [mg.modifierGroup.id]: "Please make " + choiceMin + " selections for " + mg.modifierGroup.name,
+                            });
+                        } else {
+                            Object.assign(error, {
+                                [mg.modifierGroup.id]:
+                                    "Please make at least " +
+                                    choiceMin +
+                                    (choiceMin === 1 ? " selection" : " selections") +
+                                    " for " +
+                                    mg.modifierGroup.name,
+                            });
+                        }
                         return;
                     }
-                });
-            }
+                }
 
-            // Check if number of selected modifiers is more than choiceMin
-            if (choiceMin > 0) {
-                if (orderedModifiers[mg.modifierGroup.id] === undefined || orderedModifiersLength < choiceMin) {
-                    if (choiceMin === 1 && choiceMax === 1) {
-                        Object.assign(error, {
-                            [mg.modifierGroup.id]: "Please select an option for " + mg.modifierGroup.name,
-                        });
-                    } else if (choiceMin === choiceMax) {
-                        Object.assign(error, {
-                            [mg.modifierGroup.id]: "Please make " + choiceMin + " selections for " + mg.modifierGroup.name,
-                        });
-                    } else {
-                        Object.assign(error, {
-                            [mg.modifierGroup.id]:
-                                "Please make at least " +
-                                choiceMin +
-                                (choiceMin === 1 ? " selection" : " selections") +
-                                " for " +
-                                mg.modifierGroup.name,
-                        });
-                    }
+                // Check if number of selected modifiers is less than choiceMax
+                // If logic in other places is all correct, the code should never really reach inside this condition. This check is just for backup.
+                if (orderedModifiers[mg.modifierGroup.id] !== undefined && orderedModifiersLength > choiceMax) {
+                    Object.assign(error, {
+                        [mg.modifierGroup.id]:
+                            "Please make at most " + choiceMax + (choiceMin === 1 ? " selection" : " selections") + " for " + mg.modifierGroup.name,
+                    });
                     return;
                 }
-            }
-
-            // Check if number of selected modifiers is less than choiceMax
-            // If logic in other places is all correct, the code should never really reach inside this condition. This check is just for backup.
-            if (orderedModifiers[mg.modifierGroup.id] !== undefined && orderedModifiersLength > choiceMax) {
-                Object.assign(error, {
-                    [mg.modifierGroup.id]:
-                        "Please make at most " + choiceMax + (choiceMin === 1 ? " selection" : " selections") + " for " + mg.modifierGroup.name,
-                });
-                return;
-            }
-        });
+            });
 
         if (Object.keys(error).length > 0) {
             toast.error(error[Object.keys(error)[0]]);
@@ -343,19 +348,20 @@ export const ProductModal = (props: {
         // setLoadingMessage("Updating cart");
         const selectedModifierGroups: ICartModifierGroup[] = [];
 
-        props.product.modifierGroups.items.forEach((mg) => {
-            if (orderedModifiers[mg.modifierGroup.id]) {
-                selectedModifierGroups.push({
-                    id: mg.modifierGroup.id,
-                    name: mg.modifierGroup.name,
-                    choiceDuplicate: mg.modifierGroup.choiceDuplicate,
-                    choiceMin: mg.modifierGroup.choiceMin,
-                    choiceMax: mg.modifierGroup.choiceMax,
-                    hideForCustomer: mg.hideForCustomer,
-                    modifiers: orderedModifiers[mg.modifierGroup.id],
-                });
-            }
-        });
+        props.product.modifierGroups &&
+            props.product.modifierGroups.items.forEach((mg) => {
+                if (orderedModifiers[mg.modifierGroup.id]) {
+                    selectedModifierGroups.push({
+                        id: mg.modifierGroup.id,
+                        name: mg.modifierGroup.name,
+                        choiceDuplicate: mg.modifierGroup.choiceDuplicate,
+                        choiceMin: mg.modifierGroup.choiceMin,
+                        choiceMax: mg.modifierGroup.choiceMax,
+                        hideForCustomer: mg.hideForCustomer,
+                        modifiers: orderedModifiers[mg.modifierGroup.id],
+                    });
+                }
+            });
 
         const productToOrder: ICartProduct = {
             id: props.product.id,
@@ -407,35 +413,36 @@ export const ProductModal = (props: {
 
     const modifierGroups = (
         <>
-            {props.product.modifierGroups.items.map((mg) => (
-                <>
-                    {!mg.hideForCustomer && (
-                        <>
-                            <ModifierGroup
-                                modifierGroup={mg.modifierGroup}
-                                onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) =>
-                                    onCheckingModifier(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier)
-                                }
-                                onUnCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) =>
-                                    onUnCheckingModifier(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier)
-                                }
-                                onChangeModifierQuantity={(
-                                    selectedModifier: IGET_RESTAURANT_MODIFIER,
-                                    preSelectedModifierQuantity: number,
-                                    quantity: number
-                                ) => onChangeModifierQuantity(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier, quantity)}
-                                onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) =>
-                                    onSelectRadioModifier(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier)
-                                }
-                                selectedModifiers={orderedModifiers[mg.modifierGroup.id] || []}
-                                error={error[mg.modifierGroup.id]}
-                                disabled={false}
-                            />
-                            <div className="separator-6"></div>
-                        </>
-                    )}
-                </>
-            ))}
+            {props.product.modifierGroups &&
+                props.product.modifierGroups.items.map((mg) => (
+                    <>
+                        {!mg.hideForCustomer && (
+                            <>
+                                <ModifierGroup
+                                    modifierGroup={mg.modifierGroup}
+                                    onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) =>
+                                        onCheckingModifier(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier)
+                                    }
+                                    onUnCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) =>
+                                        onUnCheckingModifier(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier)
+                                    }
+                                    onChangeModifierQuantity={(
+                                        selectedModifier: IGET_RESTAURANT_MODIFIER,
+                                        preSelectedModifierQuantity: number,
+                                        quantity: number
+                                    ) => onChangeModifierQuantity(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier, quantity)}
+                                    onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) =>
+                                        onSelectRadioModifier(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier)
+                                    }
+                                    selectedModifiers={orderedModifiers[mg.modifierGroup.id] || []}
+                                    error={error[mg.modifierGroup.id]}
+                                    disabled={false}
+                                />
+                                <div className="separator-6"></div>
+                            </>
+                        )}
+                    </>
+                ))}
         </>
     );
 
@@ -554,35 +561,36 @@ export const ModifierGroup = (props: {
             <div className="h2 mb-2">{props.modifierGroup.name}</div>
             {props.error && <div className="text-error mb-2">{props.error}</div>}
             <div className="mb-2">({getSelectInstructions()})</div>
-            {props.modifierGroup.modifiers.items.map((m) => {
-                const isModifierSoldOutAndAvailable = checkModifierSoldOutAndAvailable(m.modifier);
+            {props.modifierGroup.modifiers &&
+                props.modifierGroup.modifiers.items.map((m) => {
+                    const isModifierSoldOutAndAvailable = checkModifierSoldOutAndAvailable(m.modifier);
 
-                return (
-                    <Modifier
-                        modifierGroupName={props.modifierGroup.name}
-                        radio={props.modifierGroup.choiceMin !== 0 && props.modifierGroup.choiceMax === 1}
-                        modifier={m.modifier}
-                        choiceDuplicate={props.modifierGroup.choiceDuplicate}
-                        onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                            props.onCheckingModifier(selectedModifier, m.preSelectedQuantity);
-                        }}
-                        onUnCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                            props.onUnCheckingModifier(selectedModifier, m.preSelectedQuantity);
-                        }}
-                        onChangeModifierQuantity={(selectedModifier: IGET_RESTAURANT_MODIFIER, quantity: number) => {
-                            props.onChangeModifierQuantity(selectedModifier, m.preSelectedQuantity, quantity);
-                        }}
-                        onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                            props.onSelectRadioModifier(selectedModifier, m.preSelectedQuantity);
-                        }}
-                        modifierQuantity={modifierQuantity(m.modifier)}
-                        checked={checkModifierSelected(m.modifier)}
-                        maxReached={isMaxReached(props.modifierGroup.choiceMax, props.selectedModifiers)}
-                        soldOut={isModifierSoldOutAndAvailable}
-                        disabled={props.disabled || isModifierSoldOutAndAvailable || checkMaxReached(m.modifier)}
-                    />
-                );
-            })}
+                    return (
+                        <Modifier
+                            modifierGroupName={props.modifierGroup.name}
+                            radio={props.modifierGroup.choiceMin !== 0 && props.modifierGroup.choiceMax === 1}
+                            modifier={m.modifier}
+                            choiceDuplicate={props.modifierGroup.choiceDuplicate}
+                            onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
+                                props.onCheckingModifier(selectedModifier, m.preSelectedQuantity);
+                            }}
+                            onUnCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
+                                props.onUnCheckingModifier(selectedModifier, m.preSelectedQuantity);
+                            }}
+                            onChangeModifierQuantity={(selectedModifier: IGET_RESTAURANT_MODIFIER, quantity: number) => {
+                                props.onChangeModifierQuantity(selectedModifier, m.preSelectedQuantity, quantity);
+                            }}
+                            onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
+                                props.onSelectRadioModifier(selectedModifier, m.preSelectedQuantity);
+                            }}
+                            modifierQuantity={modifierQuantity(m.modifier)}
+                            checked={checkModifierSelected(m.modifier)}
+                            maxReached={isMaxReached(props.modifierGroup.choiceMax, props.selectedModifiers)}
+                            soldOut={isModifierSoldOutAndAvailable}
+                            disabled={props.disabled || isModifierSoldOutAndAvailable || checkMaxReached(m.modifier)}
+                        />
+                    );
+                })}
         </>
     );
 };

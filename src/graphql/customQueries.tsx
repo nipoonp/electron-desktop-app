@@ -260,6 +260,7 @@ export const GET_RESTAURANT = gql`
                                 description
                                 price
                                 totalQuantitySold
+                                totalQuantityAvailable
                                 soldOut
                                 soldOutDate
                                 image {
@@ -325,6 +326,7 @@ export const GET_RESTAURANT = gql`
                                                             identityPoolId
                                                         }
                                                         totalQuantitySold
+                                                        totalQuantityAvailable
                                                         soldOut
                                                         soldOutDate
                                                         productModifier {
@@ -511,7 +513,7 @@ export interface IGET_RESTAURANT_CATEGORY {
     displaySequence: number;
     image?: IS3Object;
     availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
-    products: {
+    products?: {
         items: IGET_RESTAURANT_PRODUCT_LINK[];
     };
 }
@@ -525,14 +527,15 @@ export interface IGET_RESTAURANT_PRODUCT_LINK {
 export interface IGET_RESTAURANT_PRODUCT {
     id: string;
     name: string;
-    description: string;
+    description?: string;
     price: number;
-    totalQuantitySold: number;
-    soldOut: boolean;
-    soldOutDate: string;
+    totalQuantitySold?: number;
+    totalQuantityAvailable?: number;
+    soldOut?: boolean;
+    soldOutDate?: string;
     image?: IS3Object;
-    availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
-    modifierGroups: {
+    availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
+    modifierGroups?: {
         items: IGET_RESTAURANT_MODIFIER_GROUP_LINK[];
     };
 }
@@ -550,7 +553,7 @@ export interface IGET_RESTAURANT_MODIFIER_GROUP {
     choiceMin: number;
     choiceMax: number;
     choiceDuplicate: number;
-    modifiers: {
+    modifiers?: {
         items: IGET_RESTAURANT_MODIFIER_LINK[];
     };
 }
@@ -567,10 +570,11 @@ export interface IGET_RESTAURANT_MODIFIER {
     name: string;
     price: number;
     image?: IS3Object;
-    totalQuantitySold: number;
-    soldOut: boolean;
-    soldOutDate: string;
-    productModifier: IGET_DASHBOARD_MODIFIER_PRODUCT_MODIFIER;
+    totalQuantitySold?: number;
+    totalQuantityAvailable?: number;
+    soldOut?: boolean;
+    soldOutDate?: string;
+    productModifier?: IGET_DASHBOARD_MODIFIER_PRODUCT_MODIFIER;
 }
 
 export interface IGET_DASHBOARD_MODIFIER_PRODUCT_MODIFIER {

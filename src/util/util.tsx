@@ -1,7 +1,7 @@
 import { format, getDay, isWithinInterval } from "date-fns";
 import { IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS, IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES } from "../graphql/customQueries";
 
-export const isItemSoldOut = (soldOut: boolean, soldOutDate: string) => {
+export const isItemSoldOut = (soldOut?: boolean, soldOutDate?: string) => {
     if (soldOut || soldOutDate == format(new Date(), "yyyy-MM-dd")) {
         return true;
     }
@@ -9,7 +9,7 @@ export const isItemSoldOut = (soldOut: boolean, soldOutDate: string) => {
     return false;
 };
 
-export const isItemAvailable = (availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS) => {
+export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS) => {
     if (!availability) return true;
 
     const dayTimes: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] = getDayData(availability);

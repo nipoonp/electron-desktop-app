@@ -83,12 +83,9 @@ export const Restaurant = (props: { restaurantID: string }) => {
     }, [restaurant]);
 
     const compareSortFunc = (a: IMostPopularProduct, b: IMostPopularProduct) => {
-        if (a.product.totalQuantitySold > b.product.totalQuantitySold) {
-            return -1;
-        }
-        if (a.product.totalQuantitySold < b.product.totalQuantitySold) {
-            return 1;
-        }
+        if (!a.product.totalQuantitySold || !b.product.totalQuantitySold) return 0;
+        if (a.product.totalQuantitySold > b.product.totalQuantitySold) return -1;
+        if (a.product.totalQuantitySold < b.product.totalQuantitySold) return 1;
         return 0;
     };
 
@@ -98,14 +95,15 @@ export const Restaurant = (props: { restaurantID: string }) => {
         const newMostPopularProducts: IMostPopularProduct[] = [];
 
         restaurant.categories.items.forEach((c) => {
-            c.products.items.forEach((p) => {
-                if (p.product.totalQuantitySold) {
-                    newMostPopularProducts.push({
-                        category: c,
-                        product: p.product,
-                    });
-                }
-            });
+            c.products &&
+                c.products.items.forEach((p) => {
+                    if (p.product.totalQuantitySold) {
+                        newMostPopularProducts.push({
+                            category: c,
+                            product: p.product,
+                        });
+                    }
+                });
         });
 
         newMostPopularProducts.sort(compareSortFunc);
@@ -340,7 +338,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
                     return (
                         <>
                             <div className="h1 mb-6">{c.name}</div>
-                            <div className="products">{c.products.items.map((p) => productDisplay(c, p.product))}</div>
+                            <div className="products">{c.products && c.products.items.map((p) => productDisplay(c, p.product))}</div>
                         </>
                     );
                 })}

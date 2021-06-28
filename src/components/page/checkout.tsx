@@ -616,11 +616,12 @@ export const Checkout = () => {
                 category = c;
             }
 
-            c.products.items.forEach((p) => {
-                if (p.product.id == productToEdit.product.id) {
-                    product = p.product;
-                }
-            });
+            c.products &&
+                c.products.items.forEach((p) => {
+                    if (p.product.id == productToEdit.product.id) {
+                        product = p.product;
+                    }
+                });
         });
 
         if (!product || !category) {
@@ -674,13 +675,14 @@ export const Checkout = () => {
             const upSellCrossSellProducts = restaurant.upSellCrossSell.custom.items;
 
             menuCategories.forEach((category) => {
-                category.products.items.forEach((p) => {
-                    upSellCrossSellProducts.forEach((upSellProduct) => {
-                        if (p.product.id === upSellProduct.id) {
-                            upSellCrossSaleProductItems.push({ category: category, product: p.product });
-                        }
+                category.products &&
+                    category.products.items.forEach((p) => {
+                        upSellCrossSellProducts.forEach((upSellProduct) => {
+                            if (p.product.id === upSellProduct.id) {
+                                upSellCrossSaleProductItems.push({ category: category, product: p.product });
+                            }
+                        });
                     });
-                });
             });
 
             return (

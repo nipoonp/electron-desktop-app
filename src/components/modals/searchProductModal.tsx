@@ -44,14 +44,15 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
         const newFilteredProducts: IFilteredProduct[] = [];
 
         restaurant.categories.items.forEach((category) => {
-            category.products.items.forEach((p) => {
-                if (p.product.name.toLowerCase().includes(value.toLowerCase())) {
-                    newFilteredProducts.push({
-                        category: category,
-                        product: p.product,
-                    });
-                }
-            });
+            category.products &&
+                category.products.items.forEach((p) => {
+                    if (p.product.name.toLowerCase().includes(value.toLowerCase())) {
+                        newFilteredProducts.push({
+                            category: category,
+                            product: p.product,
+                        });
+                    }
+                });
         });
 
         setFilteredProducts(newFilteredProducts);
