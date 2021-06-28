@@ -10,6 +10,7 @@ import { useRestaurant } from "../../context/restaurant-context";
 
 import "./searchProductModal.scss";
 import { Input } from "../../tabin/components/input";
+import { CachedImage } from "../../tabin/components/cachedImage";
 
 interface IFilteredProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -94,9 +95,10 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
                 >
                     <div style={{ margin: "0 auto" }}>
                         {product.image && (
-                            <img
+                            <CachedImage
                                 className="image mb-2"
-                                src={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                                url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                                alt="product-image"
                             />
                         )}
                     </div>

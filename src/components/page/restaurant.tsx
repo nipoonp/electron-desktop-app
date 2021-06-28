@@ -20,6 +20,7 @@ import { Shake } from "reshake";
 import { useRestaurant } from "../../context/restaurant-context";
 
 import "./restaurant.scss";
+import { CachedImage } from "../../tabin/components/cachedImage";
 
 interface IMostPopularProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -221,16 +222,17 @@ export const Restaurant = (props: { restaurantID: string }) => {
         return (
             <>
                 <div
+                    key={product.id}
                     className={`product ${isSoldOut ? "sold-out" : ""} `}
                     onClick={() => !isSoldOut && isAvailable && onClickProduct(category, product)}
                 >
                     {product.image && (
-                        <img
+                        <CachedImage
+                            url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
                             className="image mb-2"
-                            src={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                            alt="product-image"
                         />
                     )}
-
                     <div className="name text-bold">
                         {!isAvailable ? `${product.name} (UNAVAILABLE)` : isSoldOut ? `${product.name} (SOLD OUT)` : `${product.name}`}
                     </div>
@@ -275,6 +277,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
         <>
             {restaurant.categories.items.map((c, index) => (
                 <Category
+                    key={c.id}
                     isSelected={selectedCategory != null && selectedCategory.id == c.id}
                     category={c}
                     onCategorySelected={(category: IGET_RESTAURANT_CATEGORY) => {
@@ -294,7 +297,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
                         setShowSearchProductModal(true);
                     }}
                 >
-                    <img className="icon" src={`${getPublicCloudFrontDomainName()}/images/search-icon.png`} />
+                    <CachedImage className="icon" url={`${getPublicCloudFrontDomainName()}/images/search-icon.png`} alt="search-icon" />
                     <div className="name">Search</div>
                 </div>
             </Shake>
@@ -308,7 +311,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
                 setSelectedCategory(null);
             }}
         >
-            <img className="icon" src={`${getPublicCloudFrontDomainName()}/images/most-popular.png`} />
+            <CachedImage className="icon" url={`${getPublicCloudFrontDomainName()}/images/most-popular.png`} alt="most-popular-icon" />
             <div className="name">Most Popular</div>
         </div>
     );
@@ -319,9 +322,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
                 <>
                     <div className="h1 mb-6">Most Popular</div>
                     <div className="products">
-                        {mostPopularProducts.map((mostPopularProduct) => {
-                            return productDisplay(mostPopularProduct.category, mostPopularProduct.product);
-                        })}
+                        {mostPopularProducts.map((mostPopularProduct) => productDisplay(mostPopularProduct.category, mostPopularProduct.product))}
                     </div>
                 </>
             )}
@@ -339,11 +340,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
                     return (
                         <>
                             <div className="h1 mb-6">{c.name}</div>
-                            <div className="products">
-                                {c.products.items.map((p) => {
-                                    return productDisplay(c, p.product);
-                                })}
-                            </div>
+                            <div className="products">{c.products.items.map((p) => productDisplay(c, p.product))}</div>
                         </>
                     );
                 })}
@@ -354,7 +351,11 @@ export const Restaurant = (props: { restaurantID: string }) => {
         <>
             <div className="total-container">
                 <div className="total-wrapper mb-2">
-                    <img className="shopping-bag-icon mr-2" src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.png`} />
+                    <CachedImage
+                        className="shopping-bag-icon mr-2"
+                        url={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.png`}
+                        alt="shopping-bag-icon"
+                    />
                     <div className="h4 total">Total: ${convertCentsToDollars(total)}</div>
                 </div>
                 <Button className="large" disabled={!products || products.length == 0} onClick={onClickCart}>
@@ -392,5 +393,11 @@ export const Restaurant = (props: { restaurantID: string }) => {
 };
 
 const RestaurantLogo = (props: { image: IS3Object }) => {
-    return <img src={`${getCloudFrontDomainName()}/protected/${props.image.identityPoolId}/${props.image.key}`} className="restaurant-logo" />;
+    return (
+        <CachedImage
+            url={`${getCloudFrontDomainName()}/protected/${props.image.identityPoolId}/${props.image.key}`}
+            className="restaurant-logo"
+            alt="restaurant-logo"
+        />
+    );
 };

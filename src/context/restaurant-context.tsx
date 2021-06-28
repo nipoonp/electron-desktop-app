@@ -10,6 +10,7 @@ type ContextProps = {
     userRestaurants: IGET_USER_RESTAURANT[] | null;
     restaurant: IGET_RESTAURANT | null;
     setRestaurant: (restaurant: IGET_RESTAURANT) => void;
+    restaurantProductImages: any;
     isLoading: boolean;
     isError: boolean;
 };
@@ -19,6 +20,7 @@ const RestaurantContext = createContext<ContextProps>({
     userRestaurants: null,
     restaurant: null,
     setRestaurant: () => {},
+    restaurantProductImages: {},
     isLoading: true,
     isError: false,
 });
@@ -33,6 +35,7 @@ const C = (props: {
     const [restaurantLoading, setRestaurantLoading] = useState<boolean>(false);
     const [restaurantError, setRestaurantError] = useState<boolean>(false);
     const { data: getRestaurantData, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(props.restaurantId);
+    const restaurantProductImages = {};
 
     useEffect(() => {
         setRestaurant(getRestaurantData);
@@ -51,6 +54,7 @@ const C = (props: {
                 userRestaurants: props.userRestaurants,
                 restaurant: restaurant,
                 setRestaurant: _setRestaurant,
+                restaurantProductImages: restaurantProductImages,
                 isLoading: restaurantLoading,
                 isError: restaurantError,
             }}
@@ -116,6 +120,7 @@ const RestaurantProvider = (props: { children: React.ReactNode }) => {
                     userRestaurants: userRestaurants,
                     restaurant: null,
                     setRestaurant: () => {},
+                    restaurantProductImages: [],
                     isLoading: false,
                     isError: false,
                 }}

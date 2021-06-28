@@ -8,6 +8,7 @@ import { getCloudFrontDomainName } from "../../private/aws-custom";
 import "./upSellProduct.scss";
 import { IMatchingUpSellCrossSellItem } from "../../model/model";
 import { useRef } from "react";
+import { CachedImage } from "../../tabin/components/cachedImage";
 
 interface IUpSellProductModalProps {
     isOpen: boolean;
@@ -41,9 +42,10 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
                     onClick={() => !isSoldOut && isAvailable && onAddToOrder(category, product)}
                 >
                     {product.image && (
-                        <img
+                        <CachedImage
                             className="image mb-2"
-                            src={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                            url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                            alt="product-image"
                         />
                     )}
 
@@ -71,11 +73,12 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
         <>
             <div className="h1 mb-6 text-center">{randomItem.current.product.name}</div>
             {randomItem.current.product.image && (
-                <img
+                <CachedImage
                     className="main-image mb-4"
-                    src={`${getCloudFrontDomainName()}/protected/${randomItem.current.product.image.identityPoolId}/${
+                    url={`${getCloudFrontDomainName()}/protected/${randomItem.current.product.image.identityPoolId}/${
                         randomItem.current.product.image.key
                     }`}
+                    alt="product-image"
                 />
             )}
             <div className="button-container mb-12">
@@ -95,9 +98,7 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
     const content = (
         <>
             <div className="content">
-                {/* <img className="image mb-6" src="https://media.bizj.us/view/img/2902221/share-a-coke-its-coming*1200xx1440-811-0-0.jpg" /> */}
                 <div className="main-image-container">{mainImage}</div>
-
                 <div className="you-may-also-like-container">
                     <div className="h1 mb-6 text-center">You May Also Like</div>
                     {products}

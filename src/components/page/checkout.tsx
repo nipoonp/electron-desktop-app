@@ -32,6 +32,7 @@ import { TextArea } from "../../tabin/components/textArea";
 
 import "./checkout.scss";
 import { useWindcave, WindcaveTransactionOutcome, WindcaveTransactionOutcomeResult } from "../../context/windcave-context";
+import { CachedImage } from "../../tabin/components/cachedImage";
 
 const logger = new Logger("checkout");
 
@@ -739,7 +740,7 @@ export const Checkout = () => {
     const awaitingCard = () => (
         <>
             <div className="h4 mb-6 awaiting-card-text">Swipe or insert your card on the terminal to complete your payment.</div>
-            <img className="awaiting-card-image" src={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} />
+            <CachedImage className="awaiting-card-image" url={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} alt="awaiting-card-gif" />
         </>
     );
 
@@ -915,7 +916,7 @@ export const Checkout = () => {
 
     const title = (
         <div className="title mb-6">
-            <img className="image mr-2" src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`} />
+            <CachedImage className="image mr-2" url={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`} alt="shopping-bag-icon" />
             <div className="h1">Your Order</div>
         </div>
     );

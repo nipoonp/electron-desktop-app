@@ -7,6 +7,7 @@ import { IGET_RESTAURANT_ADVERTISEMENT } from "../../graphql/customQueries";
 import { useRestaurant } from "../../context/restaurant-context";
 
 import "./beginOrder.scss";
+import { CachedImage } from "../../tabin/components/cachedImage";
 
 export const BeginOrder = (props: {}) => {
     const { restaurant } = useRestaurant();
@@ -69,7 +70,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
                         <div className="here-text">HERE</div>
                     </div>
                     <div className="touch-to-begin-wrapper">
-                        <img className="icon" src={`${getPublicCloudFrontDomainName()}/images/touch-here-dark.png`} />
+                        <CachedImage className="icon" url={`${getPublicCloudFrontDomainName()}/images/touch-here-dark.png`} alt="hand-icon" />
                         <div className="h3">TOUCH TO BEGIN</div>
                     </div>
                 </div>
@@ -80,11 +81,12 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
                                 key={advertisement.id}
                                 className={`image-wrapper ${numberOfAds > 1 ? "slide-animation" : ""} ${currentAd == index ? "active" : "inactive"}`}
                             >
-                                <img
+                                <CachedImage
                                     className="image"
-                                    src={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${
+                                    url={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${
                                         advertisement.content.key
                                     }`}
+                                    alt="advertisement-image"
                                 />
                             </div>
                         ))}
@@ -116,7 +118,11 @@ const BeginOrderDefault = () => {
                             <div className="order-text">ORDER</div>
                             <div className="here-text">HERE</div>
                             <div className="and-pay-text">AND PAY</div>
-                            <img className="touch-icon" src={`${getPublicCloudFrontDomainName()}/images/touch-here.png`} />
+                            <CachedImage
+                                className="touch-icon"
+                                url={`${getPublicCloudFrontDomainName()}/images/touch-here.png`}
+                                alt="touch-here-icon"
+                            />
                             <div className="touch-icon-text">Touch to get started</div>
                         </div>
                         <div className="powered-by-tabin-wrapper">
