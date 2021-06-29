@@ -1,5 +1,10 @@
 import { format, getDay, isWithinInterval } from "date-fns";
-import { IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS, IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES, IGET_RESTAURANT_PRODUCT } from "../graphql/customQueries";
+import {
+    IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS,
+    IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES,
+    IGET_RESTAURANT_MODIFIER,
+    IGET_RESTAURANT_PRODUCT,
+} from "../graphql/customQueries";
 import { ICartItemQuantitiesById, ICartProduct } from "../model/model";
 
 export const isItemSoldOut = (soldOut?: boolean, soldOutDate?: string) => {
@@ -50,16 +55,70 @@ export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY
     return isWithinTimeSlot;
 };
 
-export const isItemQuantityAvailable = (menuProductItem: IGET_RESTAURANT_PRODUCT, cartProducts: ICartItemQuantitiesById) => {
-    if (!menuProductItem.totalQuantityAvailable) return true;
-
+export const getProductQuantityAvailable = (
+    menuProductItem: {
+        id: string;
+        totalQuantityAvailable: number;
+    },
+    cartProducts: ICartItemQuantitiesById
+) => {
     let quantityAvailable = menuProductItem.totalQuantityAvailable;
 
     if (cartProducts[menuProductItem.id] != undefined) {
         quantityAvailable -= cartProducts[menuProductItem.id];
     }
 
-    return quantityAvailable > 0;
+    return quantityAvailable;
+};
+
+export const isProductQuantityAvailable = (
+    menuProductItem: {
+        id: string;
+        totalQuantityAvailable?: number;
+    },
+    cartProducts: ICartItemQuantitiesById
+) => {
+    if (!menuProductItem.totalQuantityAvailable) return true;
+
+    const productQuantityAvailable = getProductQuantityAvailable(
+        { id: menuProductItem.id, totalQuantityAvailable: menuProductItem.totalQuantityAvailable },
+        cartProducts
+    );
+
+    return productQuantityAvailable > 0;
+};
+
+export const getModifierQuantityAvailable = (
+    menuModifierItem: {
+        id: string;
+        totalQuantityAvailable: number;
+    },
+    cartModifiers: ICartItemQuantitiesById
+) => {
+    let quantityAvailable = menuModifierItem.totalQuantityAvailable;
+
+    if (cartModifiers[menuModifierItem.id] != undefined) {
+        quantityAvailable -= cartModifiers[menuModifierItem.id];
+    }
+
+    return quantityAvailable;
+};
+
+export const isModifierQuantityAvailable = (
+    menuModifierItem: {
+        id: string;
+        totalQuantityAvailable?: number;
+    },
+    cartModifiers: ICartItemQuantitiesById
+) => {
+    if (!menuModifierItem.totalQuantityAvailable) return true;
+
+    const modifierQuantityAvailable = getModifierQuantityAvailable(
+        { id: menuModifierItem.id, totalQuantityAvailable: menuModifierItem.totalQuantityAvailable },
+        cartModifiers
+    );
+
+    return modifierQuantityAvailable > 0;
 };
 
 const getDayData = (availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS) => {

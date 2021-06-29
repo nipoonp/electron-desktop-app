@@ -77,19 +77,28 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
                 product.modifierGroups.forEach((modifierGroup) => {
                     modifierGroup.modifiers.forEach((modifier) => {
-                        if (newCartModifierQuantitiesById[modifier.id]) {
-                            newCartModifierQuantitiesById[modifier.id] += modifier.quantity;
+                        if (modifier.productModifier) {
+                            if (newCartProductQuantitiesById[modifier.productModifier.id]) {
+                                newCartProductQuantitiesById[modifier.productModifier.id] += product.quantity * modifier.quantity;
+                            } else {
+                                newCartProductQuantitiesById[modifier.productModifier.id] = product.quantity * modifier.quantity;
+                            }
                         } else {
-                            newCartModifierQuantitiesById[modifier.id] = modifier.quantity;
+                            if (newCartModifierQuantitiesById[modifier.id]) {
+                                newCartModifierQuantitiesById[modifier.id] += product.quantity * modifier.quantity;
+                            } else {
+                                newCartModifierQuantitiesById[modifier.id] = product.quantity * modifier.quantity;
+                            }
                         }
                     });
                 });
             });
 
-        console.log("xxx...newCartProductQuantitiesById", newCartProductQuantitiesById);
         _setCartProductQuantitiesById(newCartProductQuantitiesById);
         _setCartModifierQuantitiesById(newCartModifierQuantitiesById);
     };
+
+    console.log("xxx...cartProductQuantitiesById", cartProductQuantitiesById);
 
     const recalculateTotal = (products: ICartProduct[] | null) => {
         let totalPrice = 0;

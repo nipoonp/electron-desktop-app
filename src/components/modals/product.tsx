@@ -3,7 +3,14 @@ import { useUser } from "../../context/user-context";
 import { ICartModifier, ISelectedProductModifiers, ICartProduct, ICartModifierGroup } from "../../model/model";
 import { Logger } from "aws-amplify";
 import { toast } from "../../tabin/components/toast";
-import { isItemAvailable, isItemSoldOut } from "../../util/util";
+import {
+    getModifierQuantityAvailable,
+    getProductQuantityAvailable,
+    isItemAvailable,
+    isItemSoldOut,
+    isModifierQuantityAvailable,
+    isProductQuantityAvailable,
+} from "../../util/util";
 import { convertCentsToDollars } from "../../util/util";
 import { PlusIcon } from "../../tabin/components/icons/plusIcon";
 import {
@@ -22,6 +29,7 @@ import "./product.scss";
 import { TextArea } from "../../tabin/components/textArea";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { CachedImage } from "../../tabin/components/cachedImage";
+import { useCart } from "../../context/cart-context";
 
 const logger = new Logger("productModal");
 
@@ -44,6 +52,7 @@ export const ProductModal = (props: {
 }) => {
     // context
     const { user } = useUser();
+    const { cartProductQuantitiesById } = useCart();
 
     // states
     const [orderedModifiers, setOrderedModifiers] = useState<ISelectedProductModifiers>(props.editProduct ? props.editProduct.orderedModifiers : {});
@@ -454,10 +463,22 @@ export const ProductModal = (props: {
         </>
     );
 
+    const getProductFooterMaxQuantity = () => {
+        if (!props.product.totalQuantityAvailable) return;
+
+        return getProductQuantityAvailable(
+            {
+                id: props.product.id,
+                totalQuantityAvailable: props.product.totalQuantityAvailable,
+            },
+            cartProductQuantitiesById
+        );
+    };
+
     const footer = (
         <>
             <div className="stepper mb-4">
-                <Stepper count={quantity} min={1} max={props.product.totalQuantityAvailable} onUpdate={onUpdateQuantity} size={48} />
+                <Stepper count={quantity} min={1} max={getProductFooterMaxQuantity()} onUpdate={onUpdateQuantity} size={48} />
             </div>
             <div className="footer-buttons-container">
                 <Button className="button large mr-3 cancel-button" onClick={onModalClose}>
@@ -505,6 +526,8 @@ export const ModifierGroup = (props: {
     error?: string;
     disabled: boolean;
 }) => {
+    const { cartProductQuantitiesById, cartModifierQuantitiesById } = useCart();
+
     const modifierQuantity = (modifier: IGET_RESTAURANT_MODIFIER) => {
         let m = props.selectedModifiers.find((selectedModifier) => selectedModifier.id === modifier.id);
         return m ? m.quantity : 0;
@@ -515,14 +538,18 @@ export const ModifierGroup = (props: {
         return m ? true : false;
     };
 
-    const checkModifierSoldOutAndAvailable = (modifier: IGET_RESTAURANT_MODIFIER) => {
+    const checkModifierIsValid = (modifier: IGET_RESTAURANT_MODIFIER) => {
         if (modifier.productModifier) {
             const isSoldOut = isItemSoldOut(modifier.productModifier.soldOut, modifier.productModifier.soldOutDate);
             const isAvailable = isItemAvailable(modifier.productModifier.availability);
+            const isQuantityAvailable = isProductQuantityAvailable(modifier.productModifier, cartProductQuantitiesById);
 
-            return isSoldOut && isAvailable;
+            return !isSoldOut && isAvailable && isQuantityAvailable;
         } else {
-            return isItemSoldOut(modifier.soldOut, modifier.soldOutDate);
+            const isSoldOut = isItemSoldOut(modifier.soldOut, modifier.soldOutDate);
+            const isQuantityAvailable = isModifierQuantityAvailable(modifier, cartModifierQuantitiesById);
+
+            return !isSoldOut && isQuantityAvailable;
         }
     };
 
@@ -576,7 +603,7 @@ export const ModifierGroup = (props: {
             <div className="mb-2">({getSelectInstructions()})</div>
             {props.modifierGroup.modifiers &&
                 props.modifierGroup.modifiers.items.map((m) => {
-                    const isModifierSoldOutAndAvailable = checkModifierSoldOutAndAvailable(m.modifier);
+                    const isValid = checkModifierIsValid(m.modifier);
 
                     return (
                         <Modifier
@@ -601,8 +628,8 @@ export const ModifierGroup = (props: {
                             checked={checkModifierSelected(m.modifier)}
                             maxReached={isMaxReached(props.modifierGroup.choiceMax, props.selectedModifiers)}
                             modifiersSelectedCount={getModifiersSelectedCount(props.selectedModifiers)}
-                            soldOut={isModifierSoldOutAndAvailable}
-                            disabled={props.disabled || isModifierSoldOutAndAvailable || checkMaxReached(m.modifier)}
+                            isValid={isValid}
+                            disabled={props.disabled || !isValid || checkMaxReached(m.modifier)}
                         />
                     );
                 })}
@@ -615,7 +642,7 @@ const Modifier = (props: {
     choiceDuplicate: number;
     maxReached: boolean;
     modifiersSelectedCount: number;
-    soldOut: boolean;
+    isValid: boolean;
     disabled: boolean;
 
     modifierQuantity: number;
@@ -636,15 +663,39 @@ const Modifier = (props: {
     // settings
     radio: boolean;
 }) => {
-    // states
+    const { cartModifierQuantitiesById, cartProductQuantitiesById } = useCart();
     const [stepperCount, setStepperCount] = useState(props.modifierQuantity);
     const [displayModifierStepper, setDisplayModifierStepper] = useState(false);
 
-    useEffect(() => {
-        if (props.modifier.totalQuantityAvailable) {
-            const count = getStepperCount();
+    const getModifierOrProductModifierQuantityAvailable = () => {
+        if (props.modifier.productModifier) {
+            if (!props.modifier.productModifier.totalQuantityAvailable) return null;
 
-            if (props.modifier.totalQuantityAvailable) console.log("xxx...", count);
+            return getProductQuantityAvailable(
+                {
+                    id: props.modifier.productModifier.id,
+                    totalQuantityAvailable: props.modifier.productModifier.totalQuantityAvailable,
+                },
+                cartProductQuantitiesById
+            );
+        } else {
+            if (!props.modifier.totalQuantityAvailable) return null;
+
+            return getModifierQuantityAvailable(
+                {
+                    id: props.modifier.id,
+                    totalQuantityAvailable: props.modifier.totalQuantityAvailable,
+                },
+                cartModifierQuantitiesById
+            );
+        }
+    };
+
+    const modifierQuantityAvailable = getModifierOrProductModifierQuantityAvailable();
+
+    useEffect(() => {
+        if (modifierQuantityAvailable) {
+            const count = getStepperCount();
 
             setStepperCount(count);
             onChangeModifierQuantity(count);
@@ -687,7 +738,7 @@ const Modifier = (props: {
     // displays
     const modifierChildren = (
         <>
-            <div className={`modifier ${props.soldOut ? "sold-out" : ""} `}>
+            <div className={`modifier ${props.isValid ? "" : "sold-out"} `}>
                 {props.modifier.image && (
                     <CachedImage
                         url={`${getCloudFrontDomainName()}/protected/${props.modifier.image.identityPoolId}/${props.modifier.image.key}`}
@@ -696,15 +747,15 @@ const Modifier = (props: {
                     />
                 )}
 
-                {props.soldOut ? (
+                {props.isValid ? (
                     <div>
-                        {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)}) (SOLD OUT)`} (
-                        {props.modifier.totalQuantityAvailable})
+                        {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)})`} (
+                        {modifierQuantityAvailable})
                     </div>
                 ) : (
                     <div>
-                        {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)})`} (
-                        {props.modifier.totalQuantityAvailable})
+                        {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)}) (SOLD OUT)`} (
+                        {modifierQuantityAvailable})
                     </div>
                 )}
             </div>
@@ -712,11 +763,11 @@ const Modifier = (props: {
     );
 
     const getModifierStepperMax = () => {
-        if (props.modifier.totalQuantityAvailable) {
-            let maxSelectable = Math.min(props.choiceDuplicate - props.modifiersSelectedCount, props.modifier.totalQuantityAvailable);
+        if (modifierQuantityAvailable) {
+            let maxSelectable = Math.min(props.choiceDuplicate - props.modifiersSelectedCount, modifierQuantityAvailable);
 
-            if (maxSelectable < props.modifier.totalQuantityAvailable) {
-                maxSelectable = props.modifier.totalQuantityAvailable;
+            if (maxSelectable < modifierQuantityAvailable) {
+                maxSelectable = modifierQuantityAvailable;
             }
 
             return Math.floor(maxSelectable / props.productQuantity);

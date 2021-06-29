@@ -1,6 +1,6 @@
 import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
 import { Button } from "../../tabin/components/button";
-import { isItemAvailable, isItemQuantityAvailable, isItemSoldOut } from "../../util/util";
+import { isItemAvailable, isProductQuantityAvailable, isItemSoldOut } from "../../util/util";
 import { convertCentsToDollars } from "../../util/util";
 import { ModalV2 } from "../../tabin/components/modalv2";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
@@ -37,7 +37,7 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
     const productDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
         const isAvailable = isItemAvailable(product.availability);
-        const isQuantityAvailable = isItemQuantityAvailable(product, cartProductQuantitiesById);
+        const isQuantityAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById);
 
         const isValid = !isSoldOut && isAvailable && isQuantityAvailable;
 

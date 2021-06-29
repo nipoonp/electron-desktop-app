@@ -4,7 +4,7 @@ import { useHistory } from "react-router";
 import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { checkoutPath, beginOrderPath, orderTypePath } from "../main";
-import { convertCentsToDollars, isItemQuantityAvailable } from "../../util/util";
+import { convertCentsToDollars, isProductQuantityAvailable } from "../../util/util";
 import { ProductModal } from "../modals/product";
 import { SearchProductModal } from "../modals/searchProductModal";
 import { IGET_RESTAURANT_PRODUCT, IGET_RESTAURANT_CATEGORY, IS3Object } from "../../graphql/customQueries";
@@ -216,7 +216,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
     const productDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
         const isAvailable = isItemAvailable(product.availability);
-        const isQuantityAvailable = isItemQuantityAvailable(product, cartProductQuantitiesById);
+        const isQuantityAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById);
 
         const isValid = !isSoldOut && isAvailable && isQuantityAvailable;
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { Modal } from "../../tabin/components/modal";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
-import { isItemAvailable, isItemQuantityAvailable, isItemSoldOut } from "../../util/util";
+import { isItemAvailable, isProductQuantityAvailable, isItemSoldOut } from "../../util/util";
 import { convertCentsToDollars } from "../../util/util";
 import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
 import { Button } from "../../tabin/components/button";
@@ -85,7 +85,7 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
     const productDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
         const isAvailable = isItemAvailable(product.availability);
-        const isQuantityAvailable = isItemQuantityAvailable(product, cartProductQuantitiesById);
+        const isQuantityAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById);
 
         const isValid = !isSoldOut && isAvailable && isQuantityAvailable;
 

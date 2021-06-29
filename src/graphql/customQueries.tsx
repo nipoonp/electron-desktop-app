@@ -333,6 +333,7 @@ export const GET_RESTAURANT = gql`
                                                             id
                                                             soldOut
                                                             soldOutDate
+                                                            totalQuantityAvailable
                                                             availability {
                                                                 monday {
                                                                     startTime
@@ -581,6 +582,7 @@ export interface IGET_DASHBOARD_MODIFIER_PRODUCT_MODIFIER {
     id: string;
     soldOut: boolean;
     soldOutDate: string;
+    totalQuantityAvailable?: number;
     availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
 }
 
