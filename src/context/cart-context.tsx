@@ -1,6 +1,6 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
-import { ICartProduct, EOrderType } from "../model/model";
+import { ICartProduct, EOrderType, ICartItemQuantitiesById } from "../model/model";
 
 const initialRestaurant = null;
 const initialOrderType = null;
@@ -8,6 +8,8 @@ const initialTableNumber = null;
 const initialProducts = null;
 const initialNotes = "";
 const initialTotal = 0;
+const initialCartProductQuantitiesById = {};
+const initialCartModifierQuantitiesById = {};
 
 type ContextProps = {
     // restaurant: IGET_RESTAURANT | null;
@@ -17,6 +19,8 @@ type ContextProps = {
     tableNumber: string | null;
     setTableNumber: (tableNumber: string) => void;
     products: ICartProduct[] | null;
+    cartProductQuantitiesById: ICartItemQuantitiesById;
+    cartModifierQuantitiesById: ICartItemQuantitiesById;
     addItem: (product: ICartProduct) => void;
     updateItem: (index: number, product: ICartProduct) => void;
     updateItemQuantity: (index: number, quantity: number) => void;
@@ -35,6 +39,8 @@ const CartContext = createContext<ContextProps>({
     tableNumber: initialTableNumber,
     setTableNumber: () => {},
     products: initialProducts,
+    cartProductQuantitiesById: {},
+    cartModifierQuantitiesById: {},
     addItem: () => {},
     updateItem: () => {},
     updateItemQuantity: () => {},
@@ -52,6 +58,38 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
     const [notes, _setNotes] = useState<string>(initialNotes);
     const [total, _setTotal] = useState<number>(initialTotal);
+
+    const [cartProductQuantitiesById, _setCartProductQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartProductQuantitiesById);
+    const [cartModifierQuantitiesById, _setCartModifierQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartModifierQuantitiesById);
+
+    const updateCartQuantities = (products: ICartProduct[] | null) => {
+        const newCartProductQuantitiesById = {};
+        const newCartModifierQuantitiesById = {};
+
+        products &&
+            products.forEach((product) => {
+                //We do this because there could be the same product in the products array twice.
+                if (newCartProductQuantitiesById[product.id]) {
+                    newCartProductQuantitiesById[product.id] += product.quantity;
+                } else {
+                    newCartProductQuantitiesById[product.id] = product.quantity;
+                }
+
+                product.modifierGroups.forEach((modifierGroup) => {
+                    modifierGroup.modifiers.forEach((modifier) => {
+                        if (newCartModifierQuantitiesById[modifier.id]) {
+                            newCartModifierQuantitiesById[modifier.id] += modifier.quantity;
+                        } else {
+                            newCartModifierQuantitiesById[modifier.id] = modifier.quantity;
+                        }
+                    });
+                });
+            });
+
+        console.log("xxx...newCartProductQuantitiesById", newCartProductQuantitiesById);
+        _setCartProductQuantitiesById(newCartProductQuantitiesById);
+        _setCartModifierQuantitiesById(newCartModifierQuantitiesById);
+    };
 
     const recalculateTotal = (products: ICartProduct[] | null) => {
         let totalPrice = 0;
@@ -96,6 +134,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         _setProducts(newProducts);
         _setTotal(recalculateTotal(newProducts));
+        updateCartQuantities(newProducts);
     };
 
     const updateItem = (index: number, product: ICartProduct) => {
@@ -109,6 +148,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         _setProducts(newProducts);
         _setTotal(recalculateTotal(newProducts));
+        updateCartQuantities(newProducts);
     };
 
     const updateItemQuantity = (index: number, quantity: number) => {
@@ -125,6 +165,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         _setProducts(newProducts);
         _setTotal(recalculateTotal(newProducts));
+        updateCartQuantities(newProducts);
     };
 
     const deleteItem = (index: number) => {
@@ -138,6 +179,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         _setProducts(newProducts);
         _setTotal(recalculateTotal(newProducts));
+        updateCartQuantities(newProducts);
     };
 
     const clearCart = () => {
@@ -147,6 +189,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setNotes(initialNotes);
         _setTotal(initialTotal);
         _setTableNumber(initialTableNumber);
+        _setCartProductQuantitiesById(initialCartProductQuantitiesById);
+        _setCartModifierQuantitiesById(initialCartModifierQuantitiesById);
     };
 
     const setNotes = (notes: string) => {
@@ -163,6 +207,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 tableNumber: tableNumber,
                 setTableNumber: setTableNumber,
                 products: products,
+                cartProductQuantitiesById: cartProductQuantitiesById,
+                cartModifierQuantitiesById: cartModifierQuantitiesById,
                 addItem: addItem,
                 updateItem: updateItem,
                 updateItemQuantity: updateItemQuantity,

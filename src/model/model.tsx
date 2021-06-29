@@ -16,6 +16,10 @@ export enum EOrderType {
     TAKEAWAY = "TAKEAWAY",
 }
 
+export interface ICartItemQuantitiesById {
+    [id: string]: number;
+}
+
 export interface ICartProduct {
     id: string;
     name: string;

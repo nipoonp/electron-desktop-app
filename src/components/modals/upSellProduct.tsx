@@ -1,6 +1,6 @@
 import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
 import { Button } from "../../tabin/components/button";
-import { isItemAvailable, isItemSoldOut } from "../../util/util";
+import { isItemAvailable, isItemQuantityAvailable, isItemSoldOut } from "../../util/util";
 import { convertCentsToDollars } from "../../util/util";
 import { ModalV2 } from "../../tabin/components/modalv2";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
@@ -9,6 +9,7 @@ import "./upSellProduct.scss";
 import { IMatchingUpSellCrossSellItem } from "../../model/model";
 import { useRef } from "react";
 import { CachedImage } from "../../tabin/components/cachedImage";
+import { useCart } from "../../context/cart-context";
 
 interface IUpSellProductModalProps {
     isOpen: boolean;
@@ -19,6 +20,8 @@ interface IUpSellProductModalProps {
 
 export const UpSellProductModal = (props: IUpSellProductModalProps) => {
     const { onSelectUpSellCrossSellProduct, upSellCrossSaleProductItems } = { ...props };
+
+    const { cartProductQuantitiesById } = useCart();
 
     const randomItem = useRef(upSellCrossSaleProductItems[Math.floor(Math.random() * upSellCrossSaleProductItems.length)]);
 
@@ -34,11 +37,15 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
     const productDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
         const isAvailable = isItemAvailable(product.availability);
+        const isQuantityAvailable = isItemQuantityAvailable(product, cartProductQuantitiesById);
+
+        const isValid = !isSoldOut && isAvailable && isQuantityAvailable;
 
         return (
             <>
                 <div
-                    className={`product ${isSoldOut ? "sold-out" : ""} `}
+                    key={product.id}
+                    className={`product ${isValid ? "" : "sold-out"}`}
                     onClick={() => !isSoldOut && isAvailable && onAddToOrder(category, product)}
                 >
                     {product.image && (
@@ -50,7 +57,7 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
                     )}
 
                     <div className="name text-bold">
-                        {!isAvailable ? `${product.name} (UNAVAILABLE)` : isSoldOut ? `${product.name} (SOLD OUT)` : `${product.name}`}
+                        {isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}({product.totalQuantityAvailable})
                     </div>
 
                     {product.description && <div className="description mt-2">{product.description}</div>}

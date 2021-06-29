@@ -4,7 +4,7 @@ import { useHistory } from "react-router";
 import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { checkoutPath, beginOrderPath, orderTypePath } from "../main";
-import { convertCentsToDollars } from "../../util/util";
+import { convertCentsToDollars, isItemQuantityAvailable } from "../../util/util";
 import { ProductModal } from "../modals/product";
 import { SearchProductModal } from "../modals/searchProductModal";
 import { IGET_RESTAURANT_PRODUCT, IGET_RESTAURANT_CATEGORY, IS3Object } from "../../graphql/customQueries";
@@ -30,7 +30,7 @@ interface IMostPopularProduct {
 export const Restaurant = (props: { restaurantID: string }) => {
     // context
     const history = useHistory();
-    const { clearCart, orderType, total, products, addItem } = useCart();
+    const { clearCart, orderType, total, products, cartProductQuantitiesById, addItem } = useCart();
     const { setRestaurant } = useRestaurant();
 
     // query
@@ -216,14 +216,13 @@ export const Restaurant = (props: { restaurantID: string }) => {
     const productDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
         const isAvailable = isItemAvailable(product.availability);
+        const isQuantityAvailable = isItemQuantityAvailable(product, cartProductQuantitiesById);
+
+        const isValid = !isSoldOut && isAvailable && isQuantityAvailable;
 
         return (
             <>
-                <div
-                    key={product.id}
-                    className={`product ${isSoldOut ? "sold-out" : ""} `}
-                    onClick={() => !isSoldOut && isAvailable && onClickProduct(category, product)}
-                >
+                <div key={product.id} className={`product ${isValid ? "" : "sold-out"}`} onClick={() => isValid && onClickProduct(category, product)}>
                     {product.image && (
                         <CachedImage
                             url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
@@ -231,9 +230,9 @@ export const Restaurant = (props: { restaurantID: string }) => {
                             alt="product-image"
                         />
                     )}
+
                     <div className="name text-bold">
-                        {!isAvailable ? `${product.name} (UNAVAILABLE)` : isSoldOut ? `${product.name} (SOLD OUT)` : `${product.name}`} (
-                        {product.totalQuantityAvailable})
+                        {isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}({product.totalQuantityAvailable})
                     </div>
 
                     {product.description && <div className="description mt-2">{product.description}</div>}
@@ -262,7 +261,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
                 }}
             >
                 {!isAvailable ? (
-                    <div className={`name ${isAvailable ? "available" : "unavailable"}`}>{category.name} (UNAVAILABLE)</div>
+                    <div className={`name ${isAvailable ? "available" : "sold-out"}`}>{category.name} (SOLD OUT)</div>
                 ) : isSelected ? (
                     <div className="text-bold">{category.name}</div>
                 ) : (

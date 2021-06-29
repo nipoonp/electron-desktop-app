@@ -1,5 +1,6 @@
 import { format, getDay, isWithinInterval } from "date-fns";
-import { IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS, IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES } from "../graphql/customQueries";
+import { IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS, IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES, IGET_RESTAURANT_PRODUCT } from "../graphql/customQueries";
+import { ICartItemQuantitiesById, ICartProduct } from "../model/model";
 
 export const isItemSoldOut = (soldOut?: boolean, soldOutDate?: string) => {
     if (soldOut || soldOutDate == format(new Date(), "yyyy-MM-dd")) {
@@ -47,6 +48,18 @@ export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY
     });
 
     return isWithinTimeSlot;
+};
+
+export const isItemQuantityAvailable = (menuProductItem: IGET_RESTAURANT_PRODUCT, cartProducts: ICartItemQuantitiesById) => {
+    if (!menuProductItem.totalQuantityAvailable) return true;
+
+    let quantityAvailable = menuProductItem.totalQuantityAvailable;
+
+    if (cartProducts[menuProductItem.id] != undefined) {
+        quantityAvailable -= cartProducts[menuProductItem.id];
+    }
+
+    return quantityAvailable > 0;
 };
 
 const getDayData = (availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS) => {

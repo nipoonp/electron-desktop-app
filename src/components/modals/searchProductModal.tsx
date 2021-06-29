@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { Modal } from "../../tabin/components/modal";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
-import { isItemAvailable, isItemSoldOut } from "../../util/util";
+import { isItemAvailable, isItemQuantityAvailable, isItemSoldOut } from "../../util/util";
 import { convertCentsToDollars } from "../../util/util";
 import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
 import { Button } from "../../tabin/components/button";
@@ -11,6 +11,7 @@ import { useRestaurant } from "../../context/restaurant-context";
 import "./searchProductModal.scss";
 import { Input } from "../../tabin/components/input";
 import { CachedImage } from "../../tabin/components/cachedImage";
+import { useCart } from "../../context/cart-context";
 
 interface IFilteredProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -25,6 +26,7 @@ interface ISearchProductModalProps {
 
 export const SearchProductModal = (props: ISearchProductModalProps) => {
     const { restaurant } = useRestaurant();
+    const { cartProductQuantitiesById } = useCart();
 
     const [searchTerm, setSearchTerm] = useState("");
     const [filteredProducts, setFilteredProducts] = useState<IFilteredProduct[]>([]);
@@ -83,6 +85,9 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
     const productDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
         const isAvailable = isItemAvailable(product.availability);
+        const isQuantityAvailable = isItemQuantityAvailable(product, cartProductQuantitiesById);
+
+        const isValid = !isSoldOut && isAvailable && isQuantityAvailable;
 
         const onClickProduct = (category: any, product: any) => {
             props.onClickSearchProduct(category, product);
@@ -91,7 +96,8 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
         return (
             <>
                 <div
-                    className={`product ${isSoldOut ? "sold-out" : ""} `}
+                    key={product.id}
+                    className={`product ${isValid ? "" : "sold-out"}`}
                     onClick={() => !isSoldOut && isAvailable && onClickProduct(category, product)}
                 >
                     <div style={{ margin: "0 auto" }}>
@@ -105,8 +111,7 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
                     </div>
 
                     <div className="name text-bold">
-                        {formatProductName(product.name)}
-                        {!isAvailable ? `(UNAVAILABLE)` : isSoldOut ? ` (SOLD OUT)` : ""}
+                        {isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}({product.totalQuantityAvailable})
                     </div>
 
                     {product.description && <div className="description mt-2">{product.description}</div>}

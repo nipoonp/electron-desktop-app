@@ -1132,11 +1132,13 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
                 <>
                     {!mg.hideForCustomer && (
                         <>
-                            <div className="text-bold mt-1" key={mg.id}>
+                            <div className="text-bold mt-3" key={mg.id}>
                                 {mg.name}
                             </div>
                             {mg.modifiers.map((m) => (
-                                <div key={m.id}>{modifierString(m.preSelectedQuantity, m.quantity, m.name, m.price)}</div>
+                                <div key={m.id} className="mt-1">
+                                    {modifierString(m.preSelectedQuantity, m.quantity, m.name, m.price)}
+                                </div>
                             ))}
                         </>
                     )}
