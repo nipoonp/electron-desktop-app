@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useHistory } from "react-router-dom";
@@ -9,7 +10,14 @@ import { IGET_RESTAURANT_REGISTER_PRINTER, IGET_RESTAURANT_CATEGORY, IGET_RESTAU
 import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath } from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
-import { ICartProduct, ISelectedProductModifiers, ICartModifierGroup, EOrderType } from "../../model/model";
+import {
+    ICartProduct,
+    ISelectedProductModifiers,
+    ICartModifierGroup,
+    EOrderType,
+    IMatchingUpSellCrossSellProductItem,
+    IMatchingUpSellCrossSellCategoryItem,
+} from "../../model/model";
 import { useUser } from "../../context/user-context";
 import { format } from "date-fns";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -25,15 +33,20 @@ import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { toLocalISOString } from "../../util/util";
 import { useRestaurant } from "../../context/restaurant-context";
 import { logSlackError } from "../../util/logging";
-
-import "./checkout.scss";
+import { UpSellProductModal } from "../modals/upSellProduct";
 import { Link } from "../../tabin/components/link";
 import { TextArea } from "../../tabin/components/textArea";
+
+import "./checkout.scss";
+import { useWindcave, WindcaveTransactionOutcome, WindcaveTransactionOutcomeResult } from "../../context/windcave-context";
+import { CachedImage } from "../../tabin/components/cachedImage";
+import { UpSellCategoryModal } from "../modals/upSellCategory";
 
 const logger = new Logger("checkout");
 
 enum CheckoutTransactionOutcome {
     PayLater,
+    CashPayment,
     Success,
     Delay,
     Fail,
@@ -43,12 +56,13 @@ enum CheckoutTransactionOutcome {
 export const Checkout = () => {
     // context
     const history = useHistory();
-    const { orderType, products, notes, setNotes, tableNumber, clearCart, total, updateItem, updateItemQuantity, deleteItem } = useCart();
+    const { orderType, products, notes, setNotes, tableNumber, clearCart, total, updateItem, updateItemQuantity, deleteItem, addItem } = useCart();
     const { restaurant } = useRestaurant();
     const { printReceipt } = useReceiptPrinter();
     const { user } = useUser();
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
+    const { createTransaction: windcaveCreateTransaction, pollForOutcome: windcavePollForOutcome } = useWindcave();
 
     const createOrderMutation = useMutation(CREATE_ORDER, {
         update: (proxy, mutationResult) => {
@@ -57,10 +71,13 @@ export const Checkout = () => {
     });
 
     // state
+    const [selectedCategoryForProductModal, setSelectedCategoryForProductModal] = useState<IGET_RESTAURANT_CATEGORY | null>(null);
+    const [selectedProductForProductModal, setSelectedProductForProductModal] = useState<IGET_RESTAURANT_PRODUCT | null>(null);
     const [productToEdit, setProductToEdit] = useState<{
         product: ICartProduct;
         displayOrder: number;
     } | null>(null);
+    const [showProductModal, setShowProductModal] = useState(false);
     const [showEditProductModal, setShowEditProductModal] = useState(false);
     const [showItemUpdatedModal, setShowItemUpdatedModal] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -69,6 +86,8 @@ export const Checkout = () => {
     const [paymentOutcomeDelayedOrderNumber, setPaymentOutcomeDelayedOrderNumber] = useState<string | null>(null);
     const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(10);
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
+    const [showUpSellCategoryModal, setShowUpSellCategoryModal] = useState(false);
+    const [showUpSellProductModal, setShowUpSellProductModal] = useState(false);
 
     // const isUserFocusedOnEmailAddressInput = useRef(false);
 
@@ -79,12 +98,18 @@ export const Checkout = () => {
     }
 
     useEffect(() => {
-        if (showEditProductModal || showPaymentModal) {
+        if (showProductModal || showEditProductModal || showPaymentModal || showUpSellCategoryModal || showUpSellProductModal) {
             document.body.style.overflow = "hidden";
         } else {
             document.body.style.overflow = "unset";
         }
-    }, [showEditProductModal, showPaymentModal]);
+    }, [showProductModal, showEditProductModal, showPaymentModal, showUpSellCategoryModal, showUpSellProductModal]);
+
+    useEffect(() => {
+        setTimeout(() => {
+            setShowUpSellCategoryModal(true);
+        }, 1000);
+    }, []);
 
     if (!restaurant) {
         history.push(beginOrderPath);
@@ -100,15 +125,6 @@ export const Checkout = () => {
     };
 
     // callbacks
-    const onAddItem = () => {
-        if (!restaurant) {
-            throw "Cart restaurant is null!";
-        }
-
-        logger.debug("Routing to ", restaurantPath + "/" + restaurant.id);
-        history.push(restaurantPath + "/" + restaurant.id);
-    };
-
     const onUpdateTableNumber = () => {
         history.push(tableNumberPath);
     };
@@ -117,13 +133,73 @@ export const Checkout = () => {
         history.push(orderTypePath);
     };
 
+    const onCloseProductModal = () => {
+        setShowProductModal(false);
+    };
+
     const onCloseEditProductModal = () => {
         setProductToEdit(null);
         setShowEditProductModal(false);
     };
 
+    const onCloseUpSellCategoryModal = () => {
+        setShowUpSellCategoryModal(false);
+    };
+
+    const onCloseUpSellProductModal = () => {
+        setShowUpSellProductModal(false);
+    };
+
     const onCloseItemUpdatedModal = () => {
         setShowItemUpdatedModal(false);
+    };
+
+    const onAddItem = (product: ICartProduct) => {
+        addItem(product);
+    };
+
+    const onSelectUpSellCrossSellCategory = (category: IGET_RESTAURANT_CATEGORY) => {
+        history.push(`${restaurantPath}/${restaurant.id}/${category.id}`);
+    };
+
+    const onSelectUpSellCrossSellProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
+        if (product.modifierGroups && product.modifierGroups.items.length > 0) {
+            setSelectedCategoryForProductModal(category);
+            setSelectedProductForProductModal(product);
+
+            setShowProductModal(true);
+        } else {
+            addItem({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                image: product.image
+                    ? {
+                          key: product.image.key,
+                          region: product.image.region,
+                          bucket: product.image.bucket,
+                          identityPoolId: product.image.identityPoolId,
+                      }
+                    : null,
+                quantity: 1,
+                notes: null,
+                category: {
+                    id: category.id,
+                    name: category.name,
+                    image: category.image
+                        ? {
+                              key: category.image.key,
+                              region: category.image.region,
+                              bucket: category.image.bucket,
+                              identityPoolId: category.image.identityPoolId,
+                          }
+                        : null,
+                },
+                modifierGroups: [],
+            });
+        }
+
+        setShowUpSellProductModal(false);
     };
 
     const onEditProduct = (product: ICartProduct, displayOrder: number) => {
@@ -159,38 +235,91 @@ export const Checkout = () => {
     };
 
     // submit callback
-    const createOrder = async (paid: boolean, orderNumber: string) => {
+    const createOrder = async (paid: boolean, cashPayment: boolean, orderNumber: string) => {
+        const now = new Date();
+
         if (!user) {
+            await logSlackError(
+                JSON.stringify({
+                    error: "Invalid user",
+                    context: { orderRestaurantId: restaurant.id },
+                })
+            );
             throw "Invalid user";
         }
 
         if (!orderType) {
+            await logSlackError(
+                JSON.stringify({
+                    error: "Invalid order type",
+                    context: { orderRestaurantId: restaurant.id },
+                })
+            );
             throw "Invalid order type";
         }
 
         if (!restaurant) {
+            await logSlackError(
+                JSON.stringify({
+                    error: "Invalid restaurant",
+                    context: { orderRestaurantId: restaurant },
+                })
+            );
             throw "Invalid restaurant";
         }
 
         if (!products || products.length == 0) {
+            await logSlackError(
+                JSON.stringify({
+                    error: "No products have been selected",
+                    context: { orderRestaurantId: restaurant.id },
+                })
+            );
             throw "No products have been selected";
         }
 
-        const variables = {
-            status: "NEW",
-            paid: paid,
-            type: orderType,
-            number: orderNumber,
-            table: tableNumber,
-            notes: notes,
-            total: total,
-            registerId: register.id,
-            products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
-            placedAt: toLocalISOString(new Date()),
-            placedAtUtc: new Date().toISOString(),
-            orderUserId: user.id,
-            orderRestaurantId: restaurant.id,
-        };
+        let variables;
+        try {
+            variables = {
+                status: "NEW",
+                paid: paid,
+                cashPayment: cashPayment,
+                type: orderType,
+                number: orderNumber,
+                table: tableNumber,
+                notes: notes,
+                total: total,
+                registerId: register.id,
+                products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
+                placedAt: toLocalISOString(now),
+                placedAtUtc: now.toISOString(),
+                orderUserId: user.id,
+                orderRestaurantId: restaurant.id,
+            };
+        } catch (e) {
+            await logSlackError(
+                JSON.stringify({
+                    error: "No products have been selected",
+                    context: {
+                        status: "NEW",
+                        paid: paid,
+                        cashPayment: cashPayment,
+                        type: orderType,
+                        number: orderNumber,
+                        table: tableNumber,
+                        notes: notes,
+                        total: total,
+                        registerId: register.id,
+                        products: JSON.stringify(products), // copy obj so we can mutate it later
+                        placedAt: now,
+                        placedAtUtc: now,
+                        orderUserId: user.id,
+                        orderRestaurantId: restaurant.id,
+                    },
+                })
+            );
+            throw "Error in createOrderMutation input";
+        }
 
         try {
             if (tableNumber == null || tableNumber == "") {
@@ -238,7 +367,6 @@ export const Checkout = () => {
 
     const orderSummary = (
         <OrderSummary
-            onAddItem={onAddItem}
             onNotesChange={onNotesChange}
             onEditProduct={onEditProduct}
             onUpdateProductQuantity={onUpdateProductQuantity}
@@ -334,7 +462,7 @@ export const Checkout = () => {
             });
     };
 
-    const onSubmitOrder = async (paid: boolean, eftposReceipt?: string) => {
+    const onSubmitOrder = async (paid: boolean, cashPayment: boolean, eftposReceipt?: string) => {
         const orderNumber = getOrderNumber();
         setPaymentOutcomeDelayedOrderNumber(orderNumber);
 
@@ -343,7 +471,7 @@ export const Checkout = () => {
                 printReceipts(orderNumber, paid, eftposReceipt);
             }
 
-            await createOrder(paid, orderNumber);
+            await createOrder(paid, cashPayment, orderNumber);
         } catch (e) {
             throw e.message;
         }
@@ -356,6 +484,8 @@ export const Checkout = () => {
             await doTransactionSmartpay();
         } else if (register.eftposProvider == "VERIFONE") {
             await doTransactionVerifone();
+        } else if (register.eftposProvider == "WINDCAVE") {
+            await doTransactionWindcave();
         }
     };
 
@@ -381,7 +511,7 @@ export const Checkout = () => {
                 setPaymentOutcome(CheckoutTransactionOutcome.Success);
 
                 try {
-                    await onSubmitOrder(true);
+                    await onSubmitOrder(true, false);
                 } catch (e) {
                     setCreateOrderError(e);
                 }
@@ -394,6 +524,34 @@ export const Checkout = () => {
             } else if (transactionOutcome == SmartpayTransactionOutcome.DeviceOffline) {
                 setPaymentOutcome(CheckoutTransactionOutcome.Fail);
                 setPaymentOutcomeErrorMessage("Transaction Cancelled! Please check if the device is powered on and online.");
+            } else {
+                setPaymentOutcome(CheckoutTransactionOutcome.Fail);
+            }
+        } catch (errorMessage) {
+            setPaymentOutcomeErrorMessage(errorMessage);
+        }
+    };
+
+    const doTransactionWindcave = async () => {
+        try {
+            const txnRef = await windcaveCreateTransaction(register.windcaveStationId, total, "Purchase");
+
+            let transactionOutcome: WindcaveTransactionOutcomeResult = await windcavePollForOutcome(register.windcaveStationId, txnRef);
+
+            if (transactionOutcome.transactionOutcome == WindcaveTransactionOutcome.Accepted) {
+                setPaymentOutcome(CheckoutTransactionOutcome.Success);
+
+                try {
+                    await onSubmitOrder(true, false, transactionOutcome.eftposReceipt);
+                } catch (e) {
+                    setCreateOrderError(e);
+                }
+            } else if (transactionOutcome.transactionOutcome == WindcaveTransactionOutcome.Declined) {
+                setPaymentOutcome(CheckoutTransactionOutcome.Fail);
+                setPaymentOutcomeErrorMessage("Transaction Declined! Please try again.");
+            } else if (transactionOutcome.transactionOutcome == WindcaveTransactionOutcome.Cancelled) {
+                setPaymentOutcome(CheckoutTransactionOutcome.Fail);
+                setPaymentOutcomeErrorMessage("Transaction Cancelled!");
             } else {
                 setPaymentOutcome(CheckoutTransactionOutcome.Fail);
             }
@@ -415,7 +573,7 @@ export const Checkout = () => {
                 setPaymentOutcome(CheckoutTransactionOutcome.Success);
 
                 try {
-                    await onSubmitOrder(true, eftposReceipt);
+                    await onSubmitOrder(true, false, eftposReceipt);
                 } catch (e) {
                     setCreateOrderError(e);
                 }
@@ -478,11 +636,12 @@ export const Checkout = () => {
                 category = c;
             }
 
-            c.products.items.forEach((p) => {
-                if (p.product.id == productToEdit.product.id) {
-                    product = p.product;
-                }
-            });
+            c.products &&
+                c.products.items.forEach((p) => {
+                    if (p.product.id == productToEdit.product.id) {
+                        product = p.product;
+                    }
+                });
         });
 
         if (!product || !category) {
@@ -504,8 +663,6 @@ export const Checkout = () => {
                 isOpen={showEditProductModal}
                 onClose={onCloseEditProductModal}
                 onUpdateItem={onUpdateItem}
-                restaurantIsAcceptingOrders={true}
-                restaurantName={"doesn't matter if both restaurantOpen && restaurantIsAcceptingOrders are true"}
                 editProduct={{
                     orderedModifiers: orderedModifiers,
                     quantity: productToEdit.product.quantity,
@@ -514,6 +671,85 @@ export const Checkout = () => {
                 }}
             />
         );
+    };
+
+    const productModal = () => {
+        if (selectedCategoryForProductModal && selectedProductForProductModal && showProductModal) {
+            return (
+                <ProductModal
+                    isOpen={showProductModal}
+                    category={selectedCategoryForProductModal}
+                    product={selectedProductForProductModal}
+                    onAddItem={onAddItem}
+                    onClose={onCloseProductModal}
+                />
+            );
+        }
+    };
+
+    const upSellCategoryModal = () => {
+        if (
+            restaurant &&
+            restaurant.upSellCrossSell &&
+            restaurant.upSellCrossSell.customCategories &&
+            restaurant.upSellCrossSell.customCategories.items.length > 0
+        ) {
+            const upSellCrossSaleCategoryItems: IMatchingUpSellCrossSellCategoryItem[] = [];
+
+            const menuCategories = restaurant.categories.items;
+            const upSellCrossSellCategories = restaurant.upSellCrossSell.customCategories.items;
+
+            menuCategories.forEach((category) => {
+                upSellCrossSellCategories.forEach((upSellCategory) => {
+                    if (category.id === upSellCategory.id) {
+                        upSellCrossSaleCategoryItems.push({ category: category });
+                    }
+                });
+            });
+
+            return (
+                <UpSellCategoryModal
+                    isOpen={showUpSellCategoryModal}
+                    onClose={onCloseUpSellCategoryModal}
+                    upSellCrossSaleCategoryItems={upSellCrossSaleCategoryItems}
+                    onSelectUpSellCrossSellCategory={onSelectUpSellCrossSellCategory}
+                />
+            );
+        }
+    };
+
+    const upSellProductModal = () => {
+        if (
+            restaurant &&
+            restaurant.upSellCrossSell &&
+            restaurant.upSellCrossSell.customProducts &&
+            restaurant.upSellCrossSell.customProducts.items.length > 0
+        ) {
+            const upSellCrossSaleProductItems: IMatchingUpSellCrossSellProductItem[] = [];
+
+            const menuCategories = restaurant.categories.items;
+            const upSellCrossSellProducts = restaurant.upSellCrossSell.customProducts.items;
+
+            menuCategories.forEach((category) => {
+                category.products &&
+                    category.products.items.forEach((p) => {
+                        upSellCrossSellProducts.forEach((upSellProduct) => {
+                            if (p.product.id === upSellProduct.id) {
+                                upSellCrossSaleProductItems.push({ category: category, product: p.product });
+                            }
+                        });
+                    });
+            });
+
+            return (
+                <UpSellProductModal
+                    isOpen={showUpSellProductModal}
+                    onClose={onCloseUpSellProductModal}
+                    upSellCrossSaleProductItems={upSellCrossSaleProductItems}
+                    onSelectUpSellCrossSellProduct={onSelectUpSellCrossSellProduct}
+                />
+            );
+        }
     };
 
     const itemUpdatedModal = (
@@ -540,7 +776,22 @@ export const Checkout = () => {
         setPaymentOutcomeApprovedRedirectTimeLeft(10);
 
         try {
-            await onSubmitOrder(false);
+            await onSubmitOrder(false, false);
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
+    const onClickCashPayment = async () => {
+        setShowPaymentModal(true);
+
+        setPaymentOutcome(CheckoutTransactionOutcome.CashPayment);
+        setPaymentOutcomeErrorMessage(null);
+        setPaymentOutcomeDelayedOrderNumber(null);
+        setPaymentOutcomeApprovedRedirectTimeLeft(20);
+
+        try {
+            await onSubmitOrder(false, true);
         } catch (e) {
             setCreateOrderError(e);
         }
@@ -562,7 +813,7 @@ export const Checkout = () => {
     const awaitingCard = () => (
         <>
             <div className="h4 mb-6 awaiting-card-text">Swipe or insert your card on the terminal to complete your payment.</div>
-            <img className="awaiting-card-image" src={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} />
+            <CachedImage className="awaiting-card-image" url={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} alt="awaiting-card-gif" />
         </>
     );
 
@@ -574,6 +825,45 @@ export const Checkout = () => {
         <>
             <div className="h4 mb-4">All Done!</div>
             <div className="h2 mb-6">Please pay later at the counter.</div>
+            <div className="mb-1">Your order number is</div>
+            <div className="order-number h1">{paymentOutcomeDelayedOrderNumber}</div>
+            <div className="separator-6 mb-6"></div>
+            {/* <Title3Font>Would you like to help save the planet? Get a e-receipt.</Title3Font>
+            <Space4 />
+            <div style={{ display: "flex", alignItems: "center" }}>
+                <div style={{ flex: 1, paddingRight: "12px", width: "750px", height: "44px" }}>
+                    <TextAreaV2 placeholder={"Email Address..."} onChange={onNotesChange} value={notes || ""} onFocus={onFocusEmailAddressInput} />
+                </div>
+                <Button
+                    onClick={() => {
+                        toast.success("Receipt successfully sent to your email");
+                    }}
+                    style={{ padding: "12px 24px" }}
+                >
+                    <NormalFont>Send</NormalFont>
+                </Button>
+            </div>
+            <Space3 />
+            <NormalFont>
+                No, I prefer a physical copy.{" "}
+                <Link>
+                    <NormalFont>Click here to print</NormalFont>
+                </Link>{" "}
+            </NormalFont>
+            <Space3 /> */}
+            <div className="redirecting-in-text text-grey">
+                Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
+                {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
+                ...
+            </div>
+        </>
+    );
+
+    const paymentCashPayment = () => (
+        <>
+            <div className="h4 mb-4">All Done!</div>
+            <div className="h2 mb-6">Please give correct change.</div>
+            <div className="h1 mb-6">Total: ${convertCentsToDollars(total)}</div>
             <div className="mb-1">Your order number is</div>
             <div className="order-number h1">{paymentOutcomeDelayedOrderNumber}</div>
             <div className="separator-6 mb-6"></div>
@@ -682,6 +972,8 @@ export const Checkout = () => {
 
         if (paymentOutcome == CheckoutTransactionOutcome.PayLater) {
             return paymentPayLater();
+        } else if (paymentOutcome == CheckoutTransactionOutcome.CashPayment) {
+            return paymentCashPayment();
         } else if (paymentOutcome == CheckoutTransactionOutcome.Success) {
             return paymentAccepted();
         } else if (paymentOutcome == CheckoutTransactionOutcome.Fail) {
@@ -704,6 +996,10 @@ export const Checkout = () => {
     const modalsAndSpinners = (
         <>
             {/* <FullScreenSpinner show={loading} text={loadingMessage} /> */}
+
+            {upSellCategoryModal()}
+            {upSellProductModal()}
+            {productModal()}
             {editProductModal()}
             {paymentModal}
             {itemUpdatedModal}
@@ -735,7 +1031,7 @@ export const Checkout = () => {
 
     const title = (
         <div className="title mb-6">
-            <img className="image mr-2" src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`} />
+            <CachedImage className="image mr-2" url={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`} alt="shopping-bag-icon" />
             <div className="h1">Your Order</div>
         </div>
     );
@@ -772,7 +1068,6 @@ export const Checkout = () => {
             {restaurantNotes}
         </>
     );
-
     const checkoutFooter = (
         <div>
             <div className="h1 text-center mb-4">Total: ${convertCentsToDollars(total)}</div>
@@ -784,11 +1079,16 @@ export const Checkout = () => {
                     <Button onClick={onClickOrderButton} className="button large complete-order-button">
                         Complete Order
                     </Button>
+                    {register.enableCashPayments && (
+                        <Button onClick={onClickCashPayment} className="button large ml-3 complete-order-button">
+                            Cash Payment
+                        </Button>
+                    )}
                 </div>
                 {register.enablePayLater && (
-                    <Link className="pay-later-link mt-4" onClick={onClickPayLater}>
-                        Pay at counter...
-                    </Link>
+                    <div className="pay-later-link mt-4">
+                        <Link onClick={onClickPayLater}>Pay at counter...</Link>
+                    </div>
                 )}
             </div>
             <Button className="cancel-button" onClick={onCancelOrder}>
@@ -816,7 +1116,6 @@ export const Checkout = () => {
 };
 
 const OrderSummary = (props: {
-    onAddItem: () => void;
     onEditProduct: (product: ICartProduct, displayOrder: number) => void;
     onRemoveProduct: (displayOrder: number) => void;
     onUpdateProductQuantity: (displayOrder: number, productQuantity: number) => void;
@@ -950,11 +1249,13 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
                 <>
                     {!mg.hideForCustomer && (
                         <>
-                            <div className="text-bold mt-1" key={mg.id}>
+                            <div className="text-bold mt-3" key={mg.id}>
                                 {mg.name}
                             </div>
                             {mg.modifiers.map((m) => (
-                                <div key={m.id}>{modifierString(m.preSelectedQuantity, m.quantity, m.name, m.price)}</div>
+                                <div key={m.id} className="mt-1">
+                                    {modifierString(m.preSelectedQuantity, m.quantity, m.name, m.price)}
+                                </div>
                             ))}
                         </>
                     )}

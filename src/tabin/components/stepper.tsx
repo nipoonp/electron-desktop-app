@@ -1,4 +1,3 @@
-import React from "react";
 import { PlusIcon } from "./icons/plusIcon";
 import { MinusIcon } from "./icons/minusIcon";
 
@@ -83,7 +82,7 @@ export const Stepper = (props: IProps) => {
                     </div>
                     {plusButton}
                 </div>
-                {props.children && <div className="stepper-children">{props.children}</div>}
+                {props.children && <div className="stepper-children ml-3">{props.children}</div>}
             </div>
         </>
     );

@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import { useState } from "react";
+
 import { Modal } from "../../tabin/components/modal";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
-import { isItemAvailable, isItemSoldOut } from "../../util/util";
+import { isItemAvailable, isProductQuantityAvailable, isItemSoldOut, getQuantityRemainingText } from "../../util/util";
 import { convertCentsToDollars } from "../../util/util";
 import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
 import { Button } from "../../tabin/components/button";
@@ -9,6 +10,8 @@ import { useRestaurant } from "../../context/restaurant-context";
 
 import "./searchProductModal.scss";
 import { Input } from "../../tabin/components/input";
+import { CachedImage } from "../../tabin/components/cachedImage";
+import { useCart } from "../../context/cart-context";
 
 interface IFilteredProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -23,6 +26,7 @@ interface ISearchProductModalProps {
 
 export const SearchProductModal = (props: ISearchProductModalProps) => {
     const { restaurant } = useRestaurant();
+    const { cartProductQuantitiesById } = useCart();
 
     const [searchTerm, setSearchTerm] = useState("");
     const [filteredProducts, setFilteredProducts] = useState<IFilteredProduct[]>([]);
@@ -42,14 +46,15 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
         const newFilteredProducts: IFilteredProduct[] = [];
 
         restaurant.categories.items.forEach((category) => {
-            category.products.items.forEach((p) => {
-                if (p.product.name.toLowerCase().includes(value.toLowerCase())) {
-                    newFilteredProducts.push({
-                        category: category,
-                        product: p.product,
-                    });
-                }
-            });
+            category.products &&
+                category.products.items.forEach((p) => {
+                    if (p.product.name.toLowerCase().includes(value.toLowerCase())) {
+                        newFilteredProducts.push({
+                            category: category,
+                            product: p.product,
+                        });
+                    }
+                });
         });
 
         setFilteredProducts(newFilteredProducts);
@@ -80,30 +85,32 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
     const productDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
         const isAvailable = isItemAvailable(product.availability);
+        const isQuantityAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById);
 
-        function onClickProduct(category: any, product: any) {
+        const isValid = !isSoldOut && isAvailable && isQuantityAvailable;
+
+        const onClickProduct = (category: any, product: any) => {
             props.onClickSearchProduct(category, product);
-        }
+        };
 
         return (
             <>
-                <div
-                    className={`product ${isSoldOut ? "sold-out" : ""} `}
-                    onClick={() => !isSoldOut && isAvailable && onClickProduct(category, product)}
-                >
+                <div key={product.id} className={`product ${isValid ? "" : "sold-out"}`} onClick={() => isValid && onClickProduct(category, product)}>
+                    {product.totalQuantityAvailable && product.totalQuantityAvailable <= 5 && (
+                        <span className="quantity-remaining ml-2">{getQuantityRemainingText(product.totalQuantityAvailable)}</span>
+                    )}
+
                     <div style={{ margin: "0 auto" }}>
                         {product.image && (
-                            <img
+                            <CachedImage
                                 className="image mb-2"
-                                src={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                                url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                                alt="product-image"
                             />
                         )}
                     </div>
 
-                    <div className="name text-bold">
-                        {formatProductName(product.name)}
-                        {!isAvailable ? `(UNAVAILABLE)` : isSoldOut ? ` (SOLD OUT)` : ""}
-                    </div>
+                    <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
 
                     {product.description && <div className="description mt-2">{product.description}</div>}
 

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { useState } from "react";
+
 import { Input } from "../../../tabin/components/input";
 import { useReceiptPrinter } from "../../../context/receiptPrinter-context";
 import { EOrderType, ICartProduct } from "../../../model/model";
@@ -32,6 +33,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                         price: 50,
                         preSelectedQuantity: 0,
                         quantity: 1,
+                        image: null,
                     },
                 ],
             },
@@ -48,6 +50,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                         price: 50,
                         preSelectedQuantity: 0,
                         quantity: 2,
+                        image: null,
                     },
                 ],
             },
@@ -64,6 +67,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                         price: 50,
                         preSelectedQuantity: 1,
                         quantity: 1,
+                        image: null,
                     },
                 ],
             },
@@ -80,6 +84,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                         price: 50,
                         preSelectedQuantity: 1,
                         quantity: 0,
+                        image: null,
                     },
                 ],
             },
@@ -96,6 +101,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                         price: 50,
                         preSelectedQuantity: 2,
                         quantity: 1,
+                        image: null,
                     },
                 ],
             },

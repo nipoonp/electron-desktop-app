@@ -23,7 +23,7 @@ export const useGetRestaurantQuery = (restaurantId: string, skip?: boolean) => {
         notifyOnNetworkStatusChange: true,
     });
 
-    let data = null;
+    let data: IGET_RESTAURANT | null = null;
     if (!error && !loading) {
         data = _data.getRestaurant as IGET_RESTAURANT;
         cachedData.current = data;

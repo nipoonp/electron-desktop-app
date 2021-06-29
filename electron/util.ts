@@ -2,7 +2,7 @@ import { printer as ThermalPrinter, types as PrinterTypes } from "node-thermal-p
 import { IOrderReceipt, ICartProduct, ICartModifierGroup, ICartModifier } from "./model";
 
 export const calculateLRC = (str: string): string => {
-    var bytes = [];
+    var bytes: number[] = [];
     var lrc = 0;
     for (var i = 0; i < str.length; i++) {
         bytes.push(str.charCodeAt(i));

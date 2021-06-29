@@ -1,10 +1,11 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useCart } from "../../context/cart-context";
 import { convertCentsToDollars } from "../../util/util";
 import { Modal } from "../../tabin/components/modal";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 
 import "./itemAddedUpdatedModal.scss";
+import { CachedImage } from "../../tabin/components/cachedImage";
 
 export const ItemAddedUpdatedModal = (props: { isOpen: boolean; onClose: () => void; isProductUpdate: boolean }) => {
     const { total } = useCart();
@@ -22,7 +23,11 @@ export const ItemAddedUpdatedModal = (props: { isOpen: boolean; onClose: () => v
     const content = (
         <>
             <div className="content">
-                <img className="image mb-3" src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-success-icon.jpg`} />
+                <CachedImage
+                    className="image mb-3"
+                    url={`${getPublicCloudFrontDomainName()}/images/shopping-bag-success-icon.jpg`}
+                    alt="shopping-bag-icon"
+                />
                 <div className="h2 mb-3">Item {props.isProductUpdate ? "Updated" : "Added"}</div>
                 <div className="mb-3">Your total has been updated</div>
                 <div className="h2">${convertCentsToDollars(total)}</div>

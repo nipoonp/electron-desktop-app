@@ -31,10 +31,12 @@ export const GET_USER = gql`
                             name
                             enableTableFlags
                             enablePayLater
+                            enableCashPayments
                             type
                             eftposProvider
                             eftposIpAddress
                             eftposPortNumber
+                            windcaveStationId
                             orderNumberSuffix
                             printers {
                                 items {
@@ -161,6 +163,26 @@ export const GET_RESTAURANT = gql`
                     }
                 }
             }
+            upSellCrossSell {
+                id
+                customCategories {
+                    items {
+                        id
+                    }
+                }
+                customProducts {
+                    items {
+                        id
+                        categories {
+                            items {
+                                category {
+                                    id
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             registers {
                 items {
                     id
@@ -168,10 +190,12 @@ export const GET_RESTAURANT = gql`
                     name
                     enableTableFlags
                     enablePayLater
+                    enableCashPayments
                     type
                     eftposProvider
                     eftposIpAddress
                     eftposPortNumber
+                    windcaveStationId
                     orderNumberSuffix
                     printers {
                         items {
@@ -243,6 +267,7 @@ export const GET_RESTAURANT = gql`
                                 description
                                 price
                                 totalQuantitySold
+                                totalQuantityAvailable
                                 soldOut
                                 soldOutDate
                                 image {
@@ -301,9 +326,52 @@ export const GET_RESTAURANT = gql`
                                                         id
                                                         name
                                                         price
+                                                        image {
+                                                            key
+                                                            bucket
+                                                            region
+                                                            identityPoolId
+                                                        }
                                                         totalQuantitySold
+                                                        totalQuantityAvailable
                                                         soldOut
                                                         soldOutDate
+                                                        productModifier {
+                                                            id
+                                                            soldOut
+                                                            soldOutDate
+                                                            totalQuantityAvailable
+                                                            availability {
+                                                                monday {
+                                                                    startTime
+                                                                    endTime
+                                                                }
+                                                                tuesday {
+                                                                    startTime
+                                                                    endTime
+                                                                }
+                                                                wednesday {
+                                                                    startTime
+                                                                    endTime
+                                                                }
+                                                                thursday {
+                                                                    startTime
+                                                                    endTime
+                                                                }
+                                                                friday {
+                                                                    startTime
+                                                                    endTime
+                                                                }
+                                                                saturday {
+                                                                    startTime
+                                                                    endTime
+                                                                }
+                                                                sunday {
+                                                                    startTime
+                                                                    endTime
+                                                                }
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
@@ -334,6 +402,7 @@ export interface IGET_RESTAURANT {
     logo?: IS3Object;
     customStyleSheet?: IS3Object;
     advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
+    upSellCrossSell?: IGET_DASHBOARD_UP_SELL_CROSS_SELL;
     registers: { items: IGET_RESTAURANT_REGISTER[] };
     categories: {
         items: IGET_RESTAURANT_CATEGORY[];
@@ -352,10 +421,12 @@ export interface IGET_RESTAURANT_REGISTER {
     name: string;
     enableTableFlags: boolean;
     enablePayLater: boolean;
+    enableCashPayments: boolean;
     type: string;
     eftposProvider: string;
     eftposIpAddress: string;
     eftposPortNumber: string;
+    windcaveStationId: string;
     orderNumberSuffix: string;
     printers: {
         items: IGET_RESTAURANT_REGISTER_PRINTER[];
@@ -378,6 +449,31 @@ export interface IGET_RESTAURANT_REGISTER_PRINTER_IGNORE_PRODUCT {
         id: string;
         name: string;
     };
+}
+
+export interface IGET_DASHBOARD_UP_SELL_CROSS_SELL {
+    id: string;
+    customCategories: {
+        items: IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_CATEGORY[];
+    };
+    customProducts: {
+        items: IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT[];
+    };
+}
+
+export interface IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_CATEGORY {
+    id: string;
+}
+
+export interface IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT {
+    id: string;
+    categories: {
+        items: IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT_CATEGORY[];
+    };
+}
+
+export interface IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT_CATEGORY {
+    id: string;
 }
 
 export interface IGET_RESTAURANT_OPERATING_HOURS {
@@ -433,7 +529,7 @@ export interface IGET_RESTAURANT_CATEGORY {
     displaySequence: number;
     image?: IS3Object;
     availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
-    products: {
+    products?: {
         items: IGET_RESTAURANT_PRODUCT_LINK[];
     };
 }
@@ -447,14 +543,15 @@ export interface IGET_RESTAURANT_PRODUCT_LINK {
 export interface IGET_RESTAURANT_PRODUCT {
     id: string;
     name: string;
-    description: string;
+    description?: string;
     price: number;
-    totalQuantitySold: number;
-    soldOut: boolean;
-    soldOutDate: string;
+    totalQuantitySold?: number;
+    totalQuantityAvailable?: number;
+    soldOut?: boolean;
+    soldOutDate?: string;
     image?: IS3Object;
-    availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
-    modifierGroups: {
+    availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
+    modifierGroups?: {
         items: IGET_RESTAURANT_MODIFIER_GROUP_LINK[];
     };
 }
@@ -472,7 +569,7 @@ export interface IGET_RESTAURANT_MODIFIER_GROUP {
     choiceMin: number;
     choiceMax: number;
     choiceDuplicate: number;
-    modifiers: {
+    modifiers?: {
         items: IGET_RESTAURANT_MODIFIER_LINK[];
     };
 }
@@ -488,9 +585,20 @@ export interface IGET_RESTAURANT_MODIFIER {
     id: string;
     name: string;
     price: number;
-    totalQuantitySold: number;
+    image?: IS3Object;
+    totalQuantitySold?: number;
+    totalQuantityAvailable?: number;
+    soldOut?: boolean;
+    soldOutDate?: string;
+    productModifier?: IGET_DASHBOARD_MODIFIER_PRODUCT_MODIFIER;
+}
+
+export interface IGET_DASHBOARD_MODIFIER_PRODUCT_MODIFIER {
+    id: string;
     soldOut: boolean;
     soldOutDate: string;
+    totalQuantityAvailable?: number;
+    availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
 }
 
 export interface IS3Object {

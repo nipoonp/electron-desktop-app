@@ -1,4 +1,5 @@
-import React, { FunctionComponent, useEffect } from "react";
+import { FunctionComponent, useEffect } from "react";
+
 import { Router, Route, Switch, Redirect, RouteComponentProps, RouteProps, useHistory } from "react-router-dom";
 import { Restaurant } from "./page/restaurant";
 import { NoMatch } from "./page/error/404";
@@ -23,8 +24,6 @@ import { TableNumber } from "./page/tableNumber";
 import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { useRestaurant } from "../context/restaurant-context";
 import { Logout } from "./page/auth/logout";
-
-import "./../styles/app.scss";
 
 let electron: any;
 let ipcRenderer: any;
@@ -127,8 +126,17 @@ const Routes = () => {
             <RestaurantRegisterPrivateRoute exact path={checkoutPath} component={Checkout} />
             <RestaurantRegisterPrivateRoute
                 exact
-                path={`${restaurantPath}/:restaurantId`}
-                component={(props: RouteComponentProps<any>) => <Restaurant restaurantID={props.match.params.restaurantId} {...props} />}
+                path={`${restaurantPath}/:restaurantId/:selectedCategoryId?/:selectedProductId?`}
+                component={(props: RouteComponentProps<any>) => {
+                    return (
+                        <Restaurant
+                            restaurantId={props.match.params.restaurantId}
+                            selectedCategoryId={props.match.params.selectedCategoryId}
+                            selectedProductId={props.match.params.selectedProductId}
+                            {...props}
+                        />
+                    );
+                }}
             />
             <Route exact path={unauthorizedPath} component={Unauthorised} />
             <Route component={NoMatch} />

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
+
 import { Logger } from "aws-amplify";
 import { IGET_USER } from "../graphql/customQueries";
 import { useGetUserQuery } from "../hooks/useGetUserQuery";
@@ -12,7 +13,7 @@ type ContextProps = {
     error: boolean;
 };
 
-const UserContext = React.createContext<ContextProps>({
+const UserContext = createContext<ContextProps>({
     user: null,
     isLoading: true,
     error: false,
@@ -70,7 +71,7 @@ const UserProvider = (props: { userID: string | null; children: React.ReactNode 
 };
 
 const useUser = () => {
-    const context = React.useContext(UserContext);
+    const context = useContext(UserContext);
     if (context === undefined) {
         throw new Error(`useUser must be used within a UserProvider`);
     }

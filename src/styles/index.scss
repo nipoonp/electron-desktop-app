@@ -1,6 +1,7 @@
 @import-normalize;
-@import "./fonts.css";
-@import "./colors.css";
+@import "./fonts.scss";
+@import "./colors.scss";
+@import "./app.scss";
 
 /* ------------------------------ RESET ------------------------------ */
 html,
@@ -138,7 +139,7 @@ svg {
 /* ------------------------------------------------------------------- */
 
 body {
-    font-family: "Open Sans", -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif;
+    font-family: "Quicksand", sans-serif;
     font-size: 16px;
     line-height: 1;
     /* color: hsl(345, 6%, 13%); */

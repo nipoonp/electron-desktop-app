@@ -17,7 +17,30 @@
             font-size: 18px;
         }
 
-        .modifier {
+        .modifier-wrapper {
+            .modifier {
+                display: flex;
+                align-items: center;
+
+                &.sold-out {
+                    opacity: 0.5;
+                }
+
+                .quantity-remaining {
+                    padding: 5px 10px;
+                    background-color: var(--primary-color);
+                    color: #ffffff;
+                    border-radius: 5px;
+                    font-size: 12px;
+                }
+
+                .image {
+                    height: 120px;
+                    border-radius: 8px;
+                    object-fit: cover;
+                }
+            }
+
             .collapsed-stepper-container {
                 display: flex;
                 align-items: center;
@@ -32,8 +55,7 @@
                 }
 
                 .collapsed-stepper-children {
-                    margin-left: 12px;
-                    line-height: 1.25;
+                    line-height: 1.5;
                 }
             }
         }
