@@ -41,6 +41,7 @@ export const CREATE_ORDER = gql`
     mutation createOrder(
         $status: OrderStatus!
         $paid: Boolean!
+        $cashPayment: Boolean!
         $type: OrderType!
         $number: String!
         $table: String
@@ -57,6 +58,7 @@ export const CREATE_ORDER = gql`
             input: {
                 status: $status
                 paid: $paid
+                cashPayment: $cashPayment
                 type: $type
                 number: $number
                 table: $table

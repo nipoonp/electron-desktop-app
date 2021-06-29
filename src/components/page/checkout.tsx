@@ -38,6 +38,7 @@ const logger = new Logger("checkout");
 
 enum CheckoutTransactionOutcome {
     PayLater,
+    CashPayment,
     Success,
     Delay,
     Fail,
@@ -217,7 +218,7 @@ export const Checkout = () => {
     };
 
     // submit callback
-    const createOrder = async (paid: boolean, orderNumber: string) => {
+    const createOrder = async (paid: boolean, cashPayment: boolean, orderNumber: string) => {
         const now = new Date();
 
         if (!user) {
@@ -265,6 +266,7 @@ export const Checkout = () => {
             variables = {
                 status: "NEW",
                 paid: paid,
+                cashPayment: cashPayment,
                 type: orderType,
                 number: orderNumber,
                 table: tableNumber,
@@ -284,6 +286,7 @@ export const Checkout = () => {
                     context: {
                         status: "NEW",
                         paid: paid,
+                        cashPayment: cashPayment,
                         type: orderType,
                         number: orderNumber,
                         table: tableNumber,
@@ -442,7 +445,7 @@ export const Checkout = () => {
             });
     };
 
-    const onSubmitOrder = async (paid: boolean, eftposReceipt?: string) => {
+    const onSubmitOrder = async (paid: boolean, cashPayment: boolean, eftposReceipt?: string) => {
         const orderNumber = getOrderNumber();
         setPaymentOutcomeDelayedOrderNumber(orderNumber);
 
@@ -451,7 +454,7 @@ export const Checkout = () => {
                 printReceipts(orderNumber, paid, eftposReceipt);
             }
 
-            await createOrder(paid, orderNumber);
+            await createOrder(paid, cashPayment, orderNumber);
         } catch (e) {
             throw e.message;
         }
@@ -491,7 +494,7 @@ export const Checkout = () => {
                 setPaymentOutcome(CheckoutTransactionOutcome.Success);
 
                 try {
-                    await onSubmitOrder(true);
+                    await onSubmitOrder(true, false);
                 } catch (e) {
                     setCreateOrderError(e);
                 }
@@ -522,7 +525,7 @@ export const Checkout = () => {
                 setPaymentOutcome(CheckoutTransactionOutcome.Success);
 
                 try {
-                    await onSubmitOrder(true, transactionOutcome.eftposReceipt);
+                    await onSubmitOrder(true, false, transactionOutcome.eftposReceipt);
                 } catch (e) {
                     setCreateOrderError(e);
                 }
@@ -553,7 +556,7 @@ export const Checkout = () => {
                 setPaymentOutcome(CheckoutTransactionOutcome.Success);
 
                 try {
-                    await onSubmitOrder(true, eftposReceipt);
+                    await onSubmitOrder(true, false, eftposReceipt);
                 } catch (e) {
                     setCreateOrderError(e);
                 }
@@ -720,7 +723,22 @@ export const Checkout = () => {
         setPaymentOutcomeApprovedRedirectTimeLeft(10);
 
         try {
-            await onSubmitOrder(false);
+            await onSubmitOrder(false, false);
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
+    const onClickCashPayment = async () => {
+        setShowPaymentModal(true);
+
+        setPaymentOutcome(CheckoutTransactionOutcome.CashPayment);
+        setPaymentOutcomeErrorMessage(null);
+        setPaymentOutcomeDelayedOrderNumber(null);
+        setPaymentOutcomeApprovedRedirectTimeLeft(20);
+
+        try {
+            await onSubmitOrder(false, true);
         } catch (e) {
             setCreateOrderError(e);
         }
@@ -754,6 +772,45 @@ export const Checkout = () => {
         <>
             <div className="h4 mb-4">All Done!</div>
             <div className="h2 mb-6">Please pay later at the counter.</div>
+            <div className="mb-1">Your order number is</div>
+            <div className="order-number h1">{paymentOutcomeDelayedOrderNumber}</div>
+            <div className="separator-6 mb-6"></div>
+            {/* <Title3Font>Would you like to help save the planet? Get a e-receipt.</Title3Font>
+            <Space4 />
+            <div style={{ display: "flex", alignItems: "center" }}>
+                <div style={{ flex: 1, paddingRight: "12px", width: "750px", height: "44px" }}>
+                    <TextAreaV2 placeholder={"Email Address..."} onChange={onNotesChange} value={notes || ""} onFocus={onFocusEmailAddressInput} />
+                </div>
+                <Button
+                    onClick={() => {
+                        toast.success("Receipt successfully sent to your email");
+                    }}
+                    style={{ padding: "12px 24px" }}
+                >
+                    <NormalFont>Send</NormalFont>
+                </Button>
+            </div>
+            <Space3 />
+            <NormalFont>
+                No, I prefer a physical copy.{" "}
+                <Link>
+                    <NormalFont>Click here to print</NormalFont>
+                </Link>{" "}
+            </NormalFont>
+            <Space3 /> */}
+            <div className="redirecting-in-text text-grey">
+                Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
+                {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
+                ...
+            </div>
+        </>
+    );
+
+    const paymentCashPayment = () => (
+        <>
+            <div className="h4 mb-4">All Done!</div>
+            <div className="h2 mb-6">Please give correct change.</div>
+            <div className="h1 mb-6">Total: ${convertCentsToDollars(total)}</div>
             <div className="mb-1">Your order number is</div>
             <div className="order-number h1">{paymentOutcomeDelayedOrderNumber}</div>
             <div className="separator-6 mb-6"></div>
@@ -862,6 +919,8 @@ export const Checkout = () => {
 
         if (paymentOutcome == CheckoutTransactionOutcome.PayLater) {
             return paymentPayLater();
+        } else if (paymentOutcome == CheckoutTransactionOutcome.CashPayment) {
+            return paymentCashPayment();
         } else if (paymentOutcome == CheckoutTransactionOutcome.Success) {
             return paymentAccepted();
         } else if (paymentOutcome == CheckoutTransactionOutcome.Fail) {
@@ -955,7 +1014,6 @@ export const Checkout = () => {
             {restaurantNotes}
         </>
     );
-
     const checkoutFooter = (
         <div>
             <div className="h1 text-center mb-4">Total: ${convertCentsToDollars(total)}</div>
@@ -967,6 +1025,11 @@ export const Checkout = () => {
                     <Button onClick={onClickOrderButton} className="button large complete-order-button">
                         Complete Order
                     </Button>
+                    {register.enableCashPayments && (
+                        <Button onClick={onClickCashPayment} className="button large ml-3 complete-order-button">
+                            Cash Payment
+                        </Button>
+                    )}
                 </div>
                 {register.enablePayLater && (
                     <div className="pay-later-link mt-4">
