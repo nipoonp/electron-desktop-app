@@ -1,4 +1,4 @@
-import { IS3Object } from "../graphql/customQueries";
+import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object } from "../graphql/customQueries";
 
 export interface ICognitoUser {
     attributes: {
@@ -14,6 +14,10 @@ export interface ICognitoUser {
 export enum EOrderType {
     DINEIN = "DINEIN",
     TAKEAWAY = "TAKEAWAY",
+}
+
+export interface ICartItemQuantitiesById {
+    [id: string]: number;
 }
 
 export interface ICartProduct {
@@ -49,6 +53,12 @@ export interface ICartModifier {
     price: number;
     preSelectedQuantity: number;
     quantity: number;
+    productModifier?: ICartProductModifier;
+    image: IS3Object | null;
+}
+
+export interface ICartProductModifier {
+    id: string;
 }
 
 export interface ISelectedProductModifiers {
@@ -71,4 +81,13 @@ export interface IOrderReceipt {
     type: EOrderType;
     number: string;
     table: string | null;
+}
+
+export interface IMatchingUpSellCrossSellCategoryItem {
+    category: IGET_RESTAURANT_CATEGORY;
+}
+
+export interface IMatchingUpSellCrossSellProductItem {
+    category: IGET_RESTAURANT_CATEGORY;
+    product: IGET_RESTAURANT_PRODUCT;
 }

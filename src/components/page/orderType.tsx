@@ -1,4 +1,3 @@
-import React from "react";
 import { useHistory } from "react-router";
 import { checkoutPath, tableNumberPath } from "../main";
 import { EOrderType } from "../../model/model";
@@ -8,6 +7,7 @@ import { useRegister } from "../../context/register-context";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 
 import "./orderType.scss";
+import { CachedImage } from "../../tabin/components/cachedImage";
 
 export const OrderType = (props: {}) => {
     const history = useHistory();
@@ -35,11 +35,19 @@ export const OrderType = (props: {}) => {
                     <div className="h1 mb-12">Are you staying or going?</div>
                     <div className="imagesWrapper">
                         <div className="mr-12" onClick={() => onSelectOrderType(EOrderType.DINEIN)}>
-                            <img className="dineinImage mb-4" src={`${getPublicCloudFrontDomainName()}/images/order-type-dine-in.png`} />
+                            <CachedImage
+                                className="dineinImage mb-4"
+                                url={`${getPublicCloudFrontDomainName()}/images/order-type-dine-in.png`}
+                                alt="dine-in-image"
+                            />
                             <div className="h2">Dine In</div>
                         </div>
                         <div onClick={() => onSelectOrderType(EOrderType.TAKEAWAY)}>
-                            <img className="takeawayImage mb-4" src={`${getPublicCloudFrontDomainName()}/images/order-type-take-away.png`} />
+                            <CachedImage
+                                className="takeawayImage mb-4"
+                                url={`${getPublicCloudFrontDomainName()}/images/order-type-take-away.png`}
+                                alt="take-away-image"
+                            />
                             <div className="h2">Takeaway</div>
                         </div>
                     </div>

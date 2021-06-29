@@ -1,4 +1,3 @@
-import React from "react";
 import { Spinner } from "./spinner";
 
 export const FullScreenSpinner = (props: { show: boolean; text?: string }) => {

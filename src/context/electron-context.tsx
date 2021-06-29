@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
 
 let electron: any;
 let ipcRenderer: any;
@@ -9,7 +9,7 @@ try {
 
 type ContextProps = {};
 
-const ElectronContext = React.createContext<ContextProps>({});
+const ElectronContext = createContext<ContextProps>({});
 
 const ElectronProvider = (props: { children: React.ReactNode }) => {
     const [electronUpdaterMessage, setElectronUpdaterMessage] = useState<string | null>(null);
@@ -60,7 +60,7 @@ const ElectronProvider = (props: { children: React.ReactNode }) => {
 };
 
 const useElectron = () => {
-    const context = React.useContext(ElectronContext);
+    const context = useContext(ElectronContext);
     if (context === undefined) {
         throw new Error(`useElectron must be used within a ElectronProvider`);
     }

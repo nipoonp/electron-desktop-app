@@ -17,7 +17,7 @@ import { IOrderReceipt } from "./model";
 let mainWindow: any;
 let verifoneClient = new net.Socket();
 
-app.disableHardwareAcceleration();
+// app.disableHardwareAcceleration();
 
 function createWindow() {
     // mainWindow = new BrowserWindow({width: 900, height: 680, fullscreen: true});
@@ -28,6 +28,7 @@ function createWindow() {
         frame: false,
         webPreferences: {
             nodeIntegration: true,
+            contextIsolation: false,
             preload: path.join(__dirname, "preload.js"),
         },
     });

@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
 import { useHistory } from "react-router";
 import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { checkoutPath, beginOrderPath, orderTypePath } from "../main";
-import { convertCentsToDollars } from "../../util/util";
+import { convertCentsToDollars, getQuantityRemainingText, isProductQuantityAvailable } from "../../util/util";
 import { ProductModal } from "../modals/product";
 import { SearchProductModal } from "../modals/searchProductModal";
 import { IGET_RESTAURANT_PRODUCT, IGET_RESTAURANT_CATEGORY, IS3Object } from "../../graphql/customQueries";
@@ -19,20 +20,21 @@ import { Shake } from "reshake";
 import { useRestaurant } from "../../context/restaurant-context";
 
 import "./restaurant.scss";
+import { CachedImage } from "../../tabin/components/cachedImage";
 
 interface IMostPopularProduct {
     category: IGET_RESTAURANT_CATEGORY;
     product: IGET_RESTAURANT_PRODUCT;
 }
 
-export const Restaurant = (props: { restaurantID: string }) => {
+export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: string; selectedProductId?: string }) => {
     // context
     const history = useHistory();
-    const { clearCart, orderType, total, products, addItem } = useCart();
+    const { clearCart, orderType, total, products, cartProductQuantitiesById, addItem } = useCart();
     const { setRestaurant } = useRestaurant();
 
     // query
-    const { data: restaurant, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(props.restaurantID);
+    const { data: restaurant, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(props.restaurantId);
 
     // states
     const [selectedCategory, setSelectedCategory] = useState<IGET_RESTAURANT_CATEGORY | null>(null);
@@ -66,7 +68,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
         return () => clearTimeout(ticker);
     }, []);
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (restaurant) {
             setRestaurant(restaurant);
 
@@ -77,16 +79,33 @@ export const Restaurant = (props: { restaurantID: string }) => {
             //     }
             //     return true;
             // });
+
+            if (props.selectedCategoryId) {
+                restaurant.categories.items.forEach((c) => {
+                    if (c.id == props.selectedCategoryId) {
+                        setSelectedCategory(c);
+                    }
+                });
+            }
+
+            if (props.selectedProductId) {
+                restaurant.categories.items.forEach((c) => {
+                    c.products &&
+                        c.products.items.forEach((p) => {
+                            if (p.id == props.selectedProductId) {
+                                setSelectedProductForProductModal(p.product);
+                                setShowProductModal(true);
+                            }
+                        });
+                });
+            }
         }
     }, [restaurant]);
 
     const compareSortFunc = (a: IMostPopularProduct, b: IMostPopularProduct) => {
-        if (a.product.totalQuantitySold > b.product.totalQuantitySold) {
-            return -1;
-        }
-        if (a.product.totalQuantitySold < b.product.totalQuantitySold) {
-            return 1;
-        }
+        if (!a.product.totalQuantitySold || !b.product.totalQuantitySold) return 0;
+        if (a.product.totalQuantitySold > b.product.totalQuantitySold) return -1;
+        if (a.product.totalQuantitySold < b.product.totalQuantitySold) return 1;
         return 0;
     };
 
@@ -96,14 +115,15 @@ export const Restaurant = (props: { restaurantID: string }) => {
         const newMostPopularProducts: IMostPopularProduct[] = [];
 
         restaurant.categories.items.forEach((c) => {
-            c.products.items.forEach((p) => {
-                if (p.product.totalQuantitySold) {
-                    newMostPopularProducts.push({
-                        category: c,
-                        product: p.product,
-                    });
-                }
-            });
+            c.products &&
+                c.products.items.forEach((p) => {
+                    if (p.product.totalQuantitySold) {
+                        newMostPopularProducts.push({
+                            category: c,
+                            product: p.product,
+                        });
+                    }
+                });
         });
 
         newMostPopularProducts.sort(compareSortFunc);
@@ -181,15 +201,13 @@ export const Restaurant = (props: { restaurantID: string }) => {
 
     const productModal = (
         <>
-            {selectedCategoryForProductModal && selectedProductForProductModal && restaurant && showProductModal && (
+            {selectedCategoryForProductModal && selectedProductForProductModal && showProductModal && (
                 <ProductModal
                     isOpen={showProductModal}
                     category={selectedCategoryForProductModal}
                     product={selectedProductForProductModal}
                     onAddItem={onAddItem}
                     onClose={onCloseProductModal}
-                    restaurantName={restaurant.name}
-                    restaurantIsAcceptingOrders={restaurant.isAcceptingOrders}
                 />
             )}
         </>
@@ -218,23 +236,26 @@ export const Restaurant = (props: { restaurantID: string }) => {
     const productDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
         const isAvailable = isItemAvailable(product.availability);
+        const isQuantityAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById);
+
+        const isValid = !isSoldOut && isAvailable && isQuantityAvailable;
 
         return (
             <>
-                <div
-                    className={`product ${isSoldOut ? "sold-out" : ""} `}
-                    onClick={() => !isSoldOut && isAvailable && onClickProduct(category, product)}
-                >
+                <div key={product.id} className={`product ${isValid ? "" : "sold-out"}`} onClick={() => isValid && onClickProduct(category, product)}>
+                    {product.totalQuantityAvailable && product.totalQuantityAvailable <= 5 && (
+                        <span className="quantity-remaining ml-2">{getQuantityRemainingText(product.totalQuantityAvailable)}</span>
+                    )}
+
                     {product.image && (
-                        <img
+                        <CachedImage
+                            url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
                             className="image mb-2"
-                            src={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                            alt="product-image"
                         />
                     )}
 
-                    <div className="name text-bold">
-                        {!isAvailable ? `${product.name} (UNAVAILABLE)` : isSoldOut ? `${product.name} (SOLD OUT)` : `${product.name}`}
-                    </div>
+                    <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
 
                     {product.description && <div className="description mt-2">{product.description}</div>}
 
@@ -276,6 +297,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
         <>
             {restaurant.categories.items.map((c, index) => (
                 <Category
+                    key={c.id}
                     isSelected={selectedCategory != null && selectedCategory.id == c.id}
                     category={c}
                     onCategorySelected={(category: IGET_RESTAURANT_CATEGORY) => {
@@ -295,7 +317,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
                         setShowSearchProductModal(true);
                     }}
                 >
-                    <img className="icon" src={`${getPublicCloudFrontDomainName()}/images/search-icon.png`} />
+                    <CachedImage className="icon" url={`${getPublicCloudFrontDomainName()}/images/search-icon.png`} alt="search-icon" />
                     <div className="name">Search</div>
                 </div>
             </Shake>
@@ -309,7 +331,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
                 setSelectedCategory(null);
             }}
         >
-            <img className="icon" src={`${getPublicCloudFrontDomainName()}/images/most-popular.png`} />
+            <CachedImage className="icon" url={`${getPublicCloudFrontDomainName()}/images/most-popular.png`} alt="most-popular-icon" />
             <div className="name">Most Popular</div>
         </div>
     );
@@ -320,9 +342,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
                 <>
                     <div className="h1 mb-6">Most Popular</div>
                     <div className="products">
-                        {mostPopularProducts.map((mostPopularProduct) => {
-                            return productDisplay(mostPopularProduct.category, mostPopularProduct.product);
-                        })}
+                        {mostPopularProducts.map((mostPopularProduct) => productDisplay(mostPopularProduct.category, mostPopularProduct.product))}
                     </div>
                 </>
             )}
@@ -340,11 +360,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
                     return (
                         <>
                             <div className="h1 mb-6">{c.name}</div>
-                            <div className="products">
-                                {c.products.items.map((p) => {
-                                    return productDisplay(c, p.product);
-                                })}
-                            </div>
+                            <div className="products">{c.products && c.products.items.map((p) => productDisplay(c, p.product))}</div>
                         </>
                     );
                 })}
@@ -355,7 +371,11 @@ export const Restaurant = (props: { restaurantID: string }) => {
         <>
             <div className="total-container">
                 <div className="total-wrapper mb-2">
-                    <img className="shopping-bag-icon mr-2" src={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`} />
+                    <CachedImage
+                        className="shopping-bag-icon mr-2"
+                        url={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.png`}
+                        alt="shopping-bag-icon"
+                    />
                     <div className="h4 total">Total: ${convertCentsToDollars(total)}</div>
                 </div>
                 <Button className="large" disabled={!products || products.length == 0} onClick={onClickCart}>
@@ -393,5 +413,11 @@ export const Restaurant = (props: { restaurantID: string }) => {
 };
 
 const RestaurantLogo = (props: { image: IS3Object }) => {
-    return <img src={`${getCloudFrontDomainName()}/protected/${props.image.identityPoolId}/${props.image.key}`} className="restaurant-logo" />;
+    return (
+        <CachedImage
+            url={`${getCloudFrontDomainName()}/protected/${props.image.identityPoolId}/${props.image.key}`}
+            className="restaurant-logo"
+            alt="restaurant-logo"
+        />
+    );
 };

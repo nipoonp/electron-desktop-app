@@ -1,5 +1,3 @@
-import React from "react";
-
 import "./checkbox.scss";
 
 export const Checkbox = (props: IProps) => {
@@ -15,7 +13,7 @@ export const Checkbox = (props: IProps) => {
                 <div className={`checkbox ${props.disabled ? "disabled" : ""}`}>
                     <div className={`tick ${props.checked ? "checked" : ""}`} />
                 </div>
-                {props.children && <div className="checkbox-children">{props.children}</div>}
+                {props.children && <div className="checkbox-children ml-3">{props.children}</div>}
                 {/* {props.error && <ErrorMessage message={props.error} />} */}
             </div>
         </>

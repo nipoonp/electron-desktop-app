@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useAuth } from "../../../context/auth-context";
 import { useRegister } from "../../../context/register-context";
 import { useRestaurant } from "../../../context/restaurant-context";

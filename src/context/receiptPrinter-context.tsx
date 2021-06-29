@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
+
 import { IOrderReceipt } from "../model/model";
 import { toast } from "../tabin/components/toast";
 
@@ -13,7 +14,7 @@ type ContextProps = {
     printReceipt: (payload: IOrderReceipt) => void;
 };
 
-const ReceiptPrinterContext = React.createContext<ContextProps>({
+const ReceiptPrinterContext = createContext<ContextProps>({
     printReceipt: (payload: IOrderReceipt) => {},
 });
 
@@ -41,7 +42,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 };
 
 const useReceiptPrinter = () => {
-    const context = React.useContext(ReceiptPrinterContext);
+    const context = useContext(ReceiptPrinterContext);
     if (context === undefined) {
         throw new Error(`useReceiptPrinter must be used within a ReceiptPrinterProvider`);
     }

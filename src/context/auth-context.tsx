@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useReducer } from "react";
+import {
+    createContext,
+    useLayoutEffect,
+    useContext,
+    useState,
+    useEffect,
+    useReducer,
+} from "react";
 import { useAsync } from "react-async";
 import { Auth } from "aws-amplify";
 import { Hub, Logger } from "aws-amplify";
@@ -91,7 +98,7 @@ const checkIfUserIsAdmin = (data: any) => {
 };
 
 // CONTEXT
-const AuthContext = React.createContext<ContextProps>({
+const AuthContext = createContext<ContextProps>({
     login: login,
     logout: logout,
     register: (email: string, password: string, name: string, lastName: string) => {
@@ -272,6 +279,7 @@ function AuthProvider(props: any) {
 
                 const isAdmin = checkIfUserIsAdmin(user);
 
+                //@ts-ignore
                 dispatch({ type: "signIn", user: user, isAdmin: isAdmin });
                 break;
             case "signUp":
@@ -308,7 +316,7 @@ function AuthProvider(props: any) {
     });
     const [firstAttemptFinished, setFirstAttemptFinished] = useState(false);
 
-    React.useLayoutEffect(() => {
+    useLayoutEffect(() => {
         logger.info("useLayoutEffect, isSettled: ", isSettled);
         if (isSettled) {
             setFirstAttemptFinished(true);
@@ -427,7 +435,7 @@ function AuthProvider(props: any) {
 }
 
 function useAuth(): ContextProps {
-    const context = React.useContext(AuthContext);
+    const context = useContext(AuthContext);
     if (context === undefined) {
         throw new Error(`useAuth must be used within a AuthProvider`);
     }

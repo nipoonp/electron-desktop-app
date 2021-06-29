@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
+
 import { useHistory } from "react-router";
 import { beginOrderPath } from "../../components/main";
 import { useCart } from "../../context/cart-context";

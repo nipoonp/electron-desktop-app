@@ -1,4 +1,3 @@
-import React from "react";
 import { useHistory } from "react-router";
 import { checkoutPath } from "../main";
 import { useCart } from "../../context/cart-context";

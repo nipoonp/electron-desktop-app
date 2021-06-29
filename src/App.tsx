@@ -1,4 +1,3 @@
-import React from "react";
 import Amplify, { Auth } from "aws-amplify";
 import awsconfig from "./aws-exports";
 import Main from "./components/main";
@@ -20,6 +19,7 @@ import { ReceiptPrinterProvider } from "./context/receiptPrinter-context";
 import { RegisterProvider } from "./context/register-context";
 import { ElectronProvider } from "./context/electron-context";
 import { RestaurantProvider } from "./context/restaurant-context";
+import { WindcaveProvider } from "./context/windcave-context";
 // import { GoogleMapsProvider } from "./context/google-maps-context";
 // import { AlgoliaProvider } from "./context/algolia-context";
 // import { LocationProvider } from "./context/location-context";
@@ -139,7 +139,9 @@ const App = () => {
                                     <ReceiptPrinterProvider>
                                         <VerifoneProvider>
                                             <SmartpayProvider>
-                                                <Main />
+                                                <WindcaveProvider>
+                                                    <Main />
+                                                </WindcaveProvider>
                                             </SmartpayProvider>
                                         </VerifoneProvider>
                                     </ReceiptPrinterProvider>
