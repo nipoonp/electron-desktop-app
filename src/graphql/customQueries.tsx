@@ -165,7 +165,12 @@ export const GET_RESTAURANT = gql`
             }
             upSellCrossSell {
                 id
-                custom {
+                customCategories {
+                    items {
+                        id
+                    }
+                }
+                customProducts {
                     items {
                         id
                         categories {
@@ -448,9 +453,16 @@ export interface IGET_RESTAURANT_REGISTER_PRINTER_IGNORE_PRODUCT {
 
 export interface IGET_DASHBOARD_UP_SELL_CROSS_SELL {
     id: string;
-    custom: {
+    customCategories: {
+        items: IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_CATEGORY[];
+    };
+    customProducts: {
         items: IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT[];
     };
+}
+
+export interface IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_CATEGORY {
+    id: string;
 }
 
 export interface IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT {

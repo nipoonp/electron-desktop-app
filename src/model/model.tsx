@@ -83,7 +83,11 @@ export interface IOrderReceipt {
     table: string | null;
 }
 
-export interface IMatchingUpSellCrossSellItem {
+export interface IMatchingUpSellCrossSellCategoryItem {
+    category: IGET_RESTAURANT_CATEGORY;
+}
+
+export interface IMatchingUpSellCrossSellProductItem {
     category: IGET_RESTAURANT_CATEGORY;
     product: IGET_RESTAURANT_PRODUCT;
 }

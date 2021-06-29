@@ -95,11 +95,7 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
 
         return (
             <>
-                <div
-                    key={product.id}
-                    className={`product ${isValid ? "" : "sold-out"}`}
-                    onClick={() => !isSoldOut && isAvailable && onClickProduct(category, product)}
-                >
+                <div key={product.id} className={`product ${isValid ? "" : "sold-out"}`} onClick={() => isValid && onClickProduct(category, product)}>
                     {product.totalQuantityAvailable && product.totalQuantityAvailable <= 5 && (
                         <span className="quantity-remaining ml-2">{getQuantityRemainingText(product.totalQuantityAvailable)}</span>
                     )}

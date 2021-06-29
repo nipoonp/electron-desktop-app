@@ -6,7 +6,7 @@ import { ModalV2 } from "../../tabin/components/modalv2";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
 
 import "./upSellProduct.scss";
-import { IMatchingUpSellCrossSellItem } from "../../model/model";
+import { IMatchingUpSellCrossSellProductItem } from "../../model/model";
 import { useRef } from "react";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { useCart } from "../../context/cart-context";
@@ -15,7 +15,7 @@ interface IUpSellProductModalProps {
     isOpen: boolean;
     onSelectUpSellCrossSellProduct: (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => void;
     onClose: () => void;
-    upSellCrossSaleProductItems: IMatchingUpSellCrossSellItem[];
+    upSellCrossSaleProductItems: IMatchingUpSellCrossSellProductItem[];
 }
 
 export const UpSellProductModal = (props: IUpSellProductModalProps) => {
@@ -43,11 +43,7 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
 
         return (
             <>
-                <div
-                    key={product.id}
-                    className={`product ${isValid ? "" : "sold-out"}`}
-                    onClick={() => !isSoldOut && isAvailable && onAddToOrder(category, product)}
-                >
+                <div key={product.id} className={`product ${isValid ? "" : "sold-out"}`} onClick={() => isValid && onAddToOrder(category, product)}>
                     {product.totalQuantityAvailable && product.totalQuantityAvailable <= 5 && (
                         <span className="quantity-remaining ml-2">{getQuantityRemainingText(product.totalQuantityAvailable)}</span>
                     )}
@@ -60,9 +56,7 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
                         />
                     )}
 
-                    <div className="name text-bold">
-                        {isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}
-                    </div>
+                    <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
 
                     {product.description && <div className="description mt-2">{product.description}</div>}
 
@@ -109,8 +103,8 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
     const content = (
         <>
             <div className="content">
-                <div className="main-image-container">{mainImage}</div>
-                <div className="you-may-also-like-container">
+                {mainImage}
+                <div>
                     <div className="h1 mb-4 text-center">You May Also Like</div>
                     {products}
                 </div>

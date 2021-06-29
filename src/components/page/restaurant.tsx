@@ -27,14 +27,14 @@ interface IMostPopularProduct {
     product: IGET_RESTAURANT_PRODUCT;
 }
 
-export const Restaurant = (props: { restaurantID: string }) => {
+export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: string; selectedProductId?: string }) => {
     // context
     const history = useHistory();
     const { clearCart, orderType, total, products, cartProductQuantitiesById, addItem } = useCart();
     const { setRestaurant } = useRestaurant();
 
     // query
-    const { data: restaurant, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(props.restaurantID);
+    const { data: restaurant, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(props.restaurantId);
 
     // states
     const [selectedCategory, setSelectedCategory] = useState<IGET_RESTAURANT_CATEGORY | null>(null);
@@ -79,6 +79,26 @@ export const Restaurant = (props: { restaurantID: string }) => {
             //     }
             //     return true;
             // });
+
+            if (props.selectedCategoryId) {
+                restaurant.categories.items.forEach((c) => {
+                    if (c.id == props.selectedCategoryId) {
+                        setSelectedCategory(c);
+                    }
+                });
+            }
+
+            if (props.selectedProductId) {
+                restaurant.categories.items.forEach((c) => {
+                    c.products &&
+                        c.products.items.forEach((p) => {
+                            if (p.id == props.selectedProductId) {
+                                setSelectedProductForProductModal(p.product);
+                                setShowProductModal(true);
+                            }
+                        });
+                });
+            }
         }
     }, [restaurant]);
 
@@ -263,7 +283,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
                 }}
             >
                 {!isAvailable ? (
-                    <div className={`name ${isAvailable ? "available" : "sold-out"}`}>{category.name} (SOLD OUT)</div>
+                    <div className={`name ${isAvailable ? "available" : "unavailable"}`}>{category.name} (UNAVAILABLE)</div>
                 ) : isSelected ? (
                     <div className="text-bold">{category.name}</div>
                 ) : (

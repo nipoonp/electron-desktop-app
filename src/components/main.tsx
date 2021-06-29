@@ -126,8 +126,17 @@ const Routes = () => {
             <RestaurantRegisterPrivateRoute exact path={checkoutPath} component={Checkout} />
             <RestaurantRegisterPrivateRoute
                 exact
-                path={`${restaurantPath}/:restaurantId`}
-                component={(props: RouteComponentProps<any>) => <Restaurant restaurantID={props.match.params.restaurantId} {...props} />}
+                path={`${restaurantPath}/:restaurantId/:selectedCategoryId?/:selectedProductId?`}
+                component={(props: RouteComponentProps<any>) => {
+                    return (
+                        <Restaurant
+                            restaurantId={props.match.params.restaurantId}
+                            selectedCategoryId={props.match.params.selectedCategoryId}
+                            selectedProductId={props.match.params.selectedProductId}
+                            {...props}
+                        />
+                    );
+                }}
             />
             <Route exact path={unauthorizedPath} component={Unauthorised} />
             <Route component={NoMatch} />
