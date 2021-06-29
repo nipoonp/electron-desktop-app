@@ -435,6 +435,7 @@ export const ProductModal = (props: {
                                         onSelectRadioModifier(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier)
                                     }
                                     selectedModifiers={orderedModifiers[mg.modifierGroup.id] || []}
+                                    productQuantity={quantity}
                                     error={error[mg.modifierGroup.id]}
                                     disabled={false}
                                 />
@@ -456,7 +457,7 @@ export const ProductModal = (props: {
     const footer = (
         <>
             <div className="stepper mb-4">
-                <Stepper count={quantity} min={1} onUpdate={onUpdateQuantity} size={48} />
+                <Stepper count={quantity} min={1} max={props.product.totalQuantityAvailable} onUpdate={onUpdateQuantity} size={48} />
             </div>
             <div className="footer-buttons-container">
                 <Button className="button large mr-3 cancel-button" onClick={onModalClose}>
@@ -492,19 +493,6 @@ export const ProductModal = (props: {
     );
 };
 
-// helpers
-const isMaxReached = (max: number, selectedModifiers?: ICartModifier[]): boolean => {
-    if (selectedModifiers === undefined) {
-        return false;
-    }
-
-    let count = 0;
-
-    selectedModifiers.forEach((selectedModifier) => (count += selectedModifier.quantity));
-
-    return count >= max;
-};
-
 // components
 export const ModifierGroup = (props: {
     modifierGroup: IGET_RESTAURANT_MODIFIER_GROUP;
@@ -513,6 +501,7 @@ export const ModifierGroup = (props: {
     onChangeModifierQuantity: (selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number, quantity: number) => void;
     onSelectRadioModifier: (selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) => void;
     selectedModifiers: ICartModifier[];
+    productQuantity: number;
     error?: string;
     disabled: boolean;
 }) => {
@@ -535,6 +524,30 @@ export const ModifierGroup = (props: {
         } else {
             return isItemSoldOut(modifier.soldOut, modifier.soldOutDate);
         }
+    };
+
+    const getModifiersSelectedCount = (selectedModifiers?: ICartModifier[]): number => {
+        if (selectedModifiers === undefined) {
+            return 0;
+        }
+
+        let count = 0;
+
+        selectedModifiers.forEach((selectedModifier) => (count += selectedModifier.quantity));
+
+        return count;
+    };
+
+    const isMaxReached = (max: number, selectedModifiers?: ICartModifier[]): boolean => {
+        if (selectedModifiers === undefined) {
+            return false;
+        }
+
+        let count = 0;
+
+        selectedModifiers.forEach((selectedModifier) => (count += selectedModifier.quantity));
+
+        return count >= max;
     };
 
     const checkMaxReached = (modifier: IGET_RESTAURANT_MODIFIER) => {
@@ -584,8 +597,10 @@ export const ModifierGroup = (props: {
                                 props.onSelectRadioModifier(selectedModifier, m.preSelectedQuantity);
                             }}
                             modifierQuantity={modifierQuantity(m.modifier)}
+                            productQuantity={props.productQuantity}
                             checked={checkModifierSelected(m.modifier)}
                             maxReached={isMaxReached(props.modifierGroup.choiceMax, props.selectedModifiers)}
+                            modifiersSelectedCount={getModifiersSelectedCount(props.selectedModifiers)}
                             soldOut={isModifierSoldOutAndAvailable}
                             disabled={props.disabled || isModifierSoldOutAndAvailable || checkMaxReached(m.modifier)}
                         />
@@ -599,10 +614,12 @@ const Modifier = (props: {
     modifier: IGET_RESTAURANT_MODIFIER;
     choiceDuplicate: number;
     maxReached: boolean;
+    modifiersSelectedCount: number;
     soldOut: boolean;
     disabled: boolean;
 
     modifierQuantity: number;
+    productQuantity: number;
     // If checkboxes are used, this must be given
     checked: boolean;
 
@@ -622,6 +639,17 @@ const Modifier = (props: {
     // states
     const [stepperCount, setStepperCount] = useState(props.modifierQuantity);
     const [displayModifierStepper, setDisplayModifierStepper] = useState(false);
+
+    useEffect(() => {
+        if (props.modifier.totalQuantityAvailable) {
+            const count = getStepperCount();
+
+            if (props.modifier.totalQuantityAvailable) console.log("xxx...", count);
+
+            setStepperCount(count);
+            onChangeModifierQuantity(count);
+        }
+    }, [props.productQuantity]);
 
     // callbacks
     const onCheckingModifier = () => {
@@ -670,24 +698,50 @@ const Modifier = (props: {
 
                 {props.soldOut ? (
                     <div>
-                        {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)}) (SOLD OUT)`}
+                        {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)}) (SOLD OUT)`} (
+                        {props.modifier.totalQuantityAvailable})
                     </div>
                 ) : (
                     <div>
-                        {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)})`}
+                        {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)})`} (
+                        {props.modifier.totalQuantityAvailable})
                     </div>
                 )}
             </div>
         </>
     );
 
+    const getModifierStepperMax = () => {
+        if (props.modifier.totalQuantityAvailable) {
+            let maxSelectable = Math.min(props.choiceDuplicate - props.modifiersSelectedCount, props.modifier.totalQuantityAvailable);
+
+            if (maxSelectable < props.modifier.totalQuantityAvailable) {
+                maxSelectable = props.modifier.totalQuantityAvailable;
+            }
+
+            return Math.floor(maxSelectable / props.productQuantity);
+        } else {
+            return props.maxReached ? stepperCount : props.choiceDuplicate;
+        }
+    };
+
+    const getStepperCount = () => {
+        const maxAllowed = getModifierStepperMax();
+
+        if (stepperCount > maxAllowed) {
+            return maxAllowed;
+        } else {
+            return stepperCount;
+        }
+    };
+
     const stepper = (
         <Stepper
             className="pt-2 pb-2"
-            count={stepperCount}
+            count={getStepperCount()}
             setCount={setStepperCount}
             min={0}
-            max={props.maxReached ? stepperCount : props.choiceDuplicate}
+            max={getModifierStepperMax()}
             onUpdate={onChangeModifierQuantity}
             disabled={props.disabled}
             size={stepperHeight}

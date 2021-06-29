@@ -232,7 +232,8 @@ export const Restaurant = (props: { restaurantID: string }) => {
                         />
                     )}
                     <div className="name text-bold">
-                        {!isAvailable ? `${product.name} (UNAVAILABLE)` : isSoldOut ? `${product.name} (SOLD OUT)` : `${product.name}`}
+                        {!isAvailable ? `${product.name} (UNAVAILABLE)` : isSoldOut ? `${product.name} (SOLD OUT)` : `${product.name}`} (
+                        {product.totalQuantityAvailable})
                     </div>
 
                     {product.description && <div className="description mt-2">{product.description}</div>}
