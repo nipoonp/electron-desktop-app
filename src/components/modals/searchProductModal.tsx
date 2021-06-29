@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { Modal } from "../../tabin/components/modal";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
-import { isItemAvailable, isProductQuantityAvailable, isItemSoldOut } from "../../util/util";
+import { isItemAvailable, isProductQuantityAvailable, isItemSoldOut, getQuantityRemainingText } from "../../util/util";
 import { convertCentsToDollars } from "../../util/util";
 import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
 import { Button } from "../../tabin/components/button";
@@ -100,6 +100,10 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
                     className={`product ${isValid ? "" : "sold-out"}`}
                     onClick={() => !isSoldOut && isAvailable && onClickProduct(category, product)}
                 >
+                    {product.totalQuantityAvailable && product.totalQuantityAvailable <= 5 && (
+                        <span className="quantity-remaining ml-2">{getQuantityRemainingText(product.totalQuantityAvailable)}</span>
+                    )}
+
                     <div style={{ margin: "0 auto" }}>
                         {product.image && (
                             <CachedImage
@@ -110,9 +114,7 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
                         )}
                     </div>
 
-                    <div className="name text-bold">
-                        {isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}({product.totalQuantityAvailable})
-                    </div>
+                    <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
 
                     {product.description && <div className="description mt-2">{product.description}</div>}
 

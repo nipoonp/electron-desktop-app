@@ -121,6 +121,14 @@ export const isModifierQuantityAvailable = (
     return modifierQuantityAvailable > 0;
 };
 
+export const getQuantityRemainingText = (quantityRemaining: number) => {
+    if (quantityRemaining == 1) {
+        return "Last one!";
+    } else {
+        return `${quantityRemaining} left!`;
+    }
+};
+
 const getDayData = (availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS) => {
     const day: number = getDay(new Date());
 

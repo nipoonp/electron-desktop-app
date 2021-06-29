@@ -6,6 +6,7 @@ import { toast } from "../../tabin/components/toast";
 import {
     getModifierQuantityAvailable,
     getProductQuantityAvailable,
+    getQuantityRemainingText,
     isItemAvailable,
     isItemSoldOut,
     isModifierQuantityAvailable,
@@ -50,29 +51,30 @@ export const ProductModal = (props: {
         productCartIndex: number;
     };
 }) => {
+    const { category, product, isOpen, onAddItem, onUpdateItem, onClose, editProduct } = props;
     // context
     const { user } = useUser();
     const { cartProductQuantitiesById } = useCart();
 
     // states
-    const [orderedModifiers, setOrderedModifiers] = useState<ISelectedProductModifiers>(props.editProduct ? props.editProduct.orderedModifiers : {});
-    const [quantity, setQuantity] = useState(props.editProduct ? props.editProduct.quantity : 1);
-    const [notes, setNotes] = useState(props.editProduct ? props.editProduct.notes : "");
+    const [orderedModifiers, setOrderedModifiers] = useState<ISelectedProductModifiers>(editProduct ? editProduct.orderedModifiers : {});
+    const [quantity, setQuantity] = useState(editProduct ? editProduct.quantity : 1);
+    const [notes, setNotes] = useState(editProduct ? editProduct.notes : "");
     const [error, setError] = useState<{ [modifierGroupId: string]: string }>({});
 
-    const [totalDisplayPrice, setTotalDisplayPrice] = useState(props.product.price);
+    const [totalDisplayPrice, setTotalDisplayPrice] = useState(product.price);
 
     useEffect(() => {
         console.log(orderedModifiers);
     }, [orderedModifiers]);
 
     useEffect(() => {
-        if (props.editProduct) return;
+        if (editProduct) return;
 
         let newOrderedModifiers: ISelectedProductModifiers = {};
 
-        props.product.modifierGroups &&
-            props.product.modifierGroups.items.forEach((modifierGroupLink) => {
+        product.modifierGroups &&
+            product.modifierGroups.items.forEach((modifierGroupLink) => {
                 modifierGroupLink.modifierGroup.modifiers &&
                     modifierGroupLink.modifierGroup.modifiers.items.map((modifierLink) => {
                         if (modifierLink.preSelectedQuantity) {
@@ -108,7 +110,7 @@ export const ProductModal = (props: {
     }, []);
 
     useEffect(() => {
-        let price = props.product.price;
+        let price = product.price;
 
         for (let key in orderedModifiers) {
             let currElement: ICartModifier[] = orderedModifiers[key];
@@ -127,7 +129,7 @@ export const ProductModal = (props: {
 
     // callbacks
     const onModalClose = () => {
-        props.onClose();
+        onClose();
     };
 
     const onCheckingModifier = (selectedModifierGroupId: string, preSelectedModifierQuantity: number, selectedModifier: IGET_RESTAURANT_MODIFIER) => {
@@ -277,14 +279,14 @@ export const ProductModal = (props: {
 
     // TODO refactor
     const onSubmit = () => {
-        logger.debug("onSubmit", [props.product, orderedModifiers]);
-        console.log("onSubmit", [props.product, orderedModifiers]);
+        logger.debug("onSubmit", [product, orderedModifiers]);
+        console.log("onSubmit", [product, orderedModifiers]);
 
         let error: { [modifierGroupId: string]: string } = {};
 
         // TODO: Refactor into functions
-        props.product.modifierGroups &&
-            props.product.modifierGroups.items.map((mg) => {
+        product.modifierGroups &&
+            product.modifierGroups.items.map((mg) => {
                 const choiceMin = mg.modifierGroup.choiceMin;
                 const choiceMax = mg.modifierGroup.choiceMax;
                 const choiceDuplicate = mg.modifierGroup.choiceDuplicate;
@@ -357,8 +359,8 @@ export const ProductModal = (props: {
         // setLoadingMessage("Updating cart");
         const selectedModifierGroups: ICartModifierGroup[] = [];
 
-        props.product.modifierGroups &&
-            props.product.modifierGroups.items.forEach((mg) => {
+        product.modifierGroups &&
+            product.modifierGroups.items.forEach((mg) => {
                 if (orderedModifiers[mg.modifierGroup.id]) {
                     selectedModifierGroups.push({
                         id: mg.modifierGroup.id,
@@ -373,43 +375,41 @@ export const ProductModal = (props: {
             });
 
         const productToOrder: ICartProduct = {
-            id: props.product.id,
-            name: props.product.name,
-            price: props.product.price,
-            image: props.product.image
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            image: product.image
                 ? {
-                      key: props.product.image.key,
-                      region: props.product.image.region,
-                      bucket: props.product.image.bucket,
-                      identityPoolId: props.product.image.identityPoolId,
+                      key: product.image.key,
+                      region: product.image.region,
+                      bucket: product.image.bucket,
+                      identityPoolId: product.image.identityPoolId,
                   }
                 : null,
             quantity: quantity,
             notes: notes,
             category: {
-                id: props.category.id,
-                name: props.category.name,
-                image: props.category.image
+                id: category.id,
+                name: category.name,
+                image: category.image
                     ? {
-                          key: props.category.image.key,
-                          region: props.category.image.region,
-                          bucket: props.category.image.bucket,
-                          identityPoolId: props.category.image.identityPoolId,
+                          key: category.image.key,
+                          region: category.image.region,
+                          bucket: category.image.bucket,
+                          identityPoolId: category.image.identityPoolId,
                       }
                     : null,
             },
             modifierGroups: selectedModifierGroups,
         };
 
-        if (props.editProduct) {
-            props.onUpdateItem && props.onUpdateItem(props.editProduct.productCartIndex, productToOrder);
+        if (editProduct) {
+            onUpdateItem && onUpdateItem(editProduct.productCartIndex, productToOrder);
         } else {
-            console.log("adding item", productToOrder);
-            props.onAddItem && props.onAddItem(productToOrder);
-            console.log("added!");
+            onAddItem && onAddItem(productToOrder);
         }
 
-        props.onClose();
+        onClose();
     };
 
     const onUpdateQuantity = (count: number) => {
@@ -422,8 +422,8 @@ export const ProductModal = (props: {
 
     const modifierGroups = (
         <>
-            {props.product.modifierGroups &&
-                props.product.modifierGroups.items.map((mg) => (
+            {product.modifierGroups &&
+                product.modifierGroups.items.map((mg) => (
                     <>
                         {!mg.hideForCustomer && (
                             <>
@@ -464,12 +464,12 @@ export const ProductModal = (props: {
     );
 
     const getProductFooterMaxQuantity = () => {
-        if (!props.product.totalQuantityAvailable) return;
+        if (!product.totalQuantityAvailable) return;
 
         return getProductQuantityAvailable(
             {
-                id: props.product.id,
-                totalQuantityAvailable: props.product.totalQuantityAvailable,
+                id: product.id,
+                totalQuantityAvailable: product.totalQuantityAvailable,
             },
             cartProductQuantitiesById
         );
@@ -485,7 +485,7 @@ export const ProductModal = (props: {
                     Cancel
                 </Button>
                 <Button className="button large add-update-order-button" onClick={onSubmit}>
-                    {props.editProduct ? "Update Item " : "Add To Order "} ${convertCentsToDollars(totalDisplayPrice)}
+                    {editProduct ? "Update Item " : "Add To Order "} ${convertCentsToDollars(totalDisplayPrice)}
                 </Button>
             </div>
         </>
@@ -495,8 +495,8 @@ export const ProductModal = (props: {
         <>
             <div className="product">
                 <div className="mt-11" />
-                <div className="h1 mb-4">{props.product.name}</div>
-                {props.product.description && <div className="description">{props.product.description}</div>}
+                <div className="h1 mb-4">{product.name}</div>
+                {product.description && <div className="description">{product.description}</div>}
                 <div className="separator-6"></div>
                 {modifierGroups}
                 {user && productNotes}
@@ -507,7 +507,7 @@ export const ProductModal = (props: {
 
     return (
         <>
-            <Modal isOpen={props.isOpen} onRequestClose={onModalClose}>
+            <Modal isOpen={isOpen} onRequestClose={onModalClose}>
                 <div className="product-modal">{content}</div>
             </Modal>
         </>
@@ -526,15 +526,27 @@ export const ModifierGroup = (props: {
     error?: string;
     disabled: boolean;
 }) => {
+    const {
+        modifierGroup,
+        onCheckingModifier,
+        onUnCheckingModifier,
+        onChangeModifierQuantity,
+        onSelectRadioModifier,
+        selectedModifiers,
+        productQuantity,
+        error,
+        disabled,
+    } = props;
+
     const { cartProductQuantitiesById, cartModifierQuantitiesById } = useCart();
 
     const modifierQuantity = (modifier: IGET_RESTAURANT_MODIFIER) => {
-        let m = props.selectedModifiers.find((selectedModifier) => selectedModifier.id === modifier.id);
+        let m = selectedModifiers.find((selectedModifier) => selectedModifier.id === modifier.id);
         return m ? m.quantity : 0;
     };
 
     const checkModifierSelected = (modifier: IGET_RESTAURANT_MODIFIER) => {
-        let m = props.selectedModifiers.find((selectedModifier) => selectedModifier.id === modifier.id && selectedModifier.quantity > 0);
+        let m = selectedModifiers.find((selectedModifier) => selectedModifier.id === modifier.id && selectedModifier.quantity > 0);
         return m ? true : false;
     };
 
@@ -579,9 +591,9 @@ export const ModifierGroup = (props: {
 
     const checkMaxReached = (modifier: IGET_RESTAURANT_MODIFIER) => {
         return (
-            !(props.modifierGroup.choiceMin === 1 && props.modifierGroup.choiceMax === 1) &&
-            isMaxReached(props.modifierGroup.choiceMax, props.selectedModifiers) &&
-            props.selectedModifiers.find((selectedModifier) => {
+            !(modifierGroup.choiceMin === 1 && modifierGroup.choiceMax === 1) &&
+            isMaxReached(modifierGroup.choiceMax, selectedModifiers) &&
+            selectedModifiers.find((selectedModifier) => {
                 return selectedModifier.id === modifier.id;
             }) === undefined
         );
@@ -589,47 +601,46 @@ export const ModifierGroup = (props: {
 
     // display
     const getSelectInstructions = () => {
-        return props.modifierGroup.choiceMin === props.modifierGroup.choiceMax
-            ? "Select " + props.modifierGroup.choiceMin
-            : props.modifierGroup.choiceMin === 0
-            ? "Select up to " + props.modifierGroup.choiceMax
-            : "Make between " + props.modifierGroup.choiceMin + " and " + props.modifierGroup.choiceMax + " selections";
+        return modifierGroup.choiceMin === modifierGroup.choiceMax
+            ? "Select " + modifierGroup.choiceMin
+            : modifierGroup.choiceMin === 0
+            ? "Select up to " + modifierGroup.choiceMax
+            : "Make between " + modifierGroup.choiceMin + " and " + modifierGroup.choiceMax + " selections";
     };
 
     return (
         <>
-            <div className="h2 mb-2">{props.modifierGroup.name}</div>
-            {props.error && <div className="text-error mb-2">{props.error}</div>}
+            <div className="h2 mb-2">{modifierGroup.name}</div>
+            {error && <div className="text-error mb-2">{error}</div>}
             <div className="mb-2">({getSelectInstructions()})</div>
-            {props.modifierGroup.modifiers &&
-                props.modifierGroup.modifiers.items.map((m) => {
+            {modifierGroup.modifiers &&
+                modifierGroup.modifiers.items.map((m) => {
                     const isValid = checkModifierIsValid(m.modifier);
 
                     return (
                         <Modifier
-                            modifierGroupName={props.modifierGroup.name}
-                            radio={props.modifierGroup.choiceMin !== 0 && props.modifierGroup.choiceMax === 1}
+                            radio={modifierGroup.choiceMin !== 0 && modifierGroup.choiceMax === 1}
                             modifier={m.modifier}
-                            choiceDuplicate={props.modifierGroup.choiceDuplicate}
+                            choiceDuplicate={modifierGroup.choiceDuplicate}
                             onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                props.onCheckingModifier(selectedModifier, m.preSelectedQuantity);
+                                onCheckingModifier(selectedModifier, m.preSelectedQuantity);
                             }}
                             onUnCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                props.onUnCheckingModifier(selectedModifier, m.preSelectedQuantity);
+                                onUnCheckingModifier(selectedModifier, m.preSelectedQuantity);
                             }}
                             onChangeModifierQuantity={(selectedModifier: IGET_RESTAURANT_MODIFIER, quantity: number) => {
-                                props.onChangeModifierQuantity(selectedModifier, m.preSelectedQuantity, quantity);
+                                onChangeModifierQuantity(selectedModifier, m.preSelectedQuantity, quantity);
                             }}
                             onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                props.onSelectRadioModifier(selectedModifier, m.preSelectedQuantity);
+                                onSelectRadioModifier(selectedModifier, m.preSelectedQuantity);
                             }}
                             modifierQuantity={modifierQuantity(m.modifier)}
-                            productQuantity={props.productQuantity}
+                            productQuantity={productQuantity}
                             checked={checkModifierSelected(m.modifier)}
-                            maxReached={isMaxReached(props.modifierGroup.choiceMax, props.selectedModifiers)}
-                            modifiersSelectedCount={getModifiersSelectedCount(props.selectedModifiers)}
+                            maxReached={isMaxReached(modifierGroup.choiceMax, selectedModifiers)}
+                            modifiersSelectedCount={getModifiersSelectedCount(selectedModifiers)}
                             isValid={isValid}
-                            disabled={props.disabled || !isValid || checkMaxReached(m.modifier)}
+                            disabled={disabled || !isValid || checkMaxReached(m.modifier)}
                         />
                     );
                 })}
@@ -658,33 +669,48 @@ const Modifier = (props: {
 
     onSelectRadioModifier: (selectedModifier: IGET_RESTAURANT_MODIFIER) => void;
 
-    modifierGroupName: string;
-
     // settings
     radio: boolean;
 }) => {
+    const {
+        modifier,
+        choiceDuplicate,
+        maxReached,
+        modifiersSelectedCount,
+        isValid,
+        disabled,
+        modifierQuantity,
+        productQuantity,
+        checked,
+        onCheckingModifier,
+        onUnCheckingModifier,
+        onChangeModifierQuantity,
+        onSelectRadioModifier,
+        radio,
+    } = props;
+
     const { cartModifierQuantitiesById, cartProductQuantitiesById } = useCart();
-    const [stepperCount, setStepperCount] = useState(props.modifierQuantity);
+    const [stepperCount, setStepperCount] = useState(modifierQuantity);
     const [displayModifierStepper, setDisplayModifierStepper] = useState(false);
 
     const getModifierOrProductModifierQuantityAvailable = () => {
-        if (props.modifier.productModifier) {
-            if (!props.modifier.productModifier.totalQuantityAvailable) return null;
+        if (modifier.productModifier) {
+            if (!modifier.productModifier.totalQuantityAvailable) return null;
 
             return getProductQuantityAvailable(
                 {
-                    id: props.modifier.productModifier.id,
-                    totalQuantityAvailable: props.modifier.productModifier.totalQuantityAvailable,
+                    id: modifier.productModifier.id,
+                    totalQuantityAvailable: modifier.productModifier.totalQuantityAvailable,
                 },
                 cartProductQuantitiesById
             );
         } else {
-            if (!props.modifier.totalQuantityAvailable) return null;
+            if (!modifier.totalQuantityAvailable) return null;
 
             return getModifierQuantityAvailable(
                 {
-                    id: props.modifier.id,
-                    totalQuantityAvailable: props.modifier.totalQuantityAvailable,
+                    id: modifier.id,
+                    totalQuantityAvailable: modifier.totalQuantityAvailable,
                 },
                 cartModifierQuantitiesById
             );
@@ -698,64 +724,65 @@ const Modifier = (props: {
             const count = getStepperCount();
 
             setStepperCount(count);
-            onChangeModifierQuantity(count);
+            _onChangeModifierQuantity(count);
         }
-    }, [props.productQuantity]);
+    }, [productQuantity]);
 
     // callbacks
-    const onCheckingModifier = () => {
-        props.onCheckingModifier(props.modifier);
+    const _onCheckingModifier = () => {
+        onCheckingModifier(modifier);
     };
 
-    const onUnCheckingModifier = () => {
-        props.onUnCheckingModifier(props.modifier);
+    const _onUnCheckingModifier = () => {
+        onUnCheckingModifier(modifier);
     };
 
-    const onChangeModifierQuantity = (quantity: number) => {
-        if (props.modifierQuantity === 1) {
+    const _onChangeModifierQuantity = (quantity: number) => {
+        if (modifierQuantity === 1) {
             setDisplayModifierStepper(false);
         }
 
-        props.onChangeModifierQuantity(props.modifier, quantity);
+        onChangeModifierQuantity(modifier, quantity);
     };
 
-    const onSelectRadioModifier = () => {
-        props.onSelectRadioModifier(props.modifier);
+    const _onSelectRadioModifier = () => {
+        onSelectRadioModifier(modifier);
     };
 
-    const onDisplayModifierStepper = () => {
-        setDisplayModifierStepper(!props.disabled && !props.maxReached);
+    const _onDisplayModifierStepper = () => {
+        setDisplayModifierStepper(!disabled && !maxReached);
     };
 
     // constants
     const stepperHeight = 28;
 
-    const showRadio = props.radio;
-    const showStepper = props.choiceDuplicate > 1 && (displayModifierStepper || props.modifierQuantity > 0);
-    const showCollapsedStepper = props.choiceDuplicate > 1 && !displayModifierStepper && props.modifierQuantity == 0;
+    const showRadio = radio;
+    const showStepper = choiceDuplicate > 1 && (displayModifierStepper || modifierQuantity > 0);
+    const showCollapsedStepper = choiceDuplicate > 1 && !displayModifierStepper && modifierQuantity == 0;
     const showCheckbox = !showRadio && !showStepper && !showCollapsedStepper;
 
     // displays
     const modifierChildren = (
         <>
-            <div className={`modifier ${props.isValid ? "" : "sold-out"} `}>
-                {props.modifier.image && (
+            <div className={`modifier ${isValid ? "" : "sold-out"} `}>
+                {modifier.image && (
                     <CachedImage
-                        url={`${getCloudFrontDomainName()}/protected/${props.modifier.image.identityPoolId}/${props.modifier.image.key}`}
+                        url={`${getCloudFrontDomainName()}/protected/${modifier.image.identityPoolId}/${modifier.image.key}`}
                         className="image mr-3"
                         alt="product-image"
                     />
                 )}
 
-                {props.isValid ? (
+                {isValid ? (
                     <div>
-                        {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)})`} (
-                        {modifierQuantityAvailable})
+                        {modifier.name} {modifier.price > 0 && `($${convertCentsToDollars(modifier.price)})`}
+                        {modifierQuantityAvailable && modifierQuantityAvailable <= 5 && (
+                            <span className="quantity-remaining ml-2">{getQuantityRemainingText(modifierQuantityAvailable)}</span>
+                        )}
                     </div>
                 ) : (
                     <div>
-                        {props.modifier.name} {props.modifier.price > 0 && `($${convertCentsToDollars(props.modifier.price)}) (SOLD OUT)`} (
-                        {modifierQuantityAvailable})
+                        {modifier.name} {modifier.price > 0 && `($${convertCentsToDollars(modifier.price)}) (SOLD OUT)`}
                     </div>
                 )}
             </div>
@@ -764,15 +791,15 @@ const Modifier = (props: {
 
     const getModifierStepperMax = () => {
         if (modifierQuantityAvailable) {
-            let maxSelectable = Math.min(props.choiceDuplicate - props.modifiersSelectedCount, modifierQuantityAvailable);
+            let maxSelectable = Math.min(choiceDuplicate - modifiersSelectedCount, modifierQuantityAvailable);
 
             if (maxSelectable < modifierQuantityAvailable) {
                 maxSelectable = modifierQuantityAvailable;
             }
 
-            return Math.floor(maxSelectable / props.productQuantity);
+            return Math.floor(maxSelectable / productQuantity);
         } else {
-            return props.maxReached ? stepperCount : props.choiceDuplicate;
+            return maxReached ? stepperCount : choiceDuplicate;
         }
     };
 
@@ -793,8 +820,8 @@ const Modifier = (props: {
             setCount={setStepperCount}
             min={0}
             max={getModifierStepperMax()}
-            onUpdate={onChangeModifierQuantity}
-            disabled={props.disabled}
+            onUpdate={_onChangeModifierQuantity}
+            disabled={disabled}
             size={stepperHeight}
         >
             {modifierChildren}
@@ -802,7 +829,7 @@ const Modifier = (props: {
     );
 
     const collapsedStepper = (
-        <div className="collapsed-stepper-container pt-2 pb-2" onClick={onDisplayModifierStepper}>
+        <div className="collapsed-stepper-container pt-2 pb-2" onClick={_onDisplayModifierStepper}>
             <div
                 className="collapsed-stepper"
                 style={{
@@ -817,19 +844,13 @@ const Modifier = (props: {
     );
 
     const checkbox = (
-        <Checkbox
-            className="pt-2 pb-2"
-            onCheck={onCheckingModifier}
-            onUnCheck={onUnCheckingModifier}
-            checked={props.checked}
-            disabled={props.disabled}
-        >
+        <Checkbox className="pt-2 pb-2" onCheck={_onCheckingModifier} onUnCheck={_onUnCheckingModifier} checked={checked} disabled={disabled}>
             {modifierChildren}
         </Checkbox>
     );
 
-    const radio = (
-        <Radio className="pt-2 pb-2" selected={props.checked} onSelect={onSelectRadioModifier} disabled={props.disabled}>
+    const _radio = (
+        <Radio className="pt-2 pb-2" selected={checked} onSelect={_onSelectRadioModifier} disabled={disabled}>
             {modifierChildren}
         </Radio>
     );
@@ -837,7 +858,7 @@ const Modifier = (props: {
     return (
         <>
             <div className="modifier-wrapper">
-                {showRadio && radio}
+                {showRadio && _radio}
 
                 {showStepper && stepper}
 

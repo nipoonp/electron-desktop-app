@@ -55,6 +55,7 @@
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
 
             .product {
+                position: relative;
                 border: 1px solid #e0e0e0;
                 padding: 16px;
                 border-radius: 10px;
@@ -62,6 +63,17 @@
 
                 &.sold-out {
                     opacity: 0.5;
+                }
+
+                .quantity-remaining {
+                    position: absolute;
+                    top: -10px;
+                    right: -10px;
+                    padding: 5px 10px;
+                    background-color: var(--primary-color);
+                    color: #ffffff;
+                    border-radius: 5px;
+                    font-size: 12px;
                 }
 
                 .image {

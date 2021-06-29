@@ -4,7 +4,7 @@ import { useHistory } from "react-router";
 import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { checkoutPath, beginOrderPath, orderTypePath } from "../main";
-import { convertCentsToDollars, isProductQuantityAvailable } from "../../util/util";
+import { convertCentsToDollars, getQuantityRemainingText, isProductQuantityAvailable } from "../../util/util";
 import { ProductModal } from "../modals/product";
 import { SearchProductModal } from "../modals/searchProductModal";
 import { IGET_RESTAURANT_PRODUCT, IGET_RESTAURANT_CATEGORY, IS3Object } from "../../graphql/customQueries";
@@ -223,6 +223,10 @@ export const Restaurant = (props: { restaurantID: string }) => {
         return (
             <>
                 <div key={product.id} className={`product ${isValid ? "" : "sold-out"}`} onClick={() => isValid && onClickProduct(category, product)}>
+                    {product.totalQuantityAvailable && product.totalQuantityAvailable <= 5 && (
+                        <span className="quantity-remaining ml-2">{getQuantityRemainingText(product.totalQuantityAvailable)}</span>
+                    )}
+
                     {product.image && (
                         <CachedImage
                             url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
@@ -231,9 +235,7 @@ export const Restaurant = (props: { restaurantID: string }) => {
                         />
                     )}
 
-                    <div className="name text-bold">
-                        {isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}({product.totalQuantityAvailable})
-                    </div>
+                    <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
 
                     {product.description && <div className="description mt-2">{product.description}</div>}
 

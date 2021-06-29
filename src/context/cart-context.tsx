@@ -98,8 +98,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setCartModifierQuantitiesById(newCartModifierQuantitiesById);
     };
 
-    console.log("xxx...cartProductQuantitiesById", cartProductQuantitiesById);
-
     const recalculateTotal = (products: ICartProduct[] | null) => {
         let totalPrice = 0;
 

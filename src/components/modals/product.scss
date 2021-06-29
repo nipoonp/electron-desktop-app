@@ -26,6 +26,14 @@
                     opacity: 0.5;
                 }
 
+                .quantity-remaining {
+                    padding: 5px 10px;
+                    background-color: var(--primary-color);
+                    color: #ffffff;
+                    border-radius: 5px;
+                    font-size: 12px;
+                }
+
                 .image {
                     height: 120px;
                     border-radius: 8px;

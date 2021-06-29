@@ -1,6 +1,6 @@
 import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
 import { Button } from "../../tabin/components/button";
-import { isItemAvailable, isProductQuantityAvailable, isItemSoldOut } from "../../util/util";
+import { isItemAvailable, isProductQuantityAvailable, isItemSoldOut, getQuantityRemainingText } from "../../util/util";
 import { convertCentsToDollars } from "../../util/util";
 import { ModalV2 } from "../../tabin/components/modalv2";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
@@ -48,6 +48,10 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
                     className={`product ${isValid ? "" : "sold-out"}`}
                     onClick={() => !isSoldOut && isAvailable && onAddToOrder(category, product)}
                 >
+                    {product.totalQuantityAvailable && product.totalQuantityAvailable <= 5 && (
+                        <span className="quantity-remaining ml-2">{getQuantityRemainingText(product.totalQuantityAvailable)}</span>
+                    )}
+
                     {product.image && (
                         <CachedImage
                             className="image mb-2"
@@ -57,7 +61,7 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
                     )}
 
                     <div className="name text-bold">
-                        {isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}({product.totalQuantityAvailable})
+                        {isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}
                     </div>
 
                     {product.description && <div className="description mt-2">{product.description}</div>}
@@ -69,7 +73,7 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
     };
 
     const products = (
-        <div className="products">
+        <div className="products pt-2">
             {upSellCrossSaleProductItems.map((item) => {
                 return productDisplay(item.category, item.product);
             })}
@@ -107,7 +111,7 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
             <div className="content">
                 <div className="main-image-container">{mainImage}</div>
                 <div className="you-may-also-like-container">
-                    <div className="h1 mb-6 text-center">You May Also Like</div>
+                    <div className="h1 mb-4 text-center">You May Also Like</div>
                     {products}
                 </div>
             </div>
