@@ -1087,7 +1087,7 @@ export const Checkout = () => {
                 </div>
                 {register.enablePayLater && (
                     <div className="pay-later-link mt-4">
-                        <Link onClick={onClickPayLater}>Pay at counter...</Link>
+                        <Link onClick={onClickPayLater}>Pay cash at counter...</Link>
                     </div>
                 )}
             </div>
