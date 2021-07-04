@@ -41,6 +41,7 @@ export const decodeCommandBuffer = (data: Buffer): string => {
 
 const getCurrentDate = () => {
     const now = new Date();
+
     return `${now.getDay()}/${now.getMonth()}/${now.getFullYear()} ${now.getHours()}:${now.getMinutes()}`;
 };
 

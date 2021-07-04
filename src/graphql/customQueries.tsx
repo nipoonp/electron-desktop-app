@@ -216,7 +216,7 @@ export const GET_RESTAURANT = gql`
                     }
                 }
             }
-            categories(limit: 100) {
+            categories(limit: 500) {
                 items {
                     id
                     name
@@ -257,7 +257,7 @@ export const GET_RESTAURANT = gql`
                             endTime
                         }
                     }
-                    products(limit: 200) {
+                    products(limit: 500) {
                         items {
                             id
                             displaySequence
@@ -306,7 +306,7 @@ export const GET_RESTAURANT = gql`
                                         endTime
                                     }
                                 }
-                                modifierGroups(limit: 100) {
+                                modifierGroups(limit: 500) {
                                     items {
                                         id
                                         displaySequence
@@ -317,7 +317,7 @@ export const GET_RESTAURANT = gql`
                                             choiceMin
                                             choiceMax
                                             choiceDuplicate
-                                            modifiers(limit: 100) {
+                                            modifiers(limit: 500) {
                                                 items {
                                                     id
                                                     displaySequence
@@ -383,6 +383,25 @@ export const GET_RESTAURANT = gql`
                     }
                 }
             }
+            products(limit: 500) {
+                items {
+                    id
+                    name
+                    soldOut
+                    soldOutDate
+                    totalQuantityAvailable
+                }
+            }
+            # Only for stock component
+            modifiers(limit: 500) {
+                items {
+                    id
+                    name
+                    soldOut
+                    soldOutDate
+                    totalQuantityAvailable
+                }
+            }
         }
     }
 `;
@@ -406,6 +425,12 @@ export interface IGET_RESTAURANT {
     registers: { items: IGET_RESTAURANT_REGISTER[] };
     categories: {
         items: IGET_RESTAURANT_CATEGORY[];
+    };
+    products: {
+        items: IGET_RESTAURANT_PRODUCT[];
+    };
+    modifiers: {
+        items: IGET_RESTAURANT_MODIFIER[];
     };
 }
 
