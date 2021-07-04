@@ -39,10 +39,25 @@ export const decodeCommandBuffer = (data: Buffer): string => {
     return dataBuffer.toString();
 };
 
-const getCurrentDate = () => {
-    const now = new Date();
+const getCurrentDate = (date: Date) => {
+    const pad = (num: number) => {
+        var norm = Math.floor(Math.abs(num));
+        return (norm < 10 ? "0" : "") + norm;
+    };
 
-    return `${now.getDay()}/${now.getMonth()}/${now.getFullYear()} ${now.getHours()}:${now.getMinutes()}`;
+    return (
+        pad(date.getDate()) +
+        "-" +
+        pad(date.getMonth() + 1) +
+        "-" +
+        date.getFullYear() +
+        " " +
+        pad(date.getHours()) +
+        ":" +
+        pad(date.getMinutes()) +
+        ":" +
+        pad(date.getSeconds())
+    );
 };
 
 export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0);
@@ -84,7 +99,7 @@ export const printReceipt = async (order: IOrderReceipt) => {
     printer.newLine();
 
     printer.setTextNormal();
-    printer.println(`Order Placed ${getCurrentDate()} for ${order.type}`);
+    printer.println(`Order Placed ${getCurrentDate(new Date())} for ${order.type}`);
 
     if (order.table) {
         printer.newLine();
