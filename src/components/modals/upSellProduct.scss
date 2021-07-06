@@ -96,14 +96,15 @@
                     display: flex;
                     justify-content: center;
                     align-items: center;
+                    flex-wrap: wrap;
 
                     .tag {
-                        font-size: 14px;
-                        margin: 3px;
-                        padding: 8px 12px;
-                        background-color: var(--primary-color);
-                        color: #ffffff;
+                        font-size: 12px;
+                        margin: 2px;
+                        padding: 6px 8px;
+                        border: 1px solid var(--primary-color);
                         border-radius: 500px;
+                        color: var(--primary-color);
                     }
                 }
 
