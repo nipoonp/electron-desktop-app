@@ -64,7 +64,7 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
             return updateRegisterKeyMutation({
                 variables: {
                     id: key,
-                    active: false, //Disabled for now
+                    active: true,
                 },
             });
         } else {
