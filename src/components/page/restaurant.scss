@@ -102,6 +102,21 @@
                     text-align: center;
                 }
 
+                .tags {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+
+                    .tag {
+                        font-size: 14px;
+                        margin: 3px;
+                        padding: 8px 12px;
+                        background-color: var(--primary-color);
+                        color: #ffffff;
+                        border-radius: 500px;
+                    }
+                }
+
                 .price {
                     text-align: center;
                     font-size: 18px;

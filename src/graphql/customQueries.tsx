@@ -278,6 +278,7 @@ export const GET_RESTAURANT = gql`
                                 name
                                 description
                                 price
+                                tags
                                 totalQuantitySold
                                 totalQuantityAvailable
                                 soldOut
@@ -583,6 +584,7 @@ export interface IGET_RESTAURANT_PRODUCT {
     name: string;
     description?: string;
     price: number;
+    tags: string | null;
     totalQuantitySold?: number;
     totalQuantityAvailable?: number;
     soldOut?: boolean;
