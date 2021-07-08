@@ -216,6 +216,7 @@ export const printReceipt = async (order: IOrderReceipt) => {
     printer.println("Order Placed on Tabin Kiosk");
 
     printer.partialCut();
+    printer.openCashDrawer();
 
     try {
         await printer.execute();
