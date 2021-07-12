@@ -127,6 +127,7 @@ export const ReceiptPrinter = () => {
                 restaurant: {
                     name: "Test Tabin Restaurant",
                     address: "Receipt Printer 1",
+                    gstNumber: "123-456-789",
                 },
                 notes: "Order notes",
                 products: TEST_PRODUCT,
@@ -144,6 +145,7 @@ export const ReceiptPrinter = () => {
                 restaurant: {
                     name: "Test Tabin Restaurant",
                     address: "Receipt Printer 2",
+                    gstNumber: "123-456-789",
                 },
                 notes: "Order notes",
                 products: TEST_PRODUCT,
@@ -161,6 +163,7 @@ export const ReceiptPrinter = () => {
                 restaurant: {
                     name: "Test Tabin Restaurant",
                     address: "Receipt Printer 3",
+                    gstNumber: "123-456-789",
                 },
                 notes: "Order notes",
                 products: TEST_PRODUCT,
