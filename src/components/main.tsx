@@ -25,6 +25,7 @@ import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { useRestaurant } from "../context/restaurant-context";
 import { Logout } from "./page/auth/logout";
 import { Stock } from "./page/stock";
+import { Reports } from "./page/reports";
 
 let electron: any;
 let ipcRenderer: any;
@@ -48,6 +49,7 @@ Modal.setAppElement("#root");
 // Auth routes
 export const loginPath = "/login";
 export const stockPath = "/stock";
+export const reportsPath = "/reports";
 export const restaurantListPath = "/restaurant_list";
 export const registerListPath = "/register_list";
 export const configureNewEftposPath = "/configure_new_eftpos";
@@ -100,6 +102,9 @@ const Routes = () => {
                     case "stock":
                         history.push(stockPath);
                         break;
+                    case "reports":
+                        history.push(reportsPath);
+                        break;
                     case "configureEftposAndPrinters":
                         history.push(configureNewEftposPath);
                         break;
@@ -125,6 +130,7 @@ const Routes = () => {
             <PrivateRoute exact path={restaurantListPath} component={RestaurantList} />
             <PrivateRoute exact path={registerListPath} component={RegisterList} />
             <PrivateRoute exact path={stockPath} component={Stock} />
+            <PrivateRoute exact path={reportsPath} component={Reports} />
             <RestaurantRegisterPrivateRoute exact path={configureNewEftposPath} component={ConfigureNewEftpos} />
             <RestaurantRegisterPrivateRoute exact path={beginOrderPath} component={BeginOrder} />
             <RestaurantRegisterPrivateRoute exact path={orderTypePath} component={OrderType} />

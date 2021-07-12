@@ -92,3 +92,9 @@ export const UPDATE_MODIFIER = gql`
         }
     }
 `;
+
+export const EMAIL_SALES_REPORTS = gql`
+    mutation EmailSalesReports($restaurantId: String!, $emails: String!) {
+        emailSalesReports(input: { restaurantId: $restaurantId, emails: $emails })
+    }
+`;

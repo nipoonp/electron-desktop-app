@@ -151,12 +151,15 @@ export const GET_RESTAURANT = gql`
                 region
                 identityPoolId
             }
+            gstNumber
             customStyleSheet {
                 key
                 bucket
                 region
                 identityPoolId
             }
+            autoCompleteOrders
+            salesReportMailingList
             advertisements {
                 items {
                     id
@@ -432,7 +435,10 @@ export interface IGET_RESTAURANT {
     };
     operatingHours: IGET_RESTAURANT_OPERATING_HOURS;
     logo?: IS3Object;
+    gstNumber: string | null;
     customStyleSheet?: IS3Object;
+    autoCompleteOrders: boolean | null;
+    salesReportMailingList: string | null;
     advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
     upSellCrossSell?: IGET_DASHBOARD_UP_SELL_CROSS_SELL;
     registers: { items: IGET_RESTAURANT_REGISTER[] };

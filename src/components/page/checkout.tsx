@@ -279,6 +279,7 @@ export const Checkout = () => {
         }
 
         let variables;
+
         try {
             variables = {
                 status: "NEW",
@@ -296,6 +297,13 @@ export const Checkout = () => {
                 orderUserId: user.id,
                 orderRestaurantId: restaurant.id,
             };
+
+            if (restaurant.autoCompleteOrders) {
+                variables.status = "COMPLETED";
+                variables.completedAt = toLocalISOString(now);
+                variables.completedAtUtc = now.toISOString();
+                variables.paid = true;
+            }
         } catch (e) {
             await logSlackError(
                 JSON.stringify({
@@ -449,6 +457,7 @@ export const Checkout = () => {
                         restaurant: {
                             name: restaurant.name,
                             address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
+                            gstNumber: restaurant.gstNumber,
                         },
                         notes: notes,
                         products: productsToPrint,
