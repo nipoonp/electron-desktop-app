@@ -39,6 +39,7 @@ export interface IOrderReceipt {
     restaurant: {
         name: string;
         address: string;
+        gstNumber: string | null;
     };
     notes: string | null;
     products: ICartProduct[];

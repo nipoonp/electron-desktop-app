@@ -98,11 +98,13 @@ export const printReceipt = async (order: IOrderReceipt) => {
 
     printer.newLine();
 
-    printer.bold(false);
-    printer.setTextNormal();
-    printer.println(`GST: ${order.restaurant.address}`);
+    if (order.restaurant.gstNumber) {
+        printer.bold(false);
+        printer.setTextNormal();
+        printer.println(`GST: ${order.restaurant.gstNumber}`);
 
-    printer.newLine();
+        printer.newLine();
+    }
 
     printer.setTextNormal();
     printer.println(`Order Placed ${getCurrentDate(new Date())} for ${order.type}`);
