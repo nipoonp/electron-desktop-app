@@ -1,5 +1,6 @@
 import { printer as ThermalPrinter, types as PrinterTypes } from "node-thermal-printer";
 import { IOrderReceipt, ICartProduct, ICartModifierGroup, ICartModifier } from "./model";
+import usbPrinter from "@thiagoelg/node-printer";
 
 export const calculateLRC = (str: string): string => {
     var bytes: number[] = [];
@@ -77,148 +78,148 @@ const getProductTotal = (product: ICartProduct) => {
 };
 
 export const printReceipt = async (order: IOrderReceipt) => {
+    //@ts-ignore
     let printer = new ThermalPrinter({
         type: PrinterTypes.EPSON, // 'star' or 'epson'
-        interface: `tcp://${order.printerAddress}`,
     });
 
-    let isConnected = await printer.isPrinterConnected();
-    console.log("Printer connected:", isConnected);
+    // let isConnected = await printer.isPrinterConnected();
+    // console.log("Printer connected:", isConnected);
 
-    printer.alignCenter();
-    printer.bold(true);
-    printer.setTextSize(1, 1);
-    printer.println(order.restaurant.name);
+    // printer.alignCenter();
+    // printer.bold(true);
+    // printer.setTextSize(1, 1);
+    // printer.println(order.restaurant.name);
 
-    printer.newLine();
+    // printer.newLine();
 
-    printer.bold(false);
-    printer.setTextNormal();
-    printer.println(order.restaurant.address);
+    // printer.bold(false);
+    // printer.setTextNormal();
+    // printer.println(order.restaurant.address);
 
-    printer.newLine();
+    // printer.newLine();
 
-    if (order.restaurant.gstNumber) {
-        printer.bold(false);
-        printer.setTextNormal();
-        printer.println(`GST: ${order.restaurant.gstNumber}`);
+    // if (order.restaurant.gstNumber) {
+    //     printer.bold(false);
+    //     printer.setTextNormal();
+    //     printer.println(`GST: ${order.restaurant.gstNumber}`);
 
-        printer.newLine();
-    }
+    //     printer.newLine();
+    // }
 
-    printer.setTextNormal();
-    printer.println(`Order Placed ${getCurrentDate(new Date())} for ${order.type}`);
+    // printer.setTextNormal();
+    // printer.println(`Order Placed ${getCurrentDate(new Date())} for ${order.type}`);
 
-    if (order.table) {
-        printer.newLine();
-        printer.println(`Table Number: ${order.table}`);
-    }
+    // if (order.table) {
+    //     printer.newLine();
+    //     printer.println(`Table Number: ${order.table}`);
+    // }
 
-    printer.newLine();
+    // printer.newLine();
 
-    printer.println("Your order number is");
-    printer.newLine();
-    printer.setTextSize(1, 1);
-    printer.println(order.number);
-    printer.newLine();
+    // printer.println("Your order number is");
+    // printer.newLine();
+    // printer.setTextSize(1, 1);
+    // printer.println(order.number);
+    // printer.newLine();
 
-    if (order.paid == false) {
-        printer.setTextNormal();
-        printer.underlineThick(true);
-        printer.println("Payment Required");
-        printer.underlineThick(true);
-        printer.newLine();
-    }
+    // if (order.paid == false) {
+    //     printer.setTextNormal();
+    //     printer.underlineThick(true);
+    //     printer.println("Payment Required");
+    //     printer.underlineThick(true);
+    //     printer.newLine();
+    // }
 
-    printer.setTextNormal();
-    printer.alignLeft();
+    // printer.setTextNormal();
+    // printer.alignLeft();
 
-    order.products.forEach((product: ICartProduct) => {
-        printer.drawLine();
-        printer.bold(true);
+    // order.products.forEach((product: ICartProduct) => {
+    //     printer.drawLine();
+    //     printer.bold(true);
 
-        printer.tableCustom([
-            {
-                text: `${product.quantity > 1 ? product.quantity + " x " : ""}${product.name}`,
-                align: "LEFT",
-                width: 0.75,
-                bold: true,
-            },
-            {
-                text: `\$${convertCentsToDollars(getProductTotal(product))}`,
-                align: "RIGHT",
-                width: 0.25,
-                bold: true,
-            },
-        ]);
+    //     printer.tableCustom([
+    //         {
+    //             text: `${product.quantity > 1 ? product.quantity + " x " : ""}${product.name}`,
+    //             align: "LEFT",
+    //             width: 0.75,
+    //             bold: true,
+    //         },
+    //         {
+    //             text: `\$${convertCentsToDollars(getProductTotal(product))}`,
+    //             align: "RIGHT",
+    //             width: 0.25,
+    //             bold: true,
+    //         },
+    //     ]);
 
-        product.modifierGroups.forEach((modifierGroup: ICartModifierGroup) => {
-            if (order.hideModifierGroupsForCustomer == true && modifierGroup.hideForCustomer == true) {
-                return;
-            }
+    //     product.modifierGroups.forEach((modifierGroup: ICartModifierGroup) => {
+    //         if (order.hideModifierGroupsForCustomer == true && modifierGroup.hideForCustomer == true) {
+    //             return;
+    //         }
 
-            printer.newLine();
-            printer.bold(false);
-            printer.println(`${modifierGroup.name}`);
+    //         printer.newLine();
+    //         printer.bold(false);
+    //         printer.println(`${modifierGroup.name}`);
 
-            modifierGroup.modifiers.forEach((modifier: ICartModifier) => {
-                const changedQuantity = modifier.quantity - modifier.preSelectedQuantity;
-                let mStr = "";
+    //         modifierGroup.modifiers.forEach((modifier: ICartModifier) => {
+    //             const changedQuantity = modifier.quantity - modifier.preSelectedQuantity;
+    //             let mStr = "";
 
-                if (changedQuantity < 0 && Math.abs(changedQuantity) == modifier.preSelectedQuantity) {
-                    mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)} x ` : ""}${modifier.name}`;
-                } else {
-                    mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)} x ` : ""}${modifier.name}`;
-                }
+    //             if (changedQuantity < 0 && Math.abs(changedQuantity) == modifier.preSelectedQuantity) {
+    //                 mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)} x ` : ""}${modifier.name}`;
+    //             } else {
+    //                 mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)} x ` : ""}${modifier.name}`;
+    //             }
 
-                if (modifier.price > 0 && changedQuantity > 0) {
-                    mStr += ` ($${convertCentsToDollars(modifier.price)})`;
-                }
+    //             if (modifier.price > 0 && changedQuantity > 0) {
+    //                 mStr += ` ($${convertCentsToDollars(modifier.price)})`;
+    //             }
 
-                printer.println(mStr);
-            });
-        });
+    //             printer.println(mStr);
+    //         });
+    //     });
 
-        if (product.notes) {
-            printer.bold(false);
-            printer.newLine();
-            printer.println(`Notes: ${product.notes}`);
-        }
-    });
+    //     if (product.notes) {
+    //         printer.bold(false);
+    //         printer.newLine();
+    //         printer.println(`Notes: ${product.notes}`);
+    //     }
+    // });
 
-    printer.drawLine();
+    // printer.drawLine();
 
-    if (order.notes) {
-        printer.bold(false);
-        printer.println(`Notes: ${order.notes}`);
-        printer.newLine();
-    }
+    // if (order.notes) {
+    //     printer.bold(false);
+    //     printer.println(`Notes: ${order.notes}`);
+    //     printer.newLine();
+    // }
 
-    const GST = order.total * 0.15;
+    // const GST = order.total * 0.15;
 
-    printer.tableCustom([
-        { text: "GST (15.00%)", align: "LEFT", width: 0.75 },
-        { text: `\$${convertCentsToDollars(GST)}`, align: "RIGHT", width: 0.25 },
-    ]);
-    printer.tableCustom([
-        { text: "Total", align: "LEFT", width: 0.75, bold: true },
-        {
-            text: `\$${convertCentsToDollars(order.total)}`,
-            align: "RIGHT",
-            width: 0.25,
-            bold: true,
-        },
-    ]);
+    // printer.tableCustom([
+    //     { text: "GST (15.00%)", align: "LEFT", width: 0.75 },
+    //     { text: `\$${convertCentsToDollars(GST)}`, align: "RIGHT", width: 0.25 },
+    // ]);
+    // printer.tableCustom([
+    //     { text: "Total", align: "LEFT", width: 0.75, bold: true },
+    //     {
+    //         text: `\$${convertCentsToDollars(order.total)}`,
+    //         align: "RIGHT",
+    //         width: 0.25,
+    //         bold: true,
+    //     },
+    // ]);
 
-    printer.newLine();
+    // printer.newLine();
 
-    printer.alignCenter();
+    // printer.alignCenter();
 
-    if (order.eftposReceipt && order.kitchenPrinter) {
-        printer.println(order.eftposReceipt);
-    }
+    // if (order.eftposReceipt && order.kitchenPrinter) {
+    //     printer.println(order.eftposReceipt);
+    // }
 
-    printer.newLine();
+    // printer.newLine();
     printer.alignCenter();
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk");
@@ -227,7 +228,18 @@ export const printReceipt = async (order: IOrderReceipt) => {
     printer.openCashDrawer();
 
     try {
-        await printer.execute();
+        usbPrinter.printDirect({
+            data: printer.getBuffer(),
+            printer: order.printerAddress,
+            type: "RAW",
+            success: (jobID) => {
+                console.log(`printer job: ${jobID}`);
+                printer.clear();
+            },
+            error: (err) => {
+                console.log(err);
+            },
+        });
     } catch (error) {
         throw error;
     }

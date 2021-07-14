@@ -8,6 +8,7 @@
     "main": "public/electron.ts",
     "dependencies": {
         "@aws-amplify/cli": "^5.0.1",
+        "@thiagoelg/node-printer": "^0.5.5",
         "@types/react": "^17.0.11",
         "@types/react-dom": "^17.0.8",
         "@types/react-modal": "^3.12.0",
@@ -16,7 +17,7 @@
         "@types/yup": "^0.29.11",
         "aws-amplify": "^4.1.1",
         "aws-amplify-react": "^5.0.3",
-        "aws-appsync": "^4.0.3",
+        "aws-appsync": "^4.0.5",
         "date-fns": "^2.22.1",
         "electron-is-dev": "^2.0.0",
         "electron-log": "^4.3.5",
@@ -67,6 +68,7 @@
         "concurrently": "^6.2.0",
         "electron": "^13.1.2",
         "electron-builder": "^22.11.7",
+        "electron-rebuild": "^2.3.5",
         "wait-on": "^5.3.0"
     },
     "build": {
