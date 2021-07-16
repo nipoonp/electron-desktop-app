@@ -18,6 +18,7 @@
         "aws-amplify": "^4.1.1",
         "aws-amplify-react": "^5.0.3",
         "aws-appsync": "^4.0.5",
+        "cross-env": "^7.0.3",
         "date-fns": "^2.22.1",
         "electron-is-dev": "^2.0.0",
         "electron-log": "^4.3.5",
@@ -52,7 +53,7 @@
     "scripts": {
         "start": "react-scripts start",
         "start:web": "react-scripts start",
-        "build:web": "PUBLIC_URL=./ react-scripts build",
+        "build:web": "cross-env PUBLIC_URL=./ react-scripts build",
         "start:desktop": "npm run build:desktop && electron ./build/electron.js",
         "build:desktop": "tsc -p electron/tsconfig.json",
         "test": "react-scripts test",
