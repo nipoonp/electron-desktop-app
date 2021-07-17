@@ -2,7 +2,7 @@
     "name": "Tabin",
     "description": "Tabin Self Service Kiosk",
     "author": "Tabin",
-    "version": "1.4.25",
+    "version": "1.4.26",
     "repository": "https://github.com/zeal-ltd/electron-desktop-app",
     "homepage": "https://github.com/zeal-ltd/electron-desktop-app",
     "main": "public/electron.ts",
@@ -59,7 +59,8 @@
         "eject": "react-scripts eject",
         "release": "electron-builder -mwl -p 'onTagOrDraft'",
         "release:windows": "electron-builder -w -p 'onTagOrDraft'",
-        "electron-dev": "concurrently \"BROWSER=none npm run start\" \"wait-on http://localhost:3000 && electron .\""
+        "electron-dev": "concurrently \"BROWSER=none npm run start\" \"wait-on http://localhost:3000 && electron .\"",
+        "window-cert": "electron-builder create-self-signed-cert -p tabinWindowsCertificate"
     },
     "eslintConfig": {
         "extends": "react-app"
@@ -83,9 +84,10 @@
         },
         "win": {
             "icon": "build/icon.ico",
-            "certificateFile": "private/electron-tabin-desktop-development.p12",
+            "certificateFile": "private/tabinWindowsCertificate.pfx",
             "certificatePassword": "",
-            "verifyUpdateCodeSignature": false
+            "verifyUpdateCodeSignature": false,
+            "publisherName": "tabinWindowsCertificate"
         },
         "linux": {
             "category": "Office",
