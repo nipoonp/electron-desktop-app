@@ -1,4 +1,5 @@
 import gql from "graphql-tag";
+import { EReceiptPrinterType } from "../model/model";
 
 export const GET_USER = gql`
     query GetUser($userID: ID!) {
@@ -48,6 +49,7 @@ export const GET_USER = gql`
                                 items {
                                     id
                                     name
+                                    type
                                     address
                                     kitchenPrinter
                                     ignoreProducts(limit: 500) {
@@ -88,6 +90,7 @@ export interface IGET_USER_RESTAURANT {
 export interface IGET_USER_REGISTER_PRINTER {
     id: string;
     name: string;
+    type: EReceiptPrinterType;
     address: string;
     kitchenPrinter: boolean;
     ignoreProducts: {
@@ -216,6 +219,7 @@ export const GET_RESTAURANT = gql`
                         items {
                             id
                             name
+                            type
                             address
                             kitchenPrinter
                             ignoreProducts(limit: 500) {
@@ -481,6 +485,7 @@ export interface IGET_RESTAURANT_REGISTER {
 export interface IGET_RESTAURANT_REGISTER_PRINTER {
     id: string;
     name: string;
+    type: EReceiptPrinterType;
     address: string;
     kitchenPrinter: boolean;
     ignoreProducts: {
