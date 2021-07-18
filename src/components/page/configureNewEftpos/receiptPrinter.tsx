@@ -2,9 +2,10 @@ import { useState } from "react";
 
 import { Input } from "../../../tabin/components/input";
 import { useReceiptPrinter } from "../../../context/receiptPrinter-context";
-import { EOrderType, ICartProduct } from "../../../model/model";
+import { EOrderType, EReceiptPrinterType, ICartProduct } from "../../../model/model";
 import { useRegister } from "../../../context/register-context";
 import { Button } from "../../../tabin/components/button";
+import { Select } from "../../../tabin/components/select";
 
 const TEST_PRODUCT: ICartProduct[] = [
     {
@@ -112,15 +113,17 @@ const TEST_PRODUCT: ICartProduct[] = [
 
 export const ReceiptPrinter = () => {
     const { register } = useRegister();
-    const [printerAddress1, setPrinterAddress1] = useState(register?.printers?.items[0]?.address || "192.168.1.87");
-    const [printerAddress2, setPrinterAddress2] = useState(register?.printers?.items[1]?.address || "192.168.1.90");
-    const [printerAddress3, setPrinterAddress3] = useState(register?.printers?.items[2]?.address || "192.168.1.90");
+    const [printerType, setPrinterType] = useState(EReceiptPrinterType.USB);
+    const [printerAddress1, setPrinterAddress1] = useState(register?.printers?.items[0]?.address || "192.168.1.200");
+    const [printerAddress2, setPrinterAddress2] = useState(register?.printers?.items[1]?.address || "192.168.1.201");
+    const [printerAddress3, setPrinterAddress3] = useState(register?.printers?.items[2]?.address || "192.168.1.202");
 
     const { printReceipt } = useReceiptPrinter();
 
     const onPrintTestReceipt = async () => {
         if (printerAddress1) {
             printReceipt({
+                printerType: printerType,
                 printerAddress: printerAddress1,
                 hideModifierGroupsForCustomer: true,
                 eftposReceipt: "",
@@ -141,6 +144,7 @@ export const ReceiptPrinter = () => {
 
         if (printerAddress2) {
             printReceipt({
+                printerType: printerType,
                 printerAddress: printerAddress2,
                 restaurant: {
                     name: "Test Tabin Restaurant",
@@ -159,6 +163,7 @@ export const ReceiptPrinter = () => {
 
         if (printerAddress3) {
             printReceipt({
+                printerType: printerType,
                 printerAddress: printerAddress3,
                 restaurant: {
                     name: "Test Tabin Restaurant",
@@ -176,10 +181,28 @@ export const ReceiptPrinter = () => {
         }
     };
 
+    const handleSelectType = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        setPrinterType(EReceiptPrinterType[event.target.value]);
+    };
+
     return (
         <>
             <div>
                 <div className="h2 mb-4">Configure your Receipt Printer(s)</div>
+                <Select
+                    className="mb-4"
+                    label="Printer Type"
+                    // value={productOption}
+                    name="type"
+                    value={printerType}
+                    onChange={handleSelectType}
+                >
+                    <option value="" label="Select the type of this printer" />
+                    <option key="BLUETOOTH" value="BLUETOOTH" label="Bluetooth" />
+                    <option key="WIFI" value="WIFI" label="WIFI" />
+                    <option key="USB" value="USB" label="USB" />
+                </Select>
+
                 <Input
                     className="mb-4"
                     label="Bluetooth Printer Address 1:"

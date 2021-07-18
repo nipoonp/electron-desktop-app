@@ -1,5 +1,5 @@
 import { printer as ThermalPrinter, types as PrinterTypes } from "node-thermal-printer";
-import { IOrderReceipt, ICartProduct, ICartModifierGroup, ICartModifier } from "./model";
+import { IOrderReceipt, ICartProduct, ICartModifierGroup, ICartModifier, EReceiptPrinterType } from "./model";
 import usbPrinter from "@thiagoelg/node-printer";
 
 export const calculateLRC = (str: string): string => {
@@ -78,10 +78,24 @@ const getProductTotal = (product: ICartProduct) => {
 };
 
 export const printReceipt = async (order: IOrderReceipt) => {
-    //@ts-ignore
-    let printer = new ThermalPrinter({
-        type: PrinterTypes.EPSON, // 'star' or 'epson'
-    });
+    console.log(order);
+    let printer;
+
+    if (order.printerType == EReceiptPrinterType.WIFI) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            interface: `tcp://${order.printerAddress}`,
+        });
+    } else if (order.printerType == EReceiptPrinterType.USB) {
+        console.log("I am here 1...");
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+        });
+    } else {
+        //Bluetooth
+    }
 
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
@@ -215,7 +229,7 @@ export const printReceipt = async (order: IOrderReceipt) => {
 
     // printer.alignCenter();
 
-    // if (order.eftposReceipt && order.kitchenPrinter) {
+    // if (order.eftposReceipt && !order.kitchenPrinter) {
     //     printer.println(order.eftposReceipt);
     // }
 
@@ -224,23 +238,39 @@ export const printReceipt = async (order: IOrderReceipt) => {
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk");
 
-    printer.partialCut();
+    // printer.partialCut();
     printer.openCashDrawer();
 
     try {
-        usbPrinter.printDirect({
-            data: printer.getBuffer(),
-            printer: order.printerAddress,
-            type: "RAW",
-            success: (jobID) => {
-                console.log(`printer job: ${jobID}`);
-                printer.clear();
-            },
-            error: (err) => {
-                console.log(err);
-            },
-        });
+        if (order.printerType == EReceiptPrinterType.WIFI) {
+            await printer.execute();
+        } else if (order.printerType == EReceiptPrinterType.USB) {
+            console.log("I am here 2...");
+            await usbPrinterExecute(order.printerAddress, printer.getBuffer());
+            console.log("I am here 4...");
+            printer.clear();
+        } else {
+            //Bluetooth
+        }
     } catch (error) {
         throw error;
     }
+};
+
+const usbPrinterExecute = (address: string, dataBuffer: any) => {
+    return new Promise(async (resolve, reject) => {
+        usbPrinter.printDirect({
+            data: dataBuffer,
+            printer: address,
+            type: "RAW",
+            success: (jobId) => {
+                resolve(jobId);
+                console.log("I am here 3...", jobId);
+            },
+            error: (err) => {
+                reject(err);
+                console.log("I am here 3, error...", err);
+            },
+        });
+    });
 };

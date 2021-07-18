@@ -450,6 +450,7 @@ export const Checkout = () => {
 
                 if (productsToPrint.length > 0) {
                     printReceipt({
+                        printerType: printer.type,
                         printerAddress: printer.address,
                         kitchenPrinter: printer.kitchenPrinter,
                         eftposReceipt: eftposReceipt,
