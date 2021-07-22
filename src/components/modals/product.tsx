@@ -495,7 +495,7 @@ export const ProductModal = (props: {
         <>
             <div className="product">
                 <div className="mt-11" />
-                <div className="h1 mb-4">{product.name}</div>
+                <div className="h1 mb-4 name">{product.name}</div>
                 {product.description && <div className="description">{product.description}</div>}
                 <div className="separator-6"></div>
                 {modifierGroups}

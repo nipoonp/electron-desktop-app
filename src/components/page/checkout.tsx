@@ -1041,7 +1041,7 @@ export const Checkout = () => {
 
     const title = (
         <div className="title mb-6">
-            <CachedImage className="image mr-2" url={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`} alt="shopping-bag-icon" />
+            <CachedImage className="image mr-2" url={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.png`} alt="shopping-bag-icon" />
             <div className="h1">Your Order</div>
         </div>
     );
