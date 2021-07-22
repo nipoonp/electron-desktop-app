@@ -23,7 +23,8 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
 
     const { cartProductQuantitiesById } = useCart();
 
-    const randomItem = useRef(upSellCrossSaleProductItems[Math.floor(Math.random() * upSellCrossSaleProductItems.length)]);
+    const randomItemIndex = Math.floor(Math.random() * upSellCrossSaleProductItems.length);
+    const randomItem = useRef(upSellCrossSaleProductItems[randomItemIndex]);
 
     // callbacks
     const onModalClose = () => {
@@ -60,6 +61,14 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
 
                     {product.description && <div className="description mt-2">{product.description}</div>}
 
+                    {product.tags && (
+                        <div className="tags mt-2">
+                            {product.tags.split(";").map((tag) => (
+                                <div className="tag">{tag}</div>
+                            ))}
+                        </div>
+                    )}
+
                     <div className="price mt-4">${convertCentsToDollars(product.price)}</div>
                 </div>
             </>
@@ -68,7 +77,9 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
 
     const products = (
         <div className="products pt-2">
-            {upSellCrossSaleProductItems.map((item) => {
+            {upSellCrossSaleProductItems.map((item, index) => {
+                if (index == randomItemIndex) return;
+
                 return productDisplay(item.category, item.product);
             })}
         </div>

@@ -259,6 +259,14 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
 
                     {product.description && <div className="description mt-2">{product.description}</div>}
 
+                    {product.tags && (
+                        <div className="tags mt-2">
+                            {product.tags.split(";").map((tag) => (
+                                <div className="tag">{tag}</div>
+                            ))}
+                        </div>
+                    )}
+
                     <div className="price mt-4">${convertCentsToDollars(product.price)}</div>
                 </div>
             </>

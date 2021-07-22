@@ -76,3 +76,25 @@ export const CREATE_ORDER = gql`
         }
     }
 `;
+
+export const UPDATE_PRODUCT = gql`
+    mutation UpdateProduct($id: ID!, $soldOut: Boolean, $soldOutDate: String, $totalQuantityAvailable: Int) {
+        updateProduct(input: { id: $id, soldOut: $soldOut, soldOutDate: $soldOutDate, totalQuantityAvailable: $totalQuantityAvailable }) {
+            id
+        }
+    }
+`;
+
+export const UPDATE_MODIFIER = gql`
+    mutation UpdateModifier($id: ID!, $soldOut: Boolean, $soldOutDate: String, $totalQuantityAvailable: Int) {
+        updateModifier(input: { id: $id, soldOut: $soldOut, soldOutDate: $soldOutDate, totalQuantityAvailable: $totalQuantityAvailable }) {
+            id
+        }
+    }
+`;
+
+export const EMAIL_SALES_REPORTS = gql`
+    mutation EmailSalesReports($restaurantId: String!, $emails: String!) {
+        emailSalesReports(input: { restaurantId: $restaurantId, emails: $emails })
+    }
+`;

@@ -1,4 +1,5 @@
 import gql from "graphql-tag";
+import { EReceiptPrinterType } from "../model/model";
 
 export const GET_USER = gql`
     query GetUser($userID: ID!) {
@@ -38,10 +39,17 @@ export const GET_USER = gql`
                             eftposPortNumber
                             windcaveStationId
                             orderNumberSuffix
+                            customStyleSheet {
+                                key
+                                bucket
+                                region
+                                identityPoolId
+                            }
                             printers {
                                 items {
                                     id
                                     name
+                                    type
                                     address
                                     kitchenPrinter
                                     ignoreProducts(limit: 500) {
@@ -82,6 +90,7 @@ export interface IGET_USER_RESTAURANT {
 export interface IGET_USER_REGISTER_PRINTER {
     id: string;
     name: string;
+    type: EReceiptPrinterType;
     address: string;
     kitchenPrinter: boolean;
     ignoreProducts: {
@@ -145,12 +154,15 @@ export const GET_RESTAURANT = gql`
                 region
                 identityPoolId
             }
+            gstNumber
             customStyleSheet {
                 key
                 bucket
                 region
                 identityPoolId
             }
+            autoCompleteOrders
+            salesReportMailingList
             advertisements {
                 items {
                     id
@@ -197,10 +209,17 @@ export const GET_RESTAURANT = gql`
                     eftposPortNumber
                     windcaveStationId
                     orderNumberSuffix
+                    customStyleSheet {
+                        key
+                        bucket
+                        region
+                        identityPoolId
+                    }
                     printers {
                         items {
                             id
                             name
+                            type
                             address
                             kitchenPrinter
                             ignoreProducts(limit: 500) {
@@ -216,7 +235,7 @@ export const GET_RESTAURANT = gql`
                     }
                 }
             }
-            categories(limit: 100) {
+            categories(limit: 500) {
                 items {
                     id
                     name
@@ -257,7 +276,7 @@ export const GET_RESTAURANT = gql`
                             endTime
                         }
                     }
-                    products(limit: 200) {
+                    products(limit: 500) {
                         items {
                             id
                             displaySequence
@@ -266,6 +285,7 @@ export const GET_RESTAURANT = gql`
                                 name
                                 description
                                 price
+                                tags
                                 totalQuantitySold
                                 totalQuantityAvailable
                                 soldOut
@@ -306,7 +326,7 @@ export const GET_RESTAURANT = gql`
                                         endTime
                                     }
                                 }
-                                modifierGroups(limit: 100) {
+                                modifierGroups(limit: 500) {
                                     items {
                                         id
                                         displaySequence
@@ -317,7 +337,7 @@ export const GET_RESTAURANT = gql`
                                             choiceMin
                                             choiceMax
                                             choiceDuplicate
-                                            modifiers(limit: 100) {
+                                            modifiers(limit: 500) {
                                                 items {
                                                     id
                                                     displaySequence
@@ -383,6 +403,25 @@ export const GET_RESTAURANT = gql`
                     }
                 }
             }
+            products(limit: 500) {
+                items {
+                    id
+                    name
+                    soldOut
+                    soldOutDate
+                    totalQuantityAvailable
+                }
+            }
+            # Only for stock component
+            modifiers(limit: 500) {
+                items {
+                    id
+                    name
+                    soldOut
+                    soldOutDate
+                    totalQuantityAvailable
+                }
+            }
         }
     }
 `;
@@ -400,12 +439,21 @@ export interface IGET_RESTAURANT {
     };
     operatingHours: IGET_RESTAURANT_OPERATING_HOURS;
     logo?: IS3Object;
+    gstNumber: string | null;
     customStyleSheet?: IS3Object;
+    autoCompleteOrders: boolean | null;
+    salesReportMailingList: string | null;
     advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
     upSellCrossSell?: IGET_DASHBOARD_UP_SELL_CROSS_SELL;
     registers: { items: IGET_RESTAURANT_REGISTER[] };
     categories: {
         items: IGET_RESTAURANT_CATEGORY[];
+    };
+    products: {
+        items: IGET_RESTAURANT_PRODUCT[];
+    };
+    modifiers: {
+        items: IGET_RESTAURANT_MODIFIER[];
     };
 }
 
@@ -428,6 +476,7 @@ export interface IGET_RESTAURANT_REGISTER {
     eftposPortNumber: string;
     windcaveStationId: string;
     orderNumberSuffix: string;
+    customStyleSheet?: IS3Object;
     printers: {
         items: IGET_RESTAURANT_REGISTER_PRINTER[];
     };
@@ -436,6 +485,7 @@ export interface IGET_RESTAURANT_REGISTER {
 export interface IGET_RESTAURANT_REGISTER_PRINTER {
     id: string;
     name: string;
+    type: EReceiptPrinterType;
     address: string;
     kitchenPrinter: boolean;
     ignoreProducts: {
@@ -545,6 +595,7 @@ export interface IGET_RESTAURANT_PRODUCT {
     name: string;
     description?: string;
     price: number;
+    tags: string | null;
     totalQuantitySold?: number;
     totalQuantityAvailable?: number;
     soldOut?: boolean;

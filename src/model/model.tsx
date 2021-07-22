@@ -65,7 +65,14 @@ export interface ISelectedProductModifiers {
     [modifierGroupId: string]: ICartModifier[];
 }
 
+export enum EReceiptPrinterType {
+    BLUETOOTH = "BLUETOOTH",
+    WIFI = "WIFI",
+    USB = "USB",
+}
+
 export interface IOrderReceipt {
+    printerType: EReceiptPrinterType;
     printerAddress: string;
     kitchenPrinter?: boolean;
     eftposReceipt?: string;
@@ -73,6 +80,7 @@ export interface IOrderReceipt {
     restaurant: {
         name: string;
         address: string;
+        gstNumber: string | null;
     };
     notes: string | null;
     products: ICartProduct[];

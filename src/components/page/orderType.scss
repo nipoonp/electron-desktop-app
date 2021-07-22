@@ -4,16 +4,16 @@
     flex-direction: column;
     margin-top: 128px;
 
-    .imagesWrapper {
+    .images-wrapper {
         display: flex;
         text-align: center;
         margin-bottom: 32px;
 
-        .dineinImage {
+        .dine-in-image {
             height: 250px;
         }
 
-        .takeawayImage {
+        .take-away-image {
             height: 250px;
         }
     }

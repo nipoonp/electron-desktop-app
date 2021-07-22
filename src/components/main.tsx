@@ -24,6 +24,8 @@ import { TableNumber } from "./page/tableNumber";
 import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { useRestaurant } from "../context/restaurant-context";
 import { Logout } from "./page/auth/logout";
+import { Stock } from "./page/stock";
+import { Reports } from "./page/reports";
 
 let electron: any;
 let ipcRenderer: any;
@@ -46,6 +48,8 @@ Modal.setAppElement("#root");
 
 // Auth routes
 export const loginPath = "/login";
+export const stockPath = "/stock";
+export const reportsPath = "/reports";
 export const restaurantListPath = "/restaurant_list";
 export const registerListPath = "/register_list";
 export const configureNewEftposPath = "/configure_new_eftpos";
@@ -82,7 +86,7 @@ const Routes = () => {
         document.body.onmousedown = () => {
             timerId = setTimeout(() => {
                 ipcRenderer && ipcRenderer.send("SHOW_CONTEXT_MENU");
-            }, 2000);
+            }, 1000);
         };
 
         document.body.onmouseup = () => {
@@ -94,6 +98,12 @@ const Routes = () => {
                 switch (command) {
                     case "kioskMode":
                         history.push(beginOrderPath);
+                        break;
+                    case "stock":
+                        history.push(stockPath);
+                        break;
+                    case "reports":
+                        history.push(reportsPath);
                         break;
                     case "configureEftposAndPrinters":
                         history.push(configureNewEftposPath);
@@ -119,6 +129,8 @@ const Routes = () => {
             <Route exact path={logoutPath} component={Logout} />
             <PrivateRoute exact path={restaurantListPath} component={RestaurantList} />
             <PrivateRoute exact path={registerListPath} component={RegisterList} />
+            <PrivateRoute exact path={stockPath} component={Stock} />
+            <PrivateRoute exact path={reportsPath} component={Reports} />
             <RestaurantRegisterPrivateRoute exact path={configureNewEftposPath} component={ConfigureNewEftpos} />
             <RestaurantRegisterPrivateRoute exact path={beginOrderPath} component={BeginOrder} />
             <RestaurantRegisterPrivateRoute exact path={orderTypePath} component={OrderType} />

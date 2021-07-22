@@ -3,6 +3,7 @@ import { useState, useEffect, createContext, useContext } from "react";
 import { useMutation } from "react-apollo-hooks";
 import { UPDATE_REGISTER_KEY } from "../graphql/customMutations";
 import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
+import { getCloudFrontDomainName } from "../private/aws-custom";
 import { useRestaurant } from "./restaurant-context";
 
 type ContextProps = {
@@ -90,7 +91,20 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
                 connectRegister: connectRegister,
                 disconnectRegister: disconnectRegister,
             }}
-            children={props.children}
+            children={
+                <>
+                    {props.children}
+                    {register && register.customStyleSheet && (
+                        <link
+                            rel="stylesheet"
+                            type="text/css"
+                            href={`${getCloudFrontDomainName()}/protected/${register.customStyleSheet.identityPoolId}/${
+                                register.customStyleSheet.key
+                            }`}
+                        />
+                    )}
+                </>
+            }
         />
     );
 };

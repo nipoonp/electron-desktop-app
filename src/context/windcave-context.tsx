@@ -92,6 +92,9 @@ interface IWindcaveStatusResponse {
         Complete?: {
             _text?: string;
         };
+        RcptW?: {
+            _text?: string;
+        };
         Rcpt?: {
             _text?: string;
         };
@@ -164,6 +167,21 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
 
     const _baseUrl: string = "https://uat.windcave.com/pxmi3/pos.aspx";
     const currency = "NZD";
+
+    const formatReceipt = (receipt: string, width: number) => {
+        let result = "";
+
+        while (receipt.length > 0) {
+            result += receipt.substring(0, width) + "\n";
+            receipt = receipt.substring(width);
+        }
+
+        if (result.length > width) {
+            receipt = receipt.substr(0, result.length - 2);
+        }
+
+        return result;
+    };
 
     const createEftposTransactionLogMutation = useMutation(CREATE_EFTPOS_TRANSACTION_LOG, {
         update: (proxy, mutationResult) => {},
@@ -394,6 +412,10 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
 
                             if (res.Scr.Rcpt) {
                                 eftposReceipt = res.Scr.Rcpt._text;
+
+                                if (res.Scr.RcptW && res.Scr.RcptW._text) {
+                                    eftposReceipt = formatReceipt(eftposReceipt, parseInt(res.Scr.RcptW._text));
+                                }
                             }
                         } else {
                             //Some other misc error

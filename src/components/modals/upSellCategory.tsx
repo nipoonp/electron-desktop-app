@@ -19,7 +19,8 @@ interface IUpSellCategoryModalProps {
 export const UpSellCategoryModal = (props: IUpSellCategoryModalProps) => {
     const { onSelectUpSellCrossSellCategory, upSellCrossSaleCategoryItems } = { ...props };
 
-    const randomItem = useRef(upSellCrossSaleCategoryItems[Math.floor(Math.random() * upSellCrossSaleCategoryItems.length)]);
+    const randomItemIndex = Math.floor(Math.random() * upSellCrossSaleCategoryItems.length);
+    const randomItem = useRef(upSellCrossSaleCategoryItems[randomItemIndex]);
 
     // callbacks
     const onModalClose = () => {
@@ -54,7 +55,9 @@ export const UpSellCategoryModal = (props: IUpSellCategoryModalProps) => {
 
     const Categories = (
         <div className="categories pt-2">
-            {upSellCrossSaleCategoryItems.map((item) => {
+            {upSellCrossSaleCategoryItems.map((item, index) => {
+                if(randomItem.current.category.id == item.category.id) return;
+                
                 return categoryDisplay(item.category);
             })}
         </div>
@@ -62,7 +65,7 @@ export const UpSellCategoryModal = (props: IUpSellCategoryModalProps) => {
 
     const mainImage = (
         <>
-            <div className="h1 mb-6 text-center">{randomItem.current.category.name}</div>
+            <div className="h1 mb-6 text-center">Would you like some {randomItem.current.category.name}?</div>
             {randomItem.current.category.image && (
                 <CachedImage
                     className="main-image mb-4"

@@ -279,6 +279,7 @@ export const Checkout = () => {
         }
 
         let variables;
+
         try {
             variables = {
                 status: "NEW",
@@ -296,6 +297,13 @@ export const Checkout = () => {
                 orderUserId: user.id,
                 orderRestaurantId: restaurant.id,
             };
+
+            if (restaurant.autoCompleteOrders) {
+                variables.status = "COMPLETED";
+                variables.completedAt = toLocalISOString(now);
+                variables.completedAtUtc = now.toISOString();
+                variables.paid = true;
+            }
         } catch (e) {
             await logSlackError(
                 JSON.stringify({
@@ -442,6 +450,7 @@ export const Checkout = () => {
 
                 if (productsToPrint.length > 0) {
                     printReceipt({
+                        printerType: printer.type,
                         printerAddress: printer.address,
                         kitchenPrinter: printer.kitchenPrinter,
                         eftposReceipt: eftposReceipt,
@@ -449,6 +458,7 @@ export const Checkout = () => {
                         restaurant: {
                             name: restaurant.name,
                             address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
+                            gstNumber: restaurant.gstNumber,
                         },
                         notes: notes,
                         products: productsToPrint,
@@ -1031,7 +1041,7 @@ export const Checkout = () => {
 
     const title = (
         <div className="title mb-6">
-            <CachedImage className="image mr-2" url={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.jpg`} alt="shopping-bag-icon" />
+            <CachedImage className="image mr-2" url={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.png`} alt="shopping-bag-icon" />
             <div className="h1">Your Order</div>
         </div>
     );
@@ -1087,7 +1097,7 @@ export const Checkout = () => {
                 </div>
                 {register.enablePayLater && (
                     <div className="pay-later-link mt-4">
-                        <Link onClick={onClickPayLater}>Pay at counter...</Link>
+                        <Link onClick={onClickPayLater}>Pay cash at counter...</Link>
                     </div>
                 )}
             </div>

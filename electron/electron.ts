@@ -134,6 +134,18 @@ ipcMain.on("SHOW_CONTEXT_MENU", (event) => {
             },
         },
         {
+            label: "Stock",
+            click: () => {
+                event.sender.send("CONTEXT_MENU_COMMAND", "stock");
+            },
+        },
+        {
+            label: "Reports",
+            click: () => {
+                event.sender.send("CONTEXT_MENU_COMMAND", "reports");
+            },
+        },
+        {
             label: "Configure New Eftpos & Printers",
             click: () => {
                 event.sender.send("CONTEXT_MENU_COMMAND", "configureEftposAndPrinters");
