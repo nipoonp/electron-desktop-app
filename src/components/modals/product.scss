@@ -18,14 +18,14 @@
             line-height: 1.5em;
         }
 
-        .modifier-wrapper {
-            .modifier {
+        .modifier {
+            &.sold-out {
+                opacity: 0.5;
+            }
+
+            .modifier-item {
                 display: flex;
                 align-items: center;
-
-                &.sold-out {
-                    opacity: 0.5;
-                }
 
                 .quantity-remaining {
                     padding: 5px 10px;

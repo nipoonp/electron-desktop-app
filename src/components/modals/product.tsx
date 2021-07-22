@@ -613,37 +613,40 @@ export const ModifierGroup = (props: {
             <div className="h2 mb-2">{modifierGroup.name}</div>
             {error && <div className="text-error mb-2">{error}</div>}
             <div className="mb-2">({getSelectInstructions()})</div>
-            {modifierGroup.modifiers &&
-                modifierGroup.modifiers.items.map((m) => {
-                    const isValid = checkModifierIsValid(m.modifier);
 
-                    return (
-                        <Modifier
-                            radio={modifierGroup.choiceMin !== 0 && modifierGroup.choiceMax === 1}
-                            modifier={m.modifier}
-                            choiceDuplicate={modifierGroup.choiceDuplicate}
-                            onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                onCheckingModifier(selectedModifier, m.preSelectedQuantity);
-                            }}
-                            onUnCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                onUnCheckingModifier(selectedModifier, m.preSelectedQuantity);
-                            }}
-                            onChangeModifierQuantity={(selectedModifier: IGET_RESTAURANT_MODIFIER, quantity: number) => {
-                                onChangeModifierQuantity(selectedModifier, m.preSelectedQuantity, quantity);
-                            }}
-                            onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                onSelectRadioModifier(selectedModifier, m.preSelectedQuantity);
-                            }}
-                            modifierQuantity={modifierQuantity(m.modifier)}
-                            productQuantity={productQuantity}
-                            checked={checkModifierSelected(m.modifier)}
-                            maxReached={isMaxReached(modifierGroup.choiceMax, selectedModifiers)}
-                            modifiersSelectedCount={getModifiersSelectedCount(selectedModifiers)}
-                            isValid={isValid}
-                            disabled={disabled || !isValid || checkMaxReached(m.modifier)}
-                        />
-                    );
-                })}
+            <div className="modifiers">
+                {modifierGroup.modifiers &&
+                    modifierGroup.modifiers.items.map((m) => {
+                        const isValid = checkModifierIsValid(m.modifier);
+
+                        return (
+                            <Modifier
+                                radio={modifierGroup.choiceMin !== 0 && modifierGroup.choiceMax === 1}
+                                modifier={m.modifier}
+                                choiceDuplicate={modifierGroup.choiceDuplicate}
+                                onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
+                                    onCheckingModifier(selectedModifier, m.preSelectedQuantity);
+                                }}
+                                onUnCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
+                                    onUnCheckingModifier(selectedModifier, m.preSelectedQuantity);
+                                }}
+                                onChangeModifierQuantity={(selectedModifier: IGET_RESTAURANT_MODIFIER, quantity: number) => {
+                                    onChangeModifierQuantity(selectedModifier, m.preSelectedQuantity, quantity);
+                                }}
+                                onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
+                                    onSelectRadioModifier(selectedModifier, m.preSelectedQuantity);
+                                }}
+                                modifierQuantity={modifierQuantity(m.modifier)}
+                                productQuantity={productQuantity}
+                                checked={checkModifierSelected(m.modifier)}
+                                maxReached={isMaxReached(modifierGroup.choiceMax, selectedModifiers)}
+                                modifiersSelectedCount={getModifiersSelectedCount(selectedModifiers)}
+                                isValid={isValid}
+                                disabled={disabled || !isValid || checkMaxReached(m.modifier)}
+                            />
+                        );
+                    })}
+            </div>
         </>
     );
 };
@@ -764,7 +767,7 @@ const Modifier = (props: {
     // displays
     const modifierChildren = (
         <>
-            <div className={`modifier ${isValid ? "" : "sold-out"} `}>
+            <div className="modifier-item">
                 {modifier.image && (
                     <CachedImage
                         url={`${getCloudFrontDomainName()}/protected/${modifier.image.identityPoolId}/${modifier.image.key}`}
@@ -782,7 +785,7 @@ const Modifier = (props: {
                     </div>
                 ) : (
                     <div>
-                        {modifier.name} {modifier.price > 0 && `($${convertCentsToDollars(modifier.price)}) (SOLD OUT)`}
+                        {modifier.name} {modifier.price > 0 && `($${convertCentsToDollars(modifier.price)})`} (SOLD OUT)
                     </div>
                 )}
             </div>
@@ -857,7 +860,7 @@ const Modifier = (props: {
 
     return (
         <>
-            <div className="modifier-wrapper">
+            <div className={`modifier ${isValid ? "" : "sold-out"}`}>
                 {showRadio && _radio}
 
                 {showStepper && stepper}
