@@ -58,9 +58,7 @@
         "build:desktop": "tsc -p electron/tsconfig.json",
         "test": "react-scripts test",
         "eject": "react-scripts eject",
-        "release": "electron-builder -mwl -p 'onTagOrDraft'",
         "release:windows": "electron-builder -w -p 'onTagOrDraft'",
-        "electron-dev": "concurrently \"BROWSER=none npm run start\" \"wait-on http://localhost:3000 && electron .\"",
         "window-cert": "electron-builder create-self-signed-cert -p tabinWindowsCertificate"
     },
     "eslintConfig": {
