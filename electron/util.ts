@@ -228,7 +228,6 @@ export const printReceipt = async (order: IOrderReceipt) => {
         ]);
 
         printer.newLine();
-
         printer.alignCenter();
 
         if (order.eftposReceipt && !order.kitchenPrinter) {
