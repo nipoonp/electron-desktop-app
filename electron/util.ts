@@ -77,7 +77,7 @@ const getProductTotal = (product: ICartProduct) => {
     return total * product.quantity;
 };
 
-export const printReceipt = async (order: IOrderReceipt) => {
+export const printReceipt = async (order: IOrderReceipt, customerReceipt: boolean) => {
     let printer;
 
     let failedRetryCount = 10;
@@ -107,20 +107,24 @@ export const printReceipt = async (order: IOrderReceipt) => {
         printer.setTextSize(1, 1);
         printer.println(order.restaurant.name);
 
-        printer.newLine();
+        if (customerReceipt) {
+            printer.newLine();
 
-        printer.bold(false);
-        printer.setTextNormal();
-        printer.println(order.restaurant.address);
-
-        printer.newLine();
-
-        if (order.restaurant.gstNumber) {
             printer.bold(false);
             printer.setTextNormal();
-            printer.println(`GST: ${order.restaurant.gstNumber}`);
+            printer.println(order.restaurant.address);
+        }
 
+        if (customerReceipt) {
             printer.newLine();
+
+            if (order.restaurant.gstNumber) {
+                printer.bold(false);
+                printer.setTextNormal();
+                printer.println(`GST: ${order.restaurant.gstNumber}`);
+
+                printer.newLine();
+            }
         }
 
         printer.setTextNormal();
@@ -230,7 +234,7 @@ export const printReceipt = async (order: IOrderReceipt) => {
         printer.newLine();
         printer.alignCenter();
 
-        if (order.eftposReceipt && !order.kitchenPrinter) {
+        if (order.eftposReceipt && customerReceipt) {
             printer.println(order.eftposReceipt);
         }
 

@@ -40,6 +40,7 @@ export enum EReceiptPrinterType {
 export interface IOrderReceipt {
     printerType: EReceiptPrinterType;
     printerAddress: string;
+    customerPrinter?: boolean;
     kitchenPrinter?: boolean;
     eftposReceipt?: string;
     hideModifierGroupsForCustomer?: boolean;

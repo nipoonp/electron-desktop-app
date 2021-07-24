@@ -51,6 +51,7 @@ export const GET_USER = gql`
                                     name
                                     type
                                     address
+                                    customerPrinter
                                     kitchenPrinter
                                     ignoreProducts(limit: 500) {
                                         items {
@@ -92,6 +93,7 @@ export interface IGET_USER_REGISTER_PRINTER {
     name: string;
     type: EReceiptPrinterType;
     address: string;
+    customerPrinter: boolean;
     kitchenPrinter: boolean;
     ignoreProducts: {
         items: IGET_USER_REGISTER_PRINTER_IGNORE_PRODUCT[];
@@ -221,6 +223,7 @@ export const GET_RESTAURANT = gql`
                             name
                             type
                             address
+                            customerPrinter
                             kitchenPrinter
                             ignoreProducts(limit: 500) {
                                 items {
@@ -487,6 +490,7 @@ export interface IGET_RESTAURANT_REGISTER_PRINTER {
     name: string;
     type: EReceiptPrinterType;
     address: string;
+    customerPrinter: boolean;
     kitchenPrinter: boolean;
     ignoreProducts: {
         items: IGET_RESTAURANT_REGISTER_PRINTER_IGNORE_PRODUCT[];
