@@ -125,6 +125,7 @@ export const ReceiptPrinter = () => {
             printReceipt({
                 printerType: printerType,
                 printerAddress: printerAddress1,
+                customerPrinter: true,
                 hideModifierGroupsForCustomer: true,
                 eftposReceipt: "",
                 restaurant: {
@@ -146,6 +147,7 @@ export const ReceiptPrinter = () => {
             printReceipt({
                 printerType: printerType,
                 printerAddress: printerAddress2,
+                customerPrinter: true,
                 restaurant: {
                     name: "Test Tabin Restaurant",
                     address: "Receipt Printer 2",
@@ -165,6 +167,7 @@ export const ReceiptPrinter = () => {
             printReceipt({
                 printerType: printerType,
                 printerAddress: printerAddress3,
+                customerPrinter: true,
                 restaurant: {
                     name: "Test Tabin Restaurant",
                     address: "Receipt Printer 3",

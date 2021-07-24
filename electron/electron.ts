@@ -86,7 +86,14 @@ app.once("window-all-closed", () => {
 // Webapp Receipt Printer Side
 ipcMain.on("RECEIPT_PRINTER_DATA", async (event: any, data: IOrderReceipt) => {
     try {
-        await printReceipt(data);
+        //A receipt request could have print customer receipts and kitchen receipts enabled. So we would have to print 2 copies.
+        if (data.customerPrinter) {
+            await printReceipt(data, true);
+        }
+
+        if (data.kitchenPrinter) {
+            await printReceipt(data, false);
+        }
     } catch (e) {
         mainWindow.webContents.send("RECEIPT_PRINTER_ERROR", e);
     }

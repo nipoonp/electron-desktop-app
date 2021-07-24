@@ -452,6 +452,7 @@ export const Checkout = () => {
                     printReceipt({
                         printerType: printer.type,
                         printerAddress: printer.address,
+                        customerPrinter: printer.customerPrinter,
                         kitchenPrinter: printer.kitchenPrinter,
                         eftposReceipt: eftposReceipt,
                         hideModifierGroupsForCustomer: true,
