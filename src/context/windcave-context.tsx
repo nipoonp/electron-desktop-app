@@ -141,8 +141,8 @@ const windcaveResponseCodeMessages = {
 };
 
 const ACTION: string = "doScrHIT";
-const USER: string = "TabinHIT_Dev";
-const KEY: string = "6b06b931c1942fa4222903055c9ac749c77fa4b86471d91b2909da74a69d928c";
+const USER: string = "TripoliFoodsLtd";
+const KEY: string = "102ad77c997dcd4cfccd332af6c34f9b";
 
 type ContextProps = {
     createTransaction: (stationId: string, amount: number, transactionType: string, action?: string, user?: string, key?: string) => Promise<string>;
@@ -165,7 +165,7 @@ const WindcaveContext = createContext<ContextProps>({
 const WindcaveProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
 
-    const _baseUrl: string = "https://uat.windcave.com/pxmi3/pos.aspx";
+    const _baseUrl: string = "https://sec.windcave.com/pxmi3/pos.aspx";
     const currency = "NZD";
 
     const formatReceipt = (receipt: string, width: number) => {
