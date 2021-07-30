@@ -25,7 +25,7 @@ jobs:
           #   if: tag IS present
           os: windows
           script:
-              - npm run build:web
               - ./node_modules/.bin/electron-rebuild
+              - npm run build:web
         #   before_cache:
         #       - rm -rf $HOME/.cache/electron-builder/wine
