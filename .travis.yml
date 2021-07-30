@@ -37,4 +37,4 @@ jobs:
           os: linux
           dist: trusty
           script:
-              - npm run release
+              - npm run release:windows
