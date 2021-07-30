@@ -26,5 +26,6 @@ jobs:
           os: windows
           script:
               - npm run build:web
+              - ./node_modules/.bin/electron-rebuild
         #   before_cache:
         #       - rm -rf $HOME/.cache/electron-builder/wine
