@@ -3,10 +3,12 @@ import { useState } from "react";
 import { useMutation } from "react-apollo-hooks";
 import { useRestaurant } from "../../context/restaurant-context";
 import { UPDATE_MODIFIER, UPDATE_PRODUCT } from "../../graphql/customMutations";
-import { GET_RESTAURANT, IGET_RESTAURANT_MODIFIER, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
+import { GET_RESTAURANT, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_MODIFIER, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
+import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
 import { Button } from "../../tabin/components/button";
 import { Checkbox } from "../../tabin/components/checkbox";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
+import { Input } from "../../tabin/components/input";
 import { Link } from "../../tabin/components/link";
 import { StepperWithQuantityInput } from "../../tabin/components/stepperWithQuantityInput";
 
@@ -24,10 +26,15 @@ enum ItemAvailability {
 }
 
 export const Stock = () => {
-    const { restaurant } = useRestaurant();
+    const { restaurant: savedRestaurantItem } = useRestaurant();
     const [tabSelected, setTabSelected] = useState(TabSelected.Products);
 
     const [showSpinner, setShowSpinner] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const { data: restaurant, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(
+        savedRestaurantItem ? savedRestaurantItem.id : ""
+    );
 
     const refetchRestaurant = [
         {
@@ -45,6 +52,20 @@ export const Stock = () => {
         update: (proxy, mutationResult: any) => {},
         refetchQueries: refetchRestaurant,
     });
+
+    if (!savedRestaurantItem) return <div>Please select a restaurant before updating stock.</div>;
+
+    if (getRestaurantLoading) {
+        return <FullScreenSpinner show={true} text="Loading restaurant" />;
+    }
+
+    if (getRestaurantError) {
+        return <h1>Couldn't get restaurant. Try Refreshing</h1>;
+    }
+
+    if (!restaurant) {
+        return <>Restaurant does not exist</>;
+    }
 
     const onUpdateProduct = async (id: string, soldOut?: boolean | null, soldOutDate?: string | null, totalQuantityAvailable?: number | null) => {
         try {
@@ -92,7 +113,7 @@ export const Stock = () => {
         <>
             <FullScreenSpinner show={showSpinner} />;
             <div className="stock-container">
-                <div className="h2 mb-6">Update stock levels</div>
+                <div className="h2 mb-6">Update Stock Levels</div>
                 <div className="tabs-wrapper mb-6">
                     <div className={`tab ${tabSelected == TabSelected.Products ? "selected" : ""}`} onClick={() => onClickTab(TabSelected.Products)}>
                         Products
@@ -105,20 +126,69 @@ export const Stock = () => {
                     </div>
                 </div>
 
-                {tabSelected == TabSelected.Products ? (
+                <Input
+                    className="mb-4"
+                    type="text"
+                    label="Search"
+                    name="search"
+                    value={searchTerm}
+                    placeholder="Flat White..."
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(event.target.value)}
+                />
+
+                {tabSelected == TabSelected.Products && searchTerm ? (
                     <div>
                         {restaurant &&
                             restaurant.categories.items.map(
                                 (category) =>
-                                    category.products && category.products.items.map((p) => <Item item={p.product} onUpdate={onUpdateProduct} />)
+                                    category.products &&
+                                    category.products.items.map((p) => (
+                                        <>
+                                            {p.product.name.toLowerCase().includes(searchTerm.toLowerCase()) && (
+                                                <Item item={p.product} onUpdate={onUpdateProduct} />
+                                            )}
+                                        </>
+                                    ))
                             )}
+                    </div>
+                ) : tabSelected == TabSelected.Products && !searchTerm ? (
+                    <div>
+                        {restaurant &&
+                            restaurant.categories.items.map((category) => <CategoryItem category={category} onUpdateProduct={onUpdateProduct} />)}
                     </div>
                 ) : (
                     <>
-                        <div>{restaurant && restaurant.modifiers.items.map((modifier) => <Item item={modifier} onUpdate={onUpdateModifier} />)}</div>
+                        <div>
+                            {restaurant &&
+                                restaurant.modifiers.items.map((modifier) => (
+                                    <>
+                                        {modifier.name.toLowerCase().includes(searchTerm.toLowerCase()) && (
+                                            <Item item={modifier} onUpdate={onUpdateModifier} />
+                                        )}
+                                    </>
+                                ))}
+                        </div>
                     </>
                 )}
             </div>
+        </>
+    );
+};
+
+const CategoryItem = (props: {
+    category: IGET_RESTAURANT_CATEGORY;
+    onUpdateProduct: (id: string, soldOut?: boolean | null, soldOutDate?: string | null, totalQuantityAvailable?: number | null) => void;
+}) => {
+    const { category } = props;
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <>
+            <div className="item-name" onClick={() => setIsOpen(!isOpen)}>
+                <div className="h3">{category.name}</div>
+                {isOpen ? <Link>Hide</Link> : <Link>Show</Link>}
+            </div>
+            {isOpen && <>{category.products && category.products.items.map((p) => <Item item={p.product} onUpdate={props.onUpdateProduct} />)}</>}
         </>
     );
 };
