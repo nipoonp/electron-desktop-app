@@ -7,6 +7,7 @@ import * as yup from "yup";
 import { beginOrderPath } from "../../main";
 import { Button } from "../../../tabin/components/button";
 import { Input } from "../../../tabin/components/input";
+import config from "./../../../../package.json";
 
 import "./login.scss";
 
@@ -143,6 +144,7 @@ export const Login = () => {
                 <div className="mb-3"></div>
                 {loginButton}
             </div>
+            <div className="mt-2 text-center">{`Version: ${config.version}`}</div>
         </>
     );
 };
