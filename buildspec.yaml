@@ -38,12 +38,13 @@ phases:
             - echo xxx...NODE version
             - node -v
             - npm install -g node@12.18.1
-            - npm install -g node-gyp
+            - npm install -g node-gyp@6.14.13
             - ./node_modules/.bin/electron-rebuild
             # - command
     build:
         commands:
             - npm run build:web
+            - tsc -p electron/tsconfig.json
         # - command
         #post_build:
         #commands:
