@@ -12,7 +12,7 @@ import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketI
 import { ProductModal } from "../modals/product";
 import {
     ICartProduct,
-    ISelectedProductModifiers,
+    IPreSelectedModifiers,
     ICartModifierGroup,
     EOrderType,
     IMatchingUpSellCrossSellProductItem,
@@ -659,7 +659,7 @@ export const Checkout = () => {
             return <></>;
         }
 
-        let orderedModifiers: ISelectedProductModifiers = {};
+        let orderedModifiers: IPreSelectedModifiers = {};
 
         productToEdit.product.modifierGroups.forEach((mg) => {
             orderedModifiers[mg.id] = mg.modifiers;
