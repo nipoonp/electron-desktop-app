@@ -90,7 +90,11 @@ export const ProductModal = (props: {
                                     preSelectedQuantity: modifierLink.preSelectedQuantity,
                                     quantity: modifierLink.preSelectedQuantity,
                                     productModifier: modifierLink.modifier.productModifier
-                                        ? { id: modifierLink.modifier.productModifier.id }
+                                        ? {
+                                              id: modifierLink.modifier.productModifier.id,
+                                              name: modifierLink.modifier.productModifier.name,
+                                              price: modifierLink.modifier.productModifier.price,
+                                          }
                                         : undefined,
                                     image: modifierLink.modifier.image
                                         ? {
@@ -150,7 +154,13 @@ export const ProductModal = (props: {
                 price: selectedModifier.price,
                 preSelectedQuantity: preSelectedModifierQuantity,
                 quantity: 1,
-                productModifier: selectedModifier.productModifier ? { id: selectedModifier.productModifier.id } : undefined,
+                productModifier: selectedModifier.productModifier
+                    ? {
+                          id: selectedModifier.productModifier.id,
+                          name: selectedModifier.productModifier.name,
+                          price: selectedModifier.productModifier.price,
+                      }
+                    : undefined,
                 image: selectedModifier.image
                     ? {
                           key: selectedModifier.image.key,
@@ -191,7 +201,13 @@ export const ProductModal = (props: {
                     price: selectedModifier.price,
                     preSelectedQuantity: preSelectedModifierQuantity,
                     quantity: 0,
-                    productModifier: selectedModifier.productModifier ? { id: selectedModifier.productModifier.id } : undefined,
+                    productModifier: selectedModifier.productModifier
+                        ? {
+                              id: selectedModifier.productModifier.id,
+                              name: selectedModifier.productModifier.name,
+                              price: selectedModifier.productModifier.price,
+                          }
+                        : undefined,
                     image: selectedModifier.image
                         ? {
                               key: selectedModifier.image.key,
@@ -239,7 +255,13 @@ export const ProductModal = (props: {
                     price: selectedModifier.price,
                     preSelectedQuantity: preSelectedModifierQuantity,
                     quantity: quantity,
-                    productModifier: selectedModifier.productModifier ? { id: selectedModifier.productModifier.id } : undefined,
+                    productModifier: selectedModifier.productModifier
+                        ? {
+                              id: selectedModifier.productModifier.id,
+                              name: selectedModifier.productModifier.name,
+                              price: selectedModifier.productModifier.price,
+                          }
+                        : undefined,
                     image: selectedModifier.image
                         ? {
                               key: selectedModifier.image.key,
