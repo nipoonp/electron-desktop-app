@@ -361,6 +361,8 @@ export const GET_RESTAURANT = gql`
                                                         soldOutDate
                                                         productModifier {
                                                             id
+                                                            name
+                                                            price
                                                             soldOut
                                                             soldOutDate
                                                             totalQuantityAvailable
@@ -650,6 +652,8 @@ export interface IGET_RESTAURANT_MODIFIER {
 
 export interface IGET_DASHBOARD_MODIFIER_PRODUCT_MODIFIER {
     id: string;
+    name: string;
+    price: number;
     soldOut: boolean;
     soldOutDate: string;
     totalQuantityAvailable?: number;

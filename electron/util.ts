@@ -107,9 +107,9 @@ export const printReceipt = async (order: IOrderReceipt, customerReceipt: boolea
         printer.setTextSize(1, 1);
         printer.println(order.restaurant.name);
 
-        if (customerReceipt) {
-            printer.newLine();
+        printer.newLine();
 
+        if (customerReceipt) {
             printer.bold(false);
             printer.setTextNormal();
             printer.println(order.restaurant.address);
@@ -131,27 +131,35 @@ export const printReceipt = async (order: IOrderReceipt, customerReceipt: boolea
         printer.println(`Order Placed ${getCurrentDate(new Date())} for ${order.type}`);
 
         if (order.table) {
+            printer.println("Your table number is");
             printer.newLine();
-            printer.println(`Table Number: ${order.table}`);
+            printer.setTextSize(1, 1);
+            printer.println(order.table);
+            printer.newLine();
         }
 
         printer.newLine();
 
+        printer.setTextNormal();
         printer.println("Your order number is");
         printer.newLine();
-        printer.setTextSize(1, 1);
+
+        //If table number is present display table number in big, order number in small
+        if (!order.table) {
+            printer.setTextSize(1, 1);
+        }
+
         printer.println(order.number);
         printer.newLine();
+        printer.setTextNormal();
 
         if (order.paid == false) {
-            printer.setTextNormal();
             printer.underlineThick(true);
             printer.println("Payment Required");
             printer.underlineThick(true);
             printer.newLine();
         }
 
-        printer.setTextNormal();
         printer.alignLeft();
 
         order.products.forEach((product: ICartProduct) => {

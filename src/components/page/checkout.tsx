@@ -12,7 +12,7 @@ import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketI
 import { ProductModal } from "../modals/product";
 import {
     ICartProduct,
-    ISelectedProductModifiers,
+    IPreSelectedModifiers,
     ICartModifierGroup,
     EOrderType,
     IMatchingUpSellCrossSellProductItem,
@@ -659,7 +659,7 @@ export const Checkout = () => {
             return <></>;
         }
 
-        let orderedModifiers: ISelectedProductModifiers = {};
+        let orderedModifiers: IPreSelectedModifiers = {};
 
         productToEdit.product.modifierGroups.forEach((mg) => {
             orderedModifiers[mg.id] = mg.modifiers;
@@ -914,7 +914,7 @@ export const Checkout = () => {
             <div className="h4 mb-4">All Done!</div>
             <div className="h2 mb-6">Transaction Accepted!</div>
             <div className="mb-1">Your order number is</div>
-            <div className="h1">{paymentOutcomeDelayedOrderNumber}</div>
+            <div className="order-number h1">{paymentOutcomeDelayedOrderNumber}</div>
             <div className="separator-6 mb-6"></div>
             {/* <Title3Font>Would you like to help save the planet? Get a e-receipt.</Title3Font>
             <Space4 />

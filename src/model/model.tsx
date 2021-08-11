@@ -59,9 +59,11 @@ export interface ICartModifier {
 
 export interface ICartProductModifier {
     id: string;
+    name: string;
+    price: number;
 }
 
-export interface ISelectedProductModifiers {
+export interface IPreSelectedModifiers {
     [modifierGroupId: string]: ICartModifier[];
 }
 

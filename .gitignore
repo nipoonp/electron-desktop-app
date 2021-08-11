@@ -1,6 +1,6 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-private/
+# private/
 
 # dependencies
 /node_modules
@@ -46,6 +46,6 @@ go/
 archive/
 
 # Private folder
-private/
+# private/
 
 amplify/mock-data
