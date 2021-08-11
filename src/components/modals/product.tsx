@@ -292,7 +292,13 @@ export const ProductModal = (props: {
                     price: selectedModifier.price,
                     preSelectedQuantity: preSelectedModifierQuantity,
                     quantity: 1,
-                    productModifier: selectedModifier.productModifier ? { id: selectedModifier.productModifier.id } : undefined,
+                    productModifier: selectedModifier.productModifier
+                        ? {
+                              id: selectedModifier.productModifier.id,
+                              name: selectedModifier.productModifier.name,
+                              price: selectedModifier.productModifier.price,
+                          }
+                        : undefined,
                     image: selectedModifier.image
                         ? {
                               key: selectedModifier.image.key,

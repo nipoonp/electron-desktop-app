@@ -210,7 +210,7 @@ const Item = (props: {
         }
     };
 
-    const availabilityButtons = getItemAvailability();
+    const itemAvailability = getItemAvailability();
 
     const onTrackStock = () => {
         props.onUpdate(item.id, item.soldOut, item.soldOutDate, 1);
@@ -239,7 +239,18 @@ const Item = (props: {
     return (
         <>
             <div className="item-name" onClick={() => setIsOpen(!isOpen)}>
-                <div>{item.name}</div>
+                <div>
+                    <span className="text-bold">{item.name}</span>{" "}
+                    <span>
+                        {item.totalQuantityAvailable && itemAvailability == ItemAvailability.Available
+                            ? `(${item.totalQuantityAvailable} Available)`
+                            : itemAvailability == ItemAvailability.SoldOut
+                            ? "(SOLD OUT)"
+                            : itemAvailability == ItemAvailability.SoldOutToday
+                            ? "(SOLD OUT TODAY)"
+                            : ""}
+                    </span>
+                </div>
                 {isOpen ? <Link>Close</Link> : <Link>Edit</Link>}
             </div>
             {isOpen && (
@@ -261,13 +272,13 @@ const Item = (props: {
                         )}
                     </div>
                     <div className="availability-button-container mt-3">
-                        <Button className={`${availabilityButtons == ItemAvailability.Available ? "" : "unselected"}`} onClick={onAvailable}>
+                        <Button className={`${itemAvailability == ItemAvailability.Available ? "" : "unselected"}`} onClick={onAvailable}>
                             Available
                         </Button>
-                        <Button className={`${availabilityButtons == ItemAvailability.SoldOutToday ? "" : "unselected"}`} onClick={onSoldOutToday}>
+                        <Button className={`${itemAvailability == ItemAvailability.SoldOutToday ? "" : "unselected"}`} onClick={onSoldOutToday}>
                             Sold Out Today
                         </Button>
-                        <Button className={`${availabilityButtons == ItemAvailability.SoldOut ? "" : "unselected"}`} onClick={onSoldOut}>
+                        <Button className={`${itemAvailability == ItemAvailability.SoldOut ? "" : "unselected"}`} onClick={onSoldOut}>
                             Sold Out
                         </Button>
                     </div>
