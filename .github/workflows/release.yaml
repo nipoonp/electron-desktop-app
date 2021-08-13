@@ -9,7 +9,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Slack Notification
-              uses: curl -X POST --data-urlencode "payload={\"channel\": \"#github-actions\", \"username\": \"webhookbot\", \"text\": \"This is posted to github-actions and comes from a bot named webhookbot.\", \"icon_emoji\": \":ghost:\"}" https://hooks.slack.com/services/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
+              run: curl -X POST --data-urlencode "payload={\"channel\": \"#github-actions\", \"username\": \"webhookbot\", \"text\": \"This is posted to github-actions and comes from a bot named webhookbot.\", \"icon_emoji\": \":ghost:\"}" https://hooks.slack.com/services/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
     windows:
         runs-on: windows-latest
         steps:
