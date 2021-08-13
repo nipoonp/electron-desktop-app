@@ -9,15 +9,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Slack Notification
-              uses: rtCamp/action-slack-notify@v2
-              env:
-                  SLACK_CHANNEL: general
-                  SLACK_COLOR: ${{ job.status }} # or a specific color like 'good' or '#ff00ff'
-                  SLACK_ICON: https://github.com/rtCamp.png?size=48
-                  SLACK_MESSAGE: "Post Content :rocket:"
-                  SLACK_TITLE: Post Title
-                  SLACK_USERNAME: rtCamp
-                  SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+              uses: curl -X POST --data-urlencode "payload={\"channel\": \"#github-actions\", \"username\": \"webhookbot\", \"text\": \"This is posted to github-actions and comes from a bot named webhookbot.\", \"icon_emoji\": \":ghost:\"}" https://hooks.slack.com/services/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
     windows:
         runs-on: windows-latest
         steps:
@@ -52,10 +44,6 @@ jobs:
             - uses: actions/setup-node@v1
               with:
                   node-version: 14
-            - name: install node tools
-              run: npm install --global --production windows-build-tools@4.0.0
-            - name: install node-gyp
-              run: npm install --global node-gyp@latest
             - name: Install dependencies
               run: npm install
             - name: Build native dependencies
