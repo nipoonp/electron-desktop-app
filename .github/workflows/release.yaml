@@ -8,10 +8,15 @@ jobs:
     slack_message:
         runs-on: ubuntu-latest
         steps:
-        - name: Slack Notification
-          uses: wei/curl@master
-          with:
-            args: curl -X POST --data-urlencode "payload={\"channel\": \"#github-actions\", \"username\": \"webhookbot\", \"text\": \"This is posted to github-actions and comes from a bot named webhookbot.\", \"icon_emoji\": \":ghost:\"}" https://hooks.slack.com/services/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
+            - name: Post to a Slack channel
+              id: slack
+              uses: slackapi/slack-github-action@v1.14.0
+              with:
+                  channel-id: "C02B03R0J05" # Slack channel id to post message
+                  slack-message: "posting from a github action!"
+              env:
+                  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
     windows:
         runs-on: windows-latest
         steps:
