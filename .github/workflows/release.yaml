@@ -5,8 +5,8 @@ on:
         branches: [dev]
 
 jobs:
-    slack_message: 
-      runs-on: ubuntu-latest
+    slack_message:
+        runs-on: ubuntu-latest
         steps:
             - name: Slack Notification
               uses: rtCamp/action-slack-notify@v2
@@ -45,3 +45,30 @@ jobs:
               run: npm run build:desktop
             - name: Build/release Electron app
               run: GH_TOKEN=${{ secrets.GH_TOKEN }} npm run release:windows
+    macos:
+        runs-on: macos-latest
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-node@v1
+              with:
+                  node-version: 14
+            - name: install node tools
+              run: npm install --global --production windows-build-tools@4.0.0
+            - name: install node-gyp
+              run: npm install --global node-gyp@latest
+            - name: Install dependencies
+              run: npm install
+            - name: Build native dependencies
+              run: ./node_modules/.bin/electron-rebuild
+            - name: Remove
+              run: rm -r node_modules
+            - name: Remove again
+              run: rm -r package-lock.json
+            - name: Install again
+              run: npm install
+            - name: Build web
+              run: npm run build:web
+            - name: Build desktop
+              run: npm run build:desktop
+            - name: Build/release Electron app
+              run: GH_TOKEN=${{ secrets.GH_TOKEN }} npm run release:macos
