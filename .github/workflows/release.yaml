@@ -30,10 +30,12 @@ jobs:
               run: npm install
             - name: Build native dependencies
               run: ./node_modules/.bin/electron-rebuild
+            - name: Remove
+              run: rm -r node_modules
+            - name: Remove again
+              run: rm -r package-lock.json
             - name: Install again
-              - run: rm -r node_modules
-              - run: rm -r package-lock.json
-              - run: npm install
+              run: npm install
             - name: Build web
               run: npm run build:web
             - name: Build desktop
