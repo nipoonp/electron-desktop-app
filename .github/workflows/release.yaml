@@ -12,6 +12,10 @@ jobs:
             - uses: actions/setup-node@v1
               with:
                   node-version: 14
+            - name: Echo stuff
+              run: ls
+            - name: Remote node modules
+              run: rm -r node_modules
             - name: install node tools
               run: npm install --global --production windows-build-tools@4.0.0
             - name: install node-gyp
