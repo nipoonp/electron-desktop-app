@@ -45,6 +45,9 @@ jobs:
                   args: "-w"
                   windows_certs: ${{ secrets.WINDOWS_CERTS }}
                   windows_certs_password: ""
+              env:
+                  CSC_LINK: ${{ secrets.WINDOWS_CERTS }}
+                  CSC_KEY_PASSWORD: ""
     macos:
         runs-on: macos-latest
         env:
@@ -70,3 +73,6 @@ jobs:
                   args: "-m"
                   mac_certs: ${{ secrets.MAC_CERTS }}
                   mac_certs_password: ""
+              env:
+                  CSC_LINK: ${{ secrets.MAC_CERTS }}
+                  CSC_KEY_PASSWORD: ""
