@@ -2,7 +2,7 @@
     "name": "Tabin",
     "description": "Tabin Self Service Kiosk",
     "author": "Tabin",
-    "version": "1.4.39",
+    "version": "1.4.40",
     "repository": "https://github.com/zeal-ltd/electron-desktop-app",
     "homepage": "https://github.com/zeal-ltd/electron-desktop-app",
     "main": "public/electron.ts",
@@ -83,11 +83,7 @@
             "icon": "icons/icon.icns"
         },
         "win": {
-            "icon": "icons/icon.ico",
-            "certificateFile": "private/tabinWindowsCertificate.pfx",
-            "certificatePassword": "",
-            "verifyUpdateCodeSignature": false,
-            "publisherName": "tabinWindowsCertificate"
+            "icon": "icons/icon.ico"
         },
         "linux": {
             "category": "Office",
