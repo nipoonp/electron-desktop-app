@@ -12,11 +12,10 @@ jobs:
               id: slack
               uses: slackapi/slack-github-action@v1.14.0
               with:
-                  channel-id: "C02B03R0J05" # Slack channel id to post message
+                  channel-id: ${{ secrets.SLACK_BOT_CHANNEL_ID }}
                   slack-message: "Electron build started!"
               env:
                   SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-
     windows:
         runs-on: windows-latest
         env:
@@ -26,16 +25,14 @@ jobs:
             - uses: actions/setup-node@v1
               with:
                   node-version: 14
-            - name: install node tools
+            - name: Install windows build tools
               run: npm install --global --production windows-build-tools@4.0.0
-            - name: install node-gyp
+            - name: Install node-gyp
               run: npm install --global node-gyp@latest
             - name: Install dependencies
               run: npm install
             - name: Build native dependencies
               run: ./node_modules/.bin/electron-rebuild
-            - name: Rebuild node-sass
-              run: npm rebuild node-sass
             - name: Build web
               run: npm run build:web
             - name: Build desktop
@@ -43,12 +40,7 @@ jobs:
             - name: Build/release Electron app
               uses: samuelmeuli/action-electron-builder@v1
               with:
-                  # GitHub token, automatically provided to the action
-                  # (No need to define this secret in the repo settings)
                   github_token: ${{ secrets.github_token }}
-
-                  # If the commit is tagged with a version (e.g. "v1.0.0"),
-                  # release the app after building
                   release: ${{ startsWith(github.ref, 'refs/tags/v') }}
                   args: "-w"
                   windows_certs: ${{ secrets.WINDOWS_CERTS }}
@@ -73,12 +65,7 @@ jobs:
             - name: Build/release Electron app
               uses: samuelmeuli/action-electron-builder@v1
               with:
-                  # GitHub token, automatically provided to the action
-                  # (No need to define this secret in the repo settings)
                   github_token: ${{ secrets.github_token }}
-
-                  # If the commit is tagged with a version (e.g. "v1.0.0"),
-                  # release the app after building
                   release: ${{ startsWith(github.ref, 'refs/tags/v') }}
                   args: "-m"
                   mac_certs: ${{ secrets.MAC_CERTS }}
