@@ -19,6 +19,8 @@ jobs:
 
     windows:
         runs-on: windows-latest
+        env:
+            CI: false #Need this otherwise github actions will do this => "Treating warnings as errors because process.env.CI = true"
         steps:
             - uses: actions/checkout@v2
             - uses: actions/setup-node@v1
@@ -42,6 +44,8 @@ jobs:
               run: GH_TOKEN=${{ secrets.GH_TOKEN }} npm run release:windows
     macos:
         runs-on: macos-latest
+        env:
+            CI: false #Need this otherwise github actions will do this => "Treating warnings as errors because process.env.CI = true"
         steps:
             - uses: actions/checkout@v2
             - uses: actions/setup-node@v1
