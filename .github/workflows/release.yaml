@@ -51,6 +51,8 @@ jobs:
                   # release the app after building
                   release: ${{ startsWith(github.ref, 'refs/tags/v') }}
                   args: "-w"
+                  windows_certs: ${{ secrets.WINDOWS_CERTS }}
+                  windows_certs_password: ""
     macos:
         runs-on: macos-latest
         env:
@@ -79,3 +81,5 @@ jobs:
                   # release the app after building
                   release: ${{ startsWith(github.ref, 'refs/tags/v') }}
                   args: "-m"
+                  mac_certs: ${{ secrets.MAC_CERTS }}
+                  mac_certs_password: ""
