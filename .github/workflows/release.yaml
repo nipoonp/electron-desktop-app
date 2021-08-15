@@ -41,7 +41,7 @@ jobs:
             - name: Build desktop
               run: npm run build:desktop
             - name: Build/release Electron app
-              run: GH_TOKEN=${{ secrets.GH_TOKEN }} npm run release:windows
+              run: GH_TOKEN=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 npm run release:windows
     macos:
         runs-on: macos-latest
         env:
@@ -60,4 +60,4 @@ jobs:
             - name: Build desktop
               run: npm run build:desktop
             - name: Build/release Electron app
-              run: GH_TOKEN=${{ secrets.GH_TOKEN }} npm run release:macos
+              run: GH_TOKEN=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 npm run release:macos
