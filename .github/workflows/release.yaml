@@ -41,7 +41,15 @@ jobs:
             - name: Build desktop
               run: npm run build:desktop
             - name: Build/release Electron app
-              run: GH_TOKEN=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 npm run release:windows
+              uses: samuelmeuli/action-electron-builder@v1
+              with:
+                  # GitHub token, automatically provided to the action
+                  # (No need to define this secret in the repo settings)
+                  github_token: ${{ secrets.github_token }}
+
+                  # If the commit is tagged with a version (e.g. "v1.0.0"),
+                  # release the app after building
+                  release: ${{ startsWith(github.ref, 'refs/tags/v') }}
     macos:
         runs-on: macos-latest
         env:
@@ -60,4 +68,12 @@ jobs:
             - name: Build desktop
               run: npm run build:desktop
             - name: Build/release Electron app
-              run: GH_TOKEN=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 npm run release:macos
+              uses: samuelmeuli/action-electron-builder@v1
+              with:
+                  # GitHub token, automatically provided to the action
+                  # (No need to define this secret in the repo settings)
+                  github_token: ${{ secrets.github_token }}
+
+                  # If the commit is tagged with a version (e.g. "v1.0.0"),
+                  # release the app after building
+                  release: ${{ startsWith(github.ref, 'refs/tags/v') }}
