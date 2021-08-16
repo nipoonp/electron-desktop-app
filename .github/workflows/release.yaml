@@ -37,14 +37,12 @@ jobs:
               run: npm run build:web
             - name: Build desktop
               run: npm run build:desktop
-            - name: Build/release Electron app
+            - name: Release Electron app
               uses: samuelmeuli/action-electron-builder@v1
               with:
                   github_token: ${{ secrets.github_token }}
                   release: ${{ startsWith(github.ref, 'refs/tags/v') }}
                   args: "-w"
-                  windows_certs: ${{ secrets.WINDOWS_CERTS }}
-                  windows_certs_password: ""
               env:
                   CSC_LINK: ${{ secrets.WINDOWS_CERTS }}
                   CSC_KEY_PASSWORD: ""
@@ -65,14 +63,13 @@ jobs:
               run: npm run build:web
             - name: Build desktop
               run: npm run build:desktop
-            - name: Build/release Electron app
+            - name: Release Electron app
               uses: samuelmeuli/action-electron-builder@v1
               with:
                   github_token: ${{ secrets.github_token }}
                   release: ${{ startsWith(github.ref, 'refs/tags/v') }}
                   args: "-m"
-                  mac_certs: ${{ secrets.MAC_CERTS }}
-                  mac_certs_password: ""
               env:
+                  CSC_IDENTITY_AUTO_DISCOVERY: false
                   CSC_LINK: ${{ secrets.MAC_CERTS }}
                   CSC_KEY_PASSWORD: ""
