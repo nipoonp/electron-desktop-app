@@ -32,7 +32,7 @@ import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { toLocalISOString } from "../../util/util";
 import { useRestaurant } from "../../context/restaurant-context";
-import { logSlackError } from "../../util/logging";
+import { logError } from "../../util/logging";
 import { UpSellProductModal } from "../modals/upSellProduct";
 import { Link } from "../../tabin/components/link";
 import { TextArea } from "../../tabin/components/textArea";
@@ -41,6 +41,7 @@ import "./checkout.scss";
 import { useWindcave, WindcaveTransactionOutcome, WindcaveTransactionOutcomeResult } from "../../context/windcave-context";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { UpSellCategoryModal } from "../modals/upSellCategory";
+import { useErrorLogging } from "../../context/errorLogging-context";
 
 const logger = new Logger("checkout");
 
@@ -60,6 +61,8 @@ export const Checkout = () => {
     const { restaurant } = useRestaurant();
     const { printReceipt } = useReceiptPrinter();
     const { user } = useUser();
+    const { logError } = useErrorLogging();
+
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
     const { createTransaction: windcaveCreateTransaction, pollForOutcome: windcavePollForOutcome } = useWindcave();
@@ -239,7 +242,7 @@ export const Checkout = () => {
         const now = new Date();
 
         if (!user) {
-            await logSlackError(
+            await logError(
                 JSON.stringify({
                     error: "Invalid user",
                     context: { orderRestaurantId: restaurant.id },
@@ -249,7 +252,7 @@ export const Checkout = () => {
         }
 
         if (!orderType) {
-            await logSlackError(
+            await logError(
                 JSON.stringify({
                     error: "Invalid order type",
                     context: { orderRestaurantId: restaurant.id },
@@ -259,7 +262,7 @@ export const Checkout = () => {
         }
 
         if (!restaurant) {
-            await logSlackError(
+            await logError(
                 JSON.stringify({
                     error: "Invalid restaurant",
                     context: { orderRestaurantId: restaurant },
@@ -269,7 +272,7 @@ export const Checkout = () => {
         }
 
         if (!products || products.length == 0) {
-            await logSlackError(
+            await logError(
                 JSON.stringify({
                     error: "No products have been selected",
                     context: { orderRestaurantId: restaurant.id },
@@ -305,7 +308,7 @@ export const Checkout = () => {
                 variables.paid = true;
             }
         } catch (e) {
-            await logSlackError(
+            await logError(
                 JSON.stringify({
                     error: "No products have been selected",
                     context: {
@@ -363,7 +366,7 @@ export const Checkout = () => {
 
             logger.debug("process order mutation result: ", res);
         } catch (e) {
-            await logSlackError(
+            await logError(
                 JSON.stringify({
                     error: e,
                     context: variables,

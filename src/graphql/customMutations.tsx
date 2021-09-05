@@ -98,3 +98,9 @@ export const EMAIL_SALES_REPORTS = gql`
         emailSalesReports(input: { restaurantId: $restaurantId, emails: $emails })
     }
 `;
+
+export const LOG_SLACK_ERROR = gql`
+    mutation LogSlackError($message: String!) {
+        logSlackError(input: { message: $message })
+    }
+`;

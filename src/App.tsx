@@ -20,6 +20,7 @@ import { RegisterProvider } from "./context/register-context";
 import { ElectronProvider } from "./context/electron-context";
 import { RestaurantProvider } from "./context/restaurant-context";
 import { WindcaveProvider } from "./context/windcave-context";
+import { ErrorLoggingProvider } from "./context/errorLogging-context";
 // import { GoogleMapsProvider } from "./context/google-maps-context";
 // import { AlgoliaProvider } from "./context/algolia-context";
 // import { LocationProvider } from "./context/location-context";
@@ -130,25 +131,27 @@ const App = () => {
                     {/* Needs to be inside apollo */}
                     {/* Needs to be in both logged in and not logged in */}
                     {/* Otherwise other things will get complicated */}
-                    <UserProvider userID={user!.username}>
-                        {/* <UserModel /> */}
-                        {/* <Main /> */}
-                        <RestaurantProvider>
-                            <RegisterProvider>
-                                <CartProvider>
-                                    <ReceiptPrinterProvider>
-                                        <VerifoneProvider>
-                                            <SmartpayProvider>
-                                                <WindcaveProvider>
-                                                    <Main />
-                                                </WindcaveProvider>
-                                            </SmartpayProvider>
-                                        </VerifoneProvider>
-                                    </ReceiptPrinterProvider>
-                                </CartProvider>
-                            </RegisterProvider>
-                        </RestaurantProvider>
-                    </UserProvider>
+                    <ErrorLoggingProvider>
+                        <UserProvider userID={user!.username}>
+                            {/* <UserModel /> */}
+                            {/* <Main /> */}
+                            <RestaurantProvider>
+                                <RegisterProvider>
+                                    <CartProvider>
+                                        <ReceiptPrinterProvider>
+                                            <VerifoneProvider>
+                                                <SmartpayProvider>
+                                                    <WindcaveProvider>
+                                                        <Main />
+                                                    </WindcaveProvider>
+                                                </SmartpayProvider>
+                                            </VerifoneProvider>
+                                        </ReceiptPrinterProvider>
+                                    </CartProvider>
+                                </RegisterProvider>
+                            </RestaurantProvider>
+                        </UserProvider>
+                    </ErrorLoggingProvider>
                     {/* </ApolloProvider> */}
                 </A>
             );
@@ -156,11 +159,13 @@ const App = () => {
             return (
                 <A client={iamClient}>
                     {/* <ApolloProvider client={iamClient}> */}
-                    <UserProvider userID={null}>
-                        <CartProvider>
-                            <Main />
-                        </CartProvider>
-                    </UserProvider>
+                    <ErrorLoggingProvider>
+                        <UserProvider userID={null}>
+                            <CartProvider>
+                                <Main />
+                            </CartProvider>
+                        </UserProvider>
+                    </ErrorLoggingProvider>
                     {/* </ApolloProvider> */}
                 </A>
             );
