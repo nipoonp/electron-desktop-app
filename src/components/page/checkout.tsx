@@ -32,7 +32,6 @@ import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { toLocalISOString } from "../../util/util";
 import { useRestaurant } from "../../context/restaurant-context";
-import { logError } from "../../util/logging";
 import { UpSellProductModal } from "../modals/upSellProduct";
 import { Link } from "../../tabin/components/link";
 import { TextArea } from "../../tabin/components/textArea";
@@ -57,7 +56,21 @@ enum CheckoutTransactionOutcome {
 export const Checkout = () => {
     // context
     const history = useHistory();
-    const { orderType, products, notes, setNotes, tableNumber, clearCart, total, updateItem, updateItemQuantity, deleteItem, addItem } = useCart();
+    const {
+        orderType,
+        products,
+        notes,
+        setNotes,
+        tableNumber,
+        clearCart,
+        promotion,
+        total,
+        subTotal,
+        updateItem,
+        updateItemQuantity,
+        deleteItem,
+        addItem,
+    } = useCart();
     const { restaurant } = useRestaurant();
     const { printReceipt } = useReceiptPrinter();
     const { user } = useUser();
@@ -293,6 +306,8 @@ export const Checkout = () => {
                 table: tableNumber,
                 notes: notes,
                 total: total,
+                discount: promotion ? promotion.discount : null,
+                subTotal: subTotal,
                 registerId: register.id,
                 products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
                 placedAt: toLocalISOString(now),
@@ -320,6 +335,8 @@ export const Checkout = () => {
                         table: tableNumber,
                         notes: notes,
                         total: total,
+                        discount: promotion ? promotion.discount : null,
+                        subTotal: subTotal,
                         registerId: register.id,
                         products: JSON.stringify(products), // copy obj so we can mutate it later
                         placedAt: now,
@@ -467,6 +484,8 @@ export const Checkout = () => {
                         notes: notes,
                         products: productsToPrint,
                         total: total,
+                        discount: promotion ? promotion.discount : null,
+                        subTotal: subTotal,
                         paid: paid,
                         type: orderType || EOrderType.TAKEAWAY,
                         number: orderNumber,
@@ -517,7 +536,7 @@ export const Checkout = () => {
         };
 
         try {
-            let pollingUrl = await smartpayCreateTransaction(total, "Card.Purchase");
+            let pollingUrl = await smartpayCreateTransaction(subTotal, "Card.Purchase");
 
             let transactionOutcome: SmartpayTransactionOutcome = await smartpayPollForOutcome(pollingUrl, delayed);
 
@@ -548,7 +567,7 @@ export const Checkout = () => {
 
     const doTransactionWindcave = async () => {
         try {
-            const txnRef = await windcaveCreateTransaction(register.windcaveStationId, total, "Purchase");
+            const txnRef = await windcaveCreateTransaction(register.windcaveStationId, subTotal, "Purchase");
 
             let transactionOutcome: WindcaveTransactionOutcomeResult = await windcavePollForOutcome(register.windcaveStationId, txnRef);
 
@@ -577,7 +596,7 @@ export const Checkout = () => {
     const doTransactionVerifone = async () => {
         try {
             const { transactionOutcome, eftposReceipt } = await verifoneCreateTransaction(
-                total,
+                subTotal,
                 register.eftposIpAddress,
                 register.eftposPortNumber,
                 restaurant.id
@@ -877,7 +896,7 @@ export const Checkout = () => {
         <>
             <div className="h4 mb-4">All Done!</div>
             <div className="h2 mb-6">Please give correct change.</div>
-            <div className="h1 mb-6">Total: ${convertCentsToDollars(total)}</div>
+            <div className="h1 mb-6">Total: ${convertCentsToDollars(subTotal)}</div>
             <div className="mb-1">Your order number is</div>
             <div className="order-number h1">{paymentOutcomeDelayedOrderNumber}</div>
             <div className="separator-6 mb-6"></div>
@@ -1084,7 +1103,8 @@ export const Checkout = () => {
     );
     const checkoutFooter = (
         <div>
-            <div className="h1 text-center mb-4">Total: ${convertCentsToDollars(total)}</div>
+            {promotion && <div className="h3 text-center mb-2">Discount: -${convertCentsToDollars(promotion.discount)}</div>}
+            <div className="h1 text-center mb-4">Total: ${convertCentsToDollars(subTotal)}</div>
             <div className="mb-4">
                 <div className="checkout-buttons-container">
                     <Button onClick={onOrderMore} className="button large mr-3 order-more-button">

@@ -1,4 +1,4 @@
-import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object } from "../graphql/customQueries";
+import { IGET_DASHBOARD_PROMOTION, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object } from "../graphql/customQueries";
 
 export interface ICognitoUser {
     attributes: {
@@ -67,6 +67,11 @@ export interface IPreSelectedModifiers {
     [modifierGroupId: string]: ICartModifier[];
 }
 
+export interface ICartPromotion {
+    discount: number;
+    promotion: IGET_DASHBOARD_PROMOTION;
+}
+
 export enum EReceiptPrinterType {
     BLUETOOTH = "BLUETOOTH",
     WIFI = "WIFI",
@@ -88,7 +93,8 @@ export interface IOrderReceipt {
     notes: string | null;
     products: ICartProduct[];
     total: number;
-    paid: boolean;
+    discount?: number;
+    subTotal: number;
     type: EOrderType;
     number: string;
     table: string | null;

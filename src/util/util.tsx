@@ -4,6 +4,8 @@ import {
     IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES,
     IGET_RESTAURANT_MODIFIER,
     IGET_RESTAURANT_PRODUCT,
+    IGET_RESTAURANT_PROMOTION_AVAILABILITY,
+    IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES,
 } from "../graphql/customQueries";
 import { ICartItemQuantitiesById, ICartProduct } from "../model/model";
 
@@ -13,6 +15,46 @@ export const isItemSoldOut = (soldOut?: boolean, soldOutDate?: string) => {
     }
 
     return false;
+};
+
+export const isPromotionAvailable = (availability?: IGET_RESTAURANT_PROMOTION_AVAILABILITY) => {
+    if (!availability) return true;
+
+    const dayTimes: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[] = getPromotionDayData(availability);
+
+    if (dayTimes.length == 0) return true;
+
+    const currentDateTime = new Date();
+    let isWithinTimeSlot = false;
+
+    dayTimes.forEach((timeSlot) => {
+        let startDateTime = new Date(
+            currentDateTime.getFullYear(),
+            currentDateTime.getMonth(),
+            currentDateTime.getDate(),
+            parseInt(timeSlot.startTime.split(":")[0]),
+            parseInt(timeSlot.startTime.split(":")[1]),
+            0,
+            0
+        );
+        let endDateTime = new Date(
+            currentDateTime.getFullYear(),
+            currentDateTime.getMonth(),
+            currentDateTime.getDate(),
+            parseInt(timeSlot.endTime.split(":")[0]),
+            parseInt(timeSlot.endTime.split(":")[1]),
+            0,
+            0
+        );
+
+        const isWithin = isWithinInterval(currentDateTime, { start: startDateTime, end: endDateTime });
+
+        if (isWithin && !isWithinTimeSlot) {
+            isWithinTimeSlot = true;
+        }
+    });
+
+    return isWithinTimeSlot;
 };
 
 export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS) => {
@@ -126,6 +168,29 @@ export const getQuantityRemainingText = (quantityRemaining: number) => {
         return "Last one!";
     } else {
         return `${quantityRemaining} left!`;
+    }
+};
+
+const getPromotionDayData = (availability: IGET_RESTAURANT_PROMOTION_AVAILABILITY) => {
+    const day: number = getDay(new Date());
+
+    switch (day) {
+        case 1:
+            return availability.monday;
+        case 2:
+            return availability.tuesday;
+        case 3:
+            return availability.wednesday;
+        case 4:
+            return availability.thursday;
+        case 5:
+            return availability.friday;
+        case 6:
+            return availability.saturday;
+        case 0: //0 is sunday in date-fns
+            return availability.sunday;
+        default:
+            return [];
     }
 };
 

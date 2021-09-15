@@ -1,15 +1,20 @@
+import { isWithinInterval } from "date-fns";
 import { createContext, useContext, useEffect, useState } from "react";
+import { EDiscountType, EPromotionType, ERegisterType, IGET_DASHBOARD_PROMOTION } from "../graphql/customQueries";
 
-import { ICartProduct, EOrderType, ICartItemQuantitiesById } from "../model/model";
+import { ICartProduct, EOrderType, ICartItemQuantitiesById, ICartPromotion } from "../model/model";
+import { isPromotionAvailable } from "../util/util";
+import { useRestaurant } from "./restaurant-context";
 
-const initialRestaurant = null;
 const initialOrderType = null;
 const initialTableNumber = null;
 const initialProducts = null;
 const initialNotes = "";
-const initialTotal = 0;
 const initialCartProductQuantitiesById = {};
 const initialCartModifierQuantitiesById = {};
+const initialPromotion = null;
+const initialTotal = 0;
+const initialSubTotal = 0;
 
 type ContextProps = {
     // restaurant: IGET_RESTAURANT | null;
@@ -28,7 +33,9 @@ type ContextProps = {
     clearCart: () => void;
     notes: string;
     setNotes: (notes: string) => void;
+    promotion: ICartPromotion | null;
     total: number;
+    subTotal: number;
 };
 
 const CartContext = createContext<ContextProps>({
@@ -48,19 +55,132 @@ const CartContext = createContext<ContextProps>({
     clearCart: () => {},
     notes: initialNotes,
     setNotes: () => {},
+    promotion: initialPromotion,
     total: initialTotal,
+    subTotal: initialSubTotal,
 });
 
 const CartProvider = (props: { children: React.ReactNode }) => {
+    const { restaurant } = useRestaurant();
+
     // const [restaurant, _setRestaurant] = useState<IGET_RESTAURANT | null>(initialRestaurant);
     const [orderType, _setOrderType] = useState<EOrderType | null>(initialOrderType);
     const [tableNumber, _setTableNumber] = useState<string | null>(initialTableNumber);
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
     const [notes, _setNotes] = useState<string>(initialNotes);
     const [total, _setTotal] = useState<number>(initialTotal);
+    const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
+    const [promotion, _setPromotion] = useState<ICartPromotion | null>(initialPromotion);
 
     const [cartProductQuantitiesById, _setCartProductQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartProductQuantitiesById);
     const [cartModifierQuantitiesById, _setCartModifierQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartModifierQuantitiesById);
+    const [availablePromotions, _setAvailablePromotions] = useState<IGET_DASHBOARD_PROMOTION[]>([]);
+
+    console.log("xxx...promotion", promotion);
+    console.log("xxx...availablePromotions", availablePromotions);
+
+    useEffect(() => {
+        if (promotion) {
+            _setSubTotal(total - promotion.discount);
+        } else {
+            _setSubTotal(total);
+        }
+    }, [total, promotion]);
+
+    useEffect(() => {
+        const now = new Date();
+
+        const availPromotions: IGET_DASHBOARD_PROMOTION[] = [];
+
+        restaurant &&
+            restaurant.promotions.items.forEach((promotion) => {
+                // if (!promotion.autoApply) return;
+
+                // const platform = process.env.REACT_APP_PLATFORM;
+
+                // if (!platform || !promotion.availablePlatforms) return;
+                // if (!promotion.availablePlatforms.includes(ERegisterType[platform])) return;
+
+                // const startDate = new Date(promotion.startDate);
+                // const endDate = new Date(promotion.endDate);
+
+                // const isWithin = isWithinInterval(now, { start: startDate, end: endDate });
+
+                // if (!isWithin) return;
+
+                // const isAvailable = promotion.availability && isPromotionAvailable(promotion.availability);
+
+                // if (!isAvailable) return;
+
+                availPromotions.push(promotion);
+            });
+
+        _setAvailablePromotions(availPromotions);
+    }, [restaurant]);
+
+    const getEntireOrderDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION, total: number) => {
+        let discountedAmount = 0;
+
+        promotion.discounts.items.forEach((discount) => {
+            switch (discount.type) {
+                case EDiscountType.FIXED:
+                    discountedAmount = discount.amount;
+                    break;
+                case EDiscountType.PERCENTAGE:
+                    discountedAmount = (total * discount.amount) / 100;
+                    break;
+                case EDiscountType.SETPRICE:
+                    discountedAmount = total - discount.amount;
+                    break;
+                default:
+                    break;
+            }
+        });
+
+        return discountedAmount;
+    };
+
+    useEffect(() => {
+        // console.log("xxx...cartProductQuantitiesById", cartProductQuantitiesById);
+        // console.log("xxx...cartModifierQuantitiesById", cartModifierQuantitiesById);
+
+        if (availablePromotions.length == 0) return;
+        if (!products || products.length == 0) return;
+
+        let bestPromotion: ICartPromotion | null = null;
+
+        availablePromotions.forEach((promotion) => {
+            // if (!orderType || !promotion.availableOrderTypes) return;
+            // if (!promotion.availableOrderTypes.includes(ERegisterType[orderType])) return;
+
+            if (total < promotion.minSpend) return;
+
+            let discountAmount = 0;
+
+            switch (promotion.type) {
+                case EPromotionType.COMBO:
+                    break;
+                case EPromotionType.ENTIREORDER:
+                    discountAmount = getEntireOrderDiscountAmount(promotion, total);
+                    break;
+                case EPromotionType.RELATEDITEMS:
+                    break;
+                default:
+                    break;
+            }
+
+            if (!bestPromotion || discountAmount > bestPromotion.discount) {
+                bestPromotion = {
+                    discount: discountAmount,
+                    promotion: promotion,
+                };
+            }
+        });
+
+        _setPromotion(bestPromotion);
+
+        console.log("yyy...bestPromotion", bestPromotion);
+    }, [cartProductQuantitiesById, cartModifierQuantitiesById, availablePromotions]);
 
     const updateCartQuantities = (products: ICartProduct[] | null) => {
         const newCartProductQuantitiesById = {};
@@ -117,10 +237,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         return totalPrice;
     };
-
-    // const setRestaurant = (restaurant: IGET_RESTAURANT) => {
-    //     _setRestaurant(restaurant);
-    // };
 
     const setOrderType = (orderType: EOrderType) => {
         _setOrderType(orderType);
@@ -223,7 +339,9 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 clearCart: clearCart,
                 notes: notes,
                 setNotes: setNotes,
+                promotion: promotion,
                 total: total,
+                subTotal: subTotal,
             }}
             children={props.children}
         />
