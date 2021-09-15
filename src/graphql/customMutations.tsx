@@ -66,8 +66,8 @@ export const CREATE_ORDER = gql`
                 table: $table
                 notes: $notes
                 total: $total
+                discount: $discount
                 subTotal: $subTotal
-                total: $total
                 registerId: $registerId
                 products: $products
                 placedAt: $placedAt

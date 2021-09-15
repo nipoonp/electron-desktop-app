@@ -306,7 +306,7 @@ export const Checkout = () => {
                 table: tableNumber,
                 notes: notes,
                 total: total,
-                discount: promotion ? promotion.discount : null,
+                discount: promotion ? promotion.discount : undefined,
                 subTotal: subTotal,
                 registerId: register.id,
                 products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
@@ -335,7 +335,7 @@ export const Checkout = () => {
                         table: tableNumber,
                         notes: notes,
                         total: total,
-                        discount: promotion ? promotion.discount : null,
+                        discount: promotion ? promotion.discount : undefined,
                         subTotal: subTotal,
                         registerId: register.id,
                         products: JSON.stringify(products), // copy obj so we can mutate it later
@@ -484,7 +484,7 @@ export const Checkout = () => {
                         notes: notes,
                         products: productsToPrint,
                         total: total,
-                        discount: promotion ? promotion.discount : null,
+                        discount: promotion ? promotion.discount : undefined,
                         subTotal: subTotal,
                         paid: paid,
                         type: orderType || EOrderType.TAKEAWAY,

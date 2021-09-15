@@ -95,6 +95,7 @@ export interface IOrderReceipt {
     total: number;
     discount?: number;
     subTotal: number;
+    paid: boolean;
     type: EOrderType;
     number: string;
     table: string | null;
