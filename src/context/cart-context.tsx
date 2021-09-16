@@ -1,15 +1,23 @@
 import { isWithinInterval } from "date-fns";
 import { createContext, useContext, useEffect, useState } from "react";
-import { EDiscountType, EPromotionType, ERegisterType, IGET_DASHBOARD_PROMOTION } from "../graphql/customQueries";
+import {
+    EDiscountType,
+    EPromotionType,
+    ERegisterType,
+    IGET_DASHBOARD_PROMOTION,
+    IGET_DASHBOARD_PROMOTION_DISCOUNT,
+    IGET_DASHBOARD_PROMOTION_ITEMS,
+} from "../graphql/customQueries";
 
 import { ICartProduct, EOrderType, ICartItemQuantitiesById, ICartPromotion } from "../model/model";
-import { isPromotionAvailable } from "../util/util";
+import { checkPromotionItemsCondition, getMaxDiscountedAmount, isPromotionAvailable } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
 
 const initialOrderType = null;
 const initialTableNumber = null;
 const initialProducts = null;
 const initialNotes = "";
+const initialCartCategoryQuantitiesById = {};
 const initialCartProductQuantitiesById = {};
 const initialCartModifierQuantitiesById = {};
 const initialPromotion = null;
@@ -72,6 +80,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
     const [promotion, _setPromotion] = useState<ICartPromotion | null>(initialPromotion);
 
+    const [cartCategoryQuantitiesById, _setCartCategoryQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartCategoryQuantitiesById);
     const [cartProductQuantitiesById, _setCartProductQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartProductQuantitiesById);
     const [cartModifierQuantitiesById, _setCartModifierQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartModifierQuantitiesById);
     const [availablePromotions, _setAvailablePromotions] = useState<IGET_DASHBOARD_PROMOTION[]>([]);
@@ -119,25 +128,23 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     }, [restaurant]);
 
     const getEntireOrderDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION, total: number) => {
-        let discountedAmount = 0;
+        return getMaxDiscountedAmount(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.discounts.items, total);
+    };
 
-        promotion.discounts.items.forEach((discount) => {
-            switch (discount.type) {
-                case EDiscountType.FIXED:
-                    discountedAmount = discount.amount;
-                    break;
-                case EDiscountType.PERCENTAGE:
-                    discountedAmount = (total * discount.amount) / 100;
-                    break;
-                case EDiscountType.SETPRICE:
-                    discountedAmount = total - discount.amount;
-                    break;
-                default:
-                    break;
-            }
-        });
+    const getComboDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION, total: number) => {
+        const matchingCondition = checkPromotionItemsCondition(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.items.items);
 
-        return discountedAmount;
+        if (!matchingCondition) return 0;
+
+        return getMaxDiscountedAmount(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.discounts.items, total);
+    };
+
+    const getRelatedItemsDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION, total: number) => {
+        const matchingCondition = checkPromotionItemsCondition(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.items.items);
+
+        if (!matchingCondition) return 0;
+
+        return getMaxDiscountedAmount(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.discounts.items, total);
     };
 
     useEffect(() => {
@@ -159,11 +166,13 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
             switch (promotion.type) {
                 case EPromotionType.COMBO:
+                    discountAmount = getComboDiscountAmount(promotion, total);
                     break;
                 case EPromotionType.ENTIREORDER:
                     discountAmount = getEntireOrderDiscountAmount(promotion, total);
                     break;
                 case EPromotionType.RELATEDITEMS:
+                    discountAmount = getRelatedItemsDiscountAmount(promotion, total);
                     break;
                 default:
                     break;
@@ -183,11 +192,19 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     }, [cartProductQuantitiesById, cartModifierQuantitiesById, availablePromotions]);
 
     const updateCartQuantities = (products: ICartProduct[] | null) => {
+        const newCartCategoryQuantitiesById = {};
         const newCartProductQuantitiesById = {};
         const newCartModifierQuantitiesById = {};
 
         products &&
             products.forEach((product) => {
+                if (newCartCategoryQuantitiesById[product.category.id]) {
+                    //We use product.quantity here because category does not have quantity assigned to it. The number of products select is same as the quantity for the category.
+                    newCartCategoryQuantitiesById[product.category.id] += product.quantity;
+                } else {
+                    newCartCategoryQuantitiesById[product.category.id] = product.quantity;
+                }
+
                 //We do this because there could be the same product in the products array twice.
                 if (newCartProductQuantitiesById[product.id]) {
                     newCartProductQuantitiesById[product.id] += product.quantity;
@@ -214,6 +231,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 });
             });
 
+        _setCartCategoryQuantitiesById(newCartCategoryQuantitiesById);
         _setCartProductQuantitiesById(newCartProductQuantitiesById);
         _setCartModifierQuantitiesById(newCartModifierQuantitiesById);
     };

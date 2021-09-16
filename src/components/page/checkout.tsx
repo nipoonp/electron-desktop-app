@@ -1103,7 +1103,11 @@ export const Checkout = () => {
     );
     const checkoutFooter = (
         <div>
-            {promotion && <div className="h3 text-center mb-2">Discount: -${convertCentsToDollars(promotion.discount)}</div>}
+            {promotion && promotion.discount > 0 && (
+                <div className="h3 text-center mb-2">{`Discount${
+                    promotion.promotion.code ? ` (${promotion.promotion.code})` : ""
+                }: -$${convertCentsToDollars(promotion.discount)}`}</div>
+            )}
             <div className="h1 text-center mb-4">Total: ${convertCentsToDollars(subTotal)}</div>
             <div className="mb-4">
                 <div className="checkout-buttons-container">

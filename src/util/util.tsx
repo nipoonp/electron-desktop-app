@@ -1,5 +1,8 @@
 import { format, getDay, isWithinInterval } from "date-fns";
 import {
+    EDiscountType,
+    IGET_DASHBOARD_PROMOTION_DISCOUNT,
+    IGET_DASHBOARD_PROMOTION_ITEMS,
     IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS,
     IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES,
     IGET_RESTAURANT_MODIFIER,
@@ -268,4 +271,81 @@ export const toDataURL = (url, callback) => {
     xhr.open("GET", url);
     xhr.responseType = "blob";
     xhr.send();
+};
+
+export const checkPromotionItemsCondition = (
+    cartCategoryQuantitiesById: ICartItemQuantitiesById,
+    cartProductQuantitiesById: ICartItemQuantitiesById,
+    promotionItems: IGET_DASHBOARD_PROMOTION_ITEMS[]
+) => {
+    //For promotions with multiple item groups, it would become a && condition. For example, if first group is category: Vege Pizza (min quantity = 2).
+    //And second group is category: Sides (min quantity = 1.
+    //Then the user would need to select at least 2 Vege Pizza AND a side to get the discount
+    let matchingCondition = true;
+
+    promotionItems.forEach((item) => {
+        if (!matchingCondition) return;
+
+        let quantityCounted = 0;
+
+        item.categories.items.forEach((c) => {
+            if (cartCategoryQuantitiesById[c.id]) {
+                quantityCounted += cartCategoryQuantitiesById[c.id];
+            }
+        });
+
+        item.products.items.forEach((p) => {
+            if (cartProductQuantitiesById[p.id]) {
+                quantityCounted += cartProductQuantitiesById[p.id];
+            }
+        });
+
+        if (quantityCounted < item.minQuantity) {
+            //Didn't match the condition
+            matchingCondition = false;
+        }
+    });
+
+    return matchingCondition;
+};
+
+export const getMaxDiscountedAmount = (
+    cartCategoryQuantitiesById: ICartItemQuantitiesById,
+    cartProductQuantitiesById: ICartItemQuantitiesById,
+    discounts: IGET_DASHBOARD_PROMOTION_DISCOUNT[],
+    total: number
+) => {
+    let maxDiscountedAmount = 0;
+
+    discounts.forEach((discount) => {
+        let discountedAmount = 0;
+
+        let matchingCondition = true;
+
+        if (discount.items && discount.items) {
+            matchingCondition = checkPromotionItemsCondition(cartCategoryQuantitiesById, cartProductQuantitiesById, discount.items.items);
+        }
+
+        if (!matchingCondition) return 0;
+
+        switch (discount.type) {
+            case EDiscountType.FIXED:
+                discountedAmount = discount.amount;
+                break;
+            case EDiscountType.PERCENTAGE:
+                discountedAmount = (total * discount.amount) / 100;
+                break;
+            case EDiscountType.SETPRICE:
+                discountedAmount = total - discount.amount;
+                break;
+            default:
+                break;
+        }
+
+        if (maxDiscountedAmount < discountedAmount) {
+            maxDiscountedAmount = discountedAmount;
+        }
+    });
+
+    return maxDiscountedAmount;
 };
