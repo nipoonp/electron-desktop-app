@@ -1085,7 +1085,7 @@ export const Checkout = () => {
 
     const restaurantNotes = (
         <>
-            <div className="h2 mb-3">Special instructions</div>
+            <div className="h2 mb-3">Special Instructions</div>
             <TextArea placeholder={"Leave a note for the restaurant"} value={notes} onChange={onNotesChange} />
         </>
     );

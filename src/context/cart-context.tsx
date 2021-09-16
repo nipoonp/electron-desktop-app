@@ -85,9 +85,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [cartModifierQuantitiesById, _setCartModifierQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartModifierQuantitiesById);
     const [availablePromotions, _setAvailablePromotions] = useState<IGET_DASHBOARD_PROMOTION[]>([]);
 
-    console.log("xxx...promotion", promotion);
-    console.log("xxx...availablePromotions", availablePromotions);
-
     useEffect(() => {
         if (promotion) {
             _setSubTotal(total - promotion.discount);
@@ -132,17 +129,19 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     };
 
     const getComboDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION, total: number) => {
-        const matchingCondition = checkPromotionItemsCondition(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.items.items);
+        const result = checkPromotionItemsCondition(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.items.items);
 
-        if (!matchingCondition) return 0;
+        console.log("xxx...result:", result);
+
+        if (!result.matchingCondition) return 0;
 
         return getMaxDiscountedAmount(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.discounts.items, total);
     };
 
     const getRelatedItemsDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION, total: number) => {
-        const matchingCondition = checkPromotionItemsCondition(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.items.items);
+        const result = checkPromotionItemsCondition(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.items.items);
 
-        if (!matchingCondition) return 0;
+        if (!result.matchingCondition) return 0;
 
         return getMaxDiscountedAmount(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.discounts.items, total);
     };
@@ -188,43 +187,61 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         _setPromotion(bestPromotion);
 
-        console.log("yyy...bestPromotion", bestPromotion);
+        // console.log("yyy...bestPromotion", bestPromotion);
     }, [cartProductQuantitiesById, cartModifierQuantitiesById, availablePromotions]);
 
     const updateCartQuantities = (products: ICartProduct[] | null) => {
-        const newCartCategoryQuantitiesById = {};
-        const newCartProductQuantitiesById = {};
-        const newCartModifierQuantitiesById = {};
+        const newCartCategoryQuantitiesById: ICartItemQuantitiesById = {};
+        const newCartProductQuantitiesById: ICartItemQuantitiesById = {};
+        const newCartModifierQuantitiesById: ICartItemQuantitiesById = {};
 
         products &&
             products.forEach((product) => {
                 if (newCartCategoryQuantitiesById[product.category.id]) {
                     //We use product.quantity here because category does not have quantity assigned to it. The number of products select is same as the quantity for the category.
-                    newCartCategoryQuantitiesById[product.category.id] += product.quantity;
+                    newCartCategoryQuantitiesById[product.category.id].quantity += product.quantity;
                 } else {
-                    newCartCategoryQuantitiesById[product.category.id] = product.quantity;
+                    newCartCategoryQuantitiesById[product.category.id] = {
+                        id: product.category.id,
+                        quantity: product.quantity,
+                        price: product.price,
+                    };
                 }
 
                 //We do this because there could be the same product in the products array twice.
                 if (newCartProductQuantitiesById[product.id]) {
-                    newCartProductQuantitiesById[product.id] += product.quantity;
+                    newCartProductQuantitiesById[product.id].quantity += product.quantity;
                 } else {
-                    newCartProductQuantitiesById[product.id] = product.quantity;
+                    newCartProductQuantitiesById[product.id] = {
+                        id: product.id,
+                        quantity: product.quantity,
+                        price: product.price,
+                        categoryId: product.category.id,
+                    };
                 }
 
                 product.modifierGroups.forEach((modifierGroup) => {
                     modifierGroup.modifiers.forEach((modifier) => {
                         if (modifier.productModifier) {
                             if (newCartProductQuantitiesById[modifier.productModifier.id]) {
-                                newCartProductQuantitiesById[modifier.productModifier.id] += product.quantity * modifier.quantity;
+                                newCartProductQuantitiesById[modifier.productModifier.id].quantity += product.quantity * modifier.quantity;
                             } else {
-                                newCartProductQuantitiesById[modifier.productModifier.id] = product.quantity * modifier.quantity;
+                                newCartProductQuantitiesById[modifier.productModifier.id] = {
+                                    id: product.id,
+                                    quantity: product.quantity,
+                                    price: product.price,
+                                    categoryId: product.category.id,
+                                };
                             }
                         } else {
                             if (newCartModifierQuantitiesById[modifier.id]) {
-                                newCartModifierQuantitiesById[modifier.id] += product.quantity * modifier.quantity;
+                                newCartModifierQuantitiesById[modifier.id].quantity += product.quantity * modifier.quantity;
                             } else {
-                                newCartModifierQuantitiesById[modifier.id] = product.quantity * modifier.quantity;
+                                newCartModifierQuantitiesById[modifier.id] = {
+                                    id: product.id,
+                                    quantity: product.quantity,
+                                    price: product.price,
+                                };
                             }
                         }
                     });

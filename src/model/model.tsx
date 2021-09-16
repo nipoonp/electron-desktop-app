@@ -17,7 +17,14 @@ export enum EOrderType {
 }
 
 export interface ICartItemQuantitiesById {
-    [id: string]: number;
+    [id: string]: ICartItemQuantitiesByIdValue;
+}
+
+export interface ICartItemQuantitiesByIdValue {
+    id: string;
+    quantity: number;
+    price: number;
+    categoryId?: string; //Only for products
 }
 
 export interface ICartProduct {

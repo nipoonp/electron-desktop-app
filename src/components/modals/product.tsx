@@ -495,7 +495,7 @@ export const ProductModal = (props: {
 
     const productNotes = (
         <>
-            <div className="h2 mb-3">Special instructions</div>
+            <div className="h2 mb-3">Special Instructions</div>
             <TextArea placeholder={"Leave a note for the kitchen"} onChange={onNotesChange} value={notes || ""} />
         </>
     );
