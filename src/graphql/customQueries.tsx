@@ -298,6 +298,7 @@ export const GET_RESTAURANT = gql`
                     availablePlatforms
                     availableOrderTypes
                     minSpend
+                    applyToCheapest
                     items {
                         items {
                             id
@@ -696,6 +697,7 @@ export interface IGET_DASHBOARD_PROMOTION {
     availablePlatforms: ERegisterType[];
     availableOrderTypes: EOrderType[];
     minSpend: number;
+    applyToCheapest: boolean;
     type: EPromotionType;
     items: { items: IGET_DASHBOARD_PROMOTION_ITEMS[] };
     discounts: { items: IGET_DASHBOARD_PROMOTION_DISCOUNT[] };

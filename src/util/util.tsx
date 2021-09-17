@@ -273,10 +273,11 @@ export const toDataURL = (url, callback) => {
     xhr.send();
 };
 
-export const checkPromotionItemsCondition = (
+export const getMatchingPromotionProducts = (
     cartCategoryQuantitiesById: ICartItemQuantitiesById,
     cartProductQuantitiesById: ICartItemQuantitiesById,
-    promotionItems: IGET_DASHBOARD_PROMOTION_ITEMS[]
+    promotionItems: IGET_DASHBOARD_PROMOTION_ITEMS[],
+    applyToCheapest: boolean = false
 ) => {
     //For promotions with multiple item groups, it would become a && condition. For example, if first group is category: Vege Pizza (min quantity = 2).
     //And second group is category: Sides (min quantity = 1.
@@ -318,7 +319,14 @@ export const checkPromotionItemsCondition = (
             //Sort by price and get the lowest item.minQuantity
             const matchingProductsTempCpy: ICartItemQuantitiesByIdValue[] = [...matchingProductsTemp];
 
-            const matchingProductsTempCpySorted = matchingProductsTempCpy.sort((a, b) => (a.price > b.price ? 1 : -1));
+            const matchingProductsTempCpySorted = matchingProductsTempCpy.sort((a, b) => {
+                if (applyToCheapest) {
+                    return a.price > b.price ? 1 : -1;
+                } else {
+                    //reverse sort: largest to smallest
+                    return a.price > b.price ? -1 : 1;
+                }
+            });
 
             let counter = item.minQuantity;
 
@@ -338,21 +346,17 @@ export const checkPromotionItemsCondition = (
         }
     });
 
-    return {
-        matchingProducts: matchingCondition ? matchingProducts : null,
-        matchingCondition: matchingCondition,
-    };
+    return matchingCondition ? matchingProducts : null;
 };
 
 export const getMaxDiscountedAmount = (
-    // cartCategoryQuantitiesById: ICartItemQuantitiesById,
-    // cartProductQuantitiesById: ICartItemQuantitiesById,
+    cartCategoryQuantitiesById: ICartItemQuantitiesById,
+    cartProductQuantitiesById: ICartItemQuantitiesById,
     discounts: IGET_DASHBOARD_PROMOTION_DISCOUNT[],
     matchingProducts?: ICartItemQuantitiesById,
     total?: number
 ) => {
     let maxDiscountedAmount = 0;
-
     let totalDiscountableAmount = 0;
 
     if (total) {
@@ -368,13 +372,20 @@ export const getMaxDiscountedAmount = (
     discounts.forEach((discount) => {
         let discountedAmount = 0;
 
-        // let matchingCondition = true;
+        let matchingDiscountProducts: ICartItemQuantitiesById | null = null;
 
-        // if (discount.items && discount.items) {
-        //     matchingCondition = checkPromotionItemsCondition(cartCategoryQuantitiesById, cartProductQuantitiesById, discount.items.items);
-        // }
+        //For related items promotion
+        if (discount.items) {
+            //Reset discountable amount because we want to discount the matchingDiscountProducts not the original matchingProducts
+            totalDiscountableAmount = 0;
+            matchingDiscountProducts = getMatchingPromotionProducts(cartCategoryQuantitiesById, cartProductQuantitiesById, discount.items.items);
 
-        // if (!matchingCondition) return 0;
+            if (!matchingDiscountProducts) return 0;
+
+            Object.values(matchingDiscountProducts).forEach((p) => {
+                totalDiscountableAmount += p.price * p.quantity;
+            });
+        }
 
         switch (discount.type) {
             case EDiscountType.FIXED:

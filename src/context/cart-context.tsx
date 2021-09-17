@@ -10,7 +10,7 @@ import {
 } from "../graphql/customQueries";
 
 import { ICartProduct, EOrderType, ICartItemQuantitiesById, ICartPromotion } from "../model/model";
-import { checkPromotionItemsCondition, getMaxDiscountedAmount, isPromotionAvailable } from "../util/util";
+import { getMatchingPromotionProducts, getMaxDiscountedAmount, isPromotionAvailable } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
 
 const initialOrderType = null;
@@ -125,25 +125,33 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     }, [restaurant]);
 
     const getEntireOrderDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION, total: number) => {
-        return getMaxDiscountedAmount(promotion.discounts.items, undefined, total);
+        return getMaxDiscountedAmount(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.discounts.items, undefined, total);
     };
 
-    const getComboDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION, total: number) => {
-        const result = checkPromotionItemsCondition(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.items.items);
+    const getComboDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION) => {
+        const matchingProducts = getMatchingPromotionProducts(
+            cartCategoryQuantitiesById,
+            cartProductQuantitiesById,
+            promotion.items.items,
+            promotion.applyToCheapest
+        );
 
-        console.log("xxx...result:", result);
+        if (!matchingProducts) return 0;
 
-        if (!result.matchingCondition || !result.matchingProducts) return 0;
-
-        return getMaxDiscountedAmount(promotion.discounts.items, result.matchingProducts);
+        return getMaxDiscountedAmount(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.discounts.items, matchingProducts);
     };
 
-    const getRelatedItemsDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION, total: number) => {
-        const result = checkPromotionItemsCondition(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.items.items);
+    const getRelatedItemsDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION) => {
+        const matchingProducts = getMatchingPromotionProducts(
+            cartCategoryQuantitiesById,
+            cartProductQuantitiesById,
+            promotion.items.items,
+            promotion.applyToCheapest
+        );
 
-        if (!result.matchingCondition || !result.matchingProducts) return 0;
+        if (!matchingProducts) return 0;
 
-        return getMaxDiscountedAmount(promotion.discounts.items, result.matchingProducts);
+        return getMaxDiscountedAmount(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.discounts.items, matchingProducts);
     };
 
     useEffect(() => {
@@ -165,13 +173,13 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
             switch (promotion.type) {
                 case EPromotionType.COMBO:
-                    discountAmount = getComboDiscountAmount(promotion, total);
+                    discountAmount = getComboDiscountAmount(promotion);
                     break;
                 case EPromotionType.ENTIREORDER:
                     discountAmount = getEntireOrderDiscountAmount(promotion, total);
                     break;
                 case EPromotionType.RELATEDITEMS:
-                    discountAmount = getRelatedItemsDiscountAmount(promotion, total);
+                    discountAmount = getRelatedItemsDiscountAmount(promotion);
                     break;
                 default:
                     break;
@@ -341,14 +349,16 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     };
 
     const clearCart = () => {
-        // _setRestaurant(initialRestaurant);
         _setOrderType(initialOrderType);
+        _setTableNumber(initialTableNumber);
         _setProducts(initialProducts);
         _setNotes(initialNotes);
-        _setTotal(initialTotal);
-        _setTableNumber(initialTableNumber);
+        _setCartCategoryQuantitiesById(initialCartCategoryQuantitiesById);
         _setCartProductQuantitiesById(initialCartProductQuantitiesById);
         _setCartModifierQuantitiesById(initialCartModifierQuantitiesById);
+        _setPromotion(initialPromotion);
+        _setTotal(initialTotal);
+        _setSubTotal(initialSubTotal);
     };
 
     const setNotes = (notes: string) => {
