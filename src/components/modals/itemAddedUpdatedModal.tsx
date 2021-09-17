@@ -8,7 +8,7 @@ import "./itemAddedUpdatedModal.scss";
 import { CachedImage } from "../../tabin/components/cachedImage";
 
 export const ItemAddedUpdatedModal = (props: { isOpen: boolean; onClose: () => void; isProductUpdate: boolean }) => {
-    const { total } = useCart();
+    const { subTotal } = useCart();
 
     useEffect(() => {
         setTimeout(() => {
@@ -30,7 +30,7 @@ export const ItemAddedUpdatedModal = (props: { isOpen: boolean; onClose: () => v
                 />
                 <div className="h2 mb-3 item-added-updated-text">Item {props.isProductUpdate ? "Updated" : "Added"}</div>
                 <div className="mb-3">Your total has been updated</div>
-                <div className="h2">${convertCentsToDollars(total)}</div>
+                <div className="h2">${convertCentsToDollars(subTotal)}</div>
             </div>
         </>
     );

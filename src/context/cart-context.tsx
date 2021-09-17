@@ -125,7 +125,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     }, [restaurant]);
 
     const getEntireOrderDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION, total: number) => {
-        return getMaxDiscountedAmount(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.discounts.items, total);
+        return getMaxDiscountedAmount(promotion.discounts.items, undefined, total);
     };
 
     const getComboDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION, total: number) => {
@@ -133,17 +133,17 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         console.log("xxx...result:", result);
 
-        if (!result.matchingCondition) return 0;
+        if (!result.matchingCondition || !result.matchingProducts) return 0;
 
-        return getMaxDiscountedAmount(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.discounts.items, total);
+        return getMaxDiscountedAmount(promotion.discounts.items, result.matchingProducts);
     };
 
     const getRelatedItemsDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION, total: number) => {
         const result = checkPromotionItemsCondition(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.items.items);
 
-        if (!result.matchingCondition) return 0;
+        if (!result.matchingCondition || !result.matchingProducts) return 0;
 
-        return getMaxDiscountedAmount(cartCategoryQuantitiesById, cartProductQuantitiesById, promotion.discounts.items, total);
+        return getMaxDiscountedAmount(promotion.discounts.items, result.matchingProducts);
     };
 
     useEffect(() => {

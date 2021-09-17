@@ -345,12 +345,25 @@ export const checkPromotionItemsCondition = (
 };
 
 export const getMaxDiscountedAmount = (
-    cartCategoryQuantitiesById: ICartItemQuantitiesById,
-    cartProductQuantitiesById: ICartItemQuantitiesById,
+    // cartCategoryQuantitiesById: ICartItemQuantitiesById,
+    // cartProductQuantitiesById: ICartItemQuantitiesById,
     discounts: IGET_DASHBOARD_PROMOTION_DISCOUNT[],
-    total: number
+    matchingProducts?: ICartItemQuantitiesById,
+    total?: number
 ) => {
     let maxDiscountedAmount = 0;
+
+    let totalDiscountableAmount = 0;
+
+    if (total) {
+        totalDiscountableAmount = total;
+    } else {
+        if (!matchingProducts) return 0;
+
+        Object.values(matchingProducts).forEach((p) => {
+            totalDiscountableAmount += p.price * p.quantity;
+        });
+    }
 
     discounts.forEach((discount) => {
         let discountedAmount = 0;
@@ -368,10 +381,10 @@ export const getMaxDiscountedAmount = (
                 discountedAmount = discount.amount;
                 break;
             case EDiscountType.PERCENTAGE:
-                discountedAmount = (total * discount.amount) / 100;
+                discountedAmount = (totalDiscountableAmount * discount.amount) / 100;
                 break;
             case EDiscountType.SETPRICE:
-                discountedAmount = total - discount.amount;
+                discountedAmount = totalDiscountableAmount - discount.amount;
                 break;
             default:
                 break;
