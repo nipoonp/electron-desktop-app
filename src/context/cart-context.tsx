@@ -71,7 +71,6 @@ const CartContext = createContext<ContextProps>({
 const CartProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
 
-    // const [restaurant, _setRestaurant] = useState<IGET_RESTAURANT | null>(initialRestaurant);
     const [orderType, _setOrderType] = useState<EOrderType | null>(initialOrderType);
     const [tableNumber, _setTableNumber] = useState<string | null>(initialTableNumber);
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
@@ -84,7 +83,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [cartProductQuantitiesById, _setCartProductQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartProductQuantitiesById);
     const [cartModifierQuantitiesById, _setCartModifierQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartModifierQuantitiesById);
     const [availablePromotions, _setAvailablePromotions] = useState<IGET_DASHBOARD_PROMOTION[]>([]);
-    const [discountedProducts, _setDiscountedProducts] = useState<IGET_DASHBOARD_PROMOTION[]>([]);
 
     useEffect(() => {
         if (promotion) {
@@ -101,23 +99,23 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         restaurant &&
             restaurant.promotions.items.forEach((promotion) => {
-                // if (!promotion.autoApply) return;
+                if (!promotion.autoApply) return;
 
-                // const platform = process.env.REACT_APP_PLATFORM;
+                const platform = process.env.REACT_APP_PLATFORM;
 
-                // if (!platform || !promotion.availablePlatforms) return;
-                // if (!promotion.availablePlatforms.includes(ERegisterType[platform])) return;
+                if (!platform || !promotion.availablePlatforms) return;
+                if (!promotion.availablePlatforms.includes(ERegisterType[platform])) return;
 
-                // const startDate = new Date(promotion.startDate);
-                // const endDate = new Date(promotion.endDate);
+                const startDate = new Date(promotion.startDate);
+                const endDate = new Date(promotion.endDate);
 
-                // const isWithin = isWithinInterval(now, { start: startDate, end: endDate });
+                const isWithin = isWithinInterval(now, { start: startDate, end: endDate });
 
-                // if (!isWithin) return;
+                if (!isWithin) return;
 
-                // const isAvailable = promotion.availability && isPromotionAvailable(promotion.availability);
+                const isAvailable = promotion.availability && isPromotionAvailable(promotion.availability);
 
-                // if (!isAvailable) return;
+                if (!isAvailable) return;
 
                 availPromotions.push(promotion);
             });
@@ -199,17 +197,14 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     };
 
     useEffect(() => {
-        // console.log("xxx...cartProductQuantitiesById", cartProductQuantitiesById);
-        // console.log("xxx...cartModifierQuantitiesById", cartModifierQuantitiesById);
-
         if (availablePromotions.length == 0) return;
         if (!products || products.length == 0) return;
 
         let bestPromotion: ICartPromotion | null = null;
 
         availablePromotions.forEach((promotion) => {
-            // if (!orderType || !promotion.availableOrderTypes) return;
-            // if (!promotion.availableOrderTypes.includes(ERegisterType[orderType])) return;
+            if (!orderType || !promotion.availableOrderTypes) return;
+            if (!promotion.availableOrderTypes.includes(EOrderType[orderType])) return;
 
             if (total < promotion.minSpend) return;
 
@@ -235,6 +230,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                     break;
             }
 
+            if (!(discount.discountedAmount > 0)) return;
+
             if (!bestPromotion || discount.discountedAmount > bestPromotion.discountedAmount) {
                 bestPromotion = {
                     discountedAmount: discount.discountedAmount,
@@ -245,9 +242,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         });
 
         _setPromotion(bestPromotion);
-
-        // console.log("yyy...bestPromotion", bestPromotion);
-    }, [cartProductQuantitiesById, cartModifierQuantitiesById, availablePromotions]);
+    }, [cartProductQuantitiesById, cartModifierQuantitiesById, availablePromotions, orderType]);
 
     const updateCartQuantities = (products: ICartProduct[] | null) => {
         const newCartCategoryQuantitiesById: ICartItemQuantitiesById = {};

@@ -1077,25 +1077,27 @@ export const Checkout = () => {
     );
 
     const promotionInformation = (
-        <div className="checkout-promotion-information mb-2 pt-3 pr-3 pb-4 pl-3">
+        <>
             {promotion && (
-                <div>
-                    <div className="checkout-promotion-information-heading h3 mb-1">
-                        <div>Promotion Applied!</div>
-                        <div>-${convertCentsToDollars(promotion.discountedAmount)}</div>
-                    </div>
+                <div className="checkout-promotion-information mb-2 pt-3 pr-3 pb-4 pl-3">
                     <div>
-                        {promotion.promotion.name}:{" "}
-                        {Object.values(promotion.matchingProducts).map((p, index) => (
-                            <>
-                                {index !== 0 && ", "}
-                                {p.name}
-                            </>
-                        ))}
+                        <div className="checkout-promotion-information-heading h3 mb-1">
+                            <div>Promotion Applied!</div>
+                            <div>-${convertCentsToDollars(promotion.discountedAmount)}</div>
+                        </div>
+                        <div>
+                            {promotion.promotion.name}:{" "}
+                            {Object.values(promotion.matchingProducts).map((p, index) => (
+                                <>
+                                    {index !== 0 && ", "}
+                                    {p.name}
+                                </>
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}
-        </div>
+        </>
     );
 
     const restaurantTableNumber = (
