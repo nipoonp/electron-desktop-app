@@ -306,7 +306,7 @@ export const Checkout = () => {
                 table: tableNumber,
                 notes: notes,
                 total: total,
-                discount: promotion ? promotion.discount : undefined,
+                discount: promotion ? promotion.discountedAmount : undefined,
                 subTotal: subTotal,
                 registerId: register.id,
                 products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
@@ -335,7 +335,7 @@ export const Checkout = () => {
                         table: tableNumber,
                         notes: notes,
                         total: total,
-                        discount: promotion ? promotion.discount : undefined,
+                        discount: promotion ? promotion.discountedAmount : undefined,
                         subTotal: subTotal,
                         registerId: register.id,
                         products: JSON.stringify(products), // copy obj so we can mutate it later
@@ -484,7 +484,7 @@ export const Checkout = () => {
                         notes: notes,
                         products: productsToPrint,
                         total: total,
-                        discount: promotion ? promotion.discount : undefined,
+                        discount: promotion ? promotion.discountedAmount : undefined,
                         subTotal: subTotal,
                         paid: paid,
                         type: orderType || EOrderType.TAKEAWAY,
@@ -1076,6 +1076,28 @@ export const Checkout = () => {
         </div>
     );
 
+    const promotionInformation = (
+        <div className="checkout-promotion-information mb-2 pt-3 pr-3 pb-4 pl-3">
+            {promotion && (
+                <div>
+                    <div className="checkout-promotion-information-heading h3 mb-1">
+                        <div>Promotion Applied!</div>
+                        <div>-${convertCentsToDollars(promotion.discountedAmount)}</div>
+                    </div>
+                    <div>
+                        {promotion.promotion.name}:{" "}
+                        {Object.values(promotion.matchingProducts).map((p, index) => (
+                            <>
+                                {index !== 0 && ", "}
+                                {p.name}
+                            </>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+
     const restaurantTableNumber = (
         <div className="checkout-table-number">
             <div className="h3">Table Number: {tableNumber}</div>
@@ -1095,6 +1117,7 @@ export const Checkout = () => {
             <div className="mt-10"></div>
             {title}
             {restaurantOrderType}
+            {promotionInformation}
             {tableNumber && <div className="mb-4">{restaurantTableNumber}</div>}
             <div className="separator-6"></div>
             {orderSummary}
@@ -1103,10 +1126,10 @@ export const Checkout = () => {
     );
     const checkoutFooter = (
         <div>
-            {promotion && promotion.discount > 0 && (
+            {promotion && promotion.discountedAmount > 0 && (
                 <div className="h3 text-center mb-2">{`Discount${
                     promotion.promotion.code ? ` (${promotion.promotion.code})` : ""
-                }: -$${convertCentsToDollars(promotion.discount)}`}</div>
+                }: -$${convertCentsToDollars(promotion.discountedAmount)}`}</div>
             )}
             <div className="h1 text-center mb-4">Total: ${convertCentsToDollars(subTotal)}</div>
             <div className="mb-4">

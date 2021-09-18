@@ -22,6 +22,7 @@ export interface ICartItemQuantitiesById {
 
 export interface ICartItemQuantitiesByIdValue {
     id: string;
+    name: string;
     quantity: number;
     price: number;
     categoryId?: string; //Only for products
@@ -75,8 +76,9 @@ export interface IPreSelectedModifiers {
 }
 
 export interface ICartPromotion {
-    discount: number;
     promotion: IGET_DASHBOARD_PROMOTION;
+    matchingProducts: ICartItemQuantitiesById;
+    discountedAmount: number;
 }
 
 export enum EReceiptPrinterType {

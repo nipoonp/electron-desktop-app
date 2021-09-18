@@ -277,7 +277,7 @@ export const getMatchingPromotionProducts = (
     cartCategoryQuantitiesById: ICartItemQuantitiesById,
     cartProductQuantitiesById: ICartItemQuantitiesById,
     promotionItems: IGET_DASHBOARD_PROMOTION_ITEMS[],
-    applyToCheapest: boolean = false
+    applyToCheapest: boolean
 ) => {
     //For promotions with multiple item groups, it would become a && condition. For example, if first group is category: Vege Pizza (min quantity = 2).
     //And second group is category: Sides (min quantity = 1.
@@ -349,12 +349,13 @@ export const getMatchingPromotionProducts = (
     return matchingCondition ? matchingProducts : null;
 };
 
-export const getMaxDiscountedAmount = (
+export const processPromotionDiscounts = (
     cartCategoryQuantitiesById: ICartItemQuantitiesById,
     cartProductQuantitiesById: ICartItemQuantitiesById,
     discounts: IGET_DASHBOARD_PROMOTION_DISCOUNT[],
-    matchingProducts?: ICartItemQuantitiesById,
-    total?: number
+    matchingProducts: ICartItemQuantitiesById = {},
+    total: number = 0,
+    applyToCheapest: boolean = false
 ) => {
     let maxDiscountedAmount = 0;
     let totalDiscountableAmount = 0;
@@ -362,7 +363,11 @@ export const getMaxDiscountedAmount = (
     if (total) {
         totalDiscountableAmount = total;
     } else {
-        if (!matchingProducts) return 0;
+        if (!matchingProducts)
+            return {
+                matchingProducts: {},
+                discountedAmount: 0,
+            };
 
         Object.values(matchingProducts).forEach((p) => {
             totalDiscountableAmount += p.price * p.quantity;
@@ -378,9 +383,20 @@ export const getMaxDiscountedAmount = (
         if (discount.items) {
             //Reset discountable amount because we want to discount the matchingDiscountProducts not the original matchingProducts
             totalDiscountableAmount = 0;
-            matchingDiscountProducts = getMatchingPromotionProducts(cartCategoryQuantitiesById, cartProductQuantitiesById, discount.items.items);
+            matchingDiscountProducts = getMatchingPromotionProducts(
+                cartCategoryQuantitiesById,
+                cartProductQuantitiesById,
+                discount.items.items,
+                applyToCheapest
+            );
 
-            if (!matchingDiscountProducts) return 0;
+            if (!matchingDiscountProducts)
+                return {
+                    matchingProducts: {},
+                    discountedAmount: 0,
+                };
+
+            matchingProducts = { ...matchingProducts, ...matchingDiscountProducts };
 
             Object.values(matchingDiscountProducts).forEach((p) => {
                 totalDiscountableAmount += p.price * p.quantity;
@@ -406,5 +422,8 @@ export const getMaxDiscountedAmount = (
         }
     });
 
-    return maxDiscountedAmount;
+    return {
+        matchingProducts: matchingProducts,
+        discountedAmount: maxDiscountedAmount,
+    };
 };
