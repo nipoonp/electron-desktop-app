@@ -1191,9 +1191,9 @@ export const Checkout = () => {
                         <Link onClick={onClickPayLater}>Pay cash at counter...</Link>
                     </div>
                 )}
-                <div className="pay-later-link mt-4">
+                {/* <div className="pay-later-link mt-4">
                     <Link onClick={onClickApplyPromotionCode}>Apply promo code</Link>
-                </div>
+                </div> */}
             </div>
             <Button className="cancel-button" onClick={onCancelOrder}>
                 Cancel Order
