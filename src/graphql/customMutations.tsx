@@ -47,6 +47,9 @@ export const CREATE_ORDER = gql`
         $table: String
         $notes: String
         $total: Int!
+        $discount: Int
+        $promotionId: ID
+        $subTotal: Int!
         $registerId: ID!
         $products: [OrderProductInput!]
         $placedAt: String!
@@ -64,6 +67,9 @@ export const CREATE_ORDER = gql`
                 table: $table
                 notes: $notes
                 total: $total
+                discount: $discount
+                promotionId: $promotionId
+                subTotal: $subTotal
                 registerId: $registerId
                 products: $products
                 placedAt: $placedAt
@@ -96,5 +102,11 @@ export const UPDATE_MODIFIER = gql`
 export const EMAIL_SALES_REPORTS = gql`
     mutation EmailSalesReports($restaurantId: String!, $emails: String!) {
         emailSalesReports(input: { restaurantId: $restaurantId, emails: $emails })
+    }
+`;
+
+export const LOG_SLACK_ERROR = gql`
+    mutation LogSlackError($message: String!) {
+        logSlackError(input: { message: $message })
     }
 `;

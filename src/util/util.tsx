@@ -1,11 +1,18 @@
 import { format, getDay, isWithinInterval } from "date-fns";
 import {
+    EDiscountType,
+    ERegisterType,
+    IGET_DASHBOARD_PROMOTION,
+    IGET_DASHBOARD_PROMOTION_DISCOUNT,
+    IGET_DASHBOARD_PROMOTION_ITEMS,
     IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS,
     IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES,
     IGET_RESTAURANT_MODIFIER,
     IGET_RESTAURANT_PRODUCT,
+    IGET_RESTAURANT_PROMOTION_AVAILABILITY,
+    IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES,
 } from "../graphql/customQueries";
-import { ICartItemQuantitiesById, ICartProduct } from "../model/model";
+import { CheckIfPromotionValidResponse, ICartItemQuantitiesById, ICartItemQuantitiesByIdValue, ICartProduct } from "../model/model";
 
 export const isItemSoldOut = (soldOut?: boolean, soldOutDate?: string) => {
     if (soldOut || soldOutDate == format(new Date(), "yyyy-MM-dd")) {
@@ -13,6 +20,46 @@ export const isItemSoldOut = (soldOut?: boolean, soldOutDate?: string) => {
     }
 
     return false;
+};
+
+export const isPromotionAvailable = (availability?: IGET_RESTAURANT_PROMOTION_AVAILABILITY) => {
+    if (!availability) return true;
+
+    const dayTimes: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[] = getPromotionDayData(availability);
+
+    if (dayTimes.length == 0) return true;
+
+    const currentDateTime = new Date();
+    let isWithinTimeSlot = false;
+
+    dayTimes.forEach((timeSlot) => {
+        let startDateTime = new Date(
+            currentDateTime.getFullYear(),
+            currentDateTime.getMonth(),
+            currentDateTime.getDate(),
+            parseInt(timeSlot.startTime.split(":")[0]),
+            parseInt(timeSlot.startTime.split(":")[1]),
+            0,
+            0
+        );
+        let endDateTime = new Date(
+            currentDateTime.getFullYear(),
+            currentDateTime.getMonth(),
+            currentDateTime.getDate(),
+            parseInt(timeSlot.endTime.split(":")[0]),
+            parseInt(timeSlot.endTime.split(":")[1]),
+            0,
+            0
+        );
+
+        const isWithin = isWithinInterval(currentDateTime, { start: startDateTime, end: endDateTime });
+
+        if (isWithin && !isWithinTimeSlot) {
+            isWithinTimeSlot = true;
+        }
+    });
+
+    return isWithinTimeSlot;
 };
 
 export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS) => {
@@ -65,7 +112,7 @@ export const getProductQuantityAvailable = (
     let quantityAvailable = menuProductItem.totalQuantityAvailable;
 
     if (cartProducts[menuProductItem.id] != undefined) {
-        quantityAvailable -= cartProducts[menuProductItem.id];
+        quantityAvailable -= cartProducts[menuProductItem.id].quantity;
     }
 
     return quantityAvailable;
@@ -98,7 +145,7 @@ export const getModifierQuantityAvailable = (
     let quantityAvailable = menuModifierItem.totalQuantityAvailable;
 
     if (cartModifiers[menuModifierItem.id] != undefined) {
-        quantityAvailable -= cartModifiers[menuModifierItem.id];
+        quantityAvailable -= cartModifiers[menuModifierItem.id].quantity;
     }
 
     return quantityAvailable;
@@ -126,6 +173,29 @@ export const getQuantityRemainingText = (quantityRemaining: number) => {
         return "Last one!";
     } else {
         return `${quantityRemaining} left!`;
+    }
+};
+
+const getPromotionDayData = (availability: IGET_RESTAURANT_PROMOTION_AVAILABILITY) => {
+    const day: number = getDay(new Date());
+
+    switch (day) {
+        case 1:
+            return availability.monday;
+        case 2:
+            return availability.tuesday;
+        case 3:
+            return availability.wednesday;
+        case 4:
+            return availability.thursday;
+        case 5:
+            return availability.friday;
+        case 6:
+            return availability.saturday;
+        case 0: //0 is sunday in date-fns
+            return availability.sunday;
+        default:
+            return [];
     }
 };
 
@@ -203,4 +273,181 @@ export const toDataURL = (url, callback) => {
     xhr.open("GET", url);
     xhr.responseType = "blob";
     xhr.send();
+};
+
+export const checkIfPromotionValid = (promotion: IGET_DASHBOARD_PROMOTION): CheckIfPromotionValidResponse => {
+    const now = new Date();
+
+    const platform = process.env.REACT_APP_PLATFORM;
+
+    if (!platform || !promotion.availablePlatforms) return CheckIfPromotionValidResponse.INVALID_PLATFORM;
+    if (!promotion.availablePlatforms.includes(ERegisterType[platform])) return CheckIfPromotionValidResponse.INVALID_PLATFORM;
+
+    const startDate = new Date(promotion.startDate);
+    const endDate = new Date(promotion.endDate);
+
+    const isWithin = isWithinInterval(now, { start: startDate, end: endDate });
+
+    if (!isWithin) return CheckIfPromotionValidResponse.EXPIRED;
+
+    const isAvailable = promotion.availability && isPromotionAvailable(promotion.availability);
+
+    if (!isAvailable) return CheckIfPromotionValidResponse.UNAVAILABLE;
+
+    return CheckIfPromotionValidResponse.VALID;
+};
+
+export const getMatchingPromotionProducts = (
+    cartCategoryQuantitiesById: ICartItemQuantitiesById,
+    cartProductQuantitiesById: ICartItemQuantitiesById,
+    promotionItems: IGET_DASHBOARD_PROMOTION_ITEMS[],
+    applyToCheapest: boolean
+) => {
+    //For promotions with multiple item groups, it would become a && condition. For example, if first group is category: Vege Pizza (min quantity = 2).
+    //And second group is category: Sides (min quantity = 1.
+    //Then the user would need to select at least 2 Vege Pizza AND a side to get the discount
+
+    let matchingProducts: ICartItemQuantitiesById = {};
+    let matchingCondition = true;
+
+    promotionItems.forEach((item) => {
+        if (!matchingCondition) return;
+
+        const matchingProductsTemp: ICartItemQuantitiesByIdValue[] = [];
+        let quantityCounted = 0;
+
+        item.categories.items.forEach((c) => {
+            if (cartCategoryQuantitiesById[c.id]) {
+                quantityCounted += cartCategoryQuantitiesById[c.id].quantity;
+
+                Object.values(cartProductQuantitiesById).forEach((p) => {
+                    if (p.categoryId == cartCategoryQuantitiesById[c.id].id) {
+                        matchingProductsTemp.push(p);
+                    }
+                });
+            }
+        });
+
+        item.products.items.forEach((p) => {
+            if (cartProductQuantitiesById[p.id]) {
+                quantityCounted += cartProductQuantitiesById[p.id].quantity;
+
+                matchingProductsTemp.push(cartProductQuantitiesById[p.id]);
+            }
+        });
+
+        if (quantityCounted < item.minQuantity) {
+            //Didn't match the condition
+            matchingCondition = false;
+        } else {
+            //Sort by price and get the lowest item.minQuantity
+            const matchingProductsTempCpy: ICartItemQuantitiesByIdValue[] = [...matchingProductsTemp];
+
+            const matchingProductsTempCpySorted = matchingProductsTempCpy.sort((a, b) => {
+                if (applyToCheapest) {
+                    return a.price > b.price ? 1 : -1;
+                } else {
+                    //reverse sort: largest to smallest
+                    return a.price > b.price ? -1 : 1;
+                }
+            });
+
+            let counter = item.minQuantity;
+
+            matchingProductsTempCpySorted.forEach((p) => {
+                if (counter == 0) return;
+
+                const quantity = p.quantity;
+
+                if (counter > quantity) {
+                    matchingProducts[p.id] = p;
+                    counter -= quantity;
+                } else {
+                    matchingProducts[p.id] = { ...p, quantity: counter };
+                    counter = 0;
+                }
+            });
+        }
+    });
+
+    return matchingCondition ? matchingProducts : null;
+};
+
+export const processPromotionDiscounts = (
+    cartCategoryQuantitiesById: ICartItemQuantitiesById,
+    cartProductQuantitiesById: ICartItemQuantitiesById,
+    discounts: IGET_DASHBOARD_PROMOTION_DISCOUNT[],
+    matchingProducts: ICartItemQuantitiesById = {},
+    total: number = 0,
+    applyToCheapest: boolean = false
+) => {
+    let maxDiscountedAmount = 0;
+    let totalDiscountableAmount = 0;
+
+    if (total) {
+        totalDiscountableAmount = total;
+    } else {
+        if (!matchingProducts)
+            return {
+                matchingProducts: {},
+                discountedAmount: 0,
+            };
+
+        Object.values(matchingProducts).forEach((p) => {
+            totalDiscountableAmount += p.price * p.quantity;
+        });
+    }
+
+    discounts.forEach((discount) => {
+        let discountedAmount = 0;
+
+        let matchingDiscountProducts: ICartItemQuantitiesById | null = null;
+
+        //For related items promotion
+        if (discount.items && discount.items.items.length > 0) {
+            //Reset discountable amount because we want to discount the matchingDiscountProducts not the original matchingProducts
+            totalDiscountableAmount = 0;
+            matchingDiscountProducts = getMatchingPromotionProducts(
+                cartCategoryQuantitiesById,
+                cartProductQuantitiesById,
+                discount.items.items,
+                applyToCheapest
+            );
+
+            if (!matchingDiscountProducts)
+                return {
+                    matchingProducts: {},
+                    discountedAmount: 0,
+                };
+
+            matchingProducts = { ...matchingProducts, ...matchingDiscountProducts };
+
+            Object.values(matchingDiscountProducts).forEach((p) => {
+                totalDiscountableAmount += p.price * p.quantity;
+            });
+        }
+
+        switch (discount.type) {
+            case EDiscountType.FIXED:
+                discountedAmount = discount.amount;
+                break;
+            case EDiscountType.PERCENTAGE:
+                discountedAmount = (totalDiscountableAmount * discount.amount) / 100;
+                break;
+            case EDiscountType.SETPRICE:
+                discountedAmount = totalDiscountableAmount - discount.amount;
+                break;
+            default:
+                break;
+        }
+
+        if (maxDiscountedAmount < discountedAmount) {
+            maxDiscountedAmount = discountedAmount;
+        }
+    });
+
+    return {
+        matchingProducts: matchingProducts,
+        discountedAmount: maxDiscountedAmount,
+    };
 };

@@ -4,9 +4,9 @@ import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useHistory } from "react-router-dom";
 import { convertCentsToDollars } from "../../util/util";
-import { useMutation } from "react-apollo-hooks";
+import { useMutation } from "@apollo/client";
 import { CREATE_ORDER } from "../../graphql/customMutations";
-import { IGET_RESTAURANT_REGISTER_PRINTER, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
+import { IGET_RESTAURANT_REGISTER_PRINTER, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, EPromotionType } from "../../graphql/customQueries";
 import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath } from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
@@ -32,7 +32,6 @@ import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { toLocalISOString } from "../../util/util";
 import { useRestaurant } from "../../context/restaurant-context";
-import { logSlackError } from "../../util/logging";
 import { UpSellProductModal } from "../modals/upSellProduct";
 import { Link } from "../../tabin/components/link";
 import { TextArea } from "../../tabin/components/textArea";
@@ -41,6 +40,8 @@ import "./checkout.scss";
 import { useWindcave, WindcaveTransactionOutcome, WindcaveTransactionOutcomeResult } from "../../context/windcave-context";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { UpSellCategoryModal } from "../modals/upSellCategory";
+import { useErrorLogging } from "../../context/errorLogging-context";
+import { PromotionCodeModal } from "../modals/promotionCodeModal";
 
 const logger = new Logger("checkout");
 
@@ -56,15 +57,33 @@ enum CheckoutTransactionOutcome {
 export const Checkout = () => {
     // context
     const history = useHistory();
-    const { orderType, products, notes, setNotes, tableNumber, clearCart, total, updateItem, updateItemQuantity, deleteItem, addItem } = useCart();
+    const {
+        orderType,
+        products,
+        notes,
+        setNotes,
+        tableNumber,
+        clearCart,
+        promotion,
+        total,
+        subTotal,
+        updateItem,
+        updateItemQuantity,
+        deleteItem,
+        addItem,
+        userAppliedPromotionCode,
+        removeUserAppliedPromotion,
+    } = useCart();
     const { restaurant } = useRestaurant();
     const { printReceipt } = useReceiptPrinter();
     const { user } = useUser();
+    const { logError } = useErrorLogging();
+
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
     const { createTransaction: windcaveCreateTransaction, pollForOutcome: windcavePollForOutcome } = useWindcave();
 
-    const createOrderMutation = useMutation(CREATE_ORDER, {
+    const [createOrderMutation, { data, loading, error }] = useMutation(CREATE_ORDER, {
         update: (proxy, mutationResult) => {
             logger.debug("mutation result: ", mutationResult);
         },
@@ -86,6 +105,7 @@ export const Checkout = () => {
     const [paymentOutcomeDelayedOrderNumber, setPaymentOutcomeDelayedOrderNumber] = useState<string | null>(null);
     const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(10);
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
+    const [showPromotionCodeModal, setShowPromotionCodeModal] = useState(false);
     const [showUpSellCategoryModal, setShowUpSellCategoryModal] = useState(false);
     const [showUpSellProductModal, setShowUpSellProductModal] = useState(false);
 
@@ -98,12 +118,19 @@ export const Checkout = () => {
     }
 
     useEffect(() => {
-        if (showProductModal || showEditProductModal || showPaymentModal || showUpSellCategoryModal || showUpSellProductModal) {
+        if (
+            showProductModal ||
+            showEditProductModal ||
+            showPaymentModal ||
+            showPromotionCodeModal ||
+            showUpSellCategoryModal ||
+            showUpSellProductModal
+        ) {
             document.body.style.overflow = "hidden";
         } else {
             document.body.style.overflow = "unset";
         }
-    }, [showProductModal, showEditProductModal, showPaymentModal, showUpSellCategoryModal, showUpSellProductModal]);
+    }, [showProductModal, showEditProductModal, showPaymentModal, showPromotionCodeModal || showUpSellCategoryModal, showUpSellProductModal]);
 
     useEffect(() => {
         setTimeout(() => {
@@ -135,6 +162,10 @@ export const Checkout = () => {
 
     const onCloseProductModal = () => {
         setShowProductModal(false);
+    };
+
+    const onClosePromotionCodeModal = () => {
+        setShowPromotionCodeModal(false);
     };
 
     const onCloseEditProductModal = () => {
@@ -239,7 +270,7 @@ export const Checkout = () => {
         const now = new Date();
 
         if (!user) {
-            await logSlackError(
+            await logError(
                 JSON.stringify({
                     error: "Invalid user",
                     context: { orderRestaurantId: restaurant.id },
@@ -249,7 +280,7 @@ export const Checkout = () => {
         }
 
         if (!orderType) {
-            await logSlackError(
+            await logError(
                 JSON.stringify({
                     error: "Invalid order type",
                     context: { orderRestaurantId: restaurant.id },
@@ -259,7 +290,7 @@ export const Checkout = () => {
         }
 
         if (!restaurant) {
-            await logSlackError(
+            await logError(
                 JSON.stringify({
                     error: "Invalid restaurant",
                     context: { orderRestaurantId: restaurant },
@@ -269,7 +300,7 @@ export const Checkout = () => {
         }
 
         if (!products || products.length == 0) {
-            await logSlackError(
+            await logError(
                 JSON.stringify({
                     error: "No products have been selected",
                     context: { orderRestaurantId: restaurant.id },
@@ -290,6 +321,9 @@ export const Checkout = () => {
                 table: tableNumber,
                 notes: notes,
                 total: total,
+                discount: promotion ? promotion.discountedAmount : undefined,
+                promotionId: promotion ? promotion.promotion.id : undefined,
+                subTotal: subTotal,
                 registerId: register.id,
                 products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
                 placedAt: toLocalISOString(now),
@@ -305,7 +339,7 @@ export const Checkout = () => {
                 variables.paid = true;
             }
         } catch (e) {
-            await logSlackError(
+            await logError(
                 JSON.stringify({
                     error: "No products have been selected",
                     context: {
@@ -317,6 +351,9 @@ export const Checkout = () => {
                         table: tableNumber,
                         notes: notes,
                         total: total,
+                        discount: promotion ? promotion.discountedAmount : undefined,
+                        promotionId: promotion ? promotion.promotion.id : undefined,
+                        subTotal: subTotal,
                         registerId: register.id,
                         products: JSON.stringify(products), // copy obj so we can mutate it later
                         placedAt: now,
@@ -363,7 +400,7 @@ export const Checkout = () => {
 
             logger.debug("process order mutation result: ", res);
         } catch (e) {
-            await logSlackError(
+            await logError(
                 JSON.stringify({
                     error: e,
                     context: variables,
@@ -464,6 +501,8 @@ export const Checkout = () => {
                         notes: notes,
                         products: productsToPrint,
                         total: total,
+                        discount: promotion ? promotion.discountedAmount : undefined,
+                        subTotal: subTotal,
                         paid: paid,
                         type: orderType || EOrderType.TAKEAWAY,
                         number: orderNumber,
@@ -514,7 +553,7 @@ export const Checkout = () => {
         };
 
         try {
-            let pollingUrl = await smartpayCreateTransaction(total, "Card.Purchase");
+            let pollingUrl = await smartpayCreateTransaction(subTotal, "Card.Purchase");
 
             let transactionOutcome: SmartpayTransactionOutcome = await smartpayPollForOutcome(pollingUrl, delayed);
 
@@ -545,7 +584,7 @@ export const Checkout = () => {
 
     const doTransactionWindcave = async () => {
         try {
-            const txnRef = await windcaveCreateTransaction(register.windcaveStationId, total, "Purchase");
+            const txnRef = await windcaveCreateTransaction(register.windcaveStationId, subTotal, "Purchase");
 
             let transactionOutcome: WindcaveTransactionOutcomeResult = await windcavePollForOutcome(register.windcaveStationId, txnRef);
 
@@ -574,7 +613,7 @@ export const Checkout = () => {
     const doTransactionVerifone = async () => {
         try {
             const { transactionOutcome, eftposReceipt } = await verifoneCreateTransaction(
-                total,
+                subTotal,
                 register.eftposIpAddress,
                 register.eftposPortNumber,
                 restaurant.id
@@ -698,6 +737,10 @@ export const Checkout = () => {
         }
     };
 
+    const promotionCodeModal = () => {
+        return <>{showPromotionCodeModal && <PromotionCodeModal isOpen={showPromotionCodeModal} onClose={onClosePromotionCodeModal} />}</>;
+    };
+
     const upSellCategoryModal = () => {
         if (
             restaurant &&
@@ -768,6 +811,10 @@ export const Checkout = () => {
             {showItemUpdatedModal && <ItemAddedUpdatedModal isOpen={showItemUpdatedModal} onClose={onCloseItemUpdatedModal} isProductUpdate={true} />}
         </>
     );
+
+    const onClickApplyPromotionCode = async () => {
+        setShowPromotionCodeModal(true);
+    };
 
     const onConfirmTotalOrRetryTransaction = async () => {
         setPaymentOutcome(null);
@@ -874,7 +921,7 @@ export const Checkout = () => {
         <>
             <div className="h4 mb-4">All Done!</div>
             <div className="h2 mb-6">Please give correct change.</div>
-            <div className="h1 mb-6">Total: ${convertCentsToDollars(total)}</div>
+            <div className="h1 mb-6">Total: ${convertCentsToDollars(subTotal)}</div>
             <div className="mb-1">Your order number is</div>
             <div className="order-number h1">{paymentOutcomeDelayedOrderNumber}</div>
             <div className="separator-6 mb-6"></div>
@@ -1012,6 +1059,7 @@ export const Checkout = () => {
             {upSellProductModal()}
             {productModal()}
             {editProductModal()}
+            {promotionCodeModal()}
             {paymentModal}
             {itemUpdatedModal}
         </>
@@ -1054,6 +1102,34 @@ export const Checkout = () => {
         </div>
     );
 
+    const promotionInformation = (
+        <>
+            {promotion && (
+                <div className="checkout-promotion-information mb-2 pt-3 pr-3 pb-4 pl-3">
+                    <div>
+                        <div className="checkout-promotion-information-heading h3 mb-1">
+                            <div>Promotion Applied!</div>
+                            <div>-${convertCentsToDollars(promotion.discountedAmount)}</div>
+                        </div>
+                        {promotion.promotion.type !== EPromotionType.ENTIREORDER ? (
+                            <div>
+                                {promotion.promotion.name}:{" "}
+                                {Object.values(promotion.matchingProducts).map((p, index) => (
+                                    <>
+                                        {index !== 0 && ", "}
+                                        {p.name}
+                                    </>
+                                ))}
+                            </div>
+                        ) : (
+                            <div>Entire Order</div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </>
+    );
+
     const restaurantTableNumber = (
         <div className="checkout-table-number">
             <div className="h3">Table Number: {tableNumber}</div>
@@ -1063,7 +1139,7 @@ export const Checkout = () => {
 
     const restaurantNotes = (
         <>
-            <div className="h2 mb-3">Special instructions</div>
+            <div className="h2 mb-3">Special Instructions</div>
             <TextArea placeholder={"Leave a note for the restaurant"} value={notes} onChange={onNotesChange} />
         </>
     );
@@ -1073,15 +1149,29 @@ export const Checkout = () => {
             <div className="mt-10"></div>
             {title}
             {restaurantOrderType}
+            {promotionInformation}
             {tableNumber && <div className="mb-4">{restaurantTableNumber}</div>}
             <div className="separator-6"></div>
             {orderSummary}
             {restaurantNotes}
         </>
     );
+
+    const onRemoveUserAppliedPromotionCode = () => {
+        removeUserAppliedPromotion();
+    };
+
     const checkoutFooter = (
         <div>
-            <div className="h1 text-center mb-4">Total: ${convertCentsToDollars(total)}</div>
+            {promotion && (
+                <div className="h3 text-center mb-2">
+                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
+                        promotion.discountedAmount
+                    )}`}{" "}
+                    {userAppliedPromotionCode && <Link onClick={onRemoveUserAppliedPromotionCode}>Remove</Link>}
+                </div>
+            )}
+            <div className="h1 text-center mb-4">Total: ${convertCentsToDollars(subTotal)}</div>
             <div className="mb-4">
                 <div className="checkout-buttons-container">
                     <Button onClick={onOrderMore} className="button large mr-3 order-more-button">
@@ -1101,6 +1191,9 @@ export const Checkout = () => {
                         <Link onClick={onClickPayLater}>Pay cash at counter...</Link>
                     </div>
                 )}
+                {/* <div className="pay-later-link mt-4">
+                    <Link onClick={onClickApplyPromotionCode}>Apply promo code</Link>
+                </div> */}
             </div>
             <Button className="cancel-button" onClick={onCancelOrder}>
                 Cancel Order

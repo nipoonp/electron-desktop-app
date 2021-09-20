@@ -2,7 +2,7 @@ import { useState, useEffect, createContext, useContext } from "react";
 
 import { Logger } from "aws-amplify";
 import { delay, getVerifoneSocketErrorMessage, getVerifoneTimeBasedTransactionId } from "../model/util";
-import { useMutation } from "react-apollo-hooks";
+import { useMutation } from "@apollo/client";
 import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
 
 let electron: any;
@@ -94,7 +94,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     };
     let eftposReceipt: string = "";
 
-    const createEftposTransactionLogMutation = useMutation(CREATE_EFTPOS_TRANSACTION_LOG, {
+    const [createEftposTransactionLogMutation, { data, loading, error }] = useMutation(CREATE_EFTPOS_TRANSACTION_LOG, {
         update: (proxy, mutationResult) => {},
     });
 

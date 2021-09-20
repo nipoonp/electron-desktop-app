@@ -30,7 +30,7 @@ interface IMostPopularProduct {
 export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: string; selectedProductId?: string }) => {
     // context
     const history = useHistory();
-    const { clearCart, orderType, total, products, cartProductQuantitiesById, addItem } = useCart();
+    const { clearCart, orderType, subTotal, products, cartProductQuantitiesById, addItem } = useCart();
     const { setRestaurant } = useRestaurant();
 
     // query
@@ -384,7 +384,7 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
                         url={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.png`}
                         alt="shopping-bag-icon"
                     />
-                    <div className="h4 total">Total: ${convertCentsToDollars(total)}</div>
+                    <div className="h4 total">Total: ${convertCentsToDollars(subTotal)}</div>
                 </div>
                 <Button className="large" disabled={!products || products.length == 0} onClick={onClickCart}>
                     View My Order

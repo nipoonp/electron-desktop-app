@@ -49,6 +49,17 @@
                 align-items: center;
             }
 
+            .checkout-promotion-information {
+                background-color: var(--primary-color);
+                color: white;
+                border-radius: 10px;
+            }
+
+            .checkout-promotion-information-heading {
+                display: flex;
+                justify-content: space-between;
+            }
+
             .checkout-table-number {
                 display: grid;
                 grid-template-columns: 1fr auto;

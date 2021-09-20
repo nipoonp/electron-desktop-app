@@ -229,10 +229,20 @@ export const printReceipt = async (order: IOrderReceipt, customerReceipt: boolea
             { text: "GST (15.00%)", align: "LEFT", width: 0.75 },
             { text: `\$${convertCentsToDollars(GST)}`, align: "RIGHT", width: 0.25 },
         ]);
+        order.discount &&
+            printer.tableCustom([
+                { text: "Discount", align: "LEFT", width: 0.75, bold: true },
+                {
+                    text: `\$${convertCentsToDollars(order.discount)}`,
+                    align: "RIGHT",
+                    width: 0.25,
+                    bold: true,
+                },
+            ]);
         printer.tableCustom([
             { text: "Total", align: "LEFT", width: 0.75, bold: true },
             {
-                text: `\$${convertCentsToDollars(order.total)}`,
+                text: `\$${convertCentsToDollars(order.subTotal)}`,
                 align: "RIGHT",
                 width: 0.25,
                 bold: true,

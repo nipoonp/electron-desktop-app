@@ -1,15 +1,29 @@
+import { isWithinInterval } from "date-fns";
 import { createContext, useContext, useEffect, useState } from "react";
+import {
+    EDiscountType,
+    EPromotionType,
+    ERegisterType,
+    IGET_DASHBOARD_PROMOTION,
+    IGET_DASHBOARD_PROMOTION_DISCOUNT,
+    IGET_DASHBOARD_PROMOTION_ITEMS,
+} from "../graphql/customQueries";
 
-import { ICartProduct, EOrderType, ICartItemQuantitiesById } from "../model/model";
+import { ICartProduct, EOrderType, ICartItemQuantitiesById, ICartPromotion, CheckIfPromotionValidResponse } from "../model/model";
+import { getMatchingPromotionProducts, processPromotionDiscounts, isPromotionAvailable, checkIfPromotionValid } from "../util/util";
+import { useRestaurant } from "./restaurant-context";
 
-const initialRestaurant = null;
 const initialOrderType = null;
 const initialTableNumber = null;
 const initialProducts = null;
 const initialNotes = "";
-const initialTotal = 0;
+const initialCartCategoryQuantitiesById = {};
 const initialCartProductQuantitiesById = {};
 const initialCartModifierQuantitiesById = {};
+const initialUserAppliedPromotionCode = null;
+const initialPromotion = null;
+const initialTotal = 0;
+const initialSubTotal = 0;
 
 type ContextProps = {
     // restaurant: IGET_RESTAURANT | null;
@@ -28,7 +42,12 @@ type ContextProps = {
     clearCart: () => void;
     notes: string;
     setNotes: (notes: string) => void;
+    promotion: ICartPromotion | null;
+    userAppliedPromotionCode: string | null;
+    setUserAppliedPromotion: (promotion: IGET_DASHBOARD_PROMOTION) => CheckIfPromotionValidResponse;
+    removeUserAppliedPromotion: () => void;
     total: number;
+    subTotal: number;
 };
 
 const CartContext = createContext<ContextProps>({
@@ -48,52 +67,257 @@ const CartContext = createContext<ContextProps>({
     clearCart: () => {},
     notes: initialNotes,
     setNotes: () => {},
+    promotion: initialPromotion,
+    userAppliedPromotionCode: "",
+    setUserAppliedPromotion: () => CheckIfPromotionValidResponse.VALID,
+    removeUserAppliedPromotion: () => {},
     total: initialTotal,
+    subTotal: initialSubTotal,
 });
 
 const CartProvider = (props: { children: React.ReactNode }) => {
-    // const [restaurant, _setRestaurant] = useState<IGET_RESTAURANT | null>(initialRestaurant);
+    const { restaurant } = useRestaurant();
+
     const [orderType, _setOrderType] = useState<EOrderType | null>(initialOrderType);
     const [tableNumber, _setTableNumber] = useState<string | null>(initialTableNumber);
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
     const [notes, _setNotes] = useState<string>(initialNotes);
     const [total, _setTotal] = useState<number>(initialTotal);
+    const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
+    const [userAppliedPromotionCode, _setUserAppliedPromotionCode] = useState<string | null>(initialUserAppliedPromotionCode);
+    const [promotion, _setPromotion] = useState<ICartPromotion | null>(initialPromotion);
 
+    const [cartCategoryQuantitiesById, _setCartCategoryQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartCategoryQuantitiesById);
     const [cartProductQuantitiesById, _setCartProductQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartProductQuantitiesById);
     const [cartModifierQuantitiesById, _setCartModifierQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartModifierQuantitiesById);
+    const [availablePromotions, _setAvailablePromotions] = useState<IGET_DASHBOARD_PROMOTION[]>([]);
+
+    useEffect(() => {
+        if (promotion) {
+            _setSubTotal(total - promotion.discountedAmount);
+        } else {
+            _setSubTotal(total);
+        }
+    }, [total, promotion]);
+
+    useEffect(() => {
+        if (userAppliedPromotionCode) return; //Only apply restaurant promos if user has not applied one themselves
+
+        const availPromotions: IGET_DASHBOARD_PROMOTION[] = [];
+
+        restaurant &&
+            restaurant.promotions.items.forEach((promotion) => {
+                if (!promotion.autoApply) return;
+
+                const status = checkIfPromotionValid(promotion);
+
+                if (status !== CheckIfPromotionValidResponse.VALID) return;
+
+                availPromotions.push(promotion);
+            });
+
+        _setAvailablePromotions(availPromotions);
+    }, [restaurant, userAppliedPromotionCode]);
+
+    const getEntireOrderDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION, total: number) => {
+        const bestPromotionDiscount = processPromotionDiscounts(
+            cartCategoryQuantitiesById,
+            cartProductQuantitiesById,
+            promotion.discounts.items,
+            undefined,
+            total
+        );
+
+        return {
+            matchingProducts: {},
+            discountedAmount: bestPromotionDiscount.discountedAmount,
+        };
+    };
+
+    const getComboDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION) => {
+        const matchingProducts = getMatchingPromotionProducts(
+            cartCategoryQuantitiesById,
+            cartProductQuantitiesById,
+            promotion.items.items,
+            promotion.applyToCheapest
+        );
+
+        if (!matchingProducts)
+            return {
+                matchingProducts: {},
+                discountedAmount: 0,
+            };
+
+        const bestPromotionDiscount = processPromotionDiscounts(
+            cartCategoryQuantitiesById,
+            cartProductQuantitiesById,
+            promotion.discounts.items,
+            matchingProducts,
+            undefined,
+            promotion.applyToCheapest
+        );
+
+        return {
+            matchingProducts: bestPromotionDiscount.matchingProducts,
+            discountedAmount: bestPromotionDiscount.discountedAmount,
+        };
+    };
+
+    const getRelatedItemsDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION) => {
+        const matchingProducts = getMatchingPromotionProducts(
+            cartCategoryQuantitiesById,
+            cartProductQuantitiesById,
+            promotion.items.items,
+            promotion.applyToCheapest
+        );
+
+        if (!matchingProducts)
+            return {
+                matchingProducts: {},
+                discountedAmount: 0,
+            };
+
+        const bestPromotionDiscount = processPromotionDiscounts(
+            cartCategoryQuantitiesById,
+            cartProductQuantitiesById,
+            promotion.discounts.items,
+            matchingProducts,
+            undefined,
+            promotion.applyToCheapest
+        );
+
+        return {
+            matchingProducts: bestPromotionDiscount.matchingProducts,
+            discountedAmount: bestPromotionDiscount.discountedAmount,
+        };
+    };
+
+    useEffect(() => {
+        if (availablePromotions.length == 0) return;
+        if (!products || products.length == 0) return;
+
+        let bestPromotion: ICartPromotion | null = null;
+
+        availablePromotions.forEach((promotion) => {
+            if (!orderType || !promotion.availableOrderTypes) return;
+            if (!promotion.availableOrderTypes.includes(EOrderType[orderType])) return;
+
+            if (total < promotion.minSpend) return;
+
+            let discount: {
+                matchingProducts: ICartItemQuantitiesById;
+                discountedAmount: number;
+            } = {
+                matchingProducts: {},
+                discountedAmount: 0,
+            };
+
+            switch (promotion.type) {
+                case EPromotionType.COMBO:
+                    discount = getComboDiscountAmount(promotion);
+                    break;
+                case EPromotionType.ENTIREORDER:
+                    discount = getEntireOrderDiscountAmount(promotion, total);
+                    break;
+                case EPromotionType.RELATEDITEMS:
+                    discount = getRelatedItemsDiscountAmount(promotion);
+                    break;
+                default:
+                    break;
+            }
+
+            if (!(discount.discountedAmount > 0)) return;
+
+            if (!bestPromotion || discount.discountedAmount > bestPromotion.discountedAmount) {
+                bestPromotion = {
+                    discountedAmount: discount.discountedAmount,
+                    matchingProducts: discount.matchingProducts,
+                    promotion: promotion,
+                };
+            }
+        });
+
+        _setPromotion(bestPromotion);
+    }, [cartProductQuantitiesById, cartModifierQuantitiesById, availablePromotions, orderType]);
+
+    const setUserAppliedPromotion = (promotion: IGET_DASHBOARD_PROMOTION): CheckIfPromotionValidResponse => {
+        const status = checkIfPromotionValid(promotion);
+
+        if (status !== CheckIfPromotionValidResponse.VALID) return status;
+
+        _setAvailablePromotions([promotion]);
+        _setUserAppliedPromotionCode(promotion.code);
+
+        return CheckIfPromotionValidResponse.VALID;
+    };
+
+    const removeUserAppliedPromotion = () => {
+        _setUserAppliedPromotionCode(null);
+    };
 
     const updateCartQuantities = (products: ICartProduct[] | null) => {
-        const newCartProductQuantitiesById = {};
-        const newCartModifierQuantitiesById = {};
+        const newCartCategoryQuantitiesById: ICartItemQuantitiesById = {};
+        const newCartProductQuantitiesById: ICartItemQuantitiesById = {};
+        const newCartModifierQuantitiesById: ICartItemQuantitiesById = {};
 
         products &&
             products.forEach((product) => {
+                if (newCartCategoryQuantitiesById[product.category.id]) {
+                    //We use product.quantity here because category does not have quantity assigned to it. The number of products select is same as the quantity for the category.
+                    newCartCategoryQuantitiesById[product.category.id].quantity += product.quantity;
+                } else {
+                    newCartCategoryQuantitiesById[product.category.id] = {
+                        id: product.category.id,
+                        name: product.category.name,
+                        quantity: product.quantity,
+                        price: product.price,
+                    };
+                }
+
                 //We do this because there could be the same product in the products array twice.
                 if (newCartProductQuantitiesById[product.id]) {
-                    newCartProductQuantitiesById[product.id] += product.quantity;
+                    newCartProductQuantitiesById[product.id].quantity += product.quantity;
                 } else {
-                    newCartProductQuantitiesById[product.id] = product.quantity;
+                    newCartProductQuantitiesById[product.id] = {
+                        id: product.id,
+                        name: product.name,
+                        quantity: product.quantity,
+                        price: product.price,
+                        categoryId: product.category.id,
+                    };
                 }
 
                 product.modifierGroups.forEach((modifierGroup) => {
                     modifierGroup.modifiers.forEach((modifier) => {
                         if (modifier.productModifier) {
                             if (newCartProductQuantitiesById[modifier.productModifier.id]) {
-                                newCartProductQuantitiesById[modifier.productModifier.id] += product.quantity * modifier.quantity;
+                                newCartProductQuantitiesById[modifier.productModifier.id].quantity += product.quantity * modifier.quantity;
                             } else {
-                                newCartProductQuantitiesById[modifier.productModifier.id] = product.quantity * modifier.quantity;
+                                newCartProductQuantitiesById[modifier.productModifier.id] = {
+                                    id: product.id,
+                                    name: product.name,
+                                    quantity: product.quantity,
+                                    price: product.price,
+                                    categoryId: product.category.id,
+                                };
                             }
                         } else {
                             if (newCartModifierQuantitiesById[modifier.id]) {
-                                newCartModifierQuantitiesById[modifier.id] += product.quantity * modifier.quantity;
+                                newCartModifierQuantitiesById[modifier.id].quantity += product.quantity * modifier.quantity;
                             } else {
-                                newCartModifierQuantitiesById[modifier.id] = product.quantity * modifier.quantity;
+                                newCartModifierQuantitiesById[modifier.id] = {
+                                    id: product.id,
+                                    name: product.name,
+                                    quantity: product.quantity,
+                                    price: product.price,
+                                };
                             }
                         }
                     });
                 });
             });
 
+        _setCartCategoryQuantitiesById(newCartCategoryQuantitiesById);
         _setCartProductQuantitiesById(newCartProductQuantitiesById);
         _setCartModifierQuantitiesById(newCartModifierQuantitiesById);
     };
@@ -117,10 +341,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         return totalPrice;
     };
-
-    // const setRestaurant = (restaurant: IGET_RESTAURANT) => {
-    //     _setRestaurant(restaurant);
-    // };
 
     const setOrderType = (orderType: EOrderType) => {
         _setOrderType(orderType);
@@ -190,14 +410,16 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     };
 
     const clearCart = () => {
-        // _setRestaurant(initialRestaurant);
         _setOrderType(initialOrderType);
+        _setTableNumber(initialTableNumber);
         _setProducts(initialProducts);
         _setNotes(initialNotes);
-        _setTotal(initialTotal);
-        _setTableNumber(initialTableNumber);
+        _setCartCategoryQuantitiesById(initialCartCategoryQuantitiesById);
         _setCartProductQuantitiesById(initialCartProductQuantitiesById);
         _setCartModifierQuantitiesById(initialCartModifierQuantitiesById);
+        _setPromotion(initialPromotion);
+        _setTotal(initialTotal);
+        _setSubTotal(initialSubTotal);
     };
 
     const setNotes = (notes: string) => {
@@ -223,7 +445,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 clearCart: clearCart,
                 notes: notes,
                 setNotes: setNotes,
+                promotion: promotion,
+                userAppliedPromotionCode: userAppliedPromotionCode,
+                setUserAppliedPromotion: setUserAppliedPromotion,
+                removeUserAppliedPromotion: removeUserAppliedPromotion,
                 total: total,
+                subTotal: subTotal,
             }}
             children={props.children}
         />
