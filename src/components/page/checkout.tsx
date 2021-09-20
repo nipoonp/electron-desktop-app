@@ -6,7 +6,7 @@ import { useHistory } from "react-router-dom";
 import { convertCentsToDollars } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER } from "../../graphql/customMutations";
-import { IGET_RESTAURANT_REGISTER_PRINTER, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
+import { IGET_RESTAURANT_REGISTER_PRINTER, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, EPromotionType } from "../../graphql/customQueries";
 import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath } from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
@@ -315,6 +315,7 @@ export const Checkout = () => {
                 notes: notes,
                 total: total,
                 discount: promotion ? promotion.discountedAmount : undefined,
+                promotionId: promotion ? promotion.promotion.id : undefined,
                 subTotal: subTotal,
                 registerId: register.id,
                 products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
@@ -344,6 +345,7 @@ export const Checkout = () => {
                         notes: notes,
                         total: total,
                         discount: promotion ? promotion.discountedAmount : undefined,
+                        promotionId: promotion ? promotion.promotion.id : undefined,
                         subTotal: subTotal,
                         registerId: register.id,
                         products: JSON.stringify(products), // copy obj so we can mutate it later
@@ -1102,15 +1104,19 @@ export const Checkout = () => {
                             <div>Promotion Applied!</div>
                             <div>-${convertCentsToDollars(promotion.discountedAmount)}</div>
                         </div>
-                        <div>
-                            {promotion.promotion.name}:{" "}
-                            {Object.values(promotion.matchingProducts).map((p, index) => (
-                                <>
-                                    {index !== 0 && ", "}
-                                    {p.name}
-                                </>
-                            ))}
-                        </div>
+                        {promotion.promotion.type !== EPromotionType.ENTIREORDER ? (
+                            <div>
+                                {promotion.promotion.name}:{" "}
+                                {Object.values(promotion.matchingProducts).map((p, index) => (
+                                    <>
+                                        {index !== 0 && ", "}
+                                        {p.name}
+                                    </>
+                                ))}
+                            </div>
+                        ) : (
+                            <div>Entire Order</div>
+                        )}
                     </div>
                 </div>
             )}

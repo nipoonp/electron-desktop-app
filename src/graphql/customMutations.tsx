@@ -48,6 +48,7 @@ export const CREATE_ORDER = gql`
         $notes: String
         $total: Int!
         $discount: Int
+        $promotionId: ID
         $subTotal: Int!
         $registerId: ID!
         $products: [OrderProductInput!]
@@ -67,6 +68,7 @@ export const CREATE_ORDER = gql`
                 notes: $notes
                 total: $total
                 discount: $discount
+                promotionId: $promotionId
                 subTotal: $subTotal
                 registerId: $registerId
                 products: $products

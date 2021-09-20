@@ -404,7 +404,7 @@ export const processPromotionDiscounts = (
         let matchingDiscountProducts: ICartItemQuantitiesById | null = null;
 
         //For related items promotion
-        if (discount.items) {
+        if (discount.items && discount.items.items.length > 0) {
             //Reset discountable amount because we want to discount the matchingDiscountProducts not the original matchingProducts
             totalDiscountableAmount = 0;
             matchingDiscountProducts = getMatchingPromotionProducts(
