@@ -1,5 +1,5 @@
 import { GET_USER, IGET_USER } from "../graphql/customQueries";
-import { useQuery } from "react-apollo-hooks";
+import { useQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
 
 export const useGetUserQuery = (userID: string | null) => {

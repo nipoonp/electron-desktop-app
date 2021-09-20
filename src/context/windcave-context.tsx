@@ -4,7 +4,7 @@ import axios from "axios";
 
 import { convertCentsToDollars } from "../util/util";
 import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
-import { useMutation } from "react-apollo-hooks";
+import { useMutation } from "@apollo/client";
 import { useRestaurant } from "./restaurant-context";
 var convert = require("xml-js");
 
@@ -183,7 +183,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         return result;
     };
 
-    const createEftposTransactionLogMutation = useMutation(CREATE_EFTPOS_TRANSACTION_LOG, {
+    const [createEftposTransactionLogMutation, { data, loading, error }] = useMutation(CREATE_EFTPOS_TRANSACTION_LOG, {
         update: (proxy, mutationResult) => {},
     });
 

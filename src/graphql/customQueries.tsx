@@ -1,6 +1,24 @@
 import gql from "graphql-tag";
 import { EReceiptPrinterType } from "../model/model";
 
+export enum EOrderType {
+    DINEIN = "DINEIN",
+    TAKEAWAY = "TAKEAWAY",
+    DELIVERY = "DELIVERY",
+}
+
+export enum ERegisterType {
+    KIOSK = "KIOSK",
+    POS = "POS",
+    ONLINE = "ONLINE",
+}
+
+export enum ERegisterPrinterType {
+    BLUETOOTH = "BLUETOOTH",
+    WIFI = "WIFI",
+    USB = "USB",
+}
+
 export const GET_USER = gql`
     query GetUser($userID: ID!) {
         getUser(id: $userID) {
@@ -238,6 +256,94 @@ export const GET_RESTAURANT = gql`
                     }
                 }
             }
+            promotions {
+                items {
+                    id
+                    name
+                    type
+                    code
+                    autoApply
+                    startDate
+                    endDate
+                    availability {
+                        monday {
+                            startTime
+                            endTime
+                        }
+                        tuesday {
+                            startTime
+                            endTime
+                        }
+                        wednesday {
+                            startTime
+                            endTime
+                        }
+                        thursday {
+                            startTime
+                            endTime
+                        }
+                        friday {
+                            startTime
+                            endTime
+                        }
+                        saturday {
+                            startTime
+                            endTime
+                        }
+                        sunday {
+                            startTime
+                            endTime
+                        }
+                    }
+                    availablePlatforms
+                    availableOrderTypes
+                    minSpend
+                    applyToCheapest
+                    items {
+                        items {
+                            id
+                            minQuantity
+                            categories {
+                                items {
+                                    id
+                                    name
+                                }
+                            }
+                            products {
+                                items {
+                                    id
+                                    name
+                                }
+                            }
+                        }
+                    }
+                    discounts {
+                        items {
+                            id
+                            amount
+                            type
+                            items {
+                                items {
+                                    id
+                                    minQuantity
+                                    categories {
+                                        items {
+                                            id
+                                            name
+                                        }
+                                    }
+                                    products {
+                                        items {
+                                            id
+                                            name
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             categories(limit: 500) {
                 items {
                     id
@@ -451,6 +557,7 @@ export interface IGET_RESTAURANT {
     advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
     upSellCrossSell?: IGET_DASHBOARD_UP_SELL_CROSS_SELL;
     registers: { items: IGET_RESTAURANT_REGISTER[] };
+    promotions: { items: IGET_DASHBOARD_PROMOTION[] };
     categories: {
         items: IGET_RESTAURANT_CATEGORY[];
     };
@@ -579,6 +686,78 @@ export interface IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES {
     endTime: string;
 }
 
+export interface IGET_DASHBOARD_PROMOTION {
+    id: string;
+    name: string;
+    code: string;
+    autoApply: boolean;
+    startDate: string;
+    endDate: string;
+    availability: IGET_RESTAURANT_PROMOTION_AVAILABILITY;
+    availablePlatforms: ERegisterType[];
+    availableOrderTypes: EOrderType[];
+    minSpend: number;
+    applyToCheapest: boolean;
+    type: EPromotionType;
+    items: { items: IGET_DASHBOARD_PROMOTION_ITEMS[] };
+    discounts: { items: IGET_DASHBOARD_PROMOTION_DISCOUNT[] };
+    promotionRestaurantId: string;
+    owner: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface IGET_RESTAURANT_PROMOTION_AVAILABILITY {
+    monday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
+    tuesday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
+    wednesday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
+    thursday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
+    friday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
+    saturday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
+    sunday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
+}
+
+export interface IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES {
+    startTime: string;
+    endTime: string;
+}
+
+export enum EPromotionType {
+    ENTIREORDER = "ENTIREORDER",
+    COMBO = "COMBO",
+    RELATEDITEMS = "RELATEDITEMS",
+}
+
+export interface IGET_DASHBOARD_PROMOTION_ITEMS {
+    id: string;
+    minQuantity: number;
+    categories: {
+        items: {
+            id: string;
+            name: string;
+        }[];
+    };
+    products: {
+        items: {
+            id: string;
+            name: string;
+        }[];
+    };
+}
+
+export interface IGET_DASHBOARD_PROMOTION_DISCOUNT {
+    id: string;
+    amount: number;
+    type: EDiscountType;
+    items: { items: IGET_DASHBOARD_PROMOTION_ITEMS[] };
+}
+
+export enum EDiscountType {
+    FIXED = "FIXED",
+    PERCENTAGE = "PERCENTAGE",
+    SETPRICE = "SETPRICE",
+}
+
 export interface IGET_RESTAURANT_CATEGORY {
     id: string;
     name: string;
@@ -666,3 +845,96 @@ export interface IS3Object {
     region: string;
     identityPoolId: string;
 }
+
+export const GET_PROMOTION_BY_CODE = gql`
+    query getPromotionByCode($code: String!, $promotionRestaurantId: ID!) {
+        getPromotionByCode(code: $code, promotionRestaurantId: { eq: $promotionRestaurantId }) {
+            items {
+                id
+                name
+                type
+                code
+                autoApply
+                startDate
+                endDate
+                availability {
+                    monday {
+                        startTime
+                        endTime
+                    }
+                    tuesday {
+                        startTime
+                        endTime
+                    }
+                    wednesday {
+                        startTime
+                        endTime
+                    }
+                    thursday {
+                        startTime
+                        endTime
+                    }
+                    friday {
+                        startTime
+                        endTime
+                    }
+                    saturday {
+                        startTime
+                        endTime
+                    }
+                    sunday {
+                        startTime
+                        endTime
+                    }
+                }
+                availablePlatforms
+                availableOrderTypes
+                minSpend
+                applyToCheapest
+                items {
+                    items {
+                        id
+                        minQuantity
+                        categories {
+                            items {
+                                id
+                                name
+                            }
+                        }
+                        products {
+                            items {
+                                id
+                                name
+                            }
+                        }
+                    }
+                }
+                discounts {
+                    items {
+                        id
+                        amount
+                        type
+                        items {
+                            items {
+                                id
+                                minQuantity
+                                categories {
+                                    items {
+                                        id
+                                        name
+                                    }
+                                }
+                                products {
+                                    items {
+                                        id
+                                        name
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+`;

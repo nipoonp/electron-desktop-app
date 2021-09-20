@@ -1,4 +1,4 @@
-import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object } from "../graphql/customQueries";
+import { IGET_DASHBOARD_PROMOTION, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object } from "../graphql/customQueries";
 
 export interface ICognitoUser {
     attributes: {
@@ -17,7 +17,15 @@ export enum EOrderType {
 }
 
 export interface ICartItemQuantitiesById {
-    [id: string]: number;
+    [id: string]: ICartItemQuantitiesByIdValue;
+}
+
+export interface ICartItemQuantitiesByIdValue {
+    id: string;
+    name: string;
+    quantity: number;
+    price: number;
+    categoryId?: string; //Only for products
 }
 
 export interface ICartProduct {
@@ -67,6 +75,12 @@ export interface IPreSelectedModifiers {
     [modifierGroupId: string]: ICartModifier[];
 }
 
+export interface ICartPromotion {
+    promotion: IGET_DASHBOARD_PROMOTION;
+    matchingProducts: ICartItemQuantitiesById;
+    discountedAmount: number;
+}
+
 export enum EReceiptPrinterType {
     BLUETOOTH = "BLUETOOTH",
     WIFI = "WIFI",
@@ -88,6 +102,8 @@ export interface IOrderReceipt {
     notes: string | null;
     products: ICartProduct[];
     total: number;
+    discount?: number;
+    subTotal: number;
     paid: boolean;
     type: EOrderType;
     number: string;
@@ -101,4 +117,11 @@ export interface IMatchingUpSellCrossSellCategoryItem {
 export interface IMatchingUpSellCrossSellProductItem {
     category: IGET_RESTAURANT_CATEGORY;
     product: IGET_RESTAURANT_PRODUCT;
+}
+
+export enum CheckIfPromotionValidResponse {
+    VALID = "VALID",
+    UNAVAILABLE = "UNAVAILABLE",
+    EXPIRED = "EXPIRED",
+    INVALID_PLATFORM = "INVALID_PLATFORM",
 }

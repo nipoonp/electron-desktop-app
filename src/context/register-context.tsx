@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext, useContext } from "react";
 
-import { useMutation } from "react-apollo-hooks";
+import { useMutation } from "@apollo/client";
 import { UPDATE_REGISTER_KEY } from "../graphql/customMutations";
 import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { getCloudFrontDomainName } from "../private/aws-custom";
@@ -43,7 +43,7 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
         setRegister(matchingRegister);
     }, [restaurant, registerKey]);
 
-    const updateRegisterKeyMutation = useMutation(UPDATE_REGISTER_KEY, {
+    const [updateRegisterKeyMutation, { data, loading, error }] = useMutation(UPDATE_REGISTER_KEY, {
         update: (proxy, mutationResult) => {},
     });
 
