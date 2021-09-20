@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 
-import { useMutation } from "react-apollo-hooks";
+import { useMutation } from "@apollo/client";
 import { LOG_SLACK_ERROR } from "../graphql/customMutations";
 
 type ContextProps = {
@@ -12,12 +12,12 @@ const ErrorLoggingContext = createContext<ContextProps>({
 });
 
 const ErrorLoggingProvider = (props: { children: React.ReactNode }) => {
-    const logSlackError = useMutation(LOG_SLACK_ERROR, {
+    const [logSlackErrorMutation, { data, loading, error }] = useMutation(LOG_SLACK_ERROR, {
         update: (proxy, mutationResult) => {},
     });
 
     const logError = (message: string) => {
-        return logSlackError({
+        return logSlackErrorMutation({
             variables: {
                 message: message,
             },

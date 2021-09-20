@@ -118,3 +118,10 @@ export interface IMatchingUpSellCrossSellProductItem {
     category: IGET_RESTAURANT_CATEGORY;
     product: IGET_RESTAURANT_PRODUCT;
 }
+
+export enum CheckIfPromotionValidResponse {
+    VALID = "VALID",
+    UNAVAILABLE = "UNAVAILABLE",
+    EXPIRED = "EXPIRED",
+    INVALID_PLATFORM = "INVALID_PLATFORM",
+}

@@ -9,8 +9,8 @@ import {
     IGET_DASHBOARD_PROMOTION_ITEMS,
 } from "../graphql/customQueries";
 
-import { ICartProduct, EOrderType, ICartItemQuantitiesById, ICartPromotion } from "../model/model";
-import { getMatchingPromotionProducts, processPromotionDiscounts, isPromotionAvailable } from "../util/util";
+import { ICartProduct, EOrderType, ICartItemQuantitiesById, ICartPromotion, CheckIfPromotionValidResponse } from "../model/model";
+import { getMatchingPromotionProducts, processPromotionDiscounts, isPromotionAvailable, checkIfPromotionValid } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
 
 const initialOrderType = null;
@@ -20,6 +20,7 @@ const initialNotes = "";
 const initialCartCategoryQuantitiesById = {};
 const initialCartProductQuantitiesById = {};
 const initialCartModifierQuantitiesById = {};
+const initialUserAppliedPromotionCode = null;
 const initialPromotion = null;
 const initialTotal = 0;
 const initialSubTotal = 0;
@@ -42,6 +43,9 @@ type ContextProps = {
     notes: string;
     setNotes: (notes: string) => void;
     promotion: ICartPromotion | null;
+    userAppliedPromotionCode: string | null;
+    setUserAppliedPromotion: (promotion: IGET_DASHBOARD_PROMOTION) => CheckIfPromotionValidResponse;
+    removeUserAppliedPromotion: () => void;
     total: number;
     subTotal: number;
 };
@@ -64,6 +68,9 @@ const CartContext = createContext<ContextProps>({
     notes: initialNotes,
     setNotes: () => {},
     promotion: initialPromotion,
+    userAppliedPromotionCode: "",
+    setUserAppliedPromotion: () => CheckIfPromotionValidResponse.VALID,
+    removeUserAppliedPromotion: () => {},
     total: initialTotal,
     subTotal: initialSubTotal,
 });
@@ -77,6 +84,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [notes, _setNotes] = useState<string>(initialNotes);
     const [total, _setTotal] = useState<number>(initialTotal);
     const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
+    const [userAppliedPromotionCode, _setUserAppliedPromotionCode] = useState<string | null>(initialUserAppliedPromotionCode);
     const [promotion, _setPromotion] = useState<ICartPromotion | null>(initialPromotion);
 
     const [cartCategoryQuantitiesById, _setCartCategoryQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartCategoryQuantitiesById);
@@ -93,7 +101,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     }, [total, promotion]);
 
     useEffect(() => {
-        const now = new Date();
+        if (userAppliedPromotionCode) return; //Only apply restaurant promos if user has not applied one themselves
 
         const availPromotions: IGET_DASHBOARD_PROMOTION[] = [];
 
@@ -101,27 +109,15 @@ const CartProvider = (props: { children: React.ReactNode }) => {
             restaurant.promotions.items.forEach((promotion) => {
                 if (!promotion.autoApply) return;
 
-                const platform = process.env.REACT_APP_PLATFORM;
+                const status = checkIfPromotionValid(promotion);
 
-                if (!platform || !promotion.availablePlatforms) return;
-                if (!promotion.availablePlatforms.includes(ERegisterType[platform])) return;
-
-                const startDate = new Date(promotion.startDate);
-                const endDate = new Date(promotion.endDate);
-
-                const isWithin = isWithinInterval(now, { start: startDate, end: endDate });
-
-                if (!isWithin) return;
-
-                const isAvailable = promotion.availability && isPromotionAvailable(promotion.availability);
-
-                if (!isAvailable) return;
+                if (status !== CheckIfPromotionValidResponse.VALID) return;
 
                 availPromotions.push(promotion);
             });
 
         _setAvailablePromotions(availPromotions);
-    }, [restaurant]);
+    }, [restaurant, userAppliedPromotionCode]);
 
     const getEntireOrderDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION, total: number) => {
         const bestPromotionDiscount = processPromotionDiscounts(
@@ -243,6 +239,21 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         _setPromotion(bestPromotion);
     }, [cartProductQuantitiesById, cartModifierQuantitiesById, availablePromotions, orderType]);
+
+    const setUserAppliedPromotion = (promotion: IGET_DASHBOARD_PROMOTION): CheckIfPromotionValidResponse => {
+        const status = checkIfPromotionValid(promotion);
+
+        if (status !== CheckIfPromotionValidResponse.VALID) return status;
+
+        _setAvailablePromotions([promotion]);
+        _setUserAppliedPromotionCode(promotion.code);
+
+        return CheckIfPromotionValidResponse.VALID;
+    };
+
+    const removeUserAppliedPromotion = () => {
+        _setUserAppliedPromotionCode(null);
+    };
 
     const updateCartQuantities = (products: ICartProduct[] | null) => {
         const newCartCategoryQuantitiesById: ICartItemQuantitiesById = {};
@@ -435,6 +446,9 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 notes: notes,
                 setNotes: setNotes,
                 promotion: promotion,
+                userAppliedPromotionCode: userAppliedPromotionCode,
+                setUserAppliedPromotion: setUserAppliedPromotion,
+                removeUserAppliedPromotion: removeUserAppliedPromotion,
                 total: total,
                 subTotal: subTotal,
             }}

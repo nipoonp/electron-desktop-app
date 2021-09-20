@@ -4,7 +4,7 @@ import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useHistory } from "react-router-dom";
 import { convertCentsToDollars } from "../../util/util";
-import { useMutation } from "react-apollo-hooks";
+import { useMutation } from "@apollo/client";
 import { CREATE_ORDER } from "../../graphql/customMutations";
 import { IGET_RESTAURANT_REGISTER_PRINTER, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
 import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath } from "../main";
@@ -41,6 +41,7 @@ import { useWindcave, WindcaveTransactionOutcome, WindcaveTransactionOutcomeResu
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { UpSellCategoryModal } from "../modals/upSellCategory";
 import { useErrorLogging } from "../../context/errorLogging-context";
+import { PromotionCodeModal } from "../modals/promotionCodeModal";
 
 const logger = new Logger("checkout");
 
@@ -70,6 +71,8 @@ export const Checkout = () => {
         updateItemQuantity,
         deleteItem,
         addItem,
+        userAppliedPromotionCode,
+        removeUserAppliedPromotion,
     } = useCart();
     const { restaurant } = useRestaurant();
     const { printReceipt } = useReceiptPrinter();
@@ -80,7 +83,7 @@ export const Checkout = () => {
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
     const { createTransaction: windcaveCreateTransaction, pollForOutcome: windcavePollForOutcome } = useWindcave();
 
-    const createOrderMutation = useMutation(CREATE_ORDER, {
+    const [createOrderMutation, { data, loading, error }] = useMutation(CREATE_ORDER, {
         update: (proxy, mutationResult) => {
             logger.debug("mutation result: ", mutationResult);
         },
@@ -102,6 +105,7 @@ export const Checkout = () => {
     const [paymentOutcomeDelayedOrderNumber, setPaymentOutcomeDelayedOrderNumber] = useState<string | null>(null);
     const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(10);
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
+    const [showPromotionCodeModal, setShowPromotionCodeModal] = useState(false);
     const [showUpSellCategoryModal, setShowUpSellCategoryModal] = useState(false);
     const [showUpSellProductModal, setShowUpSellProductModal] = useState(false);
 
@@ -151,6 +155,10 @@ export const Checkout = () => {
 
     const onCloseProductModal = () => {
         setShowProductModal(false);
+    };
+
+    const onClosePromotionCodeModal = () => {
+        setShowPromotionCodeModal(false);
     };
 
     const onCloseEditProductModal = () => {
@@ -720,6 +728,10 @@ export const Checkout = () => {
         }
     };
 
+    const promotionCodeModal = () => {
+        return <PromotionCodeModal isOpen={showPromotionCodeModal} onClose={onClosePromotionCodeModal} />;
+    };
+
     const upSellCategoryModal = () => {
         if (
             restaurant &&
@@ -790,6 +802,10 @@ export const Checkout = () => {
             {showItemUpdatedModal && <ItemAddedUpdatedModal isOpen={showItemUpdatedModal} onClose={onCloseItemUpdatedModal} isProductUpdate={true} />}
         </>
     );
+
+    const onClickApplyPromotionCode = async () => {
+        setShowPromotionCodeModal(true);
+    };
 
     const onConfirmTotalOrRetryTransaction = async () => {
         setPaymentOutcome(null);
@@ -1034,6 +1050,7 @@ export const Checkout = () => {
             {upSellProductModal()}
             {productModal()}
             {editProductModal()}
+            {promotionCodeModal()}
             {paymentModal}
             {itemUpdatedModal}
         </>
@@ -1126,12 +1143,20 @@ export const Checkout = () => {
             {restaurantNotes}
         </>
     );
+
+    const onRemoveUserAppliedPromotionCode = () => {
+        removeUserAppliedPromotion();
+    };
+
     const checkoutFooter = (
         <div>
-            {promotion && promotion.discountedAmount > 0 && (
-                <div className="h3 text-center mb-2">{`Discount${
-                    promotion.promotion.code ? ` (${promotion.promotion.code})` : ""
-                }: -$${convertCentsToDollars(promotion.discountedAmount)}`}</div>
+            {promotion && (
+                <div className="h3 text-center mb-2">
+                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
+                        promotion.discountedAmount
+                    )}`}{" "}
+                    {userAppliedPromotionCode && <Link onClick={onRemoveUserAppliedPromotionCode}>Remove</Link>}
+                </div>
             )}
             <div className="h1 text-center mb-4">Total: ${convertCentsToDollars(subTotal)}</div>
             <div className="mb-4">
@@ -1153,6 +1178,9 @@ export const Checkout = () => {
                         <Link onClick={onClickPayLater}>Pay cash at counter...</Link>
                     </div>
                 )}
+                <div className="pay-later-link mt-4">
+                    <Link onClick={onClickApplyPromotionCode}>Apply promo code</Link>
+                </div>
             </div>
             <Button className="cancel-button" onClick={onCancelOrder}>
                 Cancel Order

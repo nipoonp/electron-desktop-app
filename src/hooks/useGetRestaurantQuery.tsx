@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "react-apollo-hooks";
+import { useQuery } from "@apollo/client";
 import { GET_RESTAURANT } from "../graphql/customQueries";
 
 import { Logger } from "aws-amplify";

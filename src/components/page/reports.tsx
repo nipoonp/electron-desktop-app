@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "react-apollo-hooks";
+import { useMutation } from "@apollo/client";
 import { useRestaurant } from "../../context/restaurant-context";
 import { EMAIL_SALES_REPORTS } from "../../graphql/customMutations";
 import { Button } from "../../tabin/components/button";
@@ -12,7 +12,7 @@ export const Reports = () => {
     const { restaurant } = useRestaurant();
     const [showSpinner, setShowSpinner] = useState(false);
 
-    const emailSalesReports = useMutation(EMAIL_SALES_REPORTS, {
+    const [emailSalesReportsMutation, { data, loading, error }] = useMutation(EMAIL_SALES_REPORTS, {
         update: (proxy, mutationResult: any) => {},
     });
 
@@ -23,7 +23,7 @@ export const Reports = () => {
 
         try {
             setShowSpinner(true);
-            await emailSalesReports({
+            await emailSalesReportsMutation({
                 variables: {
                     restaurantId: restaurant.id,
                     emails: restaurant.salesReportMailingList,

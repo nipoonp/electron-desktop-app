@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { useState } from "react";
-import { useMutation } from "react-apollo-hooks";
+import { useMutation } from "@apollo/client";
 import { useRestaurant } from "../../context/restaurant-context";
 import { UPDATE_MODIFIER, UPDATE_PRODUCT } from "../../graphql/customMutations";
 import { GET_RESTAURANT, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_MODIFIER, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
@@ -43,12 +43,12 @@ export const Stock = () => {
         },
     ];
 
-    const updateProduct = useMutation(UPDATE_PRODUCT, {
+    const [updateProductMutation, { data, loading, error }] = useMutation(UPDATE_PRODUCT, {
         update: (proxy, mutationResult: any) => {},
         refetchQueries: refetchRestaurant,
     });
 
-    const updateModifier = useMutation(UPDATE_MODIFIER, {
+    const [updateModifierMutation] = useMutation(UPDATE_MODIFIER, {
         update: (proxy, mutationResult: any) => {},
         refetchQueries: refetchRestaurant,
     });
@@ -70,7 +70,7 @@ export const Stock = () => {
     const onUpdateProduct = async (id: string, soldOut?: boolean | null, soldOutDate?: string | null, totalQuantityAvailable?: number | null) => {
         try {
             setShowSpinner(true);
-            await updateProduct({
+            await updateProductMutation({
                 variables: {
                     id: id,
                     soldOut: soldOut,
@@ -89,7 +89,7 @@ export const Stock = () => {
     const onUpdateModifier = async (id: string, soldOut?: boolean | null, soldOutDate?: string | null, totalQuantityAvailable?: number | null) => {
         try {
             setShowSpinner(true);
-            await updateModifier({
+            await updateModifierMutation({
                 variables: {
                     id: id,
                     soldOut: soldOut,

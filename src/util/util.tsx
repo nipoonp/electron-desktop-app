@@ -1,6 +1,8 @@
 import { format, getDay, isWithinInterval } from "date-fns";
 import {
     EDiscountType,
+    ERegisterType,
+    IGET_DASHBOARD_PROMOTION,
     IGET_DASHBOARD_PROMOTION_DISCOUNT,
     IGET_DASHBOARD_PROMOTION_ITEMS,
     IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS,
@@ -10,7 +12,7 @@ import {
     IGET_RESTAURANT_PROMOTION_AVAILABILITY,
     IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES,
 } from "../graphql/customQueries";
-import { ICartItemQuantitiesById, ICartItemQuantitiesByIdValue, ICartProduct } from "../model/model";
+import { CheckIfPromotionValidResponse, ICartItemQuantitiesById, ICartItemQuantitiesByIdValue, ICartProduct } from "../model/model";
 
 export const isItemSoldOut = (soldOut?: boolean, soldOutDate?: string) => {
     if (soldOut || soldOutDate == format(new Date(), "yyyy-MM-dd")) {
@@ -271,6 +273,28 @@ export const toDataURL = (url, callback) => {
     xhr.open("GET", url);
     xhr.responseType = "blob";
     xhr.send();
+};
+
+export const checkIfPromotionValid = (promotion: IGET_DASHBOARD_PROMOTION): CheckIfPromotionValidResponse => {
+    const now = new Date();
+
+    const platform = process.env.REACT_APP_PLATFORM;
+
+    if (!platform || !promotion.availablePlatforms) return CheckIfPromotionValidResponse.INVALID_PLATFORM;
+    if (!promotion.availablePlatforms.includes(ERegisterType[platform])) return CheckIfPromotionValidResponse.INVALID_PLATFORM;
+
+    const startDate = new Date(promotion.startDate);
+    const endDate = new Date(promotion.endDate);
+
+    const isWithin = isWithinInterval(now, { start: startDate, end: endDate });
+
+    if (!isWithin) return CheckIfPromotionValidResponse.EXPIRED;
+
+    const isAvailable = promotion.availability && isPromotionAvailable(promotion.availability);
+
+    if (!isAvailable) return CheckIfPromotionValidResponse.UNAVAILABLE;
+
+    return CheckIfPromotionValidResponse.VALID;
 };
 
 export const getMatchingPromotionProducts = (

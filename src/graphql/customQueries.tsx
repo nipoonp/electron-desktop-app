@@ -845,3 +845,96 @@ export interface IS3Object {
     region: string;
     identityPoolId: string;
 }
+
+export const GET_PROMOTION_BY_CODE = gql`
+    query getPromotionByCode($code: String!, $promotionRestaurantId: ID!) {
+        getPromotionByCode(code: $code, promotionRestaurantId: { eq: $promotionRestaurantId }) {
+            items {
+                id
+                name
+                type
+                code
+                autoApply
+                startDate
+                endDate
+                availability {
+                    monday {
+                        startTime
+                        endTime
+                    }
+                    tuesday {
+                        startTime
+                        endTime
+                    }
+                    wednesday {
+                        startTime
+                        endTime
+                    }
+                    thursday {
+                        startTime
+                        endTime
+                    }
+                    friday {
+                        startTime
+                        endTime
+                    }
+                    saturday {
+                        startTime
+                        endTime
+                    }
+                    sunday {
+                        startTime
+                        endTime
+                    }
+                }
+                availablePlatforms
+                availableOrderTypes
+                minSpend
+                applyToCheapest
+                items {
+                    items {
+                        id
+                        minQuantity
+                        categories {
+                            items {
+                                id
+                                name
+                            }
+                        }
+                        products {
+                            items {
+                                id
+                                name
+                            }
+                        }
+                    }
+                }
+                discounts {
+                    items {
+                        id
+                        amount
+                        type
+                        items {
+                            items {
+                                id
+                                minQuantity
+                                categories {
+                                    items {
+                                        id
+                                        name
+                                    }
+                                }
+                                products {
+                                    items {
+                                        id
+                                        name
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+`;
