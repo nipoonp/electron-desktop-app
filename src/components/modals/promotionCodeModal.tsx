@@ -102,11 +102,11 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
 
     return (
         <>
-            <ModalV2 isOpen={props.isOpen} disableClose={true} onRequestClose={onModalClose}>
+            <ModalV2 isOpen={props.isOpen} disableClose={false} onRequestClose={onModalClose}>
                 <div>
                     <div className="h3 mb-3">Please enter your promotion code</div>
                     <Input
-                        className="mb-2"
+                        className="mb-3"
                         type="text"
                         // label="Promo Code:"
                         name="promotionCode"
@@ -114,7 +114,7 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
                         placeholder="ABC123"
                         onChange={onChangePromotionCode}
                     />
-                    {error && <div className="text-error mb-2">{error}</div>}
+                    {error && <div className="text-error mb-3">{error}</div>}
                     <Button onClick={onApply} loading={getPromotionByCodeLoading}>
                         Apply
                     </Button>

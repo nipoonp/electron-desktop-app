@@ -15,9 +15,11 @@ export const ModalV2 = (
             style={{
                 cursor: "pointer",
                 display: "inline-block",
+                float: "right",
+                padding: "6px",
             }}
         >
-            <CloseIcon height={"14px"} />
+            <CloseIcon height="14px" />
         </div>
     );
 
@@ -49,12 +51,12 @@ export const ModalV2 = (
                         padding: "24px",
                         margin: "40px",
                         inset: "auto",
+                        width: "420px",
                     },
                 }}
                 {...props}
             >
                 {!props.disableClose && closeIcon}
-                {!props.disableClose && <div className="mb-2"></div>}
                 <div>{props.children}</div>
             </ReactModal>
         </>

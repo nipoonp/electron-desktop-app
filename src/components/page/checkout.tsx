@@ -118,12 +118,19 @@ export const Checkout = () => {
     }
 
     useEffect(() => {
-        if (showProductModal || showEditProductModal || showPaymentModal || showUpSellCategoryModal || showUpSellProductModal) {
+        if (
+            showProductModal ||
+            showEditProductModal ||
+            showPaymentModal ||
+            showPromotionCodeModal ||
+            showUpSellCategoryModal ||
+            showUpSellProductModal
+        ) {
             document.body.style.overflow = "hidden";
         } else {
             document.body.style.overflow = "unset";
         }
-    }, [showProductModal, showEditProductModal, showPaymentModal, showUpSellCategoryModal, showUpSellProductModal]);
+    }, [showProductModal, showEditProductModal, showPaymentModal, showPromotionCodeModal || showUpSellCategoryModal, showUpSellProductModal]);
 
     useEffect(() => {
         setTimeout(() => {
@@ -731,7 +738,7 @@ export const Checkout = () => {
     };
 
     const promotionCodeModal = () => {
-        return <PromotionCodeModal isOpen={showPromotionCodeModal} onClose={onClosePromotionCodeModal} />;
+        return <>{showPromotionCodeModal && <PromotionCodeModal isOpen={showPromotionCodeModal} onClose={onClosePromotionCodeModal} />}</>;
     };
 
     const upSellCategoryModal = () => {
