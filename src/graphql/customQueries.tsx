@@ -847,8 +847,8 @@ export interface IS3Object {
 }
 
 export const GET_PROMOTION_BY_CODE = gql`
-    query getPromotionByCode($code: String!, $promotionRestaurantId: ID!) {
-        getPromotionByCode(code: $code, promotionRestaurantId: { eq: $promotionRestaurantId }) {
+    query getPromotionsByCode($code: String!, $promotionRestaurantId: ID!) {
+        getPromotionsByCode(code: $code, promotionRestaurantId: { eq: $promotionRestaurantId }) {
             items {
                 id
                 name
