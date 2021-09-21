@@ -26,6 +26,7 @@ import { useRestaurant } from "../context/restaurant-context";
 import { Logout } from "./page/auth/logout";
 import { Stock } from "./page/stock";
 import { Reports } from "./page/reports";
+import { Orders } from "./page/orders";
 
 let electron: any;
 let ipcRenderer: any;
@@ -49,6 +50,7 @@ Modal.setAppElement("#root");
 // Auth routes
 export const loginPath = "/login";
 export const stockPath = "/stock";
+export const ordersPath = "/orders";
 export const reportsPath = "/reports";
 export const restaurantListPath = "/restaurant_list";
 export const registerListPath = "/register_list";
@@ -102,6 +104,9 @@ const Routes = () => {
                     case "stock":
                         history.push(stockPath);
                         break;
+                    case "orders":
+                        history.push(ordersPath);
+                        break;
                     case "reports":
                         history.push(reportsPath);
                         break;
@@ -130,9 +135,10 @@ const Routes = () => {
             <PrivateRoute exact path={restaurantListPath} component={RestaurantList} />
             <PrivateRoute exact path={registerListPath} component={RegisterList} />
             <PrivateRoute exact path={stockPath} component={Stock} />
+            <PrivateRoute exact path={ordersPath} component={Orders} />
             <PrivateRoute exact path={reportsPath} component={Reports} />
             <RestaurantRegisterPrivateRoute exact path={configureNewEftposPath} component={ConfigureNewEftpos} />
-            <RestaurantRegisterPrivateRoute exact path={beginOrderPath} component={BeginOrder} />
+            <RestaurantRegisterPrivateRoute exact path={beginOrderPath} component={Orders} />
             <RestaurantRegisterPrivateRoute exact path={orderTypePath} component={OrderType} />
             <RestaurantRegisterPrivateRoute exact path={tableNumberPath} component={TableNumber} />
             <RestaurantRegisterPrivateRoute exact path={checkoutPath} component={Checkout} />

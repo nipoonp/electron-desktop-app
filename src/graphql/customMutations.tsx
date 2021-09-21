@@ -110,3 +110,35 @@ export const LOG_SLACK_ERROR = gql`
         logSlackError(input: { message: $message })
     }
 `;
+
+export const UPDATE_ORDER_STATUS = gql`
+    mutation updateOrder(
+        $orderId: ID!
+        $status: OrderStatus!
+        $placedAt: String!
+        $paid: Boolean
+        $completedAt: String
+        $completedAtUtc: String
+        $cancelledAt: String
+        $cancelledAtUtc: String
+        $refundedAt: String
+        $refundedAtUtc: String
+    ) {
+        updateOrder(
+            input: {
+                id: $orderId
+                status: $status
+                placedAt: $placedAt
+                paid: $paid
+                completedAt: $completedAt
+                completedAtUtc: $completedAtUtc
+                cancelledAt: $cancelledAt
+                cancelledAtUtc: $cancelledAtUtc
+                refundedAt: $refundedAt
+                refundedAtUtc: $refundedAtUtc
+            }
+        ) {
+            id
+        }
+    }
+`;
