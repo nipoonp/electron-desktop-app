@@ -6,13 +6,13 @@
     "repository": "https://github.com/zeal-ltd/electron-desktop-app",
     "main": "public/electron.ts",
     "dependencies": {
-        "@apollo/client": "^3.4.12",
-        "@aws-amplify/cli": "^6.0.0",
+        "@apollo/client": "^3.4.13",
+        "@aws-amplify/cli": "^6.0.1",
         "@thiagoelg/node-printer": "^0.5.5",
-        "@types/react": "^17.0.21",
+        "@types/react": "^17.0.24",
         "@types/react-dom": "^17.0.9",
         "@types/react-modal": "^3.12.1",
-        "@types/react-router-dom": "^5.1.9",
+        "@types/react-router-dom": "^5.3.0",
         "@types/socket.io-client": "^3.0.0",
         "@types/yup": "^0.29.13",
         "aws-amplify": "^4.2.10",
@@ -24,7 +24,7 @@
         "electron-is-dev": "^2.0.0",
         "electron-log": "^4.4.1",
         "electron-updater": "^4.3.9",
-        "graphql": "^15.5.3",
+        "graphql": "^15.6.0",
         "node-sass": "^6.0.1",
         "node-thermal-printer": "^4.1.2",
         "npm": "^7.24.0",
@@ -67,9 +67,9 @@
     },
     "devDependencies": {
         "concurrently": "^6.2.1",
-        "electron": "^14.0.1",
+        "electron": "^13.1.2",
         "electron-builder": "^22.11.7",
-        "electron-rebuild": "^3.2.3",
+        "electron-rebuild": "^2.3.5",
         "wait-on": "^6.0.0"
     },
     "build": {
