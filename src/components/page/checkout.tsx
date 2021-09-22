@@ -283,7 +283,7 @@ export const Checkout = () => {
             await logError(
                 JSON.stringify({
                     error: "Invalid order type",
-                    context: { orderRestaurantId: restaurant.id },
+                    context: { orderRestaurantId: restaurant.id, orderType: orderType },
                 })
             );
             throw "Invalid order type";
