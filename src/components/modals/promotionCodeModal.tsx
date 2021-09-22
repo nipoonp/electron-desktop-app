@@ -24,26 +24,26 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
     const [error, setError] = useState("");
 
     const {
-        getPromotionByCode,
-        data: getPromotionByCodeData,
-        error: getPromotionByCodeError,
-        loading: getPromotionByCodeLoading,
+        getPromotionsByCode,
+        data: getPromotionsByCodeData,
+        error: getPromotionsByCodeError,
+        loading: getPromotionsByCodeLoading,
     } = useGetPromotionLazyQuery();
 
     useEffect(() => {
-        if (getPromotionByCodeError) {
+        if (getPromotionsByCodeError) {
             setError("Could not apply discount code. Please try again later");
             return;
         }
 
-        if (getPromotionByCodeData) {
-            console.log("Got getPromotionByCodeData", getPromotionByCodeData);
+        if (getPromotionsByCodeData) {
+            console.log("Got getPromotionsByCodeData", getPromotionsByCodeData);
 
-            if (getPromotionByCodeData.length == 0) {
+            if (getPromotionsByCodeData.length == 0) {
                 setError("Invalid promo code applied");
                 return;
             } else {
-                const appliedPromotion = getPromotionByCodeData[0];
+                const appliedPromotion = getPromotionsByCodeData[0];
 
                 if (!orderType || !appliedPromotion.availableOrderTypes) {
                     setError("Invalid order type");
@@ -80,14 +80,14 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
                 }
             }
         }
-    }, [getPromotionByCodeData, getPromotionByCodeError]);
+    }, [getPromotionsByCodeData, getPromotionsByCodeError]);
 
     const onModalClose = () => {
         props.onClose();
     };
 
     const onApply = () => {
-        getPromotionByCode({
+        getPromotionsByCode({
             variables: {
                 code: promotionCode,
                 promotionRestaurantId: restaurant ? restaurant.id : "",
@@ -115,7 +115,7 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
                         onChange={onChangePromotionCode}
                     />
                     {error && <div className="text-error mb-3">{error}</div>}
-                    <Button onClick={onApply} loading={getPromotionByCodeLoading}>
+                    <Button onClick={onApply} loading={getPromotionsByCodeLoading}>
                         Apply
                     </Button>
                 </div>

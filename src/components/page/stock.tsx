@@ -32,9 +32,11 @@ export const Stock = () => {
     const [showSpinner, setShowSpinner] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
 
-    const { data: restaurant, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(
-        savedRestaurantItem ? savedRestaurantItem.id : ""
-    );
+    const {
+        data: restaurant,
+        error: getRestaurantError,
+        loading: getRestaurantLoading,
+    } = useGetRestaurantQuery(savedRestaurantItem ? savedRestaurantItem.id : "");
 
     const refetchRestaurant = [
         {
@@ -114,7 +116,7 @@ export const Stock = () => {
             <FullScreenSpinner show={showSpinner} />;
             <div className="stock-container">
                 <div className="h2 mb-6">Update Stock Levels</div>
-                <div className="tabs-wrapper mb-6">
+                <div className="stock-tabs-wrapper mb-6">
                     <div className={`tab ${tabSelected == TabSelected.Products ? "selected" : ""}`} onClick={() => onClickTab(TabSelected.Products)}>
                         Products
                     </div>

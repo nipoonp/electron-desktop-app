@@ -5,18 +5,18 @@ import { useEffect, useState } from "react";
 export const useGetPromotionLazyQuery = () => {
     const [data, setSavedData] = useState<IGET_DASHBOARD_PROMOTION[] | null>(null);
 
-    const [getPromotionByCode, { loading, error, data: _data }] = useLazyQuery(GET_PROMOTION_BY_CODE, {
+    const [getPromotionsByCode, { loading, error, data: _data }] = useLazyQuery(GET_PROMOTION_BY_CODE, {
         fetchPolicy: "network-only",
     });
 
     useEffect(() => {
         if (_data) {
-            setSavedData(_data.getPromotionByCode.items);
+            setSavedData(_data.getPromotionsByCode.items);
         }
     }, [_data]);
 
     return {
-        getPromotionByCode,
+        getPromotionsByCode,
         data,
         error,
         loading,
