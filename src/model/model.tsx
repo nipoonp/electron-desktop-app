@@ -14,6 +14,7 @@ export interface ICognitoUser {
 export enum EOrderType {
     DINEIN = "DINEIN",
     TAKEAWAY = "TAKEAWAY",
+    DELIVERY = "DELIVERY",
 }
 
 export interface ICartItemQuantitiesById {
@@ -92,7 +93,6 @@ export interface IOrderReceipt {
     printerAddress: string;
     customerPrinter?: boolean;
     kitchenPrinter?: boolean;
-    eftposReceipt?: string;
     hideModifierGroupsForCustomer?: boolean;
     restaurant: {
         name: string;
@@ -101,6 +101,7 @@ export interface IOrderReceipt {
     };
     notes: string | null;
     products: ICartProduct[];
+    eftposReceipt?: string;
     total: number;
     discount?: number;
     subTotal: number;

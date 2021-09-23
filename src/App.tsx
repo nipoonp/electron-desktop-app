@@ -104,8 +104,8 @@ const App = () => {
                         <UserProvider userID={user!.username}>
                             <RestaurantProvider>
                                 <RegisterProvider>
-                                    <CartProvider>
-                                        <ReceiptPrinterProvider>
+                                    <ReceiptPrinterProvider>
+                                        <CartProvider>
                                             <VerifoneProvider>
                                                 <SmartpayProvider>
                                                     <WindcaveProvider>
@@ -113,8 +113,8 @@ const App = () => {
                                                     </WindcaveProvider>
                                                 </SmartpayProvider>
                                             </VerifoneProvider>
-                                        </ReceiptPrinterProvider>
-                                    </CartProvider>
+                                        </CartProvider>
+                                    </ReceiptPrinterProvider>
                                 </RegisterProvider>
                             </RestaurantProvider>
                         </UserProvider>

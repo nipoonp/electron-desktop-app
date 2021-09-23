@@ -266,14 +266,15 @@ export const Checkout = () => {
     };
 
     // submit callback
-    const createOrder = async (paid: boolean, cashPayment: boolean, orderNumber: string) => {
+    const createOrder = async (orderNumber: string, paid: boolean, cashPayment: boolean, eftposReceipt?: string) => {
         const now = new Date();
 
         if (!user) {
             await logError(
                 JSON.stringify({
-                    error: "Invalid user",
-                    context: { orderRestaurantId: restaurant.id },
+                    restaurantId: restaurant.id,
+                    restaurantName: restaurant.name,
+                    context: { user: user },
                 })
             );
             throw "Invalid user";
@@ -282,8 +283,10 @@ export const Checkout = () => {
         if (!orderType) {
             await logError(
                 JSON.stringify({
+                    restaurantId: restaurant.id,
+                    restaurantName: restaurant.name,
                     error: "Invalid order type",
-                    context: { orderRestaurantId: restaurant.id, orderType: orderType },
+                    context: { orderType: orderType },
                 })
             );
             throw "Invalid order type";
@@ -293,7 +296,7 @@ export const Checkout = () => {
             await logError(
                 JSON.stringify({
                     error: "Invalid restaurant",
-                    context: { orderRestaurantId: restaurant },
+                    context: { restaurant: restaurant },
                 })
             );
             throw "Invalid restaurant";
@@ -302,8 +305,10 @@ export const Checkout = () => {
         if (!products || products.length == 0) {
             await logError(
                 JSON.stringify({
+                    restaurantId: restaurant.id,
+                    restaurantName: restaurant.name,
                     error: "No products have been selected",
-                    context: { orderRestaurantId: restaurant.id },
+                    context: { products: products },
                 })
             );
             throw "No products have been selected";
@@ -320,6 +325,7 @@ export const Checkout = () => {
                 number: orderNumber,
                 table: tableNumber,
                 notes: notes,
+                eftposReceipt: eftposReceipt,
                 total: total,
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
@@ -341,6 +347,8 @@ export const Checkout = () => {
         } catch (e) {
             await logError(
                 JSON.stringify({
+                    restaurantId: restaurant.id,
+                    restaurantName: restaurant.name,
                     error: "No products have been selected",
                     context: {
                         status: "NEW",
@@ -350,6 +358,7 @@ export const Checkout = () => {
                         number: orderNumber,
                         table: tableNumber,
                         notes: notes,
+                        eftposReceipt: eftposReceipt,
                         total: total,
                         discount: promotion ? promotion.discountedAmount : undefined,
                         promotionId: promotion ? promotion.promotion.id : undefined,
@@ -402,6 +411,8 @@ export const Checkout = () => {
         } catch (e) {
             await logError(
                 JSON.stringify({
+                    restaurantId: restaurant.id,
+                    restaurantName: restaurant.name,
                     error: e,
                     context: variables,
                 })
@@ -491,7 +502,6 @@ export const Checkout = () => {
                         printerAddress: printer.address,
                         customerPrinter: printer.customerPrinter,
                         kitchenPrinter: printer.kitchenPrinter,
-                        eftposReceipt: eftposReceipt,
                         hideModifierGroupsForCustomer: true,
                         restaurant: {
                             name: restaurant.name,
@@ -500,6 +510,7 @@ export const Checkout = () => {
                         },
                         notes: notes,
                         products: productsToPrint,
+                        eftposReceipt: eftposReceipt,
                         total: total,
                         discount: promotion ? promotion.discountedAmount : undefined,
                         subTotal: subTotal,
@@ -521,7 +532,7 @@ export const Checkout = () => {
                 printReceipts(orderNumber, paid, eftposReceipt);
             }
 
-            await createOrder(paid, cashPayment, orderNumber);
+            await createOrder(orderNumber, paid, cashPayment, eftposReceipt);
         } catch (e) {
             throw e.message;
         }

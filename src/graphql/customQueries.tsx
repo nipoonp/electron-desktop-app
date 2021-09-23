@@ -1,5 +1,6 @@
-import gql from "graphql-tag";
+import { gql } from "@apollo/client";
 import { EReceiptPrinterType } from "../model/model";
+import { IGET_RESTAURANT_ORDER_FRAGMENT, ORDER_FIELDS_FRAGMENT } from "./customFragments";
 
 export enum EOrderStatus {
     NEW = "NEW",
@@ -63,6 +64,7 @@ export const GET_USER = gql`
                             eftposIpAddress
                             eftposPortNumber
                             windcaveStationId
+                            printOnlineOrderReceipts
                             orderNumberSuffix
                             customStyleSheet {
                                 key
@@ -235,6 +237,7 @@ export const GET_RESTAURANT = gql`
                     eftposIpAddress
                     eftposPortNumber
                     windcaveStationId
+                    printOnlineOrderReceipts
                     orderNumberSuffix
                     customStyleSheet {
                         key
@@ -594,6 +597,7 @@ export interface IGET_RESTAURANT_REGISTER {
     eftposIpAddress: string;
     eftposPortNumber: string;
     windcaveStationId: string;
+    printOnlineOrderReceipts: boolean;
     orderNumberSuffix: string;
     customStyleSheet?: IS3Object;
     printers: {
@@ -947,133 +951,26 @@ export const GET_PROMOTION_BY_CODE = gql`
 `;
 
 export const GET_ORDERS_BY_RESTAURANT_BY_PLACEDAT = gql`
+    ${ORDER_FIELDS_FRAGMENT}
     query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAt: String!) {
         getOrdersByRestaurantByPlacedAt(orderRestaurantId: $orderRestaurantId, placedAt: { beginsWith: $placedAt }) {
             items {
-                id
-                placedAt
-                completedAt
-                cancelledAt
-                refundedAt
-                notes
-                total
-                discount
-                subTotal
-                paid
-                cashPayment
-                onlineOrder
-                guestCheckout
-                orderScheduledAt
-                customerInformation {
-                    firstName
-                    email
-                    phoneNumber
-                }
-                status
-                type
-                number
-                table
-                products {
-                    id
-                    name
-                    price
-                    quantity
-                    notes
-                    image {
-                        bucket
-                        region
-                        key
-                        identityPoolId
-                    }
-                    category {
-                        id
-                        name
-                        image {
-                            bucket
-                            region
-                            key
-                            identityPoolId
-                        }
-                    }
-                    modifierGroups {
-                        id
-                        name
-                        modifiers {
-                            id
-                            name
-                            price
-                            preSelectedQuantity
-                            quantity
-                        }
-                    }
-                }
+                ...OrderFieldsFragment
             }
         }
     }
 `;
 
-export interface IGET_RESTAURANT_ORDER {
-    id: string;
-    placedAt: string;
-    completedAt: string | null;
-    cancelledAt: string | null;
-    refundedAt: string | null;
-    notes: string | null;
-    total: number;
-    discount: number | null;
-    subTotal: number | null;
-    paid: boolean | null;
-    cashPayment: boolean | null;
-    onlineOrder: boolean | null;
-    guestCheckout: boolean | null;
-    orderScheduledAt: string | null;
-    customerInformation: {
-        firstName: string | null;
-        email: string | null;
-        phoneNumber: string | null;
-    } | null;
-    status: EOrderStatus;
-    type: EOrderType;
-    number: string | null;
-    table: string | null;
-    products: IGET_RESTAURANT_ORDER_PRODUCT[];
-}
-
-export interface IGET_RESTAURANT_ORDER_PRODUCT {
-    id: string;
-    name: string;
-    price: number;
-    quantity: number;
-    notes: string | null;
-    image: {
-        bucket: string;
-        region: string;
-        key: string;
-        identityPoolId: string | null;
-    } | null;
-    category: {
-        id: string;
-        name: string;
-        image: {
-            bucket: string;
-            region: string;
-            key: string;
-            identityPoolId: string | null;
-        } | null;
-    } | null;
-    modifierGroups: IGET_RESTAURANT_ORDER_MODIFIER_GROUP[] | null;
-}
-
-export interface IGET_RESTAURANT_ORDER_MODIFIER_GROUP {
-    id: string;
-    name: string;
-    modifiers: IGET_RESTAURANT_ORDER_MODIFIER[];
-}
-
-export interface IGET_RESTAURANT_ORDER_MODIFIER {
-    id: string;
-    name: string;
-    price: number;
-    preSelectedQuantity: number;
-    quantity: number;
-}
+export const GET_ORDERS_BY_RESTAURANT_BY_STATUS_BY_PLACEDAT = gql`
+    ${ORDER_FIELDS_FRAGMENT}
+    query GetOrdersByRestaurantByStatusByPlacedAt($orderRestaurantId: ID!, $status: OrderStatus!, $startDateTime: String!, $endDateTime: String!) {
+        getOrdersByRestaurantByStatusByPlacedAt(
+            orderRestaurantId: $orderRestaurantId
+            statusPlacedAt: { between: [{ placedAt: $startDateTime, status: $status }, { placedAt: $endDateTime, status: $status }] }
+        ) {
+            items {
+                ...OrderFieldsFragment
+            }
+        }
+    }
+`;

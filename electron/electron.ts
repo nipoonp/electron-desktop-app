@@ -95,7 +95,7 @@ ipcMain.on("RECEIPT_PRINTER_DATA", async (event: any, data: IOrderReceipt) => {
             await printReceipt(data, false);
         }
     } catch (e) {
-        mainWindow.webContents.send("RECEIPT_PRINTER_ERROR", e);
+        mainWindow.webContents.send("RECEIPT_PRINTER_ERROR", { order: data, error: e });
     }
 });
 
@@ -144,6 +144,12 @@ ipcMain.on("SHOW_CONTEXT_MENU", (event) => {
             label: "Stock",
             click: () => {
                 event.sender.send("CONTEXT_MENU_COMMAND", "stock");
+            },
+        },
+        {
+            label: "Orders",
+            click: () => {
+                event.sender.send("CONTEXT_MENU_COMMAND", "orders");
             },
         },
         {
