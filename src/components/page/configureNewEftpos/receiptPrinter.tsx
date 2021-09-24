@@ -35,6 +35,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                         preSelectedQuantity: 0,
                         quantity: 1,
                         image: null,
+                        productModifier: null,
                     },
                 ],
             },
@@ -44,6 +45,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                 choiceDuplicate: 1,
                 choiceMin: 0,
                 choiceMax: 1,
+                hideForCustomer: false,
                 modifiers: [
                     {
                         id: "",
@@ -52,6 +54,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                         preSelectedQuantity: 0,
                         quantity: 2,
                         image: null,
+                        productModifier: null,
                     },
                 ],
             },
@@ -61,6 +64,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                 choiceDuplicate: 1,
                 choiceMin: 0,
                 choiceMax: 1,
+                hideForCustomer: false,
                 modifiers: [
                     {
                         id: "",
@@ -69,6 +73,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                         preSelectedQuantity: 1,
                         quantity: 1,
                         image: null,
+                        productModifier: null,
                     },
                 ],
             },
@@ -78,6 +83,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                 choiceDuplicate: 1,
                 choiceMin: 0,
                 choiceMax: 1,
+                hideForCustomer: false,
                 modifiers: [
                     {
                         id: "",
@@ -86,6 +92,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                         preSelectedQuantity: 1,
                         quantity: 0,
                         image: null,
+                        productModifier: null,
                     },
                 ],
             },
@@ -95,6 +102,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                 choiceDuplicate: 1,
                 choiceMin: 0,
                 choiceMax: 1,
+                hideForCustomer: false,
                 modifiers: [
                     {
                         id: "",
@@ -103,6 +111,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                         preSelectedQuantity: 2,
                         quantity: 1,
                         image: null,
+                        productModifier: null,
                     },
                 ],
             },
@@ -126,7 +135,8 @@ export const ReceiptPrinter = () => {
                 printerType: printerType,
                 printerAddress: printerAddress1,
                 customerPrinter: true,
-                hideModifierGroupsForCustomer: true,
+                kitchenPrinter: true,
+                hideModifierGroupsForCustomer: false,
                 eftposReceipt: "",
                 restaurant: {
                     name: "Test Tabin Restaurant",
@@ -150,6 +160,9 @@ export const ReceiptPrinter = () => {
                 printerType: printerType,
                 printerAddress: printerAddress2,
                 customerPrinter: true,
+                kitchenPrinter: false,
+                hideModifierGroupsForCustomer: false,
+                eftposReceipt: "",
                 restaurant: {
                     name: "Test Tabin Restaurant",
                     address: "Receipt Printer 2",
@@ -171,7 +184,10 @@ export const ReceiptPrinter = () => {
             printReceipt({
                 printerType: printerType,
                 printerAddress: printerAddress3,
-                customerPrinter: true,
+                customerPrinter: false,
+                kitchenPrinter: true,
+                hideModifierGroupsForCustomer: false,
+                eftposReceipt: "",
                 restaurant: {
                     name: "Test Tabin Restaurant",
                     address: "Receipt Printer 3",

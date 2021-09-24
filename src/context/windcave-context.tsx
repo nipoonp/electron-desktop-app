@@ -37,7 +37,7 @@ export enum EWindcaveTxnStatus {
 
 export interface WindcaveTransactionOutcomeResult {
     transactionOutcome: WindcaveTransactionOutcome;
-    eftposReceipt?: string;
+    eftposReceipt: string | null;
 }
 
 interface IWindcaveInitTransactionResponse {

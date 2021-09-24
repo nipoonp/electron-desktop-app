@@ -266,7 +266,7 @@ export const Checkout = () => {
     };
 
     // submit callback
-    const createOrder = async (orderNumber: string, paid: boolean, cashPayment: boolean, eftposReceipt?: string) => {
+    const createOrder = async (orderNumber: string, paid: boolean, cashPayment: boolean, eftposReceipt: string | null) => {
         const now = new Date();
 
         if (!user) {
@@ -487,7 +487,7 @@ export const Checkout = () => {
         return products;
     };
 
-    const printReceipts = (orderNumber: string, paid: boolean, eftposReceipt?: string) => {
+    const printReceipts = (orderNumber: string, paid: boolean, eftposReceipt: string | null) => {
         if (!products || products.length == 0) {
             return;
         }
@@ -512,7 +512,7 @@ export const Checkout = () => {
                         products: productsToPrint,
                         eftposReceipt: eftposReceipt,
                         total: total,
-                        discount: promotion ? promotion.discountedAmount : undefined,
+                        discount: promotion ? promotion.discountedAmount : null,
                         subTotal: subTotal,
                         paid: paid,
                         type: orderType || EOrderType.TAKEAWAY,
@@ -523,7 +523,7 @@ export const Checkout = () => {
             });
     };
 
-    const onSubmitOrder = async (paid: boolean, cashPayment: boolean, eftposReceipt?: string) => {
+    const onSubmitOrder = async (paid: boolean, cashPayment: boolean, eftposReceipt: string | null) => {
         const orderNumber = getOrderNumber();
         setPaymentOutcomeDelayedOrderNumber(orderNumber);
 
@@ -572,7 +572,7 @@ export const Checkout = () => {
                 setPaymentOutcome(CheckoutTransactionOutcome.Success);
 
                 try {
-                    await onSubmitOrder(true, false);
+                    await onSubmitOrder(true, false, null);
                 } catch (e) {
                     setCreateOrderError(e);
                 }
@@ -692,7 +692,7 @@ export const Checkout = () => {
             return <></>;
         }
 
-        restaurant!.categories.items.forEach((c) => {
+        restaurant.categories.items.forEach((c) => {
             if (c.id == productToEdit.product.category.id) {
                 category = c;
             }
@@ -845,7 +845,7 @@ export const Checkout = () => {
         setPaymentOutcomeApprovedRedirectTimeLeft(10);
 
         try {
-            await onSubmitOrder(false, false);
+            await onSubmitOrder(false, false, null);
         } catch (e) {
             setCreateOrderError(e);
         }
@@ -860,7 +860,7 @@ export const Checkout = () => {
         setPaymentOutcomeApprovedRedirectTimeLeft(20);
 
         try {
-            await onSubmitOrder(false, true);
+            await onSubmitOrder(false, true, null);
         } catch (e) {
             setCreateOrderError(e);
         }

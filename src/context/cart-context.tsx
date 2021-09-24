@@ -271,6 +271,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                         name: product.category.name,
                         quantity: product.quantity,
                         price: product.price,
+                        categoryId: null,
                     };
                 }
 
@@ -310,6 +311,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                                     name: product.name,
                                     quantity: product.quantity,
                                     price: product.price,
+                                    categoryId: null,
                                 };
                             }
                         }

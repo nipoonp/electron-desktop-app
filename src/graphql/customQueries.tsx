@@ -1,6 +1,6 @@
 import { gql } from "@apollo/client";
 import { EReceiptPrinterType } from "../model/model";
-import { IGET_RESTAURANT_ORDER_FRAGMENT, ORDER_FIELDS_FRAGMENT } from "./customFragments";
+import { ORDER_FIELDS_FRAGMENT } from "./customFragments";
 
 export enum EOrderStatus {
     NEW = "NEW",
@@ -806,7 +806,7 @@ export interface IGET_RESTAURANT_PRODUCT {
 export interface IGET_RESTAURANT_MODIFIER_GROUP_LINK {
     id: string;
     displaySequence: number;
-    hideForCustomer?: boolean;
+    hideForCustomer: boolean | null;
     modifierGroup: IGET_RESTAURANT_MODIFIER_GROUP;
 }
 
@@ -967,6 +967,7 @@ export const GET_ORDERS_BY_RESTAURANT_BY_STATUS_BY_PLACEDAT = gql`
         getOrdersByRestaurantByStatusByPlacedAt(
             orderRestaurantId: $orderRestaurantId
             statusPlacedAt: { between: [{ placedAt: $startDateTime, status: $status }, { placedAt: $endDateTime, status: $status }] }
+            filter: { onlineOrder: { eq: true } }
         ) {
             items {
                 ...OrderFieldsFragment

@@ -1,10 +1,11 @@
 import { useEffect, createContext, useContext } from "react";
-import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
+import { IGET_RESTAURANT_ORDER_FRAGMENT, IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
 import { EOrderStatus } from "../graphql/customQueries";
 import { useGetOnlineOrdersByRestaurantByStatusByPlacedAt } from "../hooks/useGetOnlineOrdersByRestaurantByStatusByPlacedAt";
 
-import { ICartProduct, IOrderReceipt } from "../model/model";
+import { ICartModifier, ICartModifierGroup, ICartProduct, IOrderReceipt } from "../model/model";
 import { toast } from "../tabin/components/toast";
+import { convertProductTypesForPrint, toLocalISOString } from "../util/util";
 import { useErrorLogging } from "./errorLogging-context";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
@@ -40,8 +41,8 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 const res = await refetch({
                     orderRestaurantId: restaurant ? restaurant.id : "",
                     status: EOrderStatus.NEW,
-                    startDateTime: "2021-09-20T12:35:40.839",
-                    endDateTime: "2021-09-20T12:35:40.839",
+                    startDateTime: "2021-09-22T12:35:40.839",
+                    endDateTime: toLocalISOString(new Date()),
                 });
 
                 const orders: IGET_RESTAURANT_ORDER_FRAGMENT[] = res.data.getOrdersByRestaurantByStatusByPlacedAt.items;
@@ -57,7 +58,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                     })
                 );
             }
-        }, 5000);
+        }, 60 * 1 * 1000);
 
         return () => clearInterval(timerId);
     }, [restaurant, register]);
@@ -71,6 +72,10 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 processFailedPrint(arg);
             });
     }, []);
+
+    const printReceipt = (order: IOrderReceipt) => {
+        ipcRenderer && ipcRenderer.send("RECEIPT_PRINTER_DATA", order);
+    };
 
     const processFailedPrint = (arg: { order: IOrderReceipt; error: any }) => {
         const currentFailedPrintQueue = sessionStorage.getItem("failedPrintQueue");
@@ -111,7 +116,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                     printerAddress: printer.address,
                     customerPrinter: printer.customerPrinter,
                     kitchenPrinter: printer.kitchenPrinter,
-                    eftposReceipt: order.eftposReceipt || undefined,
+                    eftposReceipt: order.eftposReceipt || null,
                     hideModifierGroupsForCustomer: true,
                     restaurant: {
                         name: restaurant.name,
@@ -119,9 +124,9 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                         gstNumber: restaurant.gstNumber,
                     },
                     notes: order.notes,
-                    products: JSON.parse(JSON.stringify(order.products)) as ICartProduct[],
+                    products: convertProductTypesForPrint(order.products),
                     total: order.total,
-                    discount: order.promotionId && order.discount ? order.discount : undefined,
+                    discount: order.promotionId && order.discount ? order.discount : null,
                     subTotal: order.subTotal,
                     paid: order.paid,
                     type: order.type,
@@ -130,10 +135,6 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 });
             });
         });
-    };
-
-    const printReceipt = (order: IOrderReceipt) => {
-        ipcRenderer && ipcRenderer.send("RECEIPT_PRINTER_DATA", order);
     };
 
     return (

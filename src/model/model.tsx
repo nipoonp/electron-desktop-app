@@ -26,9 +26,10 @@ export interface ICartItemQuantitiesByIdValue {
     name: string;
     quantity: number;
     price: number;
-    categoryId?: string; //Only for products
+    categoryId: string | null; //Only for products
 }
 
+//ICartProduct is used to pass into the DB. So its good to have it as ? undefined rather than null. Null is a type in dynamoDB so it will create a field with type Null.
 export interface ICartProduct {
     id: string;
     name: string;
@@ -52,7 +53,7 @@ export interface ICartModifierGroup {
     choiceDuplicate: number;
     choiceMin: number;
     choiceMax: number;
-    hideForCustomer?: boolean;
+    hideForCustomer: boolean | null;
     modifiers: ICartModifier[];
 }
 
@@ -62,7 +63,7 @@ export interface ICartModifier {
     price: number;
     preSelectedQuantity: number;
     quantity: number;
-    productModifier?: ICartProductModifier;
+    productModifier: ICartProductModifier | null;
     image: IS3Object | null;
 }
 
@@ -91,9 +92,9 @@ export enum EReceiptPrinterType {
 export interface IOrderReceipt {
     printerType: EReceiptPrinterType;
     printerAddress: string;
-    customerPrinter?: boolean;
-    kitchenPrinter?: boolean;
-    hideModifierGroupsForCustomer?: boolean;
+    customerPrinter: boolean | null;
+    kitchenPrinter: boolean | null;
+    hideModifierGroupsForCustomer: boolean | null;
     restaurant: {
         name: string;
         address: string;
@@ -101,9 +102,9 @@ export interface IOrderReceipt {
     };
     notes: string | null;
     products: ICartProduct[];
-    eftposReceipt?: string;
+    eftposReceipt: string | null;
     total: number;
-    discount?: number;
+    discount: number | null;
     subTotal: number;
     paid: boolean;
     type: EOrderType;

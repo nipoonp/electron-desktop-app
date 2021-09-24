@@ -1,5 +1,5 @@
 import { gql } from "@apollo/client";
-import { EOrderStatus, EOrderType } from "./customQueries";
+import { EOrderStatus, EOrderType, IS3Object } from "./customQueries";
 
 export const ORDER_FIELDS_FRAGMENT = gql`
     fragment OrderFieldsFragment on Order {
@@ -59,6 +59,18 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                     price
                     preSelectedQuantity
                     quantity
+                    productModifier {
+                        id
+                        name
+                        price
+                        soldOut
+                    }
+                    image {
+                        bucket
+                        region
+                        key
+                        identityPoolId
+                    }
                 }
             }
         }
@@ -100,21 +112,11 @@ export interface IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT {
     price: number;
     quantity: number;
     notes: string | null;
-    image: {
-        bucket: string;
-        region: string;
-        key: string;
-        identityPoolId: string | null;
-    } | null;
+    image: IS3Object | null;
     category: {
         id: string;
         name: string;
-        image: {
-            bucket: string;
-            region: string;
-            key: string;
-            identityPoolId: string | null;
-        } | null;
+        image: IS3Object | null;
     } | null;
     modifierGroups: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] | null;
 }
@@ -131,4 +133,12 @@ export interface IGET_RESTAURANT_ORDER_MODIFIER_FRAGMENT {
     price: number;
     preSelectedQuantity: number;
     quantity: number;
+    productModifier: IGET_RESTAURANT_ORDER_PRODUCT_MODIFIER_FRAGMENT | null;
+    image: IS3Object | null;
+}
+
+export interface IGET_RESTAURANT_ORDER_PRODUCT_MODIFIER_FRAGMENT {
+    id: string;
+    name: string;
+    price: number;
 }

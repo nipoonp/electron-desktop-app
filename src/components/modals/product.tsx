@@ -95,7 +95,7 @@ export const ProductModal = (props: {
                                               name: modifierLink.modifier.productModifier.name,
                                               price: modifierLink.modifier.productModifier.price,
                                           }
-                                        : undefined,
+                                        : null,
                                     image: modifierLink.modifier.image
                                         ? {
                                               key: modifierLink.modifier.image.key,
@@ -160,7 +160,7 @@ export const ProductModal = (props: {
                           name: selectedModifier.productModifier.name,
                           price: selectedModifier.productModifier.price,
                       }
-                    : undefined,
+                    : null,
                 image: selectedModifier.image
                     ? {
                           key: selectedModifier.image.key,
@@ -207,7 +207,7 @@ export const ProductModal = (props: {
                               name: selectedModifier.productModifier.name,
                               price: selectedModifier.productModifier.price,
                           }
-                        : undefined,
+                        : null,
                     image: selectedModifier.image
                         ? {
                               key: selectedModifier.image.key,
@@ -261,7 +261,7 @@ export const ProductModal = (props: {
                               name: selectedModifier.productModifier.name,
                               price: selectedModifier.productModifier.price,
                           }
-                        : undefined,
+                        : null,
                     image: selectedModifier.image
                         ? {
                               key: selectedModifier.image.key,
@@ -424,7 +424,7 @@ export const ProductModal = (props: {
                   }
                 : null,
             quantity: quantity,
-            notes: notes,
+            notes: notes || null,
             category: {
                 id: category.id,
                 name: category.name,
