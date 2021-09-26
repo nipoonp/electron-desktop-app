@@ -95,7 +95,8 @@ ipcMain.on("RECEIPT_PRINTER_DATA", async (event: any, data: IOrderReceipt) => {
             await printReceipt(data, false);
         }
     } catch (e) {
-        mainWindow.webContents.send("RECEIPT_PRINTER_ERROR", { order: data, error: e });
+        console.log("xxx...returning RECEIPT_PRINTER_ERROR", e);
+        mainWindow.webContents.send("RECEIPT_PRINTER_ERROR", { error: e, order: data });
     }
 });
 

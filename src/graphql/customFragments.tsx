@@ -63,7 +63,6 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                         id
                         name
                         price
-                        soldOut
                     }
                     image {
                         bucket
