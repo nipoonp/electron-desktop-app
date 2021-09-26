@@ -485,6 +485,16 @@ export const convertProductTypesForPrint = (products: IGET_RESTAURANT_ORDER_PROD
                         image: m.image,
                     });
                 });
+
+                convertedMG.push({
+                    id: mg.id,
+                    name: mg.name,
+                    choiceDuplicate: mg.choiceDuplicate,
+                    choiceMin: mg.choiceMin,
+                    choiceMax: mg.choiceMax,
+                    hideForCustomer: mg.hideForCustomer,
+                    modifiers: convertedM,
+                });
             });
 
         convertedP.push({

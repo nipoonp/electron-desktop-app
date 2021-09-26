@@ -244,7 +244,7 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
         printer.tableCustom([
             { text: "Discount", align: "LEFT", width: 0.75, bold: true },
             {
-                text: `\$${convertCentsToDollars(order.discount)}`,
+                text: `-\$${convertCentsToDollars(order.discount)}`,
                 align: "RIGHT",
                 width: 0.25,
                 bold: true,

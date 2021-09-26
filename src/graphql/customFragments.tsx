@@ -53,6 +53,10 @@ export const ORDER_FIELDS_FRAGMENT = gql`
             modifierGroups {
                 id
                 name
+                choiceDuplicate
+                choiceMin
+                choiceMax
+                hideForCustomer
                 modifiers {
                     id
                     name
@@ -123,6 +127,10 @@ export interface IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT {
 export interface IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT {
     id: string;
     name: string;
+    choiceDuplicate: number;
+    choiceMin: number;
+    choiceMax: number;
+    hideForCustomer: boolean | null;
     modifiers: IGET_RESTAURANT_ORDER_MODIFIER_FRAGMENT[];
 }
 

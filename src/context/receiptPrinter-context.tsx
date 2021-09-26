@@ -41,10 +41,10 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
         const onlineOrdersFetchTimer = setInterval(async () => {
             try {
-                const onlineOrdersLastFetched = sessionStorage.getItem("onlineOrdersLastFetched");
+                const onlineOrdersLastFetched = localStorage.getItem("onlineOrdersLastFetched");
 
                 if (!onlineOrdersLastFetched) {
-                    sessionStorage.setItem("onlineOrdersLastFetched", toLocalISOString(new Date()));
+                    localStorage.setItem("onlineOrdersLastFetched", toLocalISOString(new Date()));
                     return;
                 }
 
@@ -59,7 +59,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
                 await printNewOnlineOrderReceipts(orders);
 
-                sessionStorage.setItem("onlineOrdersLastFetched", toLocalISOString(new Date()));
+                localStorage.setItem("onlineOrdersLastFetched", toLocalISOString(new Date()));
             } catch (e) {
                 await logError(
                     JSON.stringify({
@@ -81,7 +81,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
         const retryFailedPrintQueueTimer = setInterval(async () => {
             try {
-                const storedFiledPrintQueue = sessionStorage.getItem("failedPrintQueue");
+                const storedFiledPrintQueue = localStorage.getItem("failedPrintQueue");
 
                 if (!storedFiledPrintQueue) return;
 
@@ -151,7 +151,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     };
 
     const storeFailedPrint = (failedPrintOrder: IPrintReceiptDataOutput) => {
-        const currentFailedPrintQueue = sessionStorage.getItem("failedPrintQueue");
+        const currentFailedPrintQueue = localStorage.getItem("failedPrintQueue");
         const currentFailedPrintQueueOrders: IPrintReceiptDataOutput[] = currentFailedPrintQueue ? JSON.parse(currentFailedPrintQueue) : [];
         const newFailedPrintQueueOrders: IPrintReceiptDataOutput[] = [
             ...currentFailedPrintQueueOrders,
@@ -161,11 +161,11 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
             },
         ];
 
-        sessionStorage.setItem("failedPrintQueue", JSON.stringify(newFailedPrintQueueOrders));
+        localStorage.setItem("failedPrintQueue", JSON.stringify(newFailedPrintQueueOrders));
     };
 
     const removeSuccessPrintFromFailedPrintQueue = (successPrintOrder: IPrintReceiptDataOutput) => {
-        const storedFiledPrintQueue = sessionStorage.getItem("failedPrintQueue");
+        const storedFiledPrintQueue = localStorage.getItem("failedPrintQueue");
 
         if (!storedFiledPrintQueue) return;
 
@@ -173,7 +173,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
         const updatedFailedPrintQueue = failedPrintQueue.filter((o) => o.order.orderId != successPrintOrder.order.orderId);
 
-        sessionStorage.setItem("failedPrintQueue", JSON.stringify(updatedFailedPrintQueue));
+        localStorage.setItem("failedPrintQueue", JSON.stringify(updatedFailedPrintQueue));
     };
 
     const printNewOnlineOrderReceipts = async (orders: IGET_RESTAURANT_ORDER_FRAGMENT[]) => {
