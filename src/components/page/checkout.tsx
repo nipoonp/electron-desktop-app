@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useHistory } from "react-router-dom";
-import { convertCentsToDollars } from "../../util/util";
+import { convertCentsToDollars, convertProductTypesForPrint } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER } from "../../graphql/customMutations";
 import { IGET_RESTAURANT_REGISTER_PRINTER, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, EPromotionType } from "../../graphql/customQueries";
@@ -42,6 +42,7 @@ import { CachedImage } from "../../tabin/components/cachedImage";
 import { UpSellCategoryModal } from "../modals/upSellCategory";
 import { useErrorLogging } from "../../context/errorLogging-context";
 import { PromotionCodeModal } from "../modals/promotionCodeModal";
+import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
 
 const logger = new Logger("checkout");
 
@@ -266,7 +267,12 @@ export const Checkout = () => {
     };
 
     // submit callback
-    const createOrder = async (orderNumber: string, paid: boolean, cashPayment: boolean, eftposReceipt: string | null) => {
+    const createOrder = async (
+        orderNumber: string,
+        paid: boolean,
+        cashPayment: boolean,
+        eftposReceipt: string | null
+    ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
         const now = new Date();
 
         if (!user) {
@@ -403,11 +409,13 @@ export const Checkout = () => {
             });
 
             // process order
-            const res = await createOrderMutation({
+            const res: any = await createOrderMutation({
                 variables: variables,
             });
 
-            logger.debug("process order mutation result: ", res);
+            console.log("process order mutation result: ", res);
+
+            return res.data.createOrder;
         } catch (e) {
             await logError(
                 JSON.stringify({
@@ -487,37 +495,41 @@ export const Checkout = () => {
         return products;
     };
 
-    const printReceipts = (orderNumber: string, paid: boolean, eftposReceipt: string | null) => {
+    const printReceipts = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         if (!products || products.length == 0) {
             return;
         }
 
         register.printers &&
-            register.printers.items.forEach((printer) => {
+            register.printers.items.forEach(async (printer) => {
                 const productsToPrint = filterPrintProducts(products, printer);
 
                 if (productsToPrint.length > 0) {
-                    printReceipt({
+                    await printReceipt({
+                        orderId: order.id,
                         printerType: printer.type,
                         printerAddress: printer.address,
                         customerPrinter: printer.customerPrinter,
                         kitchenPrinter: printer.kitchenPrinter,
-                        hideModifierGroupsForCustomer: true,
+                        hideModifierGroupsForCustomer: false,
                         restaurant: {
                             name: restaurant.name,
                             address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
                             gstNumber: restaurant.gstNumber,
                         },
-                        notes: notes,
-                        products: productsToPrint,
-                        eftposReceipt: eftposReceipt,
-                        total: total,
+                        customerInformation: null,
+                        notes: order.notes,
+                        products: convertProductTypesForPrint(order.products),
+                        eftposReceipt: order.eftposReceipt,
+                        total: order.total,
                         discount: promotion ? promotion.discountedAmount : null,
-                        subTotal: subTotal,
-                        paid: paid,
-                        type: orderType || EOrderType.TAKEAWAY,
-                        number: orderNumber,
-                        table: tableNumber,
+                        subTotal: order.subTotal,
+                        paid: order.paid,
+                        type: order.type,
+                        number: order.number,
+                        table: order.table,
+                        placedAt: order.placedAt,
+                        orderScheduledAt: order.orderScheduledAt,
                     });
                 }
             });
@@ -528,11 +540,11 @@ export const Checkout = () => {
         setPaymentOutcomeDelayedOrderNumber(orderNumber);
 
         try {
-            if (register.printers && register.printers.items.length > 0) {
-                printReceipts(orderNumber, paid, eftposReceipt);
-            }
+            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(orderNumber, paid, cashPayment, eftposReceipt);
 
-            await createOrder(orderNumber, paid, cashPayment, eftposReceipt);
+            if (register.printers && register.printers.items.length > 0) {
+                await printReceipts(newOrder);
+            }
         } catch (e) {
             throw e.message;
         }

@@ -38,6 +38,7 @@ export enum EReceiptPrinterType {
 }
 
 export interface IOrderReceipt {
+    orderId: string;
     printerType: EReceiptPrinterType;
     printerAddress: string;
     customerPrinter: boolean | null;
@@ -48,6 +49,11 @@ export interface IOrderReceipt {
         address: string;
         gstNumber: string | null;
     };
+    customerInformation: {
+        firstName: string | null;
+        email: string | null;
+        phoneNumber: string | null;
+    } | null;
     notes: string | null;
     products: ICartProduct[];
     eftposReceipt: string | null;
@@ -58,4 +64,15 @@ export interface IOrderReceipt {
     type: EOrderType;
     number: string;
     table: string | null;
+    placedAt: string;
+    orderScheduledAt: string | null;
+}
+
+export interface IPrintReceiptDataOutput {
+    error: any;
+    order: IOrderReceipt;
+}
+
+export interface IPrintReceiptOutput {
+    error: any;
 }

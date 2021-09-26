@@ -1,6 +1,7 @@
 import { printer as ThermalPrinter, types as PrinterTypes } from "node-thermal-printer";
-import { IOrderReceipt, ICartProduct, ICartModifierGroup, ICartModifier, EReceiptPrinterType } from "./model";
+import { IOrderReceipt, ICartProduct, ICartModifierGroup, ICartModifier, EReceiptPrinterType, IPrintReceiptOutput } from "./model";
 import usbPrinter from "@thiagoelg/node-printer";
+import { format } from "date-fns";
 
 export const calculateLRC = (str: string): string => {
     var bytes: number[] = [];
@@ -77,7 +78,7 @@ const getProductTotal = (product: ICartProduct) => {
     return total * product.quantity;
 };
 
-export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: boolean) => {
+export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: boolean): Promise<IPrintReceiptOutput> => {
     let printer;
 
     if (order.printerType == EReceiptPrinterType.WIFI) {
@@ -124,7 +125,21 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
     }
 
     printer.setTextNormal();
-    printer.println(`Order Placed ${getCurrentDate(new Date())} for ${order.type}`);
+    printer.println(`Order Placed ${format(new Date(order.placedAt), "dd MMM HH:mm aa")} for ${order.type}`);
+
+    if (order.orderScheduledAt) {
+        printer.newLine();
+        printer.bold(true);
+        printer.underlineThick(true);
+        printer.println(`Order Scheduled ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+        printer.underlineThick(false);
+        printer.bold(false);
+    }
+
+    if (order.customerInformation) {
+        printer.newLine();
+        printer.println(`Customer: ${order.customerInformation.firstName} (${order.customerInformation.phoneNumber})`);
+    }
 
     if (order.table) {
         printer.println("Your table number is");
@@ -152,7 +167,7 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
     if (order.paid == false) {
         printer.underlineThick(true);
         printer.println("Payment Required");
-        printer.underlineThick(true);
+        printer.underlineThick(false);
         printer.newLine();
     }
 
@@ -257,7 +272,7 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk");
 
-    // printer.partialCut();
+    printer.partialCut();
     printer.openCashDrawer();
 
     try {
@@ -269,8 +284,10 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
         } else {
             //Bluetooth
         }
+
+        return { error: null };
     } catch (e) {
-        throw e;
+        return { error: e };
     }
 };
 
