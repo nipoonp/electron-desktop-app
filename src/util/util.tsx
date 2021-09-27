@@ -3,9 +3,9 @@ import { IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragmen
 import {
     EDiscountType,
     ERegisterType,
-    IGET_DASHBOARD_PROMOTION,
-    IGET_DASHBOARD_PROMOTION_DISCOUNT,
-    IGET_DASHBOARD_PROMOTION_ITEMS,
+    IGET_RESTAURANT_PROMOTION,
+    IGET_RESTAURANT_PROMOTION_DISCOUNT,
+    IGET_RESTAURANT_PROMOTION_ITEMS,
     IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS,
     IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES,
     IGET_RESTAURANT_PROMOTION_AVAILABILITY,
@@ -281,7 +281,7 @@ export const toDataURL = (url, callback) => {
     xhr.send();
 };
 
-export const checkIfPromotionValid = (promotion: IGET_DASHBOARD_PROMOTION): CheckIfPromotionValidResponse => {
+export const checkIfPromotionValid = (promotion: IGET_RESTAURANT_PROMOTION): CheckIfPromotionValidResponse => {
     const now = new Date();
 
     const platform = process.env.REACT_APP_PLATFORM;
@@ -306,7 +306,7 @@ export const checkIfPromotionValid = (promotion: IGET_DASHBOARD_PROMOTION): Chec
 export const getMatchingPromotionProducts = (
     cartCategoryQuantitiesById: ICartItemQuantitiesById,
     cartProductQuantitiesById: ICartItemQuantitiesById,
-    promotionItems: IGET_DASHBOARD_PROMOTION_ITEMS[],
+    promotionItems: IGET_RESTAURANT_PROMOTION_ITEMS[],
     applyToCheapest: boolean
 ) => {
     //For promotions with multiple item groups, it would become a && condition. For example, if first group is category: Vege Pizza (min quantity = 2).
@@ -382,7 +382,7 @@ export const getMatchingPromotionProducts = (
 export const processPromotionDiscounts = (
     cartCategoryQuantitiesById: ICartItemQuantitiesById,
     cartProductQuantitiesById: ICartItemQuantitiesById,
-    discounts: IGET_DASHBOARD_PROMOTION_DISCOUNT[],
+    discounts: IGET_RESTAURANT_PROMOTION_DISCOUNT[],
     matchingProducts: ICartItemQuantitiesById = {},
     total: number = 0,
     applyToCheapest: boolean = false

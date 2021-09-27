@@ -488,7 +488,7 @@ export const Checkout = () => {
                         products: convertProductTypesForPrint(order.products),
                         eftposReceipt: order.eftposReceipt,
                         total: order.total,
-                        discount: promotion ? promotion.discountedAmount : null,
+                        discount: order.promotionId && order.discount ? order.discount : null,
                         subTotal: order.subTotal,
                         paid: order.paid,
                         type: order.type,

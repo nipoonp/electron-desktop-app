@@ -4,9 +4,9 @@ import {
     EDiscountType,
     EPromotionType,
     ERegisterType,
-    IGET_DASHBOARD_PROMOTION,
-    IGET_DASHBOARD_PROMOTION_DISCOUNT,
-    IGET_DASHBOARD_PROMOTION_ITEMS,
+    IGET_RESTAURANT_PROMOTION,
+    IGET_RESTAURANT_PROMOTION_DISCOUNT,
+    IGET_RESTAURANT_PROMOTION_ITEMS,
 } from "../graphql/customQueries";
 
 import { ICartProduct, EOrderType, ICartItemQuantitiesById, ICartPromotion, CheckIfPromotionValidResponse } from "../model/model";
@@ -44,7 +44,7 @@ type ContextProps = {
     setNotes: (notes: string) => void;
     promotion: ICartPromotion | null;
     userAppliedPromotionCode: string | null;
-    setUserAppliedPromotion: (promotion: IGET_DASHBOARD_PROMOTION) => CheckIfPromotionValidResponse;
+    setUserAppliedPromotion: (promotion: IGET_RESTAURANT_PROMOTION) => CheckIfPromotionValidResponse;
     removeUserAppliedPromotion: () => void;
     total: number;
     subTotal: number;
@@ -90,7 +90,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [cartCategoryQuantitiesById, _setCartCategoryQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartCategoryQuantitiesById);
     const [cartProductQuantitiesById, _setCartProductQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartProductQuantitiesById);
     const [cartModifierQuantitiesById, _setCartModifierQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartModifierQuantitiesById);
-    const [availablePromotions, _setAvailablePromotions] = useState<IGET_DASHBOARD_PROMOTION[]>([]);
+    const [availablePromotions, _setAvailablePromotions] = useState<IGET_RESTAURANT_PROMOTION[]>([]);
 
     useEffect(() => {
         if (promotion) {
@@ -103,7 +103,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     useEffect(() => {
         if (userAppliedPromotionCode) return; //Only apply restaurant promos if user has not applied one themselves
 
-        const availPromotions: IGET_DASHBOARD_PROMOTION[] = [];
+        const availPromotions: IGET_RESTAURANT_PROMOTION[] = [];
 
         restaurant &&
             restaurant.promotions.items.forEach((promotion) => {
@@ -119,7 +119,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setAvailablePromotions(availPromotions);
     }, [restaurant, userAppliedPromotionCode]);
 
-    const getEntireOrderDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION, total: number) => {
+    const getEntireOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, total: number) => {
         const bestPromotionDiscount = processPromotionDiscounts(
             cartCategoryQuantitiesById,
             cartProductQuantitiesById,
@@ -134,7 +134,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         };
     };
 
-    const getComboDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION) => {
+    const getComboDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION) => {
         const matchingProducts = getMatchingPromotionProducts(
             cartCategoryQuantitiesById,
             cartProductQuantitiesById,
@@ -163,7 +163,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         };
     };
 
-    const getRelatedItemsDiscountAmount = (promotion: IGET_DASHBOARD_PROMOTION) => {
+    const getRelatedItemsDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION) => {
         const matchingProducts = getMatchingPromotionProducts(
             cartCategoryQuantitiesById,
             cartProductQuantitiesById,
@@ -240,7 +240,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setPromotion(bestPromotion);
     }, [cartProductQuantitiesById, cartModifierQuantitiesById, availablePromotions, orderType]);
 
-    const setUserAppliedPromotion = (promotion: IGET_DASHBOARD_PROMOTION): CheckIfPromotionValidResponse => {
+    const setUserAppliedPromotion = (promotion: IGET_RESTAURANT_PROMOTION): CheckIfPromotionValidResponse => {
         const status = checkIfPromotionValid(promotion);
 
         if (status !== CheckIfPromotionValidResponse.VALID) return status;

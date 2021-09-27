@@ -1,4 +1,4 @@
-import { IGET_DASHBOARD_PROMOTION, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object } from "../graphql/customQueries";
+import { IGET_RESTAURANT_PROMOTION, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object } from "../graphql/customQueries";
 
 export interface IPrintReceiptDataOutput {
     error: any;
@@ -83,7 +83,7 @@ export interface IPreSelectedModifiers {
 }
 
 export interface ICartPromotion {
-    promotion: IGET_DASHBOARD_PROMOTION;
+    promotion: IGET_RESTAURANT_PROMOTION;
     matchingProducts: ICartItemQuantitiesById;
     discountedAmount: number;
 }
