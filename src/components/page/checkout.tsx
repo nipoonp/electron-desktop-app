@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useHistory } from "react-router-dom";
-import { convertCentsToDollars } from "../../util/util";
+import { convertCentsToDollars, convertProductTypesForPrint } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER } from "../../graphql/customMutations";
 import { IGET_RESTAURANT_REGISTER_PRINTER, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, EPromotionType } from "../../graphql/customQueries";
@@ -42,6 +42,7 @@ import { CachedImage } from "../../tabin/components/cachedImage";
 import { UpSellCategoryModal } from "../modals/upSellCategory";
 import { useErrorLogging } from "../../context/errorLogging-context";
 import { PromotionCodeModal } from "../modals/promotionCodeModal";
+import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
 
 const logger = new Logger("checkout");
 
@@ -266,46 +267,31 @@ export const Checkout = () => {
     };
 
     // submit callback
-    const createOrder = async (paid: boolean, cashPayment: boolean, orderNumber: string) => {
+    const createOrder = async (
+        orderNumber: string,
+        paid: boolean,
+        cashPayment: boolean,
+        eftposReceipt: string | null
+    ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
         const now = new Date();
 
         if (!user) {
-            await logError(
-                JSON.stringify({
-                    error: "Invalid user",
-                    context: { orderRestaurantId: restaurant.id },
-                })
-            );
+            await logError("Invalid user", JSON.stringify({ user: user }));
             throw "Invalid user";
         }
 
         if (!orderType) {
-            await logError(
-                JSON.stringify({
-                    error: "Invalid order type",
-                    context: { orderRestaurantId: restaurant.id, orderType: orderType },
-                })
-            );
+            await logError("Invalid order type", JSON.stringify({ orderType: orderType }));
             throw "Invalid order type";
         }
 
         if (!restaurant) {
-            await logError(
-                JSON.stringify({
-                    error: "Invalid restaurant",
-                    context: { orderRestaurantId: restaurant },
-                })
-            );
+            await logError("Invalid restaurant", JSON.stringify({ restaurant: restaurant }));
             throw "Invalid restaurant";
         }
 
         if (!products || products.length == 0) {
-            await logError(
-                JSON.stringify({
-                    error: "No products have been selected",
-                    context: { orderRestaurantId: restaurant.id },
-                })
-            );
+            await logError("No products have been selected", JSON.stringify({ products: products }));
             throw "No products have been selected";
         }
 
@@ -320,6 +306,7 @@ export const Checkout = () => {
                 number: orderNumber,
                 table: tableNumber,
                 notes: notes,
+                eftposReceipt: eftposReceipt,
                 total: total,
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
@@ -340,27 +327,26 @@ export const Checkout = () => {
             }
         } catch (e) {
             await logError(
+                "Error in createOrderMutation input",
                 JSON.stringify({
-                    error: "No products have been selected",
-                    context: {
-                        status: "NEW",
-                        paid: paid,
-                        cashPayment: cashPayment,
-                        type: orderType,
-                        number: orderNumber,
-                        table: tableNumber,
-                        notes: notes,
-                        total: total,
-                        discount: promotion ? promotion.discountedAmount : undefined,
-                        promotionId: promotion ? promotion.promotion.id : undefined,
-                        subTotal: subTotal,
-                        registerId: register.id,
-                        products: JSON.stringify(products), // copy obj so we can mutate it later
-                        placedAt: now,
-                        placedAtUtc: now,
-                        orderUserId: user.id,
-                        orderRestaurantId: restaurant.id,
-                    },
+                    status: "NEW",
+                    paid: paid,
+                    cashPayment: cashPayment,
+                    type: orderType,
+                    number: orderNumber,
+                    table: tableNumber,
+                    notes: notes,
+                    eftposReceipt: eftposReceipt,
+                    total: total,
+                    discount: promotion ? promotion.discountedAmount : undefined,
+                    promotionId: promotion ? promotion.promotion.id : undefined,
+                    subTotal: subTotal,
+                    registerId: register.id,
+                    products: JSON.stringify(products), // copy obj so we can mutate it later
+                    placedAt: now,
+                    placedAtUtc: now,
+                    orderUserId: user.id,
+                    orderRestaurantId: restaurant.id,
                 })
             );
             throw "Error in createOrderMutation input";
@@ -394,18 +380,17 @@ export const Checkout = () => {
             });
 
             // process order
-            const res = await createOrderMutation({
+            const res: any = await createOrderMutation({
                 variables: variables,
             });
 
-            logger.debug("process order mutation result: ", res);
+            console.log("process order mutation result: ", res);
+
+            return res.data.createOrder;
         } catch (e) {
-            await logError(
-                JSON.stringify({
-                    error: e,
-                    context: variables,
-                })
-            );
+            console.log("process order mutation error: ", e);
+
+            await logError(e, JSON.stringify({ error: e, variables: variables }));
             throw e;
         }
     };
@@ -476,52 +461,56 @@ export const Checkout = () => {
         return products;
     };
 
-    const printReceipts = (orderNumber: string, paid: boolean, eftposReceipt?: string) => {
+    const printReceipts = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         if (!products || products.length == 0) {
             return;
         }
 
         register.printers &&
-            register.printers.items.forEach((printer) => {
+            register.printers.items.forEach(async (printer) => {
                 const productsToPrint = filterPrintProducts(products, printer);
 
                 if (productsToPrint.length > 0) {
-                    printReceipt({
+                    await printReceipt({
+                        orderId: order.id,
                         printerType: printer.type,
                         printerAddress: printer.address,
                         customerPrinter: printer.customerPrinter,
                         kitchenPrinter: printer.kitchenPrinter,
-                        eftposReceipt: eftposReceipt,
-                        hideModifierGroupsForCustomer: true,
+                        hideModifierGroupsForCustomer: false,
                         restaurant: {
                             name: restaurant.name,
                             address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
                             gstNumber: restaurant.gstNumber,
                         },
-                        notes: notes,
-                        products: productsToPrint,
-                        total: total,
-                        discount: promotion ? promotion.discountedAmount : undefined,
-                        subTotal: subTotal,
-                        paid: paid,
-                        type: orderType || EOrderType.TAKEAWAY,
-                        number: orderNumber,
-                        table: tableNumber,
+                        customerInformation: null,
+                        notes: order.notes,
+                        products: convertProductTypesForPrint(order.products),
+                        eftposReceipt: order.eftposReceipt,
+                        total: order.total,
+                        discount: promotion ? promotion.discountedAmount : null,
+                        subTotal: order.subTotal,
+                        paid: order.paid,
+                        type: order.type,
+                        number: order.number,
+                        table: order.table,
+                        placedAt: order.placedAt,
+                        orderScheduledAt: order.orderScheduledAt,
                     });
                 }
             });
     };
 
-    const onSubmitOrder = async (paid: boolean, cashPayment: boolean, eftposReceipt?: string) => {
+    const onSubmitOrder = async (paid: boolean, cashPayment: boolean, eftposReceipt: string | null) => {
         const orderNumber = getOrderNumber();
         setPaymentOutcomeDelayedOrderNumber(orderNumber);
 
         try {
-            if (register.printers && register.printers.items.length > 0) {
-                printReceipts(orderNumber, paid, eftposReceipt);
-            }
+            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(orderNumber, paid, cashPayment, eftposReceipt);
 
-            await createOrder(paid, cashPayment, orderNumber);
+            if (register.printers && register.printers.items.length > 0) {
+                await printReceipts(newOrder);
+            }
         } catch (e) {
             throw e.message;
         }
@@ -561,7 +550,7 @@ export const Checkout = () => {
                 setPaymentOutcome(CheckoutTransactionOutcome.Success);
 
                 try {
-                    await onSubmitOrder(true, false);
+                    await onSubmitOrder(true, false, null);
                 } catch (e) {
                     setCreateOrderError(e);
                 }
@@ -681,7 +670,7 @@ export const Checkout = () => {
             return <></>;
         }
 
-        restaurant!.categories.items.forEach((c) => {
+        restaurant.categories.items.forEach((c) => {
             if (c.id == productToEdit.product.category.id) {
                 category = c;
             }
@@ -834,7 +823,7 @@ export const Checkout = () => {
         setPaymentOutcomeApprovedRedirectTimeLeft(10);
 
         try {
-            await onSubmitOrder(false, false);
+            await onSubmitOrder(false, false, null);
         } catch (e) {
             setCreateOrderError(e);
         }
@@ -849,7 +838,7 @@ export const Checkout = () => {
         setPaymentOutcomeApprovedRedirectTimeLeft(20);
 
         try {
-            await onSubmitOrder(false, true);
+            await onSubmitOrder(false, true, null);
         } catch (e) {
             setCreateOrderError(e);
         }

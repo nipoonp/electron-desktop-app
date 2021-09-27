@@ -138,7 +138,7 @@ const Routes = () => {
             <PrivateRoute exact path={ordersPath} component={Orders} />
             <PrivateRoute exact path={reportsPath} component={Reports} />
             <RestaurantRegisterPrivateRoute exact path={configureNewEftposPath} component={ConfigureNewEftpos} />
-            <RestaurantRegisterPrivateRoute exact path={beginOrderPath} component={Orders} />
+            <RestaurantRegisterPrivateRoute exact path={beginOrderPath} component={BeginOrder} />
             <RestaurantRegisterPrivateRoute exact path={orderTypePath} component={OrderType} />
             <RestaurantRegisterPrivateRoute exact path={tableNumberPath} component={TableNumber} />
             <RestaurantRegisterPrivateRoute exact path={checkoutPath} component={Checkout} />

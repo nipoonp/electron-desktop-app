@@ -35,6 +35,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                         preSelectedQuantity: 0,
                         quantity: 1,
                         image: null,
+                        productModifier: null,
                     },
                 ],
             },
@@ -44,6 +45,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                 choiceDuplicate: 1,
                 choiceMin: 0,
                 choiceMax: 1,
+                hideForCustomer: false,
                 modifiers: [
                     {
                         id: "",
@@ -52,6 +54,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                         preSelectedQuantity: 0,
                         quantity: 2,
                         image: null,
+                        productModifier: null,
                     },
                 ],
             },
@@ -61,6 +64,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                 choiceDuplicate: 1,
                 choiceMin: 0,
                 choiceMax: 1,
+                hideForCustomer: false,
                 modifiers: [
                     {
                         id: "",
@@ -69,6 +73,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                         preSelectedQuantity: 1,
                         quantity: 1,
                         image: null,
+                        productModifier: null,
                     },
                 ],
             },
@@ -78,6 +83,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                 choiceDuplicate: 1,
                 choiceMin: 0,
                 choiceMax: 1,
+                hideForCustomer: false,
                 modifiers: [
                     {
                         id: "",
@@ -86,6 +92,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                         preSelectedQuantity: 1,
                         quantity: 0,
                         image: null,
+                        productModifier: null,
                     },
                 ],
             },
@@ -95,6 +102,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                 choiceDuplicate: 1,
                 choiceMin: 0,
                 choiceMax: 1,
+                hideForCustomer: false,
                 modifiers: [
                     {
                         id: "",
@@ -103,6 +111,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                         preSelectedQuantity: 2,
                         quantity: 1,
                         image: null,
+                        productModifier: null,
                     },
                 ],
             },
@@ -122,16 +131,23 @@ export const ReceiptPrinter = () => {
 
     const onPrintTestReceipt = async () => {
         if (printerAddress1) {
-            printReceipt({
+            await printReceipt({
+                orderId: "123",
                 printerType: printerType,
                 printerAddress: printerAddress1,
                 customerPrinter: true,
-                hideModifierGroupsForCustomer: true,
+                kitchenPrinter: true,
+                hideModifierGroupsForCustomer: false,
                 eftposReceipt: "",
                 restaurant: {
                     name: "Test Tabin Restaurant",
                     address: "Receipt Printer 1",
                     gstNumber: "123-456-789",
+                },
+                customerInformation: {
+                    firstName: "Test Tabin",
+                    phoneNumber: "123-456-789",
+                    email: "test@test.com",
                 },
                 notes: "Order notes",
                 products: TEST_PRODUCT,
@@ -140,21 +156,28 @@ export const ReceiptPrinter = () => {
                 subTotal: 90,
                 paid: true,
                 type: EOrderType.TAKEAWAY,
-                number: "18",
+                number: "Web",
                 table: "8",
+                placedAt: new Date().toISOString(),
+                orderScheduledAt: null,
             });
         }
 
         if (printerAddress2) {
-            printReceipt({
+            await printReceipt({
+                orderId: "456",
                 printerType: printerType,
                 printerAddress: printerAddress2,
                 customerPrinter: true,
+                kitchenPrinter: false,
+                hideModifierGroupsForCustomer: false,
+                eftposReceipt: "",
                 restaurant: {
                     name: "Test Tabin Restaurant",
                     address: "Receipt Printer 2",
                     gstNumber: "123-456-789",
                 },
+                customerInformation: null,
                 notes: "Order notes",
                 products: TEST_PRODUCT,
                 total: 100,
@@ -164,19 +187,26 @@ export const ReceiptPrinter = () => {
                 type: EOrderType.TAKEAWAY,
                 number: "18",
                 table: "8",
+                placedAt: new Date().toISOString(),
+                orderScheduledAt: new Date().toISOString(),
             });
         }
 
         if (printerAddress3) {
-            printReceipt({
+            await printReceipt({
+                orderId: "789",
                 printerType: printerType,
                 printerAddress: printerAddress3,
-                customerPrinter: true,
+                customerPrinter: false,
+                kitchenPrinter: true,
+                hideModifierGroupsForCustomer: false,
+                eftposReceipt: "",
                 restaurant: {
                     name: "Test Tabin Restaurant",
                     address: "Receipt Printer 3",
                     gstNumber: "123-456-789",
                 },
+                customerInformation: null,
                 notes: "Order notes",
                 products: TEST_PRODUCT,
                 total: 100,
@@ -186,6 +216,8 @@ export const ReceiptPrinter = () => {
                 type: EOrderType.TAKEAWAY,
                 number: "18",
                 table: "8",
+                placedAt: new Date().toISOString(),
+                orderScheduledAt: null,
             });
         }
     };
