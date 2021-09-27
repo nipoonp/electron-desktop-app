@@ -38,24 +38,41 @@ export enum EReceiptPrinterType {
 }
 
 export interface IOrderReceipt {
+    orderId: string;
     printerType: EReceiptPrinterType;
     printerAddress: string;
-    customerPrinter?: boolean;
-    kitchenPrinter?: boolean;
-    eftposReceipt?: string;
-    hideModifierGroupsForCustomer?: boolean;
+    customerPrinter: boolean | null;
+    kitchenPrinter: boolean | null;
+    hideModifierGroupsForCustomer: boolean | null;
     restaurant: {
         name: string;
         address: string;
         gstNumber: string | null;
     };
+    customerInformation: {
+        firstName: string | null;
+        email: string | null;
+        phoneNumber: string | null;
+    } | null;
     notes: string | null;
     products: ICartProduct[];
+    eftposReceipt: string | null;
     total: number;
-    discount?: number;
+    discount: number | null;
     subTotal: number;
     paid: boolean;
     type: EOrderType;
     number: string;
     table: string | null;
+    placedAt: string;
+    orderScheduledAt: string | null;
+}
+
+export interface IPrintReceiptDataOutput {
+    error: any;
+    order: IOrderReceipt;
+}
+
+export interface IPrintReceiptOutput {
+    error: any;
 }

@@ -25,7 +25,6 @@ const RegisterContext = createContext<ContextProps>({
 const RegisterProvider = (props: { children: React.ReactNode }) => {
     const [registerKey, _setRegisterKey] = useState<string | null>(null);
     const [register, setRegister] = useState<IGET_RESTAURANT_REGISTER | null>(null);
-
     const { restaurant } = useRestaurant();
 
     useEffect(() => {

@@ -37,7 +37,7 @@ export enum EWindcaveTxnStatus {
 
 export interface WindcaveTransactionOutcomeResult {
     transactionOutcome: WindcaveTransactionOutcome;
-    eftposReceipt?: string;
+    eftposReceipt: string | null;
 }
 
 interface IWindcaveInitTransactionResponse {
@@ -265,8 +265,6 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                     const resJSON = convert.xml2json(response.data, { compact: true, spaces: 4 });
                     const res = JSON.parse(resJSON) as IWindcaveInitTransactionResponse;
 
-                    console.log("xxx...res", res);
-
                     await createEftposTransactionLogMutation({
                         variables: {
                             eftposProvider: "WINDCAVE",
@@ -358,8 +356,6 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                 if (response.status == 200) {
                     const resJSON = convert.xml2json(response.data, { compact: true, spaces: 4 });
                     const res = JSON.parse(resJSON) as IWindcaveStatusResponse;
-
-                    console.log("xxx...res", res);
 
                     await createEftposTransactionLogMutation({
                         variables: {

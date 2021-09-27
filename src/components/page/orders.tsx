@@ -2,12 +2,7 @@ import { useState } from "react";
 import { useMutation } from "@apollo/client";
 import { useRestaurant } from "../../context/restaurant-context";
 import { UPDATE_ORDER_STATUS } from "../../graphql/customMutations";
-import {
-    EOrderStatus,
-    GET_ORDERS_BY_RESTAURANT_BY_PLACEDAT,
-    IGET_RESTAURANT_ORDER,
-    IGET_RESTAURANT_ORDER_MODIFIER_GROUP,
-} from "../../graphql/customQueries";
+import { EOrderStatus, GET_ORDERS_BY_RESTAURANT_BY_PLACEDAT } from "../../graphql/customQueries";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { Input } from "../../tabin/components/input";
 
@@ -17,6 +12,7 @@ import { convertCentsToDollars, toLocalISOString } from "../../util/util";
 import { format } from "date-fns";
 import { Button } from "../../tabin/components/button";
 import { toast } from "../../tabin/components/toast";
+import { IGET_RESTAURANT_ORDER_FRAGMENT, IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT } from "../../graphql/customFragments";
 
 export const Orders = () => {
     const { restaurant: savedRestaurantItem } = useRestaurant();
@@ -54,7 +50,7 @@ export const Orders = () => {
         return <>Couldn't fetch orders.</>;
     }
 
-    const onOrderComplete = async (order: IGET_RESTAURANT_ORDER) => {
+    const onOrderComplete = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         const now = new Date();
 
         setShowSpinner(true);
@@ -76,7 +72,7 @@ export const Orders = () => {
         }
     };
 
-    const onOrderRefund = async (order: IGET_RESTAURANT_ORDER) => {
+    const onOrderRefund = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         const now = new Date();
 
         setShowSpinner(true);
@@ -98,7 +94,7 @@ export const Orders = () => {
         }
     };
 
-    const onOrderCancel = async (order: IGET_RESTAURANT_ORDER) => {
+    const onOrderCancel = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         const now = new Date();
 
         setShowSpinner(true);
@@ -130,7 +126,7 @@ export const Orders = () => {
 
     return (
         <>
-            <FullScreenSpinner show={showSpinner} />;
+            <FullScreenSpinner show={showSpinner} />
             <div className="order-container">
                 <div className="h2 mb-6">Orders</div>
                 <Input label="Date" type="date" name="date" placeholder="Enter a date" value={date} onChange={onChangeDate} className="mb-4" />
@@ -190,10 +186,10 @@ export const Orders = () => {
 
 const Order = (props: {
     searchTerm: string;
-    order: IGET_RESTAURANT_ORDER;
-    onOrderComplete: (order: IGET_RESTAURANT_ORDER) => void;
-    onOrderRefund: (order: IGET_RESTAURANT_ORDER) => void;
-    onOrderCancel: (order: IGET_RESTAURANT_ORDER) => void;
+    order: IGET_RESTAURANT_ORDER_FRAGMENT;
+    onOrderComplete: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
+    onOrderRefund: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
+    onOrderCancel: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
 }) => {
     const { searchTerm, order, onOrderComplete, onOrderRefund, onOrderCancel } = props;
 
@@ -236,7 +232,7 @@ const Order = (props: {
     );
 };
 
-const OrderItemDetails = (props: { name: string; notes: string | null; modifierGroups: IGET_RESTAURANT_ORDER_MODIFIER_GROUP[] | null }) => {
+const OrderItemDetails = (props: { name: string; notes: string | null; modifierGroups: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] | null }) => {
     const modifierString = (preSelectedQuantity: number, quantity: number, name: string, price: number) => {
         const changedQuantity = quantity - preSelectedQuantity;
         let mStr = "";

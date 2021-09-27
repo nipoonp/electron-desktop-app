@@ -1,4 +1,5 @@
-import gql from "graphql-tag";
+import { gql } from "@apollo/client";
+import { ORDER_FIELDS_FRAGMENT } from "./customFragments";
 
 export const CREATE_EFTPOS_TRANSACTION_LOG = gql`
     mutation createEftposTransactionLog(
@@ -38,6 +39,7 @@ export const UPDATE_REGISTER_KEY = gql`
 `;
 
 export const CREATE_ORDER = gql`
+    ${ORDER_FIELDS_FRAGMENT}
     mutation createOrder(
         $status: OrderStatus!
         $paid: Boolean!
@@ -46,6 +48,7 @@ export const CREATE_ORDER = gql`
         $number: String!
         $table: String
         $notes: String
+        $eftposReceipt: String
         $total: Int!
         $discount: Int
         $promotionId: ID
@@ -66,6 +69,7 @@ export const CREATE_ORDER = gql`
                 number: $number
                 table: $table
                 notes: $notes
+                eftposReceipt: $eftposReceipt
                 total: $total
                 discount: $discount
                 promotionId: $promotionId
@@ -78,7 +82,7 @@ export const CREATE_ORDER = gql`
                 orderRestaurantId: $orderRestaurantId
             }
         ) {
-            id
+            ...OrderFieldsFragment
         }
     }
 `;

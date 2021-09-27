@@ -12,7 +12,7 @@ import { dialog } from "electron";
 import { autoUpdater } from "electron-updater";
 import net from "net";
 import { encodeCommandBuffer, decodeCommandBuffer, printReceipt } from "./util";
-import { IOrderReceipt } from "./model";
+import { IOrderReceipt, IPrintReceiptDataOutput, IPrintReceiptOutput } from "./model";
 
 let mainWindow: any;
 let verifoneClient = new net.Socket();
@@ -84,20 +84,29 @@ app.once("window-all-closed", () => {
 });
 
 // Webapp Receipt Printer Side
-ipcMain.on("RECEIPT_PRINTER_DATA", async (event: any, data: IOrderReceipt) => {
-    try {
-        //A receipt request could have print customer receipts and kitchen receipts enabled. So we would have to print 2 copies.
-        if (data.customerPrinter) {
-            await printReceipt(data, true);
-        }
+ipcMain.handle(
+    "RECEIPT_PRINTER_DATA",
+    async (event: any, order: IOrderReceipt): Promise<IPrintReceiptDataOutput> => {
+        try {
+            // A receipt request could have print customer receipts and kitchen receipts enabled. So we would have to print 2 copies.
+            if (order.customerPrinter) {
+                const result: IPrintReceiptOutput = await printReceipt(order, true);
 
-        if (data.kitchenPrinter) {
-            await printReceipt(data, false);
+                if (result.error) return { error: result.error, order: order };
+            }
+
+            if (order.kitchenPrinter) {
+                const result: IPrintReceiptOutput = await printReceipt(order, false);
+
+                if (result.error) return { error: result.error, order: order };
+            }
+
+            return { error: null, order: order };
+        } catch (e) {
+            return { error: e, order: order };
         }
-    } catch (e) {
-        mainWindow.webContents.send("RECEIPT_PRINTER_ERROR", e);
     }
-});
+);
 
 // Webapp Side
 ipcMain.on("BROWSER_EFTPOS_CONNECT", (event: any, data: any) => {
@@ -144,6 +153,12 @@ ipcMain.on("SHOW_CONTEXT_MENU", (event) => {
             label: "Stock",
             click: () => {
                 event.sender.send("CONTEXT_MENU_COMMAND", "stock");
+            },
+        },
+        {
+            label: "Orders",
+            click: () => {
+                event.sender.send("CONTEXT_MENU_COMMAND", "orders");
             },
         },
         {

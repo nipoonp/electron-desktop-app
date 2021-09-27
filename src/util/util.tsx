@@ -1,4 +1,5 @@
 import { format, getDay, isWithinInterval } from "date-fns";
+import { IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
 import {
     EDiscountType,
     ERegisterType,
@@ -7,12 +8,17 @@ import {
     IGET_DASHBOARD_PROMOTION_ITEMS,
     IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS,
     IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES,
-    IGET_RESTAURANT_MODIFIER,
-    IGET_RESTAURANT_PRODUCT,
     IGET_RESTAURANT_PROMOTION_AVAILABILITY,
     IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES,
 } from "../graphql/customQueries";
-import { CheckIfPromotionValidResponse, ICartItemQuantitiesById, ICartItemQuantitiesByIdValue, ICartProduct } from "../model/model";
+import {
+    CheckIfPromotionValidResponse,
+    ICartItemQuantitiesById,
+    ICartItemQuantitiesByIdValue,
+    ICartModifier,
+    ICartModifierGroup,
+    ICartProduct,
+} from "../model/model";
 
 export const isItemSoldOut = (soldOut?: boolean, soldOutDate?: string) => {
     if (soldOut || soldOutDate == format(new Date(), "yyyy-MM-dd")) {
@@ -450,4 +456,68 @@ export const processPromotionDiscounts = (
         matchingProducts: matchingProducts,
         discountedAmount: maxDiscountedAmount,
     };
+};
+
+export const convertProductTypesForPrint = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[]): ICartProduct[] => {
+    const convertedP: ICartProduct[] = [];
+
+    products.forEach((p) => {
+        const convertedMG: ICartModifierGroup[] = [];
+
+        p.modifierGroups &&
+            p.modifierGroups.forEach((mg) => {
+                const convertedM: ICartModifier[] = [];
+
+                mg.modifiers.forEach((m) => {
+                    convertedM.push({
+                        id: m.id,
+                        name: m.name,
+                        price: m.price,
+                        preSelectedQuantity: m.preSelectedQuantity,
+                        quantity: m.quantity,
+                        productModifier: m.productModifier
+                            ? {
+                                  id: m.productModifier.id,
+                                  name: m.productModifier.name,
+                                  price: m.productModifier.price,
+                              }
+                            : null,
+                        image: m.image,
+                    });
+                });
+
+                convertedMG.push({
+                    id: mg.id,
+                    name: mg.name,
+                    choiceDuplicate: mg.choiceDuplicate,
+                    choiceMin: mg.choiceMin,
+                    choiceMax: mg.choiceMax,
+                    hideForCustomer: mg.hideForCustomer,
+                    modifiers: convertedM,
+                });
+            });
+
+        convertedP.push({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            image: p.image,
+            quantity: p.quantity,
+            notes: p.notes,
+            category: p.category
+                ? {
+                      id: p.category.id,
+                      name: p.category.name,
+                      image: p.category.image,
+                  }
+                : {
+                      id: "invalid",
+                      name: "invalid",
+                      image: null,
+                  },
+            modifierGroups: convertedMG,
+        });
+    });
+
+    return convertedP;
 };
