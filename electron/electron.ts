@@ -39,8 +39,8 @@ function createWindow() {
     });
 
     // Check for app updates every 3 seconds after launch
-    initUpdater();
-    checkForUpdates();
+    // initUpdater();
+    // checkForUpdates();
     // setInterval(checkForUpdates, 10 * 1000);
 
     // Hide the menu bar
