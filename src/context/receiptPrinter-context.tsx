@@ -61,14 +61,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
                 localStorage.setItem("onlineOrdersLastFetched", toLocalISOString(new Date()));
             } catch (e) {
-                await logError(
-                    JSON.stringify({
-                        restaurantId: restaurant.id,
-                        restaurantName: restaurant.name,
-                        error: "Error polling for new online orders",
-                        context: { restaurant: restaurant, error: e },
-                    })
-                );
+                await logError("Error polling for new online orders", JSON.stringify({ error: e, restaurant: restaurant }));
             }
         }, 60 * 1 * 1000);
 
@@ -89,14 +82,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
                 if (failedPrintQueue.length > 3) {
                     //Send notification for monitoring if it passes threshold
-                    logError(
-                        JSON.stringify({
-                            restaurantId: restaurant ? restaurant.id : "undefined",
-                            restaurantName: restaurant ? restaurant.name : "undefined",
-                            error: "Failed receipt prints passed threshold",
-                            context: { failedPrintQueue: failedPrintQueue },
-                        })
-                    );
+                    await logError("Failed receipt prints passed threshold", JSON.stringify({ failedPrintQueue: failedPrintQueue }));
                 }
 
                 for (var i = 0; i < failedPrintQueue.length; i++) {
@@ -106,12 +92,8 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 }
             } catch (e) {
                 await logError(
-                    JSON.stringify({
-                        restaurantId: restaurant.id,
-                        restaurantName: restaurant.name,
-                        error: "Error reprinting failed orders",
-                        context: { restaurant: restaurant, error: e },
-                    })
+                    "Error reprinting failed orders",
+                    JSON.stringify({ error: e, failedPrintQueue: localStorage.getItem("failedPrintQueue") })
                 );
             }
         }, 20 * 1 * 1000);
@@ -130,7 +112,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                     //If retry dont readd same order into failedPrintQueue
                     return;
                 } else if (result.error) {
-                    toast.error("There was an error printing your order. Please contact a Tabin representative.");
+                    toast.error("There was an error printing your order");
                     storeFailedPrint(result);
                 } else if (isRetry) {
                     //We are retrying and the retry was successful, remove order from failedPrintQueue
@@ -138,14 +120,8 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 }
             } catch (e) {
                 console.error(e);
-                toast.error("There was an error printing your order. Please contact a Tabin representative.");
-                logError(
-                    JSON.stringify({
-                        restaurantId: restaurant ? restaurant.id : "undefined",
-                        restaurantName: restaurant ? restaurant.name : "undefined",
-                        error: "There was an error printing your order. Please contact a Tabin representative.",
-                    })
-                );
+                toast.error("There was an error printing your order");
+                await logError("There was an error printing your order", JSON.stringify({ error: e, order: order }));
             }
         }
     };

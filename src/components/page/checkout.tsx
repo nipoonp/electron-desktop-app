@@ -276,47 +276,22 @@ export const Checkout = () => {
         const now = new Date();
 
         if (!user) {
-            await logError(
-                JSON.stringify({
-                    restaurantId: restaurant.id,
-                    restaurantName: restaurant.name,
-                    context: { user: user },
-                })
-            );
+            await logError("Invalid user", JSON.stringify({ user: user }));
             throw "Invalid user";
         }
 
         if (!orderType) {
-            await logError(
-                JSON.stringify({
-                    restaurantId: restaurant.id,
-                    restaurantName: restaurant.name,
-                    error: "Invalid order type",
-                    context: { orderType: orderType },
-                })
-            );
+            await logError("Invalid order type", JSON.stringify({ orderType: orderType }));
             throw "Invalid order type";
         }
 
         if (!restaurant) {
-            await logError(
-                JSON.stringify({
-                    error: "Invalid restaurant",
-                    context: { restaurant: restaurant },
-                })
-            );
+            await logError("Invalid restaurant", JSON.stringify({ restaurant: restaurant }));
             throw "Invalid restaurant";
         }
 
         if (!products || products.length == 0) {
-            await logError(
-                JSON.stringify({
-                    restaurantId: restaurant.id,
-                    restaurantName: restaurant.name,
-                    error: "No products have been selected",
-                    context: { products: products },
-                })
-            );
+            await logError("No products have been selected", JSON.stringify({ products: products }));
             throw "No products have been selected";
         }
 
@@ -352,30 +327,26 @@ export const Checkout = () => {
             }
         } catch (e) {
             await logError(
+                "Error in createOrderMutation input",
                 JSON.stringify({
-                    restaurantId: restaurant.id,
-                    restaurantName: restaurant.name,
-                    error: "No products have been selected",
-                    context: {
-                        status: "NEW",
-                        paid: paid,
-                        cashPayment: cashPayment,
-                        type: orderType,
-                        number: orderNumber,
-                        table: tableNumber,
-                        notes: notes,
-                        eftposReceipt: eftposReceipt,
-                        total: total,
-                        discount: promotion ? promotion.discountedAmount : undefined,
-                        promotionId: promotion ? promotion.promotion.id : undefined,
-                        subTotal: subTotal,
-                        registerId: register.id,
-                        products: JSON.stringify(products), // copy obj so we can mutate it later
-                        placedAt: now,
-                        placedAtUtc: now,
-                        orderUserId: user.id,
-                        orderRestaurantId: restaurant.id,
-                    },
+                    status: "NEW",
+                    paid: paid,
+                    cashPayment: cashPayment,
+                    type: orderType,
+                    number: orderNumber,
+                    table: tableNumber,
+                    notes: notes,
+                    eftposReceipt: eftposReceipt,
+                    total: total,
+                    discount: promotion ? promotion.discountedAmount : undefined,
+                    promotionId: promotion ? promotion.promotion.id : undefined,
+                    subTotal: subTotal,
+                    registerId: register.id,
+                    products: JSON.stringify(products), // copy obj so we can mutate it later
+                    placedAt: now,
+                    placedAtUtc: now,
+                    orderUserId: user.id,
+                    orderRestaurantId: restaurant.id,
                 })
             );
             throw "Error in createOrderMutation input";
@@ -417,14 +388,9 @@ export const Checkout = () => {
 
             return res.data.createOrder;
         } catch (e) {
-            await logError(
-                JSON.stringify({
-                    restaurantId: restaurant.id,
-                    restaurantName: restaurant.name,
-                    error: e,
-                    context: variables,
-                })
-            );
+            console.log("process order mutation error: ", e);
+
+            await logError(e, JSON.stringify({ error: e, variables: variables }));
             throw e;
         }
     };
