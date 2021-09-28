@@ -229,8 +229,6 @@ const getDayData = (availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS) => {
 };
 
 export const toLocalISOString = (date: Date) => {
-    const tzo = -date.getTimezoneOffset();
-
     const pad = (num: number) => {
         var norm = Math.floor(Math.abs(num));
         return (norm < 10 ? "0" : "") + norm;

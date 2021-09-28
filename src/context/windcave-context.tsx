@@ -2,7 +2,7 @@ import { createContext, useContext } from "react";
 
 import axios from "axios";
 
-import { convertCentsToDollars } from "../util/util";
+import { convertCentsToDollars, toLocalISOString } from "../util/util";
 import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
 import { useMutation } from "@apollo/client";
 import { useRestaurant } from "./restaurant-context";
@@ -265,6 +265,8 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                     const resJSON = convert.xml2json(response.data, { compact: true, spaces: 4 });
                     const res = JSON.parse(resJSON) as IWindcaveInitTransactionResponse;
 
+                    const now = new Date();
+
                     await createEftposTransactionLogMutation({
                         variables: {
                             eftposProvider: "WINDCAVE",
@@ -273,7 +275,8 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                             type: transactionType,
                             payload: response.data,
                             restaurantId: restaurant ? restaurant.id : "Invalid",
-                            expiry: Number(Math.floor(Number(new Date()) / 1000) + 2592000), // Add 30 days to timeStamp for DynamoDB TTL
+                            timestamp: toLocalISOString(now),
+                            expiry: Number(Math.floor(Number(now) / 1000) + 2592000), // Add 30 days to timeStamp for DynamoDB TTL
                         },
                     });
 

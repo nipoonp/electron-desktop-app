@@ -10,6 +10,7 @@ export const CREATE_EFTPOS_TRANSACTION_LOG = gql`
         $type: String
         $payload: String!
         $restaurantId: ID!
+        $timestamp: String
         $expiry: Int!
     ) {
         createEftposTransactionLog(
@@ -21,6 +22,7 @@ export const CREATE_EFTPOS_TRANSACTION_LOG = gql`
                 type: $type
                 payload: $payload
                 restaurantId: $restaurantId
+                timestamp: $timestamp
                 expiry: $expiry
             }
         ) {

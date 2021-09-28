@@ -4,6 +4,7 @@ import { Logger } from "aws-amplify";
 import { delay, getVerifoneSocketErrorMessage, getVerifoneTimeBasedTransactionId } from "../model/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
+import { toLocalISOString } from "../util/util";
 
 let electron: any;
 let ipcRenderer: any;
@@ -340,7 +341,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
             // Poll For Transaction Result -------------------------------------------------------------------------------------------------------------------------------- //
             while (true) {
-                const loopDate = Number(new Date());
+                const now = new Date();
+                const loopDate = Number(now);
 
                 const errorMessage = checkForErrors();
                 if (errorMessage) {
@@ -373,6 +375,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                             type: eftposData.type,
                             payload: eftposData.payload,
                             restaurantId: restaurantId,
+                            timestamp: toLocalISOString(now),
                             expiry: Number(Math.floor(loopDate / 1000) + 2592000), // Add 30 days to timeStamp for DynamoDB TTL
                         },
                     });
