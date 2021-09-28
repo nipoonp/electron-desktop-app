@@ -82,10 +82,6 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
         }
     }, [getPromotionsByCodeData, getPromotionsByCodeError]);
 
-    const onModalClose = () => {
-        props.onClose();
-    };
-
     const onApply = () => {
         getPromotionsByCode({
             variables: {
@@ -102,7 +98,7 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
 
     return (
         <>
-            <ModalV2 isOpen={props.isOpen} disableClose={false} onRequestClose={onModalClose}>
+            <ModalV2 isOpen={props.isOpen} disableClose={false} onRequestClose={props.onClose}>
                 <div>
                     <div className="h3 mb-3">Please enter your promotion code</div>
                     <Input

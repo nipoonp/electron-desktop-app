@@ -16,6 +16,14 @@ export interface ICognitoUser {
     username: string;
 }
 
+export enum ECheckoutTransactionOutcome {
+    PayLater,
+    CashPayment,
+    Success,
+    Delay,
+    Fail,
+}
+
 export enum EOrderType {
     DINEIN = "DINEIN",
     TAKEAWAY = "TAKEAWAY",
