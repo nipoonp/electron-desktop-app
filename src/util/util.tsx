@@ -10,6 +10,7 @@ import {
     IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES,
     IGET_RESTAURANT_PROMOTION_AVAILABILITY,
     IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES,
+    IGET_RESTAURANT_REGISTER_PRINTER,
 } from "../graphql/customQueries";
 import {
     CheckIfPromotionValidResponse,
@@ -19,6 +20,47 @@ import {
     ICartModifierGroup,
     ICartProduct,
 } from "../model/model";
+
+export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0);
+
+export const convertCentsToDollars = (price: number) => (price / 100).toFixed(2);
+
+export const getOrderNumber = (orderNumberSuffix: string) => {
+    let todayDate = format(new Date(), "dd/MM/yyyy");
+
+    let orderNumberStored: string | null = localStorage.getItem("orderNumber");
+    let orderNumberDateStored: string | null = localStorage.getItem("orderNumberDate");
+
+    let orderNumber;
+
+    if (todayDate == orderNumberDateStored) {
+        orderNumber = String(Number(orderNumberStored) + 1);
+
+        localStorage.setItem("orderNumber", orderNumber);
+    } else {
+        orderNumber = String(1);
+        localStorage.setItem("orderNumber", orderNumber);
+        localStorage.setItem("orderNumberDate", todayDate);
+    }
+
+    return orderNumber + (orderNumberSuffix || "");
+};
+
+export const filterPrintProducts = (products: ICartProduct[], printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
+    if (!printer.ignoreProducts || printer.ignoreProducts.items.length == 0) {
+        return products;
+    }
+
+    printer.ignoreProducts.items.forEach((ignoreProduct) => {
+        products.forEach((product) => {
+            if (ignoreProduct.product.id == product.id) {
+                products = products.filter((p) => p.id != product.id);
+            }
+        });
+    });
+
+    return products;
+};
 
 export const isItemSoldOut = (soldOut?: boolean, soldOutDate?: string) => {
     if (soldOut || soldOutDate == format(new Date(), "yyyy-MM-dd")) {
@@ -250,16 +292,6 @@ export const toLocalISOString = (date: Date) => {
         pad(date.getMilliseconds())
     );
 };
-
-export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0);
-
-export const convertCentsToDollars = (price: number) => (price / 100).toFixed(2);
-
-// https://stackoverflow.com/questions/149055/how-to-format-numbers-as-currency-string
-export const currencyFormatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-});
 
 export const toDataURL = (url, callback) => {
     const xhr = new XMLHttpRequest();

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useHistory } from "react-router-dom";
-import { convertCentsToDollars, convertProductTypesForPrint } from "../../util/util";
+import { convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER } from "../../graphql/customMutations";
 import { IGET_RESTAURANT_REGISTER_PRINTER, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, EPromotionType } from "../../graphql/customQueries";
@@ -112,21 +112,6 @@ export const Checkout = () => {
     if (!register) {
         throw "Register is not valid";
     }
-
-    useEffect(() => {
-        if (
-            showProductModal ||
-            showEditProductModal ||
-            showPaymentModal ||
-            showPromotionCodeModal ||
-            showUpSellCategoryModal ||
-            showUpSellProductModal
-        ) {
-            document.body.style.overflow = "hidden";
-        } else {
-            document.body.style.overflow = "unset";
-        }
-    }, [showProductModal, showEditProductModal, showPaymentModal, showPromotionCodeModal || showUpSellCategoryModal, showUpSellProductModal]);
 
     useEffect(() => {
         setTimeout(() => {
@@ -262,34 +247,9 @@ export const Checkout = () => {
         setShowPaymentModal(false);
     };
 
-    const getOrderNumber = () => {
-        let todayDate = format(new Date(), "dd/MM/yyyy");
-
-        let orderNumberStored: string | null = localStorage.getItem("orderNumber");
-        let orderNumberDateStored: string | null = localStorage.getItem("orderNumberDate");
-
-        let orderNumber;
-
-        if (todayDate == orderNumberDateStored) {
-            orderNumber = String(Number(orderNumberStored) + 1);
-
-            localStorage.setItem("orderNumber", orderNumber);
-        } else {
-            orderNumber = String(1);
-            localStorage.setItem("orderNumber", orderNumber);
-            localStorage.setItem("orderNumberDate", todayDate);
-        }
-
-        return orderNumber + (register.orderNumberSuffix || "");
-    };
-
     const beginPaymentOutcomeApprovedTimeout = () => {
-        (function myLoop(i) {
+        (function timerLoop(i) {
             setTimeout(() => {
-                // if (isUserFocusedOnEmailAddressInput.current) {
-                //     i = 30;
-                //     isUserFocusedOnEmailAddressInput.current = false;
-                // }
                 i--;
                 setPaymentOutcomeApprovedRedirectTimeLeft(i);
 
@@ -298,25 +258,9 @@ export const Checkout = () => {
                     clearCart();
                 }
 
-                if (i > 0) myLoop(i); //  decrement i and call myLoop again if i > 0
+                if (i > 0) timerLoop(i); //  decrement i and call myLoop again if i > 0
             }, 1000);
         })(10);
-    };
-
-    const filterPrintProducts = (products: ICartProduct[], printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
-        if (!printer.ignoreProducts || printer.ignoreProducts.items.length == 0) {
-            return products;
-        }
-
-        printer.ignoreProducts.items.forEach((ignoreProduct) => {
-            products.forEach((product) => {
-                if (ignoreProduct.product.id == product.id) {
-                    products = products.filter((p) => p.id != product.id);
-                }
-            });
-        });
-
-        return products;
     };
 
     const printReceipts = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
