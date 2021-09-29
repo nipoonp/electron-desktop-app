@@ -1,10 +1,8 @@
-import { useCart } from "../../context/cart-context";
-import { ECheckoutTransactionOutcome } from "../../model/model";
+import { EEftposTransactionOutcome } from "../../model/model";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { Button } from "../../tabin/components/button";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { Modal } from "../../tabin/components/modal";
-import { convertCentsToDollars } from "../../util/util";
 
 import "./paymentModal.scss";
 
@@ -15,7 +13,7 @@ interface IPaymentModalProps {
     paymentOutcomeApprovedRedirectTimeLeft: number;
     paymentOutcomeErrorMessage: string | null;
     createOrderError: string | null;
-    paymentOutcome: ECheckoutTransactionOutcome | null;
+    paymentOutcome: EEftposTransactionOutcome | null;
     onConfirmTotalOrRetryTransaction: () => void;
     onClosePaymentModal: () => void;
     onCancelOrder: () => void;
@@ -34,7 +32,6 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         onClosePaymentModal,
         onCancelOrder,
     } = props;
-    const { subTotal } = useCart();
 
     const retryButtons = () => (
         <>
@@ -120,13 +117,13 @@ export const PaymentModal = (props: IPaymentModalProps) => {
             return awaitingCard();
         }
 
-        if (paymentOutcome == ECheckoutTransactionOutcome.PayLater) {
+        if (paymentOutcome == EEftposTransactionOutcome.PayLater) {
             return paymentPayLater();
-        } else if (paymentOutcome == ECheckoutTransactionOutcome.Success) {
+        } else if (paymentOutcome == EEftposTransactionOutcome.Success) {
             return paymentAccepted();
-        } else if (paymentOutcome == ECheckoutTransactionOutcome.Fail) {
+        } else if (paymentOutcome == EEftposTransactionOutcome.Fail) {
             return paymentFailed();
-        } else if (paymentOutcome == ECheckoutTransactionOutcome.Delay) {
+        } else if (paymentOutcome == EEftposTransactionOutcome.Delay) {
             return paymentDelayed();
         } else {
             return paymentFailed();

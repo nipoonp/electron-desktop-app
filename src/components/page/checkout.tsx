@@ -6,28 +6,25 @@ import { useHistory } from "react-router-dom";
 import { convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER } from "../../graphql/customMutations";
-import { IGET_RESTAURANT_REGISTER_PRINTER, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, EPromotionType } from "../../graphql/customQueries";
+import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, EPromotionType } from "../../graphql/customQueries";
 import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath } from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
 import {
     ICartProduct,
     IPreSelectedModifiers,
-    ICartModifierGroup,
-    EOrderType,
     IMatchingUpSellCrossSellProductItem,
     IMatchingUpSellCrossSellCategoryItem,
-    ECheckoutTransactionOutcome,
+    EEftposTransactionOutcome,
+    IEftposTransactionOutcome,
 } from "../../model/model";
 import { useUser } from "../../context/user-context";
-import { format } from "date-fns";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
-import { useSmartpay, SmartpayTransactionOutcome } from "../../context/smartpay-context";
-import { Modal } from "../../tabin/components/modal";
+import { useSmartpay } from "../../context/smartpay-context";
 import { Button } from "../../tabin/components/button";
 import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
 import { Stepper } from "../../tabin/components/stepper";
-import { useVerifone, VerifoneTransactionOutcome } from "../../context/verifone-context";
+import { useVerifone } from "../../context/verifone-context";
 import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
@@ -38,7 +35,7 @@ import { Link } from "../../tabin/components/link";
 import { TextArea } from "../../tabin/components/textArea";
 
 import "./checkout.scss";
-import { useWindcave, WindcaveTransactionOutcome, WindcaveTransactionOutcomeResult } from "../../context/windcave-context";
+import { useWindcave } from "../../context/windcave-context";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { UpSellCategoryModal } from "../modals/upSellCategory";
 import { useErrorLogging } from "../../context/errorLogging-context";
@@ -96,7 +93,7 @@ export const Checkout = () => {
     const [showEditProductModal, setShowEditProductModal] = useState(false);
     const [showItemUpdatedModal, setShowItemUpdatedModal] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [paymentOutcome, setPaymentOutcome] = useState<ECheckoutTransactionOutcome | null>(null);
+    const [paymentOutcome, setPaymentOutcome] = useState<EEftposTransactionOutcome | null>(null);
     const [paymentOutcomeErrorMessage, setPaymentOutcomeErrorMessage] = useState<string | null>(null);
     const [paymentOutcomeDelayedOrderNumber, setPaymentOutcomeDelayedOrderNumber] = useState<string | null>(null);
     const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(10);
@@ -442,134 +439,59 @@ export const Checkout = () => {
         }
     };
 
-    const doTransaction = async () => {
-        if (register.eftposProvider == "SMARTPAY") {
-            await doTransactionSmartpay();
-        } else if (register.eftposProvider == "VERIFONE") {
-            await doTransactionVerifone();
-        } else if (register.eftposProvider == "WINDCAVE") {
-            await doTransactionWindcave();
-        }
-    };
-
-    const doTransactionSmartpay = async () => {
-        let delayedShown = false;
-
-        let delayed = () => {
-            if (!delayedShown) {
-                // Don't show it more than once per request...
-                delayedShown = true;
-
-                // Might want to let the user know to check if everything is ok with the device
-                setPaymentOutcome(ECheckoutTransactionOutcome.Delay);
-            }
-        };
-
+    const performEftposTransaction = async () => {
         try {
-            let pollingUrl = await smartpayCreateTransaction(subTotal, "Card.Purchase");
+            let transactionOutcome, message, eftposReceipt;
 
-            let transactionOutcome: SmartpayTransactionOutcome = await smartpayPollForOutcome(pollingUrl, delayed);
+            if (register.eftposProvider == "SMARTPAY") {
+                let delayedShown = false;
 
-            if (transactionOutcome == SmartpayTransactionOutcome.Accepted) {
-                setPaymentOutcome(ECheckoutTransactionOutcome.Success);
+                const delayed = () => {
+                    if (!delayedShown) {
+                        delayedShown = true;
+                        // Might want to let the user know to check if everything is ok with the device
+                        setPaymentOutcome(EEftposTransactionOutcome.Delay);
+                    }
+                };
 
-                try {
-                    await onSubmitOrder(true, null);
-                } catch (e) {
-                    setCreateOrderError(e);
-                }
-            } else if (transactionOutcome == SmartpayTransactionOutcome.Declined) {
-                setPaymentOutcome(ECheckoutTransactionOutcome.Fail);
-                setPaymentOutcomeErrorMessage("Transaction Declined! Please try again.");
-            } else if (transactionOutcome == SmartpayTransactionOutcome.Cancelled) {
-                setPaymentOutcome(ECheckoutTransactionOutcome.Fail);
-                setPaymentOutcomeErrorMessage("Transaction Cancelled!");
-            } else if (transactionOutcome == SmartpayTransactionOutcome.DeviceOffline) {
-                setPaymentOutcome(ECheckoutTransactionOutcome.Fail);
-                setPaymentOutcomeErrorMessage("Transaction Cancelled! Please check if the device is powered on and online.");
-            } else {
-                setPaymentOutcome(ECheckoutTransactionOutcome.Fail);
+                const pollingUrl = await smartpayCreateTransaction(subTotal, "Card.Purchase");
+                const res: IEftposTransactionOutcome = await smartpayPollForOutcome(pollingUrl, delayed);
+
+                transactionOutcome = res.transactionOutcome;
+                message = res.message;
+                eftposReceipt = res.eftposReceipt;
+            } else if (register.eftposProvider == "WINDCAVE") {
+                const txnRef = await windcaveCreateTransaction(register.windcaveStationId, subTotal, "Purchase");
+                const res: IEftposTransactionOutcome = await windcavePollForOutcome(register.windcaveStationId, txnRef);
+
+                transactionOutcome = res.transactionOutcome;
+                message = res.message;
+                eftposReceipt = res.eftposReceipt;
+            } else if (register.eftposProvider == "VERIFONE") {
+                const res: IEftposTransactionOutcome = await verifoneCreateTransaction(
+                    subTotal,
+                    register.eftposIpAddress,
+                    register.eftposPortNumber,
+                    restaurant.id
+                );
+
+                transactionOutcome = res.transactionOutcome;
+                message = res.message;
+                eftposReceipt = res.eftposReceipt;
             }
-        } catch (errorMessage) {
-            setPaymentOutcomeErrorMessage(errorMessage);
-        }
-    };
 
-    const doTransactionWindcave = async () => {
-        try {
-            const txnRef = await windcaveCreateTransaction(register.windcaveStationId, subTotal, "Purchase");
+            setPaymentOutcome(transactionOutcome);
+            setPaymentOutcomeErrorMessage(message);
 
-            let transactionOutcome: WindcaveTransactionOutcomeResult = await windcavePollForOutcome(register.windcaveStationId, txnRef);
-
-            if (transactionOutcome.transactionOutcome == WindcaveTransactionOutcome.Accepted) {
-                setPaymentOutcome(ECheckoutTransactionOutcome.Success);
-
-                try {
-                    await onSubmitOrder(true, transactionOutcome.eftposReceipt);
-                } catch (e) {
-                    setCreateOrderError(e);
-                }
-            } else if (transactionOutcome.transactionOutcome == WindcaveTransactionOutcome.Declined) {
-                setPaymentOutcome(ECheckoutTransactionOutcome.Fail);
-                setPaymentOutcomeErrorMessage("Transaction Declined! Please try again.");
-            } else if (transactionOutcome.transactionOutcome == WindcaveTransactionOutcome.Cancelled) {
-                setPaymentOutcome(ECheckoutTransactionOutcome.Fail);
-                setPaymentOutcomeErrorMessage("Transaction Cancelled!");
-            } else {
-                setPaymentOutcome(ECheckoutTransactionOutcome.Fail);
-            }
-        } catch (errorMessage) {
-            setPaymentOutcomeErrorMessage(errorMessage);
-        }
-    };
-
-    const doTransactionVerifone = async () => {
-        try {
-            const { transactionOutcome, eftposReceipt } = await verifoneCreateTransaction(
-                subTotal,
-                register.eftposIpAddress,
-                register.eftposPortNumber,
-                restaurant.id
-            );
-
-            if (transactionOutcome == VerifoneTransactionOutcome.Approved) {
-                setPaymentOutcome(ECheckoutTransactionOutcome.Success);
-
+            if (transactionOutcome == EEftposTransactionOutcome.Success) {
                 try {
                     await onSubmitOrder(true, eftposReceipt);
                 } catch (e) {
                     setCreateOrderError(e);
                 }
-            } else if (transactionOutcome == VerifoneTransactionOutcome.ApprovedWithSignature) {
-                // We should not come in here if its on kiosk mode, unattended mode for Verifone
-                setPaymentOutcome(ECheckoutTransactionOutcome.Fail);
-                setPaymentOutcomeErrorMessage("Transaction Approved With Signature Not Allowed In Kiosk Mode!");
-            } else if (transactionOutcome == VerifoneTransactionOutcome.Cancelled) {
-                setPaymentOutcome(ECheckoutTransactionOutcome.Fail);
-                setPaymentOutcomeErrorMessage("Transaction Cancelled!");
-            } else if (transactionOutcome == VerifoneTransactionOutcome.Declined) {
-                setPaymentOutcome(ECheckoutTransactionOutcome.Fail);
-                setPaymentOutcomeErrorMessage("Transaction Declined! Please try again.");
-            } else if (transactionOutcome == VerifoneTransactionOutcome.SettledOk) {
-                alert("Transaction Settled Ok!");
-            } else if (transactionOutcome == VerifoneTransactionOutcome.HostUnavailable) {
-                setPaymentOutcome(ECheckoutTransactionOutcome.Fail);
-                setPaymentOutcomeErrorMessage("Transaction Host Unavailable! Please check if the device is powered on and online.");
-            } else if (transactionOutcome == VerifoneTransactionOutcome.SystemError) {
-                setPaymentOutcome(ECheckoutTransactionOutcome.Fail);
-                setPaymentOutcomeErrorMessage("Transaction System Error! Please try again later.");
-            } else if (transactionOutcome == VerifoneTransactionOutcome.TransactionInProgress) {
-                // You should never come in this state
-                // alert("Transaction In Progress!");
-            } else if (transactionOutcome == VerifoneTransactionOutcome.TerminalBusy) {
-                setPaymentOutcome(ECheckoutTransactionOutcome.Fail);
-                setPaymentOutcomeErrorMessage("Terminal Is Busy! Please cancel the previous transaction before proceeding.");
-            } else {
-                setPaymentOutcome(ECheckoutTransactionOutcome.Fail);
-                setPaymentOutcomeErrorMessage("Transaction Failed!");
             }
         } catch (errorMessage) {
-            setPaymentOutcome(ECheckoutTransactionOutcome.Fail);
+            setPaymentOutcome(EEftposTransactionOutcome.Fail);
             setPaymentOutcomeErrorMessage(errorMessage);
         }
     };
@@ -589,13 +511,13 @@ export const Checkout = () => {
         setPaymentOutcomeDelayedOrderNumber(null);
         setPaymentOutcomeApprovedRedirectTimeLeft(10);
 
-        await doTransaction();
+        await performEftposTransaction();
     };
 
     const onClickPayLater = async () => {
         setShowPaymentModal(true);
 
-        setPaymentOutcome(ECheckoutTransactionOutcome.PayLater);
+        setPaymentOutcome(EEftposTransactionOutcome.PayLater);
         setPaymentOutcomeErrorMessage(null);
         setPaymentOutcomeDelayedOrderNumber(null);
         setPaymentOutcomeApprovedRedirectTimeLeft(10);

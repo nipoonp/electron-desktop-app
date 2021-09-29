@@ -6,14 +6,8 @@ import { convertCentsToDollars, toLocalISOString } from "../util/util";
 import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
 import { useMutation } from "@apollo/client";
 import { useRestaurant } from "./restaurant-context";
+import { EEftposTransactionOutcome, EWindcaveTransactionOutcome, IEftposTransactionOutcome } from "../model/model";
 var convert = require("xml-js");
-
-export enum WindcaveTransactionOutcome {
-    Accepted,
-    Declined,
-    Cancelled,
-    Failed,
-}
 
 export enum EWindcaveStatus {
     Initiating = "1",
@@ -33,11 +27,6 @@ export enum EWindcaveTxnStatus {
     Processing = "6",
     VerifyingSignature = "7",
     DisplayResult = "8",
-}
-
-export interface WindcaveTransactionOutcomeResult {
-    transactionOutcome: WindcaveTransactionOutcome;
-    eftposReceipt: string | null;
 }
 
 interface IWindcaveInitTransactionResponse {
@@ -146,7 +135,7 @@ const KEY: string = "102ad77c997dcd4cfccd332af6c34f9b";
 
 type ContextProps = {
     createTransaction: (stationId: string, amount: number, transactionType: string, action?: string, user?: string, key?: string) => Promise<string>;
-    pollForOutcome: (stationId: string, txnRef: string, action?: string, user?: string, key?: string) => Promise<WindcaveTransactionOutcomeResult>;
+    pollForOutcome: (stationId: string, txnRef: string, action?: string, user?: string, key?: string) => Promise<IEftposTransactionOutcome>;
 };
 
 const WindcaveContext = createContext<ContextProps>({
@@ -315,7 +304,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         action: string = ACTION,
         user: string = USER,
         key: string = KEY
-    ): Promise<WindcaveTransactionOutcomeResult> => {
+    ): Promise<IEftposTransactionOutcome> => {
         const interval = 2 * 1000; // 2 seconds
         const timeout = 30 * 60 * 1000; // 10 minutes
 
@@ -353,7 +342,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                 // console.log(`Transaction GET response received (${response.status}) ${response.data}`);
 
                 let transactionComplete = false;
-                let transactionOutcome;
+                let transactionOutcome: IEftposTransactionOutcome | null = null;
                 let eftposReceipt;
 
                 if (response.status == 200) {
@@ -376,7 +365,12 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                         if (res.Scr.Result && res.Scr.Result.AP) {
                             if (res.Scr.Result.AP._text === "1") {
                                 //Accepted
-                                transactionOutcome = WindcaveTransactionOutcome.Accepted;
+                                transactionOutcome = {
+                                    platformTransactionOutcome: EWindcaveTransactionOutcome.Accepted,
+                                    transactionOutcome: EEftposTransactionOutcome.Success,
+                                    message: "Transaction Accepted!",
+                                    eftposReceipt: eftposReceipt,
+                                };
                             } else if (res.Scr.Result.AP._text === "0") {
                                 //Declined or some other issue
 
@@ -384,12 +378,22 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                                     (res.Scr.Result && res.Scr.Result.RC && res.Scr.Result.RC._text === "VW") ||
                                     (res.Scr.ReCo && res.Scr.ReCo._text === "VW")
                                 ) {
-                                    transactionOutcome = WindcaveTransactionOutcome.Cancelled;
+                                    transactionOutcome = {
+                                        platformTransactionOutcome: EWindcaveTransactionOutcome.Cancelled,
+                                        transactionOutcome: EEftposTransactionOutcome.Fail,
+                                        message: "Transaction Cancelled!",
+                                        eftposReceipt: eftposReceipt,
+                                    };
                                 } else if (
                                     (res.Scr.Result && res.Scr.Result.RC && res.Scr.Result.RC._text === "76") ||
                                     (res.Scr.ReCo && res.Scr.ReCo._text === "76")
                                 ) {
-                                    transactionOutcome = WindcaveTransactionOutcome.Declined;
+                                    transactionOutcome = {
+                                        platformTransactionOutcome: EWindcaveTransactionOutcome.Declined,
+                                        transactionOutcome: EEftposTransactionOutcome.Fail,
+                                        message: "Transaction Declined! Please try again.",
+                                        eftposReceipt: eftposReceipt,
+                                    };
                                 } else if (transactionComplete && res.Scr.ReCo && res.Scr.ReCo._text) {
                                     reject(windcaveResponseCodeMessages[res.Scr.ReCo._text] || "Unknown error");
                                     return;
@@ -406,7 +410,12 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                                 res.Scr.StatusId._text == EWindcaveStatus.TransactionCompleted &&
                                 res.Scr.TxnStatusId._text == EWindcaveTxnStatus.VerifyingSignature
                             ) {
-                                transactionOutcome = WindcaveTransactionOutcome.Failed;
+                                transactionOutcome = transactionOutcome = {
+                                    platformTransactionOutcome: EWindcaveTransactionOutcome.Failed,
+                                    transactionOutcome: EEftposTransactionOutcome.Fail,
+                                    message: "Transaction Approved With Signature Not Allowed In Kiosk Mode!",
+                                    eftposReceipt: eftposReceipt,
+                                };
                             }
 
                             if (res.Scr.Rcpt) {
@@ -431,7 +440,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                 console.log(transactionComplete, transactionOutcome);
 
                 if (transactionComplete && transactionOutcome != null) {
-                    resolve({ transactionOutcome: transactionOutcome, eftposReceipt: eftposReceipt });
+                    resolve(transactionOutcome);
                     return;
                 } else if (Number(new Date()) < endTime) {
                     setTimeout(checkCondition, interval, resolve, reject);
