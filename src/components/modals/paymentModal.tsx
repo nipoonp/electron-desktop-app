@@ -71,22 +71,6 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         </>
     );
 
-    const paymentCashPayment = () => (
-        <>
-            <div className="h4 mb-4">All Done!</div>
-            <div className="h2 mb-6">Please give correct change.</div>
-            <div className="h1 mb-6">Total: ${convertCentsToDollars(subTotal)}</div>
-            <div className="mb-1">Your order number is</div>
-            <div className="order-number h1">{paymentOutcomeDelayedOrderNumber}</div>
-            <div className="separator-6 mb-6"></div>
-            <div className="redirecting-in-text text-grey">
-                Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
-                {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
-                ...
-            </div>
-        </>
-    );
-
     const paymentAccepted = () => (
         <>
             <div className="h4 mb-4">All Done!</div>
@@ -138,8 +122,6 @@ export const PaymentModal = (props: IPaymentModalProps) => {
 
         if (paymentOutcome == ECheckoutTransactionOutcome.PayLater) {
             return paymentPayLater();
-        } else if (paymentOutcome == ECheckoutTransactionOutcome.CashPayment) {
-            return paymentCashPayment();
         } else if (paymentOutcome == ECheckoutTransactionOutcome.Success) {
             return paymentAccepted();
         } else if (paymentOutcome == ECheckoutTransactionOutcome.Fail) {

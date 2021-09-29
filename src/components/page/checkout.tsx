@@ -303,12 +303,12 @@ export const Checkout = () => {
             });
     };
 
-    const onSubmitOrder = async (paid: boolean, cashPayment: boolean, eftposReceipt: string | null) => {
-        const orderNumber = getOrderNumber();
+    const onSubmitOrder = async (paid: boolean, eftposReceipt: string | null) => {
+        const orderNumber = getOrderNumber(register.orderNumberSuffix);
         setPaymentOutcomeDelayedOrderNumber(orderNumber);
 
         try {
-            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(orderNumber, paid, cashPayment, eftposReceipt);
+            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(orderNumber, paid, eftposReceipt);
 
             if (register.printers && register.printers.items.length > 0) {
                 await printReceipts(newOrder);
@@ -321,12 +321,7 @@ export const Checkout = () => {
     };
 
     // Submit callback
-    const createOrder = async (
-        orderNumber: string,
-        paid: boolean,
-        cashPayment: boolean,
-        eftposReceipt: string | null
-    ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
+    const createOrder = async (orderNumber: string, paid: boolean, eftposReceipt: string | null): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
         const now = new Date();
 
         if (!user) {
@@ -355,7 +350,6 @@ export const Checkout = () => {
             variables = {
                 status: "NEW",
                 paid: paid,
-                cashPayment: cashPayment,
                 type: orderType,
                 number: orderNumber,
                 table: tableNumber,
@@ -385,7 +379,6 @@ export const Checkout = () => {
                 JSON.stringify({
                     status: "NEW",
                     paid: paid,
-                    cashPayment: cashPayment,
                     type: orderType,
                     number: orderNumber,
                     table: tableNumber,
@@ -481,7 +474,7 @@ export const Checkout = () => {
                 setPaymentOutcome(ECheckoutTransactionOutcome.Success);
 
                 try {
-                    await onSubmitOrder(true, false, null);
+                    await onSubmitOrder(true, null);
                 } catch (e) {
                     setCreateOrderError(e);
                 }
@@ -512,7 +505,7 @@ export const Checkout = () => {
                 setPaymentOutcome(ECheckoutTransactionOutcome.Success);
 
                 try {
-                    await onSubmitOrder(true, false, transactionOutcome.eftposReceipt);
+                    await onSubmitOrder(true, transactionOutcome.eftposReceipt);
                 } catch (e) {
                     setCreateOrderError(e);
                 }
@@ -543,7 +536,7 @@ export const Checkout = () => {
                 setPaymentOutcome(ECheckoutTransactionOutcome.Success);
 
                 try {
-                    await onSubmitOrder(true, false, eftposReceipt);
+                    await onSubmitOrder(true, eftposReceipt);
                 } catch (e) {
                     setCreateOrderError(e);
                 }
@@ -608,22 +601,7 @@ export const Checkout = () => {
         setPaymentOutcomeApprovedRedirectTimeLeft(10);
 
         try {
-            await onSubmitOrder(false, false, null);
-        } catch (e) {
-            setCreateOrderError(e);
-        }
-    };
-
-    const onClickCashPayment = async () => {
-        setShowPaymentModal(true);
-
-        setPaymentOutcome(ECheckoutTransactionOutcome.CashPayment);
-        setPaymentOutcomeErrorMessage(null);
-        setPaymentOutcomeDelayedOrderNumber(null);
-        setPaymentOutcomeApprovedRedirectTimeLeft(20);
-
-        try {
-            await onSubmitOrder(false, true, null);
+            await onSubmitOrder(false, null);
         } catch (e) {
             setCreateOrderError(e);
         }
@@ -922,11 +900,6 @@ export const Checkout = () => {
                     <Button onClick={onClickOrderButton} className="button large complete-order-button">
                         Complete Order
                     </Button>
-                    {register.enableCashPayments && (
-                        <Button onClick={onClickCashPayment} className="button large ml-3 complete-order-button">
-                            Cash Payment
-                        </Button>
-                    )}
                 </div>
                 {register.enablePayLater && (
                     <div className="pay-later-link mt-4">

@@ -18,7 +18,6 @@ export interface ICognitoUser {
 
 export enum ECheckoutTransactionOutcome {
     PayLater,
-    CashPayment,
     Success,
     Delay,
     Fail,
