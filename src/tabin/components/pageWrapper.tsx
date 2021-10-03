@@ -8,7 +8,7 @@ export const PageWrapper = (props: IProps) => {
     const history = useHistory();
     const { clearCart } = useCart();
 
-    const resetAfterSeconds = 3 * 60; //3 mins
+    const resetAfterSeconds = 30 * 60; //3 mins
     const userInactiveSecondsCounter: React.MutableRefObject<number> = useRef(0);
 
     const resetUserInactiveSecondsCounter = () => {

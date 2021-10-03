@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { useCart } from "../../context/cart-context";
 import { EEftposTransactionOutcome, IEftposTransactionOutcome } from "../../model/model";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { Button } from "../../tabin/components/button";
 import { CachedImage } from "../../tabin/components/cachedImage";
+import { Input } from "../../tabin/components/input";
 import { Modal } from "../../tabin/components/modal";
+import { convertCentsToDollars } from "../../util/util";
 
 import "./paymentModal.scss";
 
@@ -32,6 +35,8 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         onConfirmTotalOrRetryTransaction,
         onCancelOrder,
     } = props;
+
+    const [amount, setAmount] = useState(subTotal);
 
     const onRetry = () => {
         onConfirmTotalOrRetryTransaction(subTotal);
@@ -101,6 +106,44 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         </>
     );
 
+    const onChangeAmount = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setAmount(parseInt(event.target.value));
+    };
+
+    const onClickEftpos = () => {
+        onConfirmTotalOrRetryTransaction(amount);
+    };
+
+    const posPaymentScreen = () => (
+        <>
+            <div className="mb-6" style={{ display: "flex", fontSize: "24px" }}>
+                <div>Amount To Pay</div>
+                <Input
+                    className="ml-4"
+                    type="number"
+                    name="AmountToPay"
+                    value={convertCentsToDollars(amount)}
+                    placeholder="9.99"
+                    onChange={onChangeAmount}
+                />
+            </div>
+            <div className="mb-6" style={{ display: "flex" }}>
+                <Button>Cash</Button>
+                <Button className="ml-4" onClick={onClickEftpos}>
+                    Eftpos
+                </Button>
+            </div>
+
+            <div className="mb-2">Quick Cash Options</div>
+            <div className="mb-4" style={{ display: "flex" }}>
+                <Button>$5</Button>
+                <Button className="ml-4">$10</Button>
+                <Button className="ml-4">$20</Button>
+                <Button className="ml-4">$50</Button>
+            </div>
+        </>
+    );
+
     const createOrderFailed = () => (
         <>
             <div className="h4 mb-4">Oops! Something went wrong.</div>
@@ -115,13 +158,9 @@ export const PaymentModal = (props: IPaymentModalProps) => {
     const getActivePaymentModalComponent = () => {
         if (createOrderError) {
             return createOrderFailed();
-        }
-
-        if (eftposTransactionInProgress) {
+        } else if (eftposTransactionInProgress) {
             return awaitingCard();
-        }
-
-        if (eftposTransactionOutcome) {
+        } else if (eftposTransactionOutcome) {
             // } else if (eftposTransactionOutcome.transactionOutcome == EEftposTransactionOutcome.PayLater) {
             //     return paymentPayLater();
             if (eftposTransactionOutcome.transactionOutcome == EEftposTransactionOutcome.Success) {
@@ -133,6 +172,8 @@ export const PaymentModal = (props: IPaymentModalProps) => {
             } else {
                 return paymentFailed();
             }
+        } else {
+            return posPaymentScreen();
         }
     };
 
