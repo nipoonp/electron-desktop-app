@@ -1,4 +1,5 @@
-import { EEftposTransactionOutcome } from "../../model/model";
+import { useCart } from "../../context/cart-context";
+import { EEftposTransactionOutcome, IEftposTransactionOutcome } from "../../model/model";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { Button } from "../../tabin/components/button";
 import { CachedImage } from "../../tabin/components/cachedImage";
@@ -8,38 +9,41 @@ import "./paymentModal.scss";
 
 interface IPaymentModalProps {
     isOpen: boolean;
-    // onClose: () => void;
+    onClose: () => void;
     paymentOutcomeDelayedOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
-    paymentOutcomeErrorMessage: string | null;
+    eftposTransactionInProgress: boolean;
+    eftposTransactionOutcome: IEftposTransactionOutcome | null;
     createOrderError: string | null;
-    paymentOutcome: EEftposTransactionOutcome | null;
-    onConfirmTotalOrRetryTransaction: () => void;
-    onClosePaymentModal: () => void;
+    onConfirmTotalOrRetryTransaction: (amount: number) => void;
     onCancelOrder: () => void;
 }
 
 export const PaymentModal = (props: IPaymentModalProps) => {
+    const { subTotal } = useCart();
     const {
         isOpen,
-        // onClose,
+        onClose,
         paymentOutcomeDelayedOrderNumber,
         paymentOutcomeApprovedRedirectTimeLeft,
-        paymentOutcomeErrorMessage,
+        eftposTransactionInProgress,
+        eftposTransactionOutcome,
         createOrderError,
-        paymentOutcome,
         onConfirmTotalOrRetryTransaction,
-        onClosePaymentModal,
         onCancelOrder,
     } = props;
+
+    const onRetry = () => {
+        onConfirmTotalOrRetryTransaction(subTotal);
+    };
 
     const retryButtons = () => (
         <>
             <div className="retry-buttons">
-                <Button className="button large mr-3" onClick={onConfirmTotalOrRetryTransaction}>
+                <Button className="button large mr-3" onClick={onRetry}>
                     Retry
                 </Button>
-                <Button className="button large retry-cancel-button" onClick={onClosePaymentModal}>
+                <Button className="button large retry-cancel-button" onClick={onClose}>
                     Cancel
                 </Button>
             </div>
@@ -83,7 +87,11 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         </>
     );
 
-    const paymentDelayed = () => <div className="h4">Transaction delayed! Check if the device is powered on and online.</div>;
+    const paymentDelayed = (errorMessage?: string) => (
+        <>
+            <div className="h4">{errorMessage && <div className="h2 mt-4 mb-6">{errorMessage}</div>}</div>
+        </>
+    );
 
     const paymentFailed = (errorMessage?: string) => (
         <>
@@ -105,28 +113,26 @@ export const PaymentModal = (props: IPaymentModalProps) => {
     );
 
     const getActivePaymentModalComponent = () => {
-        if (paymentOutcomeErrorMessage) {
-            return paymentFailed(paymentOutcomeErrorMessage);
-        }
-
         if (createOrderError) {
             return createOrderFailed();
         }
 
-        if (paymentOutcome == null) {
+        if (eftposTransactionInProgress) {
             return awaitingCard();
         }
 
-        if (paymentOutcome == EEftposTransactionOutcome.PayLater) {
-            return paymentPayLater();
-        } else if (paymentOutcome == EEftposTransactionOutcome.Success) {
-            return paymentAccepted();
-        } else if (paymentOutcome == EEftposTransactionOutcome.Fail) {
-            return paymentFailed();
-        } else if (paymentOutcome == EEftposTransactionOutcome.Delay) {
-            return paymentDelayed();
-        } else {
-            return paymentFailed();
+        if (eftposTransactionOutcome) {
+            // } else if (eftposTransactionOutcome.transactionOutcome == EEftposTransactionOutcome.PayLater) {
+            //     return paymentPayLater();
+            if (eftposTransactionOutcome.transactionOutcome == EEftposTransactionOutcome.Success) {
+                return paymentAccepted();
+            } else if (eftposTransactionOutcome.transactionOutcome == EEftposTransactionOutcome.Fail) {
+                return paymentFailed(eftposTransactionOutcome.message);
+            } else if (eftposTransactionOutcome.transactionOutcome == EEftposTransactionOutcome.Delay) {
+                return paymentDelayed(eftposTransactionOutcome.message);
+            } else {
+                return paymentFailed();
+            }
         }
     };
 

@@ -589,7 +589,7 @@ export interface IGET_RESTAURANT_REGISTER {
     name: string;
     enableTableFlags: boolean;
     enablePayLater: boolean;
-    type: string;
+    type: ERegisterType;
     eftposProvider: string;
     eftposIpAddress: string;
     eftposPortNumber: string;
