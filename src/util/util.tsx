@@ -3,13 +3,14 @@ import { IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragmen
 import {
     EDiscountType,
     ERegisterType,
-    IGET_DASHBOARD_PROMOTION,
-    IGET_DASHBOARD_PROMOTION_DISCOUNT,
-    IGET_DASHBOARD_PROMOTION_ITEMS,
+    IGET_RESTAURANT_PROMOTION,
+    IGET_RESTAURANT_PROMOTION_DISCOUNT,
+    IGET_RESTAURANT_PROMOTION_ITEMS,
     IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS,
     IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES,
     IGET_RESTAURANT_PROMOTION_AVAILABILITY,
     IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES,
+    IGET_RESTAURANT_REGISTER_PRINTER,
 } from "../graphql/customQueries";
 import {
     CheckIfPromotionValidResponse,
@@ -19,6 +20,47 @@ import {
     ICartModifierGroup,
     ICartProduct,
 } from "../model/model";
+
+export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0);
+
+export const convertCentsToDollars = (price: number) => (price / 100).toFixed(2);
+
+export const getOrderNumber = (orderNumberSuffix: string) => {
+    let todayDate = format(new Date(), "dd/MM/yyyy");
+
+    let orderNumberStored: string | null = localStorage.getItem("orderNumber");
+    let orderNumberDateStored: string | null = localStorage.getItem("orderNumberDate");
+
+    let orderNumber;
+
+    if (todayDate == orderNumberDateStored) {
+        orderNumber = String(Number(orderNumberStored) + 1);
+
+        localStorage.setItem("orderNumber", orderNumber);
+    } else {
+        orderNumber = String(1);
+        localStorage.setItem("orderNumber", orderNumber);
+        localStorage.setItem("orderNumberDate", todayDate);
+    }
+
+    return orderNumber + (orderNumberSuffix || "");
+};
+
+export const filterPrintProducts = (products: ICartProduct[], printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
+    if (!printer.ignoreProducts || printer.ignoreProducts.items.length == 0) {
+        return products;
+    }
+
+    printer.ignoreProducts.items.forEach((ignoreProduct) => {
+        products.forEach((product) => {
+            if (ignoreProduct.product.id == product.id) {
+                products = products.filter((p) => p.id != product.id);
+            }
+        });
+    });
+
+    return products;
+};
 
 export const isItemSoldOut = (soldOut?: boolean, soldOutDate?: string) => {
     if (soldOut || soldOutDate == format(new Date(), "yyyy-MM-dd")) {
@@ -229,8 +271,6 @@ const getDayData = (availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS) => {
 };
 
 export const toLocalISOString = (date: Date) => {
-    const tzo = -date.getTimezoneOffset();
-
     const pad = (num: number) => {
         var norm = Math.floor(Math.abs(num));
         return (norm < 10 ? "0" : "") + norm;
@@ -253,16 +293,6 @@ export const toLocalISOString = (date: Date) => {
     );
 };
 
-export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0);
-
-export const convertCentsToDollars = (price: number) => (price / 100).toFixed(2);
-
-// https://stackoverflow.com/questions/149055/how-to-format-numbers-as-currency-string
-export const currencyFormatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-});
-
 export const toDataURL = (url, callback) => {
     const xhr = new XMLHttpRequest();
 
@@ -281,7 +311,7 @@ export const toDataURL = (url, callback) => {
     xhr.send();
 };
 
-export const checkIfPromotionValid = (promotion: IGET_DASHBOARD_PROMOTION): CheckIfPromotionValidResponse => {
+export const checkIfPromotionValid = (promotion: IGET_RESTAURANT_PROMOTION): CheckIfPromotionValidResponse => {
     const now = new Date();
 
     const platform = process.env.REACT_APP_PLATFORM;
@@ -306,7 +336,7 @@ export const checkIfPromotionValid = (promotion: IGET_DASHBOARD_PROMOTION): Chec
 export const getMatchingPromotionProducts = (
     cartCategoryQuantitiesById: ICartItemQuantitiesById,
     cartProductQuantitiesById: ICartItemQuantitiesById,
-    promotionItems: IGET_DASHBOARD_PROMOTION_ITEMS[],
+    promotionItems: IGET_RESTAURANT_PROMOTION_ITEMS[],
     applyToCheapest: boolean
 ) => {
     //For promotions with multiple item groups, it would become a && condition. For example, if first group is category: Vege Pizza (min quantity = 2).
@@ -382,7 +412,7 @@ export const getMatchingPromotionProducts = (
 export const processPromotionDiscounts = (
     cartCategoryQuantitiesById: ICartItemQuantitiesById,
     cartProductQuantitiesById: ICartItemQuantitiesById,
-    discounts: IGET_DASHBOARD_PROMOTION_DISCOUNT[],
+    discounts: IGET_RESTAURANT_PROMOTION_DISCOUNT[],
     matchingProducts: ICartItemQuantitiesById = {},
     total: number = 0,
     applyToCheapest: boolean = false

@@ -15,7 +15,6 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         promotionId
         subTotal
         paid
-        cashPayment
         onlineOrder
         guestCheckout
         orderScheduledAt
@@ -93,7 +92,6 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     promotionId: string | null;
     subTotal: number;
     paid: boolean;
-    cashPayment: boolean | null;
     onlineOrder: boolean | null;
     guestCheckout: boolean | null;
     orderScheduledAt: string | null;

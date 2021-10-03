@@ -47,7 +47,7 @@ export const ModalV2 = (
                         position: "absolute",
                         backgroundColor: "rgb(255, 255, 255)",
                         overflow: "auto",
-                        borderRadius: "20px",
+                        borderRadius: "12px",
                         padding: "24px",
                         margin: "40px",
                         inset: "auto",

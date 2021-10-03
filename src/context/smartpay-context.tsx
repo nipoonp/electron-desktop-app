@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect } from "react";
 import axios from "axios";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
+import { EEftposTransactionOutcome, ESmartpayTransactionOutcome, IEftposTransactionOutcome } from "../model/model";
 // ******************************************************************************
 // The code below will handle the SmartConnect API endpoint communication.
 // SmartConnect API endpoints are CORS-enabled, so the calls can be made from the front-end.
@@ -44,18 +45,11 @@ import { useRestaurant } from "./restaurant-context";
 // the user pressing Cancel on the device, from the device being offline.
 //
 // The scenarios below capture the outcomes we'd want to handle on the interface.
-export enum SmartpayTransactionOutcome {
-    Accepted, // TransactionResult = "OK-ACCEPTED"
-    Declined, // TransactionResult = "OK-DECLINED"
-    Cancelled, // TransactionResult = "CANCELLED", Result != "FAILED-INTERFACE"
-    DeviceOffline, // TransactionResult = "CANCELLED", Result = "FAILED-INTERFACE"
-    Failed, // Everything else
-}
 
 type ContextProps = {
     sendParingRequest: (pairingCode: string) => Promise<void>;
     createTransaction: (amount: number, transactionType: string) => Promise<string>;
-    pollForOutcome: (pollingUrl: string, delayed: () => void) => Promise<SmartpayTransactionOutcome>;
+    pollForOutcome: (pollingUrl: string, delayed: () => void) => Promise<IEftposTransactionOutcome>;
 };
 
 const SmartpayContext = createContext<ContextProps>({
@@ -305,11 +299,11 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
     //
     // Returns:
     // - a JS Promise with the outcome:
-    //     - resolve(SmartpayTransactionOutcome, responseData) - one of the outcomes to handle on the "interface" and
+    //     - resolve(ESmartpayTransactionOutcome, responseData) - one of the outcomes to handle on the "interface" and
     //       the response data from the jqXHR object
     //     - reject(string) - the string will contain the error message
     // =====================================================
-    const pollForOutcome = (pollingUrl: string, delayed: () => void): Promise<SmartpayTransactionOutcome> => {
+    const pollForOutcome = (pollingUrl: string, delayed: () => void): Promise<IEftposTransactionOutcome> => {
         // Polling interval on the PROD server will be rate limited to 2 seconds.
 
         // It's a bad idea to let the polling run indefinitely, so will set an overall timeout to
@@ -346,7 +340,7 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
                     console.log(`Transaction GET response received (${response.status}) ${response.data.result}`);
 
                     let transactionComplete = false;
-                    let transactionOutcome;
+                    let transactionOutcome: IEftposTransactionOutcome | null = null;
 
                     if (response.status == 200) {
                         let res = response.data;
@@ -362,16 +356,41 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
 
                                 // Determine the outcome of the transaction
                                 if (transactionResult == "OK-ACCEPTED") {
-                                    transactionOutcome = SmartpayTransactionOutcome.Accepted;
+                                    transactionOutcome = {
+                                        platformTransactionOutcome: ESmartpayTransactionOutcome.Accepted,
+                                        transactionOutcome: EEftposTransactionOutcome.Success,
+                                        message: "Transaction Accepted!",
+                                        eftposReceipt: null,
+                                    };
                                 } else if (transactionResult == "OK-DECLINED") {
-                                    transactionOutcome = SmartpayTransactionOutcome.Declined;
+                                    transactionOutcome = {
+                                        platformTransactionOutcome: ESmartpayTransactionOutcome.Declined,
+                                        transactionOutcome: EEftposTransactionOutcome.Fail,
+                                        message: "Transaction Declined! Please try again.",
+                                        eftposReceipt: null,
+                                    };
                                 } else if (transactionResult == "CANCELLED" && result != "FAILED-INTERFACE") {
-                                    transactionOutcome = SmartpayTransactionOutcome.Cancelled;
+                                    transactionOutcome = {
+                                        platformTransactionOutcome: ESmartpayTransactionOutcome.Cancelled,
+                                        transactionOutcome: EEftposTransactionOutcome.Fail,
+                                        message: "Transaction Cancelled!",
+                                        eftposReceipt: null,
+                                    };
                                 } else if (transactionResult == "CANCELLED" && result == "FAILED-INTERFACE") {
-                                    transactionOutcome = SmartpayTransactionOutcome.DeviceOffline;
+                                    transactionOutcome = {
+                                        platformTransactionOutcome: ESmartpayTransactionOutcome.DeviceOffline,
+                                        transactionOutcome: EEftposTransactionOutcome.Fail,
+                                        message: "Transaction Cancelled! Please check if the device is powered on and online.",
+                                        eftposReceipt: null,
+                                    };
                                 } else {
                                     // Everything else is pretty-much a failed outcome
-                                    transactionOutcome = SmartpayTransactionOutcome.Failed;
+                                    transactionOutcome = {
+                                        platformTransactionOutcome: ESmartpayTransactionOutcome.Failed,
+                                        transactionOutcome: EEftposTransactionOutcome.Fail,
+                                        message: "Unknown transaction result. Please try again later.",
+                                        eftposReceipt: null,
+                                    };
                                 }
                             } else if (transactionStatus == "PENDING" && transactionResult == "OK-DELAYED" && delayed) {
                                 // Transaction still not done, but server reporting it's taking longer than usual

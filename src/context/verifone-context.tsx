@@ -4,6 +4,8 @@ import { Logger } from "aws-amplify";
 import { delay, getVerifoneSocketErrorMessage, getVerifoneTimeBasedTransactionId } from "../model/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
+import { toLocalISOString } from "../util/util";
+import { EEftposTransactionOutcome, IEftposTransactionOutcome, EVerifoneTransactionOutcome } from "../model/model";
 
 let electron: any;
 let ipcRenderer: any;
@@ -46,30 +48,13 @@ enum VMT {
     INITIAL = "INITIAL", // This is to give it an initial value, should not be used elsewhere.
 }
 
-export enum VerifoneTransactionOutcome {
-    Approved, // 00
-    ApprovedWithSignature, // 09
-    Cancelled, // CC
-    Declined, // 55
-    SettledOk, // 90
-    HostUnavailable, // 91
-    SystemError, // 99
-    TransactionInProgress, // ??
-    TerminalBusy, // BB
-}
-
-interface VerifoneTransactionOutcomeResult {
-    transactionOutcome: VerifoneTransactionOutcome;
-    eftposReceipt: string;
-}
-
 interface IEftposData {
     type: VMT;
     payload: string;
 }
 
 type ContextProps = {
-    createTransaction: (amount: number, ipAddress: string, portNumber: string, restaurantId: string) => Promise<VerifoneTransactionOutcomeResult>;
+    createTransaction: (amount: number, ipAddress: string, portNumber: string, restaurantId: string) => Promise<IEftposTransactionOutcome>;
 };
 
 const VerifoneContext = createContext<ContextProps>({
@@ -275,12 +260,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         }
     };
 
-    const createTransaction = (
-        amount: number,
-        ipAddress: string,
-        portNumber: string,
-        restaurantId: string
-    ): Promise<VerifoneTransactionOutcomeResult> => {
+    const createTransaction = (amount: number, ipAddress: string, portNumber: string, restaurantId: string): Promise<IEftposTransactionOutcome> => {
         return new Promise(async (resolve, reject) => {
             if (!amount) {
                 reject("The amount has to be supplied");
@@ -340,7 +320,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
             // Poll For Transaction Result -------------------------------------------------------------------------------------------------------------------------------- //
             while (true) {
-                const loopDate = Number(new Date());
+                const now = new Date();
+                const loopDate = Number(now);
 
                 const errorMessage = checkForErrors();
                 if (errorMessage) {
@@ -373,6 +354,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                             type: eftposData.type,
                             payload: eftposData.payload,
                             restaurantId: restaurantId,
+                            timestamp: toLocalISOString(now),
                             expiry: Number(Math.floor(loopDate / 1000) + 2592000), // Add 30 days to timeStamp for DynamoDB TTL
                         },
                     });
@@ -399,44 +381,95 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             disconnectEftpos();
 
             // Return Transaction Outcome -------------------------------------------------------------------------------------------------------------------------------- //
-            let transactionOutcome: VerifoneTransactionOutcome;
+            let transactionOutcome: IEftposTransactionOutcome | null = null;
+
             switch (iSO8583ResponseCode) {
                 case "00":
-                    transactionOutcome = VerifoneTransactionOutcome.Approved;
+                    transactionOutcome = {
+                        platformTransactionOutcome: EVerifoneTransactionOutcome.Approved,
+                        transactionOutcome: EEftposTransactionOutcome.Success,
+                        message: "Transaction Approved!",
+                        eftposReceipt: eftposReceipt,
+                    };
                     break;
                 case "09":
-                    transactionOutcome = VerifoneTransactionOutcome.ApprovedWithSignature;
+                    // We should not come in here if its on kiosk mode, unattended mode for Verifone
+                    transactionOutcome = {
+                        platformTransactionOutcome: EVerifoneTransactionOutcome.ApprovedWithSignature,
+                        transactionOutcome: EEftposTransactionOutcome.Fail,
+                        message: "Transaction Approved With Signature Not Allowed In Kiosk Mode!",
+                        eftposReceipt: eftposReceipt,
+                    };
                     break;
                 case "CC":
-                    transactionOutcome = VerifoneTransactionOutcome.Cancelled;
+                    transactionOutcome = {
+                        platformTransactionOutcome: EVerifoneTransactionOutcome.Cancelled,
+                        transactionOutcome: EEftposTransactionOutcome.Fail,
+                        message: "Transaction Cancelled!",
+                        eftposReceipt: eftposReceipt,
+                    };
                     break;
                 case "55":
-                    transactionOutcome = VerifoneTransactionOutcome.Declined;
+                    transactionOutcome = {
+                        platformTransactionOutcome: EVerifoneTransactionOutcome.Declined,
+                        transactionOutcome: EEftposTransactionOutcome.Fail,
+                        message: "Transaction Declined! Please try again.",
+                        eftposReceipt: eftposReceipt,
+                    };
                     break;
                 case "90":
-                    transactionOutcome = VerifoneTransactionOutcome.SettledOk;
+                    // You should never come in this state. Don't even know what settledOk is. Cannot find any references in docs as well.
+                    transactionOutcome = {
+                        platformTransactionOutcome: EVerifoneTransactionOutcome.SettledOk,
+                        transactionOutcome: EEftposTransactionOutcome.Fail,
+                        message: "Settled Ok! Invalid State..",
+                        eftposReceipt: eftposReceipt,
+                    };
                     break;
                 case "91":
-                    transactionOutcome = VerifoneTransactionOutcome.HostUnavailable;
+                    transactionOutcome = {
+                        platformTransactionOutcome: EVerifoneTransactionOutcome.HostUnavailable,
+                        transactionOutcome: EEftposTransactionOutcome.Fail,
+                        message: "Transaction Host Unavailable! Please check if the device is powered on and online.",
+                        eftposReceipt: eftposReceipt,
+                    };
                     break;
                 case "99":
-                    transactionOutcome = VerifoneTransactionOutcome.SystemError;
+                    transactionOutcome = {
+                        platformTransactionOutcome: EVerifoneTransactionOutcome.SystemError,
+                        transactionOutcome: EEftposTransactionOutcome.Fail,
+                        message: "Transaction System Error! Please try again later.",
+                        eftposReceipt: eftposReceipt,
+                    };
                     break;
                 case "??":
-                    transactionOutcome = VerifoneTransactionOutcome.TransactionInProgress;
+                    // You should never come in this state. The transaction should not have reached this point if response code is still ??
+                    transactionOutcome = {
+                        platformTransactionOutcome: EVerifoneTransactionOutcome.TransactionInProgress,
+                        transactionOutcome: EEftposTransactionOutcome.Fail,
+                        message: "Transaction Still In Process! Invalid State..",
+                        eftposReceipt: eftposReceipt,
+                    };
                     break;
                 case "BB":
-                    transactionOutcome = VerifoneTransactionOutcome.TerminalBusy;
+                    transactionOutcome = {
+                        platformTransactionOutcome: EVerifoneTransactionOutcome.TerminalBusy,
+                        transactionOutcome: EEftposTransactionOutcome.Fail,
+                        message: "Terminal Is Busy! Please cancel the previous transaction before proceeding.",
+                        eftposReceipt: eftposReceipt,
+                    };
                     break;
                 default:
-                    transactionOutcome = VerifoneTransactionOutcome.SystemError;
+                    transactionOutcome = {
+                        platformTransactionOutcome: EVerifoneTransactionOutcome.SystemError,
+                        transactionOutcome: EEftposTransactionOutcome.Fail,
+                        message: "Transaction System Error! Please try again later.",
+                        eftposReceipt: eftposReceipt,
+                    };
                     break;
             }
 
-            resolve({
-                transactionOutcome: transactionOutcome,
-                eftposReceipt: eftposReceipt,
-            });
+            resolve(transactionOutcome);
         });
     };
 

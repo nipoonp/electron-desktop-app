@@ -2,9 +2,10 @@ import { useState } from "react";
 
 import { Input } from "../../../tabin/components/input";
 import { FullScreenSpinner } from "../../../tabin/components/fullScreenSpinner";
-import { SmartpayTransactionOutcome, useSmartpay } from "../../../context/smartpay-context";
+import { useSmartpay } from "../../../context/smartpay-context";
 import { Button } from "../../../tabin/components/button";
 import { Select } from "../../../tabin/components/select";
+import { IEftposTransactionOutcome } from "../../../model/model";
 
 export const SmartPay = () => {
     const [pairingCode, setPairingCode] = useState("");
@@ -26,7 +27,7 @@ export const SmartPay = () => {
         }
     };
 
-    const doTransaction = async () => {
+    const performEftposTransaction = async () => {
         setShowSpinner(true);
 
         let delayedShown = false;
@@ -44,25 +45,12 @@ export const SmartPay = () => {
         try {
             let pollingUrl = await createTransaction(amount, transactionType);
 
-            let transactionOutcome: SmartpayTransactionOutcome = await pollForOutcome(pollingUrl, delayed);
+            const res: IEftposTransactionOutcome = await pollForOutcome(pollingUrl, delayed);
 
-            setAmount(0);
-
-            if (transactionOutcome == SmartpayTransactionOutcome.Accepted) {
-                alert("Transaction Accepted!");
-            } else if (transactionOutcome == SmartpayTransactionOutcome.Declined) {
-                alert("Transaction Declined!");
-            } else if (transactionOutcome == SmartpayTransactionOutcome.Cancelled) {
-                alert("Transaction Cancelled!");
-            } else if (transactionOutcome == SmartpayTransactionOutcome.DeviceOffline) {
-                alert("Transaction Cancelled! Please check if the device is powered on and online.");
-            } else {
-                alert("Transaction Failed!");
-            }
+            alert(res.message);
         } catch (errorMessage) {
             alert("Error! Message: " + errorMessage);
         } finally {
-            // Enable button back (always executed)
             setShowSpinner(false);
         }
     };
@@ -112,7 +100,7 @@ export const SmartPay = () => {
                     <option value="QR.Refund">QR.Refund</option>
                 </Select>
 
-                <Button onClick={doTransaction} disabled={showSpinner}>
+                <Button onClick={performEftposTransaction} disabled={showSpinner}>
                     Send Transaction
                 </Button>
             </div>
