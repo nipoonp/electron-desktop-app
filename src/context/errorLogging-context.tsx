@@ -34,34 +34,14 @@ const ErrorLoggingProvider = (props: { children: React.ReactNode }) => {
         update: (proxy, mutationResult) => {},
     });
 
-    let verifoneLogQueue: IAddVerifoneLog[] = [];
-    // const verifoneLogQueue = useRef<IAddVerifoneLog[]>([]);
-
-    useEffect(() => {
-        const timerId = setInterval(async () => {
-            const queue = [...verifoneLogQueue];
-            verifoneLogQueue = [];
-
-            try {
-                for (var i = 0; i < queue.length; i++) {
-                    const item = queue[i];
-
-                    await createEftposTransactionLogMutation({
-                        variables: item,
-                    });
-                }
-            } catch (e) {
-                console.log("Error in creating verifone transaction log", e);
-            }
-        }, 100);
-
-        return () => {
-            clearInterval(timerId);
-        };
-    }, []);
-
-    const addVerifoneLog = (log: IAddVerifoneLog) => {
-        verifoneLogQueue = [...verifoneLogQueue, log];
+    const addVerifoneLog = async (log: IAddVerifoneLog) => {
+        try {
+            await createEftposTransactionLogMutation({
+                variables: log,
+            });
+        } catch (e) {
+            console.log("Error in creating verifone transaction log", e);
+        }
     };
 
     const logError = (error: string, context: string) => {
