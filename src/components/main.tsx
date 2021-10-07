@@ -27,6 +27,7 @@ import { Logout } from "./page/auth/logout";
 import { Stock } from "./page/stock";
 import { Reports } from "./page/reports";
 import { Orders } from "./page/orders";
+import { SalesReport } from "./page/salesReport/salesReport";
 
 let electron: any;
 let ipcRenderer: any;
@@ -61,6 +62,7 @@ export const tableNumberPath = "/table_number";
 export const restaurantPath = "/restaurant";
 export const checkoutPath = "/checkout";
 export const logoutPath = "/log_out";
+export const salesReport = "/sales_report";
 export const unauthorizedPath = "/unauthorized";
 
 export default () => {
@@ -110,6 +112,9 @@ const Routes = () => {
                     case "reports":
                         history.push(reportsPath);
                         break;
+                    case "salesReport":
+                        history.push(salesReport);
+                        break;
                     case "configureEftposAndPrinters":
                         history.push(configureNewEftposPath);
                         break;
@@ -137,6 +142,7 @@ const Routes = () => {
             <PrivateRoute exact path={stockPath} component={Stock} />
             <PrivateRoute exact path={ordersPath} component={Orders} />
             <PrivateRoute exact path={reportsPath} component={Reports} />
+            <PrivateRoute exact path={salesReport} component={SalesReport} />
             <RestaurantRegisterPrivateRoute exact path={configureNewEftposPath} component={ConfigureNewEftpos} />
             <RestaurantRegisterPrivateRoute exact path={beginOrderPath} component={BeginOrder} />
             <RestaurantRegisterPrivateRoute exact path={orderTypePath} component={OrderType} />

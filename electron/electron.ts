@@ -168,6 +168,12 @@ ipcMain.on("SHOW_CONTEXT_MENU", (event) => {
             },
         },
         {
+            label: "Sales Report",
+            click: () => {
+                event.sender.send("CONTEXT_MENU_COMMAND", "salesReport");
+            },
+        },
+        {
             label: "Configure New Eftpos & Printers",
             click: () => {
                 event.sender.send("CONTEXT_MENU_COMMAND", "configureEftposAndPrinters");
