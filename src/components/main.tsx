@@ -27,7 +27,7 @@ import { Logout } from "./page/auth/logout";
 import { Stock } from "./page/stock";
 import { Reports } from "./page/reports";
 import { Orders } from "./page/orders";
-import { SalesReport } from "./page/salesReport/salesReport";
+import { SalesReport } from "./page/salesReport";
 
 let electron: any;
 let ipcRenderer: any;

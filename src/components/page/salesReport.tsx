@@ -1,11 +1,11 @@
 import { addDays, differenceInDays, format, subDays } from "date-fns";
 import { useEffect, useState } from "react";
-import { useRestaurant } from "../../../context/restaurant-context";
-import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../../graphql/customFragments";
-import { EOrderStatus, GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT } from "../../../graphql/customQueries";
-import { useGetRestaurantOrdersByBetweenPlacedAt } from "../../../hooks/useGetRestaurantOrdersByBetweenPlacedAt";
-import { DateRangePicker } from "../../../tabin/components/dateRangePicker";
-import { FullScreenSpinner } from "../../../tabin/components/fullScreenSpinner";
+import { useRestaurant } from "../../context/restaurant-context";
+import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
+import { EOrderStatus, GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT } from "../../graphql/customQueries";
+import { useGetRestaurantOrdersByBetweenPlacedAt } from "../../hooks/useGetRestaurantOrdersByBetweenPlacedAt";
+import { DateRangePicker } from "../../tabin/components/dateRangePicker";
+import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 
 export const SalesReport = () => {
     const { restaurant } = useRestaurant();
