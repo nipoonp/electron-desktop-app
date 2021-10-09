@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useMutation } from "@apollo/client";
 import { useRestaurant } from "../../context/restaurant-context";
 import { UPDATE_ORDER_STATUS } from "../../graphql/customMutations";
-import { EOrderStatus, GET_ORDERS_BY_RESTAURANT_BY_PLACEDAT } from "../../graphql/customQueries";
+import { EOrderStatus, GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT } from "../../graphql/customQueries";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { Input } from "../../tabin/components/input";
 
 import "./orders.scss";
-import { useGetRestaurantOrdersByPlacedAt } from "../../hooks/useGetRestaurantOrdersByPlacedAt";
+import { useGetRestaurantOrdersByBeginWithPlacedAt } from "../../hooks/useGetRestaurantOrdersByBeginWithPlacedAt";
 import { convertCentsToDollars, convertProductTypesForPrint, toLocalISOString } from "../../util/util";
 import { format } from "date-fns";
 import { Button } from "../../tabin/components/button";
@@ -26,11 +26,11 @@ export const Orders = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
-    const { data: orders, error, loading } = useGetRestaurantOrdersByPlacedAt(restaurant ? restaurant.id : "", date);
+    const { data: orders, error, loading } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant ? restaurant.id : "", date);
 
     const refetchOrders = [
         {
-            query: GET_ORDERS_BY_RESTAURANT_BY_PLACEDAT,
+            query: GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT,
             variables: { orderRestaurantId: restaurant ? restaurant.id : "", placedAt: date },
         },
     ];
