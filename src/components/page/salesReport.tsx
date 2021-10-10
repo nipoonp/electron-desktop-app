@@ -1,4 +1,4 @@
-import { addDays, differenceInDays, format, subDays } from "date-fns";
+import { addDays, differenceInDays, endOfDay, format, subDays } from "date-fns";
 import { useEffect, useState } from "react";
 import { useRestaurant } from "../../context/restaurant-context";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
@@ -12,7 +12,7 @@ export const SalesReport = () => {
     const [focusedInput, setFocusedInput] = useState<"startDate" | "endDate" | null>(null);
 
     const [startDate, setStartDate] = useState<string | null>(format(subDays(new Date(), 7), "yyyy-MM-dd"));
-    const [endDate, setEndDate] = useState<string | null>(format(new Date(), "yyyy-MM-dd"));
+    const [endDate, setEndDate] = useState<string | null>(format(addDays(new Date(), 1), "yyyy-MM-dd")); //Adding extra day because GraphQL query is not inclusive of endDate
 
     const [salesSummaryData, setSalesSummaryData] = useState({});
 
@@ -107,8 +107,8 @@ export const SalesReport = () => {
                 totalNumberOfOrdersCancelled++;
             }
 
-            if (order.status == EOrderStatus.NEW) {
-                const newSubTotal = dailySales[placedAt].subTotal + order.total;
+            if (order.status == EOrderStatus.COMPLETED) {
+                const newSubTotal = dailySales[placedAt].subTotal + order.subTotal;
                 const newQuantitySold = dailySales[placedAt].quantitySold + 1;
                 const newOrders: IGET_RESTAURANT_ORDER_FRAGMENT[] = [...dailySales[placedAt].orders, order];
 
@@ -221,10 +221,13 @@ export const SalesReport = () => {
 
         if (!startDate || !endDate) return;
 
+        //Adding extra day because GraphQL query is not inclusive of endDate
+        const endDateWithExtraDay = format(addDays(new Date(endDate), 1), "yyyy-MM-dd");
+
         const res = await refetch({
             orderRestaurantId: restaurant ? restaurant.id : "",
             placedAtStartDate: startDate,
-            placedAtEndDate: endDate,
+            placedAtEndDate: endDateWithExtraDay,
         });
     };
 
