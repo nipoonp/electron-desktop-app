@@ -49,6 +49,10 @@ function createWindow() {
     // mainWindow.webContents.openDevTools();
 }
 
+const checkForUpdates = () => {
+    autoUpdater.checkForUpdates();
+};
+
 const initUpdater = () => {
     // autoUpdater.autoDownload = true;
 
@@ -71,17 +75,28 @@ const initUpdater = () => {
     });
 };
 
-const checkForUpdates = () => {
-    autoUpdater.checkForUpdates();
-};
+const gotTheLock = app.requestSingleInstanceLock();
 
-app.once("ready", createWindow);
+if (!gotTheLock) {
+    app.quit();
+} else {
+    app.on("second-instance", (event, commandLine, workingDirectory) => {
+        // Someone tried to run a second instance, we should focus our window.
+        if (mainWindow) {
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.focus();
+        }
+    });
 
-app.once("window-all-closed", () => {
-    if (process.platform !== "darwin") {
-        app.quit();
-    }
-});
+    // Create mainWindow, load the rest of the app, etc...
+    app.once("ready", createWindow);
+
+    app.once("window-all-closed", () => {
+        if (process.platform !== "darwin") {
+            app.quit();
+        }
+    });
+}
 
 // Webapp Receipt Printer Side
 ipcMain.handle(
