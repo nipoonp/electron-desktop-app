@@ -9,7 +9,6 @@ import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import SalesBy from "./salesReport/SalesBy";
 
 import "./salesReport.scss";
-import TopCard from "./salesReport/TopCard";
 import { SalesReportScreen } from "../../model/model";
 import { Card } from "../../tabin/components/card";
 import { Graph } from "./salesReport/Graph";
