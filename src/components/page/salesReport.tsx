@@ -1,11 +1,19 @@
-import { addDays, differenceInDays, endOfDay, format, subDays } from "date-fns";
+import { addDays, differenceInDays, format, subDays } from "date-fns";
 import { useEffect, useState } from "react";
 import { useRestaurant } from "../../context/restaurant-context";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
-import { EOrderStatus, GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT } from "../../graphql/customQueries";
+import { EOrderStatus } from "../../graphql/customQueries";
 import { useGetRestaurantOrdersByBetweenPlacedAt } from "../../hooks/useGetRestaurantOrdersByBetweenPlacedAt";
 import { DateRangePicker } from "../../tabin/components/dateRangePicker";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
+import SalesBy from "./salesReport/SalesBy";
+
+import "./salesReport.scss";
+import ExpandableCard from "./salesReport/ExpandableCard";
+import TopCard from "./salesReport/TopCard";
+import Graph from "./salesReport/Graph";
+import InformativeCard from "./salesReport/InformativeCard";
+import { SalesReportScreen } from "../../model/model";
 
 export const SalesReport = () => {
     const { restaurant } = useRestaurant();
@@ -14,7 +22,9 @@ export const SalesReport = () => {
     const [startDate, setStartDate] = useState<string | null>(format(subDays(new Date(), 7), "yyyy-MM-dd"));
     const [endDate, setEndDate] = useState<string | null>(format(addDays(new Date(), 1), "yyyy-MM-dd")); //Adding extra day because GraphQL query is not inclusive of endDate
 
-    const [salesSummaryData, setSalesSummaryData] = useState({});
+    const [salesSummaryData, setSalesSummaryData] = useState({} as any);
+
+    const [currentScreen, setCurrentScreen] = useState(SalesReportScreen.DASHBOARD);
 
     const { data: orders, error, loading, refetch } = useGetRestaurantOrdersByBetweenPlacedAt(
         restaurant ? restaurant.id : "",
@@ -23,15 +33,12 @@ export const SalesReport = () => {
     );
 
     useEffect(() => {
-        console.log("xxx...", orders);
         processSalesData(orders);
     }, [orders]);
 
     const processSalesData = (orders: IGET_RESTAURANT_ORDER_FRAGMENT[] | null) => {
         if (!startDate || !endDate) return;
         if (!orders) return;
-
-        console.log(orders);
 
         const daysDifference: number = differenceInDays(new Date(endDate), new Date(startDate));
 
@@ -96,18 +103,18 @@ export const SalesReport = () => {
             }
 
             // NEW ORDERS //////////////////////////////////
-            if (order.status == EOrderStatus.NEW) {
+            if (order.status === EOrderStatus.NEW) {
                 subTotalNew += order.total;
                 totalNumberOfOrdersNew++;
             }
 
             // CANCELLED ORDERS //////////////////////////////////
-            if (order.status == EOrderStatus.CANCELLED) {
+            if (order.status === EOrderStatus.CANCELLED) {
                 subTotalCancelled += order.total;
                 totalNumberOfOrdersCancelled++;
             }
 
-            if (order.status == EOrderStatus.COMPLETED) {
+            if (order.status === EOrderStatus.COMPLETED) {
                 const newSubTotal = dailySales[placedAt].subTotal + order.subTotal;
                 const newQuantitySold = dailySales[placedAt].quantitySold + 1;
                 const newOrders: IGET_RESTAURANT_ORDER_FRAGMENT[] = [...dailySales[placedAt].orders, order];
@@ -213,6 +220,7 @@ export const SalesReport = () => {
             mostSoldCategories,
             mostSoldProducts,
         });
+        console.log("s:", salesSummaryData);
     };
 
     const onDatesChange = async (startD: string | null, endD: string | null) => {
@@ -224,7 +232,7 @@ export const SalesReport = () => {
         //Adding extra day because GraphQL query is not inclusive of endDate
         const endDateWithExtraDay = format(addDays(new Date(endDate), 1), "yyyy-MM-dd");
 
-        const res = await refetch({
+        await refetch({
             orderRestaurantId: restaurant ? restaurant.id : "",
             placedAtStartDate: startDate,
             placedAtEndDate: endDateWithExtraDay,
@@ -233,6 +241,101 @@ export const SalesReport = () => {
 
     const onFocusChange = (focusedInput: "startDate" | "endDate" | null) => {
         setFocusedInput(focusedInput);
+    };
+
+    const changeScreen = (screenName: SalesReportScreen) => {
+        setCurrentScreen(screenName);
+    };
+
+    const getBestHourCard = () => {
+        if (salesSummaryData?.bestHour) {
+            <div className="card" style={{ textAlign: "center" }}>
+                <p>Best Hour</p>
+                <img src="https://i.dlpng.com/static/png/6835756_preview.png" alt="clock" height="50px" width="50px" />
+                <p>{salesSummaryData.bestHour.hour}</p>
+                <p>${salesSummaryData.bestHour.saleAmount} total sales</p>
+                <p>{salesSummaryData.bestHour.saleQuantity} order(s)</p>
+            </div>;
+        }
+
+        return <></>;
+    };
+
+    const renderCurrentScreen = () => {
+        switch (currentScreen.toLocaleLowerCase()) {
+            case "day":
+            case "hour":
+            case "category":
+            case "product":
+                return (
+                    <>
+                        <SalesBy screenName={currentScreen} changeScreen={changeScreen} />
+                    </>
+                );
+            case "":
+            default:
+                return (
+                    <div className="App">
+                        <div className="report-header">
+                            <p className="header-title">Reports</p>
+                            <div>
+                                <div style={{ display: "flex", justifyContent: "center" }}>
+                                    <DateRangePicker
+                                        startDate={startDate}
+                                        endDate={endDate}
+                                        onDatesChange={onDatesChange}
+                                        focusedInput={focusedInput}
+                                        onFocusChange={onFocusChange}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="report-body">
+                            <div className="flex-responsive">
+                                <ExpandableCard title="Sales By Day" screenName={SalesReportScreen.DAY} changeScreen={changeScreen}>
+                                    <Graph />
+                                </ExpandableCard>
+                                <div className="flex-responsive" style={{ flexWrap: "wrap" }}>
+                                    <InformativeCard primaryText="$68.30" secondaryText="Total Sales" />
+                                    <InformativeCard primaryText="$22.30" secondaryText="Average Sales" />
+                                    <InformativeCard primaryText="3" secondaryText="Sales Count" />
+                                    <InformativeCard primaryText="7" secondaryText="Items Sold" />
+                                </div>
+                            </div>
+                            <div className="flex-responsive">
+                                <ExpandableCard title="Sales By Hour" screenName={SalesReportScreen.HOUR} changeScreen={changeScreen}>
+                                    <Graph />
+                                </ExpandableCard>
+                                {getBestHourCard()}
+                            </div>
+                            <div className="flex-responsive">
+                                <ExpandableCard title="Top Category" screenName={SalesReportScreen.CATEGORY} changeScreen={changeScreen}>
+                                    <TopCard
+                                        details={{
+                                            topProductName: "Aloo Tikki Burger",
+                                            image: "",
+                                            quantity: 5,
+                                            saleAmount: "$35.78",
+                                            perSales: "64.96%",
+                                        }}
+                                    />
+                                </ExpandableCard>
+                                <ExpandableCard title="Top Product" screenName={SalesReportScreen.PRODUCT} changeScreen={changeScreen}>
+                                    <TopCard
+                                        details={{
+                                            topProductName: "Aloo Tikki Burger",
+                                            image: "",
+                                            quantity: 5,
+                                            saleAmount: "$35.78",
+                                            perSales: "64.96%",
+                                        }}
+                                    />
+                                </ExpandableCard>
+                            </div>
+                        </div>
+                    </div>
+                );
+        }
     };
 
     if (error) {
@@ -245,20 +348,9 @@ export const SalesReport = () => {
 
     return (
         <>
-            <FullScreenSpinner show={loading} text={"Loading orders..."} />
+            <FullScreenSpinner show={loading} text={"Loading report details..."} />
 
-            <div className="m-4">
-                <div className="h1 text-center mb-4">Reports</div>
-                <div style={{ display: "flex", justifyContent: "center" }}>
-                    <DateRangePicker
-                        startDate={startDate}
-                        endDate={endDate}
-                        onDatesChange={onDatesChange}
-                        focusedInput={focusedInput}
-                        onFocusChange={onFocusChange}
-                    />
-                </div>
-            </div>
+            <div className="reports">{renderCurrentScreen()}</div>
         </>
     );
 };

@@ -181,3 +181,11 @@ export enum CheckIfPromotionValidResponse {
     EXPIRED = "EXPIRED",
     INVALID_PLATFORM = "INVALID_PLATFORM",
 }
+
+export enum SalesReportScreen {
+    DASHBOARD = "",
+    DAY = "day",
+    HOUR = "hour",
+    CATEGORY = "category",
+    PRODUCT = "product",
+}
