@@ -124,21 +124,21 @@ export const SalesReport = () => {
         let topSoldCategory = {} as ITopSoldItem;
         let topSoldProduct = {} as ITopSoldItem;
 
+        //First create an empty object with empty defined day sales
+        for (var i = 0; i < daysDifference; i++) {
+            const loopDateTime: Date = addDays(new Date(startDate), i);
+            const formattedDateTime: string = format(new Date(loopDateTime), "yyyy-MM-dd");
+
+            dailySales[formattedDateTime] = {
+                subTotal: 0,
+                quantitySold: 0,
+                orders: [],
+            };
+        }
+
         orders.forEach((order) => {
             const placedAt: string = format(new Date(order.placedAt), "yyyy-MM-dd");
             const placedAtHour: string = format(new Date(order.placedAt), "HH");
-
-            //First create an empty object with empty defined day sales
-            for (var i = 0; i < daysDifference; i++) {
-                const loopDateTime: Date = addDays(new Date(startDate), i);
-                const formattedDateTime: string = format(new Date(loopDateTime), "yyyy-MM-dd");
-
-                dailySales[formattedDateTime] = {
-                    subTotal: 0,
-                    quantitySold: 0,
-                    orders: [],
-                };
-            }
 
             // NEW ORDERS //////////////////////////////////
             if (order.status === EOrderStatus.NEW) {
@@ -163,7 +163,7 @@ export const SalesReport = () => {
                 dailySales[placedAt] = {
                     subTotal: newSubTotal,
                     quantitySold: newQuantitySold,
-                    orders: newOrders,
+                    orders: [...newOrders],
                 };
             }
 
@@ -350,13 +350,29 @@ export const SalesReport = () => {
 
     const MainReportBody = (props: { salesSummaryData: ISalesSummary }) => {
         const { salesSummaryData } = props;
+        const dayByGraphData: { date: string; sales: number }[] = [];
+        const hourByGraphData: { hour: string; quantity: number }[] = [];
+        for (const [key, value] of Object.entries<any>(salesSummaryData.dailySales)) {
+            dayByGraphData.push({
+                date: format(new Date(key), "dd MMM"),
+                sales: value.orders.length,
+            });
+        }
+
+        for (const [key, value] of Object.entries<any>(salesSummaryData.hourlySales).sort((a, b) => a[0].localeCompare(b[0]))) {
+            hourByGraphData.push({
+                hour: key,
+                quantity: value.saleQuantity,
+            });
+        }
+
         return (
             <div>
                 <div className="grid">
                     <div className="item item1">
                         <Card title="Sales By Day" onOpen={() => changeScreen(SalesReportScreen.DAY)}>
                             <div style={{ width: "100%", height: "300px" }}>
-                                <Graph />
+                                <Graph xAxis="date" lines={["sales"]} graphData={dayByGraphData} />
                             </div>
                         </Card>
                     </div>
@@ -384,8 +400,8 @@ export const SalesReport = () => {
                     </div>
                     <div className="item item3">
                         <Card title="Sales By Hour" onOpen={() => changeScreen(SalesReportScreen.HOUR)}>
-                            <div style={{ width: "100%", height: "300px" }}>
-                                <Graph />
+                            <div style={{ width: "100%", height: "250px" }}>
+                                <Graph xAxis="hour" lines={["quantity"]} graphData={hourByGraphData} />
                             </div>
                         </Card>
                     </div>
