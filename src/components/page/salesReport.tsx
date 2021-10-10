@@ -1,20 +1,52 @@
+import "./salesReport.scss";
+
 import { addDays, differenceInDays, format, subDays } from "date-fns";
 import { useEffect, useState } from "react";
+
 import { useRestaurant } from "../../context/restaurant-context";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
 import { EOrderStatus } from "../../graphql/customQueries";
 import { useGetRestaurantOrdersByBetweenPlacedAt } from "../../hooks/useGetRestaurantOrdersByBetweenPlacedAt";
-import { DateRangePicker } from "../../tabin/components/dateRangePicker";
-import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import SalesBy from "./salesReport/SalesBy";
-
-import "./salesReport.scss";
 import { SalesReportScreen } from "../../model/model";
 import { Card } from "../../tabin/components/card";
-import { Graph } from "./salesReport/Graph";
-import { CachedImage } from "../../tabin/components/cachedImage";
-import { getCloudFrontDomainName } from "../../private/aws-custom";
+import { DateRangePicker } from "../../tabin/components/dateRangePicker";
+import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { convertCentsToDollars } from "../../util/util";
+import SalesBy from "./salesReport/SalesBy";
+import { getCloudFrontDomainName } from "../../private/aws-custom";
+import { CachedImage } from "../../tabin/components/cachedImage";
+import { Graph } from "./salesReport/Graph";
+
+interface IBestHour {
+    hour: string;
+    saleAmount: number;
+    saleQuantity: number;
+}
+
+interface ITopSoldItem {
+    item: any;
+    quantity: number;
+    saleAmount: number;
+    percentageOfSale: string;
+}
+
+interface ISalesSummary {
+    daysDifference: number;
+    dailySales;
+    subTotalNew: number;
+    totalNumberOfOrdersNew: number;
+    subTotalCancelled: number;
+    totalNumberOfOrdersCancelled: number;
+    subTotalCompleted: number;
+    totalNumberOfOrdersCompleted: number;
+    hourlySales;
+    bestHour: IBestHour;
+    mostSoldCategories;
+    mostSoldProducts;
+    topSoldCategory: ITopSoldItem;
+    topSoldProduct: ITopSoldItem;
+    totalSoldItems: number;
+}
 
 export const SalesReport = () => {
     const { restaurant } = useRestaurant();
@@ -23,7 +55,7 @@ export const SalesReport = () => {
     const [startDate, setStartDate] = useState<string | null>(format(subDays(new Date(), 7), "yyyy-MM-dd"));
     const [endDate, setEndDate] = useState<string | null>(format(addDays(new Date(), 1), "yyyy-MM-dd")); //Adding extra day because GraphQL query is not inclusive of endDate
 
-    const [salesSummaryData, setSalesSummaryData] = useState<any | null>(null);
+    const [salesSummaryData, setSalesSummaryData] = useState<ISalesSummary | null>(null);
 
     const [currentScreen, setCurrentScreen] = useState(SalesReportScreen.DASHBOARD);
 
@@ -54,6 +86,8 @@ export const SalesReport = () => {
         let subTotalCompleted = 0;
         let numberOfProductsSold = 0;
         let totalNumberOfOrdersCompleted = 0;
+
+        let totalSoldItems = 0;
 
         const hourlySales = {
             "00": { hour: "00", saleAmount: 0, saleQuantity: 0 },
@@ -86,6 +120,9 @@ export const SalesReport = () => {
 
         const mostSoldCategories = {};
         const mostSoldProducts = {};
+
+        let topSoldCategory = {} as ITopSoldItem;
+        let topSoldProduct = {} as ITopSoldItem;
 
         orders.forEach((order) => {
             const placedAt: string = format(new Date(order.placedAt), "yyyy-MM-dd");
@@ -169,7 +206,27 @@ export const SalesReport = () => {
                             sales: product.price * product.quantity,
                         };
                     }
+
+                    // Total sold items
+                    totalSoldItems += product.quantity;
                 });
+
+            // Top Category
+            let maxCategory = 0;
+            let topSoldCategoryId = "";
+            for (const key in mostSoldCategories) {
+                if (mostSoldCategories[key].sales > maxCategory) {
+                    maxCategory = mostSoldCategories[key].sales;
+                    topSoldCategoryId = key;
+                }
+            }
+
+            topSoldCategory = {
+                item: mostSoldCategories[topSoldCategoryId].category,
+                quantity: mostSoldCategories[topSoldCategoryId].quantity,
+                saleAmount: mostSoldCategories[topSoldCategoryId].sales,
+                percentageOfSale: ((mostSoldCategories[topSoldCategoryId].sales * 100) / subTotalCompleted).toFixed(2),
+            };
 
             //MOST POPULAR PRODUCT //////////////////////////////////
             order.products &&
@@ -178,18 +235,38 @@ export const SalesReport = () => {
 
                     if (mostSoldProducts[product.id]) {
                         const prevQuantity = mostSoldProducts[product.id].quantity;
+                        const prevSales = mostSoldCategories[product.id].sales;
 
                         mostSoldProducts[product.id] = {
                             product: product,
                             quantity: prevQuantity + product.quantity,
+                            sales: prevSales + product.price * product.quantity,
                         };
                     } else {
                         mostSoldProducts[product.id] = {
                             product: product,
                             quantity: product.quantity,
+                            sales: product.price * product.quantity,
                         };
                     }
                 });
+
+            // Top Product
+            let maxProduct = 0;
+            let topSoldProductId = "";
+            for (const key in mostSoldProducts) {
+                if (mostSoldProducts[key].sales > maxProduct) {
+                    maxProduct = mostSoldProducts[key].sales;
+                    topSoldProductId = key;
+                }
+            }
+
+            topSoldProduct = {
+                item: mostSoldProducts[topSoldProductId].product,
+                quantity: mostSoldProducts[topSoldProductId].quantity,
+                saleAmount: mostSoldProducts[topSoldProductId].sales,
+                percentageOfSale: ((mostSoldProducts[topSoldProductId].sales * 100) / subTotalCompleted).toFixed(2),
+            };
         });
 
         console.log("xxx...", {
@@ -205,6 +282,7 @@ export const SalesReport = () => {
             bestHour,
             mostSoldCategories,
             mostSoldProducts,
+            totalSoldItems,
         });
 
         setSalesSummaryData({
@@ -220,6 +298,9 @@ export const SalesReport = () => {
             bestHour,
             mostSoldCategories,
             mostSoldProducts,
+            topSoldCategory,
+            topSoldProduct,
+            totalSoldItems,
         });
     };
 
@@ -249,16 +330,127 @@ export const SalesReport = () => {
         setCurrentScreen(screenName);
     };
 
-    const BestHourCard = (props: { bestHour: any }) => {
+    const BestHourCard = (props: { bestHour: IBestHour }) => {
         const { bestHour } = props;
 
         return (
             <div className="card" style={{ textAlign: "center" }}>
-                <div>Best Hour</div>
-                <img src="https://i.dlpng.com/static/png/6835756_preview.png" alt="clock" height="50px" width="50px" />
-                <div>{bestHour.hour}</div>
-                <div>${bestHour.saleAmount} total sales</div>
-                <div>{bestHour.saleQuantity} order(s)</div>
+                <div className="text-uppercase">Best Hour</div>
+                {/* <Clock/> */}
+                <div className="h4">{bestHour.hour}</div>
+                <div>
+                    <span className="h4">{`$${convertCentsToDollars(bestHour.saleAmount)}`}</span> total sales
+                </div>
+                <div>
+                    <span className="h4">{bestHour.saleQuantity}</span> order(s)
+                </div>
+            </div>
+        );
+    };
+
+    const MainReportBody = (props: { salesSummaryData: ISalesSummary }) => {
+        const { salesSummaryData } = props;
+        return (
+            <div>
+                <div className="grid">
+                    <div className="item item1">
+                        <Card title="Sales By Day" onOpen={() => changeScreen(SalesReportScreen.DAY)}>
+                            <div style={{ width: "100%", height: "300px" }}>
+                                <Graph />
+                            </div>
+                        </Card>
+                    </div>
+                    <div className="item item2 report-sales-value-wrapper">
+                        <Card className="text-center">
+                            <div className="h3 mb-1">{`$${convertCentsToDollars(salesSummaryData.subTotalCompleted)}`}</div>
+                            <div className="text-uppercase">Total Sales</div>
+                        </Card>
+                        <Card className="text-center">
+                            <div className="h3 mb-1">{`$${convertCentsToDollars(
+                                isNaN(salesSummaryData.subTotalCompleted / salesSummaryData.totalNumberOfOrdersCompleted)
+                                    ? 0
+                                    : salesSummaryData.subTotalCompleted / salesSummaryData.totalNumberOfOrdersCompleted
+                            )}`}</div>
+                            <div className="text-uppercase">Average Sales</div>
+                        </Card>
+                        <Card className="text-center">
+                            <div className="h3 mt-1">{salesSummaryData.totalNumberOfOrdersCompleted}</div>
+                            <div className="text-uppercase">Sales Count</div>
+                        </Card>
+                        <Card className="text-center">
+                            <div className="h3 mb-1">{salesSummaryData.totalSoldItems}</div>
+                            <div className="text-uppercase">Items Sold</div>
+                        </Card>
+                    </div>
+                    <div className="item item3">
+                        <Card title="Sales By Hour" onOpen={() => changeScreen(SalesReportScreen.HOUR)}>
+                            <div style={{ width: "100%", height: "300px" }}>
+                                <Graph />
+                            </div>
+                        </Card>
+                    </div>
+                    {salesSummaryData && salesSummaryData.bestHour && (
+                        <div className="item item4">
+                            <BestHourCard bestHour={salesSummaryData.bestHour} />
+                        </div>
+                    )}
+                    {salesSummaryData.topSoldCategory && (
+                        <div className="item item5">
+                            <Card title="Top Category" onOpen={() => changeScreen(SalesReportScreen.CATEGORY)}>
+                                <div className="top-item-container" style={{ alignItems: "center" }}>
+                                    <div className="top-item-image text-center">
+                                        {salesSummaryData.topSoldCategory?.item?.image && (
+                                            <CachedImage
+                                                url={`${getCloudFrontDomainName()}/protected/${
+                                                    salesSummaryData.topSoldCategory.item.image.identityPoolId
+                                                }/${salesSummaryData.topSoldCategory.item.image.key}`}
+                                                className="image mb-2"
+                                                alt={salesSummaryData.topSoldCategory.item.name}
+                                            />
+                                        )}
+                                        <div>{salesSummaryData.topSoldCategory?.item?.name}</div>
+                                    </div>
+                                    <div className="top-item-details text-center">
+                                        <div className="text-uppercase">Quantity</div>
+                                        <div className="h4">{salesSummaryData.topSoldCategory.quantity}</div>
+                                        <div className="text-uppercase">Sale Amount</div>
+                                        <div className="h4">${convertCentsToDollars(salesSummaryData.topSoldCategory.saleAmount ?? 0)}</div>
+                                        <div className="text-uppercase">% of Sales</div>
+                                        <div className="h4">{salesSummaryData.topSoldCategory.percentageOfSale}</div>
+                                    </div>
+                                </div>
+                            </Card>
+                        </div>
+                    )}
+                    {salesSummaryData.topSoldProduct && (
+                        <div className="item item6">
+                            <Card title="Top Product" onOpen={() => changeScreen(SalesReportScreen.PRODUCT)}>
+                                <div className="top-item-container" style={{ alignItems: "center" }}>
+                                    <div className="top-item-image text-center">
+                                        {salesSummaryData.topSoldProduct?.item?.image && (
+                                            <CachedImage
+                                                url={`${getCloudFrontDomainName()}/protected/${
+                                                    salesSummaryData.topSoldProduct.item.image.identityPoolId
+                                                }/${salesSummaryData.topSoldProduct.item.image.key}`}
+                                                className="image mb-2"
+                                                alt={salesSummaryData.topSoldProduct.item.name}
+                                            />
+                                        )}
+                                        <div>{salesSummaryData.topSoldProduct?.item?.name}</div>
+                                    </div>
+                                    <div className="top-item-details text-center">
+                                        <div className="text-uppercase">Quantity</div>
+                                        <div className="h4">{salesSummaryData.topSoldProduct.quantity}</div>
+                                        <div className="text-uppercase">Sale Amount</div>
+                                        <div className="h4">${convertCentsToDollars(salesSummaryData.topSoldProduct.saleAmount ?? 0)}</div>
+                                        <div className="text-uppercase">% of Sales</div>
+                                        <div className="h4">{salesSummaryData.topSoldProduct.percentageOfSale}</div>
+                                    </div>
+                                </div>
+                            </Card>
+                        </div>
+                    )}
+                </div>
             </div>
         );
     };
@@ -289,86 +481,7 @@ export const SalesReport = () => {
                                     onFocusChange={onFocusChange}
                                 />
                             </div>
-
-                            <div>
-                                <div className="grid">
-                                    <div className="item item1">
-                                        <Card title="Sales By Day" onOpen={() => changeScreen(SalesReportScreen.DAY)}>
-                                            {/* <Graph /> */}
-                                        </Card>
-                                    </div>
-                                    <div className="item item2 report-sales-value-wrapper">
-                                        <Card className="text-center">
-                                            <div className="h3 mb-1">$24.50</div>
-                                            <div>Sales</div>
-                                        </Card>
-                                        <Card className="text-center">
-                                            <div>primaryText</div>
-                                            <div className="h3 mt-1">secondaryText</div>
-                                        </Card>
-                                        <Card className="text-center">
-                                            <div>primaryText</div>
-                                            <div className="h3 mt-1">secondaryText</div>
-                                        </Card>
-                                        <Card className="text-center">
-                                            <div>primaryText</div>
-                                            <div className="h3 mt-1">secondaryText</div>
-                                        </Card>
-                                    </div>
-                                    <div className="item item3">
-                                        <Card title="Sales By Hour" onOpen={() => changeScreen(SalesReportScreen.HOUR)}>
-                                            {/* <Graph /> */}
-                                        </Card>
-                                    </div>
-                                    {salesSummaryData && salesSummaryData.bestHour && (
-                                        <div className="item item4">
-                                            <BestHourCard bestHour={salesSummaryData.bestHour} />
-                                        </div>
-                                    )}
-                                    <div className="item item5">
-                                        <Card title="Top Category" onOpen={() => changeScreen(SalesReportScreen.CATEGORY)}>
-                                            <div className="top-item-container" style={{ alignItems: "center" }}>
-                                                <div className="top-item-image text-center">
-                                                    {/* {getImage()} */}
-                                                    <div>topProductName</div>
-                                                    {/* <CachedImage
-                                                    url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
-                                                    className="image mb-2"
-                                                    alt="product-image"
-                                                /> */}
-                                                </div>
-                                                <div className="top-item-details text-center">
-                                                    <div>Quantity</div>
-                                                    <div>quantity</div>
-                                                    <div>Sale Amount</div>
-                                                    <div>details.saleAmount</div>
-                                                    {/* <div>{convertCentsToDollars(details.saleAmount)}</div> */}
-                                                    <div>% of Sales</div>
-                                                    <div>details.perSales</div>
-                                                </div>
-                                            </div>
-                                        </Card>
-                                    </div>
-                                    <div className="item item6">
-                                        <Card title="Top Product" onOpen={() => changeScreen(SalesReportScreen.PRODUCT)}>
-                                            <div className="top-item-container" style={{ alignItems: "center" }}>
-                                                <div className="top-item-image text-center">
-                                                    {/* {getImage()} */}
-                                                    <div>topProductName</div>
-                                                </div>
-                                                <div className="top-item-details text-center">
-                                                    <div>Quantity</div>
-                                                    <div>quantity</div>
-                                                    <div>Sale Amount</div>
-                                                    <div>details.saleAmount</div>
-                                                    <div>% of Sales</div>
-                                                    <div>details.perSales</div>
-                                                </div>
-                                            </div>
-                                        </Card>
-                                    </div>
-                                </div>
-                            </div>
+                            {salesSummaryData && <MainReportBody salesSummaryData={salesSummaryData} />}
                         </div>
                     </div>
                 );

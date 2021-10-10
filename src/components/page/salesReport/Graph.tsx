@@ -1,4 +1,4 @@
-import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 export const Graph = () => {
     const data = [
@@ -46,10 +46,8 @@ export const Graph = () => {
         },
     ];
     return (
-        <div>
+        <ResponsiveContainer width="99%">
             <LineChart
-                width={500}
-                height={300}
                 data={data}
                 margin={{
                     top: 5,
@@ -58,7 +56,6 @@ export const Graph = () => {
                     bottom: 5,
                 }}
             >
-                <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
@@ -66,6 +63,6 @@ export const Graph = () => {
                 <Line type="monotone" dataKey="pv" stroke="#8884d8" activeDot={{ r: 8 }} />
                 <Line type="monotone" dataKey="uv" stroke="#82ca9d" />
             </LineChart>
-        </div>
+        </ResponsiveContainer>
     );
 };
