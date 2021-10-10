@@ -1,41 +1,92 @@
-.reports {
-    margin: auto;
-    width: 50%;
-    background-color: white;
-    @media screen and (max-width: 767px) {
-        width: 100%;
-    }
-}
+.sales-report-wrapper {
+    background-color: #ffffff;
+    min-height: 100vh;
 
-.flex-responsive {
-    display: flex;
+    .sales-report {
+        max-width: 1200px;
+        margin: 0 auto;
 
-    @media screen and (max-width: 767px) {
-        display: block;
-    }
-}
+        .report-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
 
-.report-header {
-    display: flex;
-    align-items: center;
-    .header-title {
-        font-size: x-large;
-        font-weight: 700;
-        width: 50%;
-    }
-}
+            @media screen and (max-width: 768px) {
+                flex-wrap: wrap;
+            }
+        }
 
-.card {
-    border-radius: 5px;
-    margin: 10px;
-    padding: 10px;
-    box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.2);
-    transition: 0.3s;
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-gap: 16px;
+        }
 
-    &:hover {
-        box-shadow: 0 4px 10px 0 rgba(0, 0, 0, 0.2);
-    }
-    .card-header {
-        text-transform: uppercase;
+        .item1 {
+            grid-column: span 3 / auto;
+        }
+
+        // .item2 {
+        //     grid-column: span 1 / auto;
+        // }
+        .report-sales-value-wrapper {
+            display: grid;
+            grid-gap: 5px;
+        }
+
+        .item3 {
+            grid-column: span 3 / auto;
+        }
+
+        // .item4 {
+        //     grid-column: span 1 / auto;
+        // }
+
+        .item5 {
+            grid-column: span 2 / auto;
+        }
+
+        .top-item-container {
+            display: flex;
+            align-items: center;
+
+            .top-item-image {
+                flex: 1;
+            }
+
+            .top-item-details {
+                flex: 1;
+            }
+        }
+
+        .item6 {
+            grid-column: span 2 / auto;
+        }
+
+        @media screen and (max-width: 1200px) {
+            .item1 {
+                grid-column: span 1 / auto;
+            }
+
+            .item2 {
+                grid-column: span 1 / auto;
+            }
+
+            .item3 {
+                grid-column: span 1 / auto;
+            }
+
+            .item4 {
+                grid-column: span 1 / auto;
+            }
+
+            .item5 {
+                grid-column: span 1 / auto;
+            }
+
+            .item6 {
+                grid-column: span 1 / auto;
+            }
+        }
     }
 }

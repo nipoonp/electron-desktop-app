@@ -9,11 +9,13 @@ import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import SalesBy from "./salesReport/SalesBy";
 
 import "./salesReport.scss";
-import ExpandableCard from "./salesReport/ExpandableCard";
 import TopCard from "./salesReport/TopCard";
-import Graph from "./salesReport/Graph";
-import InformativeCard from "./salesReport/InformativeCard";
 import { SalesReportScreen } from "../../model/model";
+import { Card } from "../../tabin/components/card";
+import { Graph } from "./salesReport/Graph";
+import { CachedImage } from "../../tabin/components/cachedImage";
+import { getCloudFrontDomainName } from "../../private/aws-custom";
+import { convertCentsToDollars } from "../../util/util";
 
 export const SalesReport = () => {
     const { restaurant } = useRestaurant();
@@ -22,7 +24,7 @@ export const SalesReport = () => {
     const [startDate, setStartDate] = useState<string | null>(format(subDays(new Date(), 7), "yyyy-MM-dd"));
     const [endDate, setEndDate] = useState<string | null>(format(addDays(new Date(), 1), "yyyy-MM-dd")); //Adding extra day because GraphQL query is not inclusive of endDate
 
-    const [salesSummaryData, setSalesSummaryData] = useState({} as any);
+    const [salesSummaryData, setSalesSummaryData] = useState<any | null>(null);
 
     const [currentScreen, setCurrentScreen] = useState(SalesReportScreen.DASHBOARD);
 
@@ -220,8 +222,9 @@ export const SalesReport = () => {
             mostSoldCategories,
             mostSoldProducts,
         });
-        console.log("s:", salesSummaryData);
     };
+
+    console.log("s:", salesSummaryData);
 
     const onDatesChange = async (startD: string | null, endD: string | null) => {
         setStartDate(startD);
@@ -247,18 +250,18 @@ export const SalesReport = () => {
         setCurrentScreen(screenName);
     };
 
-    const getBestHourCard = () => {
-        if (salesSummaryData?.bestHour) {
-            <div className="card" style={{ textAlign: "center" }}>
-                <p>Best Hour</p>
-                <img src="https://i.dlpng.com/static/png/6835756_preview.png" alt="clock" height="50px" width="50px" />
-                <p>{salesSummaryData.bestHour.hour}</p>
-                <p>${salesSummaryData.bestHour.saleAmount} total sales</p>
-                <p>{salesSummaryData.bestHour.saleQuantity} order(s)</p>
-            </div>;
-        }
+    const BestHourCard = (props: { bestHour: any }) => {
+        const { bestHour } = props;
 
-        return <></>;
+        return (
+            <div className="card" style={{ textAlign: "center" }}>
+                <div>Best Hour</div>
+                <img src="https://i.dlpng.com/static/png/6835756_preview.png" alt="clock" height="50px" width="50px" />
+                <div>{bestHour.hour}</div>
+                <div>${bestHour.saleAmount} total sales</div>
+                <div>{bestHour.saleQuantity} order(s)</div>
+            </div>
+        );
     };
 
     const renderCurrentScreen = () => {
@@ -275,62 +278,97 @@ export const SalesReport = () => {
             case "":
             default:
                 return (
-                    <div className="App">
-                        <div className="report-header">
-                            <p className="header-title">Reports</p>
+                    <div className="sales-report-wrapper">
+                        <div className="sales-report p-3">
+                            <div className="report-header mb-3">
+                                <div className="h2">Reports</div>
+                                <DateRangePicker
+                                    startDate={startDate}
+                                    endDate={endDate}
+                                    onDatesChange={onDatesChange}
+                                    focusedInput={focusedInput}
+                                    onFocusChange={onFocusChange}
+                                />
+                            </div>
+
                             <div>
-                                <div style={{ display: "flex", justifyContent: "center" }}>
-                                    <DateRangePicker
-                                        startDate={startDate}
-                                        endDate={endDate}
-                                        onDatesChange={onDatesChange}
-                                        focusedInput={focusedInput}
-                                        onFocusChange={onFocusChange}
-                                    />
+                                <div className="grid">
+                                    <div className="item item1">
+                                        <Card title="Sales By Day" onOpen={() => changeScreen(SalesReportScreen.DAY)}>
+                                            {/* <Graph /> */}
+                                        </Card>
+                                    </div>
+                                    <div className="item item2 report-sales-value-wrapper">
+                                        <Card className="text-center">
+                                            <div className="h3 mb-1">$24.50</div>
+                                            <div>Sales</div>
+                                        </Card>
+                                        <Card className="text-center">
+                                            <div>primaryText</div>
+                                            <div className="h3 mt-1">secondaryText</div>
+                                        </Card>
+                                        <Card className="text-center">
+                                            <div>primaryText</div>
+                                            <div className="h3 mt-1">secondaryText</div>
+                                        </Card>
+                                        <Card className="text-center">
+                                            <div>primaryText</div>
+                                            <div className="h3 mt-1">secondaryText</div>
+                                        </Card>
+                                    </div>
+                                    <div className="item item3">
+                                        <Card title="Sales By Hour" onOpen={() => changeScreen(SalesReportScreen.HOUR)}>
+                                            {/* <Graph /> */}
+                                        </Card>
+                                    </div>
+                                    {salesSummaryData && salesSummaryData.bestHour && (
+                                        <div className="item item4">
+                                            <BestHourCard bestHour={salesSummaryData.bestHour} />
+                                        </div>
+                                    )}
+                                    <div className="item item5">
+                                        <Card title="Top Category" onOpen={() => changeScreen(SalesReportScreen.CATEGORY)}>
+                                            <div className="top-item-container" style={{ alignItems: "center" }}>
+                                                <div className="top-item-image text-center">
+                                                    {/* {getImage()} */}
+                                                    <div>topProductName</div>
+                                                    {/* <CachedImage
+                                                    url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                                                    className="image mb-2"
+                                                    alt="product-image"
+                                                /> */}
+                                                </div>
+                                                <div className="top-item-details text-center">
+                                                    <div>Quantity</div>
+                                                    <div>quantity</div>
+                                                    <div>Sale Amount</div>
+                                                    <div>details.saleAmount</div>
+                                                    {/* <div>{convertCentsToDollars(details.saleAmount)}</div> */}
+                                                    <div>% of Sales</div>
+                                                    <div>details.perSales</div>
+                                                </div>
+                                            </div>
+                                        </Card>
+                                    </div>
+                                    <div className="item item6">
+                                        <Card title="Top Product" onOpen={() => changeScreen(SalesReportScreen.PRODUCT)}>
+                                            <div className="top-item-container" style={{ alignItems: "center" }}>
+                                                <div className="top-item-image text-center">
+                                                    {/* {getImage()} */}
+                                                    <div>topProductName</div>
+                                                </div>
+                                                <div className="top-item-details text-center">
+                                                    <div>Quantity</div>
+                                                    <div>quantity</div>
+                                                    <div>Sale Amount</div>
+                                                    <div>details.saleAmount</div>
+                                                    <div>% of Sales</div>
+                                                    <div>details.perSales</div>
+                                                </div>
+                                            </div>
+                                        </Card>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                        <div className="report-body">
-                            <div className="flex-responsive">
-                                <ExpandableCard title="Sales By Day" screenName={SalesReportScreen.DAY} changeScreen={changeScreen}>
-                                    <Graph />
-                                </ExpandableCard>
-                                <div className="flex-responsive" style={{ flexWrap: "wrap" }}>
-                                    <InformativeCard primaryText="$68.30" secondaryText="Total Sales" />
-                                    <InformativeCard primaryText="$22.30" secondaryText="Average Sales" />
-                                    <InformativeCard primaryText="3" secondaryText="Sales Count" />
-                                    <InformativeCard primaryText="7" secondaryText="Items Sold" />
-                                </div>
-                            </div>
-                            <div className="flex-responsive">
-                                <ExpandableCard title="Sales By Hour" screenName={SalesReportScreen.HOUR} changeScreen={changeScreen}>
-                                    <Graph />
-                                </ExpandableCard>
-                                {getBestHourCard()}
-                            </div>
-                            <div className="flex-responsive">
-                                <ExpandableCard title="Top Category" screenName={SalesReportScreen.CATEGORY} changeScreen={changeScreen}>
-                                    <TopCard
-                                        details={{
-                                            topProductName: "Aloo Tikki Burger",
-                                            image: "",
-                                            quantity: 5,
-                                            saleAmount: "$35.78",
-                                            perSales: "64.96%",
-                                        }}
-                                    />
-                                </ExpandableCard>
-                                <ExpandableCard title="Top Product" screenName={SalesReportScreen.PRODUCT} changeScreen={changeScreen}>
-                                    <TopCard
-                                        details={{
-                                            topProductName: "Aloo Tikki Burger",
-                                            image: "",
-                                            quantity: 5,
-                                            saleAmount: "$35.78",
-                                            perSales: "64.96%",
-                                        }}
-                                    />
-                                </ExpandableCard>
                             </div>
                         </div>
                     </div>
@@ -346,10 +384,12 @@ export const SalesReport = () => {
         return <>Couldn't fetch orders.</>;
     }
 
+    if (loading) {
+        return <FullScreenSpinner show={loading} text={"Loading report details..."} />;
+    }
+
     return (
         <>
-            <FullScreenSpinner show={loading} text={"Loading report details..."} />
-
             <div className="reports">{renderCurrentScreen()}</div>
         </>
     );
