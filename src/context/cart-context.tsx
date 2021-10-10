@@ -23,6 +23,7 @@ const initialCartModifierQuantitiesById = {};
 const initialUserAppliedPromotionCode = null;
 const initialPromotion = null;
 const initialTotal = 0;
+const initialAmountPaid = 0;
 const initialSubTotal = 0;
 
 type ContextProps = {
@@ -48,6 +49,8 @@ type ContextProps = {
     removeUserAppliedPromotion: () => void;
     total: number;
     subTotal: number;
+    amountPaid: number;
+    addToAmountPaid: (amount: number) => void;
 };
 
 const CartContext = createContext<ContextProps>({
@@ -73,6 +76,8 @@ const CartContext = createContext<ContextProps>({
     removeUserAppliedPromotion: () => {},
     total: initialTotal,
     subTotal: initialSubTotal,
+    amountPaid: initialAmountPaid,
+    addToAmountPaid: () => {},
 });
 
 const CartProvider = (props: { children: React.ReactNode }) => {
@@ -83,7 +88,9 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
     const [notes, _setNotes] = useState<string>(initialNotes);
     const [total, _setTotal] = useState<number>(initialTotal);
+    const [amountPaid, _setAmountPaid] = useState<number>(initialAmountPaid);
     const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
+
     const [userAppliedPromotionCode, _setUserAppliedPromotionCode] = useState<string | null>(initialUserAppliedPromotionCode);
     const [promotion, _setPromotion] = useState<ICartPromotion | null>(initialPromotion);
 
@@ -411,6 +418,14 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         updateCartQuantities(newProducts);
     };
 
+    const setNotes = (notes: string) => {
+        _setNotes(notes);
+    };
+
+    const addToAmountPaid = (amount: number) => {
+        _setAmountPaid(amountPaid + amount);
+    };
+
     const clearCart = () => {
         _setOrderType(initialOrderType);
         _setTableNumber(initialTableNumber);
@@ -422,10 +437,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setPromotion(initialPromotion);
         _setTotal(initialTotal);
         _setSubTotal(initialSubTotal);
-    };
-
-    const setNotes = (notes: string) => {
-        _setNotes(notes);
+        _setAmountPaid(initialAmountPaid);
     };
 
     return (
@@ -452,6 +464,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setUserAppliedPromotion: setUserAppliedPromotion,
                 removeUserAppliedPromotion: removeUserAppliedPromotion,
                 total: total,
+                amountPaid: amountPaid,
+                addToAmountPaid: addToAmountPaid,
                 subTotal: subTotal,
             }}
             children={props.children}

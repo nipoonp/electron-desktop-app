@@ -60,6 +60,8 @@ export const Checkout = () => {
         promotion,
         total,
         subTotal,
+        amountPaid,
+        addToAmountPaid,
         updateItem,
         updateItemQuantity,
         deleteItem,
@@ -444,6 +446,8 @@ export const Checkout = () => {
         try {
             setEftposTransactionInProgress(true);
 
+            let outcome: IEftposTransactionOutcome | null = null;
+
             if (register.eftposProvider == "SMARTPAY") {
                 let delayedShown = false;
 
@@ -456,32 +460,34 @@ export const Checkout = () => {
                 };
 
                 const pollingUrl = await smartpayCreateTransaction(amount, "Card.Purchase");
-                const outcome: IEftposTransactionOutcome = await smartpayPollForOutcome(pollingUrl, delayed);
+                outcome = await smartpayPollForOutcome(pollingUrl, delayed);
 
                 setEftposTransactionOutcome(outcome);
             } else if (register.eftposProvider == "WINDCAVE") {
                 const txnRef = await windcaveCreateTransaction(register.windcaveStationId, amount, "Purchase");
-                const outcome: IEftposTransactionOutcome = await windcavePollForOutcome(register.windcaveStationId, txnRef);
+                outcome = await windcavePollForOutcome(register.windcaveStationId, txnRef);
 
                 setEftposTransactionOutcome(outcome);
             } else if (register.eftposProvider == "VERIFONE") {
-                const outcome: IEftposTransactionOutcome = await verifoneCreateTransaction(
-                    amount,
-                    register.eftposIpAddress,
-                    register.eftposPortNumber,
-                    restaurant.id
-                );
+                outcome = await verifoneCreateTransaction(amount, register.eftposIpAddress, register.eftposPortNumber, restaurant.id);
 
                 setEftposTransactionOutcome(outcome);
             }
 
-            // if (transactionOutcome == EEftposTransactionOutcome.Success) {
-            //     try {
-            //         await onSubmitOrder(true, eftposReceipt);
-            //     } catch (e) {
-            //         setCreateOrderError(e);
-            //     }
-            // }
+            if (!outcome) throw "Invalid Eftpos Transaction outcome.";
+
+            //If paid for everything
+            if (amountPaid + amount >= subTotal) {
+                if (outcome.transactionOutcome == EEftposTransactionOutcome.Success) {
+                    try {
+                        await onSubmitOrder(true, outcome.eftposReceipt);
+                    } catch (e) {
+                        setCreateOrderError(e);
+                    }
+                }
+            }
+
+            addToAmountPaid(amount);
         } catch (errorMessage) {
             setEftposTransactionOutcome({
                 platformTransactionOutcome: null,

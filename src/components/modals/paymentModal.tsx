@@ -111,8 +111,8 @@ export const PaymentModal = (props: IPaymentModalProps) => {
     };
 
     const onClickEftpos = () => {
-        const amountInt = parseInt(amount);
-        const amountCents = convertDollarsToCents(amountInt);
+        const amountFloat = parseFloat(amount);
+        const amountCents = convertDollarsToCents(amountFloat);
         const amountCentsInt = parseInt(amountCents);
 
         onConfirmTotalOrRetryTransaction(amountCentsInt);
