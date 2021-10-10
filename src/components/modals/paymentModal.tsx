@@ -6,7 +6,7 @@ import { Button } from "../../tabin/components/button";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { Input } from "../../tabin/components/input";
 import { Modal } from "../../tabin/components/modal";
-import { convertCentsToDollars } from "../../util/util";
+import { convertCentsToDollars, convertDollarsToCents } from "../../util/util";
 
 import "./paymentModal.scss";
 
@@ -36,7 +36,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         onCancelOrder,
     } = props;
 
-    const [amount, setAmount] = useState(subTotal);
+    const [amount, setAmount] = useState(convertCentsToDollars(subTotal));
 
     const onRetry = () => {
         onConfirmTotalOrRetryTransaction(subTotal);
@@ -107,25 +107,22 @@ export const PaymentModal = (props: IPaymentModalProps) => {
     );
 
     const onChangeAmount = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setAmount(parseInt(event.target.value));
+        setAmount(event.target.value);
     };
 
     const onClickEftpos = () => {
-        onConfirmTotalOrRetryTransaction(amount);
+        const amountInt = parseInt(amount);
+        const amountCents = convertDollarsToCents(amountInt);
+        const amountCentsInt = parseInt(amountCents);
+
+        onConfirmTotalOrRetryTransaction(amountCentsInt);
     };
 
     const posPaymentScreen = () => (
         <>
             <div className="mb-6" style={{ display: "flex", fontSize: "24px" }}>
                 <div>Amount To Pay</div>
-                <Input
-                    className="ml-4"
-                    type="number"
-                    name="AmountToPay"
-                    value={convertCentsToDollars(amount)}
-                    placeholder="9.99"
-                    onChange={onChangeAmount}
-                />
+                <Input className="ml-4" type="number" name="AmountToPay" value={amount} placeholder="9.99" onChange={onChangeAmount} />
             </div>
             <div className="mb-6" style={{ display: "flex" }}>
                 <Button>Cash</Button>
