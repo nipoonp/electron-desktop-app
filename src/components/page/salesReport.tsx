@@ -13,7 +13,7 @@ import { SalesReportScreen } from "../../model/model";
 import { Card } from "../../tabin/components/card";
 import { DateRangePicker } from "../../tabin/components/dateRangePicker";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { convertCentsToDollars } from "../../util/util";
+import { convertCentsToDollars, convertCentsToDollarsReturnFloat } from "../../util/util";
 import SalesBy from "./salesReport/SalesBy";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
 import { CachedImage } from "../../tabin/components/cachedImage";
@@ -200,112 +200,112 @@ export const SalesReport = () => {
                     totalQuantity: newQuantitySold,
                     orders: [...newOrders],
                 };
-            }
 
-            // HOURLY SALES //////////////////////////////////
-            const newSaleQuantity = hourlySales[placedAtHour].totalQuantity + 1;
-            const newSaleAmount = hourlySales[placedAtHour].totalAmount + order.total;
+                // HOURLY SALES //////////////////////////////////
+                const newSaleQuantity = hourlySales[placedAtHour].totalQuantity + 1;
+                const newSaleAmount = hourlySales[placedAtHour].totalAmount + order.total;
 
-            hourlySales[placedAtHour] = {
-                hour: placedAtHour,
-                totalQuantity: newSaleQuantity,
-                totalAmount: newSaleAmount,
-            };
-
-            if (newSaleAmount > bestHour.totalAmount) {
-                bestHour = {
+                hourlySales[placedAtHour] = {
                     hour: placedAtHour,
                     totalQuantity: newSaleQuantity,
                     totalAmount: newSaleAmount,
                 };
+
+                if (newSaleAmount > bestHour.totalAmount) {
+                    bestHour = {
+                        hour: placedAtHour,
+                        totalQuantity: newSaleQuantity,
+                        totalAmount: newSaleAmount,
+                    };
+                }
+
+                // MOST POPULAR CATEGORY //////////////////////////////////
+                order.products &&
+                    order.products.forEach((product) => {
+                        if (!product.category) return;
+
+                        if (mostSoldCategories[product.category.id]) {
+                            const newTotalQuantity = mostSoldCategories[product.category.id].totalQuantity + product.quantity;
+                            const newTotalAmount = mostSoldCategories[product.category.id].totalAmount + product.price * product.quantity;
+
+                            mostSoldCategories[product.category.id] = {
+                                item: product.category,
+                                totalQuantity: newTotalQuantity,
+                                totalAmount: newTotalAmount,
+                            };
+
+                            if (newTotalAmount > topSoldCategory.totalAmount) {
+                                topSoldCategory = {
+                                    item: product.category,
+                                    totalQuantity: newTotalQuantity,
+                                    totalAmount: newTotalAmount,
+                                };
+                            }
+                        } else {
+                            const totalQuantity = product.quantity;
+                            const totalAmount = product.price * product.quantity;
+
+                            mostSoldCategories[product.category.id] = {
+                                item: product.category,
+                                totalQuantity: totalQuantity,
+                                totalAmount: totalAmount,
+                            };
+
+                            if (totalAmount > topSoldCategory.totalAmount) {
+                                topSoldCategory = {
+                                    item: product.category,
+                                    totalQuantity: totalQuantity,
+                                    totalAmount: totalAmount,
+                                };
+                            }
+                        }
+
+                        // Total sold items
+                        totalSoldItems += product.quantity;
+                    });
+
+                //MOST POPULAR PRODUCT //////////////////////////////////
+                order.products &&
+                    order.products.forEach((product) => {
+                        numberOfProductsSold = numberOfProductsSold + product.quantity;
+
+                        if (mostSoldProducts[product.id]) {
+                            const newTotalQuantity = mostSoldProducts[product.id].totalQuantity + product.quantity;
+                            const newTotalAmount = mostSoldProducts[product.id].totalAmount + product.price * product.quantity;
+
+                            mostSoldProducts[product.id] = {
+                                item: product,
+                                totalQuantity: newTotalQuantity,
+                                totalAmount: newTotalAmount,
+                            };
+
+                            if (newTotalAmount > topSoldProduct.totalAmount) {
+                                topSoldProduct = {
+                                    item: product,
+                                    totalQuantity: newTotalQuantity,
+                                    totalAmount: newTotalAmount,
+                                };
+                            }
+                        } else {
+                            const totalQuantity = product.quantity;
+                            const totalAmount = product.price * product.quantity;
+
+                            mostSoldProducts[product.id] = {
+                                item: product,
+                                totalQuantity: totalQuantity,
+                                totalAmount: totalAmount,
+                            };
+
+                            if (totalAmount > topSoldProduct.totalAmount) {
+                                topSoldProduct = {
+                                    item: product,
+                                    totalQuantity: totalQuantity,
+                                    totalAmount: totalAmount,
+                                };
+                            }
+                        }
+                    });
             }
-
-            // MOST POPULAR CATEGORY //////////////////////////////////
-            order.products &&
-                order.products.forEach((product) => {
-                    if (!product.category) return;
-
-                    if (mostSoldCategories[product.category.id]) {
-                        const newTotalQuantity = mostSoldCategories[product.category.id].totalQuantity + product.quantity;
-                        const newTotalAmount = mostSoldCategories[product.category.id].totalAmount + product.price * product.quantity;
-
-                        mostSoldCategories[product.category.id] = {
-                            item: product.category,
-                            totalQuantity: newTotalQuantity,
-                            totalAmount: newTotalAmount,
-                        };
-
-                        if (newTotalAmount > topSoldCategory.totalAmount) {
-                            topSoldCategory = {
-                                item: product.category,
-                                totalQuantity: newTotalQuantity,
-                                totalAmount: newTotalAmount,
-                            };
-                        }
-                    } else {
-                        const totalQuantity = product.quantity;
-                        const totalAmount = product.price * product.quantity;
-
-                        mostSoldCategories[product.category.id] = {
-                            item: product.category,
-                            totalQuantity: totalQuantity,
-                            totalAmount: totalAmount,
-                        };
-
-                        if (totalAmount > topSoldCategory.totalAmount) {
-                            topSoldCategory = {
-                                item: product.category,
-                                totalQuantity: totalQuantity,
-                                totalAmount: totalAmount,
-                            };
-                        }
-                    }
-
-                    // Total sold items
-                    totalSoldItems += product.quantity;
-                });
-
-            //MOST POPULAR PRODUCT //////////////////////////////////
-            order.products &&
-                order.products.forEach((product) => {
-                    numberOfProductsSold = numberOfProductsSold + product.quantity;
-
-                    if (mostSoldProducts[product.id]) {
-                        const newTotalQuantity = mostSoldProducts[product.id].totalQuantity + product.quantity;
-                        const newTotalAmount = mostSoldProducts[product.id].totalAmount + product.price * product.quantity;
-
-                        mostSoldProducts[product.id] = {
-                            item: product,
-                            totalQuantity: newTotalQuantity,
-                            totalAmount: newTotalAmount,
-                        };
-
-                        if (newTotalAmount > topSoldCategory.totalAmount) {
-                            topSoldCategory = {
-                                item: product,
-                                totalQuantity: newTotalQuantity,
-                                totalAmount: newTotalAmount,
-                            };
-                        }
-                    } else {
-                        const totalQuantity = product.quantity;
-                        const totalAmount = product.price * product.quantity;
-
-                        mostSoldProducts[product.id] = {
-                            item: product,
-                            totalQuantity: totalQuantity,
-                            totalAmount: totalAmount,
-                        };
-
-                        if (totalAmount > topSoldCategory.totalAmount) {
-                            topSoldProduct = {
-                                item: product,
-                                totalQuantity: totalQuantity,
-                                totalAmount: totalAmount,
-                            };
-                        }
-                    }
-                });
         });
 
         console.log("xxx...", {
@@ -390,38 +390,31 @@ export const SalesReport = () => {
     const MainReportBody = (props: { salesSummaryData: ISalesSummary }) => {
         const { salesSummaryData } = props;
         const {
-            daysDifference,
-            dailySales,
-            subTotalNew,
-            totalNumberOfOrdersNew,
-            subTotalCancelled,
-            totalNumberOfOrdersCancelled,
             subTotalCompleted,
-            totalNumberOfOrdersCompleted,
+            dailySales,
             hourlySales,
+            totalNumberOfOrdersCompleted,
             bestHour,
-            mostSoldCategories,
-            mostSoldProducts,
             topSoldCategory,
             topSoldProduct,
             totalSoldItems,
         } = salesSummaryData;
         const dayByGraphData: { date: string; sales: number }[] = [];
-        const hourByGraphData: { hour: string; quantity: number }[] = [];
+        const hourByGraphData: { hour: string; sales: number }[] = [];
 
-        for (const [key, value] of Object.entries<any>(salesSummaryData.dailySales)) {
+        Object.entries(dailySales).forEach(([date, sale]) => {
             dayByGraphData.push({
-                date: format(new Date(key), "dd MMM"),
-                sales: value.orders.length,
+                date: format(new Date(date), "dd MMM"),
+                sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
             });
-        }
+        });
 
-        for (const [key, value] of Object.entries<any>(salesSummaryData.hourlySales).sort((a, b) => a[0].localeCompare(b[0]))) {
+        Object.entries(hourlySales).forEach(([hour, sale]) => {
             hourByGraphData.push({
-                hour: key,
-                quantity: value.saleQuantity,
+                hour: hour,
+                sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
             });
-        }
+        });
 
         return (
             <div>
@@ -445,7 +438,7 @@ export const SalesReport = () => {
                             <div className="text-uppercase">Average Sales</div>
                         </Card>
                         <Card className="text-center">
-                            <div className="h3 mt-1">{totalNumberOfOrdersCompleted}</div>
+                            <div className="h3 mb-1">{totalNumberOfOrdersCompleted}</div>
                             <div className="text-uppercase">Sales Count</div>
                         </Card>
                         <Card className="text-center">
@@ -483,11 +476,11 @@ export const SalesReport = () => {
                                     </div>
                                     <div className="top-item-details text-center">
                                         <div className="text-uppercase">Quantity</div>
-                                        <div className="h4">{topSoldCategory.totalQuantity}</div>
+                                        <div className="h4 mb-2">{topSoldCategory.totalQuantity}</div>
                                         <div className="text-uppercase">Sale Amount</div>
-                                        <div className="h4">${convertCentsToDollars(topSoldCategory.totalAmount ?? 0)}</div>
+                                        <div className="h4 mb-2">${convertCentsToDollars(topSoldCategory.totalAmount ?? 0)}</div>
                                         <div className="text-uppercase">% of Sales</div>
-                                        <div className="h4">{(topSoldCategory.totalAmount * 100) / totalNumberOfOrdersCompleted}</div>
+                                        <div className="h4">{((topSoldCategory.totalAmount / subTotalCompleted) * 100).toFixed(2)}%</div>
                                     </div>
                                 </div>
                             </Card>
@@ -511,11 +504,11 @@ export const SalesReport = () => {
                                     </div>
                                     <div className="top-item-details text-center">
                                         <div className="text-uppercase">Quantity</div>
-                                        <div className="h4">{topSoldProduct.totalQuantity}</div>
+                                        <div className="h4 mb-2">{topSoldProduct.totalQuantity}</div>
                                         <div className="text-uppercase">Sale Amount</div>
-                                        <div className="h4">${convertCentsToDollars(topSoldProduct.totalAmount ?? 0)}</div>
+                                        <div className="h4 mb-2">${convertCentsToDollars(topSoldProduct.totalAmount ?? 0)}</div>
                                         <div className="text-uppercase">% of Sales</div>
-                                        <div className="h4">{(topSoldProduct.totalAmount * 100) / totalNumberOfOrdersCompleted}</div>
+                                        <div className="h4">{((topSoldProduct.totalAmount / subTotalCompleted) * 100).toFixed(2)}%</div>
                                     </div>
                                 </div>
                             </Card>
