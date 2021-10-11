@@ -1,48 +1,75 @@
-import "./salesReport.scss";
-
 import { addDays, differenceInDays, format, subDays } from "date-fns";
 import { useEffect, useState } from "react";
 
 import { useRestaurant } from "../../context/restaurant-context";
-import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
+import {
+    IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT,
+    IGET_RESTAURANT_ORDER_FRAGMENT,
+    IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT,
+} from "../../graphql/customFragments";
 import { EOrderStatus } from "../../graphql/customQueries";
 import { useGetRestaurantOrdersByBetweenPlacedAt } from "../../hooks/useGetRestaurantOrdersByBetweenPlacedAt";
 import { SalesReportScreen } from "../../model/model";
 import { Card } from "../../tabin/components/card";
 import { DateRangePicker } from "../../tabin/components/dateRangePicker";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { convertCentsToDollars } from "../../util/util";
+import { convertCentsToDollars, convertCentsToDollarsReturnFloat } from "../../util/util";
 import { SalesBy } from "./salesReport/SalesBy";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { Graph } from "./salesReport/Graph";
 
-interface IBestHour {
-    hour: string;
-    saleAmount: number;
-    saleQuantity: number;
-}
+import "./salesReport.scss";
 
 interface ITopSoldItem {
-    item: any;
-    quantity: number;
-    saleAmount: number;
-    percentageOfSale: string;
+    item: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT | null;
+    totalQuantity: number;
+    totalAmount: number;
+}
+
+interface IDailySales {
+    [date: string]: {
+        totalAmount: number;
+        totalQuantity: number;
+        orders: IGET_RESTAURANT_ORDER_FRAGMENT[];
+    };
+}
+
+interface IBestHour {
+    hour: string;
+    totalAmount: number;
+    totalQuantity: number;
+}
+
+interface IHourlySales {
+    [hour: string]: {
+        hour: string;
+        totalAmount: number;
+        totalQuantity: number;
+    };
+}
+
+interface IMostSoldItems {
+    [id: string]: {
+        item: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT;
+        totalQuantity: number;
+        totalAmount: number;
+    };
 }
 
 interface ISalesSummary {
     daysDifference: number;
-    dailySales;
+    dailySales: IDailySales;
     subTotalNew: number;
     totalNumberOfOrdersNew: number;
     subTotalCancelled: number;
     totalNumberOfOrdersCancelled: number;
     subTotalCompleted: number;
     totalNumberOfOrdersCompleted: number;
-    hourlySales;
+    hourlySales: IHourlySales;
     bestHour: IBestHour;
-    mostSoldCategories;
-    mostSoldProducts;
+    mostSoldCategories: IMostSoldItems;
+    mostSoldProducts: IMostSoldItems;
     topSoldCategory: ITopSoldItem;
     topSoldProduct: ITopSoldItem;
     totalSoldItems: number;
@@ -75,54 +102,62 @@ export const SalesReport = () => {
 
         const daysDifference: number = differenceInDays(new Date(endDate), new Date(startDate));
 
-        const dailySales = {};
+        const dailySales: IDailySales = {};
 
-        let subTotalNew = 0;
-        let totalNumberOfOrdersNew = 0;
+        let subTotalNew: number = 0;
+        let totalNumberOfOrdersNew: number = 0;
 
-        let subTotalCancelled = 0;
-        let totalNumberOfOrdersCancelled = 0;
+        let subTotalCancelled: number = 0;
+        let totalNumberOfOrdersCancelled: number = 0;
 
-        let subTotalCompleted = 0;
-        let numberOfProductsSold = 0;
-        let totalNumberOfOrdersCompleted = 0;
+        let subTotalCompleted: number = 0;
+        let numberOfProductsSold: number = 0;
+        let totalNumberOfOrdersCompleted: number = 0;
 
-        let totalSoldItems = 0;
+        let totalSoldItems: number = 0;
 
-        const hourlySales = {
-            "00": { hour: "00", saleAmount: 0, saleQuantity: 0 },
-            "01": { hour: "01", saleAmount: 0, saleQuantity: 0 },
-            "02": { hour: "02", saleAmount: 0, saleQuantity: 0 },
-            "03": { hour: "03", saleAmount: 0, saleQuantity: 0 },
-            "04": { hour: "04", saleAmount: 0, saleQuantity: 0 },
-            "05": { hour: "05", saleAmount: 0, saleQuantity: 0 },
-            "06": { hour: "06", saleAmount: 0, saleQuantity: 0 },
-            "07": { hour: "07", saleAmount: 0, saleQuantity: 0 },
-            "08": { hour: "08", saleAmount: 0, saleQuantity: 0 },
-            "09": { hour: "09", saleAmount: 0, saleQuantity: 0 },
-            "10": { hour: "10", saleAmount: 0, saleQuantity: 0 },
-            "11": { hour: "11", saleAmount: 0, saleQuantity: 0 },
-            "12": { hour: "12", saleAmount: 0, saleQuantity: 0 },
-            "13": { hour: "13", saleAmount: 0, saleQuantity: 0 },
-            "14": { hour: "14", saleAmount: 0, saleQuantity: 0 },
-            "15": { hour: "15", saleAmount: 0, saleQuantity: 0 },
-            "16": { hour: "16", saleAmount: 0, saleQuantity: 0 },
-            "17": { hour: "17", saleAmount: 0, saleQuantity: 0 },
-            "18": { hour: "18", saleAmount: 0, saleQuantity: 0 },
-            "19": { hour: "19", saleAmount: 0, saleQuantity: 0 },
-            "20": { hour: "20", saleAmount: 0, saleQuantity: 0 },
-            "21": { hour: "21", saleAmount: 0, saleQuantity: 0 },
-            "22": { hour: "22", saleAmount: 0, saleQuantity: 0 },
-            "23": { hour: "23", saleAmount: 0, saleQuantity: 0 },
+        const hourlySales: IHourlySales = {
+            "00": { hour: "00", totalAmount: 0, totalQuantity: 0 },
+            "01": { hour: "01", totalAmount: 0, totalQuantity: 0 },
+            "02": { hour: "02", totalAmount: 0, totalQuantity: 0 },
+            "03": { hour: "03", totalAmount: 0, totalQuantity: 0 },
+            "04": { hour: "04", totalAmount: 0, totalQuantity: 0 },
+            "05": { hour: "05", totalAmount: 0, totalQuantity: 0 },
+            "06": { hour: "06", totalAmount: 0, totalQuantity: 0 },
+            "07": { hour: "07", totalAmount: 0, totalQuantity: 0 },
+            "08": { hour: "08", totalAmount: 0, totalQuantity: 0 },
+            "09": { hour: "09", totalAmount: 0, totalQuantity: 0 },
+            "10": { hour: "10", totalAmount: 0, totalQuantity: 0 },
+            "11": { hour: "11", totalAmount: 0, totalQuantity: 0 },
+            "12": { hour: "12", totalAmount: 0, totalQuantity: 0 },
+            "13": { hour: "13", totalAmount: 0, totalQuantity: 0 },
+            "14": { hour: "14", totalAmount: 0, totalQuantity: 0 },
+            "15": { hour: "15", totalAmount: 0, totalQuantity: 0 },
+            "16": { hour: "16", totalAmount: 0, totalQuantity: 0 },
+            "17": { hour: "17", totalAmount: 0, totalQuantity: 0 },
+            "18": { hour: "18", totalAmount: 0, totalQuantity: 0 },
+            "19": { hour: "19", totalAmount: 0, totalQuantity: 0 },
+            "20": { hour: "20", totalAmount: 0, totalQuantity: 0 },
+            "21": { hour: "21", totalAmount: 0, totalQuantity: 0 },
+            "22": { hour: "22", totalAmount: 0, totalQuantity: 0 },
+            "23": { hour: "23", totalAmount: 0, totalQuantity: 0 },
         };
 
-        let bestHour = { hour: "00", saleAmount: 0, saleQuantity: 0 };
+        let bestHour: IBestHour = { hour: "00", totalAmount: 0, totalQuantity: 0 };
 
-        const mostSoldCategories = {};
-        const mostSoldProducts = {};
+        let topSoldCategory: ITopSoldItem = {
+            item: null,
+            totalQuantity: 0,
+            totalAmount: 0,
+        };
+        let topSoldProduct: ITopSoldItem = {
+            item: null,
+            totalQuantity: 0,
+            totalAmount: 0,
+        };
 
-        let topSoldCategory = {} as ITopSoldItem;
-        let topSoldProduct = {} as ITopSoldItem;
+        const mostSoldCategories: IMostSoldItems = {};
+        const mostSoldProducts: IMostSoldItems = {};
 
         //First create an empty object with empty defined day sales
         for (var i = 0; i < daysDifference; i++) {
@@ -130,13 +165,13 @@ export const SalesReport = () => {
             const formattedDateTime: string = format(new Date(loopDateTime), "yyyy-MM-dd");
 
             dailySales[formattedDateTime] = {
-                subTotal: 0,
-                quantitySold: 0,
+                totalAmount: 0,
+                totalQuantity: 0,
                 orders: [],
             };
         }
 
-        orders.forEach((order) => {
+        orders.forEach((order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
             const placedAt: string = format(new Date(order.placedAt), "yyyy-MM-dd");
             const placedAtHour: string = format(new Date(order.placedAt), "HH");
 
@@ -153,120 +188,124 @@ export const SalesReport = () => {
             }
 
             if (order.status === EOrderStatus.COMPLETED) {
-                const newSubTotal = dailySales[placedAt].subTotal + order.subTotal;
-                const newQuantitySold = dailySales[placedAt].quantitySold + 1;
+                const newSubTotal = dailySales[placedAt].totalAmount + order.subTotal;
+                const newQuantitySold = dailySales[placedAt].totalQuantity + 1;
                 const newOrders: IGET_RESTAURANT_ORDER_FRAGMENT[] = [...dailySales[placedAt].orders, order];
 
                 subTotalCompleted += order.total;
                 totalNumberOfOrdersCompleted++;
 
                 dailySales[placedAt] = {
-                    subTotal: newSubTotal,
-                    quantitySold: newQuantitySold,
+                    totalAmount: newSubTotal,
+                    totalQuantity: newQuantitySold,
                     orders: [...newOrders],
                 };
-            }
 
-            // HOURLY SALES //////////////////////////////////
-            const newSaleQuantity = hourlySales[placedAtHour].saleQuantity + 1;
-            const newSaleAmount = hourlySales[placedAtHour].saleAmount + order.total;
+                // HOURLY SALES //////////////////////////////////
+                const newSaleQuantity = hourlySales[placedAtHour].totalQuantity + 1;
+                const newSaleAmount = hourlySales[placedAtHour].totalAmount + order.total;
 
-            hourlySales[placedAtHour] = {
-                hour: placedAtHour,
-                saleQuantity: newSaleQuantity,
-                saleAmount: newSaleAmount,
-            };
-
-            if (newSaleAmount > bestHour.saleAmount) {
-                bestHour = {
+                hourlySales[placedAtHour] = {
                     hour: placedAtHour,
-                    saleQuantity: newSaleQuantity,
-                    saleAmount: newSaleAmount,
+                    totalQuantity: newSaleQuantity,
+                    totalAmount: newSaleAmount,
                 };
-            }
 
-            // MOST POPULAR CATEGORY //////////////////////////////////
-            order.products &&
-                order.products.forEach((product) => {
-                    if (!product.category) return;
-
-                    if (mostSoldCategories[product.category.id]) {
-                        const prevQuantity = mostSoldCategories[product.category.id].quantity;
-                        const prevSales = mostSoldCategories[product.category.id].sales;
-
-                        mostSoldCategories[product.category.id] = {
-                            category: product.category,
-                            quantity: prevQuantity + product.quantity,
-                            sales: prevSales + product.price * product.quantity,
-                        };
-                    } else {
-                        mostSoldCategories[product.category.id] = {
-                            category: product.category,
-                            quantity: product.quantity,
-                            sales: product.price * product.quantity,
-                        };
-                    }
-
-                    // Total sold items
-                    totalSoldItems += product.quantity;
-                });
-
-            // Top Category
-            let maxCategory = 0;
-            let topSoldCategoryId = "";
-            for (const key in mostSoldCategories) {
-                if (mostSoldCategories[key].sales > maxCategory) {
-                    maxCategory = mostSoldCategories[key].sales;
-                    topSoldCategoryId = key;
+                if (newSaleAmount > bestHour.totalAmount) {
+                    bestHour = {
+                        hour: placedAtHour,
+                        totalQuantity: newSaleQuantity,
+                        totalAmount: newSaleAmount,
+                    };
                 }
+
+                // MOST POPULAR CATEGORY //////////////////////////////////
+                order.products &&
+                    order.products.forEach((product) => {
+                        if (!product.category) return;
+
+                        if (mostSoldCategories[product.category.id]) {
+                            const newTotalQuantity = mostSoldCategories[product.category.id].totalQuantity + product.quantity;
+                            const newTotalAmount = mostSoldCategories[product.category.id].totalAmount + product.price * product.quantity;
+
+                            mostSoldCategories[product.category.id] = {
+                                item: product.category,
+                                totalQuantity: newTotalQuantity,
+                                totalAmount: newTotalAmount,
+                            };
+
+                            if (newTotalAmount > topSoldCategory.totalAmount) {
+                                topSoldCategory = {
+                                    item: product.category,
+                                    totalQuantity: newTotalQuantity,
+                                    totalAmount: newTotalAmount,
+                                };
+                            }
+                        } else {
+                            const totalQuantity = product.quantity;
+                            const totalAmount = product.price * product.quantity;
+
+                            mostSoldCategories[product.category.id] = {
+                                item: product.category,
+                                totalQuantity: totalQuantity,
+                                totalAmount: totalAmount,
+                            };
+
+                            if (totalAmount > topSoldCategory.totalAmount) {
+                                topSoldCategory = {
+                                    item: product.category,
+                                    totalQuantity: totalQuantity,
+                                    totalAmount: totalAmount,
+                                };
+                            }
+                        }
+
+                        // Total sold items
+                        totalSoldItems += product.quantity;
+                    });
+
+                //MOST POPULAR PRODUCT //////////////////////////////////
+                order.products &&
+                    order.products.forEach((product) => {
+                        numberOfProductsSold = numberOfProductsSold + product.quantity;
+
+                        if (mostSoldProducts[product.id]) {
+                            const newTotalQuantity = mostSoldProducts[product.id].totalQuantity + product.quantity;
+                            const newTotalAmount = mostSoldProducts[product.id].totalAmount + product.price * product.quantity;
+
+                            mostSoldProducts[product.id] = {
+                                item: product,
+                                totalQuantity: newTotalQuantity,
+                                totalAmount: newTotalAmount,
+                            };
+
+                            if (newTotalAmount > topSoldProduct.totalAmount) {
+                                topSoldProduct = {
+                                    item: product,
+                                    totalQuantity: newTotalQuantity,
+                                    totalAmount: newTotalAmount,
+                                };
+                            }
+                        } else {
+                            const totalQuantity = product.quantity;
+                            const totalAmount = product.price * product.quantity;
+
+                            mostSoldProducts[product.id] = {
+                                item: product,
+                                totalQuantity: totalQuantity,
+                                totalAmount: totalAmount,
+                            };
+
+                            if (totalAmount > topSoldProduct.totalAmount) {
+                                topSoldProduct = {
+                                    item: product,
+                                    totalQuantity: totalQuantity,
+                                    totalAmount: totalAmount,
+                                };
+                            }
+                        }
+                    });
             }
-
-            topSoldCategory = {
-                item: mostSoldCategories[topSoldCategoryId].category,
-                quantity: mostSoldCategories[topSoldCategoryId].quantity,
-                saleAmount: mostSoldCategories[topSoldCategoryId].sales,
-                percentageOfSale: ((mostSoldCategories[topSoldCategoryId].sales * 100) / subTotalCompleted).toFixed(2),
-            };
-
-            //MOST POPULAR PRODUCT //////////////////////////////////
-            order.products &&
-                order.products.forEach((product) => {
-                    numberOfProductsSold = numberOfProductsSold + product.quantity;
-
-                    if (mostSoldProducts[product.id]) {
-                        const prevQuantity = mostSoldProducts[product.id].quantity;
-                        const prevSales = mostSoldProducts[product.id].sales;
-
-                        mostSoldProducts[product.id] = {
-                            product: product,
-                            quantity: prevQuantity + product.quantity,
-                            sales: prevSales + product.price * product.quantity,
-                        };
-                    } else {
-                        mostSoldProducts[product.id] = {
-                            product: product,
-                            quantity: product.quantity,
-                            sales: product.price * product.quantity,
-                        };
-                    }
-                });
-
-            // Top Product
-            let maxProduct = 0;
-            let topSoldProductId = "";
-            for (const key in mostSoldProducts) {
-                if (mostSoldProducts[key].sales > maxProduct) {
-                    maxProduct = mostSoldProducts[key].sales;
-                    topSoldProductId = key;
-                }
-            }
-
-            topSoldProduct = {
-                item: mostSoldProducts[topSoldProductId].product,
-                quantity: mostSoldProducts[topSoldProductId].quantity,
-                saleAmount: mostSoldProducts[topSoldProductId].sales,
-                percentageOfSale: ((mostSoldProducts[topSoldProductId].sales * 100) / subTotalCompleted).toFixed(2),
-            };
         });
 
         console.log("xxx...", {
@@ -339,10 +378,10 @@ export const SalesReport = () => {
                 {/* <Clock/> */}
                 <div className="h4">{bestHour.hour}</div>
                 <div>
-                    <span className="h4">{`$${convertCentsToDollars(bestHour.saleAmount)}`}</span> total sales
+                    <span className="h4">{`$${convertCentsToDollars(bestHour.totalAmount)}`}</span> total sales
                 </div>
                 <div>
-                    <span className="h4">{bestHour.saleQuantity}</span> order(s)
+                    <span className="h4">{bestHour.totalQuantity}</span> order(s)
                 </div>
             </div>
         );
@@ -350,21 +389,32 @@ export const SalesReport = () => {
 
     const MainReportBody = (props: { salesSummaryData: ISalesSummary }) => {
         const { salesSummaryData } = props;
+        const {
+            subTotalCompleted,
+            dailySales,
+            hourlySales,
+            totalNumberOfOrdersCompleted,
+            bestHour,
+            topSoldCategory,
+            topSoldProduct,
+            totalSoldItems,
+        } = salesSummaryData;
         const dayByGraphData: { date: string; sales: number }[] = [];
-        const hourByGraphData: { hour: string; quantity: number }[] = [];
-        for (const [key, value] of Object.entries<any>(salesSummaryData.dailySales)) {
-            dayByGraphData.push({
-                date: format(new Date(key), "dd MMM"),
-                sales: value.orders.length,
-            });
-        }
+        const hourByGraphData: { hour: string; sales: number }[] = [];
 
-        for (const [key, value] of Object.entries<any>(salesSummaryData.hourlySales).sort((a, b) => a[0].localeCompare(b[0]))) {
-            hourByGraphData.push({
-                hour: key,
-                quantity: value.saleQuantity,
+        Object.entries(dailySales).forEach(([date, sale]) => {
+            dayByGraphData.push({
+                date: format(new Date(date), "dd MMM"),
+                sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
             });
-        }
+        });
+
+        Object.entries(hourlySales).forEach(([hour, sale]) => {
+            hourByGraphData.push({
+                hour: hour,
+                sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
+            });
+        });
 
         return (
             <div>
@@ -378,23 +428,21 @@ export const SalesReport = () => {
                     </div>
                     <div className="item item2 report-sales-value-wrapper">
                         <Card className="text-center">
-                            <div className="h3 mb-1">{`$${convertCentsToDollars(salesSummaryData.subTotalCompleted)}`}</div>
+                            <div className="h3 mb-1">{`$${convertCentsToDollars(subTotalCompleted)}`}</div>
                             <div className="text-uppercase">Total Sales</div>
                         </Card>
                         <Card className="text-center">
                             <div className="h3 mb-1">{`$${convertCentsToDollars(
-                                isNaN(salesSummaryData.subTotalCompleted / salesSummaryData.totalNumberOfOrdersCompleted)
-                                    ? 0
-                                    : salesSummaryData.subTotalCompleted / salesSummaryData.totalNumberOfOrdersCompleted
+                                isNaN(subTotalCompleted / totalNumberOfOrdersCompleted) ? 0 : subTotalCompleted / totalNumberOfOrdersCompleted
                             )}`}</div>
                             <div className="text-uppercase">Average Sales</div>
                         </Card>
                         <Card className="text-center">
-                            <div className="h3 mt-1">{salesSummaryData.totalNumberOfOrdersCompleted}</div>
+                            <div className="h3 mb-1">{totalNumberOfOrdersCompleted}</div>
                             <div className="text-uppercase">Sales Count</div>
                         </Card>
                         <Card className="text-center">
-                            <div className="h3 mb-1">{salesSummaryData.totalSoldItems}</div>
+                            <div className="h3 mb-1">{totalSoldItems}</div>
                             <div className="text-uppercase">Items Sold</div>
                         </Card>
                     </div>
@@ -405,62 +453,62 @@ export const SalesReport = () => {
                             </div>
                         </Card>
                     </div>
-                    {salesSummaryData && salesSummaryData.bestHour && (
+                    {salesSummaryData && bestHour && (
                         <div className="item item4">
-                            <BestHourCard bestHour={salesSummaryData.bestHour} />
+                            <BestHourCard bestHour={bestHour} />
                         </div>
                     )}
-                    {salesSummaryData.topSoldCategory && (
+                    {topSoldCategory && (
                         <div className="item item5">
                             <Card title="Top Category" onOpen={() => changeScreen(SalesReportScreen.CATEGORY)}>
                                 <div className="top-item-container" style={{ alignItems: "center" }}>
                                     <div className="top-item-image text-center">
-                                        {salesSummaryData.topSoldCategory?.item?.image && (
+                                        {topSoldCategory?.item?.image && (
                                             <CachedImage
-                                                url={`${getCloudFrontDomainName()}/protected/${
-                                                    salesSummaryData.topSoldCategory.item.image.identityPoolId
-                                                }/${salesSummaryData.topSoldCategory.item.image.key}`}
+                                                url={`${getCloudFrontDomainName()}/protected/${topSoldCategory.item.image.identityPoolId}/${
+                                                    topSoldCategory.item.image.key
+                                                }`}
                                                 className="image mb-2"
-                                                alt={salesSummaryData.topSoldCategory.item.name}
+                                                alt={topSoldCategory.item.name}
                                             />
                                         )}
-                                        <div>{salesSummaryData.topSoldCategory?.item?.name}</div>
+                                        <div>{topSoldCategory?.item?.name}</div>
                                     </div>
                                     <div className="top-item-details text-center">
                                         <div className="text-uppercase">Quantity</div>
-                                        <div className="h4">{salesSummaryData.topSoldCategory.quantity}</div>
+                                        <div className="h4 mb-2">{topSoldCategory.totalQuantity}</div>
                                         <div className="text-uppercase">Sale Amount</div>
-                                        <div className="h4">${convertCentsToDollars(salesSummaryData.topSoldCategory.saleAmount ?? 0)}</div>
+                                        <div className="h4 mb-2">${convertCentsToDollars(topSoldCategory.totalAmount ?? 0)}</div>
                                         <div className="text-uppercase">% of Sales</div>
-                                        <div className="h4">{salesSummaryData.topSoldCategory.percentageOfSale}</div>
+                                        <div className="h4">{((topSoldCategory.totalAmount / subTotalCompleted) * 100).toFixed(2)}%</div>
                                     </div>
                                 </div>
                             </Card>
                         </div>
                     )}
-                    {salesSummaryData.topSoldProduct && (
+                    {topSoldProduct && (
                         <div className="item item6">
                             <Card title="Top Product" onOpen={() => changeScreen(SalesReportScreen.PRODUCT)}>
                                 <div className="top-item-container" style={{ alignItems: "center" }}>
                                     <div className="top-item-image text-center">
-                                        {salesSummaryData.topSoldProduct?.item?.image && (
+                                        {topSoldProduct?.item?.image && (
                                             <CachedImage
-                                                url={`${getCloudFrontDomainName()}/protected/${
-                                                    salesSummaryData.topSoldProduct.item.image.identityPoolId
-                                                }/${salesSummaryData.topSoldProduct.item.image.key}`}
+                                                url={`${getCloudFrontDomainName()}/protected/${topSoldProduct.item.image.identityPoolId}/${
+                                                    topSoldProduct.item.image.key
+                                                }`}
                                                 className="image mb-2"
-                                                alt={salesSummaryData.topSoldProduct.item.name}
+                                                alt={topSoldProduct.item.name}
                                             />
                                         )}
-                                        <div>{salesSummaryData.topSoldProduct?.item?.name}</div>
+                                        <div>{topSoldProduct?.item?.name}</div>
                                     </div>
                                     <div className="top-item-details text-center">
                                         <div className="text-uppercase">Quantity</div>
-                                        <div className="h4">{salesSummaryData.topSoldProduct.quantity}</div>
+                                        <div className="h4 mb-2">{topSoldProduct.totalQuantity}</div>
                                         <div className="text-uppercase">Sale Amount</div>
-                                        <div className="h4">${convertCentsToDollars(salesSummaryData.topSoldProduct.saleAmount ?? 0)}</div>
+                                        <div className="h4 mb-2">${convertCentsToDollars(topSoldProduct.totalAmount ?? 0)}</div>
                                         <div className="text-uppercase">% of Sales</div>
-                                        <div className="h4">{salesSummaryData.topSoldProduct.percentageOfSale}</div>
+                                        <div className="h4">{((topSoldProduct.totalAmount / subTotalCompleted) * 100).toFixed(2)}%</div>
                                     </div>
                                 </div>
                             </Card>
@@ -485,7 +533,12 @@ export const SalesReport = () => {
                 return (
                     <>
                         <div className="sales-by p-3">
-                            <SalesBy screenName={currentScreen} changeScreen={changeScreen} graphDetails={graphDetails} salesSummaryData={salesSummaryData} />
+                            <SalesBy
+                                screenName={currentScreen}
+                                changeScreen={changeScreen}
+                                graphDetails={graphDetails}
+                                salesSummaryData={salesSummaryData}
+                            />
                         </div>
                     </>
                 );
