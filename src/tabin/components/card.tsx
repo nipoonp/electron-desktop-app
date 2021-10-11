@@ -7,7 +7,7 @@ export const Card = (props: IProps) => {
         <div className={`card ${props.className}`}>
             <div className="card-header">
                 {title && <div className="h4">{title}</div>}
-                {onOpen && <div onClick={() => onOpen()}>Open</div>}
+                {onOpen && <div className="c-pointer" onClick={() => onOpen()}>Open</div>}
             </div>
             <div className="card-body">{props.children}</div>
         </div>

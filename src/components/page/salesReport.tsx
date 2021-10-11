@@ -12,7 +12,7 @@ import { Card } from "../../tabin/components/card";
 import { DateRangePicker } from "../../tabin/components/dateRangePicker";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { convertCentsToDollars } from "../../util/util";
-import SalesBy from "./salesReport/SalesBy";
+import { SalesBy } from "./salesReport/SalesBy";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { Graph } from "./salesReport/Graph";
@@ -235,7 +235,7 @@ export const SalesReport = () => {
 
                     if (mostSoldProducts[product.id]) {
                         const prevQuantity = mostSoldProducts[product.id].quantity;
-                        const prevSales = mostSoldCategories[product.id].sales;
+                        const prevSales = mostSoldProducts[product.id].sales;
 
                         mostSoldProducts[product.id] = {
                             product: product,
@@ -472,6 +472,11 @@ export const SalesReport = () => {
     };
 
     const renderCurrentScreen = () => {
+        const graphDetails = {
+            graphData: [],
+            xAxis: "date",
+            lines: ["sales"],
+        };
         switch (currentScreen.toLocaleLowerCase()) {
             case "day":
             case "hour":
@@ -479,26 +484,26 @@ export const SalesReport = () => {
             case "product":
                 return (
                     <>
-                        <SalesBy screenName={currentScreen} changeScreen={changeScreen} />
+                        <div className="sales-by p-3">
+                            <SalesBy screenName={currentScreen} changeScreen={changeScreen} graphDetails={graphDetails} salesSummaryData={salesSummaryData} />
+                        </div>
                     </>
                 );
             case "":
             default:
                 return (
-                    <div className="sales-report-wrapper">
-                        <div className="sales-report p-3">
-                            <div className="report-header mb-3">
-                                <div className="h2">Reports</div>
-                                <DateRangePicker
-                                    startDate={startDate}
-                                    endDate={endDate}
-                                    onDatesChange={onDatesChange}
-                                    focusedInput={focusedInput}
-                                    onFocusChange={onFocusChange}
-                                />
-                            </div>
-                            {salesSummaryData && <MainReportBody salesSummaryData={salesSummaryData} />}
+                    <div className="sales-report p-3">
+                        <div className="report-header mb-3">
+                            <div className="h2">Reports</div>
+                            <DateRangePicker
+                                startDate={startDate}
+                                endDate={endDate}
+                                onDatesChange={onDatesChange}
+                                focusedInput={focusedInput}
+                                onFocusChange={onFocusChange}
+                            />
                         </div>
+                        {salesSummaryData && <MainReportBody salesSummaryData={salesSummaryData} />}
                     </div>
                 );
         }
@@ -518,7 +523,9 @@ export const SalesReport = () => {
 
     return (
         <>
-            <div className="reports">{renderCurrentScreen()}</div>
+            <div className="reports">
+                <div className="sales-report-wrapper">{renderCurrentScreen()}</div>
+            </div>
         </>
     );
 };

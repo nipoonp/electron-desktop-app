@@ -26,6 +26,11 @@
     color: var(--error-color);
 }
 
+// Display
+.d-flex {
+    display: flex;
+}
+
 //Headings
 .h1 {
     font-size: 36px;
@@ -47,6 +52,12 @@
 
 .h4 {
     font-size: 18px;
+    line-height: 36px;
+    font-weight: 600;
+}
+
+.h5 {
+    font-size: 16px;
     line-height: 36px;
     font-weight: 600;
 }
@@ -574,4 +585,11 @@
 .separator-6 {
     margin: 48px 0;
     border-bottom: 1px solid #ebebeb;
+}
+
+// Curser
+.c-pointer {
+    &:hover {
+        cursor: pointer;
+    }
 }
