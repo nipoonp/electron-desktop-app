@@ -1,10 +1,12 @@
-import "./salesReport.scss";
-
 import { addDays, differenceInDays, format, subDays } from "date-fns";
 import { useEffect, useState } from "react";
 
 import { useRestaurant } from "../../context/restaurant-context";
-import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
+import {
+    IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT,
+    IGET_RESTAURANT_ORDER_FRAGMENT,
+    IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT,
+} from "../../graphql/customFragments";
 import { EOrderStatus } from "../../graphql/customQueries";
 import { useGetRestaurantOrdersByBetweenPlacedAt } from "../../hooks/useGetRestaurantOrdersByBetweenPlacedAt";
 import { SalesReportScreen } from "../../model/model";
@@ -17,6 +19,8 @@ import { getCloudFrontDomainName } from "../../private/aws-custom";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { Graph } from "./salesReport/Graph";
 
+import "./salesReport.scss";
+
 interface IBestHour {
     hour: string;
     saleAmount: number;
@@ -24,22 +28,38 @@ interface IBestHour {
 }
 
 interface ITopSoldItem {
-    item: any;
+    item: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT;
     quantity: number;
     saleAmount: number;
     percentageOfSale: string;
 }
 
+interface IDailySales {
+    [date: string]: {
+        subTotal: number;
+        quantitySold: number;
+        orders: IGET_RESTAURANT_ORDER_FRAGMENT[];
+    };
+}
+
+interface IHourlySales {
+    [hour: string]: {
+        hour: string;
+        saleAmount: number;
+        saleQuantity: number;
+    };
+}
+
 interface ISalesSummary {
     daysDifference: number;
-    dailySales;
+    dailySales: IDailySales;
     subTotalNew: number;
     totalNumberOfOrdersNew: number;
     subTotalCancelled: number;
     totalNumberOfOrdersCancelled: number;
     subTotalCompleted: number;
     totalNumberOfOrdersCompleted: number;
-    hourlySales;
+    hourlySales: IHourlySales;
     bestHour: IBestHour;
     mostSoldCategories;
     mostSoldProducts;
@@ -75,21 +95,21 @@ export const SalesReport = () => {
 
         const daysDifference: number = differenceInDays(new Date(endDate), new Date(startDate));
 
-        const dailySales = {};
+        const dailySales: IDailySales = {};
 
-        let subTotalNew = 0;
-        let totalNumberOfOrdersNew = 0;
+        let subTotalNew: number = 0;
+        let totalNumberOfOrdersNew: number = 0;
 
-        let subTotalCancelled = 0;
-        let totalNumberOfOrdersCancelled = 0;
+        let subTotalCancelled: number = 0;
+        let totalNumberOfOrdersCancelled: number = 0;
 
-        let subTotalCompleted = 0;
-        let numberOfProductsSold = 0;
-        let totalNumberOfOrdersCompleted = 0;
+        let subTotalCompleted: number = 0;
+        let numberOfProductsSold: number = 0;
+        let totalNumberOfOrdersCompleted: number = 0;
 
-        let totalSoldItems = 0;
+        let totalSoldItems: number = 0;
 
-        const hourlySales = {
+        const hourlySales: IHourlySales = {
             "00": { hour: "00", saleAmount: 0, saleQuantity: 0 },
             "01": { hour: "01", saleAmount: 0, saleQuantity: 0 },
             "02": { hour: "02", saleAmount: 0, saleQuantity: 0 },
@@ -136,7 +156,7 @@ export const SalesReport = () => {
             };
         }
 
-        orders.forEach((order) => {
+        orders.forEach((order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
             const placedAt: string = format(new Date(order.placedAt), "yyyy-MM-dd");
             const placedAtHour: string = format(new Date(order.placedAt), "HH");
 
