@@ -17,6 +17,7 @@ import {
     IMatchingUpSellCrossSellCategoryItem,
     EEftposTransactionOutcome,
     IEftposTransactionOutcome,
+    EPaymentModalState,
 } from "../../model/model";
 import { useUser } from "../../context/user-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -97,12 +98,16 @@ export const Checkout = () => {
     const [showEditProductModal, setShowEditProductModal] = useState(false);
     const [showItemUpdatedModal, setShowItemUpdatedModal] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
-    const [eftposTransactionInProgress, setEftposTransactionInProgress] = useState<boolean>(false);
+
+    const [paymentModalState, setPaymentModalState] = useState<EPaymentModalState>(EPaymentModalState.None);
+
     const [eftposTransactionOutcome, setEftposTransactionOutcome] = useState<IEftposTransactionOutcome | null>(null);
     const [cashTransactionChangeAmount, setCashTransactionChangeAmount] = useState<number | null>(null);
+
+    const [createOrderError, setCreateOrderError] = useState<string | null>(null);
     const [paymentOutcomeOrderNumber, setPaymentOutcomeOrderNumber] = useState<string | null>(null);
     const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(10);
-    const [createOrderError, setCreateOrderError] = useState<string | null>(null);
+
     const [showPromotionCodeModal, setShowPromotionCodeModal] = useState(false);
     const [showUpSellCategoryModal, setShowUpSellCategoryModal] = useState(false);
     const [showUpSellProductModal, setShowUpSellProductModal] = useState(false);
@@ -237,18 +242,28 @@ export const Checkout = () => {
     const onClickOrderButton = async () => {
         setShowPaymentModal(true);
 
-        if (register.type == ERegisterType.KIOSK) {
+        if (register.type == ERegisterType.POS) {
+            setPaymentModalState(EPaymentModalState.POSScreen);
+        } else {
             await onConfirmTotalOrRetryEftposTransaction(subTotal);
         }
     };
 
     const onClosePaymentModal = () => {
-        setEftposTransactionOutcome(null);
-        setCashTransactionChangeAmount(null);
-        setPaymentOutcomeOrderNumber(null);
-        setPaymentOutcomeApprovedRedirectTimeLeft(10);
+        // setEftposTransactionOutcome(null);
+        // setCashTransactionChangeAmount(null);
+        // setPaymentOutcomeOrderNumber(null);
+        // setPaymentOutcomeApprovedRedirectTimeLeft(10);
 
         setShowPaymentModal(false);
+    };
+
+    const onCancelPayment = () => {
+        if (register.type == ERegisterType.POS) {
+            setPaymentModalState(EPaymentModalState.POSScreen);
+        } else {
+            onClosePaymentModal();
+        }
     };
 
     const beginPaymentOutcomeApprovedTimeout = () => {
@@ -258,8 +273,14 @@ export const Checkout = () => {
                 setPaymentOutcomeApprovedRedirectTimeLeft(i);
 
                 if (i == 0) {
-                    history.push(beginOrderPath);
-                    clearCart();
+                    const totalAmountPaid = amountPaid.cash + amountPaid.eftpos;
+
+                    if (totalAmountPaid >= subTotal) {
+                        history.push(beginOrderPath);
+                        clearCart();
+                    } else {
+                        setPaymentModalState(EPaymentModalState.POSScreen);
+                    }
                 }
 
                 if (i > 0) timerLoop(i); //  decrement i and call myLoop again if i > 0
@@ -320,8 +341,6 @@ export const Checkout = () => {
         } catch (e) {
             throw e.message;
         }
-
-        beginPaymentOutcomeApprovedTimeout();
     };
 
     // Submit callback
@@ -446,53 +465,41 @@ export const Checkout = () => {
         }
     };
 
-    const performEftposTransaction = async (amount: number): Promise<IEftposTransactionOutcome | null> => {
+    const performEftposTransaction = async (amount: number): Promise<IEftposTransactionOutcome> => {
         try {
-            setEftposTransactionInProgress(true);
-
             let outcome: IEftposTransactionOutcome | null = null;
 
             if (register.eftposProvider == "SMARTPAY") {
                 let delayedShown = false;
 
                 const delayed = (outcome: IEftposTransactionOutcome) => {
-                    if (!delayedShown) {
-                        delayedShown = true;
-                        // Might want to let the user know to check if everything is ok with the device
-                        setEftposTransactionOutcome(outcome);
-                    }
+                    // if (!delayedShown) {
+                    //     delayedShown = true;
+                    //     // Might want to let the user know to check if everything is ok with the device
+                    //     setEftposTransactionOutcome(outcome);
+                    // }
                 };
 
                 const pollingUrl = await smartpayCreateTransaction(amount, "Card.Purchase");
                 outcome = await smartpayPollForOutcome(pollingUrl, delayed);
-
-                setEftposTransactionOutcome(outcome);
             } else if (register.eftposProvider == "WINDCAVE") {
                 const txnRef = await windcaveCreateTransaction(register.windcaveStationId, amount, "Purchase");
                 outcome = await windcavePollForOutcome(register.windcaveStationId, txnRef);
-
-                setEftposTransactionOutcome(outcome);
             } else if (register.eftposProvider == "VERIFONE") {
                 outcome = await verifoneCreateTransaction(amount, register.eftposIpAddress, register.eftposPortNumber, restaurant.id);
-
-                setEftposTransactionOutcome(outcome);
             }
 
             if (!outcome) throw "Invalid Eftpos Transaction outcome.";
 
             return outcome;
         } catch (errorMessage) {
-            setEftposTransactionOutcome({
+            return {
                 platformTransactionOutcome: null,
                 transactionOutcome: EEftposTransactionOutcome.Fail,
                 message: errorMessage,
                 eftposReceipt: null,
-            });
-        } finally {
-            setEftposTransactionInProgress(false);
+            };
         }
-
-        return null;
     };
 
     const onUpdateItem = (index: number, product: ICartProduct) => {
@@ -505,22 +512,27 @@ export const Checkout = () => {
     };
 
     const onConfirmTotalOrRetryEftposTransaction = async (amount: number) => {
-        setEftposTransactionOutcome(null);
-        setCashTransactionChangeAmount(null);
-        setPaymentOutcomeOrderNumber(null);
+        // setEftposTransactionOutcome(null);
+        // setCashTransactionChangeAmount(null);
+        // setPaymentOutcomeOrderNumber(null);
         setPaymentOutcomeApprovedRedirectTimeLeft(10);
+
+        setPaymentModalState(EPaymentModalState.AwaitingCard);
 
         const outcome = await performEftposTransaction(amount);
 
-        if (!outcome) return;
+        setPaymentModalState(EPaymentModalState.EftposResult);
+        setEftposTransactionOutcome(outcome);
 
         if (outcome.eftposReceipt) setTransactionEftposReceipts(transactionEftposReceipts + "\n" + outcome.eftposReceipt);
 
+        const newEftposAmountPaid = amountPaid.eftpos + amount;
         const newTotalAmountPaid = amountPaid.cash + amountPaid.eftpos + amount;
 
         //If paid for everything
         if (outcome.transactionOutcome == EEftposTransactionOutcome.Success) {
-            setAmountPaid({ ...amountPaid, eftpos: amountPaid.cash + amount });
+            setAmountPaid({ ...amountPaid, eftpos: newEftposAmountPaid });
+            beginPaymentOutcomeApprovedTimeout();
 
             if (newTotalAmountPaid >= subTotal) {
                 try {
@@ -540,10 +552,10 @@ export const Checkout = () => {
     };
 
     const onConfirmCashTransaction = async (amount: number) => {
-        setEftposTransactionOutcome(null);
-        // setCashTransactionChangeAmount(null);
-        setPaymentOutcomeOrderNumber(null);
-        setPaymentOutcomeApprovedRedirectTimeLeft(10);
+        // setEftposTransactionOutcome(null);
+        // // setCashTransactionChangeAmount(null);
+        // setPaymentOutcomeOrderNumber(null);
+        // setPaymentOutcomeApprovedRedirectTimeLeft(10);
 
         const newCashAmountPaid = amountPaid.cash + amount;
         const newTotalAmountPaid = amountPaid.cash + amountPaid.eftpos + amount;
@@ -554,7 +566,10 @@ export const Checkout = () => {
         if (newTotalAmountPaid >= subTotal) {
             const changeAmount = calculateCashChangeAmount(newCashAmountPaid, subTotal);
 
+            setPaymentModalState(EPaymentModalState.CashResult);
             setCashTransactionChangeAmount(changeAmount);
+
+            beginPaymentOutcomeApprovedTimeout();
 
             try {
                 await onSubmitOrder(true);
@@ -728,7 +743,7 @@ export const Checkout = () => {
                     <PaymentModal
                         isOpen={showPaymentModal}
                         onClose={onClosePaymentModal}
-                        eftposTransactionInProgress={eftposTransactionInProgress}
+                        paymentModalState={paymentModalState}
                         eftposTransactionOutcome={eftposTransactionOutcome}
                         cashTransactionChangeAmount={cashTransactionChangeAmount}
                         paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
@@ -736,6 +751,7 @@ export const Checkout = () => {
                         createOrderError={createOrderError}
                         onConfirmTotalOrRetryEftposTransaction={onConfirmTotalOrRetryEftposTransaction}
                         onConfirmCashTransaction={onConfirmCashTransaction}
+                        onCancelPayment={onCancelPayment}
                         onCancelOrder={onCancelOrder}
                     />
                 )}

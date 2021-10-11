@@ -57,6 +57,14 @@ export interface IEftposTransactionOutcome {
     eftposReceipt: string | null;
 }
 
+export enum EPaymentModalState {
+    POSScreen,
+    AwaitingCard,
+    EftposResult,
+    CashResult,
+    None,
+}
+
 export enum EOrderType {
     DINEIN = "DINEIN",
     TAKEAWAY = "TAKEAWAY",
