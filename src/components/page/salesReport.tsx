@@ -409,7 +409,7 @@ export const SalesReport = () => {
             });
         });
 
-        Object.entries(hourlySales).forEach(([hour, sale]) => {
+        Object.entries(hourlySales).sort((a,b) => a[0].localeCompare(b[0])).forEach(([hour, sale]) => {
             hourByGraphData.push({
                 hour: hour,
                 sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
@@ -449,7 +449,7 @@ export const SalesReport = () => {
                     <div className="item item3">
                         <Card title="Sales By Hour" onOpen={() => changeScreen(SalesReportScreen.HOUR)}>
                             <div style={{ width: "100%", height: "250px" }}>
-                                <Graph xAxis="hour" lines={["quantity"]} graphData={hourByGraphData} />
+                                <Graph xAxis="hour" lines={["sales"]} graphData={hourByGraphData} />
                             </div>
                         </Card>
                     </div>
