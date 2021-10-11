@@ -60,8 +60,10 @@ export const Checkout = () => {
         promotion,
         total,
         subTotal,
+        transactionEftposReceipts,
+        setTransactionEftposReceipts,
         amountPaid,
-        addToAmountPaid,
+        setAmountPaid,
         updateItem,
         updateItemQuantity,
         deleteItem,
@@ -97,7 +99,8 @@ export const Checkout = () => {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [eftposTransactionInProgress, setEftposTransactionInProgress] = useState<boolean>(false);
     const [eftposTransactionOutcome, setEftposTransactionOutcome] = useState<IEftposTransactionOutcome | null>(null);
-    const [paymentOutcomeDelayedOrderNumber, setPaymentOutcomeDelayedOrderNumber] = useState<string | null>(null);
+    const [cashTransactionChangeAmount, setCashTransactionChangeAmount] = useState<number | null>(null);
+    const [paymentOutcomeOrderNumber, setPaymentOutcomeOrderNumber] = useState<string | null>(null);
     const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(10);
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
     const [showPromotionCodeModal, setShowPromotionCodeModal] = useState(false);
@@ -235,13 +238,14 @@ export const Checkout = () => {
         setShowPaymentModal(true);
 
         if (register.type == ERegisterType.KIOSK) {
-            await onConfirmTotalOrRetryTransaction(subTotal);
+            await onConfirmTotalOrRetryEftposTransaction(subTotal);
         }
     };
 
     const onClosePaymentModal = () => {
         setEftposTransactionOutcome(null);
-        setPaymentOutcomeDelayedOrderNumber(null);
+        setCashTransactionChangeAmount(null);
+        setPaymentOutcomeOrderNumber(null);
         setPaymentOutcomeApprovedRedirectTimeLeft(10);
 
         setShowPaymentModal(false);
@@ -303,12 +307,12 @@ export const Checkout = () => {
             });
     };
 
-    const onSubmitOrder = async (paid: boolean, eftposReceipt: string | null) => {
+    const onSubmitOrder = async (paid: boolean) => {
         const orderNumber = getOrderNumber(register.orderNumberSuffix);
-        setPaymentOutcomeDelayedOrderNumber(orderNumber);
+        setPaymentOutcomeOrderNumber(orderNumber);
 
         try {
-            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(orderNumber, paid, eftposReceipt);
+            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(orderNumber, paid);
 
             if (register.printers && register.printers.items.length > 0) {
                 await printReceipts(newOrder);
@@ -321,7 +325,7 @@ export const Checkout = () => {
     };
 
     // Submit callback
-    const createOrder = async (orderNumber: string, paid: boolean, eftposReceipt: string | null): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
+    const createOrder = async (orderNumber: string, paid: boolean): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
         const now = new Date();
 
         if (!user) {
@@ -354,7 +358,7 @@ export const Checkout = () => {
                 number: orderNumber,
                 table: tableNumber,
                 notes: notes,
-                eftposReceipt: eftposReceipt,
+                eftposReceipt: transactionEftposReceipts,
                 total: total,
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
@@ -383,7 +387,7 @@ export const Checkout = () => {
                     number: orderNumber,
                     table: tableNumber,
                     notes: notes,
-                    eftposReceipt: eftposReceipt,
+                    eftposReceipt: transactionEftposReceipts,
                     total: total,
                     discount: promotion ? promotion.discountedAmount : undefined,
                     promotionId: promotion ? promotion.promotion.id : undefined,
@@ -442,7 +446,7 @@ export const Checkout = () => {
         }
     };
 
-    const performEftposTransaction = async (amount: number) => {
+    const performEftposTransaction = async (amount: number): Promise<IEftposTransactionOutcome | null> => {
         try {
             setEftposTransactionInProgress(true);
 
@@ -476,28 +480,19 @@ export const Checkout = () => {
 
             if (!outcome) throw "Invalid Eftpos Transaction outcome.";
 
-            //If paid for everything
-            if (amountPaid + amount >= subTotal) {
-                if (outcome.transactionOutcome == EEftposTransactionOutcome.Success) {
-                    try {
-                        await onSubmitOrder(true, outcome.eftposReceipt);
-                    } catch (e) {
-                        setCreateOrderError(e);
-                    }
-                }
-            }
-
-            addToAmountPaid(amount);
+            return outcome;
         } catch (errorMessage) {
             setEftposTransactionOutcome({
                 platformTransactionOutcome: null,
                 transactionOutcome: EEftposTransactionOutcome.Fail,
-                message: "Transaction System Error! Please try again later.",
+                message: errorMessage,
                 eftposReceipt: null,
             });
         } finally {
             setEftposTransactionInProgress(false);
         }
+
+        return null;
     };
 
     const onUpdateItem = (index: number, product: ICartProduct) => {
@@ -509,19 +504,71 @@ export const Checkout = () => {
         setShowPromotionCodeModal(true);
     };
 
-    const onConfirmTotalOrRetryTransaction = async (amount: number) => {
+    const onConfirmTotalOrRetryEftposTransaction = async (amount: number) => {
         setEftposTransactionOutcome(null);
-        setPaymentOutcomeDelayedOrderNumber(null);
+        setCashTransactionChangeAmount(null);
+        setPaymentOutcomeOrderNumber(null);
         setPaymentOutcomeApprovedRedirectTimeLeft(10);
 
-        await performEftposTransaction(amount);
+        const outcome = await performEftposTransaction(amount);
+
+        if (!outcome) return;
+
+        if (outcome.eftposReceipt) setTransactionEftposReceipts(transactionEftposReceipts + "\n" + outcome.eftposReceipt);
+
+        const newTotalAmountPaid = amountPaid.cash + amountPaid.eftpos + amount;
+
+        //If paid for everything
+        if (outcome.transactionOutcome == EEftposTransactionOutcome.Success) {
+            setAmountPaid({ ...amountPaid, eftpos: amountPaid.cash + amount });
+
+            if (newTotalAmountPaid >= subTotal) {
+                try {
+                    await onSubmitOrder(true);
+                } catch (e) {
+                    setCreateOrderError(e);
+                }
+            }
+        }
+    };
+
+    const calculateCashChangeAmount = (totalCashAmount: number, subTotal: number): number => {
+        const netAmount = totalCashAmount - subTotal;
+        const floorToNearestTen = Math.floor(netAmount / 10) * 10; //Floor to nearest 10.
+
+        return floorToNearestTen;
+    };
+
+    const onConfirmCashTransaction = async (amount: number) => {
+        setEftposTransactionOutcome(null);
+        // setCashTransactionChangeAmount(null);
+        setPaymentOutcomeOrderNumber(null);
+        setPaymentOutcomeApprovedRedirectTimeLeft(10);
+
+        const newCashAmountPaid = amountPaid.cash + amount;
+        const newTotalAmountPaid = amountPaid.cash + amountPaid.eftpos + amount;
+
+        setAmountPaid({ ...amountPaid, cash: newCashAmountPaid });
+
+        //If paid for everything
+        if (newTotalAmountPaid >= subTotal) {
+            const changeAmount = calculateCashChangeAmount(newCashAmountPaid, subTotal);
+
+            setCashTransactionChangeAmount(changeAmount);
+
+            try {
+                await onSubmitOrder(true);
+            } catch (e) {
+                setCreateOrderError(e);
+            }
+        }
     };
 
     const onClickPayLater = async () => {
         // setShowPaymentModal(true);
         // setPaymentOutcome(EEftposTransactionOutcome.PayLater);
         // setPaymentOutcomeErrorMessage(null);
-        // setPaymentOutcomeDelayedOrderNumber(null);
+        // setPaymentOutcomeOrderNumber(null);
         // setPaymentOutcomeApprovedRedirectTimeLeft(10);
         // try {
         //     await onSubmitOrder(false, null);
@@ -683,10 +730,12 @@ export const Checkout = () => {
                         onClose={onClosePaymentModal}
                         eftposTransactionInProgress={eftposTransactionInProgress}
                         eftposTransactionOutcome={eftposTransactionOutcome}
-                        paymentOutcomeDelayedOrderNumber={paymentOutcomeDelayedOrderNumber}
+                        cashTransactionChangeAmount={cashTransactionChangeAmount}
+                        paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                         createOrderError={createOrderError}
-                        onConfirmTotalOrRetryTransaction={onConfirmTotalOrRetryTransaction}
+                        onConfirmTotalOrRetryEftposTransaction={onConfirmTotalOrRetryEftposTransaction}
+                        onConfirmCashTransaction={onConfirmCashTransaction}
                         onCancelOrder={onCancelOrder}
                     />
                 )}

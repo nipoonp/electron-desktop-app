@@ -129,6 +129,11 @@ export interface ICartPromotion {
     discountedAmount: number;
 }
 
+export interface ICartAmountPaid {
+    cash: number;
+    eftpos: number;
+}
+
 export enum EReceiptPrinterType {
     BLUETOOTH = "BLUETOOTH",
     WIFI = "WIFI",

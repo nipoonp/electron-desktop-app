@@ -9,7 +9,7 @@ import {
     IGET_RESTAURANT_PROMOTION_ITEMS,
 } from "../graphql/customQueries";
 
-import { ICartProduct, EOrderType, ICartItemQuantitiesById, ICartPromotion, CheckIfPromotionValidResponse } from "../model/model";
+import { ICartProduct, EOrderType, ICartItemQuantitiesById, ICartPromotion, CheckIfPromotionValidResponse, ICartAmountPaid } from "../model/model";
 import { getMatchingPromotionProducts, processPromotionDiscounts, isPromotionAvailable, checkIfPromotionValid } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
 
@@ -23,8 +23,9 @@ const initialCartModifierQuantitiesById = {};
 const initialUserAppliedPromotionCode = null;
 const initialPromotion = null;
 const initialTotal = 0;
-const initialAmountPaid = 0;
+const initialAmountPaid: ICartAmountPaid = { cash: 0, eftpos: 0 };
 const initialSubTotal = 0;
+const initialTransactionEftposReceipts = "";
 
 type ContextProps = {
     // restaurant: IGET_RESTAURANT | null;
@@ -49,8 +50,10 @@ type ContextProps = {
     removeUserAppliedPromotion: () => void;
     total: number;
     subTotal: number;
-    amountPaid: number;
-    addToAmountPaid: (amount: number) => void;
+    amountPaid: ICartAmountPaid;
+    setAmountPaid: (amountPaid: ICartAmountPaid) => void;
+    transactionEftposReceipts: string;
+    setTransactionEftposReceipts: (receipt: string) => void;
 };
 
 const CartContext = createContext<ContextProps>({
@@ -77,7 +80,9 @@ const CartContext = createContext<ContextProps>({
     total: initialTotal,
     subTotal: initialSubTotal,
     amountPaid: initialAmountPaid,
-    addToAmountPaid: () => {},
+    setAmountPaid: () => {},
+    transactionEftposReceipts: initialTransactionEftposReceipts,
+    setTransactionEftposReceipts: () => {},
 });
 
 const CartProvider = (props: { children: React.ReactNode }) => {
@@ -88,8 +93,9 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
     const [notes, _setNotes] = useState<string>(initialNotes);
     const [total, _setTotal] = useState<number>(initialTotal);
-    const [amountPaid, _setAmountPaid] = useState<number>(initialAmountPaid);
+    const [amountPaid, _setAmountPaid] = useState<ICartAmountPaid>(initialAmountPaid);
     const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
+    const [transactionEftposReceipts, _setTransactionEftposReceipts] = useState<string>(initialTransactionEftposReceipts);
 
     const [userAppliedPromotionCode, _setUserAppliedPromotionCode] = useState<string | null>(initialUserAppliedPromotionCode);
     const [promotion, _setPromotion] = useState<ICartPromotion | null>(initialPromotion);
@@ -422,8 +428,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setNotes(notes);
     };
 
-    const addToAmountPaid = (amount: number) => {
-        _setAmountPaid(amountPaid + amount);
+    const setAmountPaid = (amount: ICartAmountPaid) => {
+        _setAmountPaid(amount);
+    };
+
+    const setTransactionEftposReceipts = (receipt: string) => {
+        _setTransactionEftposReceipts(receipt);
     };
 
     const clearCart = () => {
@@ -436,8 +446,9 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setCartModifierQuantitiesById(initialCartModifierQuantitiesById);
         _setPromotion(initialPromotion);
         _setTotal(initialTotal);
-        _setSubTotal(initialSubTotal);
         _setAmountPaid(initialAmountPaid);
+        _setSubTotal(initialSubTotal);
+        _setTransactionEftposReceipts(initialTransactionEftposReceipts);
     };
 
     return (
@@ -465,8 +476,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 removeUserAppliedPromotion: removeUserAppliedPromotion,
                 total: total,
                 amountPaid: amountPaid,
-                addToAmountPaid: addToAmountPaid,
+                setAmountPaid: setAmountPaid,
                 subTotal: subTotal,
+                transactionEftposReceipts: transactionEftposReceipts,
+                setTransactionEftposReceipts: setTransactionEftposReceipts,
             }}
             children={props.children}
         />
