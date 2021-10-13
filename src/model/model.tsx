@@ -184,8 +184,8 @@ export enum CheckIfPromotionValidResponse {
 
 export enum SalesReportScreen {
     DASHBOARD = "",
-    DAY = "day",
-    HOUR = "hour",
-    CATEGORY = "category",
-    PRODUCT = "product",
+    DAY = "Day",
+    HOUR = "Hour",
+    CATEGORY = "Category",
+    PRODUCT = "Product",
 }

@@ -20,6 +20,8 @@ import { CachedImage } from "../../tabin/components/cachedImage";
 import { Graph } from "./salesReport/Graph";
 
 import "./salesReport.scss";
+import { Table } from "../../tabin/components/table";
+import { tax } from "../../model/util";
 
 interface ITopSoldItem {
     item: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT | null;
@@ -30,6 +32,8 @@ interface ITopSoldItem {
 interface IDailySales {
     [date: string]: {
         totalAmount: number;
+        net: number;
+        tax: number;
         totalQuantity: number;
         orders: IGET_RESTAURANT_ORDER_FRAGMENT[];
     };
@@ -46,6 +50,8 @@ interface IHourlySales {
         hour: string;
         totalAmount: number;
         totalQuantity: number;
+        net: number;
+        tax: number;
     };
 }
 
@@ -55,6 +61,11 @@ interface IMostSoldItems {
         totalQuantity: number;
         totalAmount: number;
     };
+}
+
+interface ISalesTableData {
+    cols: string[];
+    rows: any[];
 }
 
 interface ISalesSummary {
@@ -73,6 +84,10 @@ interface ISalesSummary {
     topSoldCategory: ITopSoldItem;
     topSoldProduct: ITopSoldItem;
     totalSoldItems: number;
+    dayByGraphData: { date: string; sales: number }[];
+    hourByGraphData: { hour: string; sales: number }[];
+    dayByTableData: ISalesTableData;
+    hourByTableData: ISalesTableData;
 }
 
 export const SalesReport = () => {
@@ -117,30 +132,30 @@ export const SalesReport = () => {
         let totalSoldItems: number = 0;
 
         const hourlySales: IHourlySales = {
-            "00": { hour: "00", totalAmount: 0, totalQuantity: 0 },
-            "01": { hour: "01", totalAmount: 0, totalQuantity: 0 },
-            "02": { hour: "02", totalAmount: 0, totalQuantity: 0 },
-            "03": { hour: "03", totalAmount: 0, totalQuantity: 0 },
-            "04": { hour: "04", totalAmount: 0, totalQuantity: 0 },
-            "05": { hour: "05", totalAmount: 0, totalQuantity: 0 },
-            "06": { hour: "06", totalAmount: 0, totalQuantity: 0 },
-            "07": { hour: "07", totalAmount: 0, totalQuantity: 0 },
-            "08": { hour: "08", totalAmount: 0, totalQuantity: 0 },
-            "09": { hour: "09", totalAmount: 0, totalQuantity: 0 },
-            "10": { hour: "10", totalAmount: 0, totalQuantity: 0 },
-            "11": { hour: "11", totalAmount: 0, totalQuantity: 0 },
-            "12": { hour: "12", totalAmount: 0, totalQuantity: 0 },
-            "13": { hour: "13", totalAmount: 0, totalQuantity: 0 },
-            "14": { hour: "14", totalAmount: 0, totalQuantity: 0 },
-            "15": { hour: "15", totalAmount: 0, totalQuantity: 0 },
-            "16": { hour: "16", totalAmount: 0, totalQuantity: 0 },
-            "17": { hour: "17", totalAmount: 0, totalQuantity: 0 },
-            "18": { hour: "18", totalAmount: 0, totalQuantity: 0 },
-            "19": { hour: "19", totalAmount: 0, totalQuantity: 0 },
-            "20": { hour: "20", totalAmount: 0, totalQuantity: 0 },
-            "21": { hour: "21", totalAmount: 0, totalQuantity: 0 },
-            "22": { hour: "22", totalAmount: 0, totalQuantity: 0 },
-            "23": { hour: "23", totalAmount: 0, totalQuantity: 0 },
+            "00": { hour: "00", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "01": { hour: "01", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "02": { hour: "02", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "03": { hour: "03", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "04": { hour: "04", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "05": { hour: "05", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "06": { hour: "06", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "07": { hour: "07", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "08": { hour: "08", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "09": { hour: "09", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "10": { hour: "10", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "11": { hour: "11", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "12": { hour: "12", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "13": { hour: "13", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "14": { hour: "14", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "15": { hour: "15", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "16": { hour: "16", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "17": { hour: "17", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "18": { hour: "18", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "19": { hour: "19", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "20": { hour: "20", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "21": { hour: "21", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "22": { hour: "22", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+            "23": { hour: "23", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
         };
 
         let bestHour: IBestHour = { hour: "00", totalAmount: 0, totalQuantity: 0 };
@@ -168,6 +183,8 @@ export const SalesReport = () => {
                 totalAmount: 0,
                 totalQuantity: 0,
                 orders: [],
+                net: 0,
+                tax: 0,
             };
         }
 
@@ -199,6 +216,8 @@ export const SalesReport = () => {
                     totalAmount: newSubTotal,
                     totalQuantity: newQuantitySold,
                     orders: [...newOrders],
+                    net: (newSubTotal * (100 - tax)) / 100,
+                    tax: newSubTotal * (tax / 100),
                 };
 
                 // HOURLY SALES //////////////////////////////////
@@ -209,6 +228,8 @@ export const SalesReport = () => {
                     hour: placedAtHour,
                     totalQuantity: newSaleQuantity,
                     totalAmount: newSaleAmount,
+                    net: (newSaleAmount * (100 - tax)) / 100,
+                    tax: newSaleAmount * (tax / 100),
                 };
 
                 if (newSaleAmount > bestHour.totalAmount) {
@@ -308,6 +329,47 @@ export const SalesReport = () => {
             }
         });
 
+        // Table Data
+        const dayByTableData = { cols: ["Date", "Orders", "Net", "Tax", "Total"], rows: [] as any };
+        const hourByTableData = { cols: ["Time", "Orders", "Net", "Tax", "Total"], rows: [] as any };
+
+        // Graph Data
+
+        const dayByGraphData: { date: string; sales: number }[] = [];
+        const hourByGraphData: { hour: string; sales: number }[] = [];
+
+        Object.entries(dailySales).forEach(([date, sale]) => {
+            dayByGraphData.push({
+                date: format(new Date(date), "dd MMM"),
+                sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
+            });
+            const row = [
+                format(new Date(date), "E dd MMM"),
+                sale.totalQuantity,
+                `$${convertCentsToDollarsReturnFloat(sale.net)}`,
+                `$${convertCentsToDollarsReturnFloat(sale.tax)}`,
+                `$${convertCentsToDollarsReturnFloat(sale.totalAmount)}`,
+            ];
+            dayByTableData.rows.push(row);
+        });
+
+        Object.entries(hourlySales)
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .forEach(([hour, sale]) => {
+                hourByGraphData.push({
+                    hour: hour,
+                    sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
+                });
+                const row = [
+                    `${Number(hour) > 12 ? `${Number(hour) - 12} PM` : hour === '12' ? `${hour} PM`: `${hour} AM`}`,
+                    sale.totalQuantity,
+                    `$${convertCentsToDollarsReturnFloat(sale.net)}`,
+                    `$${convertCentsToDollarsReturnFloat(sale.tax)}`,
+                    `$${convertCentsToDollarsReturnFloat(sale.totalAmount)}`,
+                ];
+                hourByTableData.rows.push(row);
+            });
+
         console.log("xxx...", {
             daysDifference,
             dailySales,
@@ -340,6 +402,10 @@ export const SalesReport = () => {
             topSoldCategory,
             topSoldProduct,
             totalSoldItems,
+            dayByGraphData,
+            hourByGraphData,
+            dayByTableData,
+            hourByTableData,
         });
     };
 
@@ -391,30 +457,14 @@ export const SalesReport = () => {
         const { salesSummaryData } = props;
         const {
             subTotalCompleted,
-            dailySales,
-            hourlySales,
             totalNumberOfOrdersCompleted,
             bestHour,
             topSoldCategory,
             topSoldProduct,
             totalSoldItems,
+            dayByGraphData,
+            hourByGraphData,
         } = salesSummaryData;
-        const dayByGraphData: { date: string; sales: number }[] = [];
-        const hourByGraphData: { hour: string; sales: number }[] = [];
-
-        Object.entries(dailySales).forEach(([date, sale]) => {
-            dayByGraphData.push({
-                date: format(new Date(date), "dd MMM"),
-                sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
-            });
-        });
-
-        Object.entries(hourlySales).sort((a,b) => a[0].localeCompare(b[0])).forEach(([hour, sale]) => {
-            hourByGraphData.push({
-                hour: hour,
-                sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
-            });
-        });
 
         return (
             <div>
@@ -519,6 +569,17 @@ export const SalesReport = () => {
         );
     };
 
+    const salesByScreenHeader = (
+        <>
+            <div className="h3 pb-2">Sales By {currentScreen}</div>
+            <div className="h5 pb-2">
+                <span className="c-pointer" onClick={(e) => changeScreen(SalesReportScreen.DASHBOARD)}>
+                    back
+                </span>
+            </div>
+        </>
+    );
+
     const renderCurrentScreen = () => {
         const graphDetails = {
             graphData: [],
@@ -527,7 +588,53 @@ export const SalesReport = () => {
         };
         switch (currentScreen.toLocaleLowerCase()) {
             case "day":
+                return (
+                    <div className="sales-by p-3">
+                        {salesByScreenHeader}
+                        <div className="pb-3" style={{ width: "100%", height: "300px" }}>
+                            <Graph xAxis="date" lines={["sales"]} graphData={salesSummaryData?.dayByGraphData} />
+                        </div>
+                        {salesSummaryData && (
+                            <div className="sales-reading-wrapper">
+                                <Card className="text-center sales-reading">
+                                    <div className="h3 mb-1">{`$${convertCentsToDollars(salesSummaryData.subTotalCompleted)}`}</div>
+                                    <div className="text-uppercase">Total Sales</div>
+                                </Card>
+                                <Card className="text-center sales-reading">
+                                    <div className="h3 mb-1">{`$${convertCentsToDollars(
+                                        isNaN(salesSummaryData.subTotalCompleted / salesSummaryData.totalNumberOfOrdersCompleted)
+                                            ? 0
+                                            : salesSummaryData.subTotalCompleted / salesSummaryData.totalNumberOfOrdersCompleted
+                                    )}`}</div>
+                                    <div className="text-uppercase">Average Sales</div>
+                                </Card>
+                                <Card className="text-center sales-reading">
+                                    <div className="h3 mt-1">{salesSummaryData.totalNumberOfOrdersCompleted}</div>
+                                    <div className="text-uppercase">Sales Count</div>
+                                </Card>
+                                <Card className="text-center sales-reading">
+                                    <div className="h3 mb-1">{salesSummaryData.totalSoldItems}</div>
+                                    <div className="text-uppercase">Items Sold</div>
+                                </Card>
+                            </div>
+                        )}
+                        <div className="sales-table-wrapper">
+                            <Table cols={salesSummaryData?.dayByTableData.cols} rows={salesSummaryData?.dayByTableData.rows} />
+                        </div>
+                    </div>
+                );
             case "hour":
+                return (
+                    <div className="sales-by p-3">
+                        {salesByScreenHeader}
+                        <div className="pb-3" style={{ width: "100%", height: "300px" }}>
+                            <Graph xAxis="hour" lines={["sales"]} graphData={salesSummaryData?.hourByGraphData} />
+                        </div>
+                        <div className="sales-table-wrapper">
+                            <Table cols={salesSummaryData?.hourByTableData.cols} rows={salesSummaryData?.hourByTableData.rows} />
+                        </div>
+                    </div>
+                );
             case "category":
             case "product":
                 return (

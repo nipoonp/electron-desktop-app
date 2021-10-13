@@ -1,6 +1,6 @@
 import { Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-export const Graph = (props: { graphData, xAxis: string, lines: string[] }) => {
+export const Graph = (props: { graphData; xAxis: string; lines: string[] }) => {
     const { graphData, xAxis, lines } = props;
 
     return (
@@ -18,8 +18,8 @@ export const Graph = (props: { graphData, xAxis: string, lines: string[] }) => {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                {lines.map((l) => (
-                    <Line type="monotone" dataKey={l} stroke="#8884d8" />
+                {lines.map((l, i) => (
+                    <Line key={i} type="monotone" dataKey={l} stroke="#8884d8" />
                 ))}
             </LineChart>
         </ResponsiveContainer>
