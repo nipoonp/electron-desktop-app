@@ -9,7 +9,15 @@ import {
     IGET_RESTAURANT_PROMOTION_ITEMS,
 } from "../graphql/customQueries";
 
-import { ICartProduct, EOrderType, ICartItemQuantitiesById, ICartPromotion, CheckIfPromotionValidResponse, ICartAmountPaid } from "../model/model";
+import {
+    ICartProduct,
+    EOrderType,
+    ICartItemQuantitiesById,
+    ICartPromotion,
+    CheckIfPromotionValidResponse,
+    ICartAmountPaid,
+    ICartPayment,
+} from "../model/model";
 import { getMatchingPromotionProducts, processPromotionDiscounts, isPromotionAvailable, checkIfPromotionValid } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
 
@@ -25,6 +33,7 @@ const initialPromotion = null;
 const initialTotal = 0;
 const initialAmountPaid: ICartAmountPaid = { cash: 0, eftpos: 0 };
 const initialSubTotal = 0;
+const initialPayments = [];
 const initialTransactionEftposReceipts = "";
 
 type ContextProps = {
@@ -50,6 +59,8 @@ type ContextProps = {
     removeUserAppliedPromotion: () => void;
     total: number;
     subTotal: number;
+    payments: ICartPayment[];
+    setPayments: (payment: ICartPayment[]) => void;
     amountPaid: ICartAmountPaid;
     setAmountPaid: (amountPaid: ICartAmountPaid) => void;
     transactionEftposReceipts: string;
@@ -79,6 +90,8 @@ const CartContext = createContext<ContextProps>({
     removeUserAppliedPromotion: () => {},
     total: initialTotal,
     subTotal: initialSubTotal,
+    payments: initialPayments,
+    setPayments: () => {},
     amountPaid: initialAmountPaid,
     setAmountPaid: () => {},
     transactionEftposReceipts: initialTransactionEftposReceipts,
@@ -95,6 +108,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [total, _setTotal] = useState<number>(initialTotal);
     const [amountPaid, _setAmountPaid] = useState<ICartAmountPaid>(initialAmountPaid);
     const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
+    const [payments, _setPayments] = useState<ICartPayment[]>(initialPayments);
     const [transactionEftposReceipts, _setTransactionEftposReceipts] = useState<string>(initialTransactionEftposReceipts);
 
     const [userAppliedPromotionCode, _setUserAppliedPromotionCode] = useState<string | null>(initialUserAppliedPromotionCode);
@@ -432,6 +446,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setAmountPaid(amount);
     };
 
+    const setPayments = (payments: ICartPayment[]) => {
+        _setPayments(payments);
+    };
+
     const setTransactionEftposReceipts = (receipt: string) => {
         _setTransactionEftposReceipts(receipt);
     };
@@ -478,6 +496,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 amountPaid: amountPaid,
                 setAmountPaid: setAmountPaid,
                 subTotal: subTotal,
+                payments: payments,
+                setPayments: setPayments,
                 transactionEftposReceipts: transactionEftposReceipts,
                 setTransactionEftposReceipts: setTransactionEftposReceipts,
             }}

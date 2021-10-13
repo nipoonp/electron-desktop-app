@@ -18,6 +18,7 @@ import {
     EEftposTransactionOutcome,
     IEftposTransactionOutcome,
     EPaymentModalState,
+    EEftposProvider,
 } from "../../model/model";
 import { useUser } from "../../context/user-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -65,6 +66,8 @@ export const Checkout = () => {
         setTransactionEftposReceipts,
         amountPaid,
         setAmountPaid,
+        payments,
+        setPayments,
         updateItem,
         updateItemQuantity,
         deleteItem,
@@ -463,7 +466,7 @@ export const Checkout = () => {
         try {
             let outcome: IEftposTransactionOutcome | null = null;
 
-            if (register.eftposProvider == "SMARTPAY") {
+            if (register.eftposProvider == EEftposProvider.SMARTPAY) {
                 let delayedShown = false;
 
                 const delayed = (outcome: IEftposTransactionOutcome) => {
@@ -476,10 +479,10 @@ export const Checkout = () => {
 
                 const pollingUrl = await smartpayCreateTransaction(amount, "Card.Purchase");
                 outcome = await smartpayPollForOutcome(pollingUrl, delayed);
-            } else if (register.eftposProvider == "WINDCAVE") {
+            } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
                 const txnRef = await windcaveCreateTransaction(register.windcaveStationId, amount, "Purchase");
                 outcome = await windcavePollForOutcome(register.windcaveStationId, txnRef);
-            } else if (register.eftposProvider == "VERIFONE") {
+            } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
                 outcome = await verifoneCreateTransaction(amount, register.eftposIpAddress, register.eftposPortNumber, restaurant.id);
             }
 
@@ -522,6 +525,7 @@ export const Checkout = () => {
                 const newTotalAmountPaid = newEftposAmountPaid + amountPaid.cash;
 
                 setAmountPaid({ ...amountPaid, eftpos: newEftposAmountPaid });
+                setPayments([...payments, { type: "EFTPOS", amount: amount }]);
 
                 if (newTotalAmountPaid >= subTotal) {
                     beginPaymentOutcomeApprovedTimeout();
@@ -547,6 +551,7 @@ export const Checkout = () => {
             const newTotalAmountPaid = newCashAmountPaid + amountPaid.eftpos;
 
             setAmountPaid({ ...amountPaid, cash: newCashAmountPaid });
+            setPayments([...payments, { type: "CASH", amount: amount }]);
 
             //If paid for everything
             if (newTotalAmountPaid >= subTotal) {

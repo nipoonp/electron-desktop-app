@@ -71,6 +71,12 @@ export enum EOrderType {
     DELIVERY = "DELIVERY",
 }
 
+export enum EEftposProvider {
+    SMARTPAY = "SMARTPAY",
+    VERIFONE = "VERIFONE",
+    WINDCAVE = "WINDCAVE",
+}
+
 export interface ICartItemQuantitiesById {
     [id: string]: ICartItemQuantitiesByIdValue;
 }
@@ -140,6 +146,11 @@ export interface ICartPromotion {
 export interface ICartAmountPaid {
     cash: number;
     eftpos: number;
+}
+
+export interface ICartPayment {
+    type: "EFTPOS" | "CASH";
+    amount: number;
 }
 
 export enum EReceiptPrinterType {
