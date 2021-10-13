@@ -273,14 +273,8 @@ export const Checkout = () => {
                 setPaymentOutcomeApprovedRedirectTimeLeft(i);
 
                 if (i == 0) {
-                    const totalAmountPaid = amountPaid.cash + amountPaid.eftpos;
-
-                    if (totalAmountPaid >= subTotal) {
-                        history.push(beginOrderPath);
-                        clearCart();
-                    } else {
-                        setPaymentModalState(EPaymentModalState.POSScreen);
-                    }
+                    history.push(beginOrderPath);
+                    clearCart();
                 }
 
                 if (i > 0) timerLoop(i); //  decrement i and call myLoop again if i > 0
@@ -512,34 +506,30 @@ export const Checkout = () => {
     };
 
     const onConfirmTotalOrRetryEftposTransaction = async (amount: number) => {
-        // setEftposTransactionOutcome(null);
-        // setCashTransactionChangeAmount(null);
-        // setPaymentOutcomeOrderNumber(null);
-        setPaymentOutcomeApprovedRedirectTimeLeft(10);
-
         setPaymentModalState(EPaymentModalState.AwaitingCard);
 
         const outcome = await performEftposTransaction(amount);
 
-        setPaymentModalState(EPaymentModalState.EftposResult);
         setEftposTransactionOutcome(outcome);
+        setPaymentModalState(EPaymentModalState.EftposResult);
 
         if (outcome.eftposReceipt) setTransactionEftposReceipts(transactionEftposReceipts + "\n" + outcome.eftposReceipt);
 
-        const newEftposAmountPaid = amountPaid.eftpos + amount;
-        const newTotalAmountPaid = amountPaid.cash + amountPaid.eftpos + amount;
-
         //If paid for everything
         if (outcome.transactionOutcome == EEftposTransactionOutcome.Success) {
-            setAmountPaid({ ...amountPaid, eftpos: newEftposAmountPaid });
-            beginPaymentOutcomeApprovedTimeout();
+            try {
+                const newEftposAmountPaid = amountPaid.eftpos + amount;
+                const newTotalAmountPaid = newEftposAmountPaid + amountPaid.cash;
 
-            if (newTotalAmountPaid >= subTotal) {
-                try {
+                setAmountPaid({ ...amountPaid, eftpos: newEftposAmountPaid });
+
+                if (newTotalAmountPaid >= subTotal) {
+                    beginPaymentOutcomeApprovedTimeout();
+
                     await onSubmitOrder(true);
-                } catch (e) {
-                    setCreateOrderError(e);
                 }
+            } catch (e) {
+                setCreateOrderError(e);
             }
         }
     };
@@ -552,31 +542,30 @@ export const Checkout = () => {
     };
 
     const onConfirmCashTransaction = async (amount: number) => {
-        // setEftposTransactionOutcome(null);
-        // // setCashTransactionChangeAmount(null);
-        // setPaymentOutcomeOrderNumber(null);
-        // setPaymentOutcomeApprovedRedirectTimeLeft(10);
+        try {
+            const newCashAmountPaid = amountPaid.cash + amount;
+            const newTotalAmountPaid = newCashAmountPaid + amountPaid.eftpos;
 
-        const newCashAmountPaid = amountPaid.cash + amount;
-        const newTotalAmountPaid = amountPaid.cash + amountPaid.eftpos + amount;
+            setAmountPaid({ ...amountPaid, cash: newCashAmountPaid });
 
-        setAmountPaid({ ...amountPaid, cash: newCashAmountPaid });
+            //If paid for everything
+            if (newTotalAmountPaid >= subTotal) {
+                const changeAmount = calculateCashChangeAmount(newTotalAmountPaid, subTotal);
 
-        //If paid for everything
-        if (newTotalAmountPaid >= subTotal) {
-            const changeAmount = calculateCashChangeAmount(newCashAmountPaid, subTotal);
+                setPaymentModalState(EPaymentModalState.CashResult);
+                setCashTransactionChangeAmount(changeAmount);
 
-            setPaymentModalState(EPaymentModalState.CashResult);
-            setCashTransactionChangeAmount(changeAmount);
+                beginPaymentOutcomeApprovedTimeout();
 
-            beginPaymentOutcomeApprovedTimeout();
-
-            try {
                 await onSubmitOrder(true);
-            } catch (e) {
-                setCreateOrderError(e);
             }
+        } catch (e) {
+            setCreateOrderError(e);
         }
+    };
+
+    const onContinueToNextPayment = () => {
+        setPaymentModalState(EPaymentModalState.POSScreen);
     };
 
     const onClickPayLater = async () => {
@@ -751,6 +740,7 @@ export const Checkout = () => {
                         createOrderError={createOrderError}
                         onConfirmTotalOrRetryEftposTransaction={onConfirmTotalOrRetryEftposTransaction}
                         onConfirmCashTransaction={onConfirmCashTransaction}
+                        onContinueToNextPayment={onContinueToNextPayment}
                         onCancelPayment={onCancelPayment}
                         onCancelOrder={onCancelOrder}
                     />
