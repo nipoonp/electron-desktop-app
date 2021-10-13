@@ -1,3 +1,5 @@
+import "./salesReport.scss";
+
 import { addDays, differenceInDays, format, subDays } from "date-fns";
 import { useEffect, useState } from "react";
 
@@ -10,18 +12,15 @@ import {
 import { EOrderStatus } from "../../graphql/customQueries";
 import { useGetRestaurantOrdersByBetweenPlacedAt } from "../../hooks/useGetRestaurantOrdersByBetweenPlacedAt";
 import { SalesReportScreen } from "../../model/model";
+import { taxRate } from "../../model/util";
+import { getCloudFrontDomainName } from "../../private/aws-custom";
+import { CachedImage } from "../../tabin/components/cachedImage";
 import { Card } from "../../tabin/components/card";
 import { DateRangePicker } from "../../tabin/components/dateRangePicker";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { convertCentsToDollars, convertCentsToDollarsReturnFloat } from "../../util/util";
-import { SalesBy } from "./salesReport/SalesBy";
-import { getCloudFrontDomainName } from "../../private/aws-custom";
-import { CachedImage } from "../../tabin/components/cachedImage";
-import { Graph } from "./salesReport/Graph";
-
-import "./salesReport.scss";
 import { Table } from "../../tabin/components/table";
-import { tax } from "../../model/util";
+import { convertCentsToDollars, convertCentsToDollarsReturnFloat } from "../../util/util";
+import { LineGraph, PieGraph } from "./salesReport/Graph";
 
 interface ITopSoldItem {
     item: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT | null;
@@ -86,8 +85,12 @@ interface ISalesSummary {
     totalSoldItems: number;
     dayByGraphData: { date: string; sales: number }[];
     hourByGraphData: { hour: string; sales: number }[];
+    categoryByGraphData: { name: string; value: number }[];
+    productByGraphData: { name: string; value: number }[];
     dayByTableData: ISalesTableData;
     hourByTableData: ISalesTableData;
+    categoryByTableData: ISalesTableData;
+    productByTableData: ISalesTableData;
 }
 
 export const SalesReport = () => {
@@ -216,8 +219,8 @@ export const SalesReport = () => {
                     totalAmount: newSubTotal,
                     totalQuantity: newQuantitySold,
                     orders: [...newOrders],
-                    net: (newSubTotal * (100 - tax)) / 100,
-                    tax: newSubTotal * (tax / 100),
+                    net: (newSubTotal * (100 - taxRate)) / 100,
+                    tax: newSubTotal * (taxRate / 100),
                 };
 
                 // HOURLY SALES //////////////////////////////////
@@ -228,8 +231,8 @@ export const SalesReport = () => {
                     hour: placedAtHour,
                     totalQuantity: newSaleQuantity,
                     totalAmount: newSaleAmount,
-                    net: (newSaleAmount * (100 - tax)) / 100,
-                    tax: newSaleAmount * (tax / 100),
+                    net: (newSaleAmount * (100 - taxRate)) / 100,
+                    tax: newSaleAmount * (taxRate / 100),
                 };
 
                 if (newSaleAmount > bestHour.totalAmount) {
@@ -332,11 +335,15 @@ export const SalesReport = () => {
         // Table Data
         const dayByTableData = { cols: ["Date", "Orders", "Net", "Tax", "Total"], rows: [] as any };
         const hourByTableData = { cols: ["Time", "Orders", "Net", "Tax", "Total"], rows: [] as any };
+        const categoryByTableData = { cols: ["Category", "Quantity", "Sale Amount", "% Of Sale"], rows: [] as any };
+        const productByTableData = { cols: ["Product", "Quantity", "Sale Amount", "% Of Sale"], rows: [] as any };
 
         // Graph Data
 
         const dayByGraphData: { date: string; sales: number }[] = [];
         const hourByGraphData: { hour: string; sales: number }[] = [];
+        const categoryByGraphData: { name: string; value: number }[] = [];
+        const productByGraphData: { name: string; value: number }[] = [];
 
         Object.entries(dailySales).forEach(([date, sale]) => {
             dayByGraphData.push({
@@ -361,7 +368,7 @@ export const SalesReport = () => {
                     sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
                 });
                 const row = [
-                    `${Number(hour) > 12 ? `${Number(hour) - 12} PM` : hour === '12' ? `${hour} PM`: `${hour} AM`}`,
+                    `${Number(hour) > 12 ? `${Number(hour) - 12} PM` : hour === "12" ? `${hour} PM` : `${hour} AM`}`,
                     sale.totalQuantity,
                     `$${convertCentsToDollarsReturnFloat(sale.net)}`,
                     `$${convertCentsToDollarsReturnFloat(sale.tax)}`,
@@ -369,6 +376,34 @@ export const SalesReport = () => {
                 ];
                 hourByTableData.rows.push(row);
             });
+
+        Object.entries(mostSoldCategories).forEach(([categoryId, category]) => {
+            categoryByGraphData.push({
+                name: category.item.name,
+                value: category.totalQuantity,
+            });
+            const row = [
+                category.item.name,
+                category.totalQuantity,
+                `$${convertCentsToDollarsReturnFloat(category.totalAmount)}`,
+                `${((category.totalAmount * 100) / subTotalCompleted).toFixed(2)} %`,
+            ];
+            categoryByTableData.rows.push(row);
+        });
+
+        Object.entries(mostSoldProducts).forEach(([productId, product]) => {
+            productByGraphData.push({
+                name: product.item.name,
+                value: product.totalQuantity,
+            });
+            const row = [
+                product.item.name,
+                product.totalQuantity,
+                `$${convertCentsToDollarsReturnFloat(product.totalAmount)}`,
+                `${((product.totalAmount * 100) / subTotalCompleted).toFixed(2)} %`,
+            ];
+            productByTableData.rows.push(row);
+        });
 
         console.log("xxx...", {
             daysDifference,
@@ -404,8 +439,12 @@ export const SalesReport = () => {
             totalSoldItems,
             dayByGraphData,
             hourByGraphData,
+            categoryByGraphData,
+            productByGraphData,
             dayByTableData,
             hourByTableData,
+            categoryByTableData,
+            productByTableData,
         });
     };
 
@@ -472,7 +511,7 @@ export const SalesReport = () => {
                     <div className="item item1">
                         <Card title="Sales By Day" onOpen={() => changeScreen(SalesReportScreen.DAY)}>
                             <div style={{ width: "100%", height: "300px" }}>
-                                <Graph xAxis="date" lines={["sales"]} graphData={dayByGraphData} />
+                                <LineGraph xAxis="date" lines={["sales"]} graphData={dayByGraphData} />
                             </div>
                         </Card>
                     </div>
@@ -499,7 +538,7 @@ export const SalesReport = () => {
                     <div className="item item3">
                         <Card title="Sales By Hour" onOpen={() => changeScreen(SalesReportScreen.HOUR)}>
                             <div style={{ width: "100%", height: "250px" }}>
-                                <Graph xAxis="hour" lines={["sales"]} graphData={hourByGraphData} />
+                                <LineGraph xAxis="hour" lines={["sales"]} graphData={hourByGraphData} />
                             </div>
                         </Card>
                     </div>
@@ -581,18 +620,13 @@ export const SalesReport = () => {
     );
 
     const renderCurrentScreen = () => {
-        const graphDetails = {
-            graphData: [],
-            xAxis: "date",
-            lines: ["sales"],
-        };
         switch (currentScreen.toLocaleLowerCase()) {
             case "day":
                 return (
                     <div className="sales-by p-3">
                         {salesByScreenHeader}
                         <div className="pb-3" style={{ width: "100%", height: "300px" }}>
-                            <Graph xAxis="date" lines={["sales"]} graphData={salesSummaryData?.dayByGraphData} />
+                            <LineGraph xAxis="date" lines={["sales"]} graphData={salesSummaryData?.dayByGraphData} />
                         </div>
                         {salesSummaryData && (
                             <div className="sales-reading-wrapper">
@@ -628,7 +662,7 @@ export const SalesReport = () => {
                     <div className="sales-by p-3">
                         {salesByScreenHeader}
                         <div className="pb-3" style={{ width: "100%", height: "300px" }}>
-                            <Graph xAxis="hour" lines={["sales"]} graphData={salesSummaryData?.hourByGraphData} />
+                            <LineGraph xAxis="hour" lines={["sales"]} graphData={salesSummaryData?.hourByGraphData} />
                         </div>
                         <div className="sales-table-wrapper">
                             <Table cols={salesSummaryData?.hourByTableData.cols} rows={salesSummaryData?.hourByTableData.rows} />
@@ -636,18 +670,28 @@ export const SalesReport = () => {
                     </div>
                 );
             case "category":
+                return (
+                    <div className="sales-by p-3">
+                        {salesByScreenHeader}
+                        <div className="pb-3" style={{ width: "100%", height: "300px" }}>
+                            <PieGraph data={salesSummaryData?.categoryByGraphData} />
+                        </div>
+                        <div className="sales-table-wrapper">
+                            <Table cols={salesSummaryData?.categoryByTableData.cols} rows={salesSummaryData?.categoryByTableData.rows} />
+                        </div>
+                    </div>
+                );
             case "product":
                 return (
-                    <>
-                        <div className="sales-by p-3">
-                            <SalesBy
-                                screenName={currentScreen}
-                                changeScreen={changeScreen}
-                                graphDetails={graphDetails}
-                                salesSummaryData={salesSummaryData}
-                            />
+                    <div className="sales-by p-3">
+                        {salesByScreenHeader}
+                        <div className="pb-3" style={{ width: "100%", height: "300px" }}>
+                            <PieGraph data={salesSummaryData?.productByGraphData} />
                         </div>
-                    </>
+                        <div className="sales-table-wrapper">
+                            <Table cols={salesSummaryData?.productByTableData.cols} rows={salesSummaryData?.productByTableData.rows} />
+                        </div>
+                    </div>
                 );
             case "":
             default:

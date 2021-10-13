@@ -32,4 +32,4 @@ export const getVerifoneTimeBasedTransactionId = () => {
     //If multi-merchant is not supported or required then ID ‘0’ should be used
 };
 
-export const tax = 15;
+export const taxRate = 15;

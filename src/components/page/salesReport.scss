@@ -129,13 +129,17 @@
                 text-align: center;
             }
 
+            tbody {
+                tr {
+                    &:nth-last-child(1) {
+                        border-bottom: none;
+                    }
+                }
+            }
+
             tr {
                 border-bottom: 1px solid #e0e0e0;
                 padding: 15px;
-
-                &:nth-last-child(1) {
-                    border-bottom: none;
-                }
             }
 
             th {
