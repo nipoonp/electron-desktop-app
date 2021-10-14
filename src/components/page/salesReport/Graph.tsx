@@ -16,9 +16,17 @@ export const LineGraph = (props: { graphData; xAxis: string; lines: string[] }) 
                 }}
             >
                 <XAxis dataKey={xAxis} />
-                <YAxis />
-                <Tooltip />
-                <Legend />
+                <YAxis
+                    tickFormatter={(tick) => {
+                        return `$${tick}`;
+                    }}
+                />
+                <Tooltip
+                    formatter={(value, name, props) => {
+                        return `$${value}`;
+                    }}
+                />
+                <Legend verticalAlign="top"/>
                 {lines.map((l, i) => (
                     <Line key={i} type="monotone" dataKey={l} stroke="#8884d8" />
                 ))}
