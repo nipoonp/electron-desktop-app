@@ -61,12 +61,6 @@ interface IMostSoldItems {
         totalAmount: number;
     };
 }
-
-interface ISalesTableData {
-    cols: string[];
-    rows: any[];
-}
-
 interface ISalesSummary {
     daysDifference: number;
     dailySales: IDailySales;
@@ -87,10 +81,6 @@ interface ISalesSummary {
     hourByGraphData: { hour: string; sales: number }[];
     categoryByGraphData: { name: string; value: number }[];
     productByGraphData: { name: string; value: number }[];
-    dayByTableData: ISalesTableData;
-    hourByTableData: ISalesTableData;
-    categoryByTableData: ISalesTableData;
-    productByTableData: ISalesTableData;
 }
 
 export const SalesReport = () => {
@@ -360,12 +350,6 @@ export const SalesReport = () => {
             }
         });
 
-        // Table Data
-        const dayByTableData = { cols: ["Date", "Orders", "Net", "Tax", "Total"], rows: [] as any };
-        const hourByTableData = { cols: ["Time", "Orders", "Net", "Tax", "Total"], rows: [] as any };
-        const categoryByTableData = { cols: ["Category", "Quantity", "Sale Amount", "% Of Sale"], rows: [] as any };
-        const productByTableData = { cols: ["Product", "Quantity", "Sale Amount", "% Of Sale"], rows: [] as any };
-
         // Graph Data
 
         const dayByGraphData: { date: string; sales: number }[] = [];
@@ -378,16 +362,6 @@ export const SalesReport = () => {
                 date: format(new Date(date), "dd MMM"),
                 sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
             });
-
-            const row = [
-                format(new Date(date), "E dd MMM"),
-                sale.totalQuantity,
-                `$${convertCentsToDollarsReturnFloat(sale.net)}`,
-                `$${convertCentsToDollarsReturnFloat(sale.tax)}`,
-                `$${convertCentsToDollarsReturnFloat(sale.totalAmount)}`,
-            ];
-
-            dayByTableData.rows.push(row);
         });
 
         Object.entries(hourlySales)
@@ -397,14 +371,6 @@ export const SalesReport = () => {
                     hour: hour,
                     sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
                 });
-                const row = [
-                    `${Number(hour) > 12 ? `${Number(hour) - 12} PM` : hour === "12" ? `${hour} PM` : `${hour} AM`}`,
-                    sale.totalQuantity,
-                    `$${convertCentsToDollarsReturnFloat(sale.net)}`,
-                    `$${convertCentsToDollarsReturnFloat(sale.tax)}`,
-                    `$${convertCentsToDollarsReturnFloat(sale.totalAmount)}`,
-                ];
-                hourByTableData.rows.push(row);
             });
 
         Object.entries(mostSoldCategories).forEach(([categoryId, category]) => {
@@ -412,13 +378,6 @@ export const SalesReport = () => {
                 name: category.item.name,
                 value: category.totalQuantity,
             });
-            const row = [
-                category.item.name,
-                category.totalQuantity,
-                `$${convertCentsToDollarsReturnFloat(category.totalAmount)}`,
-                `${((category.totalAmount * 100) / subTotalCompleted).toFixed(2)} %`,
-            ];
-            categoryByTableData.rows.push(row);
         });
 
         Object.entries(mostSoldProducts).forEach(([productId, product]) => {
@@ -426,13 +385,6 @@ export const SalesReport = () => {
                 name: product.item.name,
                 value: product.totalQuantity,
             });
-            const row = [
-                product.item.name,
-                product.totalQuantity,
-                `$${convertCentsToDollarsReturnFloat(product.totalAmount)}`,
-                `${((product.totalAmount * 100) / subTotalCompleted).toFixed(2)} %`,
-            ];
-            productByTableData.rows.push(row);
         });
 
         console.log("xxx...", {
@@ -471,10 +423,6 @@ export const SalesReport = () => {
             hourByGraphData,
             categoryByGraphData,
             productByGraphData,
-            dayByTableData,
-            hourByTableData,
-            categoryByTableData,
-            productByTableData,
         });
     };
 
@@ -683,7 +631,6 @@ export const SalesReport = () => {
                             </div>
                         )}
                         <div className="sales-table-wrapper">
-                            {/* <Table cols={salesSummaryData?.dayByTableData.cols} rows={salesSummaryData?.dayByTableData.rows} /> */}
                             <Table>
                                 <thead>
                                     <tr>
@@ -721,7 +668,43 @@ export const SalesReport = () => {
                             <LineGraph xAxis="hour" lines={["sales"]} graphData={salesSummaryData?.hourByGraphData} />
                         </div>
                         <div className="sales-table-wrapper">
-                            {/* <Table cols={salesSummaryData?.hourByTableData.cols} rows={salesSummaryData?.hourByTableData.rows} /> */}
+                            <Table>
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Orders</th>
+                                        <th>Net</th>
+                                        <th>Tax</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {salesSummaryData &&
+                                        Object.entries(salesSummaryData.hourlySales)
+                                            .sort((a, b) => a[0].localeCompare(b[0]))
+                                            .map(([hour, sale]) => (
+                                                <tr>
+                                                    <td>
+                                                        {" "}
+                                                        {`${
+                                                            Number(hour) > 12
+                                                                ? `${Number(hour) - 12} PM`
+                                                                : hour === "12"
+                                                                ? `${hour} PM`
+                                                                : `${hour} AM`
+                                                        }`}
+                                                    </td>
+                                                    <td> {sale.totalQuantity}</td>
+                                                    <td> {`$${convertCentsToDollarsReturnFloat(sale.net)}`}</td>
+                                                    <td> {`$${convertCentsToDollarsReturnFloat(sale.tax)}`}</td>
+                                                    <td> {`$${convertCentsToDollarsReturnFloat(sale.totalAmount)}`}</td>
+                                                </tr>
+                                            ))}
+                                    <tr>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </Table>
                         </div>
                     </div>
                 );
@@ -733,7 +716,30 @@ export const SalesReport = () => {
                             <PieGraph data={salesSummaryData?.categoryByGraphData} />
                         </div>
                         <div className="sales-table-wrapper">
-                            {/* <Table cols={salesSummaryData?.categoryByTableData.cols} rows={salesSummaryData?.categoryByTableData.rows} /> */}
+                            <Table>
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Quantity</th>
+                                        <th>Sale Amount</th>
+                                        <th>% Of Sale</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {salesSummaryData &&
+                                        Object.entries(salesSummaryData.mostSoldCategories).map(([categoryId, category]) => (
+                                            <tr>
+                                                <td> {category.item.name}</td>
+                                                <td> {category.totalQuantity}</td>
+                                                <td> {`$${convertCentsToDollarsReturnFloat(category.totalAmount)}`}</td>
+                                                <td> {`${((category.totalAmount * 100) / salesSummaryData.subTotalCompleted).toFixed(2)} %`}</td>
+                                            </tr>
+                                        ))}
+                                    <tr>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </Table>
                         </div>
                     </div>
                 );
@@ -745,7 +751,30 @@ export const SalesReport = () => {
                             <PieGraph data={salesSummaryData?.productByGraphData} />
                         </div>
                         <div className="sales-table-wrapper">
-                            {/* <Table cols={salesSummaryData?.productByTableData.cols} rows={salesSummaryData?.productByTableData.rows} /> */}
+                        <Table>
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Quantity</th>
+                                        <th>Sale Amount</th>
+                                        <th>% Of Sale</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {salesSummaryData &&
+                                        Object.entries(salesSummaryData.mostSoldProducts).map(([productId, product]) => (
+                                            <tr>
+                                                <td> {product.item.name}</td>
+                                                <td> {product.totalQuantity}</td>
+                                                <td> {`$${convertCentsToDollarsReturnFloat(product.totalAmount)}`}</td>
+                                                <td> {`${((product.totalAmount * 100) / salesSummaryData.subTotalCompleted).toFixed(2)} %`}</td>
+                                            </tr>
+                                        ))}
+                                    <tr>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </Table>
                         </div>
                     </div>
                 );
