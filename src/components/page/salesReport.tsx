@@ -1,7 +1,9 @@
 import "./salesReport.scss";
+import "react-clock/dist/Clock.css";
 
-import { addDays, differenceInDays, format, subDays } from "date-fns";
+import { addDays, differenceInDays, format, subDays, add } from "date-fns";
 import { useEffect, useState } from "react";
+import Clock from "react-clock";
 
 import { useRestaurant } from "../../context/restaurant-context";
 import {
@@ -12,7 +14,7 @@ import {
 import { EOrderStatus } from "../../graphql/customQueries";
 import { useGetRestaurantOrdersByBetweenPlacedAt } from "../../hooks/useGetRestaurantOrdersByBetweenPlacedAt";
 import { SalesReportScreen } from "../../model/model";
-import { taxRate } from "../../model/util";
+import { get12HourFormat, taxRate } from "../../model/util";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { Card } from "../../tabin/components/card";
@@ -460,8 +462,16 @@ export const SalesReport = () => {
         return (
             <div className="card" style={{ textAlign: "center" }}>
                 <div className="text-uppercase">Best Hour</div>
-                {/* <Clock/> */}
-                <div className="h4">{bestHour.hour}</div>
+                <div className="besthour-clock-wrapper m-2">
+                    <Clock className="besthour-clock"
+                        value={add(new Date().setHours(0,0,0,0), {hours: Number(bestHour.hour)})}
+                        renderSecondHand={false}
+                        renderMinuteMarks={false}
+                    />
+                </div>
+                <div className="h4">
+                    {get12HourFormat(Number(bestHour.hour))}
+                </div>
                 <div>
                     <span className="h4">{`$${convertCentsToDollars(bestHour.totalAmount)}`}</span> total sales
                 </div>
@@ -688,13 +698,7 @@ export const SalesReport = () => {
                                                 <tr>
                                                     <td>
                                                         {" "}
-                                                        {`${
-                                                            Number(hour) > 12
-                                                                ? `${Number(hour) - 12} PM`
-                                                                : hour === "12"
-                                                                ? `${hour} PM`
-                                                                : `${hour} AM`
-                                                        }`}
+                                                        {get12HourFormat(Number(hour))}
                                                     </td>
                                                     <td> {sale.totalQuantity}</td>
                                                     <td> {`$${convertCentsToDollarsReturnFloat(sale.net)}`}</td>

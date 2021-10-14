@@ -161,3 +161,17 @@
         }
     }
 }
+
+.besthour-clock-wrapper {
+    display: flex;
+    justify-content: center;
+
+    .react-clock__face {
+        border: 1px solid var(--primary-color);
+    }
+
+    .react-clock__hand__body,
+    .react-clock__mark__body {
+        background-color: var(--primary-color);
+    }
+}

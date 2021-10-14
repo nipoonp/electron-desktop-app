@@ -33,3 +33,7 @@ export const getVerifoneTimeBasedTransactionId = () => {
 };
 
 export const taxRate = 15;
+
+export const get12HourFormat = (hour: number): string => {
+    return `${hour > 12 ? `${hour - 12} PM` : hour === 12 ? `${hour} PM` : `${hour} AM`}`;
+};
