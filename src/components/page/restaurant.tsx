@@ -384,7 +384,7 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
                         url={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.png`}
                         alt="shopping-bag-icon"
                     />
-                    <div className="h4 total">Total: ${convertCentsToDollars(subTotal)}</div>
+                    <div className="h2">Total: ${convertCentsToDollars(subTotal)}</div>
                 </div>
                 <Button className="large" disabled={!products || products.length == 0} onClick={onClickCart}>
                     View My Order

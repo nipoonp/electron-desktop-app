@@ -12,6 +12,7 @@ import "./searchProductModal.scss";
 import { Input } from "../../tabin/components/input";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { useCart } from "../../context/cart-context";
+import { FiX } from "react-icons/fi";
 
 interface IFilteredProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -142,9 +143,7 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
         <>
             <div className="content">
                 <div className="close-button-wrapper">
-                    <Button className="close-button" onClick={onModalClose}>
-                        Close
-                    </Button>
+                    <FiX className="close-button" size={36} onClick={onModalClose} />
                 </div>
                 <div className="h1 mb-6">What do you feel like eating today?</div>
                 <Input className="product-search-field mb-6" name="name" type="text" placeholder="Search..." onChange={onChange} />

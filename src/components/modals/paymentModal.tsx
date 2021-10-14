@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { FiX } from "react-icons/fi";
 import { useCart } from "../../context/cart-context";
 import { EEftposTransactionOutcome, EPaymentModalState, ICartAmountPaid, IEftposTransactionOutcome } from "../../model/model";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { Button } from "../../tabin/components/button";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { Input } from "../../tabin/components/input";
+import { Link } from "../../tabin/components/link";
 import { Modal } from "../../tabin/components/modal";
 import { convertCentsToDollars, convertDollarsToCents } from "../../util/util";
 
@@ -124,7 +126,6 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     amount={amount}
                     amountError={amountError}
                     onChangeAmount={onChangeAmount}
-                    amountPaid={amountPaid}
                     onClickCash={onClickCash}
                     onClickEftpos={onClickEftpos}
                     onClose={onClose}
@@ -145,7 +146,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
 const AwaitingCard = () => {
     return (
         <>
-            <div className="h4 mb-6 awaiting-card-text">Swipe or insert your card on the terminal to complete your payment.</div>
+            <div className="h2 mb-6 awaiting-card-text">Swipe or insert your card on the terminal to complete your payment.</div>
             <CachedImage className="awaiting-card-image" url={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} alt="awaiting-card-gif" />
         </>
     );
@@ -219,7 +220,7 @@ const PaymentPayLater = (props: { paymentOutcomeOrderNumber: string | null; paym
 
     return (
         <>
-            <div className="h4 mb-4">All Done!</div>
+            <div className="h3 mb-4">All Done!</div>
             <div className="h2 mb-6">Please pay later at the counter.</div>
             <div className="mb-1">Your order number is</div>
             <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
@@ -242,7 +243,7 @@ const PaymentCashPayment = (props: {
 
     return (
         <>
-            <div className="h4 mb-4">All Done!</div>
+            <div className="h3 mb-4">All Done!</div>
             <div className="h2 mb-6">Please give correct change.</div>
             <div className="h1 mb-6">Change: ${convertCentsToDollars(cashTransactionChangeAmount || 0)}</div>
             <div className="mb-1">Your order number is</div>
@@ -261,57 +262,92 @@ const POSPaymentScreen = (props: {
     amount: string;
     amountError: string;
     onChangeAmount: (event: React.ChangeEvent<HTMLInputElement>) => void;
-    amountPaid: ICartAmountPaid;
     onClickCash: (amount: string) => void;
     onClickEftpos: (amount: string) => void;
     onClose: () => void;
 }) => {
-    const { amount, amountError, amountPaid, onChangeAmount, onClickCash, onClickEftpos, onClose } = props;
+    const { amount, amountError, onChangeAmount, onClickCash, onClickEftpos, onClose } = props;
+    const { payments, setPayments, amountPaid, setAmountPaid } = useCart();
+
+    const onRemoveCashTransaction = (index: number) => {
+        const payment = payments[index];
+        const newPayments = [...payments];
+        const newAmountPaid = amountPaid.cash - payment.amount;
+
+        newPayments.splice(index, 1);
+
+        setPayments(newPayments);
+        setAmountPaid({ ...amountPaid, cash: newAmountPaid });
+    };
 
     return (
         <>
-            <div className="mb-6" style={{ display: "flex", fontSize: "24px" }}>
-                <div>Amount To Pay</div>
+            <div className="payment-modal-close-button-wrapper">
+                <FiX className="payment-modal-close-button" size={36} onClick={onClose} />
+            </div>
+            <div className="payment-modal-amount-input-wrapper mb-8">
+                <div className="h2">Enter Amount To Pay</div>
                 <div>
                     <Input
-                        className="ml-4"
+                        className="payment-modal-amount-input ml-10 mb-1"
                         type="number"
-                        name="AmountToPay"
+                        name="amountToPay"
                         value={amount}
                         placeholder="9.99"
                         onChange={onChangeAmount}
                         error={amountError}
                     />
+                    <div className="payment-modal-partial-payment-label ml-10 text-left">Edit to make a partial payment</div>
                 </div>
             </div>
 
-            <div className="h4 mb-2">Paid So Far</div>
-            <div className="mb-2">Cash: ${convertCentsToDollars(amountPaid.cash)}</div>
-            <div className="mb-2">Eftpos: ${convertCentsToDollars(amountPaid.eftpos)}</div>
-
-            <div className="mb-6" style={{ display: "flex" }}>
-                <Button className="large" onClick={() => onClickCash(amount)}>
+            <div className="h3 mb-4">Payment Methods</div>
+            <div className="payment-modal-payment-button-wrapper mb-8">
+                <Button className="large payment-modal-cash-button" onClick={() => onClickCash(amount)}>
                     Cash
                 </Button>
-                <Button className="large ml-4" onClick={() => onClickEftpos(amount)}>
+                <Button className="large payment-modal-eftpos-button ml-2" onClick={() => onClickEftpos(amount)}>
                     Eftpos
                 </Button>
             </div>
 
-            <div className="mb-2">Quick Cash Options</div>
-            <div className="mb-4" style={{ display: "flex" }}>
-                <Button onClick={() => onClickCash("5.00")}>$5</Button>
-                <Button className="ml-4" onClick={() => onClickCash("10.00")}>
+            <div className="h3 mb-4">Quick Cash Options</div>
+            <div className="payment-modal-quick-cash-button-wrapper mb-8">
+                <div className="payment-modal-quick-cash-button" onClick={() => onClickCash("5.00")}>
+                    $5
+                </div>
+                <div className="payment-modal-quick-cash-button ml-4" onClick={() => onClickCash("10.00")}>
                     $10
-                </Button>
-                <Button className="ml-4" onClick={() => onClickCash("20.00")}>
+                </div>
+                <div className="payment-modal-quick-cash-button ml-4" onClick={() => onClickCash("20.00")}>
                     $20
-                </Button>
-                <Button className="ml-4" onClick={() => onClickCash("50.00")}>
+                </div>
+                <div className="payment-modal-quick-cash-button ml-4" onClick={() => onClickCash("50.00")}>
                     $50
-                </Button>
+                </div>
+                <div className="payment-modal-quick-cash-button ml-4" onClick={() => onClickCash("50.00")}>
+                    $100
+                </div>
             </div>
-            <div onClick={onClose}>Cancel</div>
+
+            {payments && payments.length > 0 && (
+                <>
+                    <div className="h3 mb-4">Paid So Far</div>
+                    {payments.map((payment, index) => (
+                        <>
+                            {payment.type === "CASH" ? (
+                                <div className="payment-modal-paid-amount mb-2">
+                                    Cash: ${convertCentsToDollars(payment.amount)}{" "}
+                                    <Link onClick={() => onRemoveCashTransaction(index)}>(Remove)</Link>
+                                </div>
+                            ) : (
+                                //For all Eftpos types Verifone, Smartpay, Windcave
+                                <div className="mb-2">Eftpos: ${convertCentsToDollars(payment.amount)}</div>
+                            )}
+                        </>
+                    ))}
+                </>
+            )}
         </>
     );
 };
