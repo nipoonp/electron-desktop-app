@@ -1,32 +1,13 @@
-export const Table = (props: ITable) => {
-    const { cols, rows, className } = props;
-    return (
-        <table className={className}>
-            <thead>
-                <tr key="0">
-                    { cols && cols.map((c, index) => (
-                        <th key={index}>{c}</th>
-                    ))}
-                </tr>
-            </thead>
-            <tbody>
-                { rows && rows.map((row, i) => {
-                    return (
-                        <tr key={i}>
-                            {row.map((r, index) => (
-                                <td key={index}>{r}</td>
-                            ))}
-                        </tr>
-                    );
-                })}
-            </tbody>
-        </table>
-    );
+import React from "react";
+import "./table.scss";
+
+export const Table = (props: IProps) => {
+    return <table className={`${props.className}`}>{props.children}</table>;
 };
 
-interface ITable {
-    cols: string[] | undefined;
-    rows: any[] | undefined;
+interface IProps {
+    children: React.ReactNode;
     className?: string;
-    children?: React.ReactNode;
 }
+
+// export default React.forwardRef(Button);

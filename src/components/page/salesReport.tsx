@@ -18,9 +18,9 @@ import { CachedImage } from "../../tabin/components/cachedImage";
 import { Card } from "../../tabin/components/card";
 import { DateRangePicker } from "../../tabin/components/dateRangePicker";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { Table } from "../../tabin/components/table";
 import { convertCentsToDollars, convertCentsToDollarsReturnFloat } from "../../util/util";
 import { LineGraph, PieGraph } from "./salesReport/Graph";
+import { Table } from "../../tabin/components/table";
 
 interface ITopSoldItem {
     item: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT | null;
@@ -378,6 +378,7 @@ export const SalesReport = () => {
                 date: format(new Date(date), "dd MMM"),
                 sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
             });
+
             const row = [
                 format(new Date(date), "E dd MMM"),
                 sale.totalQuantity,
@@ -385,6 +386,7 @@ export const SalesReport = () => {
                 `$${convertCentsToDollarsReturnFloat(sale.tax)}`,
                 `$${convertCentsToDollarsReturnFloat(sale.totalAmount)}`,
             ];
+
             dayByTableData.rows.push(row);
         });
 
@@ -681,7 +683,33 @@ export const SalesReport = () => {
                             </div>
                         )}
                         <div className="sales-table-wrapper">
-                            <Table cols={salesSummaryData?.dayByTableData.cols} rows={salesSummaryData?.dayByTableData.rows} />
+                            {/* <Table cols={salesSummaryData?.dayByTableData.cols} rows={salesSummaryData?.dayByTableData.rows} /> */}
+                            <Table>
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Orders</th>
+                                        <th>Net</th>
+                                        <th>Tax</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {salesSummaryData &&
+                                        Object.entries(salesSummaryData.dailySales).map(([date, sale]) => (
+                                            <tr>
+                                                <td> {format(new Date(date), "E dd MMM")}</td>
+                                                <td> {sale.totalQuantity}</td>
+                                                <td> {`$${convertCentsToDollarsReturnFloat(sale.net)}`}</td>
+                                                <td> {`$${convertCentsToDollarsReturnFloat(sale.tax)}`}</td>
+                                                <td> {`$${convertCentsToDollarsReturnFloat(sale.totalAmount)}`}</td>
+                                            </tr>
+                                        ))}
+                                    <tr>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </Table>
                         </div>
                     </div>
                 );
@@ -693,7 +721,7 @@ export const SalesReport = () => {
                             <LineGraph xAxis="hour" lines={["sales"]} graphData={salesSummaryData?.hourByGraphData} />
                         </div>
                         <div className="sales-table-wrapper">
-                            <Table cols={salesSummaryData?.hourByTableData.cols} rows={salesSummaryData?.hourByTableData.rows} />
+                            {/* <Table cols={salesSummaryData?.hourByTableData.cols} rows={salesSummaryData?.hourByTableData.rows} /> */}
                         </div>
                     </div>
                 );
@@ -705,7 +733,7 @@ export const SalesReport = () => {
                             <PieGraph data={salesSummaryData?.categoryByGraphData} />
                         </div>
                         <div className="sales-table-wrapper">
-                            <Table cols={salesSummaryData?.categoryByTableData.cols} rows={salesSummaryData?.categoryByTableData.rows} />
+                            {/* <Table cols={salesSummaryData?.categoryByTableData.cols} rows={salesSummaryData?.categoryByTableData.rows} /> */}
                         </div>
                     </div>
                 );
@@ -717,7 +745,7 @@ export const SalesReport = () => {
                             <PieGraph data={salesSummaryData?.productByGraphData} />
                         </div>
                         <div className="sales-table-wrapper">
-                            <Table cols={salesSummaryData?.productByTableData.cols} rows={salesSummaryData?.productByTableData.rows} />
+                            {/* <Table cols={salesSummaryData?.productByTableData.cols} rows={salesSummaryData?.productByTableData.rows} /> */}
                         </div>
                     </div>
                 );
