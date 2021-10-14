@@ -525,7 +525,7 @@ export const Checkout = () => {
                 const newTotalAmountPaid = newEftposAmountPaid + amountPaid.cash;
 
                 setAmountPaid({ ...amountPaid, eftpos: newEftposAmountPaid });
-                setPayments([...payments, { type: "EFTPOS", amount: amount }]);
+                setPayments([...payments, { type: register.eftposProvider, amount: amount }]);
 
                 if (newTotalAmountPaid >= subTotal) {
                     beginPaymentOutcomeApprovedTimeout();

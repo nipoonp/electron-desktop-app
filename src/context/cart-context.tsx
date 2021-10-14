@@ -462,10 +462,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setCartCategoryQuantitiesById(initialCartCategoryQuantitiesById);
         _setCartProductQuantitiesById(initialCartProductQuantitiesById);
         _setCartModifierQuantitiesById(initialCartModifierQuantitiesById);
+        _setUserAppliedPromotionCode(initialUserAppliedPromotionCode);
         _setPromotion(initialPromotion);
         _setTotal(initialTotal);
         _setAmountPaid(initialAmountPaid);
         _setSubTotal(initialSubTotal);
+        _setPayments(initialPayments);
         _setTransactionEftposReceipts(initialTransactionEftposReceipts);
     };
 

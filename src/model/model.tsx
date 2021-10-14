@@ -149,7 +149,7 @@ export interface ICartAmountPaid {
 }
 
 export interface ICartPayment {
-    type: "EFTPOS" | "CASH";
+    type: string;
     amount: number;
 }
 

@@ -30,7 +30,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
     const { subTotal, amountPaid } = useCart();
     const {
         isOpen,
-        // onClose,
+        onClose,
         paymentModalState,
         paymentOutcomeOrderNumber,
         paymentOutcomeApprovedRedirectTimeLeft,
@@ -127,6 +127,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     amountPaid={amountPaid}
                     onClickCash={onClickCash}
                     onClickEftpos={onClickEftpos}
+                    onClose={onClose}
                 />
             );
         }
@@ -263,8 +264,9 @@ const POSPaymentScreen = (props: {
     amountPaid: ICartAmountPaid;
     onClickCash: (amount: string) => void;
     onClickEftpos: (amount: string) => void;
+    onClose: () => void;
 }) => {
-    const { amount, amountError, amountPaid, onChangeAmount, onClickCash, onClickEftpos } = props;
+    const { amount, amountError, amountPaid, onChangeAmount, onClickCash, onClickEftpos, onClose } = props;
 
     return (
         <>
@@ -309,6 +311,7 @@ const POSPaymentScreen = (props: {
                     $50
                 </Button>
             </div>
+            <div onClick={onClose}>Cancel</div>
         </>
     );
 };
