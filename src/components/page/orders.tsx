@@ -262,7 +262,7 @@ const Order = (props: {
             {order.products.map((product) => (
                 <div key={product.id}>
                     <div className="separator-2"></div>
-                    <OrderItemDetails name={product.name} notes={product.notes} modifierGroups={product.modifierGroups} />
+                    <OrderItemDetails name={product.name} quantity={product.quantity} notes={product.notes} modifierGroups={product.modifierGroups} />
                 </div>
             ))}
 
@@ -280,7 +280,12 @@ const Order = (props: {
     );
 };
 
-const OrderItemDetails = (props: { name: string; notes: string | null; modifierGroups: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] | null }) => {
+const OrderItemDetails = (props: {
+    name: string;
+    quantity: number;
+    notes: string | null;
+    modifierGroups: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] | null;
+}) => {
     const modifierString = (preSelectedQuantity: number, quantity: number, name: string, price: number) => {
         const changedQuantity = quantity - preSelectedQuantity;
         let mStr = "";
@@ -298,7 +303,7 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
         return mStr;
     };
 
-    const nameDisplay = <div className="h4">{props.name}</div>;
+    const nameDisplay = <div className="h4">{`${props.quantity > 1 ? `${props.quantity} x ` : ""}${props.name}`}</div>;
 
     const modifiersDisplay = (
         <>
