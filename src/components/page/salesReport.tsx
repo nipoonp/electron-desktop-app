@@ -100,6 +100,8 @@ export const SalesReport = () => {
         endDate || ""
     );
 
+    const graphColor = getComputedStyle(document.documentElement).getPropertyValue("--primary-color");
+
     useEffect(() => {
         processSalesData(orders);
     }, [orders]);
@@ -489,7 +491,7 @@ export const SalesReport = () => {
                     <div className="item item1">
                         <Card title="Sales By Day" onOpen={() => changeScreen(SalesReportScreen.DAY)}>
                             <div style={{ width: "100%", height: "300px" }}>
-                                <LineGraph xAxis="date" lines={["sales"]} graphData={dayByGraphData} />
+                                <LineGraph xAxis="date" lines={["sales"]} graphData={dayByGraphData} fill={graphColor} />
                             </div>
                         </Card>
                     </div>
@@ -516,7 +518,7 @@ export const SalesReport = () => {
                     <div className="item item3">
                         <Card title="Sales By Hour" onOpen={() => changeScreen(SalesReportScreen.HOUR)}>
                             <div style={{ width: "100%", height: "250px" }}>
-                                <LineGraph xAxis="hour" lines={["sales"]} graphData={hourByGraphData} />
+                                <LineGraph xAxis="hour" lines={["sales"]} graphData={hourByGraphData} fill={graphColor} />
                             </div>
                         </Card>
                     </div>
@@ -604,7 +606,7 @@ export const SalesReport = () => {
                     <div className="sales-by p-3">
                         {salesByScreenHeader}
                         <div className="pb-3" style={{ width: "100%", height: "300px" }}>
-                            <LineGraph xAxis="date" lines={["sales"]} graphData={salesSummaryData?.dayByGraphData} />
+                            <LineGraph xAxis="date" lines={["sales"]} graphData={salesSummaryData?.dayByGraphData} fill={graphColor} />
                         </div>
                         {salesSummaryData && (
                             <div className="sales-reading-wrapper">
@@ -665,7 +667,7 @@ export const SalesReport = () => {
                     <div className="sales-by p-3">
                         {salesByScreenHeader}
                         <div className="pb-3" style={{ width: "100%", height: "300px" }}>
-                            <LineGraph xAxis="hour" lines={["sales"]} graphData={salesSummaryData?.hourByGraphData} />
+                            <LineGraph xAxis="hour" lines={["sales"]} graphData={salesSummaryData?.hourByGraphData} fill={graphColor} />
                         </div>
                         <div className="sales-table-wrapper">
                             <Table>
@@ -713,7 +715,7 @@ export const SalesReport = () => {
                     <div className="sales-by p-3">
                         {salesByScreenHeader}
                         <div className="pb-3" style={{ width: "100%", height: "300px" }}>
-                            <PieGraph data={salesSummaryData?.categoryByGraphData} />
+                            <PieGraph data={salesSummaryData?.categoryByGraphData} fill={graphColor} />
                         </div>
                         <div className="sales-table-wrapper">
                             <Table>
@@ -748,10 +750,10 @@ export const SalesReport = () => {
                     <div className="sales-by p-3">
                         {salesByScreenHeader}
                         <div className="pb-3" style={{ width: "100%", height: "300px" }}>
-                            <PieGraph data={salesSummaryData?.productByGraphData} />
+                            <PieGraph data={salesSummaryData?.productByGraphData} fill={graphColor} />
                         </div>
                         <div className="sales-table-wrapper">
-                        <Table>
+                            <Table>
                                 <thead>
                                     <tr>
                                         <th>Product</th>

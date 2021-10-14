@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Sector, Tooltip, XAxis, YAxis } from "recharts";
 
-export const LineGraph = (props: { graphData; xAxis: string; lines: string[] }) => {
-    const { graphData, xAxis, lines } = props;
+export const LineGraph = (props: { graphData; xAxis: string; lines: string[]; fill: string }) => {
+    const { graphData, xAxis, lines, fill } = props;
 
     return (
         <ResponsiveContainer width="99%">
@@ -26,9 +26,9 @@ export const LineGraph = (props: { graphData; xAxis: string; lines: string[] }) 
                         return `$${value}`;
                     }}
                 />
-                <Legend verticalAlign="top"/>
+                <Legend verticalAlign="top" />
                 {lines.map((l, i) => (
-                    <Line key={i} type="monotone" dataKey={l} stroke="#8884d8" />
+                    <Line key={i} type="monotone" dataKey={l} stroke={fill} />
                 ))}
             </LineChart>
         </ResponsiveContainer>
@@ -76,8 +76,8 @@ const renderActiveShape = (props) => {
     );
 };
 
-export const PieGraph = (props) => {
-    const { data } = props;
+export const PieGraph = (props: {data, fill: string}) => {
+    const { data, fill } = props;
     const [activeIndex, setActiveIndex] = useState(0);
     const onPieEnter = (_, index) => {
         setActiveIndex(index);
@@ -94,7 +94,7 @@ export const PieGraph = (props) => {
                     cy="50%"
                     innerRadius={60}
                     outerRadius={80}
-                    fill="#8884d8"
+                    fill={fill}
                     dataKey="value"
                     onMouseEnter={onPieEnter}
                 />
