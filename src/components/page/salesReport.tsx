@@ -250,7 +250,14 @@ export const SalesReport = () => {
 
                         if (mostSoldCategories[product.category.id]) {
                             const newTotalQuantity = mostSoldCategories[product.category.id].totalQuantity + product.quantity;
-                            const newTotalAmount = mostSoldCategories[product.category.id].totalAmount + product.price * product.quantity;
+                            let newTotalAmount = mostSoldCategories[product.category.id].totalAmount + product.price * product.quantity;
+
+                            product.modifierGroups &&
+                                product.modifierGroups.forEach((modifierGroup) => {
+                                    modifierGroup.modifiers.forEach((modifier) => {
+                                        newTotalAmount += product.quantity * modifier.price * modifier.quantity;
+                                    });
+                                });
 
                             mostSoldCategories[product.category.id] = {
                                 item: product.category,
@@ -267,7 +274,14 @@ export const SalesReport = () => {
                             }
                         } else {
                             const totalQuantity = product.quantity;
-                            const totalAmount = product.price * product.quantity;
+                            let totalAmount = product.price * product.quantity;
+
+                            product.modifierGroups &&
+                                product.modifierGroups.forEach((modifierGroup) => {
+                                    modifierGroup.modifiers.forEach((modifier) => {
+                                        totalAmount += product.quantity * modifier.price * modifier.quantity;
+                                    });
+                                });
 
                             mostSoldCategories[product.category.id] = {
                                 item: product.category,
@@ -290,12 +304,19 @@ export const SalesReport = () => {
 
                 //MOST POPULAR PRODUCT //////////////////////////////////
                 order.products &&
-                    order.products.forEach((product) => {
+                    order.products.forEach((product, index) => {
                         numberOfProductsSold = numberOfProductsSold + product.quantity;
 
                         if (mostSoldProducts[product.id]) {
                             const newTotalQuantity = mostSoldProducts[product.id].totalQuantity + product.quantity;
-                            const newTotalAmount = mostSoldProducts[product.id].totalAmount + product.price * product.quantity;
+                            let newTotalAmount = mostSoldProducts[product.id].totalAmount + product.price * product.quantity;
+
+                            product.modifierGroups &&
+                                product.modifierGroups.forEach((modifierGroup) => {
+                                    modifierGroup.modifiers.forEach((modifier) => {
+                                        newTotalAmount += product.quantity * modifier.price * modifier.quantity;
+                                    });
+                                });
 
                             mostSoldProducts[product.id] = {
                                 item: product,
@@ -312,7 +333,14 @@ export const SalesReport = () => {
                             }
                         } else {
                             const totalQuantity = product.quantity;
-                            const totalAmount = product.price * product.quantity;
+                            let totalAmount = product.price * product.quantity;
+
+                            product.modifierGroups &&
+                                product.modifierGroups.forEach((modifierGroup) => {
+                                    modifierGroup.modifiers.forEach((modifier) => {
+                                        totalAmount += product.quantity * modifier.price * modifier.quantity;
+                                    });
+                                });
 
                             mostSoldProducts[product.id] = {
                                 item: product,
