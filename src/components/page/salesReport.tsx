@@ -107,7 +107,7 @@ export const SalesReport = () => {
 
     useEffect(() => {
         processSalesData(orders);
-    }, [orders]);
+    }, [orders, startDate, endDate]);
 
     const processSalesData = (orders: IGET_RESTAURANT_ORDER_FRAGMENT[] | null) => {
         if (!startDate || !endDate) return;
@@ -373,7 +373,7 @@ export const SalesReport = () => {
             .sort((a, b) => a[0].localeCompare(b[0]))
             .forEach(([hour, sale]) => {
                 hourByGraphData.push({
-                    hour: hour,
+                    hour: get12HourFormat(Number(hour)),
                     sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
                 });
             });
@@ -390,22 +390,6 @@ export const SalesReport = () => {
                 name: product.item.name,
                 value: product.totalQuantity,
             });
-        });
-
-        console.log("xxx...", {
-            daysDifference,
-            dailySales,
-            subTotalNew,
-            totalNumberOfOrdersNew,
-            subTotalCancelled,
-            totalNumberOfOrdersCancelled,
-            subTotalCompleted,
-            totalNumberOfOrdersCompleted,
-            hourlySales,
-            bestHour,
-            mostSoldCategories,
-            mostSoldProducts,
-            totalSoldItems,
         });
 
         setSalesSummaryData({
@@ -430,8 +414,6 @@ export const SalesReport = () => {
             productByGraphData,
         });
     };
-
-    console.log("s:", salesSummaryData);
 
     const onDatesChange = async (startD: string | null, endD: string | null) => {
         setStartDate(startD);
@@ -655,8 +637,8 @@ export const SalesReport = () => {
                                 </thead>
                                 <tbody>
                                     {salesSummaryData &&
-                                        Object.entries(salesSummaryData.dailySales).map(([date, sale]) => (
-                                            <tr>
+                                        Object.entries(salesSummaryData.dailySales).map(([date, sale], index) => (
+                                            <tr key={index}>
                                                 <td> {format(new Date(date), "E dd MMM")}</td>
                                                 <td> {sale.totalQuantity}</td>
                                                 <td> {`$${convertCentsToDollarsReturnFloat(sale.net)}`}</td>
@@ -694,8 +676,8 @@ export const SalesReport = () => {
                                     {salesSummaryData &&
                                         Object.entries(salesSummaryData.hourlySales)
                                             .sort((a, b) => a[0].localeCompare(b[0]))
-                                            .map(([hour, sale]) => (
-                                                <tr>
+                                            .map(([hour, sale], index) => (
+                                                <tr key={index}>
                                                     <td> {get12HourFormat(Number(hour))}</td>
                                                     <td> {sale.totalQuantity}</td>
                                                     <td> {`$${convertCentsToDollarsReturnFloat(sale.net)}`}</td>
@@ -731,7 +713,7 @@ export const SalesReport = () => {
                                 <tbody>
                                     {salesSummaryData &&
                                         Object.entries(salesSummaryData.mostSoldCategories).map(([categoryId, category]) => (
-                                            <tr>
+                                            <tr key={categoryId}>
                                                 <td> {category.item.name}</td>
                                                 <td> {category.totalQuantity}</td>
                                                 <td> {`$${convertCentsToDollarsReturnFloat(category.totalAmount)}`}</td>
@@ -766,7 +748,7 @@ export const SalesReport = () => {
                                 <tbody>
                                     {salesSummaryData &&
                                         Object.entries(salesSummaryData.mostSoldProducts).map(([productId, product]) => (
-                                            <tr>
+                                            <tr key={productId}>
                                                 <td> {product.item.name}</td>
                                                 <td> {product.totalQuantity}</td>
                                                 <td> {`$${convertCentsToDollarsReturnFloat(product.totalAmount)}`}</td>
