@@ -27,6 +27,7 @@ import { Logout } from "./page/auth/logout";
 import { Stock } from "./page/stock";
 import { Reports } from "./page/reports";
 import { Orders } from "./page/orders";
+import { AlertContainer } from "../tabin/components/alert";
 
 let electron: any;
 let ipcRenderer: any;
@@ -69,7 +70,8 @@ export default () => {
             <Router history={history}>
                 <Routes />
             </Router>
-            <ToastContainer />
+            {/* <ToastContainer /> */}
+            <AlertContainer />
         </>
     );
 };

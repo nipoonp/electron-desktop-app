@@ -12,6 +12,12 @@ import { convertCentsToDollars, convertDollarsToCents } from "../../util/util";
 
 import "./paymentModal.scss";
 
+const AMOUNT_5 = "5.00";
+const AMOUNT_10 = "10.00";
+const AMOUNT_20 = "20.00";
+const AMOUNT_50 = "50.00";
+const AMOUNT_100 = "100.00";
+
 interface IPaymentModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -313,19 +319,19 @@ const POSPaymentScreen = (props: {
 
             <div className="h3 mb-4">Quick Cash Options</div>
             <div className="payment-modal-quick-cash-button-wrapper mb-8">
-                <div className="payment-modal-quick-cash-button" onClick={() => onClickCash("5.00")}>
+                <div className="payment-modal-quick-cash-button" onClick={() => onClickCash(AMOUNT_5)}>
                     $5
                 </div>
-                <div className="payment-modal-quick-cash-button ml-4" onClick={() => onClickCash("10.00")}>
+                <div className="payment-modal-quick-cash-button ml-4" onClick={() => onClickCash(AMOUNT_10)}>
                     $10
                 </div>
-                <div className="payment-modal-quick-cash-button ml-4" onClick={() => onClickCash("20.00")}>
+                <div className="payment-modal-quick-cash-button ml-4" onClick={() => onClickCash(AMOUNT_20)}>
                     $20
                 </div>
-                <div className="payment-modal-quick-cash-button ml-4" onClick={() => onClickCash("50.00")}>
+                <div className="payment-modal-quick-cash-button ml-4" onClick={() => onClickCash(AMOUNT_50)}>
                     $50
                 </div>
-                <div className="payment-modal-quick-cash-button ml-4" onClick={() => onClickCash("50.00")}>
+                <div className="payment-modal-quick-cash-button ml-4" onClick={() => onClickCash(AMOUNT_100)}>
                     $100
                 </div>
             </div>

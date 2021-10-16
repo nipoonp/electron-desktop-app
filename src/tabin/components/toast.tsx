@@ -4,7 +4,7 @@ import { CheckIcon } from "./icons/checkIcon";
 import { TimesCircleIcon } from "./icons/timesCircleIcon";
 import { CloseThickIcon } from "./icons/closeThickIcon";
 
-const styles = require("./toast.module.css");
+import "./toast.scss";
 
 export const ToastContainer = () => {
     return (
@@ -30,13 +30,13 @@ export const toast = {
     success(message: string) {
         return _toast(<CustomToast message={message} type="success" />, {
             closeButton: false,
-            className: styles.toast,
+            className: "toast",
         });
     },
     error(message: string) {
         return _toast(<CustomToast message={message} type="error" />, {
             closeButton: false,
-            className: styles.toast,
+            className: "toast",
         });
     },
 };

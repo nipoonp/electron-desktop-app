@@ -45,6 +45,7 @@ import { PromotionCodeModal } from "../modals/promotionCodeModal";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
 import { OrderSummary } from "./checkout/orderSummary";
 import { PaymentModal } from "../modals/paymentModal";
+import { alert } from "../../tabin/components/alert";
 
 const logger = new Logger("checkout");
 
@@ -115,6 +116,8 @@ export const Checkout = () => {
     const [showUpSellCategoryModal, setShowUpSellCategoryModal] = useState(false);
     const [showUpSellProductModal, setShowUpSellProductModal] = useState(false);
 
+    const paidSoFar = amountPaid.cash + amountPaid.eftpos;
+
     // const isUserFocusedOnEmailAddressInput = useRef(false);
 
     const { register } = useRegister();
@@ -138,8 +141,23 @@ export const Checkout = () => {
     }
 
     const onCancelOrder = () => {
-        clearCart();
-        history.push(beginOrderPath);
+        const cancelOrder = () => {
+            clearCart();
+            history.push(beginOrderPath);
+        };
+
+        if (payments.length > 0) {
+            alert.success(
+                "Incomplete Payments",
+                "There have been partial payments made on this order. Are you sure you would like to cancel this order?",
+                () => {},
+                () => {
+                    cancelOrder();
+                }
+            );
+        } else {
+            cancelOrder();
+        }
     };
 
     // Modal callbacks
@@ -879,6 +897,7 @@ export const Checkout = () => {
                     {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}>Remove</Link>}
                 </div>
             )}
+            {paidSoFar > 0 && <div className="h3 text-center mb-2">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div>}
             <div className="h1 text-center mb-4">Total: ${convertCentsToDollars(subTotal)}</div>
             <div className="mb-4">
                 <div className="checkout-buttons-container">

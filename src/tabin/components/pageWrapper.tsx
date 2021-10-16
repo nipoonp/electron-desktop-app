@@ -3,12 +3,15 @@ import { useEffect, useState, useRef } from "react";
 import { useHistory } from "react-router";
 import { beginOrderPath } from "../../components/main";
 import { useCart } from "../../context/cart-context";
+import { useRegister } from "../../context/register-context";
+import { ERegisterType } from "../../graphql/customQueries";
 
 export const PageWrapper = (props: IProps) => {
     const history = useHistory();
     const { clearCart } = useCart();
+    const { register } = useRegister();
 
-    const resetAfterSeconds = 30 * 60; //3 mins
+    const resetAfterSeconds = register && register.type == ERegisterType.KIOSK ? 30 * 60 : 10000 * 60; //3 mins
     const userInactiveSecondsCounter: React.MutableRefObject<number> = useRef(0);
 
     const resetUserInactiveSecondsCounter = () => {

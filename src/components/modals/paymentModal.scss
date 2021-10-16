@@ -9,12 +9,13 @@
 
     .payment-modal-close-button-wrapper {
         position: absolute;
-        top: 32px;
-        right: 32px;
+        top: 24px;
+        right: 24px;
         cursor: pointer;
 
         .payment-modal-close-button {
             color: #484848;
+            padding: 12px;
         }
     }
 

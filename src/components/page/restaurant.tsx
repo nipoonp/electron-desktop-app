@@ -22,6 +22,8 @@ import { useRestaurant } from "../../context/restaurant-context";
 import "./restaurant.scss";
 import { CachedImage } from "../../tabin/components/cachedImage";
 
+import { alert } from "../../tabin/components/alert";
+
 interface IMostPopularProduct {
     category: IGET_RESTAURANT_CATEGORY;
     product: IGET_RESTAURANT_PRODUCT;
@@ -30,7 +32,7 @@ interface IMostPopularProduct {
 export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: string; selectedProductId?: string }) => {
     // context
     const history = useHistory();
-    const { clearCart, orderType, subTotal, products, cartProductQuantitiesById, addItem } = useCart();
+    const { payments, clearCart, orderType, subTotal, products, cartProductQuantitiesById, addItem } = useCart();
     const { setRestaurant } = useRestaurant();
 
     // query
@@ -148,8 +150,23 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
     };
 
     const onCancelOrder = () => {
-        clearCart();
-        history.push(beginOrderPath);
+        const cancelOrder = () => {
+            clearCart();
+            history.push(beginOrderPath);
+        };
+
+        if (payments.length > 0) {
+            alert.success(
+                "Incomplete Payments",
+                "There have been partial payments made on this order. Are you sure you would like to cancel this order?",
+                () => {},
+                () => {
+                    cancelOrder();
+                }
+            );
+        } else {
+            cancelOrder();
+        }
     };
 
     const onCloseProductModal = () => {
