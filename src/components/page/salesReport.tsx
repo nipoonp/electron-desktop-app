@@ -4,6 +4,7 @@ import "react-clock/dist/Clock.css";
 import { addDays, differenceInDays, format, subDays, add } from "date-fns";
 import { useEffect, useState } from "react";
 import Clock from "react-clock";
+import { FaArrowLeft } from "react-icons/fa";
 
 import { useRestaurant } from "../../context/restaurant-context";
 import {
@@ -463,15 +464,14 @@ export const SalesReport = () => {
             <div className="card" style={{ textAlign: "center" }}>
                 <div className="text-uppercase">Best Hour</div>
                 <div className="besthour-clock-wrapper m-2">
-                    <Clock className="besthour-clock"
-                        value={add(new Date().setHours(0,0,0,0), {hours: Number(bestHour.hour)})}
+                    <Clock
+                        className="besthour-clock"
+                        value={add(new Date().setHours(0, 0, 0, 0), { hours: Number(bestHour.hour) })}
                         renderSecondHand={false}
                         renderMinuteMarks={false}
                     />
                 </div>
-                <div className="h4">
-                    {get12HourFormat(Number(bestHour.hour))}
-                </div>
+                <div className="h4">{get12HourFormat(Number(bestHour.hour))}</div>
                 <div>
                     <span className="h4">{`$${convertCentsToDollars(bestHour.totalAmount)}`}</span> total sales
                 </div>
@@ -603,7 +603,7 @@ export const SalesReport = () => {
             <div className="h3 pb-2">Sales By {currentScreen}</div>
             <div className="h5 pb-2">
                 <span className="c-pointer" onClick={(e) => changeScreen(SalesReportScreen.DASHBOARD)}>
-                    back
+                    <FaArrowLeft />
                 </span>
             </div>
         </>
@@ -696,10 +696,7 @@ export const SalesReport = () => {
                                             .sort((a, b) => a[0].localeCompare(b[0]))
                                             .map(([hour, sale]) => (
                                                 <tr>
-                                                    <td>
-                                                        {" "}
-                                                        {get12HourFormat(Number(hour))}
-                                                    </td>
+                                                    <td> {get12HourFormat(Number(hour))}</td>
                                                     <td> {sale.totalQuantity}</td>
                                                     <td> {`$${convertCentsToDollarsReturnFloat(sale.net)}`}</td>
                                                     <td> {`$${convertCentsToDollarsReturnFloat(sale.tax)}`}</td>
