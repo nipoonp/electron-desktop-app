@@ -9,7 +9,7 @@ export const Card = (props: IProps) => {
             <div className="card-header">
                 {title && <div className="h4">{title}</div>}
                 {onOpen && (
-                    <div className="c-pointer" onClick={() => onOpen()}>
+                    <div className="cursor-pointer" onClick={() => onOpen()}>
                         <FaExpandAlt />
                     </div>
                 )}

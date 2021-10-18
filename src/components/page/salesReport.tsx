@@ -582,9 +582,9 @@ export const SalesReport = () => {
 
     const salesByScreenHeader = (
         <>
-            <div className="h3 pb-2">Sales By {currentScreen}</div>
+            <div className="h3 pb-2">{currentScreen ? `Sales by ${currentScreen}` : "Reports"}</div>
             <div className="h5 pb-2">
-                <span className="c-pointer" onClick={(e) => changeScreen(SalesReportScreen.DASHBOARD)}>
+                <span className="cursor-pointer" onClick={(e) => changeScreen(SalesReportScreen.DASHBOARD)}>
                     <FaArrowLeft />
                 </span>
             </div>
@@ -787,10 +787,6 @@ export const SalesReport = () => {
         return <h1>Couldn't fetch orders. Try Refreshing</h1>;
     }
 
-    if (!orders) {
-        return <>Couldn't fetch orders.</>;
-    }
-
     if (loading) {
         return <FullScreenSpinner show={loading} text={"Loading report details..."} />;
     }
@@ -798,7 +794,11 @@ export const SalesReport = () => {
     return (
         <>
             <div className="reports">
-                <div className="sales-report-wrapper">{renderCurrentScreen()}</div>
+                {startDate && endDate ? (
+                    <div className="sales-report-wrapper">{renderCurrentScreen()}</div>
+                ) : (
+                    <div>Please select both start and end dates.</div>
+                )}
             </div>
         </>
     );
