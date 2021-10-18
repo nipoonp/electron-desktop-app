@@ -19,6 +19,7 @@ import { ErrorLoggingProvider } from "./context/errorLogging-context";
 import { ApolloClient, ApolloProvider, defaultDataIdFromObject, from, HttpLink, InMemoryCache, split } from "@apollo/client";
 import { AUTH_TYPE, createAuthLink } from "aws-appsync-auth-link";
 import { createSubscriptionHandshakeLink } from "aws-appsync-subscription-link";
+import { SalesAnalyticsProvider } from "./context/salesAnalytics-context";
 
 Amplify.configure(awsconfig);
 Amplify.Logger.LOG_LEVEL = process.env.REACT_APP_LOG_LEVEL;
@@ -122,7 +123,9 @@ const App = () => {
                                             <VerifoneProvider>
                                                 <SmartpayProvider>
                                                     <WindcaveProvider>
-                                                        <Main />
+                                                        <SalesAnalyticsProvider>
+                                                            <Main />
+                                                        </SalesAnalyticsProvider>
                                                     </WindcaveProvider>
                                                 </SmartpayProvider>
                                             </VerifoneProvider>
