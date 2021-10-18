@@ -1,0 +1,157 @@
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-gap: 16px;
+}
+
+.item1 {
+    grid-column: span 3 / auto;
+}
+
+// .item2 {
+//     grid-column: span 1 / auto;
+// }
+.analytics-sales-value-wrapper {
+    display: grid;
+    grid-gap: 5px;
+}
+
+.item3 {
+    grid-column: span 3 / auto;
+}
+
+// .item4 {
+//     grid-column: span 1 / auto;
+// }
+
+.item5 {
+    grid-column: span 2 / auto;
+}
+
+.top-item-container {
+    display: flex;
+    align-items: center;
+
+    .top-item-image {
+        flex: 1;
+
+        img {
+            height: 136px;
+            border-radius: 10px;
+        }
+    }
+
+    .top-item-details {
+        flex: 1;
+    }
+}
+
+.item6 {
+    grid-column: span 2 / auto;
+}
+
+@media screen and (max-width: 1200px) {
+    .item1 {
+        grid-column: span 1 / auto;
+    }
+
+    .item2 {
+        grid-column: span 1 / auto;
+    }
+
+    .item3 {
+        grid-column: span 1 / auto;
+    }
+
+    .item4 {
+        grid-column: span 1 / auto;
+    }
+
+    .item5 {
+        grid-column: span 1 / auto;
+    }
+
+    .item6 {
+        grid-column: span 1 / auto;
+    }
+}
+
+.sales-by {
+    width: 50%;
+    margin: auto;
+    display: block;
+
+    .sales-reading-wrapper {
+        justify-content: center;
+        display: flex;
+
+        .sales-reading {
+            margin: 0 5px;
+
+            @media screen and (max-width: 768px) {
+                margin: 5px 0;
+            }
+        }
+
+        @media screen and (max-width: 768px) {
+            display: block;
+        }
+    }
+
+    @media screen and (max-width: 768px) {
+        width: 100%;
+    }
+
+    .sales-table-wrapper {
+        margin: 30px auto;
+
+        table {
+            width: 100%;
+            text-align: center;
+        }
+
+        tbody {
+            tr {
+                &:nth-last-child(1) {
+                    border-bottom: none;
+                }
+            }
+        }
+
+        tr {
+            border-bottom: 1px solid #e0e0e0;
+            padding: 15px;
+        }
+
+        th {
+            font-weight: 600;
+            font-size: large;
+            text-transform: uppercase;
+            font-style: italic;
+        }
+
+        th,
+        td {
+            padding: 15px;
+        }
+
+        @media screen and (max-width: 768px) {
+            width: 100%;
+            overflow-x: scroll;
+        }
+    }
+}
+
+.besthour-clock-wrapper {
+    display: flex;
+    justify-content: center;
+
+    .react-clock__face {
+        border: 1px solid var(--primary-color);
+    }
+
+    .react-clock__hand__body,
+    .react-clock__mark__body {
+        background-color: var(--primary-color);
+    }
+}

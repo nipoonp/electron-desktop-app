@@ -1,0 +1,24 @@
+.sales-analytics-wrapper {
+    min-height: 100vh;
+
+    .sales-analytics {
+        max-width: 1200px;
+        margin: 0 auto;
+
+        .sales-analytics-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            @media screen and (max-width: 768px) {
+                flex-wrap: wrap;
+            }
+
+            .sales-analytics-back-button {
+                display: flex;
+                align-items: center;
+                cursor: pointer;
+            }
+        }
+    }
+}

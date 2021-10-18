@@ -170,7 +170,7 @@ ipcMain.on("SHOW_CONTEXT_MENU", (event) => {
         {
             label: "Sales Report",
             click: () => {
-                event.sender.send("CONTEXT_MENU_COMMAND", "salesReport");
+                event.sender.send("CONTEXT_MENU_COMMAND", "salesAnalytics");
             },
         },
         {
