@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { Card } from "../../tabin/components/card";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { convertCentsToDollars, convertCentsToDollarsReturnFloat } from "../../util/util";
-import { LineGraph } from "./salesAnalytics/Graph";
+import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { Table } from "../../tabin/components/table";
 import { useSalesAnalytics } from "../../context/salesAnalytics-context";
 import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";

@@ -1,11 +1,11 @@
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { convertCentsToDollarsReturnFloat } from "../../util/util";
-import { PieGraph } from "./salesAnalytics/Graph";
+import { PieGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { Table } from "../../tabin/components/table";
 import { useSalesAnalytics } from "../../context/salesAnalytics-context";
+import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 
 import "./salesAnalytics.scss";
-import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 
 export const SalesAnalyticsTopProduct = () => {
     const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();

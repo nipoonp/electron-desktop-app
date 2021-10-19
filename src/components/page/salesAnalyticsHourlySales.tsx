@@ -2,12 +2,12 @@ import { FaArrowLeft } from "react-icons/fa";
 import { getTwelveHourFormat } from "../../model/util";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { convertCentsToDollarsReturnFloat } from "../../util/util";
-import { LineGraph } from "./salesAnalytics/Graph";
+import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { Table } from "../../tabin/components/table";
 import { useSalesAnalytics } from "../../context/salesAnalytics-context";
+import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 
 import "./salesAnalytics.scss";
-import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 
 export const SalesAnalyticsHourlySales = () => {
     const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();

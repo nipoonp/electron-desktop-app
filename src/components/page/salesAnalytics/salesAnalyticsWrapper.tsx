@@ -2,10 +2,10 @@ import { useState } from "react";
 import { useSalesAnalytics } from "../../../context/salesAnalytics-context";
 import { DateRangePicker } from "../../../tabin/components/dateRangePicker";
 import { FiArrowLeft } from "react-icons/fi";
-
-import "./salesAnalyticsWrapper.scss";
 import { useHistory } from "react-router";
 import { salesAnalyticsPath } from "../../main";
+
+import "./salesAnalyticsWrapper.scss";
 
 export const SalesAnalyticsWrapper = (props: IProps) => {
     const history = useHistory();
@@ -26,8 +26,8 @@ export const SalesAnalyticsWrapper = (props: IProps) => {
             <div className="sales-analytics-wrapper">
                 <div className="sales-analytics p-3">
                     <div className="sales-analytics-header mb-3">
-                        <div className="sales-analytics-back-button mb-3">
-                            {props.showBackButton && <FiArrowLeft className="mr-1" size={24} onClick={onClickBack} />}
+                        <div className="sales-analytics-back-button-wrapper">
+                            {props.showBackButton && <FiArrowLeft className="sales-analytics-back-button mr-1" size={24} onClick={onClickBack} />}
                             <div className="h2">{props.title}</div>
                         </div>
                         <DateRangePicker

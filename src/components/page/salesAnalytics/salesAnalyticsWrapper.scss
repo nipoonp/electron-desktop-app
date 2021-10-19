@@ -15,10 +15,17 @@
                 justify-content: center;
             }
 
-            .sales-analytics-back-button {
+            .sales-analytics-back-button-wrapper {
                 display: flex;
                 align-items: center;
-                cursor: pointer;
+
+                @media screen and (max-width: 768px) {
+                    margin-bottom: 24px;
+                }
+
+                .sales-analytics-back-button {
+                    cursor: pointer;
+                }
             }
         }
     }

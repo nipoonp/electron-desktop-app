@@ -6,7 +6,7 @@ import { CachedImage } from "../../tabin/components/cachedImage";
 import { Card } from "../../tabin/components/card";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { convertCentsToDollars } from "../../util/util";
-import { LineGraph } from "./salesAnalytics/Graph";
+import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { IBestHour, useSalesAnalytics } from "../../context/salesAnalytics-context";
 import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 import { useHistory } from "react-router";
