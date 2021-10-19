@@ -3,7 +3,11 @@ import { useQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
 
-export const useGetRestaurantOrdersByBetweenPlacedAt = (orderRestaurantId: string, placedAtStartDate: string, placedAtEndDate: string) => {
+export const useGetRestaurantOrdersByBetweenPlacedAt = (
+    orderRestaurantId: string,
+    placedAtStartDate: string | null,
+    placedAtEndDate: string | null
+) => {
     const [data, setSavedData] = useState<IGET_RESTAURANT_ORDER_FRAGMENT[] | null>(null);
 
     const { loading, error, data: _data, refetch } = useQuery(GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT, {
@@ -12,6 +16,7 @@ export const useGetRestaurantOrdersByBetweenPlacedAt = (orderRestaurantId: strin
             placedAtStartDate: placedAtStartDate,
             placedAtEndDate: placedAtEndDate,
         },
+        skip: !placedAtStartDate || !placedAtEndDate,
         fetchPolicy: "network-only",
     });
 

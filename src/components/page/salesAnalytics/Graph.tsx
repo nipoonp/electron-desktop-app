@@ -15,8 +15,9 @@ export const LineGraph = (props: { graphData; xAxis: string; lines: string[]; fi
                     bottom: 5,
                 }}
             >
-                <XAxis dataKey={xAxis} />
+                <XAxis dataKey={xAxis} tick={{ fontSize: 14 }} />
                 <YAxis
+                    tick={{ fontSize: 14 }}
                     tickFormatter={(tick) => {
                         return `$${tick}`;
                     }}

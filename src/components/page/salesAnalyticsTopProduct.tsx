@@ -8,7 +8,7 @@ import "./salesAnalytics.scss";
 import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 
 export const SalesAnalyticsTopProduct = () => {
-    const { salesAnalytics, error, loading } = useSalesAnalytics();
+    const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
 
     const graphColor = getComputedStyle(document.documentElement).getPropertyValue("--primary-color");
 
@@ -23,7 +23,9 @@ export const SalesAnalyticsTopProduct = () => {
     return (
         <>
             <SalesAnalyticsWrapper title="Sales By Hour" showBackButton={true}>
-                {salesAnalytics ? (
+                {!startDate || !endDate ? (
+                    <div className="text-center">Please select a start and end date.</div>
+                ) : salesAnalytics ? (
                     <div className="sales-by">
                         <div className="mb-6" style={{ width: "100%", height: "300px" }}>
                             <PieGraph data={salesAnalytics.productByGraphData} fill={graphColor} />
@@ -52,7 +54,7 @@ export const SalesAnalyticsTopProduct = () => {
                         </div>
                     </div>
                 ) : (
-                    <div>No orders were placed during this period. Please select another date range.</div>
+                    <div className="text-center">No orders were placed during this period. Please select another date range.</div>
                 )}
             </SalesAnalyticsWrapper>
         </>

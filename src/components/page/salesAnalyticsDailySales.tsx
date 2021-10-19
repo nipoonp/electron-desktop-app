@@ -10,7 +10,7 @@ import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 import "./salesAnalytics.scss";
 
 export const SalesAnalyticsDailySales = () => {
-    const { salesAnalytics, error, loading } = useSalesAnalytics();
+    const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
 
     const graphColor = getComputedStyle(document.documentElement).getPropertyValue("--primary-color");
 
@@ -25,7 +25,9 @@ export const SalesAnalyticsDailySales = () => {
     return (
         <>
             <SalesAnalyticsWrapper title="Sales By Day" showBackButton={true}>
-                {salesAnalytics ? (
+                {!startDate || !endDate ? (
+                    <div className="text-center">Please select a start and end date.</div>
+                ) : salesAnalytics ? (
                     <div className="sales-by">
                         <div className="mb-6" style={{ width: "100%", height: "300px" }}>
                             <LineGraph xAxis="date" lines={["sales"]} graphData={salesAnalytics?.dayByGraphData} fill={graphColor} />
@@ -78,7 +80,7 @@ export const SalesAnalyticsDailySales = () => {
                         </div>
                     </div>
                 ) : (
-                    <div>No orders were placed during this period. Please select another date range.</div>
+                    <div className="text-center">No orders were placed during this period. Please select another date range.</div>
                 )}
             </SalesAnalyticsWrapper>
         </>

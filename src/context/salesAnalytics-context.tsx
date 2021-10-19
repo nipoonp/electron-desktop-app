@@ -99,17 +99,17 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
 
     const [salesAnalytics, setSalesAnalytics] = useState<ISalesAnalytics | null>(null);
     const [startDate, setStartDate] = useState<string | null>(format(subDays(new Date(), 7), "yyyy-MM-dd"));
-    const [endDate, setEndDate] = useState<string | null>(format(addDays(new Date(), 1), "yyyy-MM-dd")); //Adding extra day because GraphQL query is not inclusive of endDate
+    const [endDate, setEndDate] = useState<string | null>(format(new Date(), "yyyy-MM-dd")); //Adding extra day because GraphQL query is not inclusive of endDate
 
     const { data: orders, error, loading, refetch } = useGetRestaurantOrdersByBetweenPlacedAt(
         restaurant ? restaurant.id : "",
-        startDate || "",
-        endDate || ""
+        startDate,
+        endDate ? format(addDays(new Date(endDate), 1), "yyyy-MM-dd") : null //Adding extra day because GraphQL query is not inclusive of endDate
     );
 
     useEffect(() => {
         processSalesData(orders);
-    }, [orders, startDate, endDate]);
+    }, [orders]);
 
     const processSalesData = (orders: IGET_RESTAURANT_ORDER_FRAGMENT[] | null) => {
         if (!startDate || !endDate) return;
@@ -205,6 +205,8 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
             }
 
             if (order.status === EOrderStatus.COMPLETED) {
+                console.log("xxx...dailySales", dailySales);
+                console.log("xxx...placedAt", placedAt);
                 const newSubTotal = dailySales[placedAt].totalAmount + order.subTotal;
                 const newQuantitySold = dailySales[placedAt].totalQuantity + 1;
                 const newOrders: IGET_RESTAURANT_ORDER_FRAGMENT[] = [...dailySales[placedAt].orders, order];
@@ -420,17 +422,6 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
     const onDatesChange = async (startD: string | null, endD: string | null) => {
         setStartDate(startD);
         setEndDate(endD);
-
-        if (!startDate || !endDate) return;
-
-        //Adding extra day because GraphQL query is not inclusive of endDate
-        const endDateWithExtraDay = format(addDays(new Date(endDate), 1), "yyyy-MM-dd");
-
-        await refetch({
-            orderRestaurantId: restaurant ? restaurant.id : "",
-            placedAtStartDate: startDate,
-            placedAtEndDate: endDateWithExtraDay,
-        });
     };
 
     return (

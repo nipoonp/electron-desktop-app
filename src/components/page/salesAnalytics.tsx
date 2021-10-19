@@ -17,7 +17,7 @@ import "react-clock/dist/Clock.css";
 
 export const SalesAnalytics = () => {
     const history = useHistory();
-    const { salesAnalytics, error, loading } = useSalesAnalytics();
+    const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
 
     const graphColor = getComputedStyle(document.documentElement).getPropertyValue("--primary-color");
 
@@ -72,8 +72,10 @@ export const SalesAnalytics = () => {
 
     return (
         <>
-            {salesAnalytics ? (
-                <SalesAnalyticsWrapper title="Sales Analytics">
+            <SalesAnalyticsWrapper title="Sales Analytics">
+                {!startDate || !endDate ? (
+                    <div className="text-center">Please select a start and end date.</div>
+                ) : salesAnalytics ? (
                     <div className="sales-analytics-grid">
                         <div className="sales-analytics-grid-item1">
                             <Card title="Sales By Day" onOpen={onClickDailySales}>
@@ -177,10 +179,10 @@ export const SalesAnalytics = () => {
                             </div>
                         )}
                     </div>
-                </SalesAnalyticsWrapper>
-            ) : (
-                <div>No orders were placed during this period. Please select another date range.</div>
-            )}
+                ) : (
+                    <div className="text-center">No orders were placed during this period. Please select another date range.</div>
+                )}
+            </SalesAnalyticsWrapper>
         </>
     );
 };
