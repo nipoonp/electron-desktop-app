@@ -1,13 +1,14 @@
 import { format } from "date-fns";
 import { Card } from "../../tabin/components/card";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { convertCentsToDollars, convertCentsToDollarsReturnFloat } from "../../util/util";
+import { convertCentsToDollars } from "../../util/util";
 import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { Table } from "../../tabin/components/table";
 import { useSalesAnalytics } from "../../context/salesAnalytics-context";
 import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 
 import "./salesAnalytics.scss";
+import { taxRate } from "../../model/util";
 
 export const SalesAnalyticsDailySales = () => {
     const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
@@ -58,21 +59,21 @@ export const SalesAnalyticsDailySales = () => {
                             <Table>
                                 <thead>
                                     <tr>
-                                        <th>Date</th>
-                                        <th>Orders</th>
-                                        <th>Net</th>
-                                        <th>Tax</th>
-                                        <th>Total</th>
+                                        <th className="text-left">Date</th>
+                                        <th className="text-right">Orders</th>
+                                        <th className="text-right">Net</th>
+                                        <th className="text-right">Tax</th>
+                                        <th className="text-right">Total</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {Object.entries(salesAnalytics.dailySales).map(([date, sale], index) => (
                                         <tr key={index}>
-                                            <td>{format(new Date(date), "E, dd MMM")}</td>
-                                            <td>{sale.totalQuantity}</td>
-                                            <td>{`$${convertCentsToDollarsReturnFloat(sale.net)}`}</td>
-                                            <td>{`$${convertCentsToDollarsReturnFloat(sale.tax)}`}</td>
-                                            <td>{`$${convertCentsToDollarsReturnFloat(sale.totalAmount)}`}</td>
+                                            <td className="text-left">{format(new Date(date), "E, dd MMM")}</td>
+                                            <td className="text-right">{sale.totalQuantity}</td>
+                                            <td className="text-right">{`$${convertCentsToDollars((sale.totalAmount * (100 - taxRate)) / 100)}`}</td>
+                                            <td className="text-right">{`$${convertCentsToDollars(sale.totalAmount * (taxRate / 100))}`}</td>
+                                            <td className="text-right">{`$${convertCentsToDollars(sale.totalAmount)}`}</td>
                                         </tr>
                                     ))}
                                 </tbody>

@@ -1,7 +1,6 @@
-import { FaArrowLeft } from "react-icons/fa";
-import { getTwelveHourFormat } from "../../model/util";
+import { getTwelveHourFormat, taxRate } from "../../model/util";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { convertCentsToDollarsReturnFloat } from "../../util/util";
+import { convertCentsToDollars } from "../../util/util";
 import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { Table } from "../../tabin/components/table";
 import { useSalesAnalytics } from "../../context/salesAnalytics-context";
@@ -36,11 +35,11 @@ export const SalesAnalyticsHourlySales = () => {
                             <Table>
                                 <thead>
                                     <tr>
-                                        <th>Time</th>
-                                        <th>Orders</th>
-                                        <th>Net</th>
-                                        <th>Tax</th>
-                                        <th>Total</th>
+                                        <th className="text-left">Time</th>
+                                        <th className="text-right">Orders</th>
+                                        <th className="text-right">Net</th>
+                                        <th className="text-right">Tax</th>
+                                        <th className="text-right">Total</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -48,11 +47,13 @@ export const SalesAnalyticsHourlySales = () => {
                                         .sort((a, b) => a[0].localeCompare(b[0]))
                                         .map(([hour, sale], index) => (
                                             <tr key={index}>
-                                                <td> {getTwelveHourFormat(Number(hour))}</td>
-                                                <td> {sale.totalQuantity}</td>
-                                                <td> {`$${convertCentsToDollarsReturnFloat(sale.net)}`}</td>
-                                                <td> {`$${convertCentsToDollarsReturnFloat(sale.tax)}`}</td>
-                                                <td> {`$${convertCentsToDollarsReturnFloat(sale.totalAmount)}`}</td>
+                                                <td className="text-left">{getTwelveHourFormat(Number(hour))}</td>
+                                                <td className="text-right">{sale.totalQuantity}</td>
+                                                <td className="text-right">{`$${convertCentsToDollars(
+                                                    (sale.totalAmount * (100 - taxRate)) / 100
+                                                )}`}</td>
+                                                <td className="text-right">{`$${convertCentsToDollars(sale.totalAmount * (taxRate / 100))}`}</td>
+                                                <td className="text-right">{`$${convertCentsToDollars(sale.totalAmount)}`}</td>
                                             </tr>
                                         ))}
                                 </tbody>

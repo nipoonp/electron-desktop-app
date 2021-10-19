@@ -93,7 +93,7 @@ export const PieGraph = (props: { data; fill: string }) => {
                     data={data}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
+                    innerRadius={50}
                     outerRadius={80}
                     fill={fill}
                     dataKey="value"

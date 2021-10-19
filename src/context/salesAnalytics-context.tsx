@@ -10,7 +10,7 @@ import {
     IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT,
 } from "../graphql/customFragments";
 import { EOrderStatus } from "../graphql/customQueries";
-import { getTwelveHourFormat, taxRate } from "../model/util";
+import { getTwelveHourFormat } from "../model/util";
 import { convertCentsToDollarsReturnFloat } from "../util/util";
 import { toast } from "../tabin/components/toast";
 
@@ -23,8 +23,6 @@ export interface ITopSoldItem {
 export interface IDailySales {
     [date: string]: {
         totalAmount: number;
-        net: number;
-        tax: number;
         totalQuantity: number;
         orders: IGET_RESTAURANT_ORDER_FRAGMENT[];
     };
@@ -41,8 +39,6 @@ export interface IHourlySales {
         hour: string;
         totalAmount: number;
         totalQuantity: number;
-        net: number;
-        tax: number;
     };
 }
 
@@ -134,30 +130,30 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
             let totalSoldItems: number = 0;
 
             const hourlySales: IHourlySales = {
-                "00": { hour: "00", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "01": { hour: "01", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "02": { hour: "02", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "03": { hour: "03", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "04": { hour: "04", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "05": { hour: "05", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "06": { hour: "06", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "07": { hour: "07", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "08": { hour: "08", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "09": { hour: "09", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "10": { hour: "10", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "11": { hour: "11", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "12": { hour: "12", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "13": { hour: "13", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "14": { hour: "14", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "15": { hour: "15", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "16": { hour: "16", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "17": { hour: "17", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "18": { hour: "18", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "19": { hour: "19", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "20": { hour: "20", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "21": { hour: "21", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "22": { hour: "22", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
-                "23": { hour: "23", totalAmount: 0, totalQuantity: 0, net: 0, tax: 0 },
+                "00": { hour: "00", totalAmount: 0, totalQuantity: 0 },
+                "01": { hour: "01", totalAmount: 0, totalQuantity: 0 },
+                "02": { hour: "02", totalAmount: 0, totalQuantity: 0 },
+                "03": { hour: "03", totalAmount: 0, totalQuantity: 0 },
+                "04": { hour: "04", totalAmount: 0, totalQuantity: 0 },
+                "05": { hour: "05", totalAmount: 0, totalQuantity: 0 },
+                "06": { hour: "06", totalAmount: 0, totalQuantity: 0 },
+                "07": { hour: "07", totalAmount: 0, totalQuantity: 0 },
+                "08": { hour: "08", totalAmount: 0, totalQuantity: 0 },
+                "09": { hour: "09", totalAmount: 0, totalQuantity: 0 },
+                "10": { hour: "10", totalAmount: 0, totalQuantity: 0 },
+                "11": { hour: "11", totalAmount: 0, totalQuantity: 0 },
+                "12": { hour: "12", totalAmount: 0, totalQuantity: 0 },
+                "13": { hour: "13", totalAmount: 0, totalQuantity: 0 },
+                "14": { hour: "14", totalAmount: 0, totalQuantity: 0 },
+                "15": { hour: "15", totalAmount: 0, totalQuantity: 0 },
+                "16": { hour: "16", totalAmount: 0, totalQuantity: 0 },
+                "17": { hour: "17", totalAmount: 0, totalQuantity: 0 },
+                "18": { hour: "18", totalAmount: 0, totalQuantity: 0 },
+                "19": { hour: "19", totalAmount: 0, totalQuantity: 0 },
+                "20": { hour: "20", totalAmount: 0, totalQuantity: 0 },
+                "21": { hour: "21", totalAmount: 0, totalQuantity: 0 },
+                "22": { hour: "22", totalAmount: 0, totalQuantity: 0 },
+                "23": { hour: "23", totalAmount: 0, totalQuantity: 0 },
             };
 
             let bestHour: IBestHour = { hour: "00", totalAmount: 0, totalQuantity: 0 };
@@ -185,8 +181,6 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                     totalAmount: 0,
                     totalQuantity: 0,
                     orders: [],
-                    net: 0,
-                    tax: 0,
                 };
             }
 
@@ -220,8 +214,6 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                         totalAmount: newSubTotal,
                         totalQuantity: newQuantitySold,
                         orders: [...newOrders],
-                        net: (newSubTotal * (100 - taxRate)) / 100,
-                        tax: newSubTotal * (taxRate / 100),
                     };
 
                     // HOURLY SALES //////////////////////////////////
@@ -232,8 +224,6 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                         hour: placedAtHour,
                         totalQuantity: newSaleQuantity,
                         totalAmount: newSaleAmount,
-                        net: (newSaleAmount * (100 - taxRate)) / 100,
-                        tax: newSaleAmount * (taxRate / 100),
                     };
 
                     if (newSaleAmount > bestHour.totalAmount) {
