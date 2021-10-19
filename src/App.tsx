@@ -16,9 +16,10 @@ import { RestaurantProvider } from "./context/restaurant-context";
 import { WindcaveProvider } from "./context/windcave-context";
 import { ErrorLoggingProvider } from "./context/errorLogging-context";
 
-import { ApolloClient, ApolloProvider, from, HttpLink, InMemoryCache, split } from "@apollo/client";
+import { ApolloClient, ApolloProvider, defaultDataIdFromObject, from, HttpLink, InMemoryCache, split } from "@apollo/client";
 import { AUTH_TYPE, createAuthLink } from "aws-appsync-auth-link";
 import { createSubscriptionHandshakeLink } from "aws-appsync-subscription-link";
+import { SalesAnalyticsProvider } from "./context/salesAnalytics-context";
 
 Amplify.configure(awsconfig);
 Amplify.Logger.LOG_LEVEL = process.env.REACT_APP_LOG_LEVEL;
@@ -39,7 +40,20 @@ const cognitoDetails = {
 };
 
 const cognitoClient = new ApolloClient({
-    cache: new InMemoryCache(),
+    cache: new InMemoryCache({
+        dataIdFromObject: (obj) => {
+            switch (obj.__typename) {
+                case "OrderProduct":
+                case "OrderModifier":
+                    let objCpy = JSON.parse(JSON.stringify(obj));
+                    delete objCpy.id;
+                    return defaultDataIdFromObject(objCpy);
+                // return String(Math.random());
+                default:
+                    return defaultDataIdFromObject(obj); // fall back to default handling
+            }
+        },
+    }),
     link: from([
         //@ts-ignore
         createAuthLink(cognitoDetails),
@@ -109,7 +123,9 @@ const App = () => {
                                             <VerifoneProvider>
                                                 <SmartpayProvider>
                                                     <WindcaveProvider>
-                                                        <Main />
+                                                        <SalesAnalyticsProvider>
+                                                            <Main />
+                                                        </SalesAnalyticsProvider>
                                                     </WindcaveProvider>
                                                 </SmartpayProvider>
                                             </VerifoneProvider>

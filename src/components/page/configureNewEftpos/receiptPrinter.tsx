@@ -238,10 +238,16 @@ export const ReceiptPrinter = () => {
                     value={printerType}
                     onChange={handleSelectType}
                 >
-                    <option value="" label="Select the type of this printer" />
-                    <option key="BLUETOOTH" value="BLUETOOTH" label="Bluetooth" />
-                    <option key="WIFI" value="WIFI" label="WIFI" />
-                    <option key="USB" value="USB" label="USB" />
+                    <option value="" label="Select the type of this printer"></option>
+                    <option key="BLUETOOTH" value="BLUETOOTH" label="Bluetooth">
+                        BLUETOOTH
+                    </option>
+                    <option key="WIFI" value="WIFI" label="WIFI">
+                        WIFI
+                    </option>
+                    <option key="USB" value="USB" label="USB">
+                        USB
+                    </option>
                 </Select>
 
                 <Input

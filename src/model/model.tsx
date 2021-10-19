@@ -1,4 +1,4 @@
-import { IGET_DASHBOARD_PROMOTION, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object } from "../graphql/customQueries";
+import { IGET_RESTAURANT_PROMOTION, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object } from "../graphql/customQueries";
 
 export interface IPrintReceiptDataOutput {
     error: any;
@@ -14,6 +14,47 @@ export interface ICognitoUser {
         sub: string;
     };
     username: string;
+}
+
+export enum EEftposTransactionOutcome {
+    PayLater,
+    Success,
+    Delay,
+    Fail,
+}
+
+export enum ESmartpayTransactionOutcome {
+    Accepted, // TransactionResult = "OK-ACCEPTED"
+    Declined, // TransactionResult = "OK-DECLINED"
+    Cancelled, // TransactionResult = "CANCELLED", Result != "FAILED-INTERFACE"
+    DeviceOffline, // TransactionResult = "CANCELLED", Result = "FAILED-INTERFACE"
+    Failed, // Everything else
+}
+
+export enum EWindcaveTransactionOutcome {
+    Accepted,
+    Declined,
+    Cancelled,
+    Failed,
+}
+
+export enum EVerifoneTransactionOutcome {
+    Approved, // 00
+    ApprovedWithSignature, // 09
+    Cancelled, // CC
+    Declined, // 55
+    SettledOk, // 90
+    HostUnavailable, // 91
+    SystemError, // 99
+    TransactionInProgress, // ??
+    TerminalBusy, // BB
+}
+
+export interface IEftposTransactionOutcome {
+    platformTransactionOutcome: ESmartpayTransactionOutcome | EWindcaveTransactionOutcome | EVerifoneTransactionOutcome;
+    transactionOutcome: EEftposTransactionOutcome;
+    message: string;
+    eftposReceipt: string | null;
 }
 
 export enum EOrderType {
@@ -83,7 +124,7 @@ export interface IPreSelectedModifiers {
 }
 
 export interface ICartPromotion {
-    promotion: IGET_DASHBOARD_PROMOTION;
+    promotion: IGET_RESTAURANT_PROMOTION;
     matchingProducts: ICartItemQuantitiesById;
     discountedAmount: number;
 }

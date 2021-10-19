@@ -2,32 +2,36 @@ import { useState } from "react";
 import { useMutation } from "@apollo/client";
 import { useRestaurant } from "../../context/restaurant-context";
 import { UPDATE_ORDER_STATUS } from "../../graphql/customMutations";
-import { EOrderStatus, GET_ORDERS_BY_RESTAURANT_BY_PLACEDAT } from "../../graphql/customQueries";
+import { EOrderStatus, GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT } from "../../graphql/customQueries";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { Input } from "../../tabin/components/input";
 
 import "./orders.scss";
-import { useGetRestaurantOrdersByPlacedAt } from "../../hooks/useGetRestaurantOrdersByPlacedAt";
-import { convertCentsToDollars, toLocalISOString } from "../../util/util";
+import { useGetRestaurantOrdersByBeginWithPlacedAt } from "../../hooks/useGetRestaurantOrdersByBeginWithPlacedAt";
+import { convertCentsToDollars, convertProductTypesForPrint, toLocalISOString } from "../../util/util";
 import { format } from "date-fns";
 import { Button } from "../../tabin/components/button";
 import { toast } from "../../tabin/components/toast";
 import { IGET_RESTAURANT_ORDER_FRAGMENT, IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT } from "../../graphql/customFragments";
+import { useRegister } from "../../context/register-context";
+import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 
 export const Orders = () => {
-    const { restaurant: savedRestaurantItem } = useRestaurant();
+    const { restaurant } = useRestaurant();
+    const { register } = useRegister();
+    const { printReceipt } = useReceiptPrinter();
     const [eOrderStatus, setEOrderStatus] = useState(EOrderStatus.NEW);
 
     const [showSpinner, setShowSpinner] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
-    const { data: orders, error, loading } = useGetRestaurantOrdersByPlacedAt(savedRestaurantItem ? savedRestaurantItem.id : "", date);
+    const { data: orders, error, loading } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant ? restaurant.id : "", date);
 
     const refetchOrders = [
         {
-            query: GET_ORDERS_BY_RESTAURANT_BY_PLACEDAT,
-            variables: { orderRestaurantId: savedRestaurantItem ? savedRestaurantItem.id : "", placedAt: date },
+            query: GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT,
+            variables: { orderRestaurantId: restaurant ? restaurant.id : "", placedAt: date },
         },
     ];
 
@@ -36,7 +40,7 @@ export const Orders = () => {
         refetchQueries: refetchOrders,
     });
 
-    if (!savedRestaurantItem) return <div>Please select a restaurant.</div>;
+    if (!restaurant) return <div>Please select a restaurant.</div>;
 
     if (loading) {
         return <FullScreenSpinner show={true} text="Loading restaurant" />;
@@ -116,6 +120,47 @@ export const Orders = () => {
         }
     };
 
+    const onOrderReprint = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+        setShowSpinner(true);
+
+        try {
+            register &&
+                register.printers &&
+                register.printers.items.forEach(async (printer) => {
+                    await printReceipt({
+                        orderId: order.id,
+                        printerType: printer.type,
+                        printerAddress: printer.address,
+                        customerPrinter: printer.customerPrinter,
+                        kitchenPrinter: printer.kitchenPrinter,
+                        hideModifierGroupsForCustomer: false,
+                        restaurant: {
+                            name: restaurant.name,
+                            address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
+                            gstNumber: restaurant.gstNumber,
+                        },
+                        customerInformation: null,
+                        notes: order.notes,
+                        products: convertProductTypesForPrint(order.products),
+                        eftposReceipt: order.eftposReceipt,
+                        total: order.total,
+                        discount: order.promotionId && order.discount ? order.discount : null,
+                        subTotal: order.subTotal,
+                        paid: order.paid,
+                        type: order.type,
+                        number: order.number,
+                        table: order.table,
+                        placedAt: order.placedAt,
+                        orderScheduledAt: order.orderScheduledAt,
+                    });
+                });
+        } catch (error) {
+            toast.error("Could not update order status. Please contact a Tabin representative.");
+        } finally {
+            setShowSpinner(false);
+        }
+    };
+
     const onClickTab = (tab: EOrderStatus) => {
         setEOrderStatus(tab);
     };
@@ -175,6 +220,7 @@ export const Orders = () => {
                                     onOrderComplete={onOrderComplete}
                                     onOrderRefund={onOrderRefund}
                                     onOrderCancel={onOrderCancel}
+                                    onOrderReprint={onOrderReprint}
                                 />
                             )
                     )}
@@ -190,8 +236,9 @@ const Order = (props: {
     onOrderComplete: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
     onOrderRefund: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
     onOrderCancel: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
+    onOrderReprint: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
 }) => {
-    const { searchTerm, order, onOrderComplete, onOrderRefund, onOrderCancel } = props;
+    const { searchTerm, order, onOrderComplete, onOrderRefund, onOrderCancel, onOrderReprint } = props;
 
     if (searchTerm && searchTerm !== order.number) return <div></div>;
 
@@ -215,7 +262,7 @@ const Order = (props: {
             {order.products.map((product) => (
                 <div key={product.id}>
                     <div className="separator-2"></div>
-                    <OrderItemDetails name={product.name} notes={product.notes} modifierGroups={product.modifierGroups} />
+                    <OrderItemDetails name={product.name} quantity={product.quantity} notes={product.notes} modifierGroups={product.modifierGroups} />
                 </div>
             ))}
 
@@ -227,12 +274,18 @@ const Order = (props: {
                 {order.status !== EOrderStatus.COMPLETED && <Button onClick={() => onOrderComplete(order)}>Complete</Button>}
                 {order.status !== EOrderStatus.REFUNDED && <Button onClick={() => onOrderRefund(order)}>Refund</Button>}
                 {order.status !== EOrderStatus.CANCELLED && <Button onClick={() => onOrderCancel(order)}>Cancel</Button>}
+                <Button onClick={() => onOrderReprint(order)}>Reprint</Button>
             </div>
         </div>
     );
 };
 
-const OrderItemDetails = (props: { name: string; notes: string | null; modifierGroups: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] | null }) => {
+const OrderItemDetails = (props: {
+    name: string;
+    quantity: number;
+    notes: string | null;
+    modifierGroups: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] | null;
+}) => {
     const modifierString = (preSelectedQuantity: number, quantity: number, name: string, price: number) => {
         const changedQuantity = quantity - preSelectedQuantity;
         let mStr = "";
@@ -250,7 +303,7 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
         return mStr;
     };
 
-    const nameDisplay = <div className="h4">{props.name}</div>;
+    const nameDisplay = <div className="h4">{`${props.quantity > 1 ? `${props.quantity} x ` : ""}${props.name}`}</div>;
 
     const modifiersDisplay = (
         <>
