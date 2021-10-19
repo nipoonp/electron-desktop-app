@@ -10,8 +10,8 @@ export const LineGraph = (props: { graphData; xAxis: string; lines: string[]; fi
                 data={graphData}
                 margin={{
                     top: 5,
-                    right: 30,
-                    left: 20,
+                    right: 5,
+                    left: 5,
                     bottom: 5,
                 }}
             >
@@ -76,7 +76,7 @@ const renderActiveShape = (props) => {
     );
 };
 
-export const PieGraph = (props: {data, fill: string}) => {
+export const PieGraph = (props: { data; fill: string }) => {
     const { data, fill } = props;
     const [activeIndex, setActiveIndex] = useState(0);
     const onPieEnter = (_, index) => {

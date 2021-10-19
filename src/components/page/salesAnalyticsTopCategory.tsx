@@ -24,10 +24,10 @@ export const SalesAnalyticsTopCategory = () => {
     return (
         <>
             <SalesAnalyticsWrapper title="Sales By Category" showBackButton={true}>
-                <div className="reports">
-                    <div className="sales-by p-3">
-                        <div className="pb-3" style={{ width: "100%", height: "300px" }}>
-                            <PieGraph data={salesAnalytics?.categoryByGraphData} fill={graphColor} />
+                {salesAnalytics ? (
+                    <div className="sales-by">
+                        <div className="mb-6" style={{ width: "100%", height: "300px" }}>
+                            <PieGraph data={salesAnalytics.categoryByGraphData} fill={graphColor} />
                         </div>
                         <div className="sales-table-wrapper">
                             <Table>
@@ -40,23 +40,21 @@ export const SalesAnalyticsTopCategory = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {salesAnalytics &&
-                                        Object.entries(salesAnalytics.mostSoldCategories).map(([categoryId, category]) => (
-                                            <tr key={categoryId}>
-                                                <td> {category.item.name}</td>
-                                                <td> {category.totalQuantity}</td>
-                                                <td> {`$${convertCentsToDollarsReturnFloat(category.totalAmount)}`}</td>
-                                                <td> {`${((category.totalAmount * 100) / salesAnalytics.subTotalCompleted).toFixed(2)} %`}</td>
-                                            </tr>
-                                        ))}
-                                    <tr>
-                                        <td></td>
-                                    </tr>
+                                    {Object.entries(salesAnalytics.mostSoldCategories).map(([categoryId, category]) => (
+                                        <tr key={categoryId}>
+                                            <td> {category.item.name}</td>
+                                            <td> {category.totalQuantity}</td>
+                                            <td> {`$${convertCentsToDollarsReturnFloat(category.totalAmount)}`}</td>
+                                            <td> {`${((category.totalAmount * 100) / salesAnalytics.subTotalCompleted).toFixed(2)} %`}</td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </Table>
                         </div>
                     </div>
-                </div>
+                ) : (
+                    <div>No orders were placed during this period. Please select another date range.</div>
+                )}
             </SalesAnalyticsWrapper>
         </>
     );

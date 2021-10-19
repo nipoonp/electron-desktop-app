@@ -72,17 +72,17 @@ export const SalesAnalytics = () => {
 
     return (
         <>
-            {salesAnalytics && (
+            {salesAnalytics ? (
                 <SalesAnalyticsWrapper title="Sales Analytics">
-                    <div className="grid">
-                        <div className="item item1">
+                    <div className="sales-analytics-grid">
+                        <div className="sales-analytics-grid-item1">
                             <Card title="Sales By Day" onOpen={onClickDailySales}>
                                 <div style={{ width: "100%", height: "300px" }}>
                                     <LineGraph xAxis="date" lines={["sales"]} graphData={salesAnalytics.dayByGraphData} fill={graphColor} />
                                 </div>
                             </Card>
                         </div>
-                        <div className="item item2 report-sales-value-wrapper">
+                        <div className="sales-analytics-grid-item2 analytics-value-wrapper">
                             <Card className="text-center">
                                 <div className="h3 mb-1">{`$${convertCentsToDollars(salesAnalytics.subTotalCompleted)}`}</div>
                                 <div className="text-uppercase">Total Sales</div>
@@ -104,7 +104,7 @@ export const SalesAnalytics = () => {
                                 <div className="text-uppercase">Items Sold</div>
                             </Card>
                         </div>
-                        <div className="item item3">
+                        <div className="sales-analytics-grid-item3">
                             <Card title="Sales By Hour" onOpen={onClickHourlySales}>
                                 <div style={{ width: "100%", height: "250px" }}>
                                     <LineGraph xAxis="hour" lines={["sales"]} graphData={salesAnalytics.hourByGraphData} fill={graphColor} />
@@ -112,12 +112,12 @@ export const SalesAnalytics = () => {
                             </Card>
                         </div>
                         {salesAnalytics.bestHour && (
-                            <div className="item item4">
+                            <div className="sales-analytics-grid-item4">
                                 <BestHourCard bestHour={salesAnalytics.bestHour} />
                             </div>
                         )}
                         {salesAnalytics.topSoldCategory && (
-                            <div className="item item5">
+                            <div className="sales-analytics-grid-item5">
                                 <Card title="Top Category" onOpen={onClickTopCategory}>
                                     <div className="top-item-container" style={{ alignItems: "center" }}>
                                         <div className="top-item-image text-center">
@@ -147,7 +147,7 @@ export const SalesAnalytics = () => {
                             </div>
                         )}
                         {salesAnalytics.topSoldProduct && (
-                            <div className="item item6">
+                            <div className="sales-analytics-grid-item6">
                                 <Card title="Top Product" onOpen={onClickTopProduct}>
                                     <div className="top-item-container" style={{ alignItems: "center" }}>
                                         <div className="top-item-image text-center">
@@ -178,6 +178,8 @@ export const SalesAnalytics = () => {
                         )}
                     </div>
                 </SalesAnalyticsWrapper>
+            ) : (
+                <div>No orders were placed during this period. Please select another date range.</div>
             )}
         </>
     );

@@ -25,10 +25,10 @@ export const SalesAnalyticsHourlySales = () => {
     return (
         <>
             <SalesAnalyticsWrapper title="Sales By Hour" showBackButton={true}>
-                <div className="reports">
-                    <div className="sales-by p-3">
-                        <div className="pb-3" style={{ width: "100%", height: "300px" }}>
-                            <LineGraph xAxis="hour" lines={["sales"]} graphData={salesAnalytics?.hourByGraphData} fill={graphColor} />
+                {salesAnalytics ? (
+                    <div className="sales-by">
+                        <div className="mb-6" style={{ width: "100%", height: "300px" }}>
+                            <LineGraph xAxis="hour" lines={["sales"]} graphData={salesAnalytics.hourByGraphData} fill={graphColor} />
                         </div>
                         <div className="sales-table-wrapper">
                             <Table>
@@ -42,26 +42,24 @@ export const SalesAnalyticsHourlySales = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {salesAnalytics &&
-                                        Object.entries(salesAnalytics.hourlySales)
-                                            .sort((a, b) => a[0].localeCompare(b[0]))
-                                            .map(([hour, sale], index) => (
-                                                <tr key={index}>
-                                                    <td> {getTwelveHourFormat(Number(hour))}</td>
-                                                    <td> {sale.totalQuantity}</td>
-                                                    <td> {`$${convertCentsToDollarsReturnFloat(sale.net)}`}</td>
-                                                    <td> {`$${convertCentsToDollarsReturnFloat(sale.tax)}`}</td>
-                                                    <td> {`$${convertCentsToDollarsReturnFloat(sale.totalAmount)}`}</td>
-                                                </tr>
-                                            ))}
-                                    <tr>
-                                        <td></td>
-                                    </tr>
+                                    {Object.entries(salesAnalytics.hourlySales)
+                                        .sort((a, b) => a[0].localeCompare(b[0]))
+                                        .map(([hour, sale], index) => (
+                                            <tr key={index}>
+                                                <td> {getTwelveHourFormat(Number(hour))}</td>
+                                                <td> {sale.totalQuantity}</td>
+                                                <td> {`$${convertCentsToDollarsReturnFloat(sale.net)}`}</td>
+                                                <td> {`$${convertCentsToDollarsReturnFloat(sale.tax)}`}</td>
+                                                <td> {`$${convertCentsToDollarsReturnFloat(sale.totalAmount)}`}</td>
+                                            </tr>
+                                        ))}
                                 </tbody>
                             </Table>
                         </div>
                     </div>
-                </div>
+                ) : (
+                    <div>No orders were placed during this period. Please select another date range.</div>
+                )}
             </SalesAnalyticsWrapper>
         </>
     );

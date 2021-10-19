@@ -23,10 +23,10 @@ export const SalesAnalyticsTopProduct = () => {
     return (
         <>
             <SalesAnalyticsWrapper title="Sales By Hour" showBackButton={true}>
-                <div className="reports">
-                    <div className="sales-by p-3">
-                        <div className="pb-3" style={{ width: "100%", height: "300px" }}>
-                            <PieGraph data={salesAnalytics?.productByGraphData} fill={graphColor} />
+                {salesAnalytics ? (
+                    <div className="sales-by">
+                        <div className="mb-6" style={{ width: "100%", height: "300px" }}>
+                            <PieGraph data={salesAnalytics.productByGraphData} fill={graphColor} />
                         </div>
                         <div className="sales-table-wrapper">
                             <Table>
@@ -39,23 +39,21 @@ export const SalesAnalyticsTopProduct = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {salesAnalytics &&
-                                        Object.entries(salesAnalytics.mostSoldProducts).map(([productId, product]) => (
-                                            <tr key={productId}>
-                                                <td> {product.item.name}</td>
-                                                <td> {product.totalQuantity}</td>
-                                                <td> {`$${convertCentsToDollarsReturnFloat(product.totalAmount)}`}</td>
-                                                <td> {`${((product.totalAmount * 100) / salesAnalytics.subTotalCompleted).toFixed(2)} %`}</td>
-                                            </tr>
-                                        ))}
-                                    <tr>
-                                        <td></td>
-                                    </tr>
+                                    {Object.entries(salesAnalytics.mostSoldProducts).map(([productId, product]) => (
+                                        <tr key={productId}>
+                                            <td> {product.item.name}</td>
+                                            <td> {product.totalQuantity}</td>
+                                            <td> {`$${convertCentsToDollarsReturnFloat(product.totalAmount)}`}</td>
+                                            <td> {`${((product.totalAmount * 100) / salesAnalytics.subTotalCompleted).toFixed(2)} %`}</td>
+                                        </tr>
+                                    ))}
                                 </tbody>
                             </Table>
                         </div>
                     </div>
-                </div>
+                ) : (
+                    <div>No orders were placed during this period. Please select another date range.</div>
+                )}
             </SalesAnalyticsWrapper>
         </>
     );
