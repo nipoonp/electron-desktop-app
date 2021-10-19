@@ -1,5 +1,4 @@
 import { FunctionComponent, useEffect } from "react";
-
 import { Router, Route, Switch, Redirect, RouteComponentProps, RouteProps, useHistory } from "react-router-dom";
 import { Restaurant } from "./page/restaurant";
 import { NoMatch } from "./page/error/404";
@@ -8,8 +7,6 @@ import Modal from "react-modal";
 import { Login } from "./page/auth/login";
 import { Checkout } from "./page/checkout";
 import { useAuth, AuthenticationStatus } from "../context/auth-context";
-
-import "react-toastify/dist/ReactToastify.min.css";
 import { Logger } from "aws-amplify";
 import { useUser } from "../context/user-context";
 import { ToastContainer } from "../tabin/components/toast";
@@ -28,6 +25,13 @@ import { Stock } from "./page/stock";
 import { Reports } from "./page/reports";
 import { Orders } from "./page/orders";
 import { AlertContainer } from "../tabin/components/alert";
+import { SalesAnalytics } from "./page/salesAnalytics";
+import { SalesAnalyticsDailySales } from "./page/salesAnalyticsDailySales";
+import { SalesAnalyticsHourlySales } from "./page/salesAnalyticsHourlySales";
+import { SalesAnalyticsTopCategory } from "./page/salesAnalyticsTopCategory";
+import { SalesAnalyticsTopProduct } from "./page/salesAnalyticsTopProduct";
+
+import "react-toastify/dist/ReactToastify.min.css";
 
 let electron: any;
 let ipcRenderer: any;
@@ -62,6 +66,11 @@ export const tableNumberPath = "/table_number";
 export const restaurantPath = "/restaurant";
 export const checkoutPath = "/checkout";
 export const logoutPath = "/log_out";
+export const salesAnalyticsPath = "/sales_analytics";
+export const salesAnalyticsDailySalesPath = "/sales_analytics/daily_sales";
+export const salesAnalyticsHourlySalesPath = "/sales_analytics/hourly_sales";
+export const salesAnalyticsTopCategoryPath = "/sales_analytics/top_category";
+export const salesAnalyticsTopProductPath = "/sales_analytics/top_product";
 export const unauthorizedPath = "/unauthorized";
 
 export default () => {
@@ -112,6 +121,9 @@ const Routes = () => {
                     case "reports":
                         history.push(reportsPath);
                         break;
+                    case "salesAnalytics":
+                        history.push(salesAnalyticsPath);
+                        break;
                     case "configureEftposAndPrinters":
                         history.push(configureNewEftposPath);
                         break;
@@ -139,6 +151,11 @@ const Routes = () => {
             <PrivateRoute exact path={stockPath} component={Stock} />
             <PrivateRoute exact path={ordersPath} component={Orders} />
             <PrivateRoute exact path={reportsPath} component={Reports} />
+            <PrivateRoute exact path={salesAnalyticsPath} component={SalesAnalytics} />
+            <PrivateRoute exact path={salesAnalyticsDailySalesPath} component={SalesAnalyticsDailySales} />
+            <PrivateRoute exact path={salesAnalyticsHourlySalesPath} component={SalesAnalyticsHourlySales} />
+            <PrivateRoute exact path={salesAnalyticsTopCategoryPath} component={SalesAnalyticsTopCategory} />
+            <PrivateRoute exact path={salesAnalyticsTopProductPath} component={SalesAnalyticsTopProduct} />
             <RestaurantRegisterPrivateRoute exact path={configureNewEftposPath} component={ConfigureNewEftpos} />
             <RestaurantRegisterPrivateRoute exact path={beginOrderPath} component={BeginOrder} />
             <RestaurantRegisterPrivateRoute exact path={orderTypePath} component={OrderType} />

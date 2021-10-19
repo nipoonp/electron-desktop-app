@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useMutation } from "@apollo/client";
 import { useRestaurant } from "../../context/restaurant-context";
 import { UPDATE_ORDER_STATUS } from "../../graphql/customMutations";
-import { EOrderStatus, GET_ORDERS_BY_RESTAURANT_BY_PLACEDAT } from "../../graphql/customQueries";
+import { EOrderStatus, GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT } from "../../graphql/customQueries";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { Input } from "../../tabin/components/input";
 
 import "./orders.scss";
-import { useGetRestaurantOrdersByPlacedAt } from "../../hooks/useGetRestaurantOrdersByPlacedAt";
+import { useGetRestaurantOrdersByBeginWithPlacedAt } from "../../hooks/useGetRestaurantOrdersByBeginWithPlacedAt";
 import { convertCentsToDollars, convertProductTypesForPrint, toLocalISOString } from "../../util/util";
 import { format } from "date-fns";
 import { Button } from "../../tabin/components/button";
@@ -26,11 +26,11 @@ export const Orders = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
-    const { data: orders, error, loading } = useGetRestaurantOrdersByPlacedAt(restaurant ? restaurant.id : "", date);
+    const { data: orders, error, loading } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant ? restaurant.id : "", date);
 
     const refetchOrders = [
         {
-            query: GET_ORDERS_BY_RESTAURANT_BY_PLACEDAT,
+            query: GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT,
             variables: { orderRestaurantId: restaurant ? restaurant.id : "", placedAt: date },
         },
     ];
@@ -262,7 +262,7 @@ const Order = (props: {
             {order.products.map((product) => (
                 <div key={product.id}>
                     <div className="separator-2"></div>
-                    <OrderItemDetails name={product.name} notes={product.notes} modifierGroups={product.modifierGroups} />
+                    <OrderItemDetails name={product.name} quantity={product.quantity} notes={product.notes} modifierGroups={product.modifierGroups} />
                 </div>
             ))}
 
@@ -280,7 +280,12 @@ const Order = (props: {
     );
 };
 
-const OrderItemDetails = (props: { name: string; notes: string | null; modifierGroups: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] | null }) => {
+const OrderItemDetails = (props: {
+    name: string;
+    quantity: number;
+    notes: string | null;
+    modifierGroups: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] | null;
+}) => {
     const modifierString = (preSelectedQuantity: number, quantity: number, name: string, price: number) => {
         const changedQuantity = quantity - preSelectedQuantity;
         let mStr = "";
@@ -298,7 +303,7 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
         return mStr;
     };
 
-    const nameDisplay = <div className="h4">{props.name}</div>;
+    const nameDisplay = <div className="h4">{`${props.quantity > 1 ? `${props.quantity} x ` : ""}${props.name}`}</div>;
 
     const modifiersDisplay = (
         <>

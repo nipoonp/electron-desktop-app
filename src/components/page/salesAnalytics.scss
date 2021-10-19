@@ -1,0 +1,106 @@
+.sales-analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-gap: 16px;
+
+    .sales-analytics-grid-item1 {
+        grid-column: span 3 / auto;
+    }
+
+    .sales-analytics-grid-item3 {
+        grid-column: span 3 / auto;
+    }
+
+    .sales-analytics-grid-item5 {
+        grid-column: span 2 / auto;
+    }
+
+    .sales-analytics-grid-item6 {
+        grid-column: span 2 / auto;
+    }
+
+    @media screen and (max-width: 1200px) {
+        .sales-analytics-grid-item1 {
+            grid-column: span 1 / auto;
+        }
+
+        .sales-analytics-grid-item2 {
+            grid-column: span 1 / auto;
+        }
+
+        .sales-analytics-grid-item3 {
+            grid-column: span 1 / auto;
+        }
+
+        .sales-analytics-grid-item4 {
+            grid-column: span 1 / auto;
+        }
+
+        .sales-analytics-grid-item5 {
+            grid-column: span 1 / auto;
+        }
+
+        .sales-analytics-grid-item6 {
+            grid-column: span 1 / auto;
+        }
+    }
+
+    .analytics-value-wrapper {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        grid-gap: 5px;
+
+        @media screen and (max-width: 1200px) {
+            grid-gap: 16px;
+        }
+    }
+
+    .top-item-container {
+        display: flex;
+        align-items: center;
+
+        .top-item-image {
+            flex: 1;
+
+            img {
+                height: 136px;
+                border-radius: 10px;
+            }
+        }
+
+        .top-item-details {
+            flex: 1;
+        }
+    }
+}
+
+.sales-by {
+    .sales-reading-wrapper {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        grid-gap: 12px;
+    }
+
+    .sales-table-wrapper {
+        width: 100%;
+        overflow-x: scroll;
+
+        td:first-child {
+            min-width: 120px;
+        }
+    }
+}
+
+.besthour-clock-wrapper {
+    display: flex;
+    justify-content: center;
+
+    .react-clock__face {
+        border: 1px solid var(--primary-color);
+    }
+
+    .react-clock__hand__body,
+    .react-clock__mark__body {
+        background-color: var(--primary-color);
+    }
+}
