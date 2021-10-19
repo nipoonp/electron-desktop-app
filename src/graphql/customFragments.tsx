@@ -114,12 +114,14 @@ export interface IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT {
     quantity: number;
     notes: string | null;
     image: IS3Object | null;
-    category: {
-        id: string;
-        name: string;
-        image: IS3Object | null;
-    } | null;
+    category: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | null;
     modifierGroups: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] | null;
+}
+
+export interface IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT {
+    id: string;
+    name: string;
+    image: IS3Object | null;
 }
 
 export interface IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT {

@@ -25,6 +25,8 @@ export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0)
 
 export const convertCentsToDollars = (price: number) => (price / 100).toFixed(2);
 
+export const convertCentsToDollarsReturnFloat = (price: number) => parseFloat((price / 100).toFixed(2));
+
 export const getOrderNumber = (orderNumberSuffix: string) => {
     let todayDate = format(new Date(), "dd/MM/yyyy");
 

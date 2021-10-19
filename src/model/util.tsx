@@ -31,3 +31,9 @@ export const getVerifoneTimeBasedTransactionId = () => {
     return (new Date().getTime() - new Date(2010, 1, 1).getTime()) % 100000000; // 1-8 digits Should not have repeating transactionIds, if you use the same one again, the previous transaction will get overridden? Does it matter, I don't know
     //If multi-merchant is not supported or required then ID ‘0’ should be used
 };
+
+export const taxRate = 15;
+
+export const getTwelveHourFormat = (hour: number): string => {
+    return `${hour > 12 ? `${hour - 12} PM` : hour === 12 ? `${hour} PM` : `${hour} AM`}`;
+};
