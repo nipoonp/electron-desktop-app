@@ -58,7 +58,6 @@ export const GET_USER = gql`
                             name
                             enableTableFlags
                             enablePayLater
-                            enableCashPayments
                             type
                             eftposProvider
                             eftposIpAddress
@@ -231,7 +230,6 @@ export const GET_RESTAURANT = gql`
                     name
                     enableTableFlags
                     enablePayLater
-                    enableCashPayments
                     type
                     eftposProvider
                     eftposIpAddress
@@ -565,9 +563,9 @@ export interface IGET_RESTAURANT {
     autoCompleteOrders: boolean | null;
     salesReportMailingList: string | null;
     advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
-    upSellCrossSell?: IGET_DASHBOARD_UP_SELL_CROSS_SELL;
+    upSellCrossSell?: IGET_RESTAURANT_UP_SELL_CROSS_SELL;
     registers: { items: IGET_RESTAURANT_REGISTER[] };
-    promotions: { items: IGET_DASHBOARD_PROMOTION[] };
+    promotions: { items: IGET_RESTAURANT_PROMOTION[] };
     categories: {
         items: IGET_RESTAURANT_CATEGORY[];
     };
@@ -591,7 +589,6 @@ export interface IGET_RESTAURANT_REGISTER {
     name: string;
     enableTableFlags: boolean;
     enablePayLater: boolean;
-    enableCashPayments: boolean;
     type: string;
     eftposProvider: string;
     eftposIpAddress: string;
@@ -625,28 +622,28 @@ export interface IGET_RESTAURANT_REGISTER_PRINTER_IGNORE_PRODUCT {
     };
 }
 
-export interface IGET_DASHBOARD_UP_SELL_CROSS_SELL {
+export interface IGET_RESTAURANT_UP_SELL_CROSS_SELL {
     id: string;
     customCategories: {
-        items: IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_CATEGORY[];
+        items: IGET_RESTAURANT_UP_SELL_CROSS_SELL_CUSTOM_CATEGORY[];
     };
     customProducts: {
-        items: IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT[];
+        items: IGET_RESTAURANT_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT[];
     };
 }
 
-export interface IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_CATEGORY {
+export interface IGET_RESTAURANT_UP_SELL_CROSS_SELL_CUSTOM_CATEGORY {
     id: string;
 }
 
-export interface IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT {
+export interface IGET_RESTAURANT_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT {
     id: string;
     categories: {
-        items: IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT_CATEGORY[];
+        items: IGET_RESTAURANT_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT_CATEGORY[];
     };
 }
 
-export interface IGET_DASHBOARD_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT_CATEGORY {
+export interface IGET_RESTAURANT_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT_CATEGORY {
     id: string;
 }
 
@@ -697,7 +694,7 @@ export interface IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES {
     endTime: string;
 }
 
-export interface IGET_DASHBOARD_PROMOTION {
+export interface IGET_RESTAURANT_PROMOTION {
     id: string;
     name: string;
     code: string;
@@ -710,8 +707,8 @@ export interface IGET_DASHBOARD_PROMOTION {
     minSpend: number;
     applyToCheapest: boolean;
     type: EPromotionType;
-    items: { items: IGET_DASHBOARD_PROMOTION_ITEMS[] };
-    discounts: { items: IGET_DASHBOARD_PROMOTION_DISCOUNT[] };
+    items: { items: IGET_RESTAURANT_PROMOTION_ITEMS[] };
+    discounts: { items: IGET_RESTAURANT_PROMOTION_DISCOUNT[] };
     promotionRestaurantId: string;
     owner: string;
     createdAt: string;
@@ -739,7 +736,7 @@ export enum EPromotionType {
     RELATEDITEMS = "RELATEDITEMS",
 }
 
-export interface IGET_DASHBOARD_PROMOTION_ITEMS {
+export interface IGET_RESTAURANT_PROMOTION_ITEMS {
     id: string;
     minQuantity: number;
     categories: {
@@ -756,11 +753,11 @@ export interface IGET_DASHBOARD_PROMOTION_ITEMS {
     };
 }
 
-export interface IGET_DASHBOARD_PROMOTION_DISCOUNT {
+export interface IGET_RESTAURANT_PROMOTION_DISCOUNT {
     id: string;
     amount: number;
     type: EDiscountType;
-    items: { items: IGET_DASHBOARD_PROMOTION_ITEMS[] };
+    items: { items: IGET_RESTAURANT_PROMOTION_ITEMS[] };
 }
 
 export enum EDiscountType {
@@ -837,10 +834,10 @@ export interface IGET_RESTAURANT_MODIFIER {
     totalQuantityAvailable?: number;
     soldOut?: boolean;
     soldOutDate?: string;
-    productModifier?: IGET_DASHBOARD_MODIFIER_PRODUCT_MODIFIER;
+    productModifier?: IGET_RESTAURANT_MODIFIER_PRODUCT_MODIFIER;
 }
 
-export interface IGET_DASHBOARD_MODIFIER_PRODUCT_MODIFIER {
+export interface IGET_RESTAURANT_MODIFIER_PRODUCT_MODIFIER {
     id: string;
     name: string;
     price: number;
@@ -950,10 +947,21 @@ export const GET_PROMOTION_BY_CODE = gql`
     }
 `;
 
-export const GET_ORDERS_BY_RESTAURANT_BY_PLACEDAT = gql`
+export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
     ${ORDER_FIELDS_FRAGMENT}
     query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAt: String!) {
         getOrdersByRestaurantByPlacedAt(orderRestaurantId: $orderRestaurantId, placedAt: { beginsWith: $placedAt }) {
+            items {
+                ...OrderFieldsFragment
+            }
+        }
+    }
+`;
+
+export const GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
+    ${ORDER_FIELDS_FRAGMENT}
+    query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAtStartDate: String!, $placedAtEndDate: String!) {
+        getOrdersByRestaurantByPlacedAt(orderRestaurantId: $orderRestaurantId, placedAt: { between: [$placedAtStartDate, $placedAtEndDate] }) {
             items {
                 ...OrderFieldsFragment
             }

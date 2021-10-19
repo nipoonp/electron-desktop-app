@@ -3,7 +3,8 @@ import { useState } from "react";
 import { Input } from "../../../tabin/components/input";
 import { FullScreenSpinner } from "../../../tabin/components/fullScreenSpinner";
 import { Button } from "../../../tabin/components/button";
-import { useWindcave, WindcaveTransactionOutcome, WindcaveTransactionOutcomeResult } from "../../../context/windcave-context";
+import { useWindcave } from "../../../context/windcave-context";
+import { IEftposTransactionOutcome } from "../../../model/model";
 
 export const Windcave = () => {
     const [action, setAction] = useState("doScrHIT");
@@ -15,29 +16,18 @@ export const Windcave = () => {
     const [showSpinner, setShowSpinner] = useState(false);
     const { createTransaction, pollForOutcome } = useWindcave();
 
-    const doTransaction = async () => {
+    const performEftposTransaction = async () => {
         setShowSpinner(true);
 
         try {
             const txnRef = await createTransaction(stationId, amount, "Purchase", action, user, key);
 
-            let transactionOutcome: WindcaveTransactionOutcomeResult = await pollForOutcome(stationId, txnRef, action, user, key);
+            let res: IEftposTransactionOutcome = await pollForOutcome(stationId, txnRef, action, user, key);
 
-            setAmount(199);
-
-            if (transactionOutcome.transactionOutcome == WindcaveTransactionOutcome.Accepted) {
-                alert("Transaction Accepted!\n\n" + transactionOutcome.eftposReceipt);
-            } else if (transactionOutcome.transactionOutcome == WindcaveTransactionOutcome.Declined) {
-                alert("Transaction Declined!\n\n" + transactionOutcome.eftposReceipt);
-            } else if (transactionOutcome.transactionOutcome == WindcaveTransactionOutcome.Cancelled) {
-                alert("Transaction Cancelled!");
-            } else {
-                alert("Transaction Failed!");
-            }
+            alert(res.message);
         } catch (errorMessage) {
             alert("Error! Message: " + errorMessage);
         } finally {
-            // Enable button back (always executed)
             setShowSpinner(false);
         }
     };
@@ -100,7 +90,7 @@ export const Windcave = () => {
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAmount(Number(event.target.value))}
                 />
 
-                <Button onClick={doTransaction} disabled={showSpinner}>
+                <Button onClick={performEftposTransaction} disabled={showSpinner}>
                     Send Transaction
                 </Button>
             </div>

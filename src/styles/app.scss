@@ -1,5 +1,17 @@
+.text-uppercase {
+    text-transform: uppercase;
+}
+
+.text-left {
+    text-align: left;
+}
+
 .text-center {
     text-align: center;
+}
+
+.text-right {
+    text-align: right;
 }
 
 .text-bold {
@@ -16,6 +28,11 @@
 
 .text-error {
     color: var(--error-color);
+}
+
+// Display
+.d-flex {
+    display: flex;
 }
 
 //Headings
@@ -41,6 +58,61 @@
     font-size: 18px;
     line-height: 36px;
     font-weight: 600;
+}
+
+.h5 {
+    font-size: 16px;
+    line-height: 36px;
+    font-weight: 600;
+}
+
+//Margin
+.m-1 {
+    margin: 8px;
+}
+
+.m-2 {
+    margin: 16px;
+}
+
+.m-3 {
+    margin: 24px;
+}
+
+.m-4 {
+    margin: 32px;
+}
+
+.m-5 {
+    margin: 40px;
+}
+
+.m-6 {
+    margin: 48px;
+}
+
+.m-7 {
+    margin: 56px;
+}
+
+.m-8 {
+    margin: 64px;
+}
+
+.m-9 {
+    margin: 72px;
+}
+
+.m-10 {
+    margin: 80px;
+}
+
+.m-11 {
+    margin: 88px;
+}
+
+.m-12 {
+    margin: 96px;
 }
 
 //Margin Top
@@ -237,6 +309,55 @@
 
 .mb-12 {
     margin-bottom: 96px;
+}
+
+//Padding
+.p-1 {
+    padding: 8px;
+}
+
+.p-2 {
+    padding: 16px;
+}
+
+.p-3 {
+    padding: 24px;
+}
+
+.p-4 {
+    padding: 32px;
+}
+
+.p-5 {
+    padding: 40px;
+}
+
+.p-6 {
+    padding: 48px;
+}
+
+.p-7 {
+    padding: 56px;
+}
+
+.p-8 {
+    padding: 64px;
+}
+
+.p-9 {
+    padding: 72px;
+}
+
+.p-10 {
+    padding: 80px;
+}
+
+.p-11 {
+    padding: 88px;
+}
+
+.p-12 {
+    padding: 96px;
 }
 
 //Padding Top
@@ -468,4 +589,11 @@
 .separator-6 {
     margin: 48px 0;
     border-bottom: 1px solid #ebebeb;
+}
+
+// Curser
+.cursor-pointer {
+    &:hover {
+        cursor: pointer;
+    }
 }

@@ -27,6 +27,11 @@ import { Logout } from "./page/auth/logout";
 import { Stock } from "./page/stock";
 import { Reports } from "./page/reports";
 import { Orders } from "./page/orders";
+import { SalesAnalytics } from "./page/salesAnalytics";
+import { SalesAnalyticsDailySales } from "./page/salesAnalyticsDailySales";
+import { SalesAnalyticsHourlySales } from "./page/salesAnalyticsHourlySales";
+import { SalesAnalyticsTopCategory } from "./page/salesAnalyticsTopCategory";
+import { SalesAnalyticsTopProduct } from "./page/salesAnalyticsTopProduct";
 
 let electron: any;
 let ipcRenderer: any;
@@ -61,6 +66,11 @@ export const tableNumberPath = "/table_number";
 export const restaurantPath = "/restaurant";
 export const checkoutPath = "/checkout";
 export const logoutPath = "/log_out";
+export const salesAnalyticsPath = "/sales_analytics";
+export const salesAnalyticsDailySalesPath = "/sales_analytics/daily_sales";
+export const salesAnalyticsHourlySalesPath = "/sales_analytics/hourly_sales";
+export const salesAnalyticsTopCategoryPath = "/sales_analytics/top_category";
+export const salesAnalyticsTopProductPath = "/sales_analytics/top_product";
 export const unauthorizedPath = "/unauthorized";
 
 export default () => {
@@ -110,6 +120,9 @@ const Routes = () => {
                     case "reports":
                         history.push(reportsPath);
                         break;
+                    case "salesAnalytics":
+                        history.push(salesAnalyticsPath);
+                        break;
                     case "configureEftposAndPrinters":
                         history.push(configureNewEftposPath);
                         break;
@@ -137,6 +150,11 @@ const Routes = () => {
             <PrivateRoute exact path={stockPath} component={Stock} />
             <PrivateRoute exact path={ordersPath} component={Orders} />
             <PrivateRoute exact path={reportsPath} component={Reports} />
+            <PrivateRoute exact path={salesAnalyticsPath} component={SalesAnalytics} />
+            <PrivateRoute exact path={salesAnalyticsDailySalesPath} component={SalesAnalyticsDailySales} />
+            <PrivateRoute exact path={salesAnalyticsHourlySalesPath} component={SalesAnalyticsHourlySales} />
+            <PrivateRoute exact path={salesAnalyticsTopCategoryPath} component={SalesAnalyticsTopCategory} />
+            <PrivateRoute exact path={salesAnalyticsTopProductPath} component={SalesAnalyticsTopProduct} />
             <RestaurantRegisterPrivateRoute exact path={configureNewEftposPath} component={ConfigureNewEftpos} />
             <RestaurantRegisterPrivateRoute exact path={beginOrderPath} component={BeginOrder} />
             <RestaurantRegisterPrivateRoute exact path={orderTypePath} component={OrderType} />

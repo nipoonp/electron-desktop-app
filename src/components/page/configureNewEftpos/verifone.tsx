@@ -2,8 +2,9 @@ import { useState } from "react";
 
 import { Input } from "../../../tabin/components/input";
 import { FullScreenSpinner } from "../../../tabin/components/fullScreenSpinner";
-import { useVerifone, VerifoneTransactionOutcome } from "../../../context/verifone-context";
+import { useVerifone } from "../../../context/verifone-context";
 import { Button } from "../../../tabin/components/button";
+import { IEftposTransactionOutcome } from "../../../model/model";
 
 export const Verifone = () => {
     const [showSpinner, setShowSpinner] = useState(false);
@@ -13,44 +14,16 @@ export const Verifone = () => {
 
     const { createTransaction } = useVerifone();
 
-    const doTransaction = async () => {
+    const performEftposTransaction = async () => {
         setShowSpinner(true);
 
         try {
-            let { transactionOutcome } = await createTransaction(amount, ipAddress, portNumber, "TEST-CONFIGURE");
+            const res: IEftposTransactionOutcome = await createTransaction(amount, ipAddress, portNumber, "TEST-CONFIGURE");
 
-            // setAmount(0);
-
-            if (transactionOutcome == VerifoneTransactionOutcome.Approved) {
-                alert("Transaction Approved!");
-            } else if (
-                // Should not reach here if your operating an unattended service
-                transactionOutcome == VerifoneTransactionOutcome.ApprovedWithSignature
-            ) {
-                alert("Transaction Approved With Signature!");
-            } else if (transactionOutcome == VerifoneTransactionOutcome.Cancelled) {
-                alert("Transaction Cancelled!");
-            } else if (transactionOutcome == VerifoneTransactionOutcome.Declined) {
-                alert("Transaction Declined!");
-            } else if (transactionOutcome == VerifoneTransactionOutcome.SettledOk) {
-                // Should not reach here unless your getting the settlement cutover. And this is a success code.
-                alert("Transaction Settled Ok!");
-            } else if (transactionOutcome == VerifoneTransactionOutcome.HostUnavailable) {
-                alert("Transaction Host Unavailable!");
-            } else if (transactionOutcome == VerifoneTransactionOutcome.SystemError) {
-                alert("Transaction System Error!");
-            } else if (transactionOutcome == VerifoneTransactionOutcome.TransactionInProgress) {
-                // You should never come in this state
-                // alert("Transaction Transaction In Progress!");
-            } else if (transactionOutcome == VerifoneTransactionOutcome.TerminalBusy) {
-                alert("Transaction Terminal Is Busy!");
-            } else {
-                alert("Transaction Failed!");
-            }
+            alert(res.message);
         } catch (errorMessage) {
             alert("Error! Message: " + errorMessage);
         } finally {
-            // Enable button back (always executed)
             setShowSpinner(false);
         }
     };
@@ -87,7 +60,7 @@ export const Verifone = () => {
                     placeholder="199"
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAmount(Number(event.target.value))}
                 />
-                <Button onClick={doTransaction}>Send Transaction</Button>
+                <Button onClick={performEftposTransaction}>Send Transaction</Button>
             </div>
         </>
     );
