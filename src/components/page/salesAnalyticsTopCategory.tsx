@@ -26,7 +26,7 @@ export const SalesAnalyticsTopCategory = () => {
             <SalesAnalyticsWrapper title="Sales By Category" showBackButton={true}>
                 {!startDate || !endDate ? (
                     <div className="text-center">Please select a start and end date.</div>
-                ) : salesAnalytics ? (
+                ) : salesAnalytics && salesAnalytics.totalSoldItems > 0 ? (
                     <div className="sales-by">
                         <div className="mb-6" style={{ width: "100%", height: "300px" }}>
                             <PieGraph data={salesAnalytics.categoryByGraphData} fill={graphColor} />

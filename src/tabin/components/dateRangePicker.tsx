@@ -1,4 +1,4 @@
-import { DateRangePicker as ReactDateRangePicker } from "react-dates";
+import { DateRangePicker as ReactDateRangePicker, isInclusivelyBeforeDay } from "react-dates";
 import moment from "moment";
 import { isMobile } from "react-device-detect";
 import { FiCalendar, FiX } from "react-icons/fi";
@@ -41,7 +41,7 @@ export const DateRangePicker = (props: {
                         verticalHeight={370}
                         orientation={isMobile ? "vertical" : "horizontal"}
                         numberOfMonths={isMobile ? 1 : 2}
-                        isOutsideRange={() => false}
+                        isOutsideRange={(day) => !isInclusivelyBeforeDay(day, moment())}
                     />
                 </div>
                 <FiX className="cursor-pointer" size={20} onClick={onClearDates} />

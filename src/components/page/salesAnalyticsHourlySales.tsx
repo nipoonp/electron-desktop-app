@@ -27,7 +27,7 @@ export const SalesAnalyticsHourlySales = () => {
             <SalesAnalyticsWrapper title="Sales By Hour" showBackButton={true}>
                 {!startDate || !endDate ? (
                     <div className="text-center">Please select a start and end date.</div>
-                ) : salesAnalytics ? (
+                ) : salesAnalytics && salesAnalytics.totalSoldItems > 0 ? (
                     <div className="sales-by">
                         <div className="mb-6" style={{ width: "100%", height: "300px" }}>
                             <LineGraph xAxis="hour" lines={["sales"]} graphData={salesAnalytics.hourByGraphData} fill={graphColor} />

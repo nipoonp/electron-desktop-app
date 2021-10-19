@@ -75,7 +75,7 @@ export const SalesAnalytics = () => {
             <SalesAnalyticsWrapper title="Sales Analytics">
                 {!startDate || !endDate ? (
                     <div className="text-center">Please select a start and end date.</div>
-                ) : salesAnalytics ? (
+                ) : salesAnalytics && salesAnalytics.totalSoldItems > 0 ? (
                     <div className="sales-analytics-grid">
                         <div className="sales-analytics-grid-item1">
                             <Card title="Sales By Day" onOpen={onClickDailySales}>

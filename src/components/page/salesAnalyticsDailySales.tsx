@@ -27,7 +27,7 @@ export const SalesAnalyticsDailySales = () => {
             <SalesAnalyticsWrapper title="Sales By Day" showBackButton={true}>
                 {!startDate || !endDate ? (
                     <div className="text-center">Please select a start and end date.</div>
-                ) : salesAnalytics ? (
+                ) : salesAnalytics && salesAnalytics.totalSoldItems > 0 ? (
                     <div className="sales-by">
                         <div className="mb-6" style={{ width: "100%", height: "300px" }}>
                             <LineGraph xAxis="date" lines={["sales"]} graphData={salesAnalytics?.dayByGraphData} fill={graphColor} />
