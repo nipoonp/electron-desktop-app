@@ -19,6 +19,8 @@ import {
     IEftposTransactionOutcome,
     EPaymentModalState,
     EEftposProvider,
+    ICartPaymentAmounts,
+    ICartPayment,
 } from "../../model/model";
 import { useUser } from "../../context/user-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -344,12 +346,13 @@ export const Checkout = () => {
             });
     };
 
-    const onSubmitOrder = async (paid: boolean) => {
+    const onSubmitOrder = async (paid: boolean, newPaymentAmounts: ICartPaymentAmounts, newPayments: ICartPayment[]) => {
         const orderNumber = getOrderNumber(register.orderNumberSuffix);
+
         setPaymentOutcomeOrderNumber(orderNumber);
 
         try {
-            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(orderNumber, paid);
+            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(orderNumber, paid, newPaymentAmounts, newPayments);
 
             if (register.printers && register.printers.items.length > 0) {
                 await printReceipts(newOrder);
@@ -360,7 +363,12 @@ export const Checkout = () => {
     };
 
     // Submit callback
-    const createOrder = async (orderNumber: string, paid: boolean): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
+    const createOrder = async (
+        orderNumber: string,
+        paid: boolean,
+        newPaymentAmounts: ICartPaymentAmounts,
+        newPayments: ICartPayment[]
+    ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
         const now = new Date();
 
         if (!user) {
@@ -394,8 +402,8 @@ export const Checkout = () => {
                 table: tableNumber,
                 notes: notes,
                 eftposReceipt: transactionEftposReceipts,
-                payments: payments,
-                paymentAmounts: paymentAmounts,
+                paymentAmounts: newPaymentAmounts,
+                payments: newPayments,
                 total: total,
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
@@ -547,13 +555,17 @@ export const Checkout = () => {
                 const newEftposPaymentAmounts = paymentAmounts.eftpos + amount;
                 const newTotalPaymentAmounts = newEftposPaymentAmounts + paymentAmounts.cash;
 
-                setPaymentAmounts({ ...paymentAmounts, eftpos: newEftposPaymentAmounts });
-                setPayments([...payments, { type: register.eftposProvider, amount: amount }]);
+                const newPaymentAmounts: ICartPaymentAmounts = { ...paymentAmounts, eftpos: newEftposPaymentAmounts };
+                const newPayments: ICartPayment[] = [...payments, { type: register.eftposProvider, amount: amount }];
+
+                setPaymentAmounts(newPaymentAmounts);
+                setPayments(newPayments);
 
                 if (newTotalPaymentAmounts >= subTotal) {
                     beginPaymentOutcomeApprovedTimeout();
 
-                    await onSubmitOrder(true);
+                    //Passing paymentAmounts, payments via params so we send the most updated values
+                    await onSubmitOrder(true, newPaymentAmounts, newPayments);
                 }
             } catch (e) {
                 setCreateOrderError(e);
@@ -573,8 +585,11 @@ export const Checkout = () => {
             const newCashPaymentAmounts = paymentAmounts.cash + amount;
             const newTotalPaymentAmounts = newCashPaymentAmounts + paymentAmounts.eftpos;
 
-            setPaymentAmounts({ ...paymentAmounts, cash: newCashPaymentAmounts });
-            setPayments([...payments, { type: "CASH", amount: amount }]);
+            const newPaymentAmounts: ICartPaymentAmounts = { ...paymentAmounts, cash: newCashPaymentAmounts };
+            const newPayments: ICartPayment[] = [...payments, { type: "CASH", amount: amount }];
+
+            setPaymentAmounts(newPaymentAmounts);
+            setPayments(newPayments);
 
             //If paid for everything
             if (newTotalPaymentAmounts >= subTotal) {
@@ -585,7 +600,8 @@ export const Checkout = () => {
 
                 beginPaymentOutcomeApprovedTimeout();
 
-                await onSubmitOrder(true);
+                //Passing paymentAmounts, payments via params so we send the most updated values
+                await onSubmitOrder(true, newPaymentAmounts, newPayments);
             }
         } catch (e) {
             setCreateOrderError(e);
