@@ -15,7 +15,7 @@ import {
     ICartItemQuantitiesById,
     ICartPromotion,
     CheckIfPromotionValidResponse,
-    ICartAmountPaid,
+    ICartPaymentAmounts,
     ICartPayment,
 } from "../model/model";
 import { getMatchingPromotionProducts, processPromotionDiscounts, isPromotionAvailable, checkIfPromotionValid } from "../util/util";
@@ -31,7 +31,7 @@ const initialCartModifierQuantitiesById = {};
 const initialUserAppliedPromotionCode = null;
 const initialPromotion = null;
 const initialTotal = 0;
-const initialAmountPaid: ICartAmountPaid = { cash: 0, eftpos: 0 };
+const initialPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0 };
 const initialSubTotal = 0;
 const initialPayments = [];
 const initialTransactionEftposReceipts = "";
@@ -61,8 +61,8 @@ type ContextProps = {
     subTotal: number;
     payments: ICartPayment[];
     setPayments: (payment: ICartPayment[]) => void;
-    amountPaid: ICartAmountPaid;
-    setAmountPaid: (amountPaid: ICartAmountPaid) => void;
+    paymentAmounts: ICartPaymentAmounts;
+    setPaymentAmounts: (paymentAmounts: ICartPaymentAmounts) => void;
     transactionEftposReceipts: string;
     setTransactionEftposReceipts: (receipt: string) => void;
 };
@@ -92,8 +92,8 @@ const CartContext = createContext<ContextProps>({
     subTotal: initialSubTotal,
     payments: initialPayments,
     setPayments: () => {},
-    amountPaid: initialAmountPaid,
-    setAmountPaid: () => {},
+    paymentAmounts: initialPaymentAmounts,
+    setPaymentAmounts: () => {},
     transactionEftposReceipts: initialTransactionEftposReceipts,
     setTransactionEftposReceipts: () => {},
 });
@@ -106,7 +106,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
     const [notes, _setNotes] = useState<string>(initialNotes);
     const [total, _setTotal] = useState<number>(initialTotal);
-    const [amountPaid, _setAmountPaid] = useState<ICartAmountPaid>(initialAmountPaid);
+    const [paymentAmounts, _setPaymentAmounts] = useState<ICartPaymentAmounts>(initialPaymentAmounts);
     const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
     const [payments, _setPayments] = useState<ICartPayment[]>(initialPayments);
     const [transactionEftposReceipts, _setTransactionEftposReceipts] = useState<string>(initialTransactionEftposReceipts);
@@ -442,8 +442,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setNotes(notes);
     };
 
-    const setAmountPaid = (amount: ICartAmountPaid) => {
-        _setAmountPaid(amount);
+    const setPaymentAmounts = (amount: ICartPaymentAmounts) => {
+        _setPaymentAmounts(amount);
     };
 
     const setPayments = (payments: ICartPayment[]) => {
@@ -465,7 +465,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setUserAppliedPromotionCode(initialUserAppliedPromotionCode);
         _setPromotion(initialPromotion);
         _setTotal(initialTotal);
-        _setAmountPaid(initialAmountPaid);
+        _setPaymentAmounts(initialPaymentAmounts);
         _setSubTotal(initialSubTotal);
         _setPayments(initialPayments);
         _setTransactionEftposReceipts(initialTransactionEftposReceipts);
@@ -495,8 +495,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setUserAppliedPromotion: setUserAppliedPromotion,
                 removeUserAppliedPromotion: removeUserAppliedPromotion,
                 total: total,
-                amountPaid: amountPaid,
-                setAmountPaid: setAmountPaid,
+                paymentAmounts: paymentAmounts,
+                setPaymentAmounts: setPaymentAmounts,
                 subTotal: subTotal,
                 payments: payments,
                 setPayments: setPayments,

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { FiX } from "react-icons/fi";
 import { useCart } from "../../context/cart-context";
-import { EEftposTransactionOutcome, EPaymentModalState, ICartAmountPaid, IEftposTransactionOutcome } from "../../model/model";
+import { EEftposTransactionOutcome, EPaymentModalState, ICartPaymentAmounts, IEftposTransactionOutcome } from "../../model/model";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { Button } from "../../tabin/components/button";
 import { CachedImage } from "../../tabin/components/cachedImage";
@@ -35,7 +35,7 @@ interface IPaymentModalProps {
 }
 
 export const PaymentModal = (props: IPaymentModalProps) => {
-    const { subTotal, amountPaid } = useCart();
+    const { subTotal, paymentAmounts } = useCart();
     const {
         isOpen,
         onClose,
@@ -56,10 +56,10 @@ export const PaymentModal = (props: IPaymentModalProps) => {
     const [amountError, setAmountError] = useState("");
 
     useEffect(() => {
-        const amountRemaining = subTotal - amountPaid.cash - amountPaid.eftpos;
+        const amountRemaining = subTotal - paymentAmounts.cash - paymentAmounts.eftpos;
 
         setAmount(convertCentsToDollars(amountRemaining));
-    }, [amountPaid, subTotal]);
+    }, [paymentAmounts, subTotal]);
 
     const onRetry = () => {
         onClickEftpos(amount);
@@ -75,8 +75,8 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         const eftposAmountCents = convertDollarsToCents(eftposAmountFloat);
         const eftposAmountCentsInt = parseInt(eftposAmountCents);
 
-        const totalAmountPaid = amountPaid.cash + amountPaid.eftpos;
-        const totalRemaining = subTotal - totalAmountPaid;
+        const totalPaymentAmounts = paymentAmounts.cash + paymentAmounts.eftpos;
+        const totalRemaining = subTotal - totalPaymentAmounts;
 
         if (eftposAmountCentsInt < 0) {
             setAmountError("Amount cannot be less than 0");
@@ -164,11 +164,11 @@ const PaymentAccepted = (props: {
     onContinueToNextPayment: () => void;
 }) => {
     const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextPayment } = props;
-    const { subTotal, amountPaid } = useCart();
+    const { subTotal, paymentAmounts } = useCart();
 
-    const totalAmountPaid = amountPaid.cash + amountPaid.eftpos;
-    const totalRemaining = subTotal - totalAmountPaid;
-    const paymentComplete = totalAmountPaid >= subTotal;
+    const totalPaymentAmounts = paymentAmounts.cash + paymentAmounts.eftpos;
+    const totalRemaining = subTotal - totalPaymentAmounts;
+    const paymentComplete = totalPaymentAmounts >= subTotal;
 
     return (
         <>
@@ -273,17 +273,17 @@ const POSPaymentScreen = (props: {
     onClose: () => void;
 }) => {
     const { amount, amountError, onChangeAmount, onClickCash, onClickEftpos, onClose } = props;
-    const { payments, setPayments, amountPaid, setAmountPaid } = useCart();
+    const { payments, setPayments, paymentAmounts, setPaymentAmounts } = useCart();
 
     const onRemoveCashTransaction = (index: number) => {
         const payment = payments[index];
         const newPayments = [...payments];
-        const newAmountPaid = amountPaid.cash - payment.amount;
+        const newPaymentAmounts = paymentAmounts.cash - payment.amount;
 
         newPayments.splice(index, 1);
 
         setPayments(newPayments);
-        setAmountPaid({ ...amountPaid, cash: newAmountPaid });
+        setPaymentAmounts({ ...paymentAmounts, cash: newPaymentAmounts });
     };
 
     return (

@@ -143,7 +143,7 @@ export interface ICartPromotion {
     discountedAmount: number;
 }
 
-export interface ICartAmountPaid {
+export interface ICartPaymentAmounts {
     cash: number;
     eftpos: number;
 }

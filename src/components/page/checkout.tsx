@@ -66,8 +66,8 @@ export const Checkout = () => {
         subTotal,
         transactionEftposReceipts,
         setTransactionEftposReceipts,
-        amountPaid,
-        setAmountPaid,
+        paymentAmounts,
+        setPaymentAmounts,
         payments,
         setPayments,
         updateItem,
@@ -117,7 +117,7 @@ export const Checkout = () => {
     const [showUpSellCategoryModal, setShowUpSellCategoryModal] = useState(false);
     const [showUpSellProductModal, setShowUpSellProductModal] = useState(false);
 
-    const paidSoFar = amountPaid.cash + amountPaid.eftpos;
+    const paidSoFar = paymentAmounts.cash + paymentAmounts.eftpos;
 
     // const isUserFocusedOnEmailAddressInput = useRef(false);
 
@@ -540,13 +540,13 @@ export const Checkout = () => {
         //If paid for everything
         if (outcome.transactionOutcome == EEftposTransactionOutcome.Success) {
             try {
-                const newEftposAmountPaid = amountPaid.eftpos + amount;
-                const newTotalAmountPaid = newEftposAmountPaid + amountPaid.cash;
+                const newEftposPaymentAmounts = paymentAmounts.eftpos + amount;
+                const newTotalPaymentAmounts = newEftposPaymentAmounts + paymentAmounts.cash;
 
-                setAmountPaid({ ...amountPaid, eftpos: newEftposAmountPaid });
+                setPaymentAmounts({ ...paymentAmounts, eftpos: newEftposPaymentAmounts });
                 setPayments([...payments, { type: register.eftposProvider, amount: amount }]);
 
-                if (newTotalAmountPaid >= subTotal) {
+                if (newTotalPaymentAmounts >= subTotal) {
                     beginPaymentOutcomeApprovedTimeout();
 
                     await onSubmitOrder(true);
@@ -566,15 +566,15 @@ export const Checkout = () => {
 
     const onConfirmCashTransaction = async (amount: number) => {
         try {
-            const newCashAmountPaid = amountPaid.cash + amount;
-            const newTotalAmountPaid = newCashAmountPaid + amountPaid.eftpos;
+            const newCashPaymentAmounts = paymentAmounts.cash + amount;
+            const newTotalPaymentAmounts = newCashPaymentAmounts + paymentAmounts.eftpos;
 
-            setAmountPaid({ ...amountPaid, cash: newCashAmountPaid });
+            setPaymentAmounts({ ...paymentAmounts, cash: newCashPaymentAmounts });
             setPayments([...payments, { type: "CASH", amount: amount }]);
 
             //If paid for everything
-            if (newTotalAmountPaid >= subTotal) {
-                const changeAmount = calculateCashChangeAmount(newTotalAmountPaid, subTotal);
+            if (newTotalPaymentAmounts >= subTotal) {
+                const changeAmount = calculateCashChangeAmount(newTotalPaymentAmounts, subTotal);
 
                 setPaymentModalState(EPaymentModalState.CashResult);
                 setCashTransactionChangeAmount(changeAmount);
