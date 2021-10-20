@@ -394,6 +394,8 @@ export const Checkout = () => {
                 table: tableNumber,
                 notes: notes,
                 eftposReceipt: transactionEftposReceipts,
+                payments: payments,
+                paymentAmounts: paymentAmounts,
                 total: total,
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
@@ -423,6 +425,8 @@ export const Checkout = () => {
                     table: tableNumber,
                     notes: notes,
                     eftposReceipt: transactionEftposReceipts,
+                    payments: payments,
+                    paymentAmounts: paymentAmounts,
                     total: total,
                     discount: promotion ? promotion.discountedAmount : undefined,
                     promotionId: promotion ? promotion.promotion.id : undefined,
@@ -909,11 +913,11 @@ export const Checkout = () => {
                         Complete Order
                     </Button>
                 </div>
-                {register.enablePayLater && (
+                {/* {register.enablePayLater && (
                     <div className="pay-later-link mt-4">
                         <Link onClick={onClickPayLater}>Pay cash at counter...</Link>
                     </div>
-                )}
+                )} */}
                 <div className="pay-later-link mt-4">
                     <Link onClick={onClickApplyPromotionCode}>Apply promo code</Link>
                 </div>
