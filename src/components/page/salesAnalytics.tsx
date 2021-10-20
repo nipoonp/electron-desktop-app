@@ -1,20 +1,26 @@
-import { add, format } from "date-fns";
-import Clock from "react-clock";
-import { getTwelveHourFormat, taxRate } from "../../model/util";
-import { getCloudFrontDomainName } from "../../private/aws-custom";
-import { CachedImage } from "../../tabin/components/cachedImage";
-import { Card } from "../../tabin/components/card";
-import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { convertCentsToDollars, downloadFile } from "../../util/util";
-import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
-import { IBestHour, useSalesAnalytics } from "../../context/salesAnalytics-context";
-import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
-import { useHistory } from "react-router";
-import { salesAnalyticsDailySalesPath, salesAnalyticsHourlySalesPath, salesAnalyticsTopCategoryPath, salesAnalyticsTopProductPath } from "../main";
+import './salesAnalytics.scss';
+import 'react-clock/dist/Clock.css';
 
-import "./salesAnalytics.scss";
-import "react-clock/dist/Clock.css";
-import Papa from "papaparse";
+import { add } from 'date-fns';
+import Papa from 'papaparse';
+import Clock from 'react-clock';
+import { useHistory } from 'react-router';
+
+import { IBestHour, useSalesAnalytics } from '../../context/salesAnalytics-context';
+import { getTwelveHourFormat } from '../../model/util';
+import { getCloudFrontDomainName } from '../../private/aws-custom';
+import { CachedImage } from '../../tabin/components/cachedImage';
+import { Card } from '../../tabin/components/card';
+import { FullScreenSpinner } from '../../tabin/components/fullScreenSpinner';
+import { convertCentsToDollars, downloadFile } from '../../util/util';
+import {
+    salesAnalyticsDailySalesPath,
+    salesAnalyticsHourlySalesPath,
+    salesAnalyticsTopCategoryPath,
+    salesAnalyticsTopProductPath,
+} from '../main';
+import { LineGraph } from './salesAnalytics/salesAnalyticsGraphs';
+import { SalesAnalyticsWrapper } from './salesAnalytics/salesAnalyticsWrapper';
 
 export const SalesAnalytics = () => {
     const history = useHistory();
@@ -65,20 +71,7 @@ export const SalesAnalytics = () => {
 
     const onExportDailySales = () => {
         if (salesAnalytics) {
-            let data: Array<Array<string | number>> = [];
-            Object.entries(salesAnalytics.dailySales).forEach(([date, sale]) => {
-                const row = [
-                    format(new Date(date), "E, dd MMM"),
-                    sale.totalQuantity,
-                    `$${convertCentsToDollars((sale.totalAmount * (100 - taxRate)) / 100)}`,
-                    `$${convertCentsToDollars(sale.totalAmount * (taxRate / 100))}`,
-                    `$${convertCentsToDollars(sale.totalAmount)}`,
-                ];
-                data.push(row);
-            });
-            const fields = ["Date", "Orders", "Net", "Tax", "Total"];
-            const csv = Papa.unparse({ data, fields });
-
+            const csv = Papa.unparse(salesAnalytics.dailySalesExport);
             var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
             downloadFile(csvData, "dailysales", ".csv");
         }
@@ -86,22 +79,7 @@ export const SalesAnalytics = () => {
 
     const onExportHourlySales = () => {
         if (salesAnalytics) {
-            let data: Array<Array<string | number>> = [];
-            Object.entries(salesAnalytics.hourlySales)
-                .sort((a, b) => a[0].localeCompare(b[0]))
-                .forEach(([hour, sale]) => {
-                    const row = [
-                        getTwelveHourFormat(Number(hour)),
-                        sale.totalQuantity,
-                        `$${convertCentsToDollars((sale.totalAmount * (100 - taxRate)) / 100)}`,
-                        `$${convertCentsToDollars(sale.totalAmount * (taxRate / 100))}`,
-                        `$${convertCentsToDollars(sale.totalAmount)}`,
-                    ];
-                    data.push(row);
-                });
-            const fields = ["Time", "Orders", "Net", "Tax", "Total"];
-            const csv = Papa.unparse({ data, fields });
-
+            const csv = Papa.unparse(salesAnalytics.hourlySalesExport);
             var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
             downloadFile(csvData, "hourlysales", ".csv");
         }
@@ -109,21 +87,7 @@ export const SalesAnalytics = () => {
 
     const onExportMostSoldCategory = () => {
         if (salesAnalytics) {
-            let data: Array<Array<string | number>> = [];
-            Object.entries(salesAnalytics.mostSoldCategories).forEach(([categoryId, category]) => {
-                const row = [
-                    category.item.name,
-                    category.totalQuantity,
-                    `$${convertCentsToDollars((category.totalAmount * (100 - taxRate)) / 100)}`,
-                    `$${convertCentsToDollars(category.totalAmount * (taxRate / 100))}`,
-                    `$${convertCentsToDollars(category.totalAmount)}`,
-                    `${((category.totalAmount * 100) / salesAnalytics.subTotalCompleted).toFixed(2)}%`,
-                ];
-                data.push(row);
-            });
-            const fields = ["Category", "Quantity", "Net", "Tax", "Total", "% Of Sale"];
-            const csv = Papa.unparse({ data, fields });
-
+            const csv = Papa.unparse(salesAnalytics.mostSoldCategoriesExport);
             var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
             downloadFile(csvData, "hourlysales", ".csv");
         }
@@ -131,21 +95,7 @@ export const SalesAnalytics = () => {
 
     const onExportMostSoldProduct = () => {
         if (salesAnalytics) {
-            let data: Array<Array<string | number>> = [];
-            Object.entries(salesAnalytics.mostSoldProducts).forEach(([productId, product]) => {
-                const row = [
-                    product.item.name,
-                    product.totalQuantity,
-                    `$${convertCentsToDollars((product.totalAmount * (100 - taxRate)) / 100)}`,
-                    `$${convertCentsToDollars(product.totalAmount * (taxRate / 100))}`,
-                    `$${convertCentsToDollars(product.totalAmount)}`,
-                    `${((product.totalAmount * 100) / salesAnalytics.subTotalCompleted).toFixed(2)}%`,
-                ];
-                data.push(row);
-            });
-            const fields = ["Product", "Quantity", "Net", "Tax", "Total", "% Of Sale"];
-            const csv = Papa.unparse({ data, fields });
-
+            const csv = Papa.unparse(salesAnalytics.mostSoldProductsExport);
             var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
             downloadFile(csvData, "hourlysales", ".csv");
         }
