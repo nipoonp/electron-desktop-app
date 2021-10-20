@@ -1,7 +1,7 @@
 import './salesAnalytics.scss';
 import 'react-clock/dist/Clock.css';
 
-import { add } from 'date-fns';
+import { add, format } from 'date-fns';
 import Papa from 'papaparse';
 import Clock from 'react-clock';
 import { useHistory } from 'react-router';
@@ -73,7 +73,7 @@ export const SalesAnalytics = () => {
         if (salesAnalytics) {
             const csv = Papa.unparse(salesAnalytics.dailySalesExport);
             var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-            downloadFile(csvData, "dailysales", ".csv");
+            downloadFile(csvData, `dailysales_${format(new Date(), "dd-MM-yyyy")}`, ".csv");
         }
     };
 
@@ -81,7 +81,7 @@ export const SalesAnalytics = () => {
         if (salesAnalytics) {
             const csv = Papa.unparse(salesAnalytics.hourlySalesExport);
             var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-            downloadFile(csvData, "hourlysales", ".csv");
+            downloadFile(csvData, `hourlysales_${format(new Date(), "dd-MM-yyyy")}`, ".csv");
         }
     };
 
@@ -89,7 +89,7 @@ export const SalesAnalytics = () => {
         if (salesAnalytics) {
             const csv = Papa.unparse(salesAnalytics.mostSoldCategoriesExport);
             var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-            downloadFile(csvData, "hourlysales", ".csv");
+            downloadFile(csvData, `mostsoldcategories_${format(new Date(), "dd-MM-yyyy")}`, ".csv");
         }
     };
 
@@ -97,7 +97,7 @@ export const SalesAnalytics = () => {
         if (salesAnalytics) {
             const csv = Papa.unparse(salesAnalytics.mostSoldProductsExport);
             var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-            downloadFile(csvData, "hourlysales", ".csv");
+            downloadFile(csvData, `mostsoldproducts_${format(new Date(), "dd-MM-yyyy")}`, ".csv");
         }
     };
 
