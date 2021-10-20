@@ -13,7 +13,7 @@ export const ToastContainer = () => {
                 top: "0",
                 right: "0",
                 padding: "12px",
-                width: "400px",
+                width: "360px",
             }}
             transition={Slide}
             hideProgressBar
@@ -65,7 +65,7 @@ const CustomToast = (props: {
         </div>
     );
 
-    const messageDisplay = <div>{props.message}</div>;
+    const messageDisplay = <div className="toast-body">{props.message}</div>;
 
     const iconDisplay = (
         <>
@@ -83,7 +83,7 @@ const CustomToast = (props: {
                     display: "flex",
                     alignItems: "center",
                     position: "relative",
-                    padding: "20px",
+                    padding: "16px",
                     borderLeft: "5px solid" + color,
                 }}
             >

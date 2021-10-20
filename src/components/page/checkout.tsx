@@ -45,7 +45,7 @@ import { PromotionCodeModal } from "../modals/promotionCodeModal";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
 import { OrderSummary } from "./checkout/orderSummary";
 import { PaymentModal } from "../modals/paymentModal";
-import { alert } from "../../tabin/components/alert";
+import { useAlert } from "../../tabin/components/alert";
 
 const logger = new Logger("checkout");
 
@@ -53,6 +53,7 @@ const logger = new Logger("checkout");
 export const Checkout = () => {
     // context
     const history = useHistory();
+    const { showAlert } = useAlert();
     const {
         orderType,
         products,
@@ -147,7 +148,7 @@ export const Checkout = () => {
         };
 
         if (payments.length > 0) {
-            alert.success(
+            showAlert(
                 "Incomplete Payments",
                 "There have been partial payments made on this order. Are you sure you would like to cancel this order?",
                 () => {},

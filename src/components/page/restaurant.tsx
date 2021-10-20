@@ -21,8 +21,7 @@ import { useRestaurant } from "../../context/restaurant-context";
 
 import "./restaurant.scss";
 import { CachedImage } from "../../tabin/components/cachedImage";
-
-import { alert } from "../../tabin/components/alert";
+import { useAlert } from "../../tabin/components/alert";
 
 interface IMostPopularProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -32,6 +31,8 @@ interface IMostPopularProduct {
 export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: string; selectedProductId?: string }) => {
     // context
     const history = useHistory();
+    const { showAlert } = useAlert();
+
     const { payments, clearCart, orderType, subTotal, products, cartProductQuantitiesById, addItem } = useCart();
     const { setRestaurant } = useRestaurant();
 
@@ -156,7 +157,7 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
         };
 
         if (payments.length > 0) {
-            alert.success(
+            showAlert(
                 "Incomplete Payments",
                 "There have been partial payments made on this order. Are you sure you would like to cancel this order?",
                 () => {},

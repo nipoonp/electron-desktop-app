@@ -24,7 +24,7 @@ import { Logout } from "./page/auth/logout";
 import { Stock } from "./page/stock";
 import { Reports } from "./page/reports";
 import { Orders } from "./page/orders";
-import { AlertContainer } from "../tabin/components/alert";
+import { AlertProvider } from "../tabin/components/alert";
 import { SalesAnalytics } from "./page/salesAnalytics";
 import { SalesAnalyticsDailySales } from "./page/salesAnalyticsDailySales";
 import { SalesAnalyticsHourlySales } from "./page/salesAnalyticsHourlySales";
@@ -76,11 +76,12 @@ export const unauthorizedPath = "/unauthorized";
 export default () => {
     return (
         <>
-            <Router history={history}>
-                <Routes />
-            </Router>
-            {/* <ToastContainer /> */}
-            <AlertContainer />
+            <AlertProvider>
+                <Router history={history}>
+                    <Routes />
+                </Router>
+            </AlertProvider>
+            <ToastContainer />
         </>
     );
 };

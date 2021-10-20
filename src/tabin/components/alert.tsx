@@ -1,122 +1,112 @@
-// import { Button } from "./button";
-
-// import { FiX } from "react-icons/fi";
-// import { ModalV2 } from "./modalv2";
-
-// // import "./alert.scss";
-
-// export const Alert = (props: IProps) => {
-//     return (
-//         <ModalV2 isOpen={true} disableClose={false} onRequestClose={props.onFalse}>
-//             <div className={`alert ${props.className}`} style={props.style}>
-//                 <FiX style={{ cursor: "pointer", display: "inline-block", float: "right" }} size={30} onClick={props.onFalse} />
-
-//                 <div className="mb-3">
-//                     <div className="h3 mb-2">{props.heading}</div>
-//                     <div>{props.body}</div>
-//                 </div>
-
-//                 <div>
-//                     <Button onClick={props.onFalse}>Cancel</Button>
-//                     <Button onClick={props.onTrue}>Continue</Button>
-//                 </div>
-//             </div>
-//         </ModalV2>
-//     );
-// };
-
-// export const alert = {
-//     success(heading: string, body: string, onFalse: () => void, onTrue: () => void) {
-//         return <Alert heading={heading} body={body} onFalse={onFalse} onTrue={onTrue}></Alert>;
-//     },
-// };
-
-// export interface IProps {
-//     heading: string;
-//     body: string;
-//     onFalse: () => void;
-//     onTrue: () => void;
-//     children?: React.ReactNode;
-//     style?: React.CSSProperties;
-//     className?: string;
-// }
-
-import { ToastContainer as _AlertContainer } from "react-toastify";
-import { toast as _alert, Slide } from "react-toastify";
-import { CheckIcon } from "./icons/checkIcon";
-import { TimesCircleIcon } from "./icons/timesCircleIcon";
-import { CloseThickIcon } from "./icons/closeThickIcon";
-import { FiX } from "react-icons/fi";
+import { useState, useEffect, createContext, useContext } from "react";
 import { Button } from "./button";
+import { ModalV2 } from "./modalv2";
 
-const styles = require("./alert.scss");
+type ContextProps = {
+    showAlert: (heading: string, body: string, onFalse: () => void, onTrue: () => void) => void;
+};
 
-export const AlertContainer = () => {
+const AlertContext = createContext<ContextProps>({
+    showAlert: (heading: string, body: string, onFalse: () => void, onTrue: () => void) => {},
+});
+
+let onTrueFunc;
+let onFalseFunc;
+
+const AlertProvider = (props: { children: React.ReactNode }) => {
+    const [isAlertVisible, setIsAlertVisible] = useState(false);
+    const [heading, setHeading] = useState("");
+    const [body, setBody] = useState("");
+
+    const showAlert = (heading: string, body: string, onFalse: () => void, onTrue: () => void) => {
+        setIsAlertVisible(true);
+        setHeading(heading);
+        setBody(body);
+        onTrueFunc = onTrue;
+        onFalseFunc = onFalse;
+    };
+
+    const _onTrue = () => {
+        setIsAlertVisible(false);
+        onTrueFunc && onTrueFunc();
+    };
+
+    const _onFalse = () => {
+        setIsAlertVisible(false);
+        onFalseFunc && onFalseFunc();
+    };
+
     return (
-        <_AlertContainer
-            style={{
-                top: "0",
-                right: "0",
-                padding: "12px",
-                width: "400px",
+        <AlertContext.Provider
+            value={{
+                showAlert: showAlert,
             }}
-            transition={Slide}
-            hideProgressBar
-            position={"top-right"}
-            draggable={false}
-            autoClose={2000000000}
-            closeOnClick={false}
+            children={
+                <>
+                    {props.children}
+                    {isAlertVisible && <Alert heading={heading} body={body} onTrue={_onTrue} onFalse={_onFalse} />}
+                </>
+            }
         />
     );
 };
 
-export const alert = {
-    success(heading: string, body: string, onFalse: () => void, onTrue: () => void) {
-        return _alert(<CustomAlert heading={heading} body={body} onFalse={onFalse} onTrue={onTrue} />, {
-            closeButton: false,
-            className: styles.alert,
-        });
-    },
-};
-
-const CustomAlert = (props: {
-    heading: string;
-    body: string;
-    onFalse: () => void;
-    onTrue: () => void;
-    closeToast?: () => void; // passed in by react-toastify
-}) => {
-    const onFalse = () => {
-        props.closeToast && props.closeToast();
-        props.onFalse();
-    };
-
-    const onTrue = () => {
-        props.closeToast && props.closeToast();
-        props.onTrue();
-    };
-
+export const Alert = (props: IProps) => {
     return (
-        <>
-            <div className="alert-wrapper">
-                <div className="alert">
-                    <FiX className="alert-close-button" size={30} onClick={onFalse} />
+        <ModalV2 isOpen={true} disableClose={false} onRequestClose={props.onFalse}>
+            <div className={`alert ${props.className}`} style={props.style}>
+                <div className="mb-3">
+                    <div className="h3 mb-2">{props.heading}</div>
+                    <div style={{ lineHeight: 1.4 }}>{props.body}</div>
+                </div>
 
-                    <div className="mb-3">
-                        <div className="h3 mb-2">{props.heading}</div>
-                        <div className="alert-body">{props.body}</div>
-                    </div>
-
-                    <div className="alert-button-wrapper">
-                        <Button className="alert-false-button mr-2" onClick={onFalse}>
-                            Cancel
-                        </Button>
-                        <Button className="alert-true-button" onClick={onTrue}>
-                            Continue
-                        </Button>
-                    </div>
+                <div style={{ display: "flex" }}>
+                    <Button
+                        style={{
+                            width: "50%",
+                            backgroundColor: "#ffffff",
+                            color: "#484848",
+                            border: "1px solid #e0e0e0",
+                            padding: "16px 30px",
+                            fontWeight: 300,
+                        }}
+                        className="mr-2"
+                        onClick={props.onFalse}
+                    >
+                        {props.falseButtonText}
+                    </Button>
+                    <Button style={{ width: "50%" }} onClick={props.onTrue}>
+                        {props.trueButtonText}
+                    </Button>
                 </div>
             </div>
-        </>
+        </ModalV2>
     );
 };
+
+export interface IProps {
+    heading: string;
+    body: string;
+    falseButtonText: string;
+    trueButtonText: string;
+    onFalse: () => void;
+    onTrue: () => void;
+    children?: React.ReactNode;
+    style?: React.CSSProperties;
+    className?: string;
+}
+
+Alert.defaultProps = {
+    falseButtonText: "No",
+    trueButtonText: "Yes",
+};
+
+const useAlert = () => {
+    const context = useContext(AlertContext);
+    if (context === undefined) {
+        throw new Error(`useAlert must be used within a AlertProvider`);
+    }
+    return context;
+};
+
+export { AlertProvider, useAlert };
