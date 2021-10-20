@@ -1,7 +1,7 @@
 import './salesAnalytics.scss';
 import 'react-clock/dist/Clock.css';
 
-import { add, format } from 'date-fns';
+import { add } from 'date-fns';
 import Papa from 'papaparse';
 import Clock from 'react-clock';
 import { useHistory } from 'react-router';
@@ -21,6 +21,7 @@ import {
 } from '../main';
 import { LineGraph } from './salesAnalytics/salesAnalyticsGraphs';
 import { SalesAnalyticsWrapper } from './salesAnalytics/salesAnalyticsWrapper';
+import moment from 'moment';
 
 export const SalesAnalytics = () => {
     const history = useHistory();
@@ -73,7 +74,7 @@ export const SalesAnalytics = () => {
         if (salesAnalytics) {
             const csv = Papa.unparse(salesAnalytics.dailySalesExport);
             var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-            downloadFile(csvData, `dailysales_${format(new Date(), "dd-MM-yyyy")}`, ".csv");
+            downloadFile(csvData, `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_By_Day`, ".csv");
         }
     };
 
@@ -81,7 +82,7 @@ export const SalesAnalytics = () => {
         if (salesAnalytics) {
             const csv = Papa.unparse(salesAnalytics.hourlySalesExport);
             var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-            downloadFile(csvData, `hourlysales_${format(new Date(), "dd-MM-yyyy")}`, ".csv");
+            downloadFile(csvData, `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_By_Hour`, ".csv");
         }
     };
 
@@ -89,7 +90,7 @@ export const SalesAnalytics = () => {
         if (salesAnalytics) {
             const csv = Papa.unparse(salesAnalytics.mostSoldCategoriesExport);
             var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-            downloadFile(csvData, `mostsoldcategories_${format(new Date(), "dd-MM-yyyy")}`, ".csv");
+            downloadFile(csvData, `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_By_Category`, ".csv");
         }
     };
 
@@ -97,7 +98,7 @@ export const SalesAnalytics = () => {
         if (salesAnalytics) {
             const csv = Papa.unparse(salesAnalytics.mostSoldProductsExport);
             var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-            downloadFile(csvData, `mostsoldproducts_${format(new Date(), "dd-MM-yyyy")}`, ".csv");
+            downloadFile(csvData, `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_By_Product`, ".csv");
         }
     };
 
