@@ -1,11 +1,11 @@
-import { add } from "date-fns";
+import { add, format } from "date-fns";
 import Clock from "react-clock";
-import { getTwelveHourFormat } from "../../model/util";
+import { getTwelveHourFormat, taxRate } from "../../model/util";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { Card } from "../../tabin/components/card";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { convertCentsToDollars } from "../../util/util";
+import { convertCentsToDollars, downloadFile } from "../../util/util";
 import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { IBestHour, useSalesAnalytics } from "../../context/salesAnalytics-context";
 import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
@@ -14,6 +14,7 @@ import { salesAnalyticsDailySalesPath, salesAnalyticsHourlySalesPath, salesAnaly
 
 import "./salesAnalytics.scss";
 import "react-clock/dist/Clock.css";
+import Papa from "papaparse";
 
 export const SalesAnalytics = () => {
     const history = useHistory();
@@ -62,6 +63,94 @@ export const SalesAnalytics = () => {
         history.push(salesAnalyticsTopProductPath);
     };
 
+    const onExportDailySales = () => {
+        if (salesAnalytics) {
+            let data: Array<Array<string | number>> = [];
+            Object.entries(salesAnalytics.dailySales).forEach(([date, sale]) => {
+                const row = [
+                    format(new Date(date), "E, dd MMM"),
+                    sale.totalQuantity,
+                    `$${convertCentsToDollars((sale.totalAmount * (100 - taxRate)) / 100)}`,
+                    `$${convertCentsToDollars(sale.totalAmount * (taxRate / 100))}`,
+                    `$${convertCentsToDollars(sale.totalAmount)}`,
+                ];
+                data.push(row);
+            });
+            const fields = ["Date", "Orders", "Net", "Tax", "Total"];
+            const csv = Papa.unparse({ data, fields });
+
+            var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            downloadFile(csvData, "dailysales", ".csv");
+        }
+    };
+
+    const onExportHourlySales = () => {
+        if (salesAnalytics) {
+            let data: Array<Array<string | number>> = [];
+            Object.entries(salesAnalytics.hourlySales)
+                .sort((a, b) => a[0].localeCompare(b[0]))
+                .forEach(([hour, sale]) => {
+                    const row = [
+                        getTwelveHourFormat(Number(hour)),
+                        sale.totalQuantity,
+                        `$${convertCentsToDollars((sale.totalAmount * (100 - taxRate)) / 100)}`,
+                        `$${convertCentsToDollars(sale.totalAmount * (taxRate / 100))}`,
+                        `$${convertCentsToDollars(sale.totalAmount)}`,
+                    ];
+                    data.push(row);
+                });
+            const fields = ["Time", "Orders", "Net", "Tax", "Total"];
+            const csv = Papa.unparse({ data, fields });
+
+            var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            downloadFile(csvData, "hourlysales", ".csv");
+        }
+    };
+
+    const onExportMostSoldCategory = () => {
+        if (salesAnalytics) {
+            let data: Array<Array<string | number>> = [];
+            Object.entries(salesAnalytics.mostSoldCategories).forEach(([categoryId, category]) => {
+                const row = [
+                    category.item.name,
+                    category.totalQuantity,
+                    `$${convertCentsToDollars((category.totalAmount * (100 - taxRate)) / 100)}`,
+                    `$${convertCentsToDollars(category.totalAmount * (taxRate / 100))}`,
+                    `$${convertCentsToDollars(category.totalAmount)}`,
+                    `${((category.totalAmount * 100) / salesAnalytics.subTotalCompleted).toFixed(2)}%`,
+                ];
+                data.push(row);
+            });
+            const fields = ["Category", "Quantity", "Net", "Tax", "Total", "% Of Sale"];
+            const csv = Papa.unparse({ data, fields });
+
+            var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            downloadFile(csvData, "hourlysales", ".csv");
+        }
+    };
+
+    const onExportMostSoldProduct = () => {
+        if (salesAnalytics) {
+            let data: Array<Array<string | number>> = [];
+            Object.entries(salesAnalytics.mostSoldProducts).forEach(([productId, product]) => {
+                const row = [
+                    product.item.name,
+                    product.totalQuantity,
+                    `$${convertCentsToDollars((product.totalAmount * (100 - taxRate)) / 100)}`,
+                    `$${convertCentsToDollars(product.totalAmount * (taxRate / 100))}`,
+                    `$${convertCentsToDollars(product.totalAmount)}`,
+                    `${((product.totalAmount * 100) / salesAnalytics.subTotalCompleted).toFixed(2)}%`,
+                ];
+                data.push(row);
+            });
+            const fields = ["Product", "Quantity", "Net", "Tax", "Total", "% Of Sale"];
+            const csv = Papa.unparse({ data, fields });
+
+            var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            downloadFile(csvData, "hourlysales", ".csv");
+        }
+    };
+
     if (error) {
         return <h1>Couldn't fetch orders. Try Refreshing</h1>;
     }
@@ -78,7 +167,7 @@ export const SalesAnalytics = () => {
                 ) : salesAnalytics && salesAnalytics.totalSoldItems > 0 ? (
                     <div className="sales-analytics-grid">
                         <div className="sales-analytics-grid-item1">
-                            <Card title="Sales By Day" onOpen={onClickDailySales}>
+                            <Card title="Sales By Day" onOpen={onClickDailySales} onExport={onExportDailySales}>
                                 <div style={{ width: "100%", height: "300px" }}>
                                     <LineGraph xAxis="date" lines={["sales"]} graphData={salesAnalytics.dayByGraphData} fill={graphColor} />
                                 </div>
@@ -107,7 +196,7 @@ export const SalesAnalytics = () => {
                             </Card>
                         </div>
                         <div className="sales-analytics-grid-item3">
-                            <Card title="Sales By Hour" onOpen={onClickHourlySales}>
+                            <Card title="Sales By Hour" onOpen={onClickHourlySales} onExport={onExportHourlySales}>
                                 <div style={{ width: "100%", height: "250px" }}>
                                     <LineGraph xAxis="hour" lines={["sales"]} graphData={salesAnalytics.hourByGraphData} fill={graphColor} />
                                 </div>
@@ -120,7 +209,7 @@ export const SalesAnalytics = () => {
                         )}
                         {salesAnalytics.topSoldCategory && (
                             <div className="sales-analytics-grid-item5">
-                                <Card title="Top Category" onOpen={onClickTopCategory}>
+                                <Card title="Top Category" onOpen={onClickTopCategory} onExport={onExportMostSoldCategory}>
                                     <div className="top-item-container" style={{ alignItems: "center" }}>
                                         <div className="top-item-image text-center">
                                             {salesAnalytics.topSoldCategory.item?.image && (
@@ -150,7 +239,7 @@ export const SalesAnalytics = () => {
                         )}
                         {salesAnalytics.topSoldProduct && (
                             <div className="sales-analytics-grid-item6">
-                                <Card title="Top Product" onOpen={onClickTopProduct}>
+                                <Card title="Top Product" onOpen={onClickTopProduct} onExport={onExportMostSoldProduct}>
                                     <div className="top-item-container" style={{ alignItems: "center" }}>
                                         <div className="top-item-image text-center">
                                             {salesAnalytics.topSoldProduct.item?.image && (

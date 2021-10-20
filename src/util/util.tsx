@@ -553,3 +553,13 @@ export const convertProductTypesForPrint = (products: IGET_RESTAURANT_ORDER_PROD
 
     return convertedP;
 };
+
+
+export const downloadFile = (blob: Blob, fileName: string, extention: string) => {
+    var fileURL = window.URL.createObjectURL(blob);
+
+    var fileLink = document.createElement("a");
+    fileLink.href = fileURL;
+    fileLink.setAttribute("download", "download.csv");
+    fileLink.click();
+}
