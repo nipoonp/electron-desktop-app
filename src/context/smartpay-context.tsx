@@ -49,7 +49,10 @@ import { EEftposTransactionOutcome, ESmartpayTransactionOutcome, IEftposTransact
 type ContextProps = {
     sendParingRequest: (pairingCode: string) => Promise<void>;
     createTransaction: (amount: number, transactionType: string) => Promise<string>;
-    pollForOutcome: (pollingUrl: string, delayed: () => void) => Promise<IEftposTransactionOutcome>;
+    pollForOutcome: (
+        pollingUrl: string,
+        delayed: (eftposTransactionOutcome: IEftposTransactionOutcome) => void
+    ) => Promise<IEftposTransactionOutcome>;
 };
 
 const SmartpayContext = createContext<ContextProps>({
@@ -63,7 +66,7 @@ const SmartpayContext = createContext<ContextProps>({
             console.log("");
         });
     },
-    pollForOutcome: (pollingUrl: string, delayed: () => void) => {
+    pollForOutcome: (pollingUrl: string, delayed: (eftposTransactionOutcome: IEftposTransactionOutcome) => void) => {
         return new Promise(() => {
             console.log("");
         });
@@ -303,7 +306,10 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
     //       the response data from the jqXHR object
     //     - reject(string) - the string will contain the error message
     // =====================================================
-    const pollForOutcome = (pollingUrl: string, delayed: () => void): Promise<IEftposTransactionOutcome> => {
+    const pollForOutcome = (
+        pollingUrl: string,
+        delayed: (eftposTransactionOutcome: IEftposTransactionOutcome) => void
+    ): Promise<IEftposTransactionOutcome> => {
         // Polling interval on the PROD server will be rate limited to 2 seconds.
 
         // It's a bad idea to let the polling run indefinitely, so will set an overall timeout to
@@ -396,7 +402,13 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
                                 // Transaction still not done, but server reporting it's taking longer than usual
                                 // Invoke the delayed function - POS may choose to display a visual indication to the user
                                 // (in case e.g. the device lost connectivity and is not able to upload the outcome)
-                                delayed();
+                                transactionOutcome = {
+                                    platformTransactionOutcome: ESmartpayTransactionOutcome.Delayed,
+                                    transactionOutcome: EEftposTransactionOutcome.Delay,
+                                    message: "Transaction delayed! Check if the device is powered on and online.",
+                                    eftposReceipt: null,
+                                };
+                                delayed(transactionOutcome);
 
                                 // Will still continue to poll...
                             }
