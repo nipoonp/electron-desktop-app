@@ -17,7 +17,6 @@ export interface ICognitoUser {
 }
 
 export enum EEftposTransactionOutcome {
-    PayLater,
     Success,
     Delay,
     Fail,
@@ -25,6 +24,7 @@ export enum EEftposTransactionOutcome {
 
 export enum ESmartpayTransactionOutcome {
     Accepted, // TransactionResult = "OK-ACCEPTED"
+    Delayed, // TransactionStatus == "PENDING", TransactionResult == "OK-DELAYED"
     Declined, // TransactionResult = "OK-DECLINED"
     Cancelled, // TransactionResult = "CANCELLED", Result != "FAILED-INTERFACE"
     DeviceOffline, // TransactionResult = "CANCELLED", Result = "FAILED-INTERFACE"
@@ -51,16 +51,31 @@ export enum EVerifoneTransactionOutcome {
 }
 
 export interface IEftposTransactionOutcome {
-    platformTransactionOutcome: ESmartpayTransactionOutcome | EWindcaveTransactionOutcome | EVerifoneTransactionOutcome;
+    platformTransactionOutcome: ESmartpayTransactionOutcome | EWindcaveTransactionOutcome | EVerifoneTransactionOutcome | null;
     transactionOutcome: EEftposTransactionOutcome;
     message: string;
     eftposReceipt: string | null;
+}
+
+export enum EPaymentModalState {
+    POSScreen,
+    AwaitingCard,
+    EftposResult,
+    CashResult,
+    PayLater,
+    None,
 }
 
 export enum EOrderType {
     DINEIN = "DINEIN",
     TAKEAWAY = "TAKEAWAY",
     DELIVERY = "DELIVERY",
+}
+
+export enum EEftposProvider {
+    SMARTPAY = "SMARTPAY",
+    VERIFONE = "VERIFONE",
+    WINDCAVE = "WINDCAVE",
 }
 
 export interface ICartItemQuantitiesById {
@@ -127,6 +142,16 @@ export interface ICartPromotion {
     promotion: IGET_RESTAURANT_PROMOTION;
     matchingProducts: ICartItemQuantitiesById;
     discountedAmount: number;
+}
+
+export interface ICartPaymentAmounts {
+    cash: number;
+    eftpos: number;
+}
+
+export interface ICartPayment {
+    type: string;
+    amount: number;
 }
 
 export enum EReceiptPrinterType {

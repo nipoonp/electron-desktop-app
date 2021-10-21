@@ -6,14 +6,20 @@ import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 
 import "./itemAddedUpdatedModal.scss";
 import { CachedImage } from "../../tabin/components/cachedImage";
+import { useRegister } from "../../context/register-context";
+import { ERegisterType } from "../../graphql/customQueries";
 
 export const ItemAddedUpdatedModal = (props: { isOpen: boolean; onClose: () => void; isProductUpdate: boolean }) => {
+    const { register } = useRegister();
+
     const { subTotal } = useCart();
+
+    const timeoutDelay = register && register.type == ERegisterType.KIOSK ? 1500 : 0;
 
     useEffect(() => {
         setTimeout(() => {
             props.onClose();
-        }, 1500);
+        }, timeoutDelay);
     }, []);
 
     const onModalClose = () => {
