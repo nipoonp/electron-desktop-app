@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
@@ -119,11 +119,13 @@ export const Checkout = () => {
     const [showUpSellCategoryModal, setShowUpSellCategoryModal] = useState(false);
     const [showUpSellProductModal, setShowUpSellProductModal] = useState(false);
 
+    const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
+
     const paidSoFar = paymentAmounts.cash + paymentAmounts.eftpos;
 
     // const isUserFocusedOnEmailAddressInput = useRef(false);
 
-    const { register } = useRegister();
+    const { register, isPOS } = useRegister();
 
     if (!register) {
         throw "Register is not valid";
@@ -266,7 +268,7 @@ export const Checkout = () => {
     const onClickOrderButton = async () => {
         setShowPaymentModal(true);
 
-        if (register.type == ERegisterType.POS) {
+        if (isPOS) {
             setPaymentModalState(EPaymentModalState.POSScreen);
         } else {
             await onConfirmTotalOrRetryEftposTransaction(subTotal);
@@ -274,36 +276,38 @@ export const Checkout = () => {
     };
 
     const onClosePaymentModal = () => {
-        // setEftposTransactionOutcome(null);
-        // setCashTransactionChangeAmount(null);
-        // setPaymentOutcomeOrderNumber(null);
-        // setPaymentOutcomeApprovedRedirectTimeLeft(10);
-
         setShowPaymentModal(false);
     };
 
     const onCancelPayment = () => {
-        if (register.type == ERegisterType.POS) {
+        if (isPOS) {
             setPaymentModalState(EPaymentModalState.POSScreen);
         } else {
             onClosePaymentModal();
         }
     };
 
-    const beginPaymentOutcomeApprovedTimeout = () => {
-        (function timerLoop(i) {
-            setTimeout(() => {
-                i--;
-                setPaymentOutcomeApprovedRedirectTimeLeft(i);
+    const beginTransactionCompleteTimeout = () => {
+        let timeLeft = 10;
 
-                if (i == 0) {
-                    history.push(beginOrderPath);
-                    clearCart();
-                }
+        transactionCompleteTimeoutIntervalId.current = setInterval(() => {
+            setPaymentOutcomeApprovedRedirectTimeLeft((prevPaymentOutcomeApprovedRedirectTimeLeft) => prevPaymentOutcomeApprovedRedirectTimeLeft - 1);
+            timeLeft = timeLeft - 1;
 
-                if (i > 0) timerLoop(i); //  decrement i and call myLoop again if i > 0
-            }, 1000);
-        })(10);
+            if (timeLeft == 0) {
+                transactionCompleteTimeoutIntervalId.current && clearInterval(transactionCompleteTimeoutIntervalId.current);
+
+                history.push(beginOrderPath);
+                clearCart();
+            }
+        }, 1000);
+    };
+
+    const clearTransactionCompleteTimeout = () => {
+        transactionCompleteTimeoutIntervalId.current && clearInterval(transactionCompleteTimeoutIntervalId.current);
+
+        history.push(beginOrderPath);
+        clearCart();
     };
 
     const printReceipts = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
@@ -562,7 +566,7 @@ export const Checkout = () => {
                 setPayments(newPayments);
 
                 if (newTotalPaymentAmounts >= subTotal) {
-                    beginPaymentOutcomeApprovedTimeout();
+                    beginTransactionCompleteTimeout();
 
                     //Passing paymentAmounts, payments via params so we send the most updated values
                     await onSubmitOrder(true, newPaymentAmounts, newPayments);
@@ -598,7 +602,7 @@ export const Checkout = () => {
                 setPaymentModalState(EPaymentModalState.CashResult);
                 setCashTransactionChangeAmount(changeAmount);
 
-                beginPaymentOutcomeApprovedTimeout();
+                beginTransactionCompleteTimeout();
 
                 //Passing paymentAmounts, payments via params so we send the most updated values
                 await onSubmitOrder(true, newPaymentAmounts, newPayments);
@@ -608,21 +612,29 @@ export const Checkout = () => {
         }
     };
 
+    const onContinueToNextOrder = () => {
+        clearTransactionCompleteTimeout();
+    };
+
     const onContinueToNextPayment = () => {
         setPaymentModalState(EPaymentModalState.POSScreen);
     };
 
     const onClickPayLater = async () => {
-        // setShowPaymentModal(true);
-        // setPaymentOutcome(EEftposTransactionOutcome.PayLater);
-        // setPaymentOutcomeErrorMessage(null);
-        // setPaymentOutcomeOrderNumber(null);
-        // setPaymentOutcomeApprovedRedirectTimeLeft(10);
-        // try {
-        //     await onSubmitOrder(false, null);
-        // } catch (e) {
-        //     setCreateOrderError(e);
-        // }
+        setShowPaymentModal(true);
+
+        const newPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0 };
+        const newPayments: ICartPayment[] = [];
+
+        setPaymentModalState(EPaymentModalState.PayLater);
+
+        beginTransactionCompleteTimeout();
+
+        try {
+            await onSubmitOrder(false, newPaymentAmounts, newPayments);
+        } catch (e) {
+            setCreateOrderError(e);
+        }
     };
 
     // Modals
@@ -781,6 +793,7 @@ export const Checkout = () => {
                         cashTransactionChangeAmount={cashTransactionChangeAmount}
                         paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                        onContinueToNextOrder={onContinueToNextOrder}
                         createOrderError={createOrderError}
                         onConfirmTotalOrRetryEftposTransaction={onConfirmTotalOrRetryEftposTransaction}
                         onConfirmCashTransaction={onConfirmCashTransaction}
@@ -929,11 +942,11 @@ export const Checkout = () => {
                         Complete Order
                     </Button>
                 </div>
-                {/* {register.enablePayLater && (
+                {payments.length == 0 && register.enablePayLater && (
                     <div className="pay-later-link mt-4">
                         <Link onClick={onClickPayLater}>Pay cash at counter...</Link>
                     </div>
-                )} */}
+                )}
                 <div className="pay-later-link mt-4">
                     <Link onClick={onClickApplyPromotionCode}>Apply promo code</Link>
                 </div>

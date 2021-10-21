@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { FiX } from "react-icons/fi";
 import { useCart } from "../../context/cart-context";
+import { useRegister } from "../../context/register-context";
 import { EEftposTransactionOutcome, EPaymentModalState, ICartPaymentAmounts, IEftposTransactionOutcome } from "../../model/model";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { Button } from "../../tabin/components/button";
@@ -25,6 +26,7 @@ interface IPaymentModalProps {
     eftposTransactionOutcome: IEftposTransactionOutcome | null;
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
+    onContinueToNextOrder: () => void;
     cashTransactionChangeAmount: number | null;
     createOrderError: string | null;
     onConfirmTotalOrRetryEftposTransaction: (amount: number) => void;
@@ -42,6 +44,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         paymentModalState,
         paymentOutcomeOrderNumber,
         paymentOutcomeApprovedRedirectTimeLeft,
+        onContinueToNextOrder,
         eftposTransactionOutcome,
         cashTransactionChangeAmount,
         createOrderError,
@@ -110,6 +113,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     <PaymentAccepted
                         paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                        onContinueToNextOrder={onContinueToNextOrder}
                         onContinueToNextPayment={onContinueToNextPayment}
                     />
                 );
@@ -124,6 +128,15 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     cashTransactionChangeAmount={cashTransactionChangeAmount}
                     paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                     paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                    onContinueToNextOrder={onContinueToNextOrder}
+                />
+            );
+        } else if (paymentModalState == EPaymentModalState.PayLater) {
+            return (
+                <PaymentPayLater
+                    paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
+                    paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                    onContinueToNextOrder={onContinueToNextOrder}
                 />
             );
         } else {
@@ -161,9 +174,10 @@ const AwaitingCard = () => {
 const PaymentAccepted = (props: {
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
+    onContinueToNextOrder: () => void;
     onContinueToNextPayment: () => void;
 }) => {
-    const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextPayment } = props;
+    const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder, onContinueToNextPayment } = props;
     const { subTotal, paymentAmounts } = useCart();
 
     const totalPaymentAmounts = paymentAmounts.cash + paymentAmounts.eftpos;
@@ -178,18 +192,21 @@ const PaymentAccepted = (props: {
                     <div className="mb-1">Your order number is</div>
                     <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
                     <div className="separator-6 mb-6"></div>
-                    <div className="redirecting-in-text text-grey">
-                        Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
-                        {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
-                        ...
-                    </div>
+                    <RedirectingIn
+                        paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                        onContinueToNextOrder={onContinueToNextOrder}
+                    />
                 </>
             ) : (
                 <>
                     <div className="h2 mb-6">Transaction Accepted!</div>
-                    <Button className="large redirecting-in-text" onClick={onContinueToNextPayment}>
-                        Continue to next payment... (${convertCentsToDollars(totalRemaining)})
-                    </Button>
+
+                    <div className="redirecting-in-text text-grey">
+                        <Button className="mb-2" onClick={onContinueToNextPayment}>
+                            Continue To Next Payment
+                        </Button>
+                        <div>Remaining: (${convertCentsToDollars(totalRemaining)})</div>
+                    </div>
                 </>
             )}
         </>
@@ -221,8 +238,12 @@ const PaymentFailed = (props: { errorMessage: string; onRetry: () => void; onCan
     );
 };
 
-const PaymentPayLater = (props: { paymentOutcomeOrderNumber: string | null; paymentOutcomeApprovedRedirectTimeLeft: number }) => {
-    const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft } = props;
+const PaymentPayLater = (props: {
+    paymentOutcomeOrderNumber: string | null;
+    paymentOutcomeApprovedRedirectTimeLeft: number;
+    onContinueToNextOrder: () => void;
+}) => {
+    const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
 
     return (
         <>
@@ -231,11 +252,10 @@ const PaymentPayLater = (props: { paymentOutcomeOrderNumber: string | null; paym
             <div className="mb-1">Your order number is</div>
             <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
             <div className="separator-6 mb-6"></div>
-            <div className="redirecting-in-text text-grey">
-                Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
-                {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
-                ...
-            </div>
+            <RedirectingIn
+                paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                onContinueToNextOrder={onContinueToNextOrder}
+            />
         </>
     );
 };
@@ -244,8 +264,9 @@ const PaymentCashPayment = (props: {
     cashTransactionChangeAmount: number | null;
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
+    onContinueToNextOrder: () => void;
 }) => {
-    const { cashTransactionChangeAmount, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft } = props;
+    const { cashTransactionChangeAmount, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
 
     return (
         <>
@@ -255,11 +276,10 @@ const PaymentCashPayment = (props: {
             <div className="mb-1">Your order number is</div>
             <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
             <div className="separator-6 mb-6"></div>
-            <div className="redirecting-in-text text-grey">
-                Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
-                {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
-                ...
-            </div>
+            <RedirectingIn
+                paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                onContinueToNextOrder={onContinueToNextOrder}
+            />
         </>
     );
 };
@@ -342,7 +362,7 @@ const POSPaymentScreen = (props: {
                     {payments.map((payment, index) => (
                         <>
                             {payment.type === "CASH" ? (
-                                <div className="payment-modal-paid-amount mb-2">
+                                <div className="mb-2">
                                     Cash: ${convertCentsToDollars(payment.amount)}{" "}
                                     <Link onClick={() => onRemoveCashTransaction(index)}>(Remove)</Link>
                                 </div>
@@ -369,6 +389,28 @@ const CreateOrderFailed = (props: { createOrderError: string; onCancelOrder: () 
             <Button className="issue-fixed-button" onClick={onCancelOrder}>
                 Issue Fixed? Restart
             </Button>
+        </>
+    );
+};
+
+const RedirectingIn = (props: { paymentOutcomeApprovedRedirectTimeLeft: number; onContinueToNextOrder: () => void }) => {
+    const { paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { isPOS } = useRegister();
+
+    return (
+        <>
+            <div className="redirecting-in-text text-grey">
+                {isPOS && (
+                    <Button className="mb-2" onClick={onContinueToNextOrder}>
+                        Continue To Next Transaction
+                    </Button>
+                )}
+                <div>
+                    Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
+                    {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
+                    ...
+                </div>
+            </div>
         </>
     );
 };
