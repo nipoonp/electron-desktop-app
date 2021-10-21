@@ -30,8 +30,18 @@
             width: 300px;
         }
 
-        .payment-modal-partial-payment-label {
+        .payment-modal-input-wrapper {
+            .payment-modal-partial-payment-label {
+                font-size: 14px;
+            }
+        }
+
+        .payment-modal-input-wrapper > .text-error {
+            margin-top: 0;
+            margin-left: 52px;
+            margin-bottom: 8px;
             font-size: 14px;
+            text-align: right;
         }
     }
 

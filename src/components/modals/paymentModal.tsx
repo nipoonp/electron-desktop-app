@@ -68,9 +68,8 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         onClickEftpos(amount);
     };
 
-    const onChangeAmount = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setAmount(event.target.value);
-        setAmountError("");
+    const onAmountChange = (amount: string) => {
+        setAmount(amount);
     };
 
     const onClickEftpos = (eftposAmount: string) => {
@@ -81,11 +80,16 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         const totalPaymentAmounts = paymentAmounts.cash + paymentAmounts.eftpos;
         const totalRemaining = subTotal - totalPaymentAmounts;
 
-        if (eftposAmountCentsInt < 0) {
-            setAmountError("Amount cannot be less than 0");
+        console.log("xxx..eftposAmountCents", eftposAmountCents);
+
+        if (eftposAmountCentsInt == 0) {
+            setAmountError("Value cannot be 0.00");
+            return;
+        } else if (eftposAmountCentsInt <= 0) {
+            setAmountError("Value must be greater than 0");
             return;
         } else if (eftposAmountCentsInt > totalRemaining) {
-            setAmountError("Amount cannot be greater than amount due");
+            setAmountError("Amount cannot be greater than remaining");
             return;
         }
 
@@ -96,6 +100,11 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         const cashAmountFloat = parseFloat(cashAmount);
         const cashAmountCents = convertDollarsToCents(cashAmountFloat);
         const cashAmountCentsInt = parseInt(cashAmountCents);
+
+        if (cashAmountCentsInt == 0) {
+            setAmountError("Value cannot be 0.00");
+            return;
+        }
 
         onConfirmCashTransaction(cashAmountCentsInt);
     };
@@ -143,8 +152,9 @@ export const PaymentModal = (props: IPaymentModalProps) => {
             return (
                 <POSPaymentScreen
                     amount={amount}
+                    onAmountChange={onAmountChange}
                     amountError={amountError}
-                    onChangeAmount={onChangeAmount}
+                    onAmountErrorChange={setAmountError}
                     onClickCash={onClickCash}
                     onClickEftpos={onClickEftpos}
                     onClose={onClose}
@@ -286,14 +296,19 @@ const PaymentCashPayment = (props: {
 
 const POSPaymentScreen = (props: {
     amount: string;
+    onAmountChange: (amount: string) => void;
     amountError: string;
-    onChangeAmount: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    onAmountErrorChange: (error: string) => void;
     onClickCash: (amount: string) => void;
     onClickEftpos: (amount: string) => void;
     onClose: () => void;
 }) => {
-    const { amount, amountError, onChangeAmount, onClickCash, onClickEftpos, onClose } = props;
-    const { payments, setPayments, paymentAmounts, setPaymentAmounts } = useCart();
+    const { amount, onAmountChange, amountError, onAmountErrorChange, onClickCash, onClickEftpos, onClose } = props;
+    const { subTotal, payments, setPayments, paymentAmounts, setPaymentAmounts } = useCart();
+
+    const totalPaymentAmounts = paymentAmounts.cash + paymentAmounts.eftpos;
+    const totalRemaining = subTotal - totalPaymentAmounts;
+    const totalRemainingInDollars = convertCentsToDollars(totalRemaining);
 
     const onRemoveCashTransaction = (index: number) => {
         const payment = payments[index];
@@ -306,6 +321,22 @@ const POSPaymentScreen = (props: {
         setPaymentAmounts({ ...paymentAmounts, cash: newPaymentAmounts });
     };
 
+    const onBlurAmount = () => {
+        if (amount === "") {
+            onAmountChange("0.00");
+        } else {
+            const amountFloat = parseFloat(amount);
+            const rounded = Math.round(amountFloat * 100) / 100; //To 2 dp
+
+            onAmountChange(rounded.toFixed(2));
+        }
+    };
+
+    const onChangeAmount = (event: React.ChangeEvent<HTMLInputElement>) => {
+        onAmountChange(event.target.value);
+        onAmountErrorChange("");
+    };
+
     return (
         <>
             <div className="payment-modal-close-button-wrapper">
@@ -313,7 +344,7 @@ const POSPaymentScreen = (props: {
             </div>
             <div className="payment-modal-amount-input-wrapper mb-8">
                 <div className="h2">Enter Amount To Pay</div>
-                <div>
+                <div className="payment-modal-input-wrapper">
                     <Input
                         className="payment-modal-amount-input ml-10 mb-1"
                         type="number"
@@ -321,9 +352,14 @@ const POSPaymentScreen = (props: {
                         value={amount}
                         placeholder="9.99"
                         onChange={onChangeAmount}
+                        onBlur={onBlurAmount}
                         error={amountError}
                     />
-                    <div className="payment-modal-partial-payment-label ml-10 text-left">Edit to make a partial payment</div>
+                    {parseFloat(amount) == parseFloat(totalRemainingInDollars) ? (
+                        <div className="payment-modal-partial-payment-label ml-10 text-left">Edit to make a partial payment</div>
+                    ) : (
+                        <div className="payment-modal-partial-payment-label ml-10 text-left">Remaining: ${totalRemainingInDollars}</div>
+                    )}
                 </div>
             </div>
 
