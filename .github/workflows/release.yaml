@@ -2,7 +2,7 @@ name: Tabin CI/CD
 
 on:
     push:
-        branches: [main]
+        branches: [dev]
 
 jobs:
     slack_message_start:
@@ -52,7 +52,7 @@ jobs:
             - name: Build native dependencies
               run: ./node_modules/.bin/electron-rebuild
             - name: Build web
-              run: cross-env REACT_APP_AWS_ENV=prod npm run build:web
+              run: cross-env REACT_APP_AWS_ENV=dev npm run build:web
             - name: Build desktop
               run: npm run build:desktop
             - name: Release Electron app
@@ -78,7 +78,7 @@ jobs:
             - name: Build native dependencies
               run: ./node_modules/.bin/electron-rebuild
             - name: Build web
-              run: cross-env REACT_APP_AWS_ENV=prod npm run build:web
+              run: cross-env REACT_APP_AWS_ENV=dev npm run build:web
             - name: Build desktop
               run: npm run build:desktop
             - name: Release Electron app
