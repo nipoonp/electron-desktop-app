@@ -23,7 +23,7 @@ export const SalesAnalyticsTopProduct = () => {
 
     return (
         <>
-            <SalesAnalyticsWrapper title="Sales By Hour" showBackButton={true}>
+            <SalesAnalyticsWrapper title="Sales By Product" showBackButton={true}>
                 {!startDate || !endDate ? (
                     <div className="text-center">Please select a start and end date.</div>
                 ) : salesAnalytics && salesAnalytics.totalSoldItems > 0 ? (
