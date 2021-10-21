@@ -62,6 +62,7 @@ export enum EPaymentModalState {
     AwaitingCard,
     EftposResult,
     CashResult,
+    PayLater,
     None,
 }
 
