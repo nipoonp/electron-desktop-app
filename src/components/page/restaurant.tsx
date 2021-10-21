@@ -21,6 +21,7 @@ import { useRestaurant } from "../../context/restaurant-context";
 
 import "./restaurant.scss";
 import { CachedImage } from "../../tabin/components/cachedImage";
+import { useAlert } from "../../tabin/components/alert";
 
 interface IMostPopularProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -30,7 +31,9 @@ interface IMostPopularProduct {
 export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: string; selectedProductId?: string }) => {
     // context
     const history = useHistory();
-    const { clearCart, orderType, subTotal, products, cartProductQuantitiesById, addItem } = useCart();
+    const { showAlert } = useAlert();
+
+    const { payments, clearCart, orderType, subTotal, products, cartProductQuantitiesById, addItem } = useCart();
     const { setRestaurant } = useRestaurant();
 
     // query
@@ -148,8 +151,23 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
     };
 
     const onCancelOrder = () => {
-        clearCart();
-        history.push(beginOrderPath);
+        const cancelOrder = () => {
+            clearCart();
+            history.push(beginOrderPath);
+        };
+
+        if (payments.length > 0) {
+            showAlert(
+                "Incomplete Payments",
+                "There have been partial payments made on this order. Are you sure you would like to cancel this order?",
+                () => {},
+                () => {
+                    cancelOrder();
+                }
+            );
+        } else {
+            cancelOrder();
+        }
     };
 
     const onCloseProductModal = () => {
@@ -384,7 +402,7 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
                         url={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.png`}
                         alt="shopping-bag-icon"
                     />
-                    <div className="h4 total">Total: ${convertCentsToDollars(subTotal)}</div>
+                    <div className="h2">Total: ${convertCentsToDollars(subTotal)}</div>
                 </div>
                 <Button className="large" disabled={!products || products.length == 0} onClick={onClickCart}>
                     View My Order

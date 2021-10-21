@@ -1,19 +1,27 @@
-import { add } from "date-fns";
-import Clock from "react-clock";
-import { getTwelveHourFormat } from "../../model/util";
-import { getCloudFrontDomainName } from "../../private/aws-custom";
-import { CachedImage } from "../../tabin/components/cachedImage";
-import { Card } from "../../tabin/components/card";
-import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { convertCentsToDollars } from "../../util/util";
-import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
-import { IBestHour, useSalesAnalytics } from "../../context/salesAnalytics-context";
-import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
-import { useHistory } from "react-router";
-import { salesAnalyticsDailySalesPath, salesAnalyticsHourlySalesPath, salesAnalyticsTopCategoryPath, salesAnalyticsTopProductPath } from "../main";
+import './salesAnalytics.scss';
+import 'react-clock/dist/Clock.css';
 
-import "./salesAnalytics.scss";
-import "react-clock/dist/Clock.css";
+import { add } from 'date-fns';
+import Papa from 'papaparse';
+import Clock from 'react-clock';
+import { useHistory } from 'react-router';
+
+import { IBestHour, useSalesAnalytics } from '../../context/salesAnalytics-context';
+import { getTwelveHourFormat } from '../../model/util';
+import { getCloudFrontDomainName } from '../../private/aws-custom';
+import { CachedImage } from '../../tabin/components/cachedImage';
+import { Card } from '../../tabin/components/card';
+import { FullScreenSpinner } from '../../tabin/components/fullScreenSpinner';
+import { convertCentsToDollars, downloadFile } from '../../util/util';
+import {
+    salesAnalyticsDailySalesPath,
+    salesAnalyticsHourlySalesPath,
+    salesAnalyticsTopCategoryPath,
+    salesAnalyticsTopProductPath,
+} from '../main';
+import { LineGraph } from './salesAnalytics/salesAnalyticsGraphs';
+import { SalesAnalyticsWrapper } from './salesAnalytics/salesAnalyticsWrapper';
+import moment from 'moment';
 
 export const SalesAnalytics = () => {
     const history = useHistory();
@@ -62,6 +70,38 @@ export const SalesAnalytics = () => {
         history.push(salesAnalyticsTopProductPath);
     };
 
+    const onExportDailySales = () => {
+        if (salesAnalytics) {
+            const csv = Papa.unparse(salesAnalytics.dailySalesExport);
+            var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            downloadFile(csvData, `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_By_Day`, ".csv");
+        }
+    };
+
+    const onExportHourlySales = () => {
+        if (salesAnalytics) {
+            const csv = Papa.unparse(salesAnalytics.hourlySalesExport);
+            var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            downloadFile(csvData, `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_By_Hour`, ".csv");
+        }
+    };
+
+    const onExportMostSoldCategory = () => {
+        if (salesAnalytics) {
+            const csv = Papa.unparse(salesAnalytics.mostSoldCategoriesExport);
+            var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            downloadFile(csvData, `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_By_Category`, ".csv");
+        }
+    };
+
+    const onExportMostSoldProduct = () => {
+        if (salesAnalytics) {
+            const csv = Papa.unparse(salesAnalytics.mostSoldProductsExport);
+            var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            downloadFile(csvData, `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_By_Product`, ".csv");
+        }
+    };
+
     if (error) {
         return <h1>Couldn't fetch orders. Try Refreshing</h1>;
     }
@@ -78,7 +118,7 @@ export const SalesAnalytics = () => {
                 ) : salesAnalytics && salesAnalytics.totalSoldItems > 0 ? (
                     <div className="sales-analytics-grid">
                         <div className="sales-analytics-grid-item1">
-                            <Card title="Sales By Day" onOpen={onClickDailySales}>
+                            <Card title="Sales By Day" onOpen={onClickDailySales} onExport={onExportDailySales}>
                                 <div style={{ width: "100%", height: "300px" }}>
                                     <LineGraph xAxis="date" lines={["sales"]} graphData={salesAnalytics.dayByGraphData} fill={graphColor} />
                                 </div>
@@ -107,7 +147,7 @@ export const SalesAnalytics = () => {
                             </Card>
                         </div>
                         <div className="sales-analytics-grid-item3">
-                            <Card title="Sales By Hour" onOpen={onClickHourlySales}>
+                            <Card title="Sales By Hour" onOpen={onClickHourlySales} onExport={onExportHourlySales}>
                                 <div style={{ width: "100%", height: "250px" }}>
                                     <LineGraph xAxis="hour" lines={["sales"]} graphData={salesAnalytics.hourByGraphData} fill={graphColor} />
                                 </div>
@@ -120,7 +160,7 @@ export const SalesAnalytics = () => {
                         )}
                         {salesAnalytics.topSoldCategory && (
                             <div className="sales-analytics-grid-item5">
-                                <Card title="Top Category" onOpen={onClickTopCategory}>
+                                <Card title="Top Category" onOpen={onClickTopCategory} onExport={onExportMostSoldCategory}>
                                     <div className="top-item-container" style={{ alignItems: "center" }}>
                                         <div className="top-item-image text-center">
                                             {salesAnalytics.topSoldCategory.item?.image && (
@@ -150,7 +190,7 @@ export const SalesAnalytics = () => {
                         )}
                         {salesAnalytics.topSoldProduct && (
                             <div className="sales-analytics-grid-item6">
-                                <Card title="Top Product" onOpen={onClickTopProduct}>
+                                <Card title="Top Product" onOpen={onClickTopProduct} onExport={onExportMostSoldProduct}>
                                     <div className="top-item-container" style={{ alignItems: "center" }}>
                                         <div className="top-item-image text-center">
                                             {salesAnalytics.topSoldProduct.item?.image && (

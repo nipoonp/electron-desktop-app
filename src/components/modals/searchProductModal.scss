@@ -1,5 +1,5 @@
 .search-product-modal {
-    padding: 84px;
+    padding: 100px 84px 84px 84px;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -26,13 +26,10 @@
             position: absolute;
             top: 32px;
             right: 32px;
+            cursor: pointer;
 
             .close-button {
-                background-color: #ffffff;
                 color: #484848;
-                border: 1px solid #e0e0e0;
-                padding: 12px 24px;
-                font-weight: 300;
             }
         }
 
