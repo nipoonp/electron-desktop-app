@@ -132,6 +132,7 @@ export interface ICartProductModifier {
     id: string;
     name: string;
     price: number;
+    quantity: number;
 }
 
 export interface IPreSelectedModifiers {

@@ -28,9 +28,10 @@ import { Radio } from "../../tabin/components/radio";
 
 import "./product.scss";
 import { TextArea } from "../../tabin/components/textArea";
-import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
+import { getCloudFrontDomainName } from "../../private/aws-custom";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { useCart } from "../../context/cart-context";
+import { FiChevronRight } from "react-icons/fi";
 
 const logger = new Logger("productModal");
 
@@ -94,6 +95,7 @@ export const ProductModal = (props: {
                                               id: modifierLink.modifier.productModifier.id,
                                               name: modifierLink.modifier.productModifier.name,
                                               price: modifierLink.modifier.productModifier.price,
+                                              quantity: modifierLink.preSelectedQuantity,
                                           }
                                         : null,
                                     image: modifierLink.modifier.image
@@ -159,6 +161,7 @@ export const ProductModal = (props: {
                           id: selectedModifier.productModifier.id,
                           name: selectedModifier.productModifier.name,
                           price: selectedModifier.productModifier.price,
+                          quantity: 1,
                       }
                     : null,
                 image: selectedModifier.image
@@ -206,6 +209,7 @@ export const ProductModal = (props: {
                               id: selectedModifier.productModifier.id,
                               name: selectedModifier.productModifier.name,
                               price: selectedModifier.productModifier.price,
+                              quantity: 0,
                           }
                         : null,
                     image: selectedModifier.image
@@ -260,6 +264,7 @@ export const ProductModal = (props: {
                               id: selectedModifier.productModifier.id,
                               name: selectedModifier.productModifier.name,
                               price: selectedModifier.productModifier.price,
+                              quantity: quantity,
                           }
                         : null,
                     image: selectedModifier.image
@@ -297,6 +302,7 @@ export const ProductModal = (props: {
                               id: selectedModifier.productModifier.id,
                               name: selectedModifier.productModifier.name,
                               price: selectedModifier.productModifier.price,
+                              quantity: 1,
                           }
                         : undefined,
                     image: selectedModifier.image
@@ -825,6 +831,8 @@ const Modifier = (props: {
                         {modifier.name} {modifier.price > 0 && `($${convertCentsToDollars(modifier.price)})`} (SOLD OUT)
                     </div>
                 )}
+
+                {modifier.productModifier && <FiChevronRight className="product-modifier-chevron-right" size={24} />}
             </div>
         </>
     );
@@ -855,7 +863,7 @@ const Modifier = (props: {
 
     const stepper = (
         <Stepper
-            className="pt-2 pb-2"
+            className="modifier-item-wrapper pt-2 pb-2"
             count={getStepperCount()}
             setCount={setStepperCount}
             min={0}
@@ -869,7 +877,7 @@ const Modifier = (props: {
     );
 
     const collapsedStepper = (
-        <div className="collapsed-stepper-container pt-2 pb-2" onClick={_onDisplayModifierStepper}>
+        <div className="modifier-item-wrapper collapsed-stepper-container pt-2 pb-2" onClick={_onDisplayModifierStepper}>
             <div
                 className="collapsed-stepper"
                 style={{
@@ -884,13 +892,19 @@ const Modifier = (props: {
     );
 
     const checkbox = (
-        <Checkbox className="pt-2 pb-2" onCheck={_onCheckingModifier} onUnCheck={_onUnCheckingModifier} checked={checked} disabled={disabled}>
+        <Checkbox
+            className="modifier-item-wrapper pt-2 pb-2"
+            onCheck={_onCheckingModifier}
+            onUnCheck={_onUnCheckingModifier}
+            checked={checked}
+            disabled={disabled}
+        >
             {modifierChildren}
         </Checkbox>
     );
 
     const _radio = (
-        <Radio className="pt-2 pb-2" selected={checked} onSelect={_onSelectRadioModifier} disabled={disabled}>
+        <Radio className="modifier-item-wrapper pt-2 pb-2" selected={checked} onSelect={_onSelectRadioModifier} disabled={disabled}>
             {modifierChildren}
         </Radio>
     );

@@ -512,6 +512,7 @@ export const convertProductTypesForPrint = (products: IGET_RESTAURANT_ORDER_PROD
                                   id: m.productModifier.id,
                                   name: m.productModifier.name,
                                   price: m.productModifier.price,
+                                  quantity: m.quantity,
                               }
                             : null,
                         image: m.image,

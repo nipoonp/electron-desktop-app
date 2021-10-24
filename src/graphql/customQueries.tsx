@@ -475,39 +475,88 @@ export const GET_RESTAURANT = gql`
                                                         soldOutDate
                                                         productModifier {
                                                             id
-                                                            name
-                                                            price
-                                                            soldOut
-                                                            soldOutDate
-                                                            totalQuantityAvailable
-                                                            availability {
-                                                                monday {
-                                                                    startTime
-                                                                    endTime
+                                                            displaySequence
+                                                            product {
+                                                                id
+                                                                name
+                                                                description
+                                                                price
+                                                                tags
+                                                                totalQuantitySold
+                                                                totalQuantityAvailable
+                                                                soldOut
+                                                                soldOutDate
+                                                                image {
+                                                                    key
+                                                                    bucket
+                                                                    region
+                                                                    identityPoolId
                                                                 }
-                                                                tuesday {
-                                                                    startTime
-                                                                    endTime
+                                                                availability {
+                                                                    monday {
+                                                                        startTime
+                                                                        endTime
+                                                                    }
+                                                                    tuesday {
+                                                                        startTime
+                                                                        endTime
+                                                                    }
+                                                                    wednesday {
+                                                                        startTime
+                                                                        endTime
+                                                                    }
+                                                                    thursday {
+                                                                        startTime
+                                                                        endTime
+                                                                    }
+                                                                    friday {
+                                                                        startTime
+                                                                        endTime
+                                                                    }
+                                                                    saturday {
+                                                                        startTime
+                                                                        endTime
+                                                                    }
+                                                                    sunday {
+                                                                        startTime
+                                                                        endTime
+                                                                    }
                                                                 }
-                                                                wednesday {
-                                                                    startTime
-                                                                    endTime
-                                                                }
-                                                                thursday {
-                                                                    startTime
-                                                                    endTime
-                                                                }
-                                                                friday {
-                                                                    startTime
-                                                                    endTime
-                                                                }
-                                                                saturday {
-                                                                    startTime
-                                                                    endTime
-                                                                }
-                                                                sunday {
-                                                                    startTime
-                                                                    endTime
+                                                                modifierGroups(limit: 500) {
+                                                                    items {
+                                                                        id
+                                                                        displaySequence
+                                                                        hideForCustomer
+                                                                        modifierGroup {
+                                                                            id
+                                                                            name
+                                                                            choiceMin
+                                                                            choiceMax
+                                                                            choiceDuplicate
+                                                                            modifiers(limit: 500) {
+                                                                                items {
+                                                                                    id
+                                                                                    displaySequence
+                                                                                    preSelectedQuantity
+                                                                                    modifier {
+                                                                                        id
+                                                                                        name
+                                                                                        price
+                                                                                        image {
+                                                                                            key
+                                                                                            bucket
+                                                                                            region
+                                                                                            identityPoolId
+                                                                                        }
+                                                                                        totalQuantitySold
+                                                                                        totalQuantityAvailable
+                                                                                        soldOut
+                                                                                        soldOutDate
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
                                                                 }
                                                             }
                                                         }
@@ -834,17 +883,7 @@ export interface IGET_RESTAURANT_MODIFIER {
     totalQuantityAvailable?: number;
     soldOut?: boolean;
     soldOutDate?: string;
-    productModifier?: IGET_RESTAURANT_MODIFIER_PRODUCT_MODIFIER;
-}
-
-export interface IGET_RESTAURANT_MODIFIER_PRODUCT_MODIFIER {
-    id: string;
-    name: string;
-    price: number;
-    soldOut: boolean;
-    soldOutDate: string;
-    totalQuantityAvailable?: number;
-    availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
+    productModifier?: IGET_RESTAURANT_PRODUCT;
 }
 
 export interface IS3Object {

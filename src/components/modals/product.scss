@@ -23,40 +23,48 @@
                 opacity: 0.5;
             }
 
-            .modifier-item {
-                display: flex;
-                align-items: center;
+            .modifier-item-wrapper {
+                width: 100%;
 
-                .quantity-remaining {
-                    padding: 5px 10px;
-                    background-color: var(--primary-color);
-                    color: #ffffff;
-                    border-radius: 5px;
-                    font-size: 12px;
-                }
-
-                .image {
-                    height: 120px;
-                    border-radius: 8px;
-                    object-fit: cover;
-                }
-            }
-
-            .collapsed-stepper-container {
-                display: flex;
-                align-items: center;
-
-                .collapsed-stepper {
-                    cursor: pointer;
-                    border: 1px solid #c8c8c8;
-                    border-radius: 50%;
+                .modifier-item {
                     display: flex;
-                    justify-content: center;
                     align-items: center;
+
+                    .image {
+                        height: 120px;
+                        border-radius: 8px;
+                        object-fit: cover;
+                    }
+
+                    .quantity-remaining {
+                        padding: 5px 10px;
+                        background-color: var(--primary-color);
+                        color: #ffffff;
+                        border-radius: 5px;
+                        font-size: 12px;
+                    }
+
+                    .product-modifier-chevron-right {
+                        margin-left: auto;
+                    }
                 }
 
-                .collapsed-stepper-children {
-                    line-height: 1.5;
+                .collapsed-stepper-container {
+                    display: flex;
+                    align-items: center;
+
+                    .collapsed-stepper {
+                        cursor: pointer;
+                        border: 1px solid #c8c8c8;
+                        border-radius: 50%;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                    }
+
+                    .collapsed-stepper-children {
+                        line-height: 1.5;
+                    }
                 }
             }
         }
