@@ -50,6 +50,8 @@ export const CREATE_ORDER = gql`
         $table: String
         $notes: String
         $eftposReceipt: String
+        $payments: [OrderPaymentInput]
+        $paymentAmounts: OrderPaymentAmountsInput
         $total: Int!
         $discount: Int
         $promotionId: ID
@@ -70,6 +72,8 @@ export const CREATE_ORDER = gql`
                 table: $table
                 notes: $notes
                 eftposReceipt: $eftposReceipt
+                payments: $payments
+                paymentAmounts: $paymentAmounts
                 total: $total
                 discount: $discount
                 promotionId: $promotionId
