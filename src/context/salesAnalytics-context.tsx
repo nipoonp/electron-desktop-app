@@ -430,6 +430,10 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                 mostSoldCategoriesExport.data.push(row);
             });
 
+            // Sort Category graph data by it's value
+            categoryByGraphData.sort((a, b) => b.value - a.value);
+            mostSoldCategoriesExport.data.sort((a, b) => (a[0] > b[0] && 1) || -1);
+
             // CSV Export Data
             const mostSoldProductsExport = {} as UnparseObject<Array<string | number>>;
             mostSoldProductsExport.fields = ["Product", "Quantity", "Net", "Tax", "Total", "% Of Sale"];
@@ -451,6 +455,10 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                 ];
                 mostSoldProductsExport.data.push(row);
             });
+
+            // Sort Product graph data by
+            productByGraphData.sort((a, b) => b.value - a.value);
+            mostSoldProductsExport.data.sort((a, b) => (a[0] > b[0] && 1) || -1);
 
             setSalesAnalytics({
                 daysDifference,

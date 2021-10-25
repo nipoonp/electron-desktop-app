@@ -1,5 +1,5 @@
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { convertCentsToDollars, convertCentsToDollarsReturnFloat } from "../../util/util";
+import { convertCentsToDollars } from "../../util/util";
 import { PieGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { Table } from "../../tabin/components/table";
 import { useSalesAnalytics } from "../../context/salesAnalytics-context";
@@ -35,6 +35,7 @@ export const SalesAnalyticsTopCategory = () => {
                             <Table>
                                 <thead>
                                     <tr>
+                                        <th className="text-center">Image</th>
                                         <th className="text-left">Category</th>
                                         <th className="text-right">Quantity</th>
                                         <th className="text-right">Net</th>
@@ -44,20 +45,24 @@ export const SalesAnalyticsTopCategory = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {Object.entries(salesAnalytics.mostSoldCategories).map(([categoryId, category]) => (
-                                        <tr key={categoryId}>
-                                            <td className="text-left">{category.item.name}</td>
-                                            <td className="text-right">{category.totalQuantity}</td>
-                                            <td className="text-right">{`$${convertCentsToDollars(
-                                                (category.totalAmount * (100 - taxRate)) / 100
-                                            )}`}</td>
-                                            <td className="text-right">{`$${convertCentsToDollars(category.totalAmount * (taxRate / 100))}`}</td>
-                                            <td className="text-right">{`$${convertCentsToDollars(category.totalAmount)}`}</td>
-                                            <td className="text-right">{`${((category.totalAmount * 100) / salesAnalytics.subTotalCompleted).toFixed(
-                                                2
-                                            )}%`}</td>
-                                        </tr>
-                                    ))}
+                                    {Object.entries(salesAnalytics.mostSoldCategories)
+                                        .sort((a, b) => b[1].totalAmount - a[1].totalAmount)
+                                        .map(([categoryId, category]) => (
+                                            <tr key={categoryId}>
+                                                <td className="text-center">{category.item.image}</td>
+                                                <td className="text-left">{category.item.name}</td>
+                                                <td className="text-right">{category.totalQuantity}</td>
+                                                <td className="text-right">{`$${convertCentsToDollars(
+                                                    (category.totalAmount * (100 - taxRate)) / 100
+                                                )}`}</td>
+                                                <td className="text-right">{`$${convertCentsToDollars(category.totalAmount * (taxRate / 100))}`}</td>
+                                                <td className="text-right">{`$${convertCentsToDollars(category.totalAmount)}`}</td>
+                                                <td className="text-right">{`${(
+                                                    (category.totalAmount * 100) /
+                                                    salesAnalytics.subTotalCompleted
+                                                ).toFixed(2)}%`}</td>
+                                            </tr>
+                                        ))}
                                 </tbody>
                             </Table>
                         </div>

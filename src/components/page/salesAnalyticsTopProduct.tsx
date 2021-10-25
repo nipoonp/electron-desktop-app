@@ -1,5 +1,5 @@
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { convertCentsToDollars, convertCentsToDollarsReturnFloat } from "../../util/util";
+import { convertCentsToDollars } from "../../util/util";
 import { PieGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { Table } from "../../tabin/components/table";
 import { useSalesAnalytics } from "../../context/salesAnalytics-context";
@@ -36,6 +36,7 @@ export const SalesAnalyticsTopProduct = () => {
                                 <thead>
                                     <tr>
                                         <th className="text-left">Product</th>
+                                        <th className="text-left">Category</th>
                                         <th className="text-right">Quantity</th>
                                         <th className="text-right">Net</th>
                                         <th className="text-right">Tax</th>
@@ -44,8 +45,11 @@ export const SalesAnalyticsTopProduct = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {Object.entries(salesAnalytics.mostSoldProducts).map(([productId, product]) => (
+                                    {Object.entries(salesAnalytics.mostSoldProducts)
+                                    .sort((a, b) => b[1].totalAmount - a[1].totalAmount)
+                                    .map(([productId, product]) => (
                                         <tr key={productId}>
+                                            <td className="text-left"> {product.item.name}</td>
                                             <td className="text-left"> {product.item.name}</td>
                                             <td className="text-right"> {product.totalQuantity}</td>
                                             <td className="text-right">{`$${convertCentsToDollars(
