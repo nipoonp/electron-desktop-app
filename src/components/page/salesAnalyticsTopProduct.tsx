@@ -7,6 +7,7 @@ import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 
 import "./salesAnalytics.scss";
 import { taxRate } from "../../model/util";
+import { IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../../graphql/customFragments";
 
 export const SalesAnalyticsTopProduct = () => {
     const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
@@ -47,10 +48,12 @@ export const SalesAnalyticsTopProduct = () => {
                                 <tbody>
                                     {Object.entries(salesAnalytics.mostSoldProducts)
                                     .sort((a, b) => b[1].totalAmount - a[1].totalAmount)
-                                    .map(([productId, product]) => (
+                                    .map(([productId, product]) => {
+                                        const category = product.item as IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT;
+                                        return (
                                         <tr key={productId}>
                                             <td className="text-left"> {product.item.name}</td>
-                                            <td className="text-left"> {product.item.name}</td>
+                                            <td className="text-left"> {category.category && category.category.name}</td>
                                             <td className="text-right"> {product.totalQuantity}</td>
                                             <td className="text-right">{`$${convertCentsToDollars(
                                                 (product.totalAmount * (100 - taxRate)) / 100
@@ -61,7 +64,7 @@ export const SalesAnalyticsTopProduct = () => {
                                                 2
                                             )}%`}</td>
                                         </tr>
-                                    ))}
+                                    )})}
                                 </tbody>
                             </Table>
                         </div>

@@ -7,6 +7,8 @@ import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 
 import "./salesAnalytics.scss";
 import { taxRate } from "../../model/util";
+import { CachedImage } from "../../tabin/components/cachedImage";
+import { getCloudFrontDomainName } from "../../private/aws-custom";
 
 export const SalesAnalyticsTopCategory = () => {
     const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
@@ -49,7 +51,17 @@ export const SalesAnalyticsTopCategory = () => {
                                         .sort((a, b) => b[1].totalAmount - a[1].totalAmount)
                                         .map(([categoryId, category]) => (
                                             <tr key={categoryId}>
-                                                <td className="text-center">{category.item.image}</td>
+                                                <td className="text-left">
+                                                    {category && category.item.image && (
+                                                        <CachedImage
+                                                            url={`${getCloudFrontDomainName()}/protected/${category.item.image.identityPoolId}/${
+                                                                category.item.image.key
+                                                            }`}
+                                                            className="image mb-2"
+                                                            alt={category.item.name}
+                                                        />
+                                                    )}
+                                                </td>
                                                 <td className="text-left">{category.item.name}</td>
                                                 <td className="text-right">{category.totalQuantity}</td>
                                                 <td className="text-right">{`$${convertCentsToDollars(
