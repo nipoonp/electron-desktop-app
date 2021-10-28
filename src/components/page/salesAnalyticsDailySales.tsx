@@ -69,7 +69,7 @@ export const SalesAnalyticsDailySales = () => {
                                 <tbody>
                                     {Object.entries(salesAnalytics.dailySales).map(([date, sale], index) => (
                                         <tr key={index}>
-                                            <td className="text-left">{format(new Date(date), "E, dd MMM")}</td>
+                                            <td className="sales-analytics-table-date-cell">{format(new Date(date), "E, dd MMM")}</td>
                                             <td className="text-right">{sale.totalQuantity}</td>
                                             <td className="text-right">{`$${convertCentsToDollars((sale.totalAmount * (100 - taxRate)) / 100)}`}</td>
                                             <td className="text-right">{`$${convertCentsToDollars(sale.totalAmount * (taxRate / 100))}`}</td>

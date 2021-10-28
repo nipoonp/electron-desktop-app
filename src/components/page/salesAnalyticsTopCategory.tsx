@@ -37,7 +37,7 @@ export const SalesAnalyticsTopCategory = () => {
                             <Table>
                                 <thead>
                                     <tr>
-                                        <th className="text-center">Image</th>
+                                        <th></th>
                                         <th className="text-left">Category</th>
                                         <th className="text-right">Quantity</th>
                                         <th className="text-right">Net</th>
@@ -51,14 +51,14 @@ export const SalesAnalyticsTopCategory = () => {
                                         .sort((a, b) => b[1].totalAmount - a[1].totalAmount)
                                         .map(([categoryId, category]) => (
                                             <tr key={categoryId}>
-                                                <td className="text-left">
-                                                    {category && category.item.image && (
+                                                <td className="sales-analytics-table-image-cell">
+                                                    {category.item.image && (
                                                         <CachedImage
                                                             url={`${getCloudFrontDomainName()}/protected/${category.item.image.identityPoolId}/${
                                                                 category.item.image.key
                                                             }`}
-                                                            className="image mb-2"
-                                                            alt={category.item.name}
+                                                            className="sales-analytics-table-image"
+                                                            alt="category-image"
                                                         />
                                                     )}
                                                 </td>
