@@ -140,12 +140,6 @@ export interface IGET_RESTAURANT_ORDER_MODIFIER_FRAGMENT {
     price: number;
     preSelectedQuantity: number;
     quantity: number;
-    productModifier: IGET_RESTAURANT_ORDER_PRODUCT_MODIFIER_FRAGMENT | null;
+    productModifier: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT | null;
     image: IS3Object | null;
-}
-
-export interface IGET_RESTAURANT_ORDER_PRODUCT_MODIFIER_FRAGMENT {
-    id: string;
-    name: string;
-    price: number;
 }
