@@ -58,7 +58,7 @@ export const ProductModal = (props: {
         orderedModifiers: IPreSelectedModifiers;
         quantity: number;
         notes: string | null;
-        productCartIndex: number;
+        productCartIndex?: number;
     };
 }) => {
     const { category, product, isProductModifier, isOpen, onAddItem, onUpdateItem, onClose, editProduct } = props;
@@ -71,51 +71,50 @@ export const ProductModal = (props: {
     const [error, setError] = useState<{ [modifierGroupId: string]: string }>({});
 
     const [selectedProductModifier, setSelectedProductModifier] = useState<ISelectedProductModifier | null>(null);
-
-    // useEffect(() => {
-    //     console.log("xxx...", orderedModifiers);
-    // }, [orderedModifiers]);
+    const [selectedProductModifierOrderedModifiers, setProductModifierOrderedModifiers] = useState({});
 
     useEffect(() => {
-        // if (editProduct) return;
-        // let newOrderedModifiers: IPreSelectedModifiers = {};
-        // product.modifierGroups &&
-        //     product.modifierGroups.items.forEach((modifierGroupLink) => {
-        //         modifierGroupLink.modifierGroup.modifiers &&
-        //             modifierGroupLink.modifierGroup.modifiers.items.map((modifierLink) => {
-        //                 if (modifierLink.preSelectedQuantity) {
-        //                     if (newOrderedModifiers[modifierGroupLink.modifierGroup.id] === undefined) {
-        //                         newOrderedModifiers[modifierGroupLink.modifierGroup.id] = [];
-        //                     }
-        //                     newOrderedModifiers = Object.assign({}, newOrderedModifiers, {
-        //                         [modifierGroupLink.modifierGroup.id]: newOrderedModifiers[modifierGroupLink.modifierGroup.id].concat({
-        //                             id: modifierLink.modifier.id,
-        //                             name: modifierLink.modifier.name,
-        //                             price: modifierLink.modifier.price,
-        //                             preSelectedQuantity: modifierLink.preSelectedQuantity,
-        //                             quantity: modifierLink.preSelectedQuantity,
-        //                             productModifier: modifierLink.modifier.productModifier
-        //                                 ? {
-        //                                       id: modifierLink.modifier.productModifier.id,
-        //                                       name: modifierLink.modifier.productModifier.name,
-        //                                       price: modifierLink.modifier.productModifier.price,
-        //                                       quantity: modifierLink.preSelectedQuantity,
-        //                                   }
-        //                                 : null,
-        //                             image: modifierLink.modifier.image
-        //                                 ? {
-        //                                       key: modifierLink.modifier.image.key,
-        //                                       region: modifierLink.modifier.image.region,
-        //                                       bucket: modifierLink.modifier.image.bucket,
-        //                                       identityPoolId: modifierLink.modifier.image.identityPoolId,
-        //                                   }
-        //                                 : null,
-        //                         }),
-        //                     });
-        //                 }
-        //             });
-        //         setOrderedModifiers(newOrderedModifiers);
-        //     });
+        console.log("xxx...", orderedModifiers);
+    }, [orderedModifiers]);
+
+    useEffect(() => {
+        //Set preselected modifiers logic
+        if (editProduct) return;
+
+        let newOrderedModifiers: IPreSelectedModifiers = {};
+
+        product.modifierGroups &&
+            product.modifierGroups.items.forEach((modifierGroupLink) => {
+                modifierGroupLink.modifierGroup.modifiers &&
+                    modifierGroupLink.modifierGroup.modifiers.items.map((modifierLink) => {
+                        if (modifierLink.preSelectedQuantity) {
+                            if (newOrderedModifiers[modifierGroupLink.modifierGroup.id] === undefined) {
+                                newOrderedModifiers[modifierGroupLink.modifierGroup.id] = [];
+                            }
+
+                            newOrderedModifiers = Object.assign({}, newOrderedModifiers, {
+                                [modifierGroupLink.modifierGroup.id]: newOrderedModifiers[modifierGroupLink.modifierGroup.id].concat({
+                                    id: modifierLink.modifier.id,
+                                    name: modifierLink.modifier.name,
+                                    price: modifierLink.modifier.price,
+                                    preSelectedQuantity: modifierLink.preSelectedQuantity,
+                                    quantity: modifierLink.preSelectedQuantity,
+                                    productModifier: null,
+                                    image: modifierLink.modifier.image
+                                        ? {
+                                              key: modifierLink.modifier.image.key,
+                                              region: modifierLink.modifier.image.region,
+                                              bucket: modifierLink.modifier.image.bucket,
+                                              identityPoolId: modifierLink.modifier.image.identityPoolId,
+                                          }
+                                        : null,
+                                }),
+                            });
+                        }
+                    });
+
+                setOrderedModifiers(newOrderedModifiers);
+            });
     }, []);
 
     useEffect(() => {
@@ -481,7 +480,7 @@ export const ProductModal = (props: {
         };
 
         if (editProduct) {
-            onUpdateItem && onUpdateItem(editProduct.productCartIndex, productToOrder);
+            onUpdateItem && editProduct.productCartIndex && onUpdateItem(editProduct.productCartIndex, productToOrder);
         } else {
             onAddItem && onAddItem(productToOrder);
         }
