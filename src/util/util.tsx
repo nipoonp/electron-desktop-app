@@ -501,22 +501,35 @@ export const convertProductTypesForPrint = (products: IGET_RESTAURANT_ORDER_PROD
                 const convertedM: ICartModifier[] = [];
 
                 mg.modifiers.forEach((m) => {
-                    convertedM.push({
-                        id: m.id,
-                        name: m.name,
-                        price: m.price,
-                        preSelectedQuantity: m.preSelectedQuantity,
-                        quantity: m.quantity,
-                        productModifier: m.productModifier
-                            ? {
-                                  id: m.productModifier.id,
-                                  name: m.productModifier.name,
-                                  price: m.productModifier.price,
-                                  quantity: m.quantity,
-                              }
-                            : null,
-                        image: m.image,
-                    });
+                    if (m.productModifier && !m.productModifier.category) return;
+
+                    // convertedM.push({
+                    //     id: m.id,
+                    //     name: m.name,
+                    //     price: m.price,
+                    //     preSelectedQuantity: m.preSelectedQuantity,
+                    //     quantity: m.quantity,
+                    //     productModifier: m.productModifier
+                    //         ? {
+                    //               id: m.productModifier.id,
+                    //               name: m.productModifier.name,
+                    //               price: m.productModifier.price,
+                    //               quantity: m.quantity,
+                    //               image: m.productModifier.image
+                    //                   ? {
+                    //                         key: m.productModifier.image.key,
+                    //                         region: m.productModifier.image.region,
+                    //                         bucket: m.productModifier.image.bucket,
+                    //                         identityPoolId: m.productModifier.image.identityPoolId,
+                    //                     }
+                    //                   : null,
+                    //               category: m.productModifier.category,
+                    //               modifierGroups: m.productModifier.modifierGroups,
+                    //               notes: m.productModifier.notes,
+                    //           }
+                    //         : null,
+                    //     image: m.image,
+                    // });
                 });
 
                 convertedMG.push({

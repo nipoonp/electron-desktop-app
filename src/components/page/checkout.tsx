@@ -894,7 +894,7 @@ export const Checkout = () => {
 
     const orderSummary = (
         <OrderSummary
-            onNotesChange={onNotesChange}
+            products={products || []}
             onEditProduct={onEditProduct}
             onUpdateProductQuantity={onUpdateProductQuantity}
             onRemoveProduct={onRemoveProduct}

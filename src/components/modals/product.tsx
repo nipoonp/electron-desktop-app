@@ -32,13 +32,22 @@ import { getCloudFrontDomainName } from "../../private/aws-custom";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { useCart } from "../../context/cart-context";
 import { FiChevronRight } from "react-icons/fi";
+import { OrderSummary } from "../page/checkout/orderSummary";
+import { ProductModifier } from "../shared/productModifier";
 
 const logger = new Logger("productModal");
+
+interface ISelectedProductModifier {
+    product: IGET_RESTAURANT_PRODUCT;
+    selectedModifierGroupId: string;
+    selectedModifierGroupModifierIndex: number;
+}
 
 export const ProductModal = (props: {
     //
     category: IGET_RESTAURANT_CATEGORY;
     product: IGET_RESTAURANT_PRODUCT;
+    isProductModifier?: boolean;
     isOpen: boolean;
     onAddItem?: (product: ICartProduct) => void;
     onUpdateItem?: (index: number, product: ICartProduct) => void;
@@ -52,82 +61,87 @@ export const ProductModal = (props: {
         productCartIndex: number;
     };
 }) => {
-    const { category, product, isOpen, onAddItem, onUpdateItem, onClose, editProduct } = props;
-    // context
-    const { user } = useUser();
+    const { category, product, isProductModifier, isOpen, onAddItem, onUpdateItem, onClose, editProduct } = props;
     const { cartProductQuantitiesById } = useCart();
 
-    // states
     const [orderedModifiers, setOrderedModifiers] = useState<IPreSelectedModifiers>(editProduct ? editProduct.orderedModifiers : {});
     const [quantity, setQuantity] = useState(editProduct ? editProduct.quantity : 1);
+    const [totalDisplayPrice, setTotalDisplayPrice] = useState(product.price);
     const [notes, setNotes] = useState(editProduct ? editProduct.notes : "");
     const [error, setError] = useState<{ [modifierGroupId: string]: string }>({});
 
-    const [totalDisplayPrice, setTotalDisplayPrice] = useState(product.price);
+    const [selectedProductModifier, setSelectedProductModifier] = useState<ISelectedProductModifier | null>(null);
+
+    // useEffect(() => {
+    //     console.log("xxx...", orderedModifiers);
+    // }, [orderedModifiers]);
 
     useEffect(() => {
-        console.log(orderedModifiers);
-    }, [orderedModifiers]);
-
-    useEffect(() => {
-        if (editProduct) return;
-
-        let newOrderedModifiers: IPreSelectedModifiers = {};
-
-        product.modifierGroups &&
-            product.modifierGroups.items.forEach((modifierGroupLink) => {
-                modifierGroupLink.modifierGroup.modifiers &&
-                    modifierGroupLink.modifierGroup.modifiers.items.map((modifierLink) => {
-                        if (modifierLink.preSelectedQuantity) {
-                            if (newOrderedModifiers[modifierGroupLink.modifierGroup.id] === undefined) {
-                                newOrderedModifiers[modifierGroupLink.modifierGroup.id] = [];
-                            }
-
-                            newOrderedModifiers = Object.assign({}, newOrderedModifiers, {
-                                [modifierGroupLink.modifierGroup.id]: newOrderedModifiers[modifierGroupLink.modifierGroup.id].concat({
-                                    id: modifierLink.modifier.id,
-                                    name: modifierLink.modifier.name,
-                                    price: modifierLink.modifier.price,
-                                    preSelectedQuantity: modifierLink.preSelectedQuantity,
-                                    quantity: modifierLink.preSelectedQuantity,
-                                    productModifier: modifierLink.modifier.productModifier
-                                        ? {
-                                              id: modifierLink.modifier.productModifier.id,
-                                              name: modifierLink.modifier.productModifier.name,
-                                              price: modifierLink.modifier.productModifier.price,
-                                              quantity: modifierLink.preSelectedQuantity,
-                                          }
-                                        : null,
-                                    image: modifierLink.modifier.image
-                                        ? {
-                                              key: modifierLink.modifier.image.key,
-                                              region: modifierLink.modifier.image.region,
-                                              bucket: modifierLink.modifier.image.bucket,
-                                              identityPoolId: modifierLink.modifier.image.identityPoolId,
-                                          }
-                                        : null,
-                                }),
-                            });
-                        }
-                    });
-
-                setOrderedModifiers(newOrderedModifiers);
-            });
+        // if (editProduct) return;
+        // let newOrderedModifiers: IPreSelectedModifiers = {};
+        // product.modifierGroups &&
+        //     product.modifierGroups.items.forEach((modifierGroupLink) => {
+        //         modifierGroupLink.modifierGroup.modifiers &&
+        //             modifierGroupLink.modifierGroup.modifiers.items.map((modifierLink) => {
+        //                 if (modifierLink.preSelectedQuantity) {
+        //                     if (newOrderedModifiers[modifierGroupLink.modifierGroup.id] === undefined) {
+        //                         newOrderedModifiers[modifierGroupLink.modifierGroup.id] = [];
+        //                     }
+        //                     newOrderedModifiers = Object.assign({}, newOrderedModifiers, {
+        //                         [modifierGroupLink.modifierGroup.id]: newOrderedModifiers[modifierGroupLink.modifierGroup.id].concat({
+        //                             id: modifierLink.modifier.id,
+        //                             name: modifierLink.modifier.name,
+        //                             price: modifierLink.modifier.price,
+        //                             preSelectedQuantity: modifierLink.preSelectedQuantity,
+        //                             quantity: modifierLink.preSelectedQuantity,
+        //                             productModifier: modifierLink.modifier.productModifier
+        //                                 ? {
+        //                                       id: modifierLink.modifier.productModifier.id,
+        //                                       name: modifierLink.modifier.productModifier.name,
+        //                                       price: modifierLink.modifier.productModifier.price,
+        //                                       quantity: modifierLink.preSelectedQuantity,
+        //                                   }
+        //                                 : null,
+        //                             image: modifierLink.modifier.image
+        //                                 ? {
+        //                                       key: modifierLink.modifier.image.key,
+        //                                       region: modifierLink.modifier.image.region,
+        //                                       bucket: modifierLink.modifier.image.bucket,
+        //                                       identityPoolId: modifierLink.modifier.image.identityPoolId,
+        //                                   }
+        //                                 : null,
+        //                         }),
+        //                     });
+        //                 }
+        //             });
+        //         setOrderedModifiers(newOrderedModifiers);
+        //     });
     }, []);
 
     useEffect(() => {
         let price = product.price;
 
-        for (let key in orderedModifiers) {
-            let currElement: ICartModifier[] = orderedModifiers[key];
-            currElement.forEach((m) => {
+        Object.values(orderedModifiers).forEach((orderedModifier) => {
+            orderedModifier.forEach((m) => {
                 const changedQuantity = m.quantity - m.preSelectedQuantity;
 
                 if (changedQuantity > 0) {
                     price += m.price * changedQuantity;
                 }
+
+                if (m.productModifier) {
+                    m.productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
+                        orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
+                            const changedQuantity = orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
+
+                            if (changedQuantity > 0) {
+                                price += orderedProductModifierModifier.price * changedQuantity;
+                            }
+                        });
+                    });
+                }
             });
-        }
+        });
 
         price = price * quantity;
         setTotalDisplayPrice(price);
@@ -156,14 +170,15 @@ export const ProductModal = (props: {
                 price: selectedModifier.price,
                 preSelectedQuantity: preSelectedModifierQuantity,
                 quantity: 1,
-                productModifier: selectedModifier.productModifier
-                    ? {
-                          id: selectedModifier.productModifier.id,
-                          name: selectedModifier.productModifier.name,
-                          price: selectedModifier.productModifier.price,
-                          quantity: 1,
-                      }
-                    : null,
+                productModifier: null,
+                // productModifier: selectedModifier.productModifier
+                //     ? {
+                //           id: selectedModifier.productModifier.id,
+                //           name: selectedModifier.productModifier.name,
+                //           price: selectedModifier.productModifier.price,
+                //           quantity: 1,
+                //       }
+                //     : null,
                 image: selectedModifier.image
                     ? {
                           key: selectedModifier.image.key,
@@ -176,6 +191,14 @@ export const ProductModal = (props: {
         });
 
         setOrderedModifiers(newOrderedModifiers2);
+
+        if (selectedModifier.productModifier) {
+            setSelectedProductModifier({
+                product: selectedModifier.productModifier,
+                selectedModifierGroupId: selectedModifierGroupId,
+                selectedModifierGroupModifierIndex: newOrderedModifiers2[selectedModifierGroupId].length - 1, //Last index is length - 1
+            });
+        }
     };
 
     const onUnCheckingModifier = (
@@ -204,14 +227,15 @@ export const ProductModal = (props: {
                     price: selectedModifier.price,
                     preSelectedQuantity: preSelectedModifierQuantity,
                     quantity: 0,
-                    productModifier: selectedModifier.productModifier
-                        ? {
-                              id: selectedModifier.productModifier.id,
-                              name: selectedModifier.productModifier.name,
-                              price: selectedModifier.productModifier.price,
-                              quantity: 0,
-                          }
-                        : null,
+                    productModifier: null,
+                    // productModifier: selectedModifier.productModifier
+                    //     ? {
+                    //           id: selectedModifier.productModifier.id,
+                    //           name: selectedModifier.productModifier.name,
+                    //           price: selectedModifier.productModifier.price,
+                    //           quantity: 0,
+                    //       }
+                    //     : null,
                     image: selectedModifier.image
                         ? {
                               key: selectedModifier.image.key,
@@ -259,14 +283,15 @@ export const ProductModal = (props: {
                     price: selectedModifier.price,
                     preSelectedQuantity: preSelectedModifierQuantity,
                     quantity: quantity,
-                    productModifier: selectedModifier.productModifier
-                        ? {
-                              id: selectedModifier.productModifier.id,
-                              name: selectedModifier.productModifier.name,
-                              price: selectedModifier.productModifier.price,
-                              quantity: quantity,
-                          }
-                        : null,
+                    productModifier: null,
+                    // productModifier: selectedModifier.productModifier
+                    //     ? {
+                    //           id: selectedModifier.productModifier.id,
+                    //           name: selectedModifier.productModifier.name,
+                    //           price: selectedModifier.productModifier.price,
+                    //           quantity: quantity,
+                    //       }
+                    //     : null,
                     image: selectedModifier.image
                         ? {
                               key: selectedModifier.image.key,
@@ -297,14 +322,15 @@ export const ProductModal = (props: {
                     price: selectedModifier.price,
                     preSelectedQuantity: preSelectedModifierQuantity,
                     quantity: 1,
-                    productModifier: selectedModifier.productModifier
-                        ? {
-                              id: selectedModifier.productModifier.id,
-                              name: selectedModifier.productModifier.name,
-                              price: selectedModifier.productModifier.price,
-                              quantity: 1,
-                          }
-                        : undefined,
+                    productModifier: null,
+                    // productModifier: selectedModifier.productModifier
+                    //     ? {
+                    //           id: selectedModifier.productModifier.id,
+                    //           name: selectedModifier.productModifier.name,
+                    //           price: selectedModifier.productModifier.price,
+                    //           quantity: 1,
+                    //       }
+                    //     : undefined,
                     image: selectedModifier.image
                         ? {
                               key: selectedModifier.image.key,
@@ -318,6 +344,14 @@ export const ProductModal = (props: {
         });
 
         setOrderedModifiers(newOrderedModifiers);
+
+        if (selectedModifier.productModifier) {
+            setSelectedProductModifier({
+                product: selectedModifier.productModifier,
+                selectedModifierGroupId: selectedModifierGroupId,
+                selectedModifierGroupModifierIndex: newOrderedModifiers[selectedModifierGroupId].length - 1, //Last index is length - 1
+            });
+        }
     };
 
     // TODO refactor
@@ -520,15 +554,21 @@ export const ProductModal = (props: {
 
     const footer = (
         <>
-            <div className="stepper mb-4">
-                <Stepper count={quantity} min={1} max={getProductFooterMaxQuantity()} onUpdate={onUpdateQuantity} size={48} />
-            </div>
+            {!isProductModifier && (
+                <div className="stepper mb-4">
+                    <Stepper count={quantity} min={1} max={getProductFooterMaxQuantity()} onUpdate={onUpdateQuantity} size={48} />
+                </div>
+            )}
             <div className="footer-buttons-container">
                 <Button className="button large mr-3 cancel-button" onClick={onModalClose}>
                     Cancel
                 </Button>
                 <Button className="button large add-update-order-button" onClick={onSubmit}>
-                    {editProduct ? "Update Item " : "Add To Order "} ${convertCentsToDollars(totalDisplayPrice)}
+                    {isProductModifier
+                        ? "Save"
+                        : editProduct
+                        ? `Update Item ${convertCentsToDollars(totalDisplayPrice)}`
+                        : `Add To Order ${convertCentsToDollars(totalDisplayPrice)}`}
                 </Button>
             </div>
         </>
@@ -542,17 +582,46 @@ export const ProductModal = (props: {
                 {product.description && <div className="description">{product.description}</div>}
                 <div className="separator-6"></div>
                 {modifierGroups}
-                {user && productNotes}
+                {!isProductModifier && productNotes}
             </div>
             <div className="footer">{footer}</div>
         </>
     );
+
+    const onCloseProductModifierModifier = () => {
+        setSelectedProductModifier(null);
+    };
+
+    const onAddProductModifierProduct = (product: ICartProduct) => {
+        if (!selectedProductModifier) return;
+
+        // console.log("xxx...product", product);
+
+        const newOrderedModifiers = JSON.parse(JSON.stringify(orderedModifiers));
+
+        newOrderedModifiers[selectedProductModifier.selectedModifierGroupId][
+            selectedProductModifier.selectedModifierGroupModifierIndex
+        ].productModifier = product;
+
+        setOrderedModifiers(newOrderedModifiers);
+    };
 
     return (
         <>
             <Modal isOpen={isOpen} onRequestClose={onModalClose}>
                 <div className="product-modal">{content}</div>
             </Modal>
+
+            {selectedProductModifier && (
+                <ProductModal
+                    isOpen={selectedProductModifier ? true : false}
+                    onClose={onCloseProductModifierModifier}
+                    category={category}
+                    product={selectedProductModifier.product}
+                    isProductModifier={true}
+                    onAddItem={onAddProductModifierProduct}
+                />
+            )}
         </>
     );
 };
@@ -666,6 +735,7 @@ export const ModifierGroup = (props: {
                             <Modifier
                                 radio={modifierGroup.choiceMin !== 0 && modifierGroup.choiceMax === 1}
                                 modifier={m.modifier}
+                                selectedModifier={selectedModifiers.find((modifier) => modifier.id == m.modifier.id)}
                                 choiceDuplicate={modifierGroup.choiceDuplicate}
                                 onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
                                     onCheckingModifier(selectedModifier, m.preSelectedQuantity);
@@ -696,6 +766,7 @@ export const ModifierGroup = (props: {
 
 const Modifier = (props: {
     modifier: IGET_RESTAURANT_MODIFIER;
+    selectedModifier?: ICartModifier;
     choiceDuplicate: number;
     maxReached: boolean;
     modifiersSelectedCount: number;
@@ -720,6 +791,7 @@ const Modifier = (props: {
 }) => {
     const {
         modifier,
+        selectedModifier,
         choiceDuplicate,
         maxReached,
         modifiersSelectedCount,
@@ -909,6 +981,16 @@ const Modifier = (props: {
         </Radio>
     );
 
+    const onEditSelections = () => {};
+
+    const productModifier = (
+        <div>
+            {selectedModifier && selectedModifier.productModifier && (
+                <ProductModifier product={selectedModifier.productModifier} onEditSelections={onEditSelections} />
+            )}
+        </div>
+    );
+
     return (
         <>
             <div className={`modifier ${isValid ? "" : "sold-out"}`}>
@@ -919,6 +1001,8 @@ const Modifier = (props: {
                 {showCollapsedStepper && collapsedStepper}
 
                 {showCheckbox && checkbox}
+
+                {selectedModifier && selectedModifier.productModifier && productModifier}
             </div>
         </>
     );

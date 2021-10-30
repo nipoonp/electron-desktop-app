@@ -127,6 +127,7 @@ export interface ICartModifier {
     productModifier: ICartProduct | null;
     image: IS3Object | null;
 }
+
 export interface IPreSelectedModifiers {
     [modifierGroupId: string]: ICartModifier[];
 }
