@@ -390,7 +390,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                     date: format(new Date(date), "dd MMM"),
                     sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
                 });
-                
+
                 const row = [
                     format(new Date(date), "E, dd MMM"),
                     sale.totalQuantity,
@@ -447,7 +447,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
             });
 
             // Sort Category graph data by it's value
-            categoryByGraphData.sort((a, b) => b.value - a.value);
+            categoryByGraphData.sort((a, b) => a.value - b.value);
             mostSoldCategoriesExport.data.sort((a, b) => (a[0] > b[0] && 1) || -1);
 
             // CSV Export Data
@@ -473,7 +473,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
             });
 
             // Sort Product graph data by
-            productByGraphData.sort((a, b) => b.value - a.value);
+            productByGraphData.sort((a, b) => a.value - b.value);
             mostSoldProductsExport.data.sort((a, b) => (a[0] > b[0] && 1) || -1);
 
             setSalesAnalytics({
