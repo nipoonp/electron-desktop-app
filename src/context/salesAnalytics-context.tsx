@@ -21,6 +21,15 @@ export interface ITopSoldItem {
     totalAmount: number;
 }
 
+export interface IDayComaparisonExport {
+    [date: string]: {
+        [key: string]: {
+            name: string;
+            total: number;
+        };
+    };
+}
+
 export interface IDailySales {
     [date: string]: {
         totalAmount: number;
@@ -52,6 +61,7 @@ export interface IMostSoldItems {
 }
 
 export interface ISalesAnalytics {
+    orders: IGET_RESTAURANT_ORDER_FRAGMENT[];
     daysDifference: number;
     dailySales: IDailySales;
     subTotalNew: number;
@@ -75,6 +85,7 @@ export interface ISalesAnalytics {
     hourlySalesExport: UnparseObject<Array<string | number>>;
     mostSoldCategoriesExport: UnparseObject<Array<string | number>>;
     mostSoldProductsExport: UnparseObject<Array<string | number>>;
+    exportSalesDates: string[];
 }
 
 type ContextProps = {
@@ -178,6 +189,8 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
             const mostSoldCategories: IMostSoldItems = {};
             const mostSoldProducts: IMostSoldItems = {};
 
+            const exportSalesDates: string[] = [];
+
             //First create an empty object with empty defined day sales
             for (var i = 0; i < daysDifference; i++) {
                 const loopDateTime: Date = addDays(new Date(startDate), i);
@@ -188,6 +201,8 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                     totalQuantity: 0,
                     orders: [],
                 };
+
+                exportSalesDates.push(format(new Date(loopDateTime), "E, dd MMM"));
             }
 
             orders.forEach((order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
@@ -232,6 +247,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                         totalAmount: newSaleAmount,
                     };
 
+                    // Best Hour
                     if (newSaleAmount > bestHour.totalAmount) {
                         bestHour = {
                             hour: placedAtHour,
@@ -374,7 +390,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                     date: format(new Date(date), "dd MMM"),
                     sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
                 });
-
+                
                 const row = [
                     format(new Date(date), "E, dd MMM"),
                     sale.totalQuantity,
@@ -461,6 +477,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
             mostSoldProductsExport.data.sort((a, b) => (a[0] > b[0] && 1) || -1);
 
             setSalesAnalytics({
+                orders,
                 daysDifference,
                 dailySales,
                 subTotalNew,
@@ -484,6 +501,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                 hourlySalesExport,
                 mostSoldCategoriesExport,
                 mostSoldProductsExport,
+                exportSalesDates,
             });
         } catch (e) {
             toast.error("There was an error processing sales analytics data. Please try again later.");

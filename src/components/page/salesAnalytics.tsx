@@ -1,18 +1,18 @@
 import './salesAnalytics.scss';
 import 'react-clock/dist/Clock.css';
 
-import { add } from 'date-fns';
-import Papa from 'papaparse';
+import { add, addDays, format } from 'date-fns';
+import Papa, { UnparseObject } from 'papaparse';
 import Clock from 'react-clock';
 import { useHistory } from 'react-router';
 
-import { IBestHour, useSalesAnalytics } from '../../context/salesAnalytics-context';
+import { IBestHour, IDayComaparisonExport, useSalesAnalytics } from '../../context/salesAnalytics-context';
 import { getTwelveHourFormat } from '../../model/util';
 import { getCloudFrontDomainName } from '../../private/aws-custom';
 import { CachedImage } from '../../tabin/components/cachedImage';
 import { Card } from '../../tabin/components/card';
 import { FullScreenSpinner } from '../../tabin/components/fullScreenSpinner';
-import { convertCentsToDollars, downloadFile } from '../../util/util';
+import { convertCentsToDollars, downloadFile, getDollarString } from '../../util/util';
 import {
     salesAnalyticsDailySalesPath,
     salesAnalyticsHourlySalesPath,
@@ -22,9 +22,13 @@ import {
 import { LineGraph } from './salesAnalytics/salesAnalyticsGraphs';
 import { SalesAnalyticsWrapper } from './salesAnalytics/salesAnalyticsWrapper';
 import moment from 'moment';
+import { useRestaurant } from '../../context/restaurant-context';
+import { EOrderStatus } from '../../graphql/customQueries';
+import { IGET_RESTAURANT_ORDER_FRAGMENT } from '../../graphql/customFragments';
 
 export const SalesAnalytics = () => {
     const history = useHistory();
+    const { restaurant } = useRestaurant();
     const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
 
     const graphColor = getComputedStyle(document.documentElement).getPropertyValue("--primary-color");
@@ -72,7 +76,8 @@ export const SalesAnalytics = () => {
 
     const onExportDailySales = () => {
         if (salesAnalytics) {
-            const csv = Papa.unparse(salesAnalytics.dailySalesExport);
+            // const csv = Papa.unparse(salesAnalytics.dailySalesExport);
+            const csv = Papa.unparse(calculateDailySalesExport());
             var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
             downloadFile(csvData, `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_By_Day`, ".csv");
         }
@@ -80,7 +85,8 @@ export const SalesAnalytics = () => {
 
     const onExportHourlySales = () => {
         if (salesAnalytics) {
-            const csv = Papa.unparse(salesAnalytics.hourlySalesExport);
+            // const csv = Papa.unparse(salesAnalytics.hourlySalesExport);
+            const csv = Papa.unparse(calculateHourlySalesExport());
             var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
             downloadFile(csvData, `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_By_Hour`, ".csv");
         }
@@ -88,7 +94,8 @@ export const SalesAnalytics = () => {
 
     const onExportMostSoldCategory = () => {
         if (salesAnalytics) {
-            const csv = Papa.unparse(salesAnalytics.mostSoldCategoriesExport);
+            // const csv = Papa.unparse(salesAnalytics.mostSoldCategoriesExport);
+            const csv = Papa.unparse(calculateCategorySalesExport());
             var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
             downloadFile(csvData, `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_By_Category`, ".csv");
         }
@@ -96,10 +103,188 @@ export const SalesAnalytics = () => {
 
     const onExportMostSoldProduct = () => {
         if (salesAnalytics) {
-            const csv = Papa.unparse(salesAnalytics.mostSoldProductsExport);
+            // const csv = Papa.unparse(salesAnalytics.mostSoldProductsExport);
+            const csv = Papa.unparse(calculateProductSalesExport());
             var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
             downloadFile(csvData, `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_By_Product`, ".csv");
         }
+    };
+
+    const calculateDailySalesExport = () => {
+        // CSV Date Comparison Export
+        const dailySalesExport = {} as UnparseObject<Array<string | number>>;
+        if (salesAnalytics) {
+            dailySalesExport.fields = ["Date", ...salesAnalytics.exportSalesDates];
+            dailySalesExport.data = [];
+            dailySalesExport.data.push(["Orders"]);
+            dailySalesExport.data.push(["Net"]);
+            dailySalesExport.data.push(["Tax"]);
+            dailySalesExport.data.push(["Total"]);
+
+            salesAnalytics.dailySalesExport.data.forEach((d) => {
+                dailySalesExport.data[0] = [...dailySalesExport.data[0], d[1]];
+                dailySalesExport.data[1] = [...dailySalesExport.data[1], d[2]];
+                dailySalesExport.data[2] = [...dailySalesExport.data[2], d[3]];
+                dailySalesExport.data[3] = [...dailySalesExport.data[3], d[4]];
+            });
+        }
+
+        return dailySalesExport;
+    };
+
+    const calculateHourlySalesExport = () => {
+        const hourlySalesExport = {} as UnparseObject<Array<string | number>>;
+        if (salesAnalytics && startDate) {
+            hourlySalesExport.fields = ["Time", ...salesAnalytics.exportSalesDates];
+            hourlySalesExport.data = [];
+            const hourlySales: IDayComaparisonExport = {};
+            for (let i = 0; i < salesAnalytics.daysDifference; i++) {
+                const loopDateTime: Date = addDays(new Date(startDate), i);
+
+                hourlySales[format(new Date(loopDateTime), "yyyy-MM-dd")] = {
+                    "00": { name: "00", total: 0 },
+                    "01": { name: "01", total: 0 },
+                    "02": { name: "02", total: 0 },
+                    "03": { name: "03", total: 0 },
+                    "04": { name: "04", total: 0 },
+                    "05": { name: "05", total: 0 },
+                    "06": { name: "06", total: 0 },
+                    "07": { name: "07", total: 0 },
+                    "08": { name: "08", total: 0 },
+                    "09": { name: "09", total: 0 },
+                    "10": { name: "10", total: 0 },
+                    "11": { name: "11", total: 0 },
+                    "12": { name: "12", total: 0 },
+                    "13": { name: "13", total: 0 },
+                    "14": { name: "14", total: 0 },
+                    "15": { name: "15", total: 0 },
+                    "16": { name: "16", total: 0 },
+                    "17": { name: "17", total: 0 },
+                    "18": { name: "18", total: 0 },
+                    "19": { name: "19", total: 0 },
+                    "20": { name: "20", total: 0 },
+                    "21": { name: "21", total: 0 },
+                    "22": { name: "22", total: 0 },
+                    "23": { name: "23", total: 0 },
+                };
+            }
+
+            salesAnalytics.orders.forEach((order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+                const placedAt: string = format(new Date(order.placedAt), "yyyy-MM-dd");
+                const placedAtHour: string = format(new Date(order.placedAt), "HH");
+                if (order.status === EOrderStatus.NEW || order.status === EOrderStatus.COMPLETED) {
+                    hourlySales[placedAt][placedAtHour] = {
+                        name: placedAtHour,
+                        total: hourlySales[placedAt][placedAtHour].total + order.total,
+                    };
+                }
+            });
+
+            Object.entries(hourlySales).forEach(([date, obj]) => {
+                const hourKeys = Object.keys(obj).sort((a, b) => a[0].localeCompare(b[0]));
+
+                hourKeys.forEach((hour, index) => {
+                    if (!hourlySalesExport.data[index] || hourlySalesExport.data[index].length === 0) {
+                        hourlySalesExport.data.push([getTwelveHourFormat(Number(hour))]);
+                    }
+                    hourlySalesExport.data[index] = [...hourlySalesExport.data[index], getDollarString(obj[hour].total)];
+                });
+            });
+        }
+        return hourlySalesExport;
+    };
+
+    const calculateCategorySalesExport = () => {
+        const categorySalesExport = {} as UnparseObject<Array<string | number>>;
+        if (salesAnalytics && startDate && restaurant) {
+            categorySalesExport.fields = ["Category", ...salesAnalytics.exportSalesDates];
+            categorySalesExport.data = [];
+            const categorySales: IDayComaparisonExport = {};
+            const categories = [...restaurant.categories.items].sort((a, b) => (a.name > b.name && 1) || -1);
+            for (let i = 0; i < salesAnalytics.daysDifference; i++) {
+                const loopDateTime: Date = addDays(new Date(startDate), i);
+                const defaultCategorySale = {};
+                categories.forEach((c) => (defaultCategorySale[c.id] = { name: c.name, total: 0 }));
+                categorySales[format(new Date(loopDateTime), "yyyy-MM-dd")] = defaultCategorySale;
+            }
+
+            salesAnalytics.orders.forEach((order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+                const placedAt: string = format(new Date(order.placedAt), "yyyy-MM-dd");
+                order.products &&
+                    order.products.forEach((product) => {
+                        if (!product.category) return;
+                        let newTotalAmount = categorySales[placedAt][product.category.id].total + product.price * product.quantity;
+
+                        product.modifierGroups &&
+                            product.modifierGroups.forEach((modifierGroup) => {
+                                modifierGroup.modifiers.forEach((modifier) => {
+                                    newTotalAmount += product.quantity * modifier.price * modifier.quantity;
+                                });
+                            });
+
+                        categorySales[placedAt][product.category.id] = {
+                            name: categorySales[placedAt][product.category.id].name,
+                            total: newTotalAmount,
+                        };
+                    });
+            });
+
+            Object.entries(categorySales).forEach(([date, obj]) => {
+                Object.entries(obj).forEach(([id, category], index) => {
+                    if (!categorySalesExport.data[index] || categorySalesExport.data[index].length === 0) {
+                        categorySalesExport.data.push([category.name]);
+                    }
+                    categorySalesExport.data[index] = [...categorySalesExport.data[index], getDollarString(category.total)];
+                });
+            });
+        }
+        return categorySalesExport;
+    };
+
+    const calculateProductSalesExport = () => {
+        const productSalesExport = {} as UnparseObject<Array<string | number>>;
+        if (salesAnalytics && startDate && restaurant) {
+            productSalesExport.fields = ["Product", ...salesAnalytics.exportSalesDates];
+            productSalesExport.data = [];
+            const productSales: IDayComaparisonExport = {};
+            const products = [...restaurant.products.items].sort((a, b) => (a.name > b.name && 1) || -1);
+            for (let i = 0; i < salesAnalytics.daysDifference; i++) {
+                const loopDateTime: Date = addDays(new Date(startDate), i);
+                const defaultProductSale = {};
+                products.forEach((p) => (defaultProductSale[p.id] = { name: p.name, total: 0 }));
+                productSales[format(new Date(loopDateTime), "yyyy-MM-dd")] = defaultProductSale;
+            }
+
+            salesAnalytics.orders.forEach((order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+                const placedAt: string = format(new Date(order.placedAt), "yyyy-MM-dd");
+                order.products &&
+                    order.products.forEach((product) => {
+                        let newTotalAmount = productSales[placedAt][product.id].total + product.price * product.quantity;
+
+                        product.modifierGroups &&
+                            product.modifierGroups.forEach((modifierGroup) => {
+                                modifierGroup.modifiers.forEach((modifier) => {
+                                    newTotalAmount += product.quantity * modifier.price * modifier.quantity;
+                                });
+                            });
+
+                            productSales[placedAt][product.id] = {
+                            name: productSales[placedAt][product.id].name,
+                            total: newTotalAmount,
+                        };
+                    });
+            });
+
+            Object.entries(productSales).forEach(([date, obj]) => {
+                Object.entries(obj).forEach(([id, product], index) => {
+                    if (!productSalesExport.data[index] || productSalesExport.data[index].length === 0) {
+                        productSalesExport.data.push([product.name]);
+                    }
+                    productSalesExport.data[index] = [...productSalesExport.data[index], getDollarString(product.total)];
+                });
+            });
+        }
+        return productSalesExport;
     };
 
     if (error) {
