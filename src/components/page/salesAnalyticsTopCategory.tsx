@@ -71,7 +71,7 @@ export const SalesAnalyticsTopCategory = () => {
                                                 <td className="text-right">{`$${convertCentsToDollars(category.totalAmount)}`}</td>
                                                 <td className="text-right">{`${(
                                                     (category.totalAmount * 100) /
-                                                    salesAnalytics.subTotalCompleted
+                                                    (salesAnalytics.subTotalCompleted + salesAnalytics.subTotalNew)
                                                 ).toFixed(2)}%`}</td>
                                             </tr>
                                         ))}

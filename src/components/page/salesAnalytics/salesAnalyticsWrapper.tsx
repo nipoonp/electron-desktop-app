@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useSalesAnalytics } from "../../../context/salesAnalytics-context";
 import { DateRangePicker } from "../../../tabin/components/dateRangePicker";
-import { FiArrowLeft } from "react-icons/fi";
+import { FiArrowLeft, FiDownload } from "react-icons/fi";
 import { useHistory } from "react-router";
 import { salesAnalyticsPath } from "../../main";
 
 import "./salesAnalyticsWrapper.scss";
 
 export const SalesAnalyticsWrapper = (props: IProps) => {
+    const { title, children, showBackButton, onExportAll } = props;
     const history = useHistory();
     const [focusedInput, setFocusedInput] = useState<"startDate" | "endDate" | null>(null);
 
@@ -27,18 +28,25 @@ export const SalesAnalyticsWrapper = (props: IProps) => {
                 <div className="sales-analytics p-3">
                     <div className="sales-analytics-header mb-3">
                         <div className="sales-analytics-back-button-wrapper">
-                            {props.showBackButton && <FiArrowLeft className="sales-analytics-back-button mr-1" size={24} onClick={onClickBack} />}
-                            <div className="h2">{props.title}</div>
+                            {showBackButton && <FiArrowLeft className="sales-analytics-back-button mr-1" size={24} onClick={onClickBack} />}
+                            <div className="h2">{title}</div>
                         </div>
-                        <DateRangePicker
-                            startDate={startDate}
-                            endDate={endDate}
-                            onDatesChange={onDatesChange}
-                            focusedInput={focusedInput}
-                            onFocusChange={onFocusChange}
-                        />
+                        <div style={{ display: "flex", alignItems: "center" }}>
+                            {onExportAll && (
+                                <div className="cursor-pointer pr-3" onClick={() => onExportAll()}>
+                                    <FiDownload title="Download All" />
+                                </div>
+                            )}
+                            <DateRangePicker
+                                startDate={startDate}
+                                endDate={endDate}
+                                onDatesChange={onDatesChange}
+                                focusedInput={focusedInput}
+                                onFocusChange={onFocusChange}
+                            />
+                        </div>
                     </div>
-                    {props.children}
+                    {children}
                 </div>
             </div>
         </>
@@ -49,4 +57,5 @@ interface IProps {
     title: string;
     showBackButton?: boolean;
     children: React.ReactNode;
+    onExportAll?: () => void;
 }

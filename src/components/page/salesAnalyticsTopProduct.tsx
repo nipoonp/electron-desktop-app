@@ -79,7 +79,7 @@ export const SalesAnalyticsTopProduct = () => {
                                                     <td className="text-right">{`$${convertCentsToDollars(product.totalAmount)}`}</td>
                                                     <td className="text-right">{`${(
                                                         (product.totalAmount * 100) /
-                                                        salesAnalytics.subTotalCompleted
+                                                        (salesAnalytics.subTotalCompleted + salesAnalytics.subTotalNew)
                                                     ).toFixed(2)}%`}</td>
                                                 </tr>
                                             );
