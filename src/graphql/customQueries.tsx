@@ -58,6 +58,7 @@ export const GET_USER = gql`
                             name
                             enableTableFlags
                             enablePayLater
+                            availableOrderTypes
                             type
                             eftposProvider
                             eftposIpAddress
@@ -230,6 +231,7 @@ export const GET_RESTAURANT = gql`
                     name
                     enableTableFlags
                     enablePayLater
+                    availableOrderTypes
                     type
                     eftposProvider
                     eftposIpAddress
@@ -589,6 +591,7 @@ export interface IGET_RESTAURANT_REGISTER {
     name: string;
     enableTableFlags: boolean;
     enablePayLater: boolean;
+    availableOrderTypes: EOrderType[];
     type: ERegisterType;
     eftposProvider: string;
     eftposIpAddress: string;

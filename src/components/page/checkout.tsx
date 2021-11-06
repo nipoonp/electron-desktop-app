@@ -912,7 +912,7 @@ export const Checkout = () => {
         <>
             <div className="mt-10"></div>
             {title}
-            {restaurantOrderType}
+            {register && register.availableOrderTypes.length > 1 && restaurantOrderType}
             {promotionInformation}
             {tableNumber && <div className="mb-4">{restaurantTableNumber}</div>}
             <div className="separator-6"></div>
