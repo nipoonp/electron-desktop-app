@@ -1,13 +1,5 @@
-import { isWithinInterval } from "date-fns";
 import { createContext, useContext, useEffect, useState } from "react";
-import {
-    EDiscountType,
-    EPromotionType,
-    ERegisterType,
-    IGET_RESTAURANT_PROMOTION,
-    IGET_RESTAURANT_PROMOTION_DISCOUNT,
-    IGET_RESTAURANT_PROMOTION_ITEMS,
-} from "../graphql/customQueries";
+import { EPromotionType, IGET_RESTAURANT_PROMOTION } from "../graphql/customQueries";
 
 import {
     ICartProduct,
@@ -356,16 +348,32 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         products &&
             products.forEach((p) => {
-                totalPrice += p.price * p.quantity;
+                let price = p.price;
+
                 p.modifierGroups.forEach((mg) => {
                     mg.modifiers.forEach((m) => {
                         const changedQuantity = m.quantity - m.preSelectedQuantity;
 
                         if (changedQuantity > 0) {
-                            totalPrice += m.price * changedQuantity * p.quantity;
+                            price += m.price * changedQuantity * p.quantity;
+                        }
+
+                        if (m.productModifier) {
+                            m.productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
+                                orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
+                                    const changedQuantity =
+                                        orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
+
+                                    if (changedQuantity > 0) {
+                                        price += orderedProductModifierModifier.price * changedQuantity;
+                                    }
+                                });
+                            });
                         }
                     });
                 });
+
+                totalPrice = price * p.quantity;
             });
 
         return totalPrice;

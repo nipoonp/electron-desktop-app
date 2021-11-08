@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { ICartModifierGroup, ICartProduct } from "../../../model/model";
 import { Button } from "../../../tabin/components/button";
 import { Stepper } from "../../../tabin/components/stepper";
@@ -56,17 +57,31 @@ const OrderItem = (props: {
 }) => {
     const { product, displayOrder, onEditProduct, onUpdateProductQuantity, onRemoveProduct } = props;
 
-    let itemPrice = product.price * product.quantity;
+    let price = product.price;
 
     product.modifierGroups.forEach((mg) => {
         mg.modifiers.forEach((m) => {
             const changedQuantity = m.quantity - m.preSelectedQuantity;
 
             if (changedQuantity > 0) {
-                itemPrice += m.price * changedQuantity * product.quantity;
+                price += m.price * changedQuantity * product.quantity;
+            }
+
+            if (m.productModifier) {
+                m.productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
+                    orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
+                        const changedQuantity = orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
+
+                        if (changedQuantity > 0) {
+                            price += orderedProductModifierModifier.price * changedQuantity;
+                        }
+                    });
+                });
             }
         });
     });
+
+    price = price * product.quantity;
 
     const quantity = (
         <Stepper count={product.quantity} min={1} onUpdate={(count: number) => onUpdateProductQuantity(displayOrder, count)} size={32} />
@@ -83,7 +98,7 @@ const OrderItem = (props: {
                     onEditProduct={() => onEditProduct(product, displayOrder)}
                 />
                 <div className="text-center">
-                    <div className="h2 text-primary mb-2">${convertCentsToDollars(itemPrice)}</div>
+                    <div className="h2 text-primary mb-2">${convertCentsToDollars(price)}</div>
                     {
                         <Button className="remove-button" onClick={() => onRemoveProduct(displayOrder)}>
                             Remove
