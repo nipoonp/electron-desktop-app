@@ -883,6 +883,13 @@ const Modifier = (props: {
     const [stepperCount, setStepperCount] = useState(modifierQuantity);
     const [displayModifierStepper, setDisplayModifierStepper] = useState(false);
 
+    const stepperHeight = 28;
+
+    const showRadio = radio;
+    const showStepper = choiceDuplicate > 1 && (displayModifierStepper || modifierQuantity > 0);
+    const showCollapsedStepper = choiceDuplicate > 1 && !displayModifierStepper && modifierQuantity == 0;
+    const showCheckbox = !showRadio && !showStepper && !showCollapsedStepper;
+
     const getModifierOrProductModifierQuantityAvailable = () => {
         if (modifier.productModifier) {
             if (!modifier.productModifier.totalQuantityAvailable) return null;
@@ -918,7 +925,16 @@ const Modifier = (props: {
         }
     }, [productQuantity]);
 
-    // callbacks
+    useEffect(() => {
+        if (!selectedModifier) return;
+
+        setStepperCount(selectedModifier.quantity);
+
+        if (selectedModifier.quantity > 0) {
+            setDisplayModifierStepper(true);
+        }
+    }, [selectedModifier]);
+
     const _onCheckingModifier = () => {
         onCheckingModifier(modifier);
     };
@@ -942,20 +958,11 @@ const Modifier = (props: {
     };
 
     const _onDisplayModifierStepper = () => {
-        setDisplayModifierStepper(!disabled && !maxReached);
-        setStepperCount(1);
+        if (disabled || maxReached) return;
+
         onChangeModifierQuantity(modifier, true, 1);
     };
 
-    // constants
-    const stepperHeight = 28;
-
-    const showRadio = radio;
-    const showStepper = choiceDuplicate > 1 && (displayModifierStepper || modifierQuantity > 0);
-    const showCollapsedStepper = choiceDuplicate > 1 && !displayModifierStepper && modifierQuantity == 0;
-    const showCheckbox = !showRadio && !showStepper && !showCollapsedStepper;
-
-    // displays
     const modifierChildren = (
         <>
             <div className="modifier-item">
@@ -1015,7 +1022,6 @@ const Modifier = (props: {
         <Stepper
             className="modifier-item-wrapper pt-2 pb-2"
             count={getStepperCount()}
-            setCount={setStepperCount}
             min={0}
             max={getModifierStepperMax()}
             onIncrement={(count: number) => _onChangeModifierQuantity(count, true)}
@@ -1030,7 +1036,7 @@ const Modifier = (props: {
     const collapsedStepper = (
         <div className="modifier-item-wrapper collapsed-stepper-container pt-2 pb-2" onClick={_onDisplayModifierStepper}>
             <div
-                className="collapsed-stepper"
+                className={`collapsed-stepper ${disabled ? "disabled" : ""}  `}
                 style={{
                     height: String(stepperHeight) + "px",
                     width: String(stepperHeight) + "px",

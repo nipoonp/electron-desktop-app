@@ -34,6 +34,11 @@
                     display: flex;
                     justify-content: center;
                     align-items: center;
+
+                    &.disabled {
+                        border: 1px solid #dcdcdc;
+                        color: #dcdcdc;
+                    }
                 }
 
                 .collapsed-stepper-children {
