@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useUser } from "../../context/user-context";
 import { ICartModifier, IPreSelectedModifiers, ICartProduct, ICartModifierGroup } from "../../model/model";
 import { Logger } from "aws-amplify";
 import { toast } from "../../tabin/components/toast";
@@ -25,22 +24,21 @@ import { Button } from "../../tabin/components/button";
 import { Stepper } from "../../tabin/components/stepper";
 import { Checkbox } from "../../tabin/components/checkbox";
 import { Radio } from "../../tabin/components/radio";
-
-import "./product.scss";
 import { TextArea } from "../../tabin/components/textArea";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { useCart } from "../../context/cart-context";
 import { FiChevronRight } from "react-icons/fi";
-import { OrderSummary } from "../page/checkout/orderSummary";
 import { ProductModifier } from "../shared/productModifier";
+
+import "./product.scss";
 
 const logger = new Logger("productModal");
 
 interface ISelectedProductModifier {
     product: IGET_RESTAURANT_PRODUCT;
     selectedModifierGroupId: string;
-    selectedModifierGroupModifierIndex: number;
+    selectedProductModifierOrderedModifiers: IPreSelectedModifiers;
 }
 
 export const ProductModal = (props: {
@@ -58,7 +56,7 @@ export const ProductModal = (props: {
         orderedModifiers: IPreSelectedModifiers;
         quantity: number;
         notes: string | null;
-        productCartIndex?: number;
+        productCartIndex: number;
     };
 }) => {
     const { category, product, isProductModifier, isOpen, onAddItem, onUpdateItem, onClose, editProduct } = props;
@@ -71,11 +69,10 @@ export const ProductModal = (props: {
     const [error, setError] = useState<{ [modifierGroupId: string]: string }>({});
 
     const [selectedProductModifier, setSelectedProductModifier] = useState<ISelectedProductModifier | null>(null);
-    const [selectedProductModifierOrderedModifiers, setProductModifierOrderedModifiers] = useState({});
 
-    useEffect(() => {
-        console.log("xxx...", orderedModifiers);
-    }, [orderedModifiers]);
+    // useEffect(() => {
+    //     console.log("xxx...", orderedModifiers);
+    // }, [orderedModifiers]);
 
     useEffect(() => {
         //Set preselected modifiers logic
@@ -92,24 +89,28 @@ export const ProductModal = (props: {
                                 newOrderedModifiers[modifierGroupLink.modifierGroup.id] = [];
                             }
 
-                            newOrderedModifiers = Object.assign({}, newOrderedModifiers, {
-                                [modifierGroupLink.modifierGroup.id]: newOrderedModifiers[modifierGroupLink.modifierGroup.id].concat({
-                                    id: modifierLink.modifier.id,
-                                    name: modifierLink.modifier.name,
-                                    price: modifierLink.modifier.price,
-                                    preSelectedQuantity: modifierLink.preSelectedQuantity,
-                                    quantity: modifierLink.preSelectedQuantity,
-                                    productModifier: null,
-                                    image: modifierLink.modifier.image
-                                        ? {
-                                              key: modifierLink.modifier.image.key,
-                                              region: modifierLink.modifier.image.region,
-                                              bucket: modifierLink.modifier.image.bucket,
-                                              identityPoolId: modifierLink.modifier.image.identityPoolId,
-                                          }
-                                        : null,
-                                }),
-                            });
+                            newOrderedModifiers = {
+                                ...newOrderedModifiers,
+                                [modifierGroupLink.modifierGroup.id]: [
+                                    ...newOrderedModifiers[modifierGroupLink.modifierGroup.id],
+                                    {
+                                        id: modifierLink.modifier.id,
+                                        name: modifierLink.modifier.name,
+                                        price: modifierLink.modifier.price,
+                                        preSelectedQuantity: modifierLink.preSelectedQuantity,
+                                        quantity: modifierLink.preSelectedQuantity,
+                                        productModifier: null,
+                                        image: modifierLink.modifier.image
+                                            ? {
+                                                  key: modifierLink.modifier.image.key,
+                                                  region: modifierLink.modifier.image.region,
+                                                  bucket: modifierLink.modifier.image.bucket,
+                                                  identityPoolId: modifierLink.modifier.image.identityPoolId,
+                                              }
+                                            : null,
+                                    },
+                                ],
+                            };
                         }
                     });
 
@@ -151,6 +152,51 @@ export const ProductModal = (props: {
         onClose();
     };
 
+    const onEditSelections = (
+        selectedModifier: ICartModifier,
+        selectedModifierGroupId: string,
+        selectedProductModifierProduct: IGET_RESTAURANT_PRODUCT
+    ) => {
+        let selectedProductModifierOrderedModifiers = {};
+
+        selectedModifier.productModifier &&
+            selectedModifier.productModifier.modifierGroups.forEach((modifierGroup) => {
+                modifierGroup.modifiers.forEach((modifier) => {
+                    if (selectedProductModifierOrderedModifiers[modifierGroup.id] === undefined) {
+                        selectedProductModifierOrderedModifiers[modifierGroup.id] = [];
+                    }
+
+                    const newOrderedProductModifierItem: ICartModifier = {
+                        id: modifier.id,
+                        name: modifier.name,
+                        price: modifier.price,
+                        preSelectedQuantity: modifier.preSelectedQuantity,
+                        quantity: modifier.quantity,
+                        productModifier: null,
+                        image: modifier.image
+                            ? {
+                                  key: modifier.image.key,
+                                  region: modifier.image.region,
+                                  bucket: modifier.image.bucket,
+                                  identityPoolId: modifier.image.identityPoolId,
+                              }
+                            : null,
+                    };
+
+                    selectedProductModifierOrderedModifiers[modifierGroup.id] = [
+                        ...selectedProductModifierOrderedModifiers[modifierGroup.id],
+                        newOrderedProductModifierItem,
+                    ];
+                });
+            });
+
+        setSelectedProductModifier({
+            product: selectedProductModifierProduct,
+            selectedModifierGroupId: selectedModifierGroupId,
+            selectedProductModifierOrderedModifiers: selectedProductModifierOrderedModifiers,
+        });
+    };
+
     const onCheckingModifier = (selectedModifierGroupId: string, preSelectedModifierQuantity: number, selectedModifier: IGET_RESTAURANT_MODIFIER) => {
         setError({});
 
@@ -158,46 +204,34 @@ export const ProductModal = (props: {
             orderedModifiers[selectedModifierGroupId] = [];
         }
 
-        let newOrderedModifiers = Object.assign({}, orderedModifiers, {
-            [selectedModifierGroupId]: orderedModifiers[selectedModifierGroupId].filter((m) => m.id !== selectedModifier.id),
-        });
+        const newOrderedModifierItem: ICartModifier = {
+            id: selectedModifier.id,
+            name: selectedModifier.name,
+            price: selectedModifier.price,
+            preSelectedQuantity: preSelectedModifierQuantity,
+            quantity: 1,
+            productModifier: null,
+            image: selectedModifier.image
+                ? {
+                      key: selectedModifier.image.key,
+                      region: selectedModifier.image.region,
+                      bucket: selectedModifier.image.bucket,
+                      identityPoolId: selectedModifier.image.identityPoolId,
+                  }
+                : null,
+        };
 
-        let newOrderedModifiers2 = Object.assign({}, newOrderedModifiers, {
-            [selectedModifierGroupId]: newOrderedModifiers[selectedModifierGroupId].concat({
-                id: selectedModifier.id,
-                name: selectedModifier.name,
-                price: selectedModifier.price,
-                preSelectedQuantity: preSelectedModifierQuantity,
-                quantity: 1,
-                productModifier: null,
-                // productModifier: selectedModifier.productModifier
-                //     ? {
-                //           id: selectedModifier.productModifier.id,
-                //           name: selectedModifier.productModifier.name,
-                //           price: selectedModifier.productModifier.price,
-                //           quantity: 1,
-                //       }
-                //     : null,
-                image: selectedModifier.image
-                    ? {
-                          key: selectedModifier.image.key,
-                          region: selectedModifier.image.region,
-                          bucket: selectedModifier.image.bucket,
-                          identityPoolId: selectedModifier.image.identityPoolId,
-                      }
-                    : null,
-            }),
-        });
+        let newOrderedModifiers = {
+            ...orderedModifiers,
+            [selectedModifierGroupId]: orderedModifiers[selectedModifierGroupId].filter((m) => m.id !== selectedModifier.id),
+        };
+
+        let newOrderedModifiers2 = {
+            ...newOrderedModifiers,
+            [selectedModifierGroupId]: [...newOrderedModifiers[selectedModifierGroupId], newOrderedModifierItem],
+        };
 
         setOrderedModifiers(newOrderedModifiers2);
-
-        if (selectedModifier.productModifier) {
-            setSelectedProductModifier({
-                product: selectedModifier.productModifier,
-                selectedModifierGroupId: selectedModifierGroupId,
-                selectedModifierGroupModifierIndex: newOrderedModifiers2[selectedModifierGroupId].length - 1, //Last index is length - 1
-            });
-        }
     };
 
     const onUnCheckingModifier = (
@@ -207,9 +241,27 @@ export const ProductModal = (props: {
     ) => {
         setError({});
 
-        let newOrderedModifiers = Object.assign({}, orderedModifiers, {
+        const newOrderedModifierItem: ICartModifier = {
+            id: selectedModifier.id,
+            name: selectedModifier.name,
+            price: selectedModifier.price,
+            preSelectedQuantity: preSelectedModifierQuantity,
+            quantity: 0,
+            productModifier: null,
+            image: selectedModifier.image
+                ? {
+                      key: selectedModifier.image.key,
+                      region: selectedModifier.image.region,
+                      bucket: selectedModifier.image.bucket,
+                      identityPoolId: selectedModifier.image.identityPoolId,
+                  }
+                : null,
+        };
+
+        let newOrderedModifiers = {
+            ...orderedModifiers,
             [selectedModifierGroupId]: orderedModifiers[selectedModifierGroupId].filter((m) => m.id !== selectedModifier.id),
-        });
+        };
 
         if (preSelectedModifierQuantity == 0) {
             // If no selected modifies inside a modifier group. Delete the group.
@@ -219,32 +271,10 @@ export const ProductModal = (props: {
 
             setOrderedModifiers(newOrderedModifiers);
         } else {
-            let newOrderedModifiers2 = Object.assign({}, newOrderedModifiers, {
-                [selectedModifierGroupId]: newOrderedModifiers[selectedModifierGroupId].concat({
-                    id: selectedModifier.id,
-                    name: selectedModifier.name,
-                    price: selectedModifier.price,
-                    preSelectedQuantity: preSelectedModifierQuantity,
-                    quantity: 0,
-                    productModifier: null,
-                    // productModifier: selectedModifier.productModifier
-                    //     ? {
-                    //           id: selectedModifier.productModifier.id,
-                    //           name: selectedModifier.productModifier.name,
-                    //           price: selectedModifier.productModifier.price,
-                    //           quantity: 0,
-                    //       }
-                    //     : null,
-                    image: selectedModifier.image
-                        ? {
-                              key: selectedModifier.image.key,
-                              region: selectedModifier.image.region,
-                              bucket: selectedModifier.image.bucket,
-                              identityPoolId: selectedModifier.image.identityPoolId,
-                          }
-                        : null,
-                }),
-            });
+            let newOrderedModifiers2 = {
+                ...newOrderedModifiers,
+                [selectedModifierGroupId]: [...newOrderedModifiers[selectedModifierGroupId], newOrderedModifierItem],
+            };
 
             setOrderedModifiers(newOrderedModifiers2);
         }
@@ -262,9 +292,27 @@ export const ProductModal = (props: {
             orderedModifiers[selectedModifierGroupId] = [];
         }
 
-        let newOrderedModifiers = Object.assign({}, orderedModifiers, {
+        const newOrderedModifierItem: ICartModifier = {
+            id: selectedModifier.id,
+            name: selectedModifier.name,
+            price: selectedModifier.price,
+            preSelectedQuantity: preSelectedModifierQuantity,
+            quantity: quantity,
+            productModifier: null,
+            image: selectedModifier.image
+                ? {
+                      key: selectedModifier.image.key,
+                      region: selectedModifier.image.region,
+                      bucket: selectedModifier.image.bucket,
+                      identityPoolId: selectedModifier.image.identityPoolId,
+                  }
+                : null,
+        };
+
+        let newOrderedModifiers = {
+            ...orderedModifiers,
             [selectedModifierGroupId]: orderedModifiers[selectedModifierGroupId].filter((m) => m.id !== selectedModifier.id),
-        });
+        };
 
         // If quantity is 0, don't add a 0 quantity modifier.
         if (quantity == 0 && preSelectedModifierQuantity == 0) {
@@ -275,32 +323,10 @@ export const ProductModal = (props: {
 
             setOrderedModifiers(newOrderedModifiers);
         } else {
-            let newOrderedModifiers2 = Object.assign({}, newOrderedModifiers, {
-                [selectedModifierGroupId]: newOrderedModifiers[selectedModifierGroupId].concat({
-                    id: selectedModifier.id,
-                    name: selectedModifier.name,
-                    price: selectedModifier.price,
-                    preSelectedQuantity: preSelectedModifierQuantity,
-                    quantity: quantity,
-                    productModifier: null,
-                    // productModifier: selectedModifier.productModifier
-                    //     ? {
-                    //           id: selectedModifier.productModifier.id,
-                    //           name: selectedModifier.productModifier.name,
-                    //           price: selectedModifier.productModifier.price,
-                    //           quantity: quantity,
-                    //       }
-                    //     : null,
-                    image: selectedModifier.image
-                        ? {
-                              key: selectedModifier.image.key,
-                              region: selectedModifier.image.region,
-                              bucket: selectedModifier.image.bucket,
-                              identityPoolId: selectedModifier.image.identityPoolId,
-                          }
-                        : null,
-                }),
-            });
+            let newOrderedModifiers2 = {
+                ...newOrderedModifiers,
+                [selectedModifierGroupId]: [...newOrderedModifiers[selectedModifierGroupId], newOrderedModifierItem],
+            };
 
             setOrderedModifiers(newOrderedModifiers2);
         }
@@ -313,50 +339,38 @@ export const ProductModal = (props: {
     ) => {
         setError({});
 
-        let newOrderedModifiers = Object.assign({}, orderedModifiers, {
-            [selectedModifierGroupId]: [
-                {
-                    id: selectedModifier.id,
-                    name: selectedModifier.name,
-                    price: selectedModifier.price,
-                    preSelectedQuantity: preSelectedModifierQuantity,
-                    quantity: 1,
-                    productModifier: null,
-                    // productModifier: selectedModifier.productModifier
-                    //     ? {
-                    //           id: selectedModifier.productModifier.id,
-                    //           name: selectedModifier.productModifier.name,
-                    //           price: selectedModifier.productModifier.price,
-                    //           quantity: 1,
-                    //       }
-                    //     : undefined,
-                    image: selectedModifier.image
-                        ? {
-                              key: selectedModifier.image.key,
-                              region: selectedModifier.image.region,
-                              bucket: selectedModifier.image.bucket,
-                              identityPoolId: selectedModifier.image.identityPoolId,
-                          }
-                        : null,
-                },
-            ],
-        });
+        const newOrderedModifierItem: ICartModifier = {
+            id: selectedModifier.id,
+            name: selectedModifier.name,
+            price: selectedModifier.price,
+            preSelectedQuantity: preSelectedModifierQuantity,
+            quantity: 1,
+            productModifier: null,
+            image: selectedModifier.image
+                ? {
+                      key: selectedModifier.image.key,
+                      region: selectedModifier.image.region,
+                      bucket: selectedModifier.image.bucket,
+                      identityPoolId: selectedModifier.image.identityPoolId,
+                  }
+                : null,
+        };
+
+        let newOrderedModifiers: IPreSelectedModifiers = { ...orderedModifiers, [selectedModifierGroupId]: [newOrderedModifierItem] };
+
+        console.log("xxx...newOrderedModifiers", newOrderedModifiers);
 
         setOrderedModifiers(newOrderedModifiers);
 
         if (selectedModifier.productModifier) {
-            setSelectedProductModifier({
-                product: selectedModifier.productModifier,
-                selectedModifierGroupId: selectedModifierGroupId,
-                selectedModifierGroupModifierIndex: newOrderedModifiers[selectedModifierGroupId].length - 1, //Last index is length - 1
-            });
+            onEditSelections(newOrderedModifierItem, selectedModifierGroupId, selectedModifier.productModifier);
         }
     };
 
     // TODO refactor
     const onSubmit = () => {
-        logger.debug("onSubmit", [product, orderedModifiers]);
-        console.log("onSubmit", [product, orderedModifiers]);
+        // logger.debug("onSubmit", [product, orderedModifiers]);
+        // console.log("onSubmit", [product, orderedModifiers]);
 
         let error: { [modifierGroupId: string]: string } = {};
 
@@ -480,7 +494,7 @@ export const ProductModal = (props: {
         };
 
         if (editProduct) {
-            onUpdateItem && editProduct.productCartIndex && onUpdateItem(editProduct.productCartIndex, productToOrder);
+            onUpdateItem && onUpdateItem(editProduct.productCartIndex, productToOrder);
         } else {
             onAddItem && onAddItem(productToOrder);
         }
@@ -505,6 +519,9 @@ export const ProductModal = (props: {
                             <>
                                 <ModifierGroup
                                     modifierGroup={mg.modifierGroup}
+                                    onEditSelections={(selectedModifier: ICartModifier, productModifier: IGET_RESTAURANT_PRODUCT) => {
+                                        onEditSelections(selectedModifier, mg.modifierGroup.id, productModifier);
+                                    }}
                                     onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) =>
                                         onCheckingModifier(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier)
                                     }
@@ -588,21 +605,30 @@ export const ProductModal = (props: {
     );
 
     const onCloseProductModifierModifier = () => {
+        console.log("xxx...selectedProductModifier", selectedProductModifier, isProductModifier);
+        if (selectedProductModifier && Object.entries(selectedProductModifier.selectedProductModifierOrderedModifiers).length == 0) {
+            const newOrderedModifiers = { ...orderedModifiers };
+
+            delete newOrderedModifiers[selectedProductModifier.selectedModifierGroupId];
+
+            setOrderedModifiers(newOrderedModifiers);
+        }
+
         setSelectedProductModifier(null);
     };
 
     const onAddProductModifierProduct = (product: ICartProduct) => {
         if (!selectedProductModifier) return;
 
-        // console.log("xxx...product", product);
+        const newOrderedModifiers: IPreSelectedModifiers = JSON.parse(JSON.stringify(orderedModifiers));
+        const indexToEdit = newOrderedModifiers[selectedProductModifier.selectedModifierGroupId].length - 1;
 
-        const newOrderedModifiers = JSON.parse(JSON.stringify(orderedModifiers));
-
-        newOrderedModifiers[selectedProductModifier.selectedModifierGroupId][
-            selectedProductModifier.selectedModifierGroupModifierIndex
-        ].productModifier = product;
-
+        newOrderedModifiers[selectedProductModifier.selectedModifierGroupId][indexToEdit].productModifier = product;
         setOrderedModifiers(newOrderedModifiers);
+    };
+
+    const onUpdateProductModifierProduct = (index: number, product: ICartProduct) => {
+        onAddProductModifierProduct(product);
     };
 
     return (
@@ -619,6 +645,17 @@ export const ProductModal = (props: {
                     product={selectedProductModifier.product}
                     isProductModifier={true}
                     onAddItem={onAddProductModifierProduct}
+                    onUpdateItem={onUpdateProductModifierProduct}
+                    editProduct={
+                        selectedProductModifier.selectedProductModifierOrderedModifiers
+                            ? {
+                                  orderedModifiers: selectedProductModifier.selectedProductModifierOrderedModifiers,
+                                  quantity: 1,
+                                  notes: null,
+                                  productCartIndex: 0,
+                              }
+                            : undefined
+                    }
                 />
             )}
         </>
@@ -628,6 +665,7 @@ export const ProductModal = (props: {
 // components
 export const ModifierGroup = (props: {
     modifierGroup: IGET_RESTAURANT_MODIFIER_GROUP;
+    onEditSelections: (selectedModifier: ICartModifier, productModifier: IGET_RESTAURANT_PRODUCT) => void;
     onCheckingModifier: (selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) => void;
     onUnCheckingModifier: (selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) => void;
     onChangeModifierQuantity: (selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number, quantity: number) => void;
@@ -729,13 +767,17 @@ export const ModifierGroup = (props: {
                 {modifierGroup.modifiers &&
                     modifierGroup.modifiers.items.map((m) => {
                         const isValid = checkModifierIsValid(m.modifier);
+                        const selectedModifier = selectedModifiers.find((modifier) => modifier.id == m.modifier.id);
 
                         return (
                             <Modifier
                                 radio={modifierGroup.choiceMin !== 0 && modifierGroup.choiceMax === 1}
                                 modifier={m.modifier}
-                                selectedModifier={selectedModifiers.find((modifier) => modifier.id == m.modifier.id)}
+                                selectedModifier={selectedModifier}
                                 choiceDuplicate={modifierGroup.choiceDuplicate}
+                                onEditSelections={(selectedModifier: ICartModifier, productModifier: IGET_RESTAURANT_PRODUCT) =>
+                                    props.onEditSelections(selectedModifier, productModifier)
+                                }
                                 onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
                                     onCheckingModifier(selectedModifier, m.preSelectedQuantity);
                                 }}
@@ -777,6 +819,7 @@ const Modifier = (props: {
     // If checkboxes are used, this must be given
     checked: boolean;
 
+    onEditSelections: (selectedModifier: ICartModifier, productModifier: IGET_RESTAURANT_PRODUCT) => void;
     // Called when checkboxes are used
     onCheckingModifier: (selectedModifier: IGET_RESTAURANT_MODIFIER) => void;
     onUnCheckingModifier: (selectedModifier: IGET_RESTAURANT_MODIFIER) => void;
@@ -863,6 +906,8 @@ const Modifier = (props: {
     };
 
     const _onSelectRadioModifier = () => {
+        if (selectedModifier) return;
+
         onSelectRadioModifier(modifier);
     };
 
@@ -980,7 +1025,11 @@ const Modifier = (props: {
         </Radio>
     );
 
-    const onEditSelections = () => {};
+    const onEditSelections = () => {
+        if (!selectedModifier || !modifier.productModifier) return;
+
+        props.onEditSelections(selectedModifier, modifier.productModifier);
+    };
 
     const productModifier = (
         <div>

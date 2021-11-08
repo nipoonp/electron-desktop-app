@@ -9,11 +9,13 @@ export const ProductModifier = (props: { product: ICartProduct; onEditSelections
 
     return (
         <div className="modifier-product-modifier-wrapper">
-            <OrderItemDetails modifierGroups={product.modifierGroups} />
+            {product.modifierGroups.length > 0 ? <OrderItemDetails modifierGroups={product.modifierGroups} /> : <div>No selections made</div>}
             {onEditSelections && (
                 <>
                     <div className="separator-2"></div>
-                    <Link className="product-modifier-edit-selections-link">Edit Selections</Link>
+                    <Link className="product-modifier-edit-selections-link" onClick={onEditSelections}>
+                        Edit Selections
+                    </Link>
                 </>
             )}
         </div>
