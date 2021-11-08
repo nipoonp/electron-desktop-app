@@ -36,8 +36,10 @@ import "./product.scss";
 const logger = new Logger("productModal");
 
 interface ISelectedProductModifier {
+    // selectedModifier: ICartModifier;
     product: IGET_RESTAURANT_PRODUCT;
     selectedModifierGroupId: string;
+    newOrderedModifiers: IPreSelectedModifiers;
     selectedProductModifierOrderedModifiers: IPreSelectedModifiers;
 }
 
@@ -155,7 +157,8 @@ export const ProductModal = (props: {
     const onProcessProductModifier = (
         selectedModifier: ICartModifier,
         selectedModifierGroupId: string,
-        selectedProductModifierProduct: IGET_RESTAURANT_PRODUCT
+        selectedProductModifierProduct: IGET_RESTAURANT_PRODUCT,
+        newOrderedModifiers: IPreSelectedModifiers
     ) => {
         let selectedProductModifierOrderedModifiers = {};
 
@@ -193,8 +196,10 @@ export const ProductModal = (props: {
         //Add productModifier directly as modifier if productModifier has no modifier groups
         if (selectedProductModifierProduct.modifierGroups && selectedProductModifierProduct.modifierGroups.items.length > 0) {
             setSelectedProductModifier({
+                // selectedModifier: selectedModifier,
                 product: selectedProductModifierProduct,
                 selectedModifierGroupId: selectedModifierGroupId,
+                newOrderedModifiers: newOrderedModifiers,
                 selectedProductModifierOrderedModifiers: selectedProductModifierOrderedModifiers,
             });
         }
@@ -224,6 +229,7 @@ export const ProductModal = (props: {
                 : null,
         };
 
+        //Deselect modifier if you clicked on it again
         let newOrderedModifiers = {
             ...orderedModifiers,
             [selectedModifierGroupId]: orderedModifiers[selectedModifierGroupId].filter((m) => m.id !== selectedModifier.id),
@@ -234,10 +240,14 @@ export const ProductModal = (props: {
             [selectedModifierGroupId]: [...newOrderedModifiers[selectedModifierGroupId], newOrderedModifierItem],
         };
 
-        setOrderedModifiers(newOrderedModifiers2);
-
-        if (selectedModifier.productModifier) {
-            onProcessProductModifier(newOrderedModifierItem, selectedModifierGroupId, selectedModifier.productModifier);
+        if (
+            selectedModifier.productModifier &&
+            selectedModifier.productModifier.modifierGroups &&
+            selectedModifier.productModifier.modifierGroups.items.length > 0
+        ) {
+            onProcessProductModifier(newOrderedModifierItem, selectedModifierGroupId, selectedModifier.productModifier, newOrderedModifiers2);
+        } else {
+            setOrderedModifiers(newOrderedModifiers2);
         }
     };
 
@@ -275,22 +285,21 @@ export const ProductModal = (props: {
             if (newOrderedModifiers[selectedModifierGroupId].length == 0) {
                 delete newOrderedModifiers[selectedModifierGroupId];
             }
-
-            setOrderedModifiers(newOrderedModifiers);
         } else {
-            let newOrderedModifiers2 = {
+            newOrderedModifiers = {
                 ...newOrderedModifiers,
                 [selectedModifierGroupId]: [...newOrderedModifiers[selectedModifierGroupId], newOrderedModifierItem],
             };
-
-            setOrderedModifiers(newOrderedModifiers2);
         }
+
+        setOrderedModifiers(newOrderedModifiers);
     };
 
     const onChangeModifierQuantity = (
         selectedModifierGroupId: string,
         preSelectedModifierQuantity: number,
         selectedModifier: IGET_RESTAURANT_MODIFIER,
+        isIncremented: boolean,
         quantity: number
     ) => {
         setError({});
@@ -327,15 +336,22 @@ export const ProductModal = (props: {
             if (newOrderedModifiers[selectedModifierGroupId].length == 0) {
                 delete newOrderedModifiers[selectedModifierGroupId];
             }
-
-            setOrderedModifiers(newOrderedModifiers);
         } else {
-            let newOrderedModifiers2 = {
+            newOrderedModifiers = {
                 ...newOrderedModifiers,
                 [selectedModifierGroupId]: [...newOrderedModifiers[selectedModifierGroupId], newOrderedModifierItem],
             };
+        }
 
-            setOrderedModifiers(newOrderedModifiers2);
+        if (
+            selectedModifier.productModifier &&
+            selectedModifier.productModifier.modifierGroups &&
+            selectedModifier.productModifier.modifierGroups.items.length > 0 &&
+            isIncremented
+        ) {
+            onProcessProductModifier(newOrderedModifierItem, selectedModifierGroupId, selectedModifier.productModifier, newOrderedModifiers);
+        } else {
+            setOrderedModifiers(newOrderedModifiers);
         }
     };
 
@@ -365,17 +381,20 @@ export const ProductModal = (props: {
 
         let newOrderedModifiers: IPreSelectedModifiers = { ...orderedModifiers, [selectedModifierGroupId]: [newOrderedModifierItem] };
 
-        setOrderedModifiers(newOrderedModifiers);
-
-        if (selectedModifier.productModifier) {
-            onProcessProductModifier(newOrderedModifierItem, selectedModifierGroupId, selectedModifier.productModifier);
+        if (
+            selectedModifier.productModifier &&
+            selectedModifier.productModifier.modifierGroups &&
+            selectedModifier.productModifier.modifierGroups.items.length > 0
+        ) {
+            onProcessProductModifier(newOrderedModifierItem, selectedModifierGroupId, selectedModifier.productModifier, newOrderedModifiers);
+        } else {
+            setOrderedModifiers(newOrderedModifiers);
         }
     };
 
-    // TODO refactor
     const onSubmit = () => {
         // logger.debug("onSubmit", [product, orderedModifiers]);
-        // console.log("onSubmit", [product, orderedModifiers]);
+        console.log("onSubmit", [product, orderedModifiers]);
 
         let error: { [modifierGroupId: string]: string } = {};
 
@@ -525,7 +544,7 @@ export const ProductModal = (props: {
                                 <ModifierGroup
                                     modifierGroup={mg.modifierGroup}
                                     onProcessProductModifier={(selectedModifier: ICartModifier, productModifier: IGET_RESTAURANT_PRODUCT) => {
-                                        onProcessProductModifier(selectedModifier, mg.modifierGroup.id, productModifier);
+                                        onProcessProductModifier(selectedModifier, mg.modifierGroup.id, productModifier, orderedModifiers);
                                     }}
                                     onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) =>
                                         onCheckingModifier(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier)
@@ -536,8 +555,17 @@ export const ProductModal = (props: {
                                     onChangeModifierQuantity={(
                                         selectedModifier: IGET_RESTAURANT_MODIFIER,
                                         preSelectedModifierQuantity: number,
+                                        isIncremented: boolean,
                                         quantity: number
-                                    ) => onChangeModifierQuantity(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier, quantity)}
+                                    ) =>
+                                        onChangeModifierQuantity(
+                                            mg.modifierGroup.id,
+                                            preSelectedModifierQuantity,
+                                            selectedModifier,
+                                            isIncremented,
+                                            quantity
+                                        )
+                                    }
                                     onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) =>
                                         onSelectRadioModifier(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier)
                                     }
@@ -610,21 +638,14 @@ export const ProductModal = (props: {
     );
 
     const onCloseProductModifierModifier = () => {
-        if (selectedProductModifier && Object.entries(selectedProductModifier.selectedProductModifierOrderedModifiers).length == 0) {
-            const newOrderedModifiers = { ...orderedModifiers };
-
-            delete newOrderedModifiers[selectedProductModifier.selectedModifierGroupId];
-
-            setOrderedModifiers(newOrderedModifiers);
-        }
-
         setSelectedProductModifier(null);
     };
 
     const onAddProductModifierProduct = (product: ICartProduct) => {
         if (!selectedProductModifier) return;
 
-        const newOrderedModifiers: IPreSelectedModifiers = JSON.parse(JSON.stringify(orderedModifiers));
+        const newOrderedModifiers = { ...selectedProductModifier.newOrderedModifiers };
+
         const indexToEdit = newOrderedModifiers[selectedProductModifier.selectedModifierGroupId].length - 1;
 
         newOrderedModifiers[selectedProductModifier.selectedModifierGroupId][indexToEdit].productModifier = product;
@@ -672,7 +693,12 @@ export const ModifierGroup = (props: {
     onProcessProductModifier: (selectedModifier: ICartModifier, productModifier: IGET_RESTAURANT_PRODUCT) => void;
     onCheckingModifier: (selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) => void;
     onUnCheckingModifier: (selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) => void;
-    onChangeModifierQuantity: (selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number, quantity: number) => void;
+    onChangeModifierQuantity: (
+        selectedModifier: IGET_RESTAURANT_MODIFIER,
+        preSelectedModifierQuantity: number,
+        isIncremented: boolean,
+        quantity: number
+    ) => void;
     onSelectRadioModifier: (selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) => void;
     selectedModifiers: ICartModifier[];
     productQuantity: number;
@@ -788,8 +814,8 @@ export const ModifierGroup = (props: {
                                 onUnCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
                                     onUnCheckingModifier(selectedModifier, m.preSelectedQuantity);
                                 }}
-                                onChangeModifierQuantity={(selectedModifier: IGET_RESTAURANT_MODIFIER, quantity: number) => {
-                                    onChangeModifierQuantity(selectedModifier, m.preSelectedQuantity, quantity);
+                                onChangeModifierQuantity={(selectedModifier: IGET_RESTAURANT_MODIFIER, isIncremented: boolean, quantity: number) => {
+                                    onChangeModifierQuantity(selectedModifier, m.preSelectedQuantity, isIncremented, quantity);
                                 }}
                                 onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
                                     onSelectRadioModifier(selectedModifier, m.preSelectedQuantity);
@@ -828,7 +854,7 @@ const Modifier = (props: {
     onCheckingModifier: (selectedModifier: IGET_RESTAURANT_MODIFIER) => void;
     onUnCheckingModifier: (selectedModifier: IGET_RESTAURANT_MODIFIER) => void;
 
-    onChangeModifierQuantity: (selectedModifier: IGET_RESTAURANT_MODIFIER, quantity: number) => void;
+    onChangeModifierQuantity: (selectedModifier: IGET_RESTAURANT_MODIFIER, isIncremented: boolean, quantity: number) => void;
 
     onSelectRadioModifier: (selectedModifier: IGET_RESTAURANT_MODIFIER) => void;
 
@@ -888,7 +914,7 @@ const Modifier = (props: {
             const count = getStepperCount();
 
             setStepperCount(count);
-            _onChangeModifierQuantity(count);
+            _onChangeModifierQuantity(count, false); //Set isIncremented=false because if count was to be changed by getStepperCount would return a lower or same value as now.
         }
     }, [productQuantity]);
 
@@ -901,12 +927,12 @@ const Modifier = (props: {
         onUnCheckingModifier(modifier);
     };
 
-    const _onChangeModifierQuantity = (quantity: number) => {
+    const _onChangeModifierQuantity = (quantity: number, isIncremented: boolean) => {
         if (quantity === 0) {
             setDisplayModifierStepper(false);
         }
 
-        onChangeModifierQuantity(modifier, quantity);
+        onChangeModifierQuantity(modifier, isIncremented, quantity);
     };
 
     const _onSelectRadioModifier = () => {
@@ -918,6 +944,7 @@ const Modifier = (props: {
     const _onDisplayModifierStepper = () => {
         setDisplayModifierStepper(!disabled && !maxReached);
         setStepperCount(1);
+        onChangeModifierQuantity(modifier, true, 1);
     };
 
     // constants
@@ -986,12 +1013,13 @@ const Modifier = (props: {
 
     const stepper = (
         <Stepper
-            className="pt-2 pb-2"
+            className="modifier-item-wrapper pt-2 pb-2"
             count={getStepperCount()}
             setCount={setStepperCount}
             min={0}
             max={getModifierStepperMax()}
-            onUpdate={_onChangeModifierQuantity}
+            onIncrement={(count: number) => _onChangeModifierQuantity(count, true)}
+            onDecrement={(count: number) => _onChangeModifierQuantity(count, false)}
             disabled={disabled}
             size={stepperHeight}
         >
