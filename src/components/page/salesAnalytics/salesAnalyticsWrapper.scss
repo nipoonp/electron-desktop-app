@@ -27,6 +27,29 @@
                     cursor: pointer;
                 }
             }
+
+            .sales-filter-icon {
+                border-radius: 8px;
+                padding: 16px;
+                border: 1px solid #e0e0e0;
+            }
+
+            .sales-filter-icon-on {
+                background: var(--primary-color);
+            }
+        }
+
+        .sales-filters {
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid #e0e0e0;
+            display: block;
+            align-items: baseline;
+
+            .filter {
+                display: flex;
+                align-items: baseline;
+            }
         }
     }
 }

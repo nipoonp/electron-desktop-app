@@ -6,7 +6,9 @@ import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
 export const useGetRestaurantOrdersByBetweenPlacedAt = (
     orderRestaurantId: string,
     placedAtStartDate: string | null,
-    placedAtEndDate: string | null
+    placedAtEndDate: string | null,
+    orderType: string | null,
+    registerId: string | null
 ) => {
     const [data, setSavedData] = useState<IGET_RESTAURANT_ORDER_FRAGMENT[] | null>(null);
 
@@ -15,6 +17,8 @@ export const useGetRestaurantOrdersByBetweenPlacedAt = (
             orderRestaurantId: orderRestaurantId,
             placedAtStartDate: placedAtStartDate,
             placedAtEndDate: placedAtEndDate,
+            orderType,
+            registerId
         },
         skip: !placedAtStartDate || !placedAtEndDate,
         fetchPolicy: "network-only",
