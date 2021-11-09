@@ -40,7 +40,7 @@ interface ISelectedProductModifier {
     product: IGET_RESTAURANT_PRODUCT;
     selectedModifierGroupId: string;
     newOrderedModifiers: IPreSelectedModifiers;
-    selectedProductModifierOrderedModifiers?: IPreSelectedModifiers;
+    selectedProductModifierOrderedModifiers: IPreSelectedModifiers;
     editSelectionsProductModifierIndex?: number;
 }
 
@@ -204,8 +204,7 @@ export const ProductModal = (props: {
             product: selectedProductModifierProduct,
             selectedModifierGroupId: selectedModifierGroupId,
             newOrderedModifiers: newOrderedModifiers,
-            selectedProductModifierOrderedModifiers:
-                Object.entries(selectedProductModifierOrderedModifiers).length > 0 ? selectedProductModifierOrderedModifiers : undefined,
+            selectedProductModifierOrderedModifiers: selectedProductModifierOrderedModifiers,
             editSelectionsProductModifierIndex: editSelectionsProductModifierIndex,
         });
     };
@@ -709,7 +708,7 @@ export const ProductModal = (props: {
                     onAddItem={onAddProductModifierProduct}
                     onUpdateItem={onUpdateProductModifierProduct}
                     editProduct={
-                        selectedProductModifier.selectedProductModifierOrderedModifiers
+                        selectedProductModifier.editSelectionsProductModifierIndex !== undefined
                             ? {
                                   orderedModifiers: selectedProductModifier.selectedProductModifierOrderedModifiers,
                                   quantity: 1,
