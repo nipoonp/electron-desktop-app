@@ -1,15 +1,25 @@
+import { IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT, IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../../graphql/customFragments";
 import { ICartModifierGroup, ICartProduct } from "../../model/model";
 import { Link } from "../../tabin/components/link";
 import { convertCentsToDollars } from "../../util/util";
 
 import "./productModifier.scss";
 
-export const ProductModifier = (props: { product: ICartProduct; onEditSelections?: () => void }) => {
-    const { product, onEditSelections } = props;
+export const ProductModifier = (props: {
+    selectionIndex?: number;
+    product: ICartProduct | IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT;
+    onEditSelections?: () => void;
+}) => {
+    const { product, selectionIndex, onEditSelections } = props;
 
     return (
         <div className="modifier-product-modifier-wrapper">
-            {product.modifierGroups.length > 0 ? <OrderItemDetails modifierGroups={product.modifierGroups} /> : <div>No selections made</div>}
+            {selectionIndex && <div className="mb-2 text-underline">Selection {selectionIndex}</div>}
+            {product.modifierGroups && product.modifierGroups.length > 0 ? (
+                <OrderItemDetails modifierGroups={product.modifierGroups} />
+            ) : (
+                <div>No extra selections made</div>
+            )}
             {onEditSelections && (
                 <>
                     <div className="separator-2"></div>
@@ -22,7 +32,7 @@ export const ProductModifier = (props: { product: ICartProduct; onEditSelections
     );
 };
 
-const OrderItemDetails = (props: { modifierGroups: ICartModifierGroup[] }) => {
+const OrderItemDetails = (props: { modifierGroups: ICartModifierGroup[] | IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] }) => {
     const { modifierGroups } = props;
 
     const modifierString = (preSelectedQuantity: number, quantity: number, name: string, price: number) => {

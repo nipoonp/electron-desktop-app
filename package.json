@@ -59,7 +59,7 @@
     "scripts": {
         "start": "react-scripts start",
         "start:web": "react-scripts start",
-        "build:web": "cross-env PUBLIC_URL=./ REACT_APP_AWS_ENV=prod react-scripts build",
+        "build:web": "cross-env PUBLIC_URL=./ react-scripts build",
         "start:desktop": "npm run build:desktop && electron ./build/electron.js",
         "build:desktop": "tsc -p electron/tsconfig.json",
         "test": "react-scripts test",
