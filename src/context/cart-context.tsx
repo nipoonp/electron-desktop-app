@@ -278,7 +278,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         const newCartCategoryQuantitiesById: ICartItemQuantitiesById = {};
         const newCartProductQuantitiesById: ICartItemQuantitiesById = {};
         const newCartModifierQuantitiesById: ICartItemQuantitiesById = {};
-
         products &&
             products.forEach((product) => {
                 if (newCartCategoryQuantitiesById[product.category.id]) {
@@ -293,7 +292,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                         categoryId: null,
                     };
                 }
-
                 //We do this because there could be the same product in the products array twice.
                 if (newCartProductQuantitiesById[product.id]) {
                     newCartProductQuantitiesById[product.id].quantity += product.quantity;
@@ -306,21 +304,22 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                         categoryId: product.category.id,
                     };
                 }
-
                 product.modifierGroups.forEach((modifierGroup) => {
                     modifierGroup.modifiers.forEach((modifier) => {
-                        if (modifier.productModifier) {
-                            if (newCartProductQuantitiesById[modifier.productModifier.id]) {
-                                newCartProductQuantitiesById[modifier.productModifier.id].quantity += product.quantity * modifier.quantity;
-                            } else {
-                                newCartProductQuantitiesById[modifier.productModifier.id] = {
-                                    id: product.id,
-                                    name: product.name,
-                                    quantity: product.quantity,
-                                    price: product.price,
-                                    categoryId: product.category.id,
-                                };
-                            }
+                        if (modifier.productModifiers) {
+                            modifier.productModifiers.forEach((productModifier) => {
+                                if (newCartProductQuantitiesById[productModifier.id]) {
+                                    newCartProductQuantitiesById[productModifier.id].quantity += product.quantity * modifier.quantity;
+                                } else {
+                                    newCartProductQuantitiesById[productModifier.id] = {
+                                        id: product.id,
+                                        name: product.name,
+                                        quantity: product.quantity,
+                                        price: product.price,
+                                        categoryId: product.category.id,
+                                    };
+                                }
+                            });
                         } else {
                             if (newCartModifierQuantitiesById[modifier.id]) {
                                 newCartModifierQuantitiesById[modifier.id].quantity += product.quantity * modifier.quantity;
@@ -337,7 +336,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                     });
                 });
             });
-
         _setCartCategoryQuantitiesById(newCartCategoryQuantitiesById);
         _setCartProductQuantitiesById(newCartProductQuantitiesById);
         _setCartModifierQuantitiesById(newCartModifierQuantitiesById);
@@ -355,18 +353,20 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                         const changedQuantity = m.quantity - m.preSelectedQuantity;
 
                         if (changedQuantity > 0) {
-                            price += m.price * changedQuantity * p.quantity;
+                            price += m.price * changedQuantity;
                         }
 
-                        if (m.productModifier) {
-                            m.productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
-                                orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
-                                    const changedQuantity =
-                                        orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
+                        if (m.productModifiers) {
+                            m.productModifiers.forEach((productModifier) => {
+                                productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
+                                    orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
+                                        const changedQuantity =
+                                            orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
 
-                                    if (changedQuantity > 0) {
-                                        price += orderedProductModifierModifier.price * changedQuantity;
-                                    }
+                                        if (changedQuantity > 0) {
+                                            price += orderedProductModifierModifier.price * changedQuantity;
+                                        }
+                                    });
                                 });
                             });
                         }

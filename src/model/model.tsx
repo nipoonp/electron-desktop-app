@@ -124,7 +124,7 @@ export interface ICartModifier {
     price: number;
     preSelectedQuantity: number;
     quantity: number;
-    productModifier: ICartProduct | null;
+    productModifiers: ICartProduct[] | null;
     image: IS3Object | null;
 }
 

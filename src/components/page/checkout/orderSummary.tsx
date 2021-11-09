@@ -64,17 +64,19 @@ const OrderItem = (props: {
             const changedQuantity = m.quantity - m.preSelectedQuantity;
 
             if (changedQuantity > 0) {
-                price += m.price * changedQuantity * product.quantity;
+                price += m.price * changedQuantity;
             }
 
-            if (m.productModifier) {
-                m.productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
-                    orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
-                        const changedQuantity = orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
+            if (m.productModifiers) {
+                m.productModifiers.forEach((productModifier) => {
+                    productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
+                        orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
+                            const changedQuantity = orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
 
-                        if (changedQuantity > 0) {
-                            price += orderedProductModifierModifier.price * changedQuantity;
-                        }
+                            if (changedQuantity > 0) {
+                                price += orderedProductModifierModifier.price * changedQuantity;
+                            }
+                        });
                     });
                 });
             }
@@ -158,9 +160,14 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
                                     <div key={m.id} className="mt-1">
                                         {modifierString(m.preSelectedQuantity, m.quantity, m.name, m.price)}
                                     </div>
-                                    {m.productModifier && (
-                                        <div className="mt-3">
-                                            <ProductModifier product={m.productModifier} />
+                                    {m.productModifiers && (
+                                        <div className="mb-2">
+                                            {m.productModifiers.map((productModifier) => (
+                                                <div>
+                                                    <div className="mt-2"></div>
+                                                    <ProductModifier product={productModifier} />
+                                                </div>
+                                            ))}
                                         </div>
                                     )}
                                 </>
