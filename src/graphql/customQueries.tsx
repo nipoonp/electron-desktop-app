@@ -960,18 +960,8 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
 
 export const GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
     ${ORDER_FIELDS_FRAGMENT}
-    query GetOrdersByRestaurantByPlacedAt(
-        $orderRestaurantId: ID!
-        $placedAtStartDate: String!
-        $placedAtEndDate: String!
-        $orderType: OrderType
-        $registerId: ID
-    ) {
-        getOrdersByRestaurantByPlacedAt(
-            orderRestaurantId: $orderRestaurantId
-            placedAt: { between: [$placedAtStartDate, $placedAtEndDate] }
-            filter: { and: [{ and: [{ type: { eq: $orderType } }] }, { registerId: { eq: $registerId } }] }
-        ) {
+    query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAtStartDate: String!, $placedAtEndDate: String!) {
+        getOrdersByRestaurantByPlacedAt(orderRestaurantId: $orderRestaurantId, placedAt: { between: [$placedAtStartDate, $placedAtEndDate] }) {
             items {
                 ...OrderFieldsFragment
             }

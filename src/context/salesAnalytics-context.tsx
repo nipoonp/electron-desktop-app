@@ -131,15 +131,22 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
     const { data: orders, error, loading, refetch } = useGetRestaurantOrdersByBetweenPlacedAt(
         restaurant ? restaurant.id : '',
         startDate,
-        endDate ? format(addDays(new Date(endDate), 1), 'yyyy-MM-dd') : null, //Adding extra day because GraphQL query is not inclusive of endDate
-        'TAKEAWAY',
-        // JSON.stringify('{ registerId: { eq: "38691271-ad06-4fc4-b1ef-3ba325ad1386" } }')
-        registerFilters.length > 0 ? registerFilters[0].id : '38691271-ad06-4fc4-b1ef-3ba325ad1386'
+        endDate ? format(addDays(new Date(endDate), 1), 'yyyy-MM-dd') : null //Adding extra day because GraphQL query is not inclusive of endDate
     );
 
     useEffect(() => {
-        processSalesData(orders);
-    }, [orders]);
+        processSalesData(getFilteredOrders(orders));
+    }, [orders, orderFilters, registerFilters]);
+
+    const getFilteredOrders = (orders: IGET_RESTAURANT_ORDER_FRAGMENT[] | null): IGET_RESTAURANT_ORDER_FRAGMENT[] => {
+        if (!orders) return [];
+        let filteredOrders: IGET_RESTAURANT_ORDER_FRAGMENT[] = [];
+
+        // Filter by order type and register type
+        filteredOrders = orders.filter((o) => orderFilters.includes(o.type) && registerFilters.map((r) => r.id).includes(o.registerId));
+
+        return filteredOrders;
+    };
 
     const processSalesData = (orders: IGET_RESTAURANT_ORDER_FRAGMENT[] | null) => {
         try {

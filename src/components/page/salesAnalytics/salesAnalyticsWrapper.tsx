@@ -33,7 +33,7 @@ export const SalesAnalyticsWrapper = (props: IProps) => {
         const index = orderFilters.indexOf(value);
         if(index > -1) {
             orderFilters.splice(index, 1);
-            onRegisterFilterChange();
+            onOrderFilterChange();
         }
     };
 
@@ -41,7 +41,7 @@ export const SalesAnalyticsWrapper = (props: IProps) => {
         const index = registerFilters.findIndex(r => r.id === value.id);
         if(index > -1) {
             registerFilters.splice(index, 1);
-            onOrderFilterChange();
+            onRegisterFilterChange();
         }
     };
 
