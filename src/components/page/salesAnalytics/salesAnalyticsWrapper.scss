@@ -46,9 +46,20 @@
             display: block;
             align-items: baseline;
 
-            .filter {
+            .filters {
                 display: flex;
                 align-items: baseline;
+            }
+
+            @media screen and (max-width: 768px) {
+                .filters {
+                    display: block;
+                    margin: 8px 0;
+                }
+
+                .filter {
+                    margin: 8px 0;
+                }
             }
         }
     }

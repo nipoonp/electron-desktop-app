@@ -79,12 +79,12 @@ export const SalesAnalyticsWrapper = (props: IProps) => {
                     </div>
                     {isFilter && (
                         <div className="sales-filters mb-3">
-                            <div className="filter m-1">
+                            <div className="filters m-1">
                                 <div className="text-bold mr-2">Order Type: </div>
                                 {Object.values(EOrderType).map((value, index) => {
                                     return (
                                         <Checkbox key={index}
-                                            className="mr-2"
+                                            className="filter mr-2"
                                             onCheck={() => onOrderFilterChange(value)}
                                             onUnCheck={() => onOrderFilterUnCheck(value)}
                                             checked={orderFilters.includes(value)}
@@ -94,12 +94,12 @@ export const SalesAnalyticsWrapper = (props: IProps) => {
                                     );
                                 })}
                             </div>
-                            <div className="filter m-1">
+                            <div className="filters m-1">
                                 <div className="text-bold mr-2">Register Type: </div>
                                 {restaurant?.registers.items.map((register) => {
                                     return (
                                         <Checkbox key={register.id}
-                                            className="mr-2"
+                                            className="filter mr-2"
                                             onCheck={() => onRegisterFilterChange(register)}
                                             onUnCheck={() => onRegisterFilterUnCheck(register)}
                                             checked={registerFilters.some(r => r.id === register.id)}
