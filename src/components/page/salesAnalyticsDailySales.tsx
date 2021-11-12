@@ -1,26 +1,34 @@
-import { format } from "date-fns";
-import { Card } from "../../tabin/components/card";
-import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { convertCentsToDollars } from "../../util/util";
-import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
-import { Table } from "../../tabin/components/table";
-import { useSalesAnalytics } from "../../context/salesAnalytics-context";
-import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
+import { format } from 'date-fns';
+import { Card } from '../../tabin/components/card';
+import { FullScreenSpinner } from '../../tabin/components/fullScreenSpinner';
+import { convertCentsToDollars } from '../../util/util';
+import { LineGraph } from './salesAnalytics/salesAnalyticsGraphs';
+import { Table } from '../../tabin/components/table';
+import { useSalesAnalytics } from '../../context/salesAnalytics-context';
+import { SalesAnalyticsWrapper } from './salesAnalytics/salesAnalyticsWrapper';
 
-import "./salesAnalytics.scss";
-import { taxRate } from "../../model/util";
+import './salesAnalytics.scss';
+import { taxRate } from '../../model/util';
+import { Button } from '../../tabin/components/button';
+import { useHistory } from 'react-router-dom';
+import { ordersPath } from '../main';
 
 export const SalesAnalyticsDailySales = () => {
+    const history = useHistory();
     const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
 
-    const graphColor = getComputedStyle(document.documentElement).getPropertyValue("--primary-color");
+    const graphColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-color');
+
+    const onShowOrder = (date: string) => {
+        history.push(`${ordersPath}?date=${date}`);
+    };
 
     if (error) {
         return <h1>Couldn't fetch orders. Try Refreshing</h1>;
     }
 
     if (loading) {
-        return <FullScreenSpinner show={loading} text={"Loading report details..."} />;
+        return <FullScreenSpinner show={loading} text={'Loading report details...'} />;
     }
 
     return (
@@ -30,8 +38,8 @@ export const SalesAnalyticsDailySales = () => {
                     <div className="text-center">Please select a start and end date.</div>
                 ) : salesAnalytics && salesAnalytics.totalSoldItems > 0 ? (
                     <div className="sales-by">
-                        <div className="mb-6" style={{ width: "100%", height: "300px" }}>
-                            <LineGraph xAxis="date" lines={["sales"]} graphData={salesAnalytics?.dayByGraphData} fill={graphColor} />
+                        <div className="mb-6" style={{ width: '100%', height: '300px' }}>
+                            <LineGraph xAxis="date" lines={['sales']} graphData={salesAnalytics?.dayByGraphData} fill={graphColor} />
                         </div>
                         <div className="sales-reading-wrapper mb-6">
                             <Card className="text-center sales-reading">
@@ -64,16 +72,26 @@ export const SalesAnalyticsDailySales = () => {
                                         <th className="text-right">Net</th>
                                         <th className="text-right">Tax</th>
                                         <th className="text-right">Total</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {Object.entries(salesAnalytics.dailySales).map(([date, sale], index) => (
                                         <tr key={index}>
-                                            <td className="sales-analytics-table-date-cell">{format(new Date(date), "E, dd MMM")}</td>
+                                            <td className="sales-analytics-table-date-cell">{format(new Date(date), 'E, dd MMM')}</td>
                                             <td className="text-right">{sale.totalQuantity}</td>
                                             <td className="text-right">{`$${convertCentsToDollars((sale.totalAmount * (100 - taxRate)) / 100)}`}</td>
                                             <td className="text-right">{`$${convertCentsToDollars(sale.totalAmount * (taxRate / 100))}`}</td>
                                             <td className="text-right">{`$${convertCentsToDollars(sale.totalAmount)}`}</td>
+                                            <td className="text-right">
+                                                <Button
+                                                    onClick={() => {
+                                                        onShowOrder(date);
+                                                    }}
+                                                >
+                                                    Show Orders
+                                                </Button>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
