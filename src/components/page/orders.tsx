@@ -16,18 +16,19 @@ import { IGET_RESTAURANT_ORDER_FRAGMENT, IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FR
 import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { RouteProps } from "react-router-dom";
+import { ProductModifier } from "../shared/productModifier";
 
 export const Orders = (props: RouteProps) => {
     const { location } = props;
-    const queryDate = new URLSearchParams(location?.search).get('date');
+    const queryDate = new URLSearchParams(location?.search).get("date");
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
     const { printReceipt } = useReceiptPrinter();
     const [eOrderStatus, setEOrderStatus] = useState(EOrderStatus.NEW);
 
     const [showSpinner, setShowSpinner] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [date, setDate] = useState(queryDate ?? format(new Date(), 'yyyy-MM-dd'));
+    const [searchTerm, setSearchTerm] = useState("");
+    const [date, setDate] = useState(queryDate ?? format(new Date(), "yyyy-MM-dd"));
 
     const { data: orders, error, loading } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant ? restaurant.id : "", date);
 
@@ -312,16 +313,37 @@ const OrderItemDetails = (props: {
         <>
             {props.modifierGroups &&
                 props.modifierGroups.map((mg) => (
-                    <div key={mg.id}>
-                        <div className="text-bold mt-1" key={mg.id}>
-                            {mg.name}
-                        </div>
-                        {mg.modifiers.map((m) => (
-                            <div key={m.id} className="mt-1">
-                                {modifierString(m.preSelectedQuantity, m.quantity, m.name, m.price)}
-                            </div>
-                        ))}
-                    </div>
+                    <>
+                        {!mg.hideForCustomer && (
+                            <>
+                                <div className="text-bold mt-3" key={mg.id}>
+                                    {mg.name}
+                                </div>
+                                {mg.modifiers.map((m) => (
+                                    <>
+                                        <div key={m.id} className="mt-1">
+                                            {modifierString(m.preSelectedQuantity, m.quantity, m.name, m.price)}
+                                        </div>
+                                        {m.productModifiers && (
+                                            <div className="mb-2">
+                                                {m.productModifiers.map((productModifier, index) => (
+                                                    <div>
+                                                        <div className="mt-2"></div>
+                                                        <ProductModifier
+                                                            selectionIndex={
+                                                                m.productModifiers && m.productModifiers.length > 1 ? index + 1 : undefined
+                                                            }
+                                                            product={productModifier}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </>
+                                ))}
+                            </>
+                        )}
+                    </>
                 ))}
         </>
     );

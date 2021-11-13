@@ -227,10 +227,10 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
             {selectedCategoryForProductModal && selectedProductForProductModal && showProductModal && (
                 <ProductModal
                     isOpen={showProductModal}
+                    onClose={onCloseProductModal}
                     category={selectedCategoryForProductModal}
                     product={selectedProductForProductModal}
                     onAddItem={onAddItem}
-                    onClose={onCloseProductModal}
                 />
             )}
         </>
