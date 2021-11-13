@@ -1,30 +1,30 @@
-import { gql } from "@apollo/client";
-import { EReceiptPrinterType } from "../model/model";
-import { ORDER_FIELDS_FRAGMENT } from "./customFragments";
+import { gql } from '@apollo/client';
+import { EReceiptPrinterType } from '../model/model';
+import { ORDER_FIELDS_FRAGMENT } from './customFragments';
 
 export enum EOrderStatus {
-    NEW = "NEW",
-    COMPLETED = "COMPLETED",
-    CANCELLED = "CANCELLED",
-    REFUNDED = "REFUNDED",
+    NEW = 'NEW',
+    COMPLETED = 'COMPLETED',
+    CANCELLED = 'CANCELLED',
+    REFUNDED = 'REFUNDED',
 }
 
 export enum EOrderType {
-    DINEIN = "DINEIN",
-    TAKEAWAY = "TAKEAWAY",
-    DELIVERY = "DELIVERY",
+    DINEIN = 'DINEIN',
+    TAKEAWAY = 'TAKEAWAY',
+    DELIVERY = 'DELIVERY',
 }
 
 export enum ERegisterType {
-    KIOSK = "KIOSK",
-    POS = "POS",
-    ONLINE = "ONLINE",
+    KIOSK = 'KIOSK',
+    POS = 'POS',
+    ONLINE = 'ONLINE',
 }
 
 export enum ERegisterPrinterType {
-    BLUETOOTH = "BLUETOOTH",
-    WIFI = "WIFI",
-    USB = "USB",
+    BLUETOOTH = 'BLUETOOTH',
+    WIFI = 'WIFI',
+    USB = 'USB',
 }
 
 export const GET_USER = gql`
@@ -734,9 +734,9 @@ export interface IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES {
 }
 
 export enum EPromotionType {
-    ENTIREORDER = "ENTIREORDER",
-    COMBO = "COMBO",
-    RELATEDITEMS = "RELATEDITEMS",
+    ENTIREORDER = 'ENTIREORDER',
+    COMBO = 'COMBO',
+    RELATEDITEMS = 'RELATEDITEMS',
 }
 
 export interface IGET_RESTAURANT_PROMOTION_ITEMS {
@@ -764,9 +764,9 @@ export interface IGET_RESTAURANT_PROMOTION_DISCOUNT {
 }
 
 export enum EDiscountType {
-    FIXED = "FIXED",
-    PERCENTAGE = "PERCENTAGE",
-    SETPRICE = "SETPRICE",
+    FIXED = 'FIXED',
+    PERCENTAGE = 'PERCENTAGE',
+    SETPRICE = 'SETPRICE',
 }
 
 export interface IGET_RESTAURANT_CATEGORY {

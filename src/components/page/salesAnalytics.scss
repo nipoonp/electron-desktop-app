@@ -85,8 +85,21 @@
         width: 100%;
         overflow-x: scroll;
 
-        td:first-child {
+        .sales-analytics-table-date-cell {
             min-width: 120px;
+        }
+
+        .sales-analytics-table-time-cell {
+            min-width: 80px;
+        }
+
+        .sales-analytics-table-image-cell {
+            padding: 8px;
+
+            .sales-analytics-table-image {
+                width: 40px;
+                border-radius: 3px;
+            }
         }
     }
 }
