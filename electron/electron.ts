@@ -46,7 +46,7 @@ function createWindow() {
     // Hide the menu bar
     mainWindow.setMenu(null);
 
-    // mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
 }
 
 const checkForUpdates = () => {
