@@ -1,19 +1,19 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, createContext, useContext } from "react";
 
-import { ApolloError } from '@apollo/client';
-import { useRestaurant } from './restaurant-context';
-import { addDays, differenceInDays, format, subDays } from 'date-fns';
-import { useGetRestaurantOrdersByBetweenPlacedAt } from '../hooks/useGetRestaurantOrdersByBetweenPlacedAt';
+import { ApolloError } from "@apollo/client";
+import { useRestaurant } from "./restaurant-context";
+import { addDays, differenceInDays, format, subDays } from "date-fns";
+import { useGetRestaurantOrdersByBetweenPlacedAt } from "../hooks/useGetRestaurantOrdersByBetweenPlacedAt";
 import {
     IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT,
     IGET_RESTAURANT_ORDER_FRAGMENT,
     IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT,
-} from '../graphql/customFragments';
-import { EOrderStatus, EOrderType, IGET_RESTAURANT_REGISTER } from '../graphql/customQueries';
-import { getTwelveHourFormat, taxRate } from '../model/util';
-import { convertCentsToDollars, convertCentsToDollarsReturnFloat } from '../util/util';
-import { toast } from '../tabin/components/toast';
-import { UnparseObject } from 'papaparse';
+} from "../graphql/customFragments";
+import { EOrderStatus, EOrderType, IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
+import { getTwelveHourFormat, taxRate } from "../model/util";
+import { convertCentsToDollars, convertCentsToDollarsReturnFloat } from "../util/util";
+import { toast } from "../tabin/components/toast";
+import { UnparseObject } from "papaparse";
 
 export interface ITopSoldItem {
     item: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT | null;
@@ -120,18 +120,23 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
 
     const [salesAnalytics, setSalesAnalytics] = useState<ISalesAnalytics | null>(null);
-    const [startDate, setStartDate] = useState<string | null>(format(subDays(new Date(), 7), 'yyyy-MM-dd'));
-    const [endDate, setEndDate] = useState<string | null>(format(new Date(), 'yyyy-MM-dd')); //Adding extra day because GraphQL query is not inclusive of endDate
+    const [startDate, setStartDate] = useState<string | null>(format(subDays(new Date(), 7), "yyyy-MM-dd"));
+    const [endDate, setEndDate] = useState<string | null>(format(new Date(), "yyyy-MM-dd")); //Adding extra day because GraphQL query is not inclusive of endDate
 
     // Filters
-    const registers = restaurant && restaurant.registers.items ? restaurant.registers.items : [];
-    const [registerFilters, setRegisterFilter] = useState<IGET_RESTAURANT_REGISTER[]>(registers);
+    const [registerFilters, setRegisterFilter] = useState<IGET_RESTAURANT_REGISTER[]>([]);
     const [orderFilters, setOrderFilter] = useState(Object.values(EOrderType));
 
+    useEffect(() => {
+        const registers = restaurant && restaurant.registers.items ? restaurant.registers.items : [];
+
+        setRegisterFilter(registers);
+    }, [restaurant]);
+
     const { data: orders, error, loading, refetch } = useGetRestaurantOrdersByBetweenPlacedAt(
-        restaurant ? restaurant.id : '',
+        restaurant ? restaurant.id : "",
         startDate,
-        endDate ? format(addDays(new Date(endDate), 1), 'yyyy-MM-dd') : null //Adding extra day because GraphQL query is not inclusive of endDate
+        endDate ? format(addDays(new Date(endDate), 1), "yyyy-MM-dd") : null //Adding extra day because GraphQL query is not inclusive of endDate
     );
 
     useEffect(() => {
@@ -170,33 +175,33 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
             let totalSoldItems: number = 0;
 
             const hourlySales: IHourlySales = {
-                '00': { hour: '00', totalAmount: 0, totalQuantity: 0 },
-                '01': { hour: '01', totalAmount: 0, totalQuantity: 0 },
-                '02': { hour: '02', totalAmount: 0, totalQuantity: 0 },
-                '03': { hour: '03', totalAmount: 0, totalQuantity: 0 },
-                '04': { hour: '04', totalAmount: 0, totalQuantity: 0 },
-                '05': { hour: '05', totalAmount: 0, totalQuantity: 0 },
-                '06': { hour: '06', totalAmount: 0, totalQuantity: 0 },
-                '07': { hour: '07', totalAmount: 0, totalQuantity: 0 },
-                '08': { hour: '08', totalAmount: 0, totalQuantity: 0 },
-                '09': { hour: '09', totalAmount: 0, totalQuantity: 0 },
-                '10': { hour: '10', totalAmount: 0, totalQuantity: 0 },
-                '11': { hour: '11', totalAmount: 0, totalQuantity: 0 },
-                '12': { hour: '12', totalAmount: 0, totalQuantity: 0 },
-                '13': { hour: '13', totalAmount: 0, totalQuantity: 0 },
-                '14': { hour: '14', totalAmount: 0, totalQuantity: 0 },
-                '15': { hour: '15', totalAmount: 0, totalQuantity: 0 },
-                '16': { hour: '16', totalAmount: 0, totalQuantity: 0 },
-                '17': { hour: '17', totalAmount: 0, totalQuantity: 0 },
-                '18': { hour: '18', totalAmount: 0, totalQuantity: 0 },
-                '19': { hour: '19', totalAmount: 0, totalQuantity: 0 },
-                '20': { hour: '20', totalAmount: 0, totalQuantity: 0 },
-                '21': { hour: '21', totalAmount: 0, totalQuantity: 0 },
-                '22': { hour: '22', totalAmount: 0, totalQuantity: 0 },
-                '23': { hour: '23', totalAmount: 0, totalQuantity: 0 },
+                "00": { hour: "00", totalAmount: 0, totalQuantity: 0 },
+                "01": { hour: "01", totalAmount: 0, totalQuantity: 0 },
+                "02": { hour: "02", totalAmount: 0, totalQuantity: 0 },
+                "03": { hour: "03", totalAmount: 0, totalQuantity: 0 },
+                "04": { hour: "04", totalAmount: 0, totalQuantity: 0 },
+                "05": { hour: "05", totalAmount: 0, totalQuantity: 0 },
+                "06": { hour: "06", totalAmount: 0, totalQuantity: 0 },
+                "07": { hour: "07", totalAmount: 0, totalQuantity: 0 },
+                "08": { hour: "08", totalAmount: 0, totalQuantity: 0 },
+                "09": { hour: "09", totalAmount: 0, totalQuantity: 0 },
+                "10": { hour: "10", totalAmount: 0, totalQuantity: 0 },
+                "11": { hour: "11", totalAmount: 0, totalQuantity: 0 },
+                "12": { hour: "12", totalAmount: 0, totalQuantity: 0 },
+                "13": { hour: "13", totalAmount: 0, totalQuantity: 0 },
+                "14": { hour: "14", totalAmount: 0, totalQuantity: 0 },
+                "15": { hour: "15", totalAmount: 0, totalQuantity: 0 },
+                "16": { hour: "16", totalAmount: 0, totalQuantity: 0 },
+                "17": { hour: "17", totalAmount: 0, totalQuantity: 0 },
+                "18": { hour: "18", totalAmount: 0, totalQuantity: 0 },
+                "19": { hour: "19", totalAmount: 0, totalQuantity: 0 },
+                "20": { hour: "20", totalAmount: 0, totalQuantity: 0 },
+                "21": { hour: "21", totalAmount: 0, totalQuantity: 0 },
+                "22": { hour: "22", totalAmount: 0, totalQuantity: 0 },
+                "23": { hour: "23", totalAmount: 0, totalQuantity: 0 },
             };
 
-            let bestHour: IBestHour = { hour: '00', totalAmount: 0, totalQuantity: 0 };
+            let bestHour: IBestHour = { hour: "00", totalAmount: 0, totalQuantity: 0 };
 
             let topSoldCategory: ITopSoldItem = {
                 item: null,
@@ -217,7 +222,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
             //First create an empty object with empty defined day sales
             for (var i = 0; i < daysDifference; i++) {
                 const loopDateTime: Date = addDays(new Date(startDate), i);
-                const formattedDateTime: string = format(new Date(loopDateTime), 'yyyy-MM-dd');
+                const formattedDateTime: string = format(new Date(loopDateTime), "yyyy-MM-dd");
 
                 dailySales[formattedDateTime] = {
                     totalAmount: 0,
@@ -225,12 +230,12 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                     orders: [],
                 };
 
-                exportSalesDates.push(format(new Date(loopDateTime), 'E, dd MMM'));
+                exportSalesDates.push(format(new Date(loopDateTime), "E, dd MMM"));
             }
 
             orders.forEach((order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
-                const placedAt: string = format(new Date(order.placedAt), 'yyyy-MM-dd');
-                const placedAtHour: string = format(new Date(order.placedAt), 'HH');
+                const placedAt: string = format(new Date(order.placedAt), "yyyy-MM-dd");
+                const placedAtHour: string = format(new Date(order.placedAt), "HH");
 
                 // NEW ORDERS //////////////////////////////////
                 if (order.status === EOrderStatus.NEW) {
@@ -405,17 +410,17 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
 
             // CSV Export Data
             const dailySalesExport = {} as UnparseObject<Array<string | number>>;
-            dailySalesExport.fields = ['Date', 'Orders', 'Net', 'Tax', 'Total'];
+            dailySalesExport.fields = ["Date", "Orders", "Net", "Tax", "Total"];
             dailySalesExport.data = [];
 
             Object.entries(dailySales).forEach(([date, sale]) => {
                 dayByGraphData.push({
-                    date: format(new Date(date), 'dd MMM'),
+                    date: format(new Date(date), "dd MMM"),
                     sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
                 });
 
                 const row = [
-                    format(new Date(date), 'E, dd MMM'),
+                    format(new Date(date), "E, dd MMM"),
                     sale.totalQuantity,
                     `$${convertCentsToDollars((sale.totalAmount * (100 - taxRate)) / 100)}`,
                     `$${convertCentsToDollars(sale.totalAmount * (taxRate / 100))}`,
@@ -426,7 +431,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
 
             // CSV Export Data
             const hourlySalesExport = {} as UnparseObject<Array<string | number>>;
-            hourlySalesExport.fields = ['Time', 'Orders', 'Net', 'Tax', 'Total'];
+            hourlySalesExport.fields = ["Time", "Orders", "Net", "Tax", "Total"];
             hourlySalesExport.data = [];
 
             Object.entries(hourlySales)
@@ -449,7 +454,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
 
             // CSV Export Data
             const mostSoldCategoriesExport = {} as UnparseObject<Array<string | number>>;
-            mostSoldCategoriesExport.fields = ['Category', 'Quantity', 'Net', 'Tax', 'Total', '% Of Sale'];
+            mostSoldCategoriesExport.fields = ["Category", "Quantity", "Net", "Tax", "Total", "% Of Sale"];
             mostSoldCategoriesExport.data = [];
 
             Object.entries(mostSoldCategories).forEach(([categoryId, category]) => {
@@ -475,7 +480,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
 
             // CSV Export Data
             const mostSoldProductsExport = {} as UnparseObject<Array<string | number>>;
-            mostSoldProductsExport.fields = ['Product', 'Quantity', 'Net', 'Tax', 'Total', '% Of Sale'];
+            mostSoldProductsExport.fields = ["Product", "Quantity", "Net", "Tax", "Total", "% Of Sale"];
             mostSoldProductsExport.data = [];
 
             Object.entries(mostSoldProducts).forEach(([productId, product]) => {
@@ -527,7 +532,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                 exportSalesDates,
             });
         } catch (e) {
-            toast.error('There was an error processing sales analytics data. Please try again later.');
+            toast.error("There was an error processing sales analytics data. Please try again later.");
         }
     };
 
