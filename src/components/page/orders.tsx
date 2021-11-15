@@ -15,11 +15,10 @@ import { toast } from "../../tabin/components/toast";
 import { IGET_RESTAURANT_ORDER_FRAGMENT, IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT } from "../../graphql/customFragments";
 import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
-import { RouteProps } from "react-router-dom";
+import { RouteComponentProps } from "react-router-dom";
 
-export const Orders = (props: RouteProps) => {
-    const { location } = props;
-    const queryDate = new URLSearchParams(location?.search).get('date');
+export const Orders = (props: RouteComponentProps<any>) => {
+    const dateParam = props.match.params.date;
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
     const { printReceipt } = useReceiptPrinter();
@@ -27,7 +26,7 @@ export const Orders = (props: RouteProps) => {
 
     const [showSpinner, setShowSpinner] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [date, setDate] = useState(queryDate ?? format(new Date(), 'yyyy-MM-dd'));
+    const [date, setDate] = useState(dateParam ?? format(new Date(), 'yyyy-MM-dd'));
 
     const { data: orders, error, loading } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant ? restaurant.id : "", date);
 

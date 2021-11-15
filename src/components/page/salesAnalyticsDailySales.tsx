@@ -20,7 +20,7 @@ export const SalesAnalyticsDailySales = () => {
     const graphColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-color');
 
     const onShowOrder = (date: string) => {
-        history.push(`${ordersPath}?date=${date}`);
+        history.push(`${ordersPath}/${date}`);
     };
 
     if (error) {

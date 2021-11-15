@@ -127,17 +127,16 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
     const [registerFilters, setRegisterFilter] = useState<IGET_RESTAURANT_REGISTER[]>([]);
     const [orderFilters, setOrderFilter] = useState(Object.values(EOrderType));
 
-    useEffect(() => {
-        const registers = restaurant && restaurant.registers.items ? restaurant.registers.items : [];
-
-        setRegisterFilter(registers);
-    }, [restaurant]);
-
     const { data: orders, error, loading, refetch } = useGetRestaurantOrdersByBetweenPlacedAt(
         restaurant ? restaurant.id : "",
         startDate,
         endDate ? format(addDays(new Date(endDate), 1), "yyyy-MM-dd") : null //Adding extra day because GraphQL query is not inclusive of endDate
     );
+
+    useEffect(() => {
+        const registers = restaurant && restaurant.registers.items ? restaurant.registers.items : [];
+        setRegisterFilter(registers);
+    }, [restaurant]);
 
     useEffect(() => {
         processSalesData(getFilteredOrders(orders));
