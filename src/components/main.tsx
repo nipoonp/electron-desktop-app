@@ -150,7 +150,7 @@ const Routes = () => {
             <PrivateRoute exact path={restaurantListPath} component={RestaurantList} />
             <PrivateRoute exact path={registerListPath} component={RegisterList} />
             <PrivateRoute exact path={stockPath} component={Stock} />
-            <PrivateRoute exact path={ordersPath} component={Orders} />
+            <PrivateRoute exact path={`${ordersPath}/:date?`} component={Orders} />
             <PrivateRoute exact path={reportsPath} component={Reports} />
             <PrivateRoute exact path={salesAnalyticsPath} component={SalesAnalytics} />
             <PrivateRoute exact path={salesAnalyticsDailySalesPath} component={SalesAnalyticsDailySales} />
@@ -158,7 +158,7 @@ const Routes = () => {
             <PrivateRoute exact path={salesAnalyticsTopCategoryPath} component={SalesAnalyticsTopCategory} />
             <PrivateRoute exact path={salesAnalyticsTopProductPath} component={SalesAnalyticsTopProduct} />
             <RestaurantRegisterPrivateRoute exact path={configureNewEftposPath} component={ConfigureNewEftpos} />
-            <RestaurantRegisterPrivateRoute exact path={beginOrderPath} component={BeginOrder} />
+            <RestaurantRegisterPrivateRoute exact path={beginOrderPath} component={SalesAnalytics} />
             <RestaurantRegisterPrivateRoute exact path={orderTypePath} component={OrderType} />
             <RestaurantRegisterPrivateRoute exact path={tableNumberPath} component={TableNumber} />
             <RestaurantRegisterPrivateRoute exact path={checkoutPath} component={Checkout} />
