@@ -478,10 +478,19 @@ export const GET_RESTAURANT = gql`
                                                         productModifier {
                                                             id
                                                             name
+                                                            description
                                                             price
+                                                            tags
+                                                            totalQuantitySold
+                                                            totalQuantityAvailable
                                                             soldOut
                                                             soldOutDate
-                                                            totalQuantityAvailable
+                                                            image {
+                                                                key
+                                                                bucket
+                                                                region
+                                                                identityPoolId
+                                                            }
                                                             availability {
                                                                 monday {
                                                                     startTime
@@ -510,6 +519,42 @@ export const GET_RESTAURANT = gql`
                                                                 sunday {
                                                                     startTime
                                                                     endTime
+                                                                }
+                                                            }
+                                                            modifierGroups(limit: 500) {
+                                                                items {
+                                                                    id
+                                                                    displaySequence
+                                                                    hideForCustomer
+                                                                    modifierGroup {
+                                                                        id
+                                                                        name
+                                                                        choiceMin
+                                                                        choiceMax
+                                                                        choiceDuplicate
+                                                                        modifiers(limit: 500) {
+                                                                            items {
+                                                                                id
+                                                                                displaySequence
+                                                                                preSelectedQuantity
+                                                                                modifier {
+                                                                                    id
+                                                                                    name
+                                                                                    price
+                                                                                    image {
+                                                                                        key
+                                                                                        bucket
+                                                                                        region
+                                                                                        identityPoolId
+                                                                                    }
+                                                                                    totalQuantitySold
+                                                                                    totalQuantityAvailable
+                                                                                    soldOut
+                                                                                    soldOutDate
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
                                                                 }
                                                             }
                                                         }
@@ -837,17 +882,7 @@ export interface IGET_RESTAURANT_MODIFIER {
     totalQuantityAvailable?: number;
     soldOut?: boolean;
     soldOutDate?: string;
-    productModifier?: IGET_RESTAURANT_MODIFIER_PRODUCT_MODIFIER;
-}
-
-export interface IGET_RESTAURANT_MODIFIER_PRODUCT_MODIFIER {
-    id: string;
-    name: string;
-    price: number;
-    soldOut: boolean;
-    soldOutDate: string;
-    totalQuantityAvailable?: number;
-    availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
+    productModifier?: IGET_RESTAURANT_PRODUCT;
 }
 
 export interface IS3Object {

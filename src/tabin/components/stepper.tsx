@@ -68,8 +68,8 @@ export const Stepper = (props: IProps) => {
 
     return (
         <>
-            <div className="stepper-container">
-                <div className={`stepper ${props.className}`} style={props.style}>
+            <div className={`stepper-container ${props.className}`}>
+                <div className="stepper" style={props.style}>
                     {minusButton}
                     <div
                         style={{
