@@ -68,9 +68,32 @@ export interface IOrderReceipt {
     orderScheduledAt: string | null;
 }
 
+export interface IPrintSalesByDayDataInput {
+    printerType: EReceiptPrinterType;
+    printerAddress: string;
+    saleData: {
+        [date: string]: {
+            totalAmount: number;
+            totalQuantity: number;
+            totalPaymentAmounts: IOrderPaymentAmounts;
+        };
+    };
+}
+
+export interface IOrderPaymentAmounts {
+    cash: number;
+    eftpos: number;
+    online: number;
+}
+
 export interface IPrintReceiptDataOutput {
     error: any;
     order: IOrderReceipt;
+}
+
+export interface IPrintSalesByDayDataOutput {
+    error: any;
+    printSalesByDayDataInput: IPrintSalesByDayDataInput;
 }
 
 export interface IPrintReceiptOutput {

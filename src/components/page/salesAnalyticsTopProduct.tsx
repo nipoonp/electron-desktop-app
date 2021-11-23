@@ -42,7 +42,6 @@ export const SalesAnalyticsTopProduct = () => {
                                         <th className="text-left">Product</th>
                                         <th className="text-left">Category</th>
                                         <th className="text-right">Quantity</th>
-                                        <th className="text-right">Net</th>
                                         <th className="text-right">Tax</th>
                                         <th className="text-right">Total</th>
                                         <th className="text-right">% Of Sale</th>
@@ -70,9 +69,6 @@ export const SalesAnalyticsTopProduct = () => {
                                                     <td className="text-left"> {product.item.name}</td>
                                                     <td className="text-left"> {pItem.category && pItem.category.name}</td>
                                                     <td className="text-right"> {product.totalQuantity}</td>
-                                                    <td className="text-right">{`$${convertCentsToDollars(
-                                                        (product.totalAmount * (100 - taxRate)) / 100
-                                                    )}`}</td>
                                                     <td className="text-right">{`$${convertCentsToDollars(
                                                         product.totalAmount * (taxRate / 100)
                                                     )}`}</td>

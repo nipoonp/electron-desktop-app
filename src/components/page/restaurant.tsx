@@ -3,11 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import { useHistory } from "react-router";
 import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { checkoutPath, beginOrderPath, orderTypePath } from "../main";
+import { checkoutPath, beginOrderPath, orderTypePath, tableNumberPath } from "../main";
 import { convertCentsToDollars, getQuantityRemainingText, isProductQuantityAvailable } from "../../util/util";
 import { ProductModal } from "../modals/product";
 import { SearchProductModal } from "../modals/searchProductModal";
-import { IGET_RESTAURANT_PRODUCT, IGET_RESTAURANT_CATEGORY, IS3Object } from "../../graphql/customQueries";
+import { IGET_RESTAURANT_PRODUCT, IGET_RESTAURANT_CATEGORY, IS3Object, EOrderType } from "../../graphql/customQueries";
 import { useCart } from "../../context/cart-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { Button } from "../../tabin/components/button";
@@ -149,7 +149,12 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
             history.push(orderTypePath);
         } else if (register && register.availableOrderTypes.length == 1) {
             setOrderType(register.availableOrderTypes[0]);
-            history.push(checkoutPath);
+
+            if (register.availableOrderTypes[0] === EOrderType.DINEIN && register.enableTableFlags) {
+                history.push(tableNumberPath);
+            } else {
+                history.push(checkoutPath);
+            }
         } else {
             history.push(checkoutPath);
         }

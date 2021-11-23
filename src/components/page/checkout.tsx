@@ -589,7 +589,10 @@ export const Checkout = () => {
             const newCashPaymentAmounts = paymentAmounts.cash + amount;
             const newTotalPaymentAmounts = newCashPaymentAmounts + paymentAmounts.eftpos;
 
-            const newPaymentAmounts: ICartPaymentAmounts = { ...paymentAmounts, cash: newCashPaymentAmounts };
+            const newPaymentAmounts: ICartPaymentAmounts = {
+                ...paymentAmounts,
+                cash: newTotalPaymentAmounts >= subTotal ? subTotal : newCashPaymentAmounts, //Cannot pay more than subTotal amount
+            };
             const newPayments: ICartPayment[] = [...payments, { type: "CASH", amount: amount }];
 
             setPaymentAmounts(newPaymentAmounts);
@@ -623,7 +626,7 @@ export const Checkout = () => {
     const onClickPayLater = async () => {
         setShowPaymentModal(true);
 
-        const newPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0 };
+        const newPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0 };
         const newPayments: ICartPayment[] = [];
 
         setPaymentModalState(EPaymentModalState.PayLater);

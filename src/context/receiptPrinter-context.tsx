@@ -3,12 +3,13 @@ import { IGET_RESTAURANT_ORDER_FRAGMENT, IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT 
 import { EOrderStatus } from "../graphql/customQueries";
 import { useGetOnlineOrdersByRestaurantByStatusByPlacedAt } from "../hooks/useGetOnlineOrdersByRestaurantByStatusByPlacedAt";
 
-import { ICartModifier, ICartModifierGroup, ICartProduct, IPrintReceiptDataOutput, IOrderReceipt } from "../model/model";
+import { ICartModifier, ICartModifierGroup, ICartProduct, IPrintReceiptDataOutput, IOrderReceipt, IPrintSalesByDayDataInput } from "../model/model";
 import { toast } from "../tabin/components/toast";
 import { convertProductTypesForPrint, toLocalISOString } from "../util/util";
 import { useErrorLogging } from "./errorLogging-context";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
+import { IDailySales } from "./salesAnalytics-context";
 
 let electron: any;
 let ipcRenderer: any;
@@ -19,10 +20,14 @@ try {
 
 type ContextProps = {
     printReceipt: (payload: IOrderReceipt) => Promise<any>;
+    printSalesByDay: (printSalesByDayDataInput: IPrintSalesByDayDataInput) => Promise<any>;
 };
 
 const ReceiptPrinterContext = createContext<ContextProps>({
     printReceipt: (payload: IOrderReceipt) => {
+        return new Promise(() => {});
+    },
+    printSalesByDay: (printSalesByDayDataInput: IPrintSalesByDayDataInput) => {
         return new Promise(() => {});
     },
 });
@@ -126,6 +131,27 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         }
     };
 
+    const printSalesByDay = async (printSalesByDayDataInput: IPrintSalesByDayDataInput) => {
+        if (ipcRenderer) {
+            try {
+                const result: IPrintReceiptDataOutput = await ipcRenderer.invoke("RECEIPT_SALES_BY_DAY_PRINTER_DATA", printSalesByDayDataInput);
+
+                console.log("result", result);
+
+                if (result.error) {
+                    toast.error("There was an error printing your report");
+                }
+            } catch (e) {
+                console.error(e);
+                toast.error("There was an error printing your report");
+                await logError(
+                    "There was an error printing your report",
+                    JSON.stringify({ error: e, printSalesByDayDataInput: printSalesByDayDataInput })
+                );
+            }
+        }
+    };
+
     const storeFailedPrint = (failedPrintOrder: IPrintReceiptDataOutput) => {
         const currentFailedPrintQueue = localStorage.getItem("failedPrintQueue");
         const currentFailedPrintQueueOrders: IPrintReceiptDataOutput[] = currentFailedPrintQueue ? JSON.parse(currentFailedPrintQueue) : [];
@@ -205,6 +231,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         <ReceiptPrinterContext.Provider
             value={{
                 printReceipt: printReceipt,
+                printSalesByDay: printSalesByDay,
             }}
             children={props.children}
         />
