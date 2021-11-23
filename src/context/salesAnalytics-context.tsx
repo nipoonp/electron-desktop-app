@@ -273,7 +273,8 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                     totalNumberOfOrdersCompleted++;
                 }
 
-                if (order.status === EOrderStatus.NEW || order.status === EOrderStatus.COMPLETED) {
+                //Not including refunded orders because we expect restaurants to refund an order before its been made.
+                if (order.status === EOrderStatus.NEW || order.status === EOrderStatus.COMPLETED || order.status === EOrderStatus.CANCELLED) {
                     const newSubTotal = dailySales[placedAt].totalAmount + order.subTotal;
                     const newQuantitySold = dailySales[placedAt].totalQuantity + 1;
                     const newOrders: IGET_RESTAURANT_ORDER_FRAGMENT[] = [...dailySales[placedAt].orders, order];
