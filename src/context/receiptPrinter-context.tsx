@@ -137,11 +137,15 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 const result: IPrintReceiptDataOutput = await ipcRenderer.invoke("RECEIPT_SALES_BY_DAY_PRINTER_DATA", printSalesByDayDataInput);
 
                 console.log("result", result);
+
+                if (result.error) {
+                    toast.error("There was an error printing your report");
+                }
             } catch (e) {
                 console.error(e);
-                toast.error("There was an error printing sales by day");
+                toast.error("There was an error printing your report");
                 await logError(
-                    "There was an error printing sales by day",
+                    "There was an error printing your report",
                     JSON.stringify({ error: e, printSalesByDayDataInput: printSalesByDayDataInput })
                 );
             }

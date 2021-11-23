@@ -1,12 +1,9 @@
-import "./salesAnalytics.scss";
-import "react-clock/dist/Clock.css";
-
 import { add, addDays, format } from "date-fns";
 import Papa, { UnparseObject } from "papaparse";
 import Clock from "react-clock";
 import { useHistory } from "react-router";
 
-import { IBestHour, IDailySales, IDayComaparisonExport, useSalesAnalytics } from "../../context/salesAnalytics-context";
+import { IBestHour, IDayComparisonExport, useSalesAnalytics } from "../../context/salesAnalytics-context";
 import { getTwelveHourFormat } from "../../model/util";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
 import { CachedImage } from "../../tabin/components/cachedImage";
@@ -18,15 +15,25 @@ import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 import moment from "moment";
 import { useRestaurant } from "../../context/restaurant-context";
-import { EOrderStatus } from "../../graphql/customQueries";
+import { EOrderStatus, IGET_RESTAURANT_REGISTER_PRINTER } from "../../graphql/customQueries";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { EReceiptPrinterType } from "../../model/model";
+import { SelectReceiptPrinterModal } from "../modals/selectReceiptPrinterModal";
+import { useState } from "react";
+import { useRegister } from "../../context/register-context";
+import { toast } from "../../tabin/components/toast";
+
+import "./salesAnalytics.scss";
+import "react-clock/dist/Clock.css";
+
 export const SalesAnalytics = () => {
     const history = useHistory();
     const { restaurant } = useRestaurant();
+    const { register } = useRegister();
     const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
     const { printSalesByDay } = useReceiptPrinter();
+    const [showSelectReceiptPrinterModal, setShowSelectReceiptPrinterModal] = useState(false);
 
     const graphColor = getComputedStyle(document.documentElement).getPropertyValue("--primary-color");
 
@@ -77,9 +84,15 @@ export const SalesAnalytics = () => {
         }
     };
 
-    const onPrintDailySales = () => {
-        if (salesAnalytics) {
-            printDailySalesData(salesAnalytics.dailySales);
+    const onPrintDailySales = async () => {
+        if (salesAnalytics && register) {
+            if (register.printers.items.length > 1) {
+                setShowSelectReceiptPrinterModal(true);
+            } else if (register.printers.items.length === 1) {
+                await printDailySalesData(register.printers.items[0].type, register.printers.items[0].address);
+            } else {
+                toast.error("No receipt printers configured");
+            }
         }
     };
 
@@ -134,6 +147,7 @@ export const SalesAnalytics = () => {
     const calculateDailySalesExport = () => {
         // CSV Date Comparison Export
         const dailySalesExport = {} as UnparseObject<Array<string | number>>;
+
         if (salesAnalytics) {
             dailySalesExport.fields = ["Date", ...salesAnalytics.exportSalesDates];
             dailySalesExport.data = [];
@@ -158,7 +172,9 @@ export const SalesAnalytics = () => {
         if (salesAnalytics && startDate) {
             hourlySalesExport.fields = ["Time", ...salesAnalytics.exportSalesDates];
             hourlySalesExport.data = [];
-            const hourlySales: IDayComaparisonExport = {};
+
+            const hourlySales: IDayComparisonExport = {};
+
             for (let i = 0; i < salesAnalytics.daysDifference; i++) {
                 const loopDateTime: Date = addDays(new Date(startDate), i);
 
@@ -193,6 +209,7 @@ export const SalesAnalytics = () => {
             salesAnalytics.orders.forEach((order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
                 const placedAt: string = format(new Date(order.placedAt), "yyyy-MM-dd");
                 const placedAtHour: string = format(new Date(order.placedAt), "HH");
+
                 if (order.status === EOrderStatus.NEW || order.status === EOrderStatus.COMPLETED) {
                     hourlySales[placedAt][placedAtHour] = {
                         name: placedAtHour,
@@ -220,17 +237,21 @@ export const SalesAnalytics = () => {
         if (salesAnalytics && startDate && restaurant) {
             categorySalesExport.fields = ["Category", ...salesAnalytics.exportSalesDates];
             categorySalesExport.data = [];
-            const categorySales: IDayComaparisonExport = {};
+
+            const categorySales: IDayComparisonExport = {};
             const categories = [...restaurant.categories.items].sort((a, b) => (a.name > b.name && 1) || -1);
+
             for (let i = 0; i < salesAnalytics.daysDifference; i++) {
                 const loopDateTime: Date = addDays(new Date(startDate), i);
                 const defaultCategorySale = {};
+
                 categories.forEach((c) => (defaultCategorySale[c.id] = { name: c.name, total: 0 }));
                 categorySales[format(new Date(loopDateTime), "yyyy-MM-dd")] = defaultCategorySale;
             }
 
             salesAnalytics.orders.forEach((order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
                 const placedAt: string = format(new Date(order.placedAt), "yyyy-MM-dd");
+
                 order.products &&
                     order.products.forEach((product) => {
                         if (!product.category) return;
@@ -267,17 +288,21 @@ export const SalesAnalytics = () => {
         if (salesAnalytics && startDate && restaurant) {
             productSalesExport.fields = ["Product", ...salesAnalytics.exportSalesDates];
             productSalesExport.data = [];
-            const productSales: IDayComaparisonExport = {};
+
+            const productSales: IDayComparisonExport = {};
             const products = [...restaurant.products.items].sort((a, b) => (a.name > b.name && 1) || -1);
+
             for (let i = 0; i < salesAnalytics.daysDifference; i++) {
                 const loopDateTime: Date = addDays(new Date(startDate), i);
                 const defaultProductSale = {};
+
                 products.forEach((p) => (defaultProductSale[p.id] = { name: p.name, total: 0 }));
                 productSales[format(new Date(loopDateTime), "yyyy-MM-dd")] = defaultProductSale;
             }
 
             salesAnalytics.orders.forEach((order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
                 const placedAt: string = format(new Date(order.placedAt), "yyyy-MM-dd");
+
                 order.products &&
                     order.products.forEach((product) => {
                         let newTotalAmount = productSales[placedAt][product.id].total + product.price * product.quantity;
@@ -314,11 +339,13 @@ export const SalesAnalytics = () => {
         downloadFile(csvData, fileName, ".csv");
     };
 
-    const printDailySalesData = (dailySales: IDailySales) => {
-        printSalesByDay({
-            printerType: EReceiptPrinterType.WIFI,
-            printerAddress: "192.168.1.210",
-            saleData: dailySales,
+    const printDailySalesData = async (type: EReceiptPrinterType, address: string) => {
+        if (!salesAnalytics) return;
+
+        await printSalesByDay({
+            printerType: type,
+            printerAddress: address,
+            saleData: salesAnalytics.dailySales,
         });
     };
 
@@ -329,6 +356,30 @@ export const SalesAnalytics = () => {
     if (loading) {
         return <FullScreenSpinner show={loading} text={"Loading sales analytics..."} />;
     }
+
+    const onCloseSelectReceiptPrinterModal = () => {
+        setShowSelectReceiptPrinterModal(false);
+    };
+
+    const onSelectPrinter = async (printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
+        await printDailySalesData(printer.type, printer.address);
+    };
+
+    const selectReceiptPrinterModal = () => {
+        return (
+            <>
+                {showSelectReceiptPrinterModal && (
+                    <SelectReceiptPrinterModal
+                        isOpen={showSelectReceiptPrinterModal}
+                        onClose={onCloseSelectReceiptPrinterModal}
+                        onSelectPrinter={onSelectPrinter}
+                    />
+                )}
+            </>
+        );
+    };
+
+    const modalsAndSpinners = <>{selectReceiptPrinterModal()}</>;
 
     return (
         <>
@@ -443,6 +494,7 @@ export const SalesAnalytics = () => {
                     <div className="text-center">No orders were placed during this period. Please select another date range.</div>
                 )}
             </SalesAnalyticsWrapper>
+            {modalsAndSpinners}
         </>
     );
 };

@@ -22,7 +22,7 @@ export interface ITopSoldItem {
     totalAmount: number;
 }
 
-export interface IDayComaparisonExport {
+export interface IDayComparisonExport {
     [date: string]: {
         [key: string]: {
             name: string;
