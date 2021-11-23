@@ -79,7 +79,7 @@ const renderActiveShape = (props) => {
 
 export const PieGraph = (props: { data; fill: string }) => {
     const { data, fill } = props;
-    const [activeIndex, setActiveIndex] = useState(0);
+    const [activeIndex, setActiveIndex] = useState(data.length-1);
     const onPieEnter = (_, index) => {
         setActiveIndex(index);
     };
@@ -93,6 +93,8 @@ export const PieGraph = (props: { data; fill: string }) => {
                     data={data}
                     cx="50%"
                     cy="50%"
+                    startAngle={90}
+                    endAngle={450}
                     innerRadius={50}
                     outerRadius={80}
                     fill={fill}

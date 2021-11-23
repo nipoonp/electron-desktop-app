@@ -17,7 +17,8 @@ import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { ProductModifier } from "../shared/productModifier";
 
-export const Orders = () => {
+export const Orders = (props: { date?: string }) => {
+    const dateParam = props.date;
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
     const { printReceipt } = useReceiptPrinter();
@@ -25,7 +26,7 @@ export const Orders = () => {
 
     const [showSpinner, setShowSpinner] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
-    const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+    const [date, setDate] = useState(dateParam ? dateParam : format(new Date(), "yyyy-MM-dd"));
 
     const { data: orders, error, loading } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant ? restaurant.id : "", date);
 
