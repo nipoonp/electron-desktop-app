@@ -738,10 +738,10 @@ export const Checkout = () => {
 
         return (
             <ProductModal
-                category={category}
-                product={product}
                 isOpen={showEditProductModal}
                 onClose={onCloseEditProductModal}
+                category={category}
+                product={product}
                 onUpdateItem={onUpdateItem}
                 editProduct={{
                     orderedModifiers: orderedModifiers,
@@ -758,10 +758,10 @@ export const Checkout = () => {
             return (
                 <ProductModal
                     isOpen={showProductModal}
+                    onClose={onCloseProductModal}
                     category={selectedCategoryForProductModal}
                     product={selectedProductForProductModal}
                     onAddItem={onAddItem}
-                    onClose={onCloseProductModal}
                 />
             );
         }
@@ -894,7 +894,7 @@ export const Checkout = () => {
 
     const orderSummary = (
         <OrderSummary
-            onNotesChange={onNotesChange}
+            products={products || []}
             onEditProduct={onEditProduct}
             onUpdateProductQuantity={onUpdateProductQuantity}
             onRemoveProduct={onRemoveProduct}
@@ -912,7 +912,7 @@ export const Checkout = () => {
         <>
             <div className="mt-10"></div>
             {title}
-            {restaurantOrderType}
+            {register && register.availableOrderTypes.length > 1 && restaurantOrderType}
             {promotionInformation}
             {tableNumber && <div className="mb-4">{restaurantTableNumber}</div>}
             <div className="separator-6"></div>

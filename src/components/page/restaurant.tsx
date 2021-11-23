@@ -22,6 +22,7 @@ import { useRestaurant } from "../../context/restaurant-context";
 import "./restaurant.scss";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { useAlert } from "../../tabin/components/alert";
+import { useRegister } from "../../context/register-context";
 
 interface IMostPopularProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -33,8 +34,9 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
     const history = useHistory();
     const { showAlert } = useAlert();
 
-    const { payments, clearCart, orderType, subTotal, products, cartProductQuantitiesById, addItem } = useCart();
+    const { payments, clearCart, orderType, subTotal, products, cartProductQuantitiesById, addItem, setOrderType } = useCart();
     const { setRestaurant } = useRestaurant();
+    const { register } = useRegister();
 
     // query
     const { data: restaurant, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(props.restaurantId);
@@ -143,8 +145,11 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
 
     // callbacks
     const onClickCart = () => {
-        if (orderType == null) {
+        if (register && register.availableOrderTypes.length > 1 && orderType == null) {
             history.push(orderTypePath);
+        } else if (register && register.availableOrderTypes.length == 1) {
+            setOrderType(register.availableOrderTypes[0]);
+            history.push(checkoutPath);
         } else {
             history.push(checkoutPath);
         }
@@ -222,10 +227,10 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
             {selectedCategoryForProductModal && selectedProductForProductModal && showProductModal && (
                 <ProductModal
                     isOpen={showProductModal}
+                    onClose={onCloseProductModal}
                     category={selectedCategoryForProductModal}
                     product={selectedProductForProductModal}
                     onAddItem={onAddItem}
-                    onClose={onCloseProductModal}
                 />
             )}
         </>

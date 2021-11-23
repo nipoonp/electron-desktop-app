@@ -27,6 +27,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         type
         number
         table
+        registerId
         products {
             id
             name
@@ -62,10 +63,49 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                     price
                     preSelectedQuantity
                     quantity
-                    productModifier {
+                    productModifiers {
                         id
                         name
                         price
+                        quantity
+                        notes
+                        image {
+                            bucket
+                            region
+                            key
+                            identityPoolId
+                        }
+                        category {
+                            id
+                            name
+                            image {
+                                bucket
+                                region
+                                key
+                                identityPoolId
+                            }
+                        }
+                        modifierGroups {
+                            id
+                            name
+                            choiceDuplicate
+                            choiceMin
+                            choiceMax
+                            hideForCustomer
+                            modifiers {
+                                id
+                                name
+                                price
+                                preSelectedQuantity
+                                quantity
+                                image {
+                                    bucket
+                                    region
+                                    key
+                                    identityPoolId
+                                }
+                            }
+                        }
                     }
                     image {
                         bucket
@@ -104,6 +144,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     type: EOrderType;
     number: string;
     table: string | null;
+    registerId: string;
     products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[];
 }
 
@@ -140,12 +181,6 @@ export interface IGET_RESTAURANT_ORDER_MODIFIER_FRAGMENT {
     price: number;
     preSelectedQuantity: number;
     quantity: number;
-    productModifier: IGET_RESTAURANT_ORDER_PRODUCT_MODIFIER_FRAGMENT | null;
+    productModifiers: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[] | null;
     image: IS3Object | null;
-}
-
-export interface IGET_RESTAURANT_ORDER_PRODUCT_MODIFIER_FRAGMENT {
-    id: string;
-    name: string;
-    price: number;
 }
