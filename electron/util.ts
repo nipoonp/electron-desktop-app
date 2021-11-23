@@ -67,15 +67,35 @@ export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0)
 export const convertCentsToDollars = (price: number) => (price / 100).toFixed(2);
 
 const getProductTotal = (product: ICartProduct) => {
-    let total = product.price;
+    let price = product.price;
 
-    product.modifierGroups.forEach((modifierGroup) => {
-        modifierGroup.modifiers.forEach((modifier) => {
-            total += modifier.price * modifier.quantity;
+    product.modifierGroups.forEach((mg) => {
+        mg.modifiers.forEach((m) => {
+            const changedQuantity = m.quantity - m.preSelectedQuantity;
+
+            if (changedQuantity > 0) {
+                price += m.price * changedQuantity;
+            }
+
+            if (m.productModifiers) {
+                m.productModifiers.forEach((productModifier) => {
+                    productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
+                        orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
+                            const changedQuantity = orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
+
+                            if (changedQuantity > 0) {
+                                price += orderedProductModifierModifier.price * changedQuantity;
+                            }
+                        });
+                    });
+                });
+            }
         });
     });
 
-    return total * product.quantity;
+    price = price * product.quantity;
+
+    return price;
 };
 
 export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: boolean): Promise<IPrintReceiptOutput> => {
@@ -216,6 +236,59 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
                 }
 
                 printer.println(mStr);
+
+                modifier.productModifiers &&
+                    modifier.productModifiers.forEach((productModifier_product: ICartProduct, index) => {
+                        if (modifier.productModifiers && modifier.productModifiers.length > 1) {
+                            if (index !== 0) {
+                                printer.newLine();
+                            }
+
+                            printer.print(`     `);
+                            printer.underlineThick(true);
+                            printer.print(`Selection ${index + 1}`);
+                            printer.println(``);
+                            printer.underlineThick(false);
+                        }
+
+                        if (productModifier_product.modifierGroups.length > 0) {
+                            productModifier_product.modifierGroups.forEach((productModifier_modifierGroup, index2) => {
+                                if (order.hideModifierGroupsForCustomer == true && productModifier_modifierGroup.hideForCustomer == true) {
+                                    return;
+                                }
+
+                                if (index2 !== 0) {
+                                    printer.newLine();
+                                }
+
+                                printer.bold(false);
+                                printer.println(`     ${productModifier_modifierGroup.name}`);
+
+                                productModifier_modifierGroup.modifiers.forEach((productModifier_modifier: ICartModifier) => {
+                                    const changedQuantity = productModifier_modifier.quantity - productModifier_modifier.preSelectedQuantity;
+                                    let mStr = "";
+
+                                    if (changedQuantity < 0 && Math.abs(changedQuantity) == productModifier_modifier.preSelectedQuantity) {
+                                        mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)} x ` : ""}${
+                                            productModifier_modifier.name
+                                        }`;
+                                    } else {
+                                        mStr = `${productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)} x ` : ""}${
+                                            productModifier_modifier.name
+                                        }`;
+                                    }
+
+                                    if (productModifier_modifier.price > 0 && changedQuantity > 0) {
+                                        mStr += ` ($${convertCentsToDollars(productModifier_modifier.price)})`;
+                                    }
+
+                                    printer.println(`     ${mStr}`);
+                                });
+                            });
+                        } else {
+                            printer.println(`     No extra selections made`);
+                        }
+                    });
             });
         });
 

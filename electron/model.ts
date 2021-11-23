@@ -25,8 +25,8 @@ export interface ICartModifier {
     price: number;
     preSelectedQuantity: number;
     quantity: number;
+    productModifiers: ICartProduct[] | null;
 }
-
 export interface IPreSelectedModifiers {
     [modifierGroupId: string]: ICartModifier[];
 }
