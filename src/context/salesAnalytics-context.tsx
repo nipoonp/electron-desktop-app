@@ -8,6 +8,7 @@ import {
     IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT,
     IGET_RESTAURANT_ORDER_FRAGMENT,
     IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT,
+    IOrderPaymentAmounts,
 } from "../graphql/customFragments";
 import { EOrderStatus, EOrderType, IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { getTwelveHourFormat, taxRate } from "../model/util";
@@ -21,7 +22,7 @@ export interface ITopSoldItem {
     totalAmount: number;
 }
 
-export interface IDayComaparisonExport {
+export interface IDayComparisonExport {
     [date: string]: {
         [key: string]: {
             name: string;
@@ -35,6 +36,7 @@ export interface IDailySales {
         totalAmount: number;
         totalQuantity: number;
         orders: IGET_RESTAURANT_ORDER_FRAGMENT[];
+        totalPaymentAmounts: IOrderPaymentAmounts;
     };
 }
 
@@ -64,6 +66,7 @@ export interface ISalesAnalytics {
     orders: IGET_RESTAURANT_ORDER_FRAGMENT[];
     daysDifference: number;
     dailySales: IDailySales;
+    totalPaymentAmounts: IOrderPaymentAmounts;
     subTotalNew: number;
     totalNumberOfOrdersNew: number;
     subTotalCancelled: number;
@@ -161,6 +164,12 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
 
             const dailySales: IDailySales = {};
 
+            let totalPaymentAmounts: IOrderPaymentAmounts = {
+                cash: 0,
+                eftpos: 0,
+                online: 0,
+            };
+
             let subTotalNew: number = 0;
             let totalNumberOfOrdersNew: number = 0;
 
@@ -227,6 +236,11 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                     totalAmount: 0,
                     totalQuantity: 0,
                     orders: [],
+                    totalPaymentAmounts: {
+                        cash: 0,
+                        eftpos: 0,
+                        online: 0,
+                    },
                 };
 
                 exportSalesDates.push(format(new Date(loopDateTime), "E, dd MMM"));
@@ -236,24 +250,31 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                 const placedAt: string = format(new Date(order.placedAt), "yyyy-MM-dd");
                 const placedAtHour: string = format(new Date(order.placedAt), "HH");
 
+                if (order.paymentAmounts) {
+                    totalPaymentAmounts.cash += order.paymentAmounts.cash;
+                    totalPaymentAmounts.eftpos += order.paymentAmounts.eftpos;
+                    totalPaymentAmounts.online += order.paymentAmounts.online;
+                }
+
                 // NEW ORDERS //////////////////////////////////
                 if (order.status === EOrderStatus.NEW) {
-                    subTotalNew += order.total;
+                    subTotalNew += order.subTotal;
                     totalNumberOfOrdersNew++;
                 }
 
                 // CANCELLED ORDERS //////////////////////////////////
                 if (order.status === EOrderStatus.CANCELLED) {
-                    subTotalCancelled += order.total;
+                    subTotalCancelled += order.subTotal;
                     totalNumberOfOrdersCancelled++;
                 }
 
                 if (order.status === EOrderStatus.COMPLETED) {
-                    subTotalCompleted += order.total;
+                    subTotalCompleted += order.subTotal;
                     totalNumberOfOrdersCompleted++;
                 }
 
-                if (order.status === EOrderStatus.NEW || order.status === EOrderStatus.COMPLETED) {
+                //Not including refunded orders because we expect restaurants to refund an order before its been made.
+                if (order.status === EOrderStatus.NEW || order.status === EOrderStatus.COMPLETED || order.status === EOrderStatus.CANCELLED) {
                     const newSubTotal = dailySales[placedAt].totalAmount + order.subTotal;
                     const newQuantitySold = dailySales[placedAt].totalQuantity + 1;
                     const newOrders: IGET_RESTAURANT_ORDER_FRAGMENT[] = [...dailySales[placedAt].orders, order];
@@ -262,11 +283,16 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                         totalAmount: newSubTotal,
                         totalQuantity: newQuantitySold,
                         orders: [...newOrders],
+                        totalPaymentAmounts: {
+                            cash: dailySales[placedAt].totalPaymentAmounts.cash + (order.paymentAmounts ? order.paymentAmounts.cash : 0),
+                            eftpos: dailySales[placedAt].totalPaymentAmounts.eftpos + (order.paymentAmounts ? order.paymentAmounts.eftpos : 0),
+                            online: dailySales[placedAt].totalPaymentAmounts.online + (order.paymentAmounts ? order.paymentAmounts.online : 0),
+                        },
                     };
 
                     // HOURLY SALES //////////////////////////////////
                     const newSaleQuantity = hourlySales[placedAtHour].totalQuantity + 1;
-                    const newSaleAmount = hourlySales[placedAtHour].totalAmount + order.total;
+                    const newSaleAmount = hourlySales[placedAtHour].totalAmount + order.subTotal;
 
                     hourlySales[placedAtHour] = {
                         hour: placedAtHour,
@@ -507,6 +533,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                 orders,
                 daysDifference,
                 dailySales,
+                totalPaymentAmounts,
                 subTotalNew,
                 totalNumberOfOrdersNew,
                 subTotalCancelled,

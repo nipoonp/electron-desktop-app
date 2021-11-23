@@ -15,6 +15,11 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         promotionId
         subTotal
         paid
+        paymentAmounts {
+            cash
+            eftpos
+            online
+        }
         onlineOrder
         guestCheckout
         orderScheduledAt
@@ -132,6 +137,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     promotionId: string | null;
     subTotal: number;
     paid: boolean;
+    paymentAmounts: IOrderPaymentAmounts | null;
     onlineOrder: boolean | null;
     guestCheckout: boolean | null;
     orderScheduledAt: string | null;
@@ -183,4 +189,10 @@ export interface IGET_RESTAURANT_ORDER_MODIFIER_FRAGMENT {
     quantity: number;
     productModifiers: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[] | null;
     image: IS3Object | null;
+}
+
+export interface IOrderPaymentAmounts {
+    cash: number;
+    eftpos: number;
+    online: number;
 }
