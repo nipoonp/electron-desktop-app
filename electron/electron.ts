@@ -11,8 +11,8 @@ import path from "path";
 import { dialog } from "electron";
 import { autoUpdater } from "electron-updater";
 import net from "net";
-import { encodeCommandBuffer, decodeCommandBuffer, printReceipt } from "./util";
-import { IOrderReceipt, IPrintReceiptDataOutput, IPrintReceiptOutput } from "./model";
+import { encodeCommandBuffer, decodeCommandBuffer, printReceipt, printSalesByDayReceipt } from "./util";
+import { IOrderReceipt, IPrintReceiptDataOutput, IPrintReceiptOutput, IPrintSalesByDayDataInput, IPrintSalesByDayDataOutput } from "./model";
 
 let mainWindow: any;
 let verifoneClient = new net.Socket();
@@ -46,7 +46,7 @@ function createWindow() {
     // Hide the menu bar
     mainWindow.setMenu(null);
 
-    // mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
 }
 
 const checkForUpdates = () => {
@@ -119,6 +119,21 @@ ipcMain.handle(
             return { error: null, order: order };
         } catch (e) {
             return { error: e, order: order };
+        }
+    }
+);
+
+ipcMain.handle(
+    "RECEIPT_SALES_BY_DAY_PRINTER_DATA",
+    async (event: any, printSalesByDayDataInput: IPrintSalesByDayDataInput): Promise<IPrintSalesByDayDataOutput> => {
+        try {
+            const result: IPrintReceiptOutput = await printSalesByDayReceipt(printSalesByDayDataInput);
+
+            if (result.error) return { error: result.error, printSalesByDayDataInput: printSalesByDayDataInput };
+
+            return { error: null, printSalesByDayDataInput: printSalesByDayDataInput };
+        } catch (e) {
+            return { error: e, printSalesByDayDataInput: printSalesByDayDataInput };
         }
     }
 );

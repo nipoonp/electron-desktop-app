@@ -42,6 +42,7 @@ export const DateRangePicker = (props: {
                         orientation={isMobile ? "vertical" : "horizontal"}
                         numberOfMonths={isMobile ? 1 : 2}
                         isOutsideRange={(day) => !isInclusivelyBeforeDay(day, moment())}
+                        minimumNights={0} //This lets us select same day for start and end dates
                     />
                 </div>
                 <FiX className="cursor-pointer" size={20} onClick={onClearDates} />
