@@ -1,3 +1,4 @@
+import { IOrderPaymentAmounts } from "../graphql/customFragments";
 import { IGET_RESTAURANT_PROMOTION, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object } from "../graphql/customQueries";
 
 export interface IPrintReceiptDataOutput {
@@ -141,6 +142,7 @@ export interface ICartPromotion {
 export interface ICartPaymentAmounts {
     cash: number;
     eftpos: number;
+    online: number;
 }
 
 export interface ICartPayment {
@@ -183,6 +185,18 @@ export interface IOrderReceipt {
     table: string | null;
     placedAt: string;
     orderScheduledAt: string | null;
+}
+
+export interface IPrintSalesByDayDataInput {
+    printerType: EReceiptPrinterType;
+    printerAddress: string;
+    saleData: {
+        [date: string]: {
+            totalAmount: number;
+            totalQuantity: number;
+            totalPaymentAmounts: IOrderPaymentAmounts;
+        };
+    };
 }
 
 export interface IMatchingUpSellCrossSellCategoryItem {

@@ -37,7 +37,6 @@ export const SalesAnalyticsHourlySales = () => {
                                     <tr>
                                         <th className="text-left">Time</th>
                                         <th className="text-right">Orders</th>
-                                        <th className="text-right">Net</th>
                                         <th className="text-right">Tax</th>
                                         <th className="text-right">Total</th>
                                     </tr>
@@ -49,9 +48,6 @@ export const SalesAnalyticsHourlySales = () => {
                                             <tr key={index}>
                                                 <td className="sales-analytics-table-time-cell">{getTwelveHourFormat(Number(hour))}</td>
                                                 <td className="text-right">{sale.totalQuantity}</td>
-                                                <td className="text-right">{`$${convertCentsToDollars(
-                                                    (sale.totalAmount * (100 - taxRate)) / 100
-                                                )}`}</td>
                                                 <td className="text-right">{`$${convertCentsToDollars(sale.totalAmount * (taxRate / 100))}`}</td>
                                                 <td className="text-right">{`$${convertCentsToDollars(sale.totalAmount)}`}</td>
                                             </tr>

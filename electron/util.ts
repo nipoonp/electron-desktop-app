@@ -1,5 +1,13 @@
 import { printer as ThermalPrinter, types as PrinterTypes } from "node-thermal-printer";
-import { IOrderReceipt, ICartProduct, ICartModifierGroup, ICartModifier, EReceiptPrinterType, IPrintReceiptOutput } from "./model";
+import {
+    IOrderReceipt,
+    ICartProduct,
+    ICartModifierGroup,
+    ICartModifier,
+    EReceiptPrinterType,
+    IPrintReceiptOutput,
+    IPrintSalesByDayDataInput,
+} from "./model";
 import usbPrinter from "@thiagoelg/node-printer";
 import { format } from "date-fns";
 
@@ -353,6 +361,74 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
             await printer.execute();
         } else if (order.printerType == EReceiptPrinterType.USB) {
             await usbPrinterExecute(order.printerAddress, printer.getBuffer());
+            printer.clear();
+        } else {
+            //Bluetooth
+        }
+
+        return { error: null };
+    } catch (e) {
+        return { error: e };
+    }
+};
+
+export const printSalesByDayReceipt = async (printSalesByDayDataInput: IPrintSalesByDayDataInput): Promise<IPrintReceiptOutput> => {
+    let printer;
+
+    if (printSalesByDayDataInput.printerType == EReceiptPrinterType.WIFI) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            interface: `tcp://${printSalesByDayDataInput.printerAddress}`,
+        });
+    } else if (printSalesByDayDataInput.printerType == EReceiptPrinterType.USB) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+        });
+    } else {
+        //Bluetooth
+    }
+
+    printer.alignCenter();
+    printer.bold(true);
+    printer.setTextSize(1, 1);
+    printer.println("Sales Report");
+    printer.setTextNormal();
+    printer.bold(false);
+
+    printer.alignLeft();
+
+    printer.newLine();
+    printer.println(`Printed On: ${format(new Date(), "dd MMM yyyy HH:mm aa")}`);
+    printer.newLine();
+
+    Object.entries(printSalesByDayDataInput.saleData).forEach(([date, data], index) => {
+        printer.bold(true);
+        printer.underline(true);
+        printer.println(date);
+        printer.underline(false);
+        printer.bold(false);
+
+        printer.println(`Cash: $${convertCentsToDollars(data.totalPaymentAmounts.cash)}`);
+        printer.println(`Eftpos: $${convertCentsToDollars(data.totalPaymentAmounts.eftpos)}`);
+        printer.println(`Online: $${convertCentsToDollars(data.totalPaymentAmounts.online)}`);
+
+        printer.bold(true);
+        printer.println(`Total: $${convertCentsToDollars(data.totalAmount)}`);
+        printer.println(`Number of Orders: ${data.totalQuantity}`);
+
+        printer.bold(false);
+        printer.newLine();
+    });
+
+    printer.partialCut();
+
+    try {
+        if (printSalesByDayDataInput.printerType == EReceiptPrinterType.WIFI) {
+            await printer.execute();
+        } else if (printSalesByDayDataInput.printerType == EReceiptPrinterType.USB) {
+            await usbPrinterExecute(printSalesByDayDataInput.printerAddress, printer.getBuffer());
             printer.clear();
         } else {
             //Bluetooth

@@ -1,37 +1,47 @@
-import './salesAnalytics.scss';
-import 'react-clock/dist/Clock.css';
+import { add, addDays, format } from "date-fns";
+import Papa, { UnparseObject } from "papaparse";
+import Clock from "react-clock";
+import { useHistory } from "react-router";
 
-import { add, addDays, format } from 'date-fns';
-import Papa, { UnparseObject } from 'papaparse';
-import Clock from 'react-clock';
-import { useHistory } from 'react-router';
+import { IBestHour, IDayComparisonExport, useSalesAnalytics } from "../../context/salesAnalytics-context";
+import { getTwelveHourFormat } from "../../model/util";
+import { getCloudFrontDomainName } from "../../private/aws-custom";
+import { CachedImage } from "../../tabin/components/cachedImage";
+import { Card } from "../../tabin/components/card";
+import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
+import { convertCentsToDollars, downloadFile, getDollarString } from "../../util/util";
+import { salesAnalyticsDailySalesPath, salesAnalyticsHourlySalesPath, salesAnalyticsTopCategoryPath, salesAnalyticsTopProductPath } from "../main";
+import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
+import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
+import moment from "moment";
+import { useRestaurant } from "../../context/restaurant-context";
+import { EOrderStatus, IGET_RESTAURANT_REGISTER_PRINTER } from "../../graphql/customQueries";
+import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
+import { useReceiptPrinter } from "../../context/receiptPrinter-context";
+import { EReceiptPrinterType } from "../../model/model";
+import { SelectReceiptPrinterModal } from "../modals/selectReceiptPrinterModal";
+import { useState } from "react";
+import { useRegister } from "../../context/register-context";
+import { toast } from "../../tabin/components/toast";
 
-import { IBestHour, IDayComaparisonExport, useSalesAnalytics } from '../../context/salesAnalytics-context';
-import { getTwelveHourFormat } from '../../model/util';
-import { getCloudFrontDomainName } from '../../private/aws-custom';
-import { CachedImage } from '../../tabin/components/cachedImage';
-import { Card } from '../../tabin/components/card';
-import { FullScreenSpinner } from '../../tabin/components/fullScreenSpinner';
-import { convertCentsToDollars, downloadFile, getDollarString } from '../../util/util';
-import { salesAnalyticsDailySalesPath, salesAnalyticsHourlySalesPath, salesAnalyticsTopCategoryPath, salesAnalyticsTopProductPath } from '../main';
-import { LineGraph } from './salesAnalytics/salesAnalyticsGraphs';
-import { SalesAnalyticsWrapper } from './salesAnalytics/salesAnalyticsWrapper';
-import moment from 'moment';
-import { useRestaurant } from '../../context/restaurant-context';
-import { EOrderStatus } from '../../graphql/customQueries';
-import { IGET_RESTAURANT_ORDER_FRAGMENT } from '../../graphql/customFragments';
+import "./salesAnalytics.scss";
+import "react-clock/dist/Clock.css";
+
 export const SalesAnalytics = () => {
     const history = useHistory();
     const { restaurant } = useRestaurant();
+    const { register } = useRegister();
     const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
+    const { printSalesByDay } = useReceiptPrinter();
+    const [showSelectReceiptPrinterModal, setShowSelectReceiptPrinterModal] = useState(false);
 
-    const graphColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-color');
+    const graphColor = getComputedStyle(document.documentElement).getPropertyValue("--primary-color");
 
     const BestHourCard = (props: { bestHour: IBestHour }) => {
         const { bestHour } = props;
 
         return (
-            <div className="card" style={{ textAlign: 'center' }}>
+            <div className="card" style={{ textAlign: "center" }}>
                 <div className="text-uppercase">Best Hour</div>
                 <div className="besthour-clock-wrapper m-2">
                     <Clock
@@ -70,7 +80,19 @@ export const SalesAnalytics = () => {
 
     const onExportDailySales = () => {
         if (salesAnalytics) {
-            downloadCSVFile(salesAnalytics.dailySalesExport, `${moment(startDate).format('DD-MM')}_${moment(endDate).format('DD-MM')}_Sales_By_Day`);
+            downloadCSVFile(salesAnalytics.dailySalesExport, `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_By_Day`);
+        }
+    };
+
+    const onPrintDailySales = async () => {
+        if (salesAnalytics && register) {
+            if (register.printers.items.length > 1) {
+                setShowSelectReceiptPrinterModal(true);
+            } else if (register.printers.items.length === 1) {
+                await printDailySalesData(register.printers.items[0].type, register.printers.items[0].address);
+            } else {
+                toast.error("No receipt printers configured");
+            }
         }
     };
 
@@ -78,7 +100,7 @@ export const SalesAnalytics = () => {
         if (salesAnalytics) {
             downloadCSVFile(
                 salesAnalytics.hourlySalesExport,
-                `${moment(startDate).format('DD-MM')}_${moment(endDate).format('DD-MM')}_Sales_By_Hour`
+                `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_By_Hour`
             );
         }
     };
@@ -87,7 +109,7 @@ export const SalesAnalytics = () => {
         if (salesAnalytics) {
             downloadCSVFile(
                 salesAnalytics.mostSoldCategoriesExport,
-                `${moment(startDate).format('DD-MM')}_${moment(endDate).format('DD-MM')}_Sales_By_Category`
+                `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_By_Category`
             );
         }
     };
@@ -96,7 +118,7 @@ export const SalesAnalytics = () => {
         if (salesAnalytics) {
             downloadCSVFile(
                 salesAnalytics.mostSoldProductsExport,
-                `${moment(startDate).format('DD-MM')}_${moment(endDate).format('DD-MM')}_Sales_By_Product`
+                `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_By_Product`
             );
         }
     };
@@ -105,19 +127,19 @@ export const SalesAnalytics = () => {
         if (salesAnalytics) {
             downloadCSVFile(
                 calculateDailySalesExport(),
-                `${moment(startDate).format('DD-MM')}_${moment(endDate).format('DD-MM')}_Sales_Comparison_By_Day`
+                `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_Comparison_By_Day`
             );
             downloadCSVFile(
                 calculateHourlySalesExport(),
-                `${moment(startDate).format('DD-MM')}_${moment(endDate).format('DD-MM')}_Sales_Comparison_By_Hour`
+                `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_Comparison_By_Hour`
             );
             downloadCSVFile(
                 calculateCategorySalesExport(),
-                `${moment(startDate).format('DD-MM')}_${moment(endDate).format('DD-MM')}_Sales_Comparison_By_Category`
+                `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_Comparison_By_Category`
             );
             downloadCSVFile(
                 calculateProductSalesExport(),
-                `${moment(startDate).format('DD-MM')}_${moment(endDate).format('DD-MM')}_Sales_Comparison_By_Product`
+                `${moment(startDate).format("DD-MM")}_${moment(endDate).format("DD-MM")}_Sales_Comparison_By_Product`
             );
         }
     };
@@ -125,13 +147,14 @@ export const SalesAnalytics = () => {
     const calculateDailySalesExport = () => {
         // CSV Date Comparison Export
         const dailySalesExport = {} as UnparseObject<Array<string | number>>;
+
         if (salesAnalytics) {
-            dailySalesExport.fields = ['Date', ...salesAnalytics.exportSalesDates];
+            dailySalesExport.fields = ["Date", ...salesAnalytics.exportSalesDates];
             dailySalesExport.data = [];
-            dailySalesExport.data.push(['Orders']);
-            dailySalesExport.data.push(['Net']);
-            dailySalesExport.data.push(['Tax']);
-            dailySalesExport.data.push(['Total']);
+            dailySalesExport.data.push(["Orders"]);
+            dailySalesExport.data.push(["Net"]);
+            dailySalesExport.data.push(["Tax"]);
+            dailySalesExport.data.push(["Total"]);
 
             salesAnalytics.dailySalesExport.data.forEach((d) => {
                 dailySalesExport.data[0] = [...dailySalesExport.data[0], d[1]];
@@ -147,43 +170,46 @@ export const SalesAnalytics = () => {
     const calculateHourlySalesExport = () => {
         const hourlySalesExport = {} as UnparseObject<Array<string | number>>;
         if (salesAnalytics && startDate) {
-            hourlySalesExport.fields = ['Time', ...salesAnalytics.exportSalesDates];
+            hourlySalesExport.fields = ["Time", ...salesAnalytics.exportSalesDates];
             hourlySalesExport.data = [];
-            const hourlySales: IDayComaparisonExport = {};
+
+            const hourlySales: IDayComparisonExport = {};
+
             for (let i = 0; i < salesAnalytics.daysDifference; i++) {
                 const loopDateTime: Date = addDays(new Date(startDate), i);
 
-                hourlySales[format(new Date(loopDateTime), 'yyyy-MM-dd')] = {
-                    '00': { name: '00', total: 0 },
-                    '01': { name: '01', total: 0 },
-                    '02': { name: '02', total: 0 },
-                    '03': { name: '03', total: 0 },
-                    '04': { name: '04', total: 0 },
-                    '05': { name: '05', total: 0 },
-                    '06': { name: '06', total: 0 },
-                    '07': { name: '07', total: 0 },
-                    '08': { name: '08', total: 0 },
-                    '09': { name: '09', total: 0 },
-                    '10': { name: '10', total: 0 },
-                    '11': { name: '11', total: 0 },
-                    '12': { name: '12', total: 0 },
-                    '13': { name: '13', total: 0 },
-                    '14': { name: '14', total: 0 },
-                    '15': { name: '15', total: 0 },
-                    '16': { name: '16', total: 0 },
-                    '17': { name: '17', total: 0 },
-                    '18': { name: '18', total: 0 },
-                    '19': { name: '19', total: 0 },
-                    '20': { name: '20', total: 0 },
-                    '21': { name: '21', total: 0 },
-                    '22': { name: '22', total: 0 },
-                    '23': { name: '23', total: 0 },
+                hourlySales[format(new Date(loopDateTime), "yyyy-MM-dd")] = {
+                    "00": { name: "00", total: 0 },
+                    "01": { name: "01", total: 0 },
+                    "02": { name: "02", total: 0 },
+                    "03": { name: "03", total: 0 },
+                    "04": { name: "04", total: 0 },
+                    "05": { name: "05", total: 0 },
+                    "06": { name: "06", total: 0 },
+                    "07": { name: "07", total: 0 },
+                    "08": { name: "08", total: 0 },
+                    "09": { name: "09", total: 0 },
+                    "10": { name: "10", total: 0 },
+                    "11": { name: "11", total: 0 },
+                    "12": { name: "12", total: 0 },
+                    "13": { name: "13", total: 0 },
+                    "14": { name: "14", total: 0 },
+                    "15": { name: "15", total: 0 },
+                    "16": { name: "16", total: 0 },
+                    "17": { name: "17", total: 0 },
+                    "18": { name: "18", total: 0 },
+                    "19": { name: "19", total: 0 },
+                    "20": { name: "20", total: 0 },
+                    "21": { name: "21", total: 0 },
+                    "22": { name: "22", total: 0 },
+                    "23": { name: "23", total: 0 },
                 };
             }
 
             salesAnalytics.orders.forEach((order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
-                const placedAt: string = format(new Date(order.placedAt), 'yyyy-MM-dd');
-                const placedAtHour: string = format(new Date(order.placedAt), 'HH');
+                const placedAt: string = format(new Date(order.placedAt), "yyyy-MM-dd");
+                const placedAtHour: string = format(new Date(order.placedAt), "HH");
+
                 if (order.status === EOrderStatus.NEW || order.status === EOrderStatus.COMPLETED) {
                     hourlySales[placedAt][placedAtHour] = {
                         name: placedAtHour,
@@ -209,19 +235,23 @@ export const SalesAnalytics = () => {
     const calculateCategorySalesExport = () => {
         const categorySalesExport = {} as UnparseObject<Array<string | number>>;
         if (salesAnalytics && startDate && restaurant) {
-            categorySalesExport.fields = ['Category', ...salesAnalytics.exportSalesDates];
+            categorySalesExport.fields = ["Category", ...salesAnalytics.exportSalesDates];
             categorySalesExport.data = [];
-            const categorySales: IDayComaparisonExport = {};
+
+            const categorySales: IDayComparisonExport = {};
             const categories = [...restaurant.categories.items].sort((a, b) => (a.name > b.name && 1) || -1);
+
             for (let i = 0; i < salesAnalytics.daysDifference; i++) {
                 const loopDateTime: Date = addDays(new Date(startDate), i);
                 const defaultCategorySale = {};
+
                 categories.forEach((c) => (defaultCategorySale[c.id] = { name: c.name, total: 0 }));
-                categorySales[format(new Date(loopDateTime), 'yyyy-MM-dd')] = defaultCategorySale;
+                categorySales[format(new Date(loopDateTime), "yyyy-MM-dd")] = defaultCategorySale;
             }
 
             salesAnalytics.orders.forEach((order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
-                const placedAt: string = format(new Date(order.placedAt), 'yyyy-MM-dd');
+                const placedAt: string = format(new Date(order.placedAt), "yyyy-MM-dd");
+
                 order.products &&
                     order.products.forEach((product) => {
                         if (!product.category) return;
@@ -256,19 +286,23 @@ export const SalesAnalytics = () => {
     const calculateProductSalesExport = () => {
         const productSalesExport = {} as UnparseObject<Array<string | number>>;
         if (salesAnalytics && startDate && restaurant) {
-            productSalesExport.fields = ['Product', ...salesAnalytics.exportSalesDates];
+            productSalesExport.fields = ["Product", ...salesAnalytics.exportSalesDates];
             productSalesExport.data = [];
-            const productSales: IDayComaparisonExport = {};
+
+            const productSales: IDayComparisonExport = {};
             const products = [...restaurant.products.items].sort((a, b) => (a.name > b.name && 1) || -1);
+
             for (let i = 0; i < salesAnalytics.daysDifference; i++) {
                 const loopDateTime: Date = addDays(new Date(startDate), i);
                 const defaultProductSale = {};
+
                 products.forEach((p) => (defaultProductSale[p.id] = { name: p.name, total: 0 }));
-                productSales[format(new Date(loopDateTime), 'yyyy-MM-dd')] = defaultProductSale;
+                productSales[format(new Date(loopDateTime), "yyyy-MM-dd")] = defaultProductSale;
             }
 
             salesAnalytics.orders.forEach((order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
-                const placedAt: string = format(new Date(order.placedAt), 'yyyy-MM-dd');
+                const placedAt: string = format(new Date(order.placedAt), "yyyy-MM-dd");
+
                 order.products &&
                     order.products.forEach((product) => {
                         let newTotalAmount = productSales[placedAt][product.id].total + product.price * product.quantity;
@@ -301,8 +335,18 @@ export const SalesAnalytics = () => {
 
     const downloadCSVFile = (data: UnparseObject<Array<string | number>>, fileName: string) => {
         const csv = Papa.unparse(data);
-        var csvData = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        downloadFile(csvData, fileName, '.csv');
+        var csvData = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        downloadFile(csvData, fileName, ".csv");
+    };
+
+    const printDailySalesData = async (type: EReceiptPrinterType, address: string) => {
+        if (!salesAnalytics) return;
+
+        await printSalesByDay({
+            printerType: type,
+            printerAddress: address,
+            saleData: salesAnalytics.dailySales,
+        });
     };
 
     if (error) {
@@ -310,8 +354,32 @@ export const SalesAnalytics = () => {
     }
 
     if (loading) {
-        return <FullScreenSpinner show={loading} text={'Loading sales analytics...'} />;
+        return <FullScreenSpinner show={loading} text={"Loading sales analytics..."} />;
     }
+
+    const onCloseSelectReceiptPrinterModal = () => {
+        setShowSelectReceiptPrinterModal(false);
+    };
+
+    const onSelectPrinter = async (printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
+        await printDailySalesData(printer.type, printer.address);
+    };
+
+    const selectReceiptPrinterModal = () => {
+        return (
+            <>
+                {showSelectReceiptPrinterModal && (
+                    <SelectReceiptPrinterModal
+                        isOpen={showSelectReceiptPrinterModal}
+                        onClose={onCloseSelectReceiptPrinterModal}
+                        onSelectPrinter={onSelectPrinter}
+                    />
+                )}
+            </>
+        );
+    };
+
+    const modalsAndSpinners = <>{selectReceiptPrinterModal()}</>;
 
     return (
         <>
@@ -321,9 +389,9 @@ export const SalesAnalytics = () => {
                 ) : salesAnalytics && salesAnalytics.totalSoldItems > 0 ? (
                     <div className="sales-analytics-grid">
                         <div className="sales-analytics-grid-item1">
-                            <Card title="Sales By Day" onOpen={onClickDailySales} onExport={onExportDailySales}>
-                                <div style={{ width: '100%', height: '300px' }}>
-                                    <LineGraph xAxis="date" lines={['sales']} graphData={salesAnalytics.dayByGraphData} fill={graphColor} />
+                            <Card title="Sales By Day" onOpen={onClickDailySales} onExport={onExportDailySales} onPrint={onPrintDailySales}>
+                                <div style={{ width: "100%", height: "300px" }}>
+                                    <LineGraph xAxis="date" lines={["sales"]} graphData={salesAnalytics.dayByGraphData} fill={graphColor} />
                                 </div>
                             </Card>
                         </div>
@@ -351,8 +419,8 @@ export const SalesAnalytics = () => {
                         </div>
                         <div className="sales-analytics-grid-item3">
                             <Card title="Sales By Hour" onOpen={onClickHourlySales} onExport={onExportHourlySales}>
-                                <div style={{ width: '100%', height: '250px' }}>
-                                    <LineGraph xAxis="hour" lines={['sales']} graphData={salesAnalytics.hourByGraphData} fill={graphColor} />
+                                <div style={{ width: "100%", height: "250px" }}>
+                                    <LineGraph xAxis="hour" lines={["sales"]} graphData={salesAnalytics.hourByGraphData} fill={graphColor} />
                                 </div>
                             </Card>
                         </div>
@@ -364,7 +432,7 @@ export const SalesAnalytics = () => {
                         {salesAnalytics.topSoldCategory && (
                             <div className="sales-analytics-grid-item5">
                                 <Card title="Top Category" onOpen={onClickTopCategory} onExport={onExportMostSoldCategory}>
-                                    <div className="top-item-container" style={{ alignItems: 'center' }}>
+                                    <div className="top-item-container" style={{ alignItems: "center" }}>
                                         <div className="top-item-image text-center">
                                             {salesAnalytics.topSoldCategory.item?.image && (
                                                 <CachedImage
@@ -394,7 +462,7 @@ export const SalesAnalytics = () => {
                         {salesAnalytics.topSoldProduct && (
                             <div className="sales-analytics-grid-item6">
                                 <Card title="Top Product" onOpen={onClickTopProduct} onExport={onExportMostSoldProduct}>
-                                    <div className="top-item-container" style={{ alignItems: 'center' }}>
+                                    <div className="top-item-container" style={{ alignItems: "center" }}>
                                         <div className="top-item-image text-center">
                                             {salesAnalytics.topSoldProduct.item?.image && (
                                                 <CachedImage
@@ -426,6 +494,7 @@ export const SalesAnalytics = () => {
                     <div className="text-center">No orders were placed during this period. Please select another date range.</div>
                 )}
             </SalesAnalyticsWrapper>
+            {modalsAndSpinners}
         </>
     );
 };
