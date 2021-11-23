@@ -1,5 +1,5 @@
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { convertCentsToDollars, convertCentsToDollarsReturnFloat } from "../../util/util";
+import { convertCentsToDollars } from "../../util/util";
 import { PieGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { Table } from "../../tabin/components/table";
 import { useSalesAnalytics } from "../../context/salesAnalytics-context";
@@ -7,6 +7,9 @@ import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 
 import "./salesAnalytics.scss";
 import { taxRate } from "../../model/util";
+import { IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../../graphql/customFragments";
+import { CachedImage } from "../../tabin/components/cachedImage";
+import { getCloudFrontDomainName } from "../../private/aws-custom";
 
 export const SalesAnalyticsTopProduct = () => {
     const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
@@ -23,7 +26,7 @@ export const SalesAnalyticsTopProduct = () => {
 
     return (
         <>
-            <SalesAnalyticsWrapper title="Sales By Hour" showBackButton={true}>
+            <SalesAnalyticsWrapper title="Sales By Product" showBackButton={true}>
                 {!startDate || !endDate ? (
                     <div className="text-center">Please select a start and end date.</div>
                 ) : salesAnalytics && salesAnalytics.totalSoldItems > 0 ? (
@@ -35,7 +38,9 @@ export const SalesAnalyticsTopProduct = () => {
                             <Table>
                                 <thead>
                                     <tr>
+                                        <th></th>
                                         <th className="text-left">Product</th>
+                                        <th className="text-left">Category</th>
                                         <th className="text-right">Quantity</th>
                                         <th className="text-right">Net</th>
                                         <th className="text-right">Tax</th>
@@ -44,20 +49,41 @@ export const SalesAnalyticsTopProduct = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {Object.entries(salesAnalytics.mostSoldProducts).map(([productId, product]) => (
-                                        <tr key={productId}>
-                                            <td className="text-left"> {product.item.name}</td>
-                                            <td className="text-right"> {product.totalQuantity}</td>
-                                            <td className="text-right">{`$${convertCentsToDollars(
-                                                (product.totalAmount * (100 - taxRate)) / 100
-                                            )}`}</td>
-                                            <td className="text-right">{`$${convertCentsToDollars(product.totalAmount * (taxRate / 100))}`}</td>
-                                            <td className="text-right">{`$${convertCentsToDollars(product.totalAmount)}`}</td>
-                                            <td className="text-right">{`${((product.totalAmount * 100) / salesAnalytics.subTotalCompleted).toFixed(
-                                                2
-                                            )}%`}</td>
-                                        </tr>
-                                    ))}
+                                    {Object.entries(salesAnalytics.mostSoldProducts)
+                                        .sort((a, b) => b[1].totalAmount - a[1].totalAmount)
+                                        .map(([productId, product]) => {
+                                            const pItem = product.item as IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT;
+
+                                            return (
+                                                <tr key={productId}>
+                                                    <td className="sales-analytics-table-image-cell">
+                                                        {pItem.image && (
+                                                            <CachedImage
+                                                                url={`${getCloudFrontDomainName()}/protected/${pItem.image.identityPoolId}/${
+                                                                    pItem.image.key
+                                                                }`}
+                                                                className="sales-analytics-table-image"
+                                                                alt="product-image"
+                                                            />
+                                                        )}
+                                                    </td>
+                                                    <td className="text-left"> {product.item.name}</td>
+                                                    <td className="text-left"> {pItem.category && pItem.category.name}</td>
+                                                    <td className="text-right"> {product.totalQuantity}</td>
+                                                    <td className="text-right">{`$${convertCentsToDollars(
+                                                        (product.totalAmount * (100 - taxRate)) / 100
+                                                    )}`}</td>
+                                                    <td className="text-right">{`$${convertCentsToDollars(
+                                                        product.totalAmount * (taxRate / 100)
+                                                    )}`}</td>
+                                                    <td className="text-right">{`$${convertCentsToDollars(product.totalAmount)}`}</td>
+                                                    <td className="text-right">{`${(
+                                                        (product.totalAmount * 100) /
+                                                        (salesAnalytics.subTotalCompleted + salesAnalytics.subTotalNew)
+                                                    ).toFixed(2)}%`}</td>
+                                                </tr>
+                                            );
+                                        })}
                                 </tbody>
                             </Table>
                         </div>

@@ -1,15 +1,15 @@
-import { isWithinInterval } from "date-fns";
 import { createContext, useContext, useEffect, useState } from "react";
-import {
-    EDiscountType,
-    EPromotionType,
-    ERegisterType,
-    IGET_RESTAURANT_PROMOTION,
-    IGET_RESTAURANT_PROMOTION_DISCOUNT,
-    IGET_RESTAURANT_PROMOTION_ITEMS,
-} from "../graphql/customQueries";
+import { EPromotionType, IGET_RESTAURANT_PROMOTION } from "../graphql/customQueries";
 
-import { ICartProduct, EOrderType, ICartItemQuantitiesById, ICartPromotion, CheckIfPromotionValidResponse } from "../model/model";
+import {
+    ICartProduct,
+    EOrderType,
+    ICartItemQuantitiesById,
+    ICartPromotion,
+    CheckIfPromotionValidResponse,
+    ICartPaymentAmounts,
+    ICartPayment,
+} from "../model/model";
 import { getMatchingPromotionProducts, processPromotionDiscounts, isPromotionAvailable, checkIfPromotionValid } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
 
@@ -23,7 +23,10 @@ const initialCartModifierQuantitiesById = {};
 const initialUserAppliedPromotionCode = null;
 const initialPromotion = null;
 const initialTotal = 0;
+const initialPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0 };
 const initialSubTotal = 0;
+const initialPayments = [];
+const initialTransactionEftposReceipts = "";
 
 type ContextProps = {
     // restaurant: IGET_RESTAURANT | null;
@@ -48,6 +51,12 @@ type ContextProps = {
     removeUserAppliedPromotion: () => void;
     total: number;
     subTotal: number;
+    payments: ICartPayment[];
+    setPayments: (payment: ICartPayment[]) => void;
+    paymentAmounts: ICartPaymentAmounts;
+    setPaymentAmounts: (paymentAmounts: ICartPaymentAmounts) => void;
+    transactionEftposReceipts: string;
+    setTransactionEftposReceipts: (receipt: string) => void;
 };
 
 const CartContext = createContext<ContextProps>({
@@ -73,6 +82,12 @@ const CartContext = createContext<ContextProps>({
     removeUserAppliedPromotion: () => {},
     total: initialTotal,
     subTotal: initialSubTotal,
+    payments: initialPayments,
+    setPayments: () => {},
+    paymentAmounts: initialPaymentAmounts,
+    setPaymentAmounts: () => {},
+    transactionEftposReceipts: initialTransactionEftposReceipts,
+    setTransactionEftposReceipts: () => {},
 });
 
 const CartProvider = (props: { children: React.ReactNode }) => {
@@ -83,7 +98,11 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
     const [notes, _setNotes] = useState<string>(initialNotes);
     const [total, _setTotal] = useState<number>(initialTotal);
+    const [paymentAmounts, _setPaymentAmounts] = useState<ICartPaymentAmounts>(initialPaymentAmounts);
     const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
+    const [payments, _setPayments] = useState<ICartPayment[]>(initialPayments);
+    const [transactionEftposReceipts, _setTransactionEftposReceipts] = useState<string>(initialTransactionEftposReceipts);
+
     const [userAppliedPromotionCode, _setUserAppliedPromotionCode] = useState<string | null>(initialUserAppliedPromotionCode);
     const [promotion, _setPromotion] = useState<ICartPromotion | null>(initialPromotion);
 
@@ -259,7 +278,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         const newCartCategoryQuantitiesById: ICartItemQuantitiesById = {};
         const newCartProductQuantitiesById: ICartItemQuantitiesById = {};
         const newCartModifierQuantitiesById: ICartItemQuantitiesById = {};
-
         products &&
             products.forEach((product) => {
                 if (newCartCategoryQuantitiesById[product.category.id]) {
@@ -274,7 +292,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                         categoryId: null,
                     };
                 }
-
                 //We do this because there could be the same product in the products array twice.
                 if (newCartProductQuantitiesById[product.id]) {
                     newCartProductQuantitiesById[product.id].quantity += product.quantity;
@@ -287,21 +304,22 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                         categoryId: product.category.id,
                     };
                 }
-
                 product.modifierGroups.forEach((modifierGroup) => {
                     modifierGroup.modifiers.forEach((modifier) => {
-                        if (modifier.productModifier) {
-                            if (newCartProductQuantitiesById[modifier.productModifier.id]) {
-                                newCartProductQuantitiesById[modifier.productModifier.id].quantity += product.quantity * modifier.quantity;
-                            } else {
-                                newCartProductQuantitiesById[modifier.productModifier.id] = {
-                                    id: product.id,
-                                    name: product.name,
-                                    quantity: product.quantity,
-                                    price: product.price,
-                                    categoryId: product.category.id,
-                                };
-                            }
+                        if (modifier.productModifiers) {
+                            modifier.productModifiers.forEach((productModifier) => {
+                                if (newCartProductQuantitiesById[productModifier.id]) {
+                                    newCartProductQuantitiesById[productModifier.id].quantity += product.quantity * modifier.quantity;
+                                } else {
+                                    newCartProductQuantitiesById[productModifier.id] = {
+                                        id: product.id,
+                                        name: product.name,
+                                        quantity: product.quantity,
+                                        price: product.price,
+                                        categoryId: product.category.id,
+                                    };
+                                }
+                            });
                         } else {
                             if (newCartModifierQuantitiesById[modifier.id]) {
                                 newCartModifierQuantitiesById[modifier.id].quantity += product.quantity * modifier.quantity;
@@ -318,7 +336,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                     });
                 });
             });
-
         _setCartCategoryQuantitiesById(newCartCategoryQuantitiesById);
         _setCartProductQuantitiesById(newCartProductQuantitiesById);
         _setCartModifierQuantitiesById(newCartModifierQuantitiesById);
@@ -329,16 +346,34 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         products &&
             products.forEach((p) => {
-                totalPrice += p.price * p.quantity;
+                let price = p.price;
+
                 p.modifierGroups.forEach((mg) => {
                     mg.modifiers.forEach((m) => {
                         const changedQuantity = m.quantity - m.preSelectedQuantity;
 
                         if (changedQuantity > 0) {
-                            totalPrice += m.price * changedQuantity * p.quantity;
+                            price += m.price * changedQuantity;
+                        }
+
+                        if (m.productModifiers) {
+                            m.productModifiers.forEach((productModifier) => {
+                                productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
+                                    orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
+                                        const changedQuantity =
+                                            orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
+
+                                        if (changedQuantity > 0) {
+                                            price += orderedProductModifierModifier.price * changedQuantity;
+                                        }
+                                    });
+                                });
+                            });
                         }
                     });
                 });
+
+                totalPrice = price * p.quantity;
             });
 
         return totalPrice;
@@ -411,6 +446,22 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         updateCartQuantities(newProducts);
     };
 
+    const setNotes = (notes: string) => {
+        _setNotes(notes);
+    };
+
+    const setPaymentAmounts = (amount: ICartPaymentAmounts) => {
+        _setPaymentAmounts(amount);
+    };
+
+    const setPayments = (payments: ICartPayment[]) => {
+        _setPayments(payments);
+    };
+
+    const setTransactionEftposReceipts = (receipt: string) => {
+        _setTransactionEftposReceipts(receipt);
+    };
+
     const clearCart = () => {
         _setOrderType(initialOrderType);
         _setTableNumber(initialTableNumber);
@@ -419,13 +470,13 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setCartCategoryQuantitiesById(initialCartCategoryQuantitiesById);
         _setCartProductQuantitiesById(initialCartProductQuantitiesById);
         _setCartModifierQuantitiesById(initialCartModifierQuantitiesById);
+        _setUserAppliedPromotionCode(initialUserAppliedPromotionCode);
         _setPromotion(initialPromotion);
         _setTotal(initialTotal);
+        _setPaymentAmounts(initialPaymentAmounts);
         _setSubTotal(initialSubTotal);
-    };
-
-    const setNotes = (notes: string) => {
-        _setNotes(notes);
+        _setPayments(initialPayments);
+        _setTransactionEftposReceipts(initialTransactionEftposReceipts);
     };
 
     return (
@@ -452,7 +503,13 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setUserAppliedPromotion: setUserAppliedPromotion,
                 removeUserAppliedPromotion: removeUserAppliedPromotion,
                 total: total,
+                paymentAmounts: paymentAmounts,
+                setPaymentAmounts: setPaymentAmounts,
                 subTotal: subTotal,
+                payments: payments,
+                setPayments: setPayments,
+                transactionEftposReceipts: transactionEftposReceipts,
+                setTransactionEftposReceipts: setTransactionEftposReceipts,
             }}
             children={props.children}
         />

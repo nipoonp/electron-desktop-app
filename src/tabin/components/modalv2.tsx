@@ -1,5 +1,5 @@
 import ReactModal, { Props } from "react-modal";
-import { CloseIcon } from "./icons/closeIcon";
+import { FiX } from "react-icons/fi";
 
 export const ModalV2 = (
     props: Props & {
@@ -8,21 +8,6 @@ export const ModalV2 = (
         children: React.ReactNode;
     }
 ) => {
-    // constants
-    const closeIcon = (
-        <div
-            onClick={props.onRequestClose}
-            style={{
-                cursor: "pointer",
-                display: "inline-block",
-                float: "right",
-                padding: "6px",
-            }}
-        >
-            <CloseIcon height="14px" />
-        </div>
-    );
-
     return (
         <>
             <ReactModal
@@ -47,16 +32,18 @@ export const ModalV2 = (
                         position: "absolute",
                         backgroundColor: "rgb(255, 255, 255)",
                         overflow: "auto",
-                        borderRadius: "12px",
+                        borderRadius: "10px",
                         padding: "24px",
                         margin: "40px",
                         inset: "auto",
-                        width: "420px",
+                        width: "450px",
                     },
                 }}
                 {...props}
             >
-                {!props.disableClose && closeIcon}
+                {!props.disableClose && (
+                    <FiX style={{ cursor: "pointer", display: "inline-block", float: "right" }} size={30} onClick={props.onRequestClose} />
+                )}
                 <div>{props.children}</div>
             </ReactModal>
         </>

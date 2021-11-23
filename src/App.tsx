@@ -43,7 +43,9 @@ const cognitoClient = new ApolloClient({
     cache: new InMemoryCache({
         dataIdFromObject: (obj) => {
             switch (obj.__typename) {
+                case "OrderCategory":
                 case "OrderProduct":
+                case "OrderModifierGroup":
                 case "OrderModifier":
                     let objCpy = JSON.parse(JSON.stringify(obj));
                     delete objCpy.id;

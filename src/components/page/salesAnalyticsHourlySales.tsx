@@ -47,7 +47,7 @@ export const SalesAnalyticsHourlySales = () => {
                                         .sort((a, b) => a[0].localeCompare(b[0]))
                                         .map(([hour, sale], index) => (
                                             <tr key={index}>
-                                                <td className="text-left">{getTwelveHourFormat(Number(hour))}</td>
+                                                <td className="sales-analytics-table-time-cell">{getTwelveHourFormat(Number(hour))}</td>
                                                 <td className="text-right">{sale.totalQuantity}</td>
                                                 <td className="text-right">{`$${convertCentsToDollars(
                                                     (sale.totalAmount * (100 - taxRate)) / 100

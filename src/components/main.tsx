@@ -1,5 +1,4 @@
 import { FunctionComponent, useEffect } from "react";
-
 import { Router, Route, Switch, Redirect, RouteComponentProps, RouteProps, useHistory } from "react-router-dom";
 import { Restaurant } from "./page/restaurant";
 import { NoMatch } from "./page/error/404";
@@ -8,8 +7,6 @@ import Modal from "react-modal";
 import { Login } from "./page/auth/login";
 import { Checkout } from "./page/checkout";
 import { useAuth, AuthenticationStatus } from "../context/auth-context";
-
-import "react-toastify/dist/ReactToastify.min.css";
 import { Logger } from "aws-amplify";
 import { useUser } from "../context/user-context";
 import { ToastContainer } from "../tabin/components/toast";
@@ -27,11 +24,14 @@ import { Logout } from "./page/auth/logout";
 import { Stock } from "./page/stock";
 import { Reports } from "./page/reports";
 import { Orders } from "./page/orders";
+import { AlertProvider } from "../tabin/components/alert";
 import { SalesAnalytics } from "./page/salesAnalytics";
 import { SalesAnalyticsDailySales } from "./page/salesAnalyticsDailySales";
 import { SalesAnalyticsHourlySales } from "./page/salesAnalyticsHourlySales";
 import { SalesAnalyticsTopCategory } from "./page/salesAnalyticsTopCategory";
 import { SalesAnalyticsTopProduct } from "./page/salesAnalyticsTopProduct";
+
+import "react-toastify/dist/ReactToastify.min.css";
 
 let electron: any;
 let ipcRenderer: any;
@@ -76,9 +76,11 @@ export const unauthorizedPath = "/unauthorized";
 export default () => {
     return (
         <>
-            <Router history={history}>
-                <Routes />
-            </Router>
+            <AlertProvider>
+                <Router history={history}>
+                    <Routes />
+                </Router>
+            </AlertProvider>
             <ToastContainer />
         </>
     );
@@ -148,7 +150,13 @@ const Routes = () => {
             <PrivateRoute exact path={restaurantListPath} component={RestaurantList} />
             <PrivateRoute exact path={registerListPath} component={RegisterList} />
             <PrivateRoute exact path={stockPath} component={Stock} />
-            <PrivateRoute exact path={ordersPath} component={Orders} />
+            <PrivateRoute
+                exact
+                path={`${ordersPath}/:date?`}
+                component={(props: RouteComponentProps<any>) => {
+                    return <Orders date={props.match.params.date} {...props} />;
+                }}
+            />
             <PrivateRoute exact path={reportsPath} component={Reports} />
             <PrivateRoute exact path={salesAnalyticsPath} component={SalesAnalytics} />
             <PrivateRoute exact path={salesAnalyticsDailySalesPath} component={SalesAnalyticsDailySales} />

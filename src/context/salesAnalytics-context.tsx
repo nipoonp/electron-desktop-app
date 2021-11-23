@@ -9,15 +9,25 @@ import {
     IGET_RESTAURANT_ORDER_FRAGMENT,
     IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT,
 } from "../graphql/customFragments";
-import { EOrderStatus } from "../graphql/customQueries";
-import { getTwelveHourFormat } from "../model/util";
-import { convertCentsToDollarsReturnFloat } from "../util/util";
+import { EOrderStatus, EOrderType, IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
+import { getTwelveHourFormat, taxRate } from "../model/util";
+import { convertCentsToDollars, convertCentsToDollarsReturnFloat } from "../util/util";
 import { toast } from "../tabin/components/toast";
+import { UnparseObject } from "papaparse";
 
 export interface ITopSoldItem {
     item: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT | null;
     totalQuantity: number;
     totalAmount: number;
+}
+
+export interface IDayComaparisonExport {
+    [date: string]: {
+        [key: string]: {
+            name: string;
+            total: number;
+        };
+    };
 }
 
 export interface IDailySales {
@@ -49,7 +59,9 @@ export interface IMostSoldItems {
         totalAmount: number;
     };
 }
+
 export interface ISalesAnalytics {
+    orders: IGET_RESTAURANT_ORDER_FRAGMENT[];
     daysDifference: number;
     dailySales: IDailySales;
     subTotalNew: number;
@@ -69,26 +81,39 @@ export interface ISalesAnalytics {
     hourByGraphData: { hour: string; sales: number }[];
     categoryByGraphData: { name: string; value: number }[];
     productByGraphData: { name: string; value: number }[];
+    dailySalesExport: UnparseObject<Array<string | number>>;
+    hourlySalesExport: UnparseObject<Array<string | number>>;
+    mostSoldCategoriesExport: UnparseObject<Array<string | number>>;
+    mostSoldProductsExport: UnparseObject<Array<string | number>>;
+    exportSalesDates: string[];
 }
 
 type ContextProps = {
     startDate: string | null;
     endDate: string | null;
+    registerFilters: IGET_RESTAURANT_REGISTER[];
+    orderFilters: EOrderType[];
     salesAnalytics: ISalesAnalytics | null;
     error: ApolloError | undefined;
     loading: boolean;
     onDatesChange: (startD: string | null, endD: string | null) => Promise<any>;
+    onRegisterFilterChange: (value?: IGET_RESTAURANT_REGISTER) => void;
+    onOrderFilterChange: (value?: EOrderType) => void;
 };
 
 const SalesAnalyticsContext = createContext<ContextProps>({
     startDate: null,
     endDate: null,
+    registerFilters: [],
+    orderFilters: [],
     salesAnalytics: null,
     error: undefined,
     loading: false,
     onDatesChange: (startD: string | null, endD: string | null) => {
         return new Promise(() => {});
     },
+    onRegisterFilterChange: (value?: IGET_RESTAURANT_REGISTER) => {},
+    onOrderFilterChange: (value?: EOrderType) => {},
 });
 
 const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
@@ -98,6 +123,10 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
     const [startDate, setStartDate] = useState<string | null>(format(subDays(new Date(), 7), "yyyy-MM-dd"));
     const [endDate, setEndDate] = useState<string | null>(format(new Date(), "yyyy-MM-dd")); //Adding extra day because GraphQL query is not inclusive of endDate
 
+    // Filters
+    const [registerFilters, setRegisterFilter] = useState<IGET_RESTAURANT_REGISTER[]>([]);
+    const [orderFilters, setOrderFilter] = useState(Object.values(EOrderType));
+
     const { data: orders, error, loading, refetch } = useGetRestaurantOrdersByBetweenPlacedAt(
         restaurant ? restaurant.id : "",
         startDate,
@@ -105,8 +134,23 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
     );
 
     useEffect(() => {
-        processSalesData(orders);
-    }, [orders]);
+        const registers = restaurant && restaurant.registers.items ? restaurant.registers.items : [];
+        setRegisterFilter(registers);
+    }, [restaurant]);
+
+    useEffect(() => {
+        processSalesData(getFilteredOrders(orders));
+    }, [orders, orderFilters, registerFilters]);
+
+    const getFilteredOrders = (orders: IGET_RESTAURANT_ORDER_FRAGMENT[] | null): IGET_RESTAURANT_ORDER_FRAGMENT[] => {
+        if (!orders) return [];
+        let filteredOrders: IGET_RESTAURANT_ORDER_FRAGMENT[] = [];
+
+        // Filter by order type and register type
+        filteredOrders = orders.filter((o) => orderFilters.includes(o.type) && registerFilters.map((r) => r.id).includes(o.registerId));
+
+        return filteredOrders;
+    };
 
     const processSalesData = (orders: IGET_RESTAURANT_ORDER_FRAGMENT[] | null) => {
         try {
@@ -172,6 +216,8 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
             const mostSoldCategories: IMostSoldItems = {};
             const mostSoldProducts: IMostSoldItems = {};
 
+            const exportSalesDates: string[] = [];
+
             //First create an empty object with empty defined day sales
             for (var i = 0; i < daysDifference; i++) {
                 const loopDateTime: Date = addDays(new Date(startDate), i);
@@ -182,6 +228,8 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                     totalQuantity: 0,
                     orders: [],
                 };
+
+                exportSalesDates.push(format(new Date(loopDateTime), "E, dd MMM"));
             }
 
             orders.forEach((order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
@@ -226,6 +274,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                         totalAmount: newSaleAmount,
                     };
 
+                    // Best Hour
                     if (newSaleAmount > bestHour.totalAmount) {
                         bestHour = {
                             hour: placedAtHour,
@@ -358,12 +407,31 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
             const categoryByGraphData: { name: string; value: number }[] = [];
             const productByGraphData: { name: string; value: number }[] = [];
 
+            // CSV Export Data
+            const dailySalesExport = {} as UnparseObject<Array<string | number>>;
+            dailySalesExport.fields = ["Date", "Orders", "Net", "Tax", "Total"];
+            dailySalesExport.data = [];
+
             Object.entries(dailySales).forEach(([date, sale]) => {
                 dayByGraphData.push({
                     date: format(new Date(date), "dd MMM"),
                     sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
                 });
+
+                const row = [
+                    format(new Date(date), "E, dd MMM"),
+                    sale.totalQuantity,
+                    `$${convertCentsToDollars((sale.totalAmount * (100 - taxRate)) / 100)}`,
+                    `$${convertCentsToDollars(sale.totalAmount * (taxRate / 100))}`,
+                    `$${convertCentsToDollars(sale.totalAmount)}`,
+                ];
+                dailySalesExport.data.push(row);
             });
+
+            // CSV Export Data
+            const hourlySalesExport = {} as UnparseObject<Array<string | number>>;
+            hourlySalesExport.fields = ["Time", "Orders", "Net", "Tax", "Total"];
+            hourlySalesExport.data = [];
 
             Object.entries(hourlySales)
                 .sort((a, b) => a[0].localeCompare(b[0]))
@@ -372,23 +440,71 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                         hour: getTwelveHourFormat(Number(hour)),
                         sales: convertCentsToDollarsReturnFloat(sale.totalAmount),
                     });
+
+                    const row = [
+                        getTwelveHourFormat(Number(hour)),
+                        sale.totalQuantity,
+                        `$${convertCentsToDollars((sale.totalAmount * (100 - taxRate)) / 100)}`,
+                        `$${convertCentsToDollars(sale.totalAmount * (taxRate / 100))}`,
+                        `$${convertCentsToDollars(sale.totalAmount)}`,
+                    ];
+                    hourlySalesExport.data.push(row);
                 });
+
+            // CSV Export Data
+            const mostSoldCategoriesExport = {} as UnparseObject<Array<string | number>>;
+            mostSoldCategoriesExport.fields = ["Category", "Quantity", "Net", "Tax", "Total", "% Of Sale"];
+            mostSoldCategoriesExport.data = [];
 
             Object.entries(mostSoldCategories).forEach(([categoryId, category]) => {
                 categoryByGraphData.push({
                     name: category.item.name,
                     value: category.totalQuantity,
                 });
+
+                const row = [
+                    category.item.name,
+                    category.totalQuantity,
+                    `$${convertCentsToDollars((category.totalAmount * (100 - taxRate)) / 100)}`,
+                    `$${convertCentsToDollars(category.totalAmount * (taxRate / 100))}`,
+                    `$${convertCentsToDollars(category.totalAmount)}`,
+                    `${((category.totalAmount * 100) / subTotalCompleted).toFixed(2)}%`,
+                ];
+                mostSoldCategoriesExport.data.push(row);
             });
+
+            // Sort Category graph data by it's value
+            categoryByGraphData.sort((a, b) => a.value - b.value);
+            mostSoldCategoriesExport.data.sort((a, b) => (a[0] > b[0] && 1) || -1);
+
+            // CSV Export Data
+            const mostSoldProductsExport = {} as UnparseObject<Array<string | number>>;
+            mostSoldProductsExport.fields = ["Product", "Quantity", "Net", "Tax", "Total", "% Of Sale"];
+            mostSoldProductsExport.data = [];
 
             Object.entries(mostSoldProducts).forEach(([productId, product]) => {
                 productByGraphData.push({
                     name: product.item.name,
                     value: product.totalQuantity,
                 });
+
+                const row = [
+                    product.item.name,
+                    product.totalQuantity,
+                    `$${convertCentsToDollars((product.totalAmount * (100 - taxRate)) / 100)}`,
+                    `$${convertCentsToDollars(product.totalAmount * (taxRate / 100))}`,
+                    `$${convertCentsToDollars(product.totalAmount)}`,
+                    `${((product.totalAmount * 100) / subTotalCompleted).toFixed(2)}%`,
+                ];
+                mostSoldProductsExport.data.push(row);
             });
 
+            // Sort Product graph data by
+            productByGraphData.sort((a, b) => a.value - b.value);
+            mostSoldProductsExport.data.sort((a, b) => (a[0] > b[0] && 1) || -1);
+
             setSalesAnalytics({
+                orders,
                 daysDifference,
                 dailySales,
                 subTotalNew,
@@ -408,6 +524,11 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                 hourByGraphData,
                 categoryByGraphData,
                 productByGraphData,
+                dailySalesExport,
+                hourlySalesExport,
+                mostSoldCategoriesExport,
+                mostSoldProductsExport,
+                exportSalesDates,
             });
         } catch (e) {
             toast.error("There was an error processing sales analytics data. Please try again later.");
@@ -419,15 +540,27 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
         setEndDate(endD);
     };
 
+    const onRegisterFilterChange = (value?: IGET_RESTAURANT_REGISTER) => {
+        value ? setRegisterFilter([...registerFilters, value]) : setRegisterFilter([...registerFilters]);
+    };
+
+    const onOrderFilterChange = (value?: EOrderType) => {
+        value ? setOrderFilter([...orderFilters, value]) : setOrderFilter([...orderFilters]);
+    };
+
     return (
         <SalesAnalyticsContext.Provider
             value={{
                 startDate: startDate,
                 endDate: endDate,
+                registerFilters,
+                orderFilters,
                 salesAnalytics: salesAnalytics,
                 error: error,
                 loading: loading,
                 onDatesChange: onDatesChange,
+                onRegisterFilterChange,
+                onOrderFilterChange,
             }}
             children={props.children}
         />

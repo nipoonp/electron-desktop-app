@@ -1,0 +1,115 @@
+.payment-modal {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 100px 84px 84px 84px;
+    position: relative;
+
+    .payment-modal-close-button-wrapper {
+        position: absolute;
+        top: 24px;
+        right: 24px;
+        cursor: pointer;
+
+        .payment-modal-close-button {
+            color: #484848;
+            padding: 12px;
+        }
+    }
+
+    .payment-modal-amount-input-wrapper {
+        display: flex;
+        align-items: center;
+
+        .payment-modal-amount-input {
+            font-size: 28px;
+            padding: 16px 24px;
+            text-align: right;
+            width: 300px;
+        }
+
+        .payment-modal-input-wrapper {
+            .payment-modal-partial-payment-label {
+                font-size: 14px;
+            }
+        }
+
+        .payment-modal-input-wrapper > .text-error {
+            margin-top: 0;
+            margin-left: 52px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            text-align: right;
+        }
+    }
+
+    .payment-modal-payment-button-wrapper {
+        display: flex;
+
+        .payment-modal-cash-button {
+            width: 300px;
+        }
+
+        .payment-modal-eftpos-button {
+            width: 300px;
+        }
+    }
+
+    .payment-modal-quick-cash-button-wrapper {
+        display: flex;
+
+        .payment-modal-quick-cash-button {
+            height: 72px;
+            width: 72px;
+            border-radius: 5px;
+            background-color: transparent;
+            border: 1px solid #484848;
+            color: #484848;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    }
+
+    .payment-modal-paid-amount {
+        font-size: 18px;
+    }
+
+    .issue-fixed-button {
+        background-color: #ffffff;
+        color: #484848;
+        border: 1px solid #e0e0e0;
+        padding: 12px 24px;
+    }
+
+    .awaiting-card-text {
+        line-height: 42px;
+    }
+
+    .awaiting-card-image {
+        height: 250px;
+    }
+
+    .order-number {
+        font-size: 200px;
+        line-height: 256px;
+    }
+
+    .redirecting-in-text {
+        margin-top: auto;
+    }
+
+    .retry-buttons {
+        display: flex;
+    }
+
+    .retry-cancel-button {
+        background-color: #ffffff;
+        color: #484848;
+        border: 1px solid #e0e0e0;
+    }
+}

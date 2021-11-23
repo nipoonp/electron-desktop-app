@@ -1,19 +1,19 @@
-import { useCart } from "../../../context/cart-context";
+import { useEffect } from "react";
 import { ICartModifierGroup, ICartProduct } from "../../../model/model";
 import { Button } from "../../../tabin/components/button";
 import { Stepper } from "../../../tabin/components/stepper";
 import { convertCentsToDollars } from "../../../util/util";
+import { ProductModifier } from "../../shared/productModifier";
+
+import "./orderSummary.scss";
 
 export const OrderSummary = (props: {
+    products: ICartProduct[];
     onEditProduct: (product: ICartProduct, displayOrder: number) => void;
     onRemoveProduct: (displayOrder: number) => void;
     onUpdateProductQuantity: (displayOrder: number, productQuantity: number) => void;
-    onNotesChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
 }) => {
-    // context
-    const { products } = useCart();
-
-    // displays
+    const { products, onEditProduct, onRemoveProduct, onUpdateProductQuantity } = props;
     if (!products || products == []) {
         return (
             <>
@@ -33,9 +33,9 @@ export const OrderSummary = (props: {
                                 <OrderItem
                                     product={product}
                                     displayOrder={index}
-                                    onEditProduct={props.onEditProduct}
-                                    onUpdateProductQuantity={props.onUpdateProductQuantity}
-                                    onRemoveProduct={props.onRemoveProduct}
+                                    onEditProduct={onEditProduct}
+                                    onUpdateProductQuantity={onUpdateProductQuantity}
+                                    onRemoveProduct={onRemoveProduct}
                                 />
                                 <div className="separator-6"></div>
                             </div>
@@ -55,27 +55,38 @@ const OrderItem = (props: {
     onUpdateProductQuantity: (displayOrder: number, productQuantity: number) => void;
     onRemoveProduct: (displayOrder: number) => void;
 }) => {
-    // constants
-    let itemPrice = props.product.price * props.product.quantity;
+    const { product, displayOrder, onEditProduct, onUpdateProductQuantity, onRemoveProduct } = props;
 
-    props.product.modifierGroups.forEach((mg) => {
+    let price = product.price;
+
+    product.modifierGroups.forEach((mg) => {
         mg.modifiers.forEach((m) => {
             const changedQuantity = m.quantity - m.preSelectedQuantity;
 
             if (changedQuantity > 0) {
-                itemPrice += m.price * changedQuantity * props.product.quantity;
+                price += m.price * changedQuantity;
+            }
+
+            if (m.productModifiers) {
+                m.productModifiers.forEach((productModifier) => {
+                    productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
+                        orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
+                            const changedQuantity = orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
+
+                            if (changedQuantity > 0) {
+                                price += orderedProductModifierModifier.price * changedQuantity;
+                            }
+                        });
+                    });
+                });
             }
         });
     });
 
-    // displays
+    price = price * product.quantity;
+
     const quantity = (
-        <Stepper
-            count={props.product.quantity}
-            min={1}
-            onUpdate={(count: number) => props.onUpdateProductQuantity(props.displayOrder, count)}
-            size={32}
-        />
+        <Stepper count={product.quantity} min={1} onUpdate={(count: number) => onUpdateProductQuantity(displayOrder, count)} size={32} />
     );
 
     return (
@@ -83,16 +94,18 @@ const OrderItem = (props: {
             <div className="order-item">
                 {quantity}
                 <OrderItemDetails
-                    name={props.product.name}
-                    notes={props.product.notes}
-                    modifierGroups={props.product.modifierGroups}
-                    onEditProduct={() => props.onEditProduct(props.product, props.displayOrder)}
+                    name={product.name}
+                    notes={product.notes}
+                    modifierGroups={product.modifierGroups}
+                    onEditProduct={() => onEditProduct(product, displayOrder)}
                 />
                 <div className="text-center">
-                    <div className="h2 text-primary mb-2">${convertCentsToDollars(itemPrice)}</div>
-                    <Button className="remove-button" onClick={() => props.onRemoveProduct(props.displayOrder)}>
-                        Remove
-                    </Button>
+                    <div className="h2 text-primary mb-2">${convertCentsToDollars(price)}</div>
+                    {
+                        <Button className="remove-button" onClick={() => onRemoveProduct(displayOrder)}>
+                            Remove
+                        </Button>
+                    }
                 </div>
             </div>
         </>
@@ -100,7 +113,8 @@ const OrderItem = (props: {
 };
 
 const OrderItemDetails = (props: { name: string; notes: string | null; modifierGroups: ICartModifierGroup[]; onEditProduct: () => void }) => {
-    // functions
+    const { name, notes, modifierGroups, onEditProduct } = props;
+
     const modifierString = (preSelectedQuantity: number, quantity: number, name: string, price: number) => {
         const changedQuantity = quantity - preSelectedQuantity;
         let mStr = "";
@@ -120,7 +134,7 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
 
     const editButton = (
         <>
-            <Button className="edit-button" onClick={() => props.onEditProduct()}>
+            <Button className="edit-button" onClick={() => onEditProduct()}>
                 Edit
             </Button>
         </>
@@ -128,13 +142,13 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
 
     const nameDisplay = (
         <div className="name-edit-button">
-            <div className="h2 mr-2">{props.name}</div> {editButton}
+            <div className="h2 mr-2">{name}</div> {editButton}
         </div>
     );
 
     const modifiersDisplay = (
         <>
-            {props.modifierGroups.map((mg, index) => (
+            {modifierGroups.map((mg, index) => (
                 <>
                     {!mg.hideForCustomer && (
                         <>
@@ -142,9 +156,24 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
                                 {mg.name}
                             </div>
                             {mg.modifiers.map((m) => (
-                                <div key={m.id} className="mt-1">
-                                    {modifierString(m.preSelectedQuantity, m.quantity, m.name, m.price)}
-                                </div>
+                                <>
+                                    <div key={m.id} className="mt-1">
+                                        {modifierString(m.preSelectedQuantity, m.quantity, m.name, m.price)}
+                                    </div>
+                                    {m.productModifiers && (
+                                        <div className="mb-2">
+                                            {m.productModifiers.map((productModifier, index) => (
+                                                <div>
+                                                    <div className="mt-2"></div>
+                                                    <ProductModifier
+                                                        selectionIndex={m.productModifiers && m.productModifiers.length > 1 ? index + 1 : undefined}
+                                                        product={productModifier}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
                             ))}
                         </>
                     )}
@@ -153,7 +182,7 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
         </>
     );
 
-    const notesDisplay = <>{props.notes && <div className="text-grey">Notes: {props.notes}</div>}</>;
+    const notesDisplay = <>{notes && <div className="text-grey">Notes: {notes}</div>}</>;
 
     return (
         <div className="detail">
