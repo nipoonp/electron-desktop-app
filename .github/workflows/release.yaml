@@ -5,17 +5,17 @@ on:
         branches: [main]
 
 jobs:
-    # slack_message_start:
-    #     runs-on: ubuntu-latest
-    #     steps:
-    #         - name: Post to a Slack channel
-    #           id: slack
-    #           uses: slackapi/slack-github-action@v1.14.0
-    #           with:
-    #               channel-id: ${{ secrets.SLACK_BOT_CHANNEL_ID }}
-    #               slack-message: "Electron build started!"
-    #           env:
-    #               SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+    slack_message_start:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Post to a Slack channel
+              id: slack
+              uses: slackapi/slack-github-action@v1.14.0
+              with:
+                  channel-id: ${{ secrets.SLACK_BOT_CHANNEL_ID }}
+                  slack-message: "Electron build started!"
+              env:
+                  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
     create_release:
         runs-on: ubuntu-latest
         steps:
@@ -52,7 +52,7 @@ jobs:
             - name: Build native dependencies
               run: ./node_modules/.bin/electron-rebuild
             - name: Build web
-              run: npm run build:web
+              run: REACT_APP_AWS_ENV=prod npm run build:web
             - name: Build desktop
               run: npm run build:desktop
             - name: Release Electron app
@@ -78,7 +78,7 @@ jobs:
     #         - name: Build native dependencies
     #           run: ./node_modules/.bin/electron-rebuild
     #         - name: Build web
-    #           run: npm run build:web
+    #           run: REACT_APP_AWS_ENV=prod npm run build:web
     #         - name: Build desktop
     #           run: npm run build:desktop
     #         - name: Release Electron app
