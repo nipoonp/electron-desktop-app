@@ -623,7 +623,7 @@ export const Checkout = () => {
     const onClickPayLater = async () => {
         setShowPaymentModal(true);
 
-        const newPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0 };
+        const newPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0 };
         const newPayments: ICartPayment[] = [];
 
         setPaymentModalState(EPaymentModalState.PayLater);

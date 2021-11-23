@@ -141,6 +141,7 @@ export interface ICartPromotion {
 export interface ICartPaymentAmounts {
     cash: number;
     eftpos: number;
+    online: number;
 }
 
 export interface ICartPayment {
