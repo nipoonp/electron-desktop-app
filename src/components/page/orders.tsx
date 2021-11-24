@@ -8,7 +8,7 @@ import { Input } from "../../tabin/components/input";
 
 import "./orders.scss";
 import { useGetRestaurantOrdersByBeginWithPlacedAt } from "../../hooks/useGetRestaurantOrdersByBeginWithPlacedAt";
-import { convertCentsToDollars, convertProductTypesForPrint, toLocalISOString } from "../../util/util";
+import { convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, toLocalISOString } from "../../util/util";
 import { format } from "date-fns";
 import { Button } from "../../tabin/components/button";
 import { toast } from "../../tabin/components/toast";
@@ -129,32 +129,36 @@ export const Orders = (props: { date?: string }) => {
             register &&
                 register.printers &&
                 register.printers.items.forEach(async (printer) => {
-                    await printReceipt({
-                        orderId: order.id,
-                        printerType: printer.type,
-                        printerAddress: printer.address,
-                        customerPrinter: printer.customerPrinter,
-                        kitchenPrinter: printer.kitchenPrinter,
-                        hideModifierGroupsForCustomer: false,
-                        restaurant: {
-                            name: restaurant.name,
-                            address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
-                            gstNumber: restaurant.gstNumber,
-                        },
-                        customerInformation: null,
-                        notes: order.notes,
-                        products: convertProductTypesForPrint(order.products),
-                        eftposReceipt: order.eftposReceipt,
-                        total: order.total,
-                        discount: order.promotionId && order.discount ? order.discount : null,
-                        subTotal: order.subTotal,
-                        paid: order.paid,
-                        type: order.type,
-                        number: order.number,
-                        table: order.table,
-                        placedAt: order.placedAt,
-                        orderScheduledAt: order.orderScheduledAt,
-                    });
+                    const productsToPrint = filterPrintProducts(order.products, printer);
+
+                    if (productsToPrint.length > 0) {
+                        await printReceipt({
+                            orderId: order.id,
+                            printerType: printer.type,
+                            printerAddress: printer.address,
+                            customerPrinter: printer.customerPrinter,
+                            kitchenPrinter: printer.kitchenPrinter,
+                            hideModifierGroupsForCustomer: false,
+                            restaurant: {
+                                name: restaurant.name,
+                                address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
+                                gstNumber: restaurant.gstNumber,
+                            },
+                            customerInformation: null,
+                            notes: order.notes,
+                            products: convertProductTypesForPrint(order.products),
+                            eftposReceipt: order.eftposReceipt,
+                            total: order.total,
+                            discount: order.promotionId && order.discount ? order.discount : null,
+                            subTotal: order.subTotal,
+                            paid: order.paid,
+                            type: order.type,
+                            number: order.number,
+                            table: order.table,
+                            placedAt: order.placedAt,
+                            orderScheduledAt: order.orderScheduledAt,
+                        });
+                    }
                 });
         } catch (error) {
             toast.error("Could not update order status. Please contact a Tabin representative.");
@@ -179,7 +183,7 @@ export const Orders = (props: { date?: string }) => {
                 <Input label="Date" type="date" name="date" placeholder="Enter a date" value={date} onChange={onChangeDate} className="mb-4" />
                 <div className="order-tabs-wrapper mb-6">
                     <div className={`tab ${eOrderStatus == EOrderStatus.NEW ? "selected" : ""}`} onClick={() => onClickTab(EOrderStatus.NEW)}>
-                        NEW
+                        New
                     </div>
                     <div
                         className={`tab ${eOrderStatus == EOrderStatus.COMPLETED ? "selected" : ""}`}

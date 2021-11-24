@@ -311,13 +311,9 @@ export const Checkout = () => {
     };
 
     const printReceipts = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
-        if (!products || products.length == 0) {
-            return;
-        }
-
         register.printers &&
             register.printers.items.forEach(async (printer) => {
-                const productsToPrint = filterPrintProducts(products, printer);
+                const productsToPrint = filterPrintProducts(order.products, printer);
 
                 if (productsToPrint.length > 0) {
                     await printReceipt({
