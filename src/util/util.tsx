@@ -50,7 +50,7 @@ export const getOrderNumber = (orderNumberSuffix: string) => {
     return orderNumber + (orderNumberSuffix || "");
 };
 
-export const filterPrintProducts = (products: ICartProduct[], printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
+export const filterPrintProducts = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[], printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
     if (!printer.ignoreProducts || printer.ignoreProducts.items.length == 0) {
         return products;
     }
