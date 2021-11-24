@@ -1,15 +1,13 @@
 import { useEffect, createContext, useContext } from "react";
-import { IGET_RESTAURANT_ORDER_FRAGMENT, IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
+import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
 import { EOrderStatus } from "../graphql/customQueries";
-import { useGetOnlineOrdersByRestaurantByStatusByPlacedAt } from "../hooks/useGetOnlineOrdersByRestaurantByStatusByPlacedAt";
-
-import { ICartModifier, ICartModifierGroup, ICartProduct, IPrintReceiptDataOutput, IOrderReceipt, IPrintSalesByDayDataInput } from "../model/model";
+import { useGetOrdersByRestaurantByStatusByPlacedAt } from "../hooks/useGetOrdersByRestaurantByStatusByPlacedAt";
+import { IPrintReceiptDataOutput, IOrderReceipt, IPrintSalesByDayDataInput } from "../model/model";
 import { toast } from "../tabin/components/toast";
-import { convertProductTypesForPrint, toLocalISOString } from "../util/util";
+import { convertProductTypesForPrint, filterPrintProducts, toLocalISOString } from "../util/util";
 import { useErrorLogging } from "./errorLogging-context";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
-import { IDailySales } from "./salesAnalytics-context";
 
 let electron: any;
 let ipcRenderer: any;
@@ -37,40 +35,52 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     const { register } = useRegister();
     const { logError } = useErrorLogging();
 
-    const { refetch } = useGetOnlineOrdersByRestaurantByStatusByPlacedAt(true); //Skip the first iteration. Get new orders from refetch.
+    const { refetch } = useGetOrdersByRestaurantByStatusByPlacedAt(); //Skip the first iteration. Get new orders from refetch.
+
+    const fetchOrdersLoopTime = 5 * 1000; //15 seconds
+    const retryPrintLoopTime = 20 * 1 * 1000; //20 seconds
 
     useEffect(() => {
         if (!restaurant) return;
         if (!register) return;
-        if (!register.printOnlineOrderReceipts) return;
 
-        const onlineOrdersFetchTimer = setInterval(async () => {
+        let matchingPrinter = false;
+
+        register.printers.items.forEach((printer) => {
+            if (printer.printAllOrderReceipts || printer.printOnlineOrderReceipts) {
+                matchingPrinter = true;
+            }
+        });
+
+        if (!matchingPrinter) return;
+
+        const ordersFetchTimer = setInterval(async () => {
             try {
-                const onlineOrdersLastFetched = localStorage.getItem("onlineOrdersLastFetched");
+                const ordersLastFetched = localStorage.getItem("ordersLastFetched");
 
-                if (!onlineOrdersLastFetched) {
-                    localStorage.setItem("onlineOrdersLastFetched", toLocalISOString(new Date()));
+                if (!ordersLastFetched) {
+                    localStorage.setItem("ordersLastFetched", toLocalISOString(new Date()));
                     return;
                 }
 
                 const res = await refetch({
                     orderRestaurantId: restaurant ? restaurant.id : "",
                     status: EOrderStatus.NEW,
-                    startDateTime: onlineOrdersLastFetched,
+                    startDateTime: ordersLastFetched,
                     endDateTime: toLocalISOString(new Date()),
                 });
 
                 const orders: IGET_RESTAURANT_ORDER_FRAGMENT[] = res.data.getOrdersByRestaurantByStatusByPlacedAt.items;
 
-                await printNewOnlineOrderReceipts(orders);
+                await printNewOrderReceipts(orders);
 
-                localStorage.setItem("onlineOrdersLastFetched", toLocalISOString(new Date()));
+                localStorage.setItem("ordersLastFetched", toLocalISOString(new Date()));
             } catch (e) {
-                await logError("Error polling for new online orders", JSON.stringify({ error: e, restaurant: restaurant }));
+                await logError("Error polling for new orders", JSON.stringify({ error: e, restaurant: restaurant }));
             }
-        }, 60 * 1 * 1000);
+        }, fetchOrdersLoopTime);
 
-        return () => clearInterval(onlineOrdersFetchTimer);
+        return () => clearInterval(ordersFetchTimer);
     }, [restaurant, register]);
 
     useEffect(() => {
@@ -101,7 +111,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                     JSON.stringify({ error: e, failedPrintQueue: localStorage.getItem("failedPrintQueue") })
                 );
             }
-        }, 20 * 1 * 1000);
+        }, retryPrintLoopTime);
 
         return () => clearInterval(retryFailedPrintQueueTimer);
     }, [restaurant, register]);
@@ -178,51 +188,60 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         localStorage.setItem("failedPrintQueue", JSON.stringify(updatedFailedPrintQueue));
     };
 
-    const printNewOnlineOrderReceipts = async (orders: IGET_RESTAURANT_ORDER_FRAGMENT[]) => {
+    const printNewOrderReceipts = async (orders: IGET_RESTAURANT_ORDER_FRAGMENT[]) => {
         if (!restaurant) return;
         if (!register || register.printers.items.length == 0) return;
-        if (!register.printOnlineOrderReceipts) return;
 
         for (var i = 0; i < register.printers.items.length; i++) {
             const printer = register.printers.items[i];
 
-            if (!printer.kitchenPrinter) return;
+            if (!printer.printOnlineOrderReceipts && !printer.printAllOrderReceipts) return;
 
             for (var j = 0; j < orders.length; j++) {
                 const order = orders[j];
 
-                await printReceipt({
-                    orderId: order.id,
-                    printerType: printer.type,
-                    printerAddress: printer.address,
-                    customerPrinter: printer.customerPrinter,
-                    kitchenPrinter: printer.kitchenPrinter,
-                    eftposReceipt: order.eftposReceipt || null,
-                    hideModifierGroupsForCustomer: false,
-                    restaurant: {
-                        name: restaurant.name,
-                        address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
-                        gstNumber: restaurant.gstNumber,
-                    },
-                    customerInformation: order.customerInformation
-                        ? {
-                              firstName: order.customerInformation.firstName,
-                              email: order.customerInformation.email,
-                              phoneNumber: order.customerInformation.phoneNumber,
-                          }
-                        : null,
-                    notes: order.notes,
-                    products: convertProductTypesForPrint(order.products),
-                    total: order.total,
-                    discount: order.promotionId && order.discount ? order.discount : null,
-                    subTotal: order.subTotal,
-                    paid: order.paid,
-                    type: order.type,
-                    number: order.number,
-                    table: order.table,
-                    placedAt: order.placedAt,
-                    orderScheduledAt: order.orderScheduledAt,
-                });
+                //If new order placed is from the current register do not print
+                if (register.id === order.registerId) return;
+
+                //If print online orders is selected but current order is not online, return
+                if (printer.printOnlineOrderReceipts && !order.onlineOrder) return;
+
+                const productsToPrint = filterPrintProducts(order.products, printer);
+
+                if (productsToPrint.length > 0) {
+                    await printReceipt({
+                        orderId: order.id,
+                        printerType: printer.type,
+                        printerAddress: printer.address,
+                        customerPrinter: printer.customerPrinter,
+                        kitchenPrinter: printer.kitchenPrinter,
+                        eftposReceipt: order.eftposReceipt || null,
+                        hideModifierGroupsForCustomer: false,
+                        restaurant: {
+                            name: restaurant.name,
+                            address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
+                            gstNumber: restaurant.gstNumber,
+                        },
+                        customerInformation: order.customerInformation
+                            ? {
+                                  firstName: order.customerInformation.firstName,
+                                  email: order.customerInformation.email,
+                                  phoneNumber: order.customerInformation.phoneNumber,
+                              }
+                            : null,
+                        notes: order.notes,
+                        products: convertProductTypesForPrint(order.products),
+                        total: order.total,
+                        discount: order.promotionId && order.discount ? order.discount : null,
+                        subTotal: order.subTotal,
+                        paid: order.paid,
+                        type: order.type,
+                        number: order.number,
+                        table: order.table,
+                        placedAt: order.placedAt,
+                        orderScheduledAt: order.orderScheduledAt,
+                    });
+                }
             }
         }
     };

@@ -3,7 +3,7 @@ import { useQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
 
-export const useGetOnlineOrdersByRestaurantByStatusByPlacedAt = (skip?: boolean) => {
+export const useGetOrdersByRestaurantByStatusByPlacedAt = (skip?: boolean) => {
     const [data, setSavedData] = useState<IGET_RESTAURANT_ORDER_FRAGMENT[] | null>(null);
 
     const { loading, error, data: _data, refetch } = useQuery(GET_ORDERS_BY_RESTAURANT_BY_STATUS_BY_PLACEDAT, {
