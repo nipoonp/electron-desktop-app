@@ -227,7 +227,9 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
 
             printer.newLine();
             printer.bold(false);
+            printer.underline(true);
             printer.println(`${modifierGroup.name}`);
+            printer.underline(false);
 
             modifierGroup.modifiers.forEach((modifier: ICartModifier) => {
                 const changedQuantity = modifier.quantity - modifier.preSelectedQuantity;

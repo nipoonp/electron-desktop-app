@@ -373,7 +373,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                     });
                 });
 
-                totalPrice = price * p.quantity;
+                totalPrice += price * p.quantity;
             });
 
         return totalPrice;
