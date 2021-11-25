@@ -284,7 +284,7 @@ export const ProductModal = (props: {
             [selectedModifierGroupId]: orderedModifiers[selectedModifierGroupId].filter((m) => m.id !== selectedModifier.id),
         };
 
-        if (preSelectedModifierQuantity == 0) {
+        if (!preSelectedModifierQuantity || preSelectedModifierQuantity == 0) {
             // If no selected modifies inside a modifier group. Delete the group.
             if (newOrderedModifiers[selectedModifierGroupId].length == 0) {
                 delete newOrderedModifiers[selectedModifierGroupId];
@@ -336,7 +336,7 @@ export const ProductModal = (props: {
         };
 
         // If quantity is 0, don't add a 0 quantity modifier.
-        if (quantity == 0 && preSelectedModifierQuantity == 0) {
+        if (quantity == 0 && (!preSelectedModifierQuantity || preSelectedModifierQuantity == 0)) {
             // If no selected modifies inside a modifier group. Delete the group.
             if (newOrderedModifiers[selectedModifierGroupId].length == 0) {
                 delete newOrderedModifiers[selectedModifierGroupId];
