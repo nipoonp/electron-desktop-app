@@ -79,6 +79,7 @@ export interface ISalesAnalytics {
     mostSoldProducts: IMostSoldItems;
     topSoldCategory: ITopSoldItem;
     topSoldProduct: ITopSoldItem;
+    totalSubTotal: number;
     totalSoldItems: number;
     dayByGraphData: { date: string; sales: number }[];
     hourByGraphData: { hour: string; sales: number }[];
@@ -92,6 +93,7 @@ export interface ISalesAnalytics {
 }
 
 type ContextProps = {
+    refetchRestaurantOrdersByBetweenPlacedAt: () => void;
     startDate: string | null;
     endDate: string | null;
     registerFilters: IGET_RESTAURANT_REGISTER[];
@@ -105,6 +107,7 @@ type ContextProps = {
 };
 
 const SalesAnalyticsContext = createContext<ContextProps>({
+    refetchRestaurantOrdersByBetweenPlacedAt: () => {},
     startDate: null,
     endDate: null,
     registerFilters: [],
@@ -145,6 +148,14 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
         processSalesData(getFilteredOrders(orders));
     }, [orders, orderFilters, registerFilters]);
 
+    const refetchRestaurantOrdersByBetweenPlacedAt = () => {
+        refetch({
+            orderRestaurantId: restaurant ? restaurant.id : "",
+            placedAtStartDate: startDate,
+            placedAtEndDate: endDate ? format(addDays(new Date(endDate), 1), "yyyy-MM-dd") : null, //Adding extra day because GraphQL query is not inclusive of endDate
+        });
+    };
+
     const getFilteredOrders = (orders: IGET_RESTAURANT_ORDER_FRAGMENT[] | null): IGET_RESTAURANT_ORDER_FRAGMENT[] => {
         if (!orders) return [];
         let filteredOrders: IGET_RESTAURANT_ORDER_FRAGMENT[] = [];
@@ -181,6 +192,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
             let totalNumberOfOrdersCompleted: number = 0;
 
             let totalSoldItems: number = 0;
+            let totalSubTotal: number = 0;
 
             const hourlySales: IHourlySales = {
                 "00": { hour: "00", totalAmount: 0, totalQuantity: 0 },
@@ -275,6 +287,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
 
                 //Not including refunded orders because we expect restaurants to refund an order before its been made.
                 if (order.status === EOrderStatus.NEW || order.status === EOrderStatus.COMPLETED || order.status === EOrderStatus.CANCELLED) {
+                    totalSubTotal += order.subTotal;
                     const newSubTotal = dailySales[placedAt].totalAmount + order.subTotal;
                     const newQuantitySold = dailySales[placedAt].totalQuantity + 1;
                     const newOrders: IGET_RESTAURANT_ORDER_FRAGMENT[] = [...dailySales[placedAt].orders, order];
@@ -494,7 +507,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                     `$${convertCentsToDollars((category.totalAmount * (100 - taxRate)) / 100)}`,
                     `$${convertCentsToDollars(category.totalAmount * (taxRate / 100))}`,
                     `$${convertCentsToDollars(category.totalAmount)}`,
-                    `${((category.totalAmount * 100) / subTotalCompleted).toFixed(2)}%`,
+                    `${((category.totalAmount * 100) / totalSubTotal).toFixed(2)}%`,
                 ];
                 mostSoldCategoriesExport.data.push(row);
             });
@@ -520,7 +533,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                     `$${convertCentsToDollars((product.totalAmount * (100 - taxRate)) / 100)}`,
                     `$${convertCentsToDollars(product.totalAmount * (taxRate / 100))}`,
                     `$${convertCentsToDollars(product.totalAmount)}`,
-                    `${((product.totalAmount * 100) / subTotalCompleted).toFixed(2)}%`,
+                    `${((product.totalAmount * 100) / totalSubTotal).toFixed(2)}%`,
                 ];
                 mostSoldProductsExport.data.push(row);
             });
@@ -546,6 +559,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                 mostSoldProducts,
                 topSoldCategory,
                 topSoldProduct,
+                totalSubTotal,
                 totalSoldItems,
                 dayByGraphData,
                 hourByGraphData,
@@ -578,6 +592,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
     return (
         <SalesAnalyticsContext.Provider
             value={{
+                refetchRestaurantOrdersByBetweenPlacedAt: refetchRestaurantOrdersByBetweenPlacedAt,
                 startDate: startDate,
                 endDate: endDate,
                 registerFilters,

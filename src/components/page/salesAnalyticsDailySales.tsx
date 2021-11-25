@@ -44,19 +44,19 @@ export const SalesAnalyticsDailySales = () => {
                         </div>
                         <div className="sales-reading-wrapper mb-6">
                             <Card className="text-center sales-reading">
-                                <div className="h3 mb-1">{`$${convertCentsToDollars(salesAnalytics.subTotalCompleted)}`}</div>
+                                <div className="h3 mb-1">{`$${convertCentsToDollars(salesAnalytics.totalSubTotal)}`}</div>
                                 <div className="text-uppercase">Total Sales</div>
                             </Card>
                             <Card className="text-center sales-reading">
                                 <div className="h3 mb-1">{`$${convertCentsToDollars(
-                                    isNaN(salesAnalytics.subTotalCompleted / salesAnalytics.totalNumberOfOrdersCompleted)
+                                    isNaN(salesAnalytics.totalSubTotal / salesAnalytics.orders.length)
                                         ? 0
-                                        : salesAnalytics.subTotalCompleted / salesAnalytics.totalNumberOfOrdersCompleted
+                                        : salesAnalytics.totalSubTotal / salesAnalytics.orders.length
                                 )}`}</div>
                                 <div className="text-uppercase">Average Sales</div>
                             </Card>
                             <Card className="text-center sales-reading">
-                                <div className="h3 mb-1">{salesAnalytics.totalNumberOfOrdersCompleted}</div>
+                                <div className="h3 mb-1">{salesAnalytics.orders.length}</div>
                                 <div className="text-uppercase">Sales Count</div>
                             </Card>
                             <Card className="text-center sales-reading">

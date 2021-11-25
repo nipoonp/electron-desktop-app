@@ -20,7 +20,7 @@ import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { EReceiptPrinterType } from "../../model/model";
 import { SelectReceiptPrinterModal } from "../modals/selectReceiptPrinterModal";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRegister } from "../../context/register-context";
 import { toast } from "../../tabin/components/toast";
 
@@ -31,11 +31,15 @@ export const SalesAnalytics = () => {
     const history = useHistory();
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
-    const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
+    const { refetchRestaurantOrdersByBetweenPlacedAt, startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
     const { printSalesByDay } = useReceiptPrinter();
     const [showSelectReceiptPrinterModal, setShowSelectReceiptPrinterModal] = useState(false);
 
     const graphColor = getComputedStyle(document.documentElement).getPropertyValue("--primary-color");
+
+    useEffect(() => {
+        refetchRestaurantOrdersByBetweenPlacedAt();
+    }, []);
 
     const BestHourCard = (props: { bestHour: IBestHour }) => {
         const { bestHour } = props;
@@ -397,19 +401,19 @@ export const SalesAnalytics = () => {
                         </div>
                         <div className="sales-analytics-grid-item2 analytics-value-wrapper">
                             <Card className="text-center">
-                                <div className="h3 mb-1">{`$${convertCentsToDollars(salesAnalytics.subTotalCompleted)}`}</div>
+                                <div className="h3 mb-1">{`$${convertCentsToDollars(salesAnalytics.totalSubTotal)}`}</div>
                                 <div className="text-uppercase">Total Sales</div>
                             </Card>
                             <Card className="text-center">
                                 <div className="h3 mb-1">{`$${convertCentsToDollars(
-                                    isNaN(salesAnalytics.subTotalCompleted / salesAnalytics.totalNumberOfOrdersCompleted)
+                                    isNaN(salesAnalytics.totalSubTotal / salesAnalytics.orders.length)
                                         ? 0
-                                        : salesAnalytics.subTotalCompleted / salesAnalytics.totalNumberOfOrdersCompleted
+                                        : salesAnalytics.totalSubTotal / salesAnalytics.orders.length
                                 )}`}</div>
                                 <div className="text-uppercase">Average Sales</div>
                             </Card>
                             <Card className="text-center">
-                                <div className="h3 mb-1">{salesAnalytics.totalNumberOfOrdersCompleted}</div>
+                                <div className="h3 mb-1">{salesAnalytics.orders.length}</div>
                                 <div className="text-uppercase">Sales Count</div>
                             </Card>
                             <Card className="text-center">
@@ -452,7 +456,7 @@ export const SalesAnalytics = () => {
                                             <div className="h4 mb-2">${convertCentsToDollars(salesAnalytics.topSoldCategory.totalAmount ?? 0)}</div>
                                             <div className="text-uppercase">% of Sales</div>
                                             <div className="h4">
-                                                {((salesAnalytics.topSoldCategory.totalAmount / salesAnalytics.subTotalCompleted) * 100).toFixed(2)}%
+                                                {((salesAnalytics.topSoldCategory.totalAmount / salesAnalytics.totalSubTotal) * 100).toFixed(2)}%
                                             </div>
                                         </div>
                                     </div>
@@ -482,7 +486,7 @@ export const SalesAnalytics = () => {
                                             <div className="h4 mb-2">${convertCentsToDollars(salesAnalytics.topSoldProduct.totalAmount ?? 0)}</div>
                                             <div className="text-uppercase">% of Sales</div>
                                             <div className="h4">
-                                                {((salesAnalytics.topSoldProduct.totalAmount / salesAnalytics.subTotalCompleted) * 100).toFixed(2)}%
+                                                {((salesAnalytics.topSoldProduct.totalAmount / salesAnalytics.totalSubTotal) * 100).toFixed(2)}%
                                             </div>
                                         </div>
                                     </div>
