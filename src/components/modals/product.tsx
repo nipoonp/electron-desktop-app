@@ -32,6 +32,7 @@ import { FiChevronRight } from "react-icons/fi";
 import { ProductModifier } from "../shared/productModifier";
 
 import "./product.scss";
+import { useRegister } from "../../context/register-context";
 
 const logger = new Logger("productModal");
 
@@ -59,6 +60,7 @@ export const ProductModal = (props: {
         productCartIndex: number;
     };
 }) => {
+    const { register } = useRegister();
     const { category, product, isProductModifier, isOpen, onAddItem, onUpdateItem, onClose, editProduct } = props;
     const { cartProductQuantitiesById } = useCart();
 
@@ -557,52 +559,53 @@ export const ProductModal = (props: {
     const modifierGroups = (
         <>
             {product.modifierGroups &&
-                product.modifierGroups.items.map((mg) => (
-                    <>
-                        {!mg.hideForCustomer && (
-                            <>
-                                <ModifierGroup
-                                    modifierGroup={mg.modifierGroup}
-                                    onEditSelectionsProductModifier={(
-                                        index: number,
-                                        selectedModifier: ICartModifier,
-                                        productModifier: IGET_RESTAURANT_PRODUCT
-                                    ) => {
-                                        onProcessProductModifier(selectedModifier, mg.modifierGroup.id, productModifier, orderedModifiers, index);
-                                    }}
-                                    onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) =>
-                                        onCheckingModifier(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier)
-                                    }
-                                    onUnCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) =>
-                                        onUnCheckingModifier(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier)
-                                    }
-                                    onChangeModifierQuantity={(
-                                        selectedModifier: IGET_RESTAURANT_MODIFIER,
-                                        preSelectedModifierQuantity: number,
-                                        isIncremented: boolean,
-                                        quantity: number
-                                    ) =>
-                                        onChangeModifierQuantity(
-                                            mg.modifierGroup.id,
-                                            preSelectedModifierQuantity,
-                                            selectedModifier,
-                                            isIncremented,
-                                            quantity
-                                        )
-                                    }
-                                    onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) =>
-                                        onSelectRadioModifier(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier)
-                                    }
-                                    selectedModifiers={orderedModifiers[mg.modifierGroup.id] || []}
-                                    productQuantity={quantity}
-                                    error={error[mg.modifierGroup.id]}
-                                    disabled={false}
-                                />
-                                <div className="separator-6"></div>
-                            </>
-                        )}
-                    </>
-                ))}
+                product.modifierGroups.items.map((mg) => {
+                    if (mg.hideForCustomer) return;
+                    if (register && !mg.modifierGroup.availablePlatforms.includes(register.type)) return;
+
+                    return (
+                        <>
+                            <ModifierGroup
+                                modifierGroup={mg.modifierGroup}
+                                onEditSelectionsProductModifier={(
+                                    index: number,
+                                    selectedModifier: ICartModifier,
+                                    productModifier: IGET_RESTAURANT_PRODUCT
+                                ) => {
+                                    onProcessProductModifier(selectedModifier, mg.modifierGroup.id, productModifier, orderedModifiers, index);
+                                }}
+                                onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) =>
+                                    onCheckingModifier(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier)
+                                }
+                                onUnCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) =>
+                                    onUnCheckingModifier(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier)
+                                }
+                                onChangeModifierQuantity={(
+                                    selectedModifier: IGET_RESTAURANT_MODIFIER,
+                                    preSelectedModifierQuantity: number,
+                                    isIncremented: boolean,
+                                    quantity: number
+                                ) =>
+                                    onChangeModifierQuantity(
+                                        mg.modifierGroup.id,
+                                        preSelectedModifierQuantity,
+                                        selectedModifier,
+                                        isIncremented,
+                                        quantity
+                                    )
+                                }
+                                onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER, preSelectedModifierQuantity: number) =>
+                                    onSelectRadioModifier(mg.modifierGroup.id, preSelectedModifierQuantity, selectedModifier)
+                                }
+                                selectedModifiers={orderedModifiers[mg.modifierGroup.id] || []}
+                                productQuantity={quantity}
+                                error={error[mg.modifierGroup.id]}
+                                disabled={false}
+                            />
+                            <div className="separator-6"></div>
+                        </>
+                    );
+                })}
         </>
     );
 
@@ -753,6 +756,7 @@ export const ModifierGroup = (props: {
         disabled,
     } = props;
 
+    const { register } = useRegister();
     const { cartProductQuantitiesById, cartModifierQuantitiesById } = useCart();
 
     const modifierQuantity = (modifier: IGET_RESTAURANT_MODIFIER) => {
@@ -832,6 +836,8 @@ export const ModifierGroup = (props: {
             <div className="modifiers">
                 {modifierGroup.modifiers &&
                     modifierGroup.modifiers.items.map((m) => {
+                        if (register && !m.modifier.availablePlatforms.includes(register.type)) return;
+
                         const isValid = checkModifierIsValid(m.modifier);
                         const selectedModifier = selectedModifiers.find((modifier) => modifier.id == m.modifier.id);
 

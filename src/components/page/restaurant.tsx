@@ -115,13 +115,17 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
     };
 
     useEffect(() => {
-        if (!restaurant) return;
+        if (!restaurant || !register) return;
 
         const newMostPopularProducts: IMostPopularProduct[] = [];
 
         restaurant.categories.items.forEach((c) => {
+            if (!c.availablePlatforms.includes(register.type)) return;
+
             c.products &&
                 c.products.items.forEach((p) => {
+                    if (!p.product.availablePlatforms.includes(register.type)) return;
+
                     if (p.product.totalQuantitySold) {
                         newMostPopularProducts.push({
                             category: c,
@@ -208,6 +212,10 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
 
     if (!restaurant) {
         return <>Restaurant does not exist</>;
+    }
+
+    if (!register) {
+        return <>Register not selected</>;
     }
 
     if (!restaurant.verified) {
@@ -331,16 +339,20 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
 
     const menuCategories = (
         <>
-            {restaurant.categories.items.map((c, index) => (
-                <Category
-                    key={c.id}
-                    isSelected={selectedCategory != null && selectedCategory.id == c.id}
-                    category={c}
-                    onCategorySelected={(category: IGET_RESTAURANT_CATEGORY) => {
-                        setSelectedCategory(category);
-                    }}
-                />
-            ))}
+            {restaurant.categories.items.map((c, index) => {
+                if (!c.availablePlatforms.includes(register.type)) return;
+
+                return (
+                    <Category
+                        key={c.id}
+                        isSelected={selectedCategory != null && selectedCategory.id == c.id}
+                        category={c}
+                        onCategorySelected={(category: IGET_RESTAURANT_CATEGORY) => {
+                            setSelectedCategory(category);
+                        }}
+                    />
+                );
+            })}
         </>
     );
 
@@ -389,14 +401,20 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
         <div>
             {selectedCategory &&
                 restaurant.categories.items.map((c) => {
-                    if (selectedCategory.id !== c.id) {
-                        return;
-                    }
+                    if (selectedCategory.id !== c.id) return;
+                    if (!c.availablePlatforms.includes(register.type)) return;
 
                     return (
                         <>
                             <div className="h1 mb-6">{c.name}</div>
-                            <div className="products">{c.products && c.products.items.map((p) => productDisplay(c, p.product))}</div>
+                            <div className="products">
+                                {c.products &&
+                                    c.products.items.map((p) => {
+                                        if (!p.product.availablePlatforms.includes(register.type)) return;
+
+                                        return productDisplay(c, p.product);
+                                    })}
+                            </div>
                         </>
                     );
                 })}

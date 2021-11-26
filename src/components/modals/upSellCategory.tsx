@@ -56,8 +56,8 @@ export const UpSellCategoryModal = (props: IUpSellCategoryModalProps) => {
     const Categories = (
         <div className="categories pt-2">
             {upSellCrossSaleCategoryItems.map((item, index) => {
-                if(randomItem.current.category.id == item.category.id) return;
-                
+                if (randomItem.current.category.id == item.category.id) return;
+
                 return categoryDisplay(item.category);
             })}
         </div>
@@ -75,7 +75,7 @@ export const UpSellCategoryModal = (props: IUpSellCategoryModalProps) => {
                     alt="category-image"
                 />
             )}
-            <div className="button-container mb-12">
+            <div className="button-container">
                 <Button className="button large no-thank-you-button mr-3" onClick={onModalClose}>
                     No Thank You
                 </Button>
@@ -90,10 +90,12 @@ export const UpSellCategoryModal = (props: IUpSellCategoryModalProps) => {
         <>
             <div className="content">
                 {mainImage}
-                <div>
-                    <div className="h1 mb-4 text-center">You May Also Like</div>
-                    {Categories}
-                </div>
+                {upSellCrossSaleCategoryItems.length > 1 && (
+                    <div className="mt-12">
+                        <div className="h1 mb-4 text-center">You May Also Like</div>
+                        {Categories}
+                    </div>
+                )}
             </div>
         </>
     );
