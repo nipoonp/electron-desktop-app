@@ -14,9 +14,8 @@ export const useGetRestaurantOrdersByBetweenPlacedAt = (
         variables: {
             orderRestaurantId: orderRestaurantId,
             placedAtStartDate: placedAtStartDate,
-            placedAtEndDate: placedAtEndDate
+            placedAtEndDate: placedAtEndDate,
         },
-        skip: !placedAtStartDate || !placedAtEndDate,
         fetchPolicy: "network-only",
     });
 

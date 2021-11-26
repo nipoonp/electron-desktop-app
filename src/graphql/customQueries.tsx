@@ -1009,17 +1009,3 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
         }
     }
 `;
-
-export const GET_ORDERS_BY_RESTAURANT_BY_STATUS_BY_PLACEDAT = gql`
-    ${ORDER_FIELDS_FRAGMENT}
-    query GetOrdersByRestaurantByStatusByPlacedAt($orderRestaurantId: ID!, $status: OrderStatus!, $startDateTime: String!, $endDateTime: String!) {
-        getOrdersByRestaurantByStatusByPlacedAt(
-            orderRestaurantId: $orderRestaurantId
-            statusPlacedAt: { between: [{ placedAt: $startDateTime, status: $status }, { placedAt: $endDateTime, status: $status }] }
-        ) {
-            items {
-                ...OrderFieldsFragment
-            }
-        }
-    }
-`;
