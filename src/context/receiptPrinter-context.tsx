@@ -1,7 +1,6 @@
 import { useEffect, createContext, useContext } from "react";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
-import { EOrderStatus } from "../graphql/customQueries";
-import { useGetOrdersByRestaurantByStatusByPlacedAt } from "../hooks/useGetOrdersByRestaurantByStatusByPlacedAt";
+import { useGetRestaurantOrdersByBetweenPlacedAt } from "../hooks/useGetRestaurantOrdersByBetweenPlacedAt";
 import { IPrintReceiptDataOutput, IOrderReceipt, IPrintSalesByDayDataInput } from "../model/model";
 import { toast } from "../tabin/components/toast";
 import { convertProductTypesForPrint, filterPrintProducts, toLocalISOString } from "../util/util";
@@ -35,10 +34,10 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     const { register } = useRegister();
     const { logError } = useErrorLogging();
 
-    const { refetch } = useGetOrdersByRestaurantByStatusByPlacedAt(); //Skip the first iteration. Get new orders from refetch.
+    const { refetch } = useGetRestaurantOrdersByBetweenPlacedAt(restaurant ? restaurant.id : "", null, null); //Skip the first iteration. Get new orders from refetch.
 
-    const fetchOrdersLoopTime = 5 * 1000; //15 seconds
-    const retryPrintLoopTime = 20 * 1 * 1000; //20 seconds
+    const fetchOrdersLoopTime = 15 * 1000; //15 seconds
+    const retryPrintLoopTime = 20 * 1000; //20 seconds
 
     useEffect(() => {
         if (!restaurant) return;
@@ -65,17 +64,17 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
                 const res = await refetch({
                     orderRestaurantId: restaurant ? restaurant.id : "",
-                    status: EOrderStatus.NEW,
-                    startDateTime: ordersLastFetched,
-                    endDateTime: toLocalISOString(new Date()),
+                    placedAtStartDate: ordersLastFetched,
+                    placedAtEndDate: toLocalISOString(new Date()),
                 });
 
-                const orders: IGET_RESTAURANT_ORDER_FRAGMENT[] = res.data.getOrdersByRestaurantByStatusByPlacedAt.items;
+                const orders: IGET_RESTAURANT_ORDER_FRAGMENT[] = res.data.getOrdersByRestaurantByPlacedAt.items;
 
                 await printNewOrderReceipts(orders);
 
                 localStorage.setItem("ordersLastFetched", toLocalISOString(new Date()));
             } catch (e) {
+                console.error("Error", e);
                 await logError("Error polling for new orders", JSON.stringify({ error: e, restaurant: restaurant }));
             }
         }, fetchOrdersLoopTime);
