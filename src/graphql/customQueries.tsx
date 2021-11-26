@@ -367,6 +367,7 @@ export const GET_RESTAURANT = gql`
                         identityPoolId
                     }
                     displaySequence
+                    availablePlatforms
                     availability {
                         monday {
                             startTime
@@ -417,6 +418,7 @@ export const GET_RESTAURANT = gql`
                                     region
                                     identityPoolId
                                 }
+                                availablePlatforms
                                 availability {
                                     monday {
                                         startTime
@@ -458,6 +460,7 @@ export const GET_RESTAURANT = gql`
                                             choiceMin
                                             choiceMax
                                             choiceDuplicate
+                                            availablePlatforms
                                             modifiers(limit: 500) {
                                                 items {
                                                     id
@@ -477,6 +480,7 @@ export const GET_RESTAURANT = gql`
                                                         totalQuantityAvailable
                                                         soldOut
                                                         soldOutDate
+                                                        availablePlatforms
                                                         productModifier {
                                                             id
                                                             name
@@ -534,6 +538,7 @@ export const GET_RESTAURANT = gql`
                                                                         choiceMin
                                                                         choiceMax
                                                                         choiceDuplicate
+                                                                        availablePlatforms
                                                                         modifiers(limit: 500) {
                                                                             items {
                                                                                 id
@@ -553,6 +558,7 @@ export const GET_RESTAURANT = gql`
                                                                                     totalQuantityAvailable
                                                                                     soldOut
                                                                                     soldOutDate
+                                                                                    availablePlatforms
                                                                                 }
                                                                             }
                                                                         }
@@ -822,6 +828,7 @@ export interface IGET_RESTAURANT_CATEGORY {
     name: string;
     displaySequence: number;
     image?: IS3Object;
+    availablePlatforms: ERegisterType[];
     availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
     products?: {
         items: IGET_RESTAURANT_PRODUCT_LINK[];
@@ -845,6 +852,7 @@ export interface IGET_RESTAURANT_PRODUCT {
     soldOut?: boolean;
     soldOutDate?: string;
     image?: IS3Object;
+    availablePlatforms: ERegisterType[];
     availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
     modifierGroups?: {
         items: IGET_RESTAURANT_MODIFIER_GROUP_LINK[];
@@ -864,6 +872,7 @@ export interface IGET_RESTAURANT_MODIFIER_GROUP {
     choiceMin: number;
     choiceMax: number;
     choiceDuplicate: number;
+    availablePlatforms: ERegisterType[];
     modifiers?: {
         items: IGET_RESTAURANT_MODIFIER_LINK[];
     };
@@ -885,6 +894,7 @@ export interface IGET_RESTAURANT_MODIFIER {
     totalQuantityAvailable?: number;
     soldOut?: boolean;
     soldOutDate?: string;
+    availablePlatforms: ERegisterType[];
     productModifier?: IGET_RESTAURANT_PRODUCT;
 }
 
@@ -1003,20 +1013,6 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
     ${ORDER_FIELDS_FRAGMENT}
     query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAtStartDate: String!, $placedAtEndDate: String!) {
         getOrdersByRestaurantByPlacedAt(orderRestaurantId: $orderRestaurantId, placedAt: { between: [$placedAtStartDate, $placedAtEndDate] }) {
-            items {
-                ...OrderFieldsFragment
-            }
-        }
-    }
-`;
-
-export const GET_ORDERS_BY_RESTAURANT_BY_STATUS_BY_PLACEDAT = gql`
-    ${ORDER_FIELDS_FRAGMENT}
-    query GetOrdersByRestaurantByStatusByPlacedAt($orderRestaurantId: ID!, $status: OrderStatus!, $startDateTime: String!, $endDateTime: String!) {
-        getOrdersByRestaurantByStatusByPlacedAt(
-            orderRestaurantId: $orderRestaurantId
-            statusPlacedAt: { between: [{ placedAt: $startDateTime, status: $status }, { placedAt: $endDateTime, status: $status }] }
-        ) {
             items {
                 ...OrderFieldsFragment
             }

@@ -115,10 +115,12 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
         <>
             <div className="content">
                 {mainImage}
-                <div>
-                    <div className="h1 mb-4 text-center">You May Also Like</div>
-                    {products}
-                </div>
+                {upSellCrossSaleProductItems.length > 1 && (
+                    <div className="mt-12">
+                        <div className="h1 mb-4 text-center">You May Also Like</div>
+                        {products}
+                    </div>
+                )}
             </div>
         </>
     );

@@ -13,6 +13,7 @@ import { Input } from "../../tabin/components/input";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { useCart } from "../../context/cart-context";
 import { FiX } from "react-icons/fi";
+import { useRegister } from "../../context/register-context";
 
 interface IFilteredProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -27,12 +28,14 @@ interface ISearchProductModalProps {
 
 export const SearchProductModal = (props: ISearchProductModalProps) => {
     const { restaurant } = useRestaurant();
+    const { register } = useRegister();
     const { cartProductQuantitiesById } = useCart();
 
     const [searchTerm, setSearchTerm] = useState("");
     const [filteredProducts, setFilteredProducts] = useState<IFilteredProduct[]>([]);
 
     if (!restaurant) throw "Restaurant is invalid!";
+    if (!register) throw "Register is invalid!";
 
     const onModalClose = () => {
         props.onClose();
@@ -49,6 +52,9 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
         restaurant.categories.items.forEach((category) => {
             category.products &&
                 category.products.items.forEach((p) => {
+                    if (!category.availablePlatforms.includes(register.type)) return;
+                    if (!p.product.availablePlatforms.includes(register.type)) return;
+
                     if (p.product.name.toLowerCase().includes(value.toLowerCase())) {
                         newFilteredProducts.push({
                             category: category,
