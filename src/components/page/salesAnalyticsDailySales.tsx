@@ -1,18 +1,17 @@
 import { format } from "date-fns";
+import { useHistory } from "react-router-dom";
+import { useSalesAnalytics } from "../../context/salesAnalytics-context";
+import { taxRate } from "../../model/util";
 import { Card } from "../../tabin/components/card";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { convertCentsToDollars } from "../../util/util";
-import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
+import { Link } from "../../tabin/components/link";
 import { Table } from "../../tabin/components/table";
-import { useSalesAnalytics } from "../../context/salesAnalytics-context";
+import { convertCentsToDollars, getDollarString } from "../../util/util";
+import { ordersPath } from "../main";
+import "./salesAnalytics.scss";
+import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 
-import "./salesAnalytics.scss";
-import { taxRate } from "../../model/util";
-import { Button } from "../../tabin/components/button";
-import { useHistory } from "react-router-dom";
-import { ordersPath } from "../main";
-import { Link } from "../../tabin/components/link";
 
 export const SalesAnalyticsDailySales = () => {
     const history = useHistory();
@@ -83,11 +82,11 @@ export const SalesAnalyticsDailySales = () => {
                                         <tr key={index}>
                                             <td className="sales-analytics-table-date-cell">{format(new Date(date), "E, dd MMM")}</td>
                                             <td className="text-right">{sale.totalQuantity}</td>
-                                            <td className="text-right">{`$${convertCentsToDollars(sale.totalPaymentAmounts.cash)}`}</td>
-                                            <td className="text-right">{`$${convertCentsToDollars(sale.totalPaymentAmounts.eftpos)}`}</td>
-                                            <td className="text-right">{`$${convertCentsToDollars(sale.totalPaymentAmounts.online)}`}</td>
-                                            <td className="text-right">{`$${convertCentsToDollars(sale.totalAmount * (taxRate / 100))}`}</td>
-                                            <td className="text-right">{`$${convertCentsToDollars(sale.totalAmount)}`}</td>
+                                            <td className="text-right">{getDollarString(sale.totalPaymentAmounts.cash)}</td>
+                                            <td className="text-right">{getDollarString(sale.totalPaymentAmounts.eftpos)}</td>
+                                            <td className="text-right">{getDollarString(sale.totalPaymentAmounts.online)}</td>
+                                            <td className="text-right">{getDollarString(sale.totalAmount * (taxRate / 100))}</td>
+                                            <td className="text-right">{getDollarString(sale.totalAmount)}</td>
                                             <td className="text-right">
                                                 <Link
                                                     className="sales-analytics-table-show-orders-link"
