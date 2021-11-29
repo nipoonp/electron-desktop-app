@@ -17,7 +17,7 @@ import { IOrderReceipt, IPrintReceiptDataOutput, IPrintReceiptOutput, IPrintSale
 let mainWindow: any;
 let verifoneClient = new net.Socket();
 
-// app.disableHardwareAcceleration();
+app.disableHardwareAcceleration();
 
 function createWindow() {
     // mainWindow = new BrowserWindow({width: 900, height: 680, fullscreen: true});
