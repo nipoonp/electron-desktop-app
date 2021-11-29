@@ -25,8 +25,6 @@ import "./salesAnalytics.scss";
 import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 
-
-
 export const SalesAnalytics = () => {
     const history = useHistory();
     const { restaurant } = useRestaurant();
@@ -156,7 +154,7 @@ export const SalesAnalytics = () => {
             dailySalesExport.fields = ["Date", ...salesAnalytics.exportSalesDates];
             dailySalesExport.data = [];
             dailySalesExport.data.push(["Orders"], ["Cash"], ["Eftpos"], ["Online"], ["Tax"], ["Total"]);
-            
+
             salesAnalytics.dailySalesExport.data.forEach((d) => {
                 dailySalesExport.data[0] = [...dailySalesExport.data[0], d[1]];
                 dailySalesExport.data[1] = [...dailySalesExport.data[1], d[2]];
@@ -455,7 +453,10 @@ export const SalesAnalytics = () => {
                                             <div className="h4 mb-2">${convertCentsToDollars(salesAnalytics.topSoldCategory.totalAmount ?? 0)}</div>
                                             <div className="text-uppercase">% of Sales</div>
                                             <div className="h4">
-                                                {((salesAnalytics.topSoldCategory.totalAmount / salesAnalytics.totalSubTotal) * 100).toFixed(2)}%
+                                                {salesAnalytics.totalSubTotal
+                                                    ? ((salesAnalytics.topSoldCategory.totalAmount / salesAnalytics.totalSubTotal) * 100).toFixed(2)
+                                                    : 0}
+                                                %
                                             </div>
                                         </div>
                                     </div>
@@ -485,7 +486,10 @@ export const SalesAnalytics = () => {
                                             <div className="h4 mb-2">${convertCentsToDollars(salesAnalytics.topSoldProduct.totalAmount ?? 0)}</div>
                                             <div className="text-uppercase">% of Sales</div>
                                             <div className="h4">
-                                                {((salesAnalytics.topSoldProduct.totalAmount / salesAnalytics.totalSubTotal) * 100).toFixed(2)}%
+                                                {salesAnalytics.totalSubTotal
+                                                    ? ((salesAnalytics.topSoldProduct.totalAmount / salesAnalytics.totalSubTotal) * 100).toFixed(2)
+                                                    : 0}
+                                                %
                                             </div>
                                         </div>
                                     </div>
