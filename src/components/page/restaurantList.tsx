@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useRestaurant } from "../../context/restaurant-context";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { beginOrderPath } from "../main";
@@ -10,7 +10,7 @@ import { Button } from "../../tabin/components/button";
 import "./restaurantList.scss";
 
 export const RestaurantList = () => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { restaurant, selectRestaurant, userRestaurants } = useRestaurant();
     const { register, disconnectRegister } = useRegister();
     const storedSelectedRestaurantId = localStorage.getItem("selectedRestaurantId");
@@ -40,7 +40,7 @@ export const RestaurantList = () => {
 
     const onConnect = async (restaurantId: string) => {
         selectRestaurant(restaurantId);
-        history.push(beginOrderPath);
+        navigate(beginOrderPath);
     };
 
     return (

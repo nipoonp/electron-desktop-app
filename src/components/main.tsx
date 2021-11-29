@@ -1,5 +1,6 @@
 import { FunctionComponent, useEffect } from "react";
-import { Router, Route, Switch, Redirect, RouteComponentProps, RouteProps, useHistory } from "react-router-dom";
+import { Navigate, Route, RouteProps, Routes, useNavigate } from "react-router";
+import { BrowserRouter } from "react-router-dom";
 import { Restaurant } from "./page/restaurant";
 import { NoMatch } from "./page/error/404";
 import Unauthorised from "./page/error/unauthorised";
@@ -42,58 +43,59 @@ try {
 
 // reset scroll position on change of route
 // https://stackoverflow.com/a/46868707/11460922
-export const history = createBrowserHistory();
+export const navigate = createBrowserHistory();
 
-history.listen((location, action) => {
-    window.scrollTo(0, 0);
-});
+// history.listen((location, action) => {
+//     window.scrollTo(0, 0);
+// });
 
 const logger = new Logger("Main");
 
 Modal.setAppElement("#root");
 
 // Auth routes
-export const loginPath = "/login";
-export const stockPath = "/stock";
-export const ordersPath = "/orders";
-export const reportsPath = "/reports";
-export const restaurantListPath = "/restaurant_list";
-export const registerListPath = "/register_list";
-export const configureNewEftposPath = "/configure_new_eftpos";
-export const beginOrderPath = "/";
-export const orderTypePath = "/order_type";
-export const tableNumberPath = "/table_number";
-export const restaurantPath = "/restaurant";
-export const checkoutPath = "/checkout";
-export const logoutPath = "/log_out";
-export const salesAnalyticsPath = "/sales_analytics";
-export const salesAnalyticsDailySalesPath = "/sales_analytics/daily_sales";
-export const salesAnalyticsHourlySalesPath = "/sales_analytics/hourly_sales";
-export const salesAnalyticsTopCategoryPath = "/sales_analytics/top_category";
-export const salesAnalyticsTopProductPath = "/sales_analytics/top_product";
-export const unauthorizedPath = "/unauthorized";
+export const loginPath = "login";
+export const stockPath = "stock";
+export const ordersPath = "orders";
+export const reportsPath = "reports";
+export const restaurantListPath = "restaurant_list";
+export const registerListPath = "register_list";
+export const configureNewEftposPath = "configure_new_eftpos";
+export const beginOrderPath = "";
+export const orderTypePath = "order_type";
+export const tableNumberPath = "table_number";
+export const restaurantPath = "restaurant";
+export const checkoutPath = "checkout";
+export const logoutPath = "log_out";
+export const salesAnalyticsPath = "sales_analytics";
+export const salesAnalyticsDailySalesPath = "sales_analytics/daily_sales";
+export const salesAnalyticsHourlySalesPath = "sales_analytics/hourly_sales";
+export const salesAnalyticsTopCategoryPath = "sales_analytics/top_category";
+export const salesAnalyticsTopProductPath = "sales_analytics/top_product";
+export const unauthorizedPath = "unauthorized";
 
 export default () => {
     return (
         <>
             <AlertProvider>
-                <Router history={history}>
-                    <Routes />
-                </Router>
+                {/* <Router history={history}> */}
+                <BrowserRouter>
+                    <AppRoutes />
+                </BrowserRouter>
             </AlertProvider>
             <ToastContainer />
         </>
     );
 };
 
-const Routes = () => {
-    const history = useHistory();
+const AppRoutes = () => {
+    const navigate = useNavigate();
 
     let timerId: NodeJS.Timeout;
 
     // This is for electron, as it doesn't start at '/' route for some reason.
     useEffect(() => {
-        history.push(beginOrderPath);
+        navigate(beginOrderPath);
     }, []);
 
     useEffect(() => {
@@ -111,31 +113,31 @@ const Routes = () => {
             ipcRenderer.on("CONTEXT_MENU_COMMAND", (e: any, command: any) => {
                 switch (command) {
                     case "kioskMode":
-                        history.push(beginOrderPath);
+                        navigate(beginOrderPath);
                         break;
                     case "stock":
-                        history.push(stockPath);
+                        navigate(stockPath);
                         break;
                     case "orders":
-                        history.push(ordersPath);
+                        navigate(ordersPath);
                         break;
                     case "reports":
-                        history.push(reportsPath);
+                        navigate(reportsPath);
                         break;
                     case "salesAnalytics":
-                        history.push(salesAnalyticsPath);
+                        navigate(salesAnalyticsPath);
                         break;
                     case "configureEftposAndPrinters":
-                        history.push(configureNewEftposPath);
+                        navigate(configureNewEftposPath);
                         break;
                     case "configureRestaurant":
-                        history.push(restaurantListPath);
+                        navigate(restaurantListPath);
                         break;
                     case "configureRegister":
-                        history.push(registerListPath);
+                        navigate(registerListPath);
                         break;
                     case "logout":
-                        history.push(logoutPath);
+                        navigate(logoutPath);
                         break;
                     default:
                         break;
@@ -144,162 +146,93 @@ const Routes = () => {
     }, []);
 
     return (
-        <Switch>
-            <Route exact path={loginPath} component={Login} />
-            <Route exact path={logoutPath} component={Logout} />
-            <PrivateRoute exact path={restaurantListPath} component={RestaurantList} />
-            <PrivateRoute exact path={registerListPath} component={RegisterList} />
-            <PrivateRoute exact path={stockPath} component={Stock} />
-            <PrivateRoute
-                exact
+        <Routes>
+            <Route path={loginPath} element={<Login />} />
+            <Route path={logoutPath} element={<Logout />} />
+            <Route path={restaurantListPath} element={<PrivateRoute element={<RestaurantList />} />} />
+            <Route path={registerListPath} element={<PrivateRoute element={<RegisterList />} />} />
+            <Route path={stockPath} element={<PrivateRoute element={<Stock />} />} />
+            <Route
                 path={`${ordersPath}/:date?`}
-                component={(props: RouteComponentProps<any>) => {
-                    return <Orders date={props.match.params.date} {...props} />;
-                }}
+                element={<PrivateRoute element={(props) => <Orders date={props.match.params.date} {...props} />} />}
             />
-            <PrivateRoute exact path={reportsPath} component={Reports} />
-            <PrivateRoute exact path={salesAnalyticsPath} component={SalesAnalytics} />
-            <PrivateRoute exact path={salesAnalyticsDailySalesPath} component={SalesAnalyticsDailySales} />
-            <PrivateRoute exact path={salesAnalyticsHourlySalesPath} component={SalesAnalyticsHourlySales} />
-            <PrivateRoute exact path={salesAnalyticsTopCategoryPath} component={SalesAnalyticsTopCategory} />
-            <PrivateRoute exact path={salesAnalyticsTopProductPath} component={SalesAnalyticsTopProduct} />
-            <RestaurantRegisterPrivateRoute exact path={configureNewEftposPath} component={ConfigureNewEftpos} />
-            <RestaurantRegisterPrivateRoute exact path={beginOrderPath} component={BeginOrder} />
-            <RestaurantRegisterPrivateRoute exact path={orderTypePath} component={OrderType} />
-            <RestaurantRegisterPrivateRoute exact path={tableNumberPath} component={TableNumber} />
-            <RestaurantRegisterPrivateRoute exact path={checkoutPath} component={Checkout} />
-            <RestaurantRegisterPrivateRoute
-                exact
+            <Route path={reportsPath} element={<PrivateRoute element={<Reports />} />} />
+            <Route path={salesAnalyticsPath} element={<PrivateRoute element={<SalesAnalytics />} />} />
+            <Route path={salesAnalyticsDailySalesPath} element={<PrivateRoute element={<SalesAnalyticsDailySales />} />} />
+            <Route path={salesAnalyticsHourlySalesPath} element={<PrivateRoute element={<SalesAnalyticsHourlySales />} />} />
+            <Route path={salesAnalyticsTopCategoryPath} element={<PrivateRoute element={<SalesAnalyticsTopCategory />} />} />
+            <Route path={salesAnalyticsTopProductPath} element={<PrivateRoute element={<SalesAnalyticsTopProduct />} />} />
+            <Route path={configureNewEftposPath} element={<RestaurantRegisterPrivateRoute element={<ConfigureNewEftpos />} />} />
+            <Route path={beginOrderPath} element={<RestaurantRegisterPrivateRoute element={<BeginOrder />} />} />
+            <Route path={orderTypePath} element={<RestaurantRegisterPrivateRoute element={<OrderType />} />} />
+            <Route path={tableNumberPath} element={<RestaurantRegisterPrivateRoute element={<TableNumber />} />} />
+            <Route path={checkoutPath} element={<RestaurantRegisterPrivateRoute element={<Checkout />} />} />
+            <Route
                 path={`${restaurantPath}/:restaurantId/:selectedCategoryId?/:selectedProductId?`}
-                component={(props: RouteComponentProps<any>) => {
-                    return (
-                        <Restaurant
-                            restaurantId={props.match.params.restaurantId}
-                            selectedCategoryId={props.match.params.selectedCategoryId}
-                            selectedProductId={props.match.params.selectedProductId}
-                            {...props}
-                        />
-                    );
-                }}
+                element={
+                    <RestaurantRegisterPrivateRoute
+                        element={(props) => (
+                            <Restaurant
+                                restaurantId={props.match.params.restaurantId}
+                                selectedCategoryId={props.match.params.selectedCategoryId}
+                                selectedProductId={props.match.params.selectedProductId}
+                                {...props}
+                            />
+                        )}
+                    />
+                }
             />
-            <Route exact path={unauthorizedPath} component={Unauthorised} />
-            <Route component={NoMatch} />
-        </Switch>
+            <Route path={unauthorizedPath} element={<Unauthorised />} />
+            <Route element={<NoMatch />} />
+        </Routes>
     );
 };
 
-export const AdminOnlyRoute: FunctionComponent<PrivateRouteProps> = ({ component: Component, path: Path, ...rest }) => {
+export const AdminOnlyRoute = ({ element }) => {
+    console.log("I am here...111");
     const { isAdmin, status } = useAuth();
-    const { user, isLoading } = useUser();
+    const { isLoading } = useUser();
 
     // Handle other authentication statuses
-    if (status !== AuthenticationStatus.SignedIn) {
-        return (
-            <Route
-                {...rest}
-                render={(props) => (
-                    <Redirect
-                        to={{
-                            pathname: "/login",
-                            state: { from: props.location },
-                        }}
-                    />
-                )}
-            />
-        );
-    }
+    if (status !== AuthenticationStatus.SignedIn) return <Navigate to={loginPath} replace />;
 
     // Assumed signed in from this point onwards
-    if (isLoading) {
-        return <FullScreenSpinner show={true} text="Loading user" />;
-    }
+    if (isLoading) return <FullScreenSpinner show={true} text="Loading user" />;
 
     // not authorized
-    if (!isAdmin) {
-        return (
-            <Route
-                {...rest}
-                render={(props) => (
-                    <Redirect
-                        to={{
-                            pathname: unauthorizedPath,
-                            state: { from: props.location },
-                        }}
-                    />
-                )}
-            />
-        );
-    }
+    if (!isAdmin) return <Navigate to={unauthorizedPath} replace />;
 
     // Route to original path
-    return <Route {...rest} component={Component} />;
+    return element;
 };
 
-const PrivateRoute: FunctionComponent<PrivateRouteProps> = ({ component: Component, ...rest }) => {
+const PrivateRoute = ({ element }) => {
+    console.log("I am here...222");
     const { status } = useAuth();
     const { user, isLoading } = useUser();
 
     // Handle other authentication statuses
-    if (status !== AuthenticationStatus.SignedIn) {
-        return (
-            <Route
-                {...rest}
-                render={(props) => (
-                    <Redirect
-                        to={{
-                            pathname: "/login",
-                            state: { from: props.location },
-                        }}
-                    />
-                )}
-            />
-        );
-    }
+    if (status !== AuthenticationStatus.SignedIn) return <Navigate to={loginPath} replace />;
 
     // Assumed signed in from this point onwards
-    if (isLoading) {
-        return <FullScreenSpinner show={true} text="Loading user..." />;
-    }
+    if (isLoading) return <FullScreenSpinner show={true} text="Loading user..." />;
 
-    if (!user) {
-        throw "Signed in but no user found in database";
-    }
+    if (!user) throw "Signed in but no user found in database";
 
     // Route to original path
-    return <Route {...rest} component={Component} />;
+    return element;
 };
 
-interface PrivateRouteProps extends RouteProps {
-    component: React.ComponentType<RouteComponentProps<any>> | React.ComponentType<any>;
-}
-
-const RestaurantRegisterPrivateRoute: FunctionComponent<PrivateRouteProps> = ({ component: Component, ...rest }) => {
+const RestaurantRegisterPrivateRoute = ({ element }) => {
+    console.log("I am here...333");
     const { user } = useUser();
     const { restaurant, isLoading, isError } = useRestaurant();
 
-    if (user && isLoading) {
-        return <FullScreenSpinner show={true} text="Loading restaurant..." />;
-    }
+    if (user && isLoading) return <FullScreenSpinner show={true} text="Loading restaurant..." />;
 
-    if (isError) {
-        return <div>There was an error loading your restaurant.</div>;
-    }
+    if (isError) return <div>There was an error loading your restaurant.</div>;
 
-    if (!restaurant) {
-        return (
-            <Route
-                {...rest}
-                render={(props) => (
-                    <Redirect
-                        to={{
-                            pathname: restaurantListPath,
-                            state: { from: props.location },
-                        }}
-                    />
-                )}
-            />
-        );
-    }
+    if (!restaurant) return <Navigate to={restaurantListPath} replace />;
 
     //----------------------------------------------------------------------------
     //TODO: Fix this later, should be coming in from the kiosk
@@ -315,22 +248,8 @@ const RestaurantRegisterPrivateRoute: FunctionComponent<PrivateRouteProps> = ({ 
         });
     //----------------------------------------------------------------------------
 
-    if (!matchingRegister) {
-        return (
-            <Route
-                {...rest}
-                render={(props) => (
-                    <Redirect
-                        to={{
-                            pathname: registerListPath,
-                            state: { from: props.location },
-                        }}
-                    />
-                )}
-            />
-        );
-    }
+    if (!matchingRegister) return <Navigate to={restaurantListPath} replace />;
 
     // Route to original path
-    return <PrivateRoute {...rest} component={Component} />;
+    return element;
 };

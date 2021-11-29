@@ -1,4 +1,4 @@
-import { useHistory } from "react-router";
+import { useNavigate } from "react-router";
 import { checkoutPath } from "../main";
 import { useCart } from "../../context/cart-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -9,7 +9,7 @@ import { useRestaurant } from "../../context/restaurant-context";
 import "./tableNumber.scss";
 
 export const TableNumber = () => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { tableNumber, setTableNumber } = useCart();
     const { restaurant } = useRestaurant();
 
@@ -18,7 +18,7 @@ export const TableNumber = () => {
     }
 
     const onNext = () => {
-        history.push(checkoutPath);
+        navigate(checkoutPath);
     };
 
     const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {

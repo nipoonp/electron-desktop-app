@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "../../tabin/components/toast";
 import { useRegister } from "../../context/register-context";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { beginOrderPath } from "../main";
 import { useRestaurant } from "../../context/restaurant-context";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
@@ -10,7 +10,7 @@ import { Button } from "../../tabin/components/button";
 import "./registerList.scss";
 
 export const RegisterList = () => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { restaurant } = useRestaurant();
     const { register, connectRegister, disconnectRegister } = useRegister();
     const [showFullScreenSpinner, setShowFullScreenSpinner] = useState(false);
@@ -24,7 +24,7 @@ export const RegisterList = () => {
             await connectRegister(key);
 
             setShowFullScreenSpinner(false);
-            history.replace(beginOrderPath);
+            navigate(beginOrderPath, { replace: true });
         } catch (e) {
             setShowFullScreenSpinner(false);
             toast.error(e);

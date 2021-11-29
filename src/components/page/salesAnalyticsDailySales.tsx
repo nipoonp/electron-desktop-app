@@ -10,18 +10,18 @@ import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 import "./salesAnalytics.scss";
 import { taxRate } from "../../model/util";
 import { Button } from "../../tabin/components/button";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ordersPath } from "../main";
 import { Link } from "../../tabin/components/link";
 
 export const SalesAnalyticsDailySales = () => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
 
     const graphColor = getComputedStyle(document.documentElement).getPropertyValue("--primary-color");
 
     const onShowOrder = (date: string) => {
-        history.push(`${ordersPath}/${date}`);
+        navigate(`${ordersPath}/${date}`);
     };
 
     if (error) {
