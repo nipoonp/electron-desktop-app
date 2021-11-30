@@ -1,5 +1,5 @@
-import { FunctionComponent, useEffect } from "react";
-import { Navigate, Route, RouteProps, Routes, useNavigate } from "react-router";
+import { useEffect } from "react";
+import { Navigate, Route, Routes, useNavigate } from "react-router";
 import { BrowserRouter } from "react-router-dom";
 import { Restaurant } from "./page/restaurant";
 import { NoMatch } from "./page/error/404";
@@ -54,31 +54,30 @@ const logger = new Logger("Main");
 Modal.setAppElement("#root");
 
 // Auth routes
-export const loginPath = "login";
-export const stockPath = "stock";
-export const ordersPath = "orders";
-export const reportsPath = "reports";
-export const restaurantListPath = "restaurant_list";
-export const registerListPath = "register_list";
-export const configureNewEftposPath = "configure_new_eftpos";
-export const beginOrderPath = "";
-export const orderTypePath = "order_type";
-export const tableNumberPath = "table_number";
-export const restaurantPath = "restaurant";
-export const checkoutPath = "checkout";
-export const logoutPath = "log_out";
-export const salesAnalyticsPath = "sales_analytics";
-export const salesAnalyticsDailySalesPath = "sales_analytics/daily_sales";
-export const salesAnalyticsHourlySalesPath = "sales_analytics/hourly_sales";
-export const salesAnalyticsTopCategoryPath = "sales_analytics/top_category";
-export const salesAnalyticsTopProductPath = "sales_analytics/top_product";
-export const unauthorizedPath = "unauthorized";
+export const loginPath = "/login";
+export const stockPath = "/stock";
+export const ordersPath = "/orders";
+export const reportsPath = "/reports";
+export const restaurantListPath = "/restaurant_list";
+export const registerListPath = "/register_list";
+export const configureNewEftposPath = "/configure_new_eftpos";
+export const beginOrderPath = "/";
+export const orderTypePath = "/order_type";
+export const tableNumberPath = "/table_number";
+export const restaurantPath = "/restaurant";
+export const checkoutPath = "/checkout";
+export const logoutPath = "/log_out";
+export const salesAnalyticsPath = "/sales_analytics";
+export const salesAnalyticsDailySalesPath = "/sales_analytics/daily_sales";
+export const salesAnalyticsHourlySalesPath = "/sales_analytics/hourly_sales";
+export const salesAnalyticsTopCategoryPath = "/sales_analytics/top_category";
+export const salesAnalyticsTopProductPath = "/sales_analytics/top_product";
+export const unauthorizedPath = "/unauthorized";
 
 export default () => {
     return (
         <>
             <AlertProvider>
-                {/* <Router history={history}> */}
                 <BrowserRouter>
                     <AppRoutes />
                 </BrowserRouter>
@@ -90,7 +89,6 @@ export default () => {
 
 const AppRoutes = () => {
     const navigate = useNavigate();
-
     let timerId: NodeJS.Timeout;
 
     // This is for electron, as it doesn't start at '/' route for some reason.
@@ -152,10 +150,7 @@ const AppRoutes = () => {
             <Route path={restaurantListPath} element={<PrivateRoute element={<RestaurantList />} />} />
             <Route path={registerListPath} element={<PrivateRoute element={<RegisterList />} />} />
             <Route path={stockPath} element={<PrivateRoute element={<Stock />} />} />
-            <Route
-                path={`${ordersPath}/:date?`}
-                element={<PrivateRoute element={(props) => <Orders date={props.match.params.date} {...props} />} />}
-            />
+            <Route path={`${ordersPath}/:date?`} element={<PrivateRoute element={<Orders />} />} />
             <Route path={reportsPath} element={<PrivateRoute element={<Reports />} />} />
             <Route path={salesAnalyticsPath} element={<PrivateRoute element={<SalesAnalytics />} />} />
             <Route path={salesAnalyticsDailySalesPath} element={<PrivateRoute element={<SalesAnalyticsDailySales />} />} />
@@ -167,77 +162,46 @@ const AppRoutes = () => {
             <Route path={orderTypePath} element={<RestaurantRegisterPrivateRoute element={<OrderType />} />} />
             <Route path={tableNumberPath} element={<RestaurantRegisterPrivateRoute element={<TableNumber />} />} />
             <Route path={checkoutPath} element={<RestaurantRegisterPrivateRoute element={<Checkout />} />} />
-            <Route
-                path={`${restaurantPath}/:restaurantId/:selectedCategoryId?/:selectedProductId?`}
-                element={
-                    <RestaurantRegisterPrivateRoute
-                        element={(props) => (
-                            <Restaurant
-                                restaurantId={props.match.params.restaurantId}
-                                selectedCategoryId={props.match.params.selectedCategoryId}
-                                selectedProductId={props.match.params.selectedProductId}
-                                {...props}
-                            />
-                        )}
-                    />
-                }
-            />
+            <Route path={`${restaurantPath}/:restaurantId`} element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />} />
             <Route path={unauthorizedPath} element={<Unauthorised />} />
-            <Route element={<NoMatch />} />
+            <Route path="*" element={<NoMatch />} />
         </Routes>
     );
 };
 
 export const AdminOnlyRoute = ({ element }) => {
-    console.log("I am here...111");
     const { isAdmin, status } = useAuth();
     const { isLoading } = useUser();
 
-    // Handle other authentication statuses
-    if (status !== AuthenticationStatus.SignedIn) return <Navigate to={loginPath} replace />;
+    if (status !== AuthenticationStatus.SignedIn) return <Navigate to={loginPath} />; // Handle other authentication statuses
+    if (isLoading) return <FullScreenSpinner show={true} text="Loading user" />; // Assumed signed in from this point onwards
+    if (!isAdmin) return <Navigate to={unauthorizedPath} replace />; // not authorized
 
-    // Assumed signed in from this point onwards
-    if (isLoading) return <FullScreenSpinner show={true} text="Loading user" />;
-
-    // not authorized
-    if (!isAdmin) return <Navigate to={unauthorizedPath} replace />;
-
-    // Route to original path
-    return element;
+    return element; // Route to original path
 };
 
 const PrivateRoute = ({ element }) => {
-    console.log("I am here...222");
     const { status } = useAuth();
     const { user, isLoading } = useUser();
 
-    // Handle other authentication statuses
-    if (status !== AuthenticationStatus.SignedIn) return <Navigate to={loginPath} replace />;
-
-    // Assumed signed in from this point onwards
-    if (isLoading) return <FullScreenSpinner show={true} text="Loading user..." />;
-
+    if (status !== AuthenticationStatus.SignedIn) return <Navigate to={loginPath} />; // Handle other authentication statuses
+    if (isLoading) return <FullScreenSpinner show={true} text="Loading user..." />; // Assumed signed in from this point onwards
     if (!user) throw "Signed in but no user found in database";
 
-    // Route to original path
-    return element;
+    return element; // Route to original path
 };
 
 const RestaurantRegisterPrivateRoute = ({ element }) => {
-    console.log("I am here...333");
     const { user } = useUser();
     const { restaurant, isLoading, isError } = useRestaurant();
 
     if (user && isLoading) return <FullScreenSpinner show={true} text="Loading restaurant..." />;
-
     if (isError) return <div>There was an error loading your restaurant.</div>;
-
-    if (!restaurant) return <Navigate to={restaurantListPath} replace />;
+    if (!restaurant) return <Navigate to={restaurantListPath} />;
 
     //----------------------------------------------------------------------------
     //TODO: Fix this later, should be coming in from the kiosk
     const storedRegisterKey = localStorage.getItem("registerKey");
-
     let matchingRegister: IGET_RESTAURANT_REGISTER | null = null;
 
     restaurant &&
@@ -248,7 +212,7 @@ const RestaurantRegisterPrivateRoute = ({ element }) => {
         });
     //----------------------------------------------------------------------------
 
-    if (!matchingRegister) return <Navigate to={restaurantListPath} replace />;
+    if (!matchingRegister) return <Navigate to={registerListPath} />;
 
     // Route to original path
     return element;
