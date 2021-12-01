@@ -2,13 +2,8 @@ import electron from "electron";
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
 
-// Setup file logging
-// var log = require('electron-log');
-
-import isDev from "electron-is-dev";
 import { ipcMain, Menu } from "electron";
 import path from "path";
-import { dialog } from "electron";
 import { autoUpdater } from "electron-updater";
 import net from "net";
 import { encodeCommandBuffer, decodeCommandBuffer, printReceipt, printSalesByDayReceipt } from "./util";
@@ -22,6 +17,7 @@ let verifoneClient = new net.Socket();
 function createWindow() {
     // mainWindow = new BrowserWindow({width: 900, height: 680, fullscreen: true});
     mainWindow = new BrowserWindow({
+        // kiosk: true,
         width: 1024,
         height: 900,
         fullscreen: true,

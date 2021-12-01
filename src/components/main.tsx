@@ -150,7 +150,9 @@ const AppRoutes = () => {
             <Route path={restaurantListPath} element={<PrivateRoute element={<RestaurantList />} />} />
             <Route path={registerListPath} element={<PrivateRoute element={<RegisterList />} />} />
             <Route path={stockPath} element={<PrivateRoute element={<Stock />} />} />
-            <Route path={`${ordersPath}/:date?`} element={<PrivateRoute element={<Orders />} />} />
+            <Route path={`${ordersPath}`} element={<PrivateRoute element={<Orders />} />}>
+                <Route path=":date" element={<PrivateRoute element={<Orders />} />} />
+            </Route>
             <Route path={reportsPath} element={<PrivateRoute element={<Reports />} />} />
             <Route path={salesAnalyticsPath} element={<PrivateRoute element={<SalesAnalytics />} />} />
             <Route path={salesAnalyticsDailySalesPath} element={<PrivateRoute element={<SalesAnalyticsDailySales />} />} />
@@ -159,10 +161,14 @@ const AppRoutes = () => {
             <Route path={salesAnalyticsTopProductPath} element={<PrivateRoute element={<SalesAnalyticsTopProduct />} />} />
             <Route path={configureNewEftposPath} element={<RestaurantRegisterPrivateRoute element={<ConfigureNewEftpos />} />} />
             <Route path={beginOrderPath} element={<RestaurantRegisterPrivateRoute element={<BeginOrder />} />} />
+            <Route path={`${restaurantPath}/:restaurantId`} element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />}>
+                <Route path=":selectedCategoryId" element={<PrivateRoute element={<Orders />} />}>
+                    <Route path=":selectedProductId" element={<PrivateRoute element={<Orders />} />} />
+                </Route>
+            </Route>
             <Route path={orderTypePath} element={<RestaurantRegisterPrivateRoute element={<OrderType />} />} />
             <Route path={tableNumberPath} element={<RestaurantRegisterPrivateRoute element={<TableNumber />} />} />
             <Route path={checkoutPath} element={<RestaurantRegisterPrivateRoute element={<Checkout />} />} />
-            <Route path={`${restaurantPath}/:restaurantId`} element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />} />
             <Route path={unauthorizedPath} element={<Unauthorised />} />
             <Route path="*" element={<NoMatch />} />
         </Routes>

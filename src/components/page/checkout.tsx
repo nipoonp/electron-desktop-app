@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useNavigate } from "react-router-dom";
@@ -27,7 +26,6 @@ import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { useSmartpay } from "../../context/smartpay-context";
 import { Button } from "../../tabin/components/button";
 import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
-import { Stepper } from "../../tabin/components/stepper";
 import { useVerifone } from "../../context/verifone-context";
 import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
@@ -37,8 +35,6 @@ import { useRestaurant } from "../../context/restaurant-context";
 import { UpSellProductModal } from "../modals/upSellProduct";
 import { Link } from "../../tabin/components/link";
 import { TextArea } from "../../tabin/components/textArea";
-
-import "./checkout.scss";
 import { useWindcave } from "../../context/windcave-context";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { UpSellCategoryModal } from "../modals/upSellCategory";
@@ -48,6 +44,8 @@ import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
 import { OrderSummary } from "./checkout/orderSummary";
 import { PaymentModal } from "../modals/paymentModal";
 import { useAlert } from "../../tabin/components/alert";
+
+import "./checkout.scss";
 
 const logger = new Logger("checkout");
 
