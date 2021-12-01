@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useHistory } from "react-router";
+import { useNavigate } from "react-router";
 import { restaurantPath } from "../main";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
@@ -34,7 +34,7 @@ export const BeginOrder = (props: {}) => {
 };
 
 const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] }) => {
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const numberOfAds = props.ads.length;
     const [currentAd, setCurrentAd] = useState(0);
@@ -62,7 +62,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
                 <div
                     className="wrapper"
                     onClick={() => {
-                        history.push(restaurantPath + "/" + restaurant.id);
+                        navigate(restaurantPath + "/" + restaurant.id);
                     }}
                 >
                     <div className="order-here-text-wrapper">
@@ -97,7 +97,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
 };
 
 const BeginOrderDefault = () => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { restaurant } = useRestaurant();
 
     if (!restaurant) {
@@ -112,7 +112,7 @@ const BeginOrderDefault = () => {
                         <div
                             className="wrapper"
                             onClick={() => {
-                                history.push(restaurantPath + "/" + restaurant.id);
+                                navigate(restaurantPath + "/" + restaurant.id);
                             }}
                         >
                             <div className="order-text">ORDER</div>
