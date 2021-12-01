@@ -1,4 +1,4 @@
-import { useHistory } from "react-router";
+import { useNavigate } from "react-router";
 import { checkoutPath, tableNumberPath } from "../main";
 import { EOrderType } from "../../model/model";
 import { useCart } from "../../context/cart-context";
@@ -10,7 +10,7 @@ import "./orderType.scss";
 import { CachedImage } from "../../tabin/components/cachedImage";
 
 export const OrderType = (props: {}) => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { setOrderType } = useCart();
     const { register } = useRegister();
 
@@ -22,9 +22,9 @@ export const OrderType = (props: {}) => {
         setOrderType(orderType);
 
         if (register.enableTableFlags && orderType == EOrderType.DINEIN) {
-            history.push(tableNumberPath);
+            navigate(tableNumberPath);
         } else {
-            history.push(checkoutPath);
+            navigate(checkoutPath);
         }
     };
 
