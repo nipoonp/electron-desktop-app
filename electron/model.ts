@@ -57,6 +57,7 @@ export interface IOrderReceipt {
     notes: string | null;
     products: ICartProduct[];
     eftposReceipt: string | null;
+    paymentAmounts: IOrderPaymentAmounts | null;
     total: number;
     discount: number | null;
     subTotal: number;
