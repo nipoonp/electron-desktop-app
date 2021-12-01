@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
-import { useHistory } from "react-router";
+import { useNavigate } from "react-router";
+import { useParams } from "react-router-dom";
 import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { checkoutPath, beginOrderPath, orderTypePath, tableNumberPath } from "../main";
@@ -29,9 +30,10 @@ interface IMostPopularProduct {
     product: IGET_RESTAURANT_PRODUCT;
 }
 
-export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: string; selectedProductId?: string }) => {
+export const Restaurant = () => {
     // context
-    const history = useHistory();
+    const { restaurantId, selectedCategoryId, selectedProductId } = useParams();
+    const navigate = useNavigate();
     const { showAlert } = useAlert();
 
     const { payments, clearCart, orderType, subTotal, products, cartProductQuantitiesById, addItem, setOrderType } = useCart();
@@ -39,7 +41,7 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
     const { register } = useRegister();
 
     // query
-    const { data: restaurant, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(props.restaurantId);
+    const { data: restaurant, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(restaurantId || "");
 
     // states
     const [selectedCategory, setSelectedCategory] = useState<IGET_RESTAURANT_CATEGORY | null>(null);
@@ -85,19 +87,19 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
             //     return true;
             // });
 
-            if (props.selectedCategoryId) {
+            if (selectedCategoryId) {
                 restaurant.categories.items.forEach((c) => {
-                    if (c.id == props.selectedCategoryId) {
+                    if (c.id == selectedCategoryId) {
                         setSelectedCategory(c);
                     }
                 });
             }
 
-            if (props.selectedProductId) {
+            if (selectedProductId) {
                 restaurant.categories.items.forEach((c) => {
                     c.products &&
                         c.products.items.forEach((p) => {
-                            if (p.id == props.selectedProductId) {
+                            if (p.id == selectedProductId) {
                                 setSelectedProductForProductModal(p.product);
                                 setShowProductModal(true);
                             }
@@ -150,24 +152,24 @@ export const Restaurant = (props: { restaurantId: string; selectedCategoryId?: s
     // callbacks
     const onClickCart = () => {
         if (register && register.availableOrderTypes.length > 1 && orderType == null) {
-            history.push(orderTypePath);
+            navigate(orderTypePath);
         } else if (register && register.availableOrderTypes.length == 1) {
             setOrderType(register.availableOrderTypes[0]);
 
             if (register.availableOrderTypes[0] === EOrderType.DINEIN && register.enableTableFlags) {
-                history.push(tableNumberPath);
+                navigate(tableNumberPath);
             } else {
-                history.push(checkoutPath);
+                navigate(checkoutPath);
             }
         } else {
-            history.push(checkoutPath);
+            navigate(checkoutPath);
         }
     };
 
     const onCancelOrder = () => {
         const cancelOrder = () => {
             clearCart();
-            history.push(beginOrderPath);
+            navigate(beginOrderPath);
         };
 
         if (payments.length > 0) {

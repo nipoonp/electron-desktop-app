@@ -5,8 +5,6 @@ import { UPDATE_ORDER_STATUS } from "../../graphql/customMutations";
 import { EOrderStatus, GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT } from "../../graphql/customQueries";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { Input } from "../../tabin/components/input";
-
-import "./orders.scss";
 import { useGetRestaurantOrdersByBeginWithPlacedAt } from "../../hooks/useGetRestaurantOrdersByBeginWithPlacedAt";
 import { convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, toLocalISOString } from "../../util/util";
 import { format } from "date-fns";
@@ -16,9 +14,12 @@ import { IGET_RESTAURANT_ORDER_FRAGMENT, IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FR
 import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { ProductModifier } from "../shared/productModifier";
+import { useParams } from "react-router-dom";
 
-export const Orders = (props: { date?: string }) => {
-    const dateParam = props.date;
+import "./orders.scss";
+
+export const Orders = () => {
+    const { dateParam } = useParams();
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
     const { printReceipt } = useReceiptPrinter();

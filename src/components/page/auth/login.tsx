@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth, AuthenticationStatus } from "../../../context/auth-context";
 import { Logger } from "aws-amplify";
 import * as yup from "yup";
@@ -24,7 +24,7 @@ const passwordSchema = yup
 
 export const Login = () => {
     const { login } = useAuth();
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState("");
@@ -38,7 +38,7 @@ export const Login = () => {
 
     useEffect(() => {
         if (status === AuthenticationStatus.SignedIn) {
-            history.replace(beginOrderPath);
+            navigate(beginOrderPath, { replace: true });
         }
     }, [status]);
 

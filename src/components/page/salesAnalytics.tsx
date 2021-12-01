@@ -1,7 +1,7 @@
 import { add, addDays, format } from "date-fns";
 import Papa, { UnparseObject } from "papaparse";
 import Clock from "react-clock";
-import { useHistory } from "react-router";
+import { useNavigate } from "react-router";
 
 import { IBestHour, IDayComparisonExport, useSalesAnalytics } from "../../context/salesAnalytics-context";
 import { getTwelveHourFormat } from "../../model/util";
@@ -28,7 +28,7 @@ import "./salesAnalytics.scss";
 import "react-clock/dist/Clock.css";
 
 export const SalesAnalytics = () => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
     const { refetchRestaurantOrdersByBetweenPlacedAt, startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
@@ -67,19 +67,19 @@ export const SalesAnalytics = () => {
     };
 
     const onClickDailySales = () => {
-        history.push(salesAnalyticsDailySalesPath);
+        navigate(salesAnalyticsDailySalesPath);
     };
 
     const onClickHourlySales = () => {
-        history.push(salesAnalyticsHourlySalesPath);
+        navigate(salesAnalyticsHourlySalesPath);
     };
 
     const onClickTopCategory = () => {
-        history.push(salesAnalyticsTopCategoryPath);
+        navigate(salesAnalyticsTopCategoryPath);
     };
 
     const onClickTopProduct = () => {
-        history.push(salesAnalyticsTopProductPath);
+        navigate(salesAnalyticsTopProductPath);
     };
 
     const onExportDailySales = () => {

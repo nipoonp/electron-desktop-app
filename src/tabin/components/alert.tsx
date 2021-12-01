@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, createContext, useContext } from "react";
 import { Button } from "./button";
 import { ModalV2 } from "./modalv2";
 
