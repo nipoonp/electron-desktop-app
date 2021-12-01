@@ -333,6 +333,39 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
                 bold: true,
             },
         ]);
+    order.paymentAmounts &&
+        order.paymentAmounts.cash &&
+        printer.tableCustom([
+            { text: "Cash", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.paymentAmounts.cash)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.paymentAmounts &&
+        order.paymentAmounts.eftpos &&
+        printer.tableCustom([
+            { text: "Eftpos", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.paymentAmounts.eftpos)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.paymentAmounts &&
+        order.paymentAmounts.online &&
+        printer.tableCustom([
+            { text: "Online", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.paymentAmounts.online)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
     printer.tableCustom([
         { text: "Total", align: "LEFT", width: 0.75, bold: true },
         {
@@ -356,7 +389,10 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
     printer.println("Order Placed on Tabin Kiosk");
 
     printer.partialCut();
-    printer.openCashDrawer();
+
+    if (order.paymentAmounts && order.paymentAmounts.cash > 0 && !printCustomerReceipt) {
+        printer.openCashDrawer();
+    }
 
     try {
         if (order.printerType == EReceiptPrinterType.WIFI) {
