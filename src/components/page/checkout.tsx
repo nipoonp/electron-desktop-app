@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER } from "../../graphql/customMutations";
@@ -27,7 +26,6 @@ import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { useSmartpay } from "../../context/smartpay-context";
 import { Button } from "../../tabin/components/button";
 import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
-import { Stepper } from "../../tabin/components/stepper";
 import { useVerifone } from "../../context/verifone-context";
 import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
@@ -37,8 +35,6 @@ import { useRestaurant } from "../../context/restaurant-context";
 import { UpSellProductModal } from "../modals/upSellProduct";
 import { Link } from "../../tabin/components/link";
 import { TextArea } from "../../tabin/components/textArea";
-
-import "./checkout.scss";
 import { useWindcave } from "../../context/windcave-context";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { UpSellCategoryModal } from "../modals/upSellCategory";
@@ -49,12 +45,14 @@ import { OrderSummary } from "./checkout/orderSummary";
 import { PaymentModal } from "../modals/paymentModal";
 import { useAlert } from "../../tabin/components/alert";
 
+import "./checkout.scss";
+
 const logger = new Logger("checkout");
 
 // Component
 export const Checkout = () => {
     // context
-    const history = useHistory();
+    const navigate = useNavigate();
     const { showAlert } = useAlert();
     const {
         orderType,
@@ -138,7 +136,7 @@ export const Checkout = () => {
     }, []);
 
     if (!restaurant) {
-        history.push(beginOrderPath);
+        navigate(beginOrderPath);
     }
 
     if (!restaurant) {
@@ -148,7 +146,7 @@ export const Checkout = () => {
     const onCancelOrder = () => {
         const cancelOrder = () => {
             clearCart();
-            history.push(beginOrderPath);
+            navigate(beginOrderPath);
         };
 
         if (payments.length > 0) {
@@ -193,11 +191,11 @@ export const Checkout = () => {
 
     // Callbacks
     const onUpdateTableNumber = () => {
-        history.push(tableNumberPath);
+        navigate(tableNumberPath);
     };
 
     const onUpdateOrderType = () => {
-        history.push(orderTypePath);
+        navigate(orderTypePath);
     };
 
     const onNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -209,7 +207,7 @@ export const Checkout = () => {
     };
 
     const onSelectUpSellCrossSellCategory = (category: IGET_RESTAURANT_CATEGORY) => {
-        history.push(`${restaurantPath}/${restaurant.id}/${category.id}`);
+        navigate(`${restaurantPath}/${restaurant.id}/${category.id}`);
     };
 
     const onSelectUpSellCrossSellProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
@@ -297,7 +295,7 @@ export const Checkout = () => {
             if (timeLeft == 0) {
                 transactionCompleteTimeoutIntervalId.current && clearInterval(transactionCompleteTimeoutIntervalId.current);
 
-                history.push(beginOrderPath);
+                navigate(beginOrderPath);
                 clearCart();
             }
         }, 1000);
@@ -306,7 +304,7 @@ export const Checkout = () => {
     const clearTransactionCompleteTimeout = () => {
         transactionCompleteTimeoutIntervalId.current && clearInterval(transactionCompleteTimeoutIntervalId.current);
 
-        history.push(beginOrderPath);
+        navigate(beginOrderPath);
         clearCart();
     };
 
@@ -835,7 +833,7 @@ export const Checkout = () => {
                 <div className="h3 center mb-6">Show some love and start ordering!</div>
                 <Button
                     onClick={() => {
-                        history.push(restaurantPath + "/" + restaurant!.id);
+                        navigate(restaurantPath + "/" + restaurant!.id);
                     }}
                 >
                     Back To Menu
@@ -845,7 +843,7 @@ export const Checkout = () => {
     );
 
     const onOrderMore = () => {
-        history.push(`/restaurant/${restaurant.id}`);
+        navigate(`/restaurant/${restaurant.id}`);
     };
 
     const title = (
