@@ -1001,7 +1001,12 @@ export const GET_PROMOTION_BY_CODE = gql`
 export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
     ${ORDER_FIELDS_FRAGMENT}
     query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAt: String!) {
-        getOrdersByRestaurantByPlacedAt(orderRestaurantId: $orderRestaurantId, placedAt: { beginsWith: $placedAt }) {
+        getOrdersByRestaurantByPlacedAt(
+            limit: 1000000
+            sortDirection: DESC
+            orderRestaurantId: $orderRestaurantId
+            placedAt: { beginsWith: $placedAt }
+        ) {
             items {
                 ...OrderFieldsFragment
             }
@@ -1012,7 +1017,11 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
 export const GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
     ${ORDER_FIELDS_FRAGMENT}
     query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAtStartDate: String!, $placedAtEndDate: String!) {
-        getOrdersByRestaurantByPlacedAt(orderRestaurantId: $orderRestaurantId, placedAt: { between: [$placedAtStartDate, $placedAtEndDate] }) {
+        getOrdersByRestaurantByPlacedAt(
+            limit: 1000000
+            orderRestaurantId: $orderRestaurantId
+            placedAt: { between: [$placedAtStartDate, $placedAtEndDate] }
+        ) {
             items {
                 ...OrderFieldsFragment
             }
