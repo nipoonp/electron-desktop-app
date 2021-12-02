@@ -320,7 +320,7 @@ const OrderItemDetails = (props: {
                     <>
                         {!mg.hideForCustomer && (
                             <>
-                                <div className="text-bold mt-3" key={mg.id}>
+                                <div className="text-bold mt-2" key={mg.id}>
                                     {mg.name}
                                 </div>
                                 {mg.modifiers.map((m) => (
@@ -352,7 +352,7 @@ const OrderItemDetails = (props: {
         </>
     );
 
-    const notesDisplay = <>{props.notes && <div className="text-grey">Notes: {props.notes}</div>}</>;
+    const notesDisplay = <div className="mt-2">{props.notes && <div className="text-grey">Notes: {props.notes}</div>}</div>;
 
     return (
         <div className="detail">

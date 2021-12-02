@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router";
-import { BrowserRouter } from "react-router-dom";
+import { HashRouter } from "react-router-dom";
 import { Restaurant } from "./page/restaurant";
 import { NoMatch } from "./page/error/404";
 import Unauthorised from "./page/error/unauthorised";
@@ -78,9 +78,10 @@ export default () => {
     return (
         <>
             <AlertProvider>
-                <BrowserRouter>
+                {/* Cannot use BrowserRouter in electron. Should use HashRouter: https://github.com/remix-run/react-router/issues/6726 */}
+                <HashRouter>
                     <AppRoutes />
-                </BrowserRouter>
+                </HashRouter>
             </AlertProvider>
             <ToastContainer />
         </>

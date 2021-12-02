@@ -1,31 +1,30 @@
 import { add, addDays, format } from "date-fns";
+import moment from "moment";
 import Papa, { UnparseObject } from "papaparse";
+import { useEffect, useState } from "react";
 import Clock from "react-clock";
 import { useNavigate } from "react-router";
-
+import { useReceiptPrinter } from "../../context/receiptPrinter-context";
+import { useRegister } from "../../context/register-context";
+import { useRestaurant } from "../../context/restaurant-context";
 import { IBestHour, IDayComparisonExport, useSalesAnalytics } from "../../context/salesAnalytics-context";
+import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
+import { EOrderStatus, IGET_RESTAURANT_REGISTER_PRINTER } from "../../graphql/customQueries";
+import { EReceiptPrinterType } from "../../model/model";
 import { getTwelveHourFormat } from "../../model/util";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { Card } from "../../tabin/components/card";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
+import { toast } from "../../tabin/components/toast";
 import { convertCentsToDollars, downloadFile, getDollarString } from "../../util/util";
 import { salesAnalyticsDailySalesPath, salesAnalyticsHourlySalesPath, salesAnalyticsTopCategoryPath, salesAnalyticsTopProductPath } from "../main";
+import { SelectReceiptPrinterModal } from "../modals/selectReceiptPrinterModal";
 import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
-import moment from "moment";
-import { useRestaurant } from "../../context/restaurant-context";
-import { EOrderStatus, IGET_RESTAURANT_REGISTER_PRINTER } from "../../graphql/customQueries";
-import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
-import { useReceiptPrinter } from "../../context/receiptPrinter-context";
-import { EReceiptPrinterType } from "../../model/model";
-import { SelectReceiptPrinterModal } from "../modals/selectReceiptPrinterModal";
-import { useEffect, useState } from "react";
-import { useRegister } from "../../context/register-context";
-import { toast } from "../../tabin/components/toast";
 
-import "./salesAnalytics.scss";
 import "react-clock/dist/Clock.css";
+import "./salesAnalytics.scss";
 
 export const SalesAnalytics = () => {
     const navigate = useNavigate();
@@ -155,16 +154,15 @@ export const SalesAnalytics = () => {
         if (salesAnalytics) {
             dailySalesExport.fields = ["Date", ...salesAnalytics.exportSalesDates];
             dailySalesExport.data = [];
-            dailySalesExport.data.push(["Orders"]);
-            dailySalesExport.data.push(["Net"]);
-            dailySalesExport.data.push(["Tax"]);
-            dailySalesExport.data.push(["Total"]);
+            dailySalesExport.data.push(["Orders"], ["Cash"], ["Eftpos"], ["Online"], ["Tax"], ["Total"]);
 
             salesAnalytics.dailySalesExport.data.forEach((d) => {
                 dailySalesExport.data[0] = [...dailySalesExport.data[0], d[1]];
                 dailySalesExport.data[1] = [...dailySalesExport.data[1], d[2]];
                 dailySalesExport.data[2] = [...dailySalesExport.data[2], d[3]];
                 dailySalesExport.data[3] = [...dailySalesExport.data[3], d[4]];
+                dailySalesExport.data[4] = [...dailySalesExport.data[4], d[5]];
+                dailySalesExport.data[5] = [...dailySalesExport.data[5], d[6]];
             });
         }
 
@@ -456,7 +454,10 @@ export const SalesAnalytics = () => {
                                             <div className="h4 mb-2">${convertCentsToDollars(salesAnalytics.topSoldCategory.totalAmount ?? 0)}</div>
                                             <div className="text-uppercase">% of Sales</div>
                                             <div className="h4">
-                                                {((salesAnalytics.topSoldCategory.totalAmount / salesAnalytics.totalSubTotal) * 100).toFixed(2)}%
+                                                {salesAnalytics.totalSubTotal
+                                                    ? ((salesAnalytics.topSoldCategory.totalAmount / salesAnalytics.totalSubTotal) * 100).toFixed(2)
+                                                    : 0}
+                                                %
                                             </div>
                                         </div>
                                     </div>
@@ -486,7 +487,10 @@ export const SalesAnalytics = () => {
                                             <div className="h4 mb-2">${convertCentsToDollars(salesAnalytics.topSoldProduct.totalAmount ?? 0)}</div>
                                             <div className="text-uppercase">% of Sales</div>
                                             <div className="h4">
-                                                {((salesAnalytics.topSoldProduct.totalAmount / salesAnalytics.totalSubTotal) * 100).toFixed(2)}%
+                                                {salesAnalytics.totalSubTotal
+                                                    ? ((salesAnalytics.topSoldProduct.totalAmount / salesAnalytics.totalSubTotal) * 100).toFixed(2)
+                                                    : 0}
+                                                %
                                             </div>
                                         </div>
                                     </div>

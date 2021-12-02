@@ -1,9 +1,7 @@
-import { useState, useEffect, createContext, useContext } from "react";
-
 import { ApolloError } from "@apollo/client";
-import { useRestaurant } from "./restaurant-context";
 import { addDays, differenceInDays, format, subDays } from "date-fns";
-import { useGetRestaurantOrdersByBetweenPlacedAt } from "../hooks/useGetRestaurantOrdersByBetweenPlacedAt";
+import { UnparseObject } from "papaparse";
+import { createContext, useContext, useEffect, useState } from "react";
 import {
     IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT,
     IGET_RESTAURANT_ORDER_FRAGMENT,
@@ -11,10 +9,11 @@ import {
     IOrderPaymentAmounts,
 } from "../graphql/customFragments";
 import { EOrderStatus, EOrderType, IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
+import { useGetRestaurantOrdersByBetweenPlacedAt } from "../hooks/useGetRestaurantOrdersByBetweenPlacedAt";
 import { getTwelveHourFormat, taxRate } from "../model/util";
-import { convertCentsToDollars, convertCentsToDollarsReturnFloat } from "../util/util";
 import { toast } from "../tabin/components/toast";
-import { UnparseObject } from "papaparse";
+import { convertCentsToDollars, convertCentsToDollarsReturnFloat, getDollarString } from "../util/util";
+import { useRestaurant } from "./restaurant-context";
 
 export interface ITopSoldItem {
     item: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT | null;
@@ -51,6 +50,7 @@ export interface IHourlySales {
         hour: string;
         totalAmount: number;
         totalQuantity: number;
+        totalPaymentAmounts: IOrderPaymentAmounts;
     };
 }
 
@@ -195,30 +195,30 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
             let totalSubTotal: number = 0;
 
             const hourlySales: IHourlySales = {
-                "00": { hour: "00", totalAmount: 0, totalQuantity: 0 },
-                "01": { hour: "01", totalAmount: 0, totalQuantity: 0 },
-                "02": { hour: "02", totalAmount: 0, totalQuantity: 0 },
-                "03": { hour: "03", totalAmount: 0, totalQuantity: 0 },
-                "04": { hour: "04", totalAmount: 0, totalQuantity: 0 },
-                "05": { hour: "05", totalAmount: 0, totalQuantity: 0 },
-                "06": { hour: "06", totalAmount: 0, totalQuantity: 0 },
-                "07": { hour: "07", totalAmount: 0, totalQuantity: 0 },
-                "08": { hour: "08", totalAmount: 0, totalQuantity: 0 },
-                "09": { hour: "09", totalAmount: 0, totalQuantity: 0 },
-                "10": { hour: "10", totalAmount: 0, totalQuantity: 0 },
-                "11": { hour: "11", totalAmount: 0, totalQuantity: 0 },
-                "12": { hour: "12", totalAmount: 0, totalQuantity: 0 },
-                "13": { hour: "13", totalAmount: 0, totalQuantity: 0 },
-                "14": { hour: "14", totalAmount: 0, totalQuantity: 0 },
-                "15": { hour: "15", totalAmount: 0, totalQuantity: 0 },
-                "16": { hour: "16", totalAmount: 0, totalQuantity: 0 },
-                "17": { hour: "17", totalAmount: 0, totalQuantity: 0 },
-                "18": { hour: "18", totalAmount: 0, totalQuantity: 0 },
-                "19": { hour: "19", totalAmount: 0, totalQuantity: 0 },
-                "20": { hour: "20", totalAmount: 0, totalQuantity: 0 },
-                "21": { hour: "21", totalAmount: 0, totalQuantity: 0 },
-                "22": { hour: "22", totalAmount: 0, totalQuantity: 0 },
-                "23": { hour: "23", totalAmount: 0, totalQuantity: 0 },
+                "00": { hour: "00", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "01": { hour: "01", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "02": { hour: "02", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "03": { hour: "03", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "04": { hour: "04", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "05": { hour: "05", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "06": { hour: "06", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "07": { hour: "07", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "08": { hour: "08", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "09": { hour: "09", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "10": { hour: "10", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "11": { hour: "11", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "12": { hour: "12", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "13": { hour: "13", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "14": { hour: "14", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "15": { hour: "15", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "16": { hour: "16", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "17": { hour: "17", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "18": { hour: "18", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "19": { hour: "19", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "20": { hour: "20", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "21": { hour: "21", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "22": { hour: "22", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
+                "23": { hour: "23", totalAmount: 0, totalQuantity: 0, totalPaymentAmounts: { cash: 0, eftpos: 0, online: 0 } },
             };
 
             let bestHour: IBestHour = { hour: "00", totalAmount: 0, totalQuantity: 0 };
@@ -311,6 +311,11 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                         hour: placedAtHour,
                         totalQuantity: newSaleQuantity,
                         totalAmount: newSaleAmount,
+                        totalPaymentAmounts: {
+                            cash: hourlySales[placedAtHour].totalPaymentAmounts.cash + (order.paymentAmounts ? order.paymentAmounts.cash : 0),
+                            eftpos: hourlySales[placedAtHour].totalPaymentAmounts.eftpos + (order.paymentAmounts ? order.paymentAmounts.eftpos : 0),
+                            online: hourlySales[placedAtHour].totalPaymentAmounts.online + (order.paymentAmounts ? order.paymentAmounts.online : 0),
+                        },
                     };
 
                     // Best Hour
@@ -448,7 +453,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
 
             // CSV Export Data
             const dailySalesExport = {} as UnparseObject<Array<string | number>>;
-            dailySalesExport.fields = ["Date", "Orders", "Net", "Tax", "Total"];
+            dailySalesExport.fields = ["Date", "Orders", "Cash", "Eftpos", "Online", "Tax", "Total"];
             dailySalesExport.data = [];
 
             Object.entries(dailySales).forEach(([date, sale]) => {
@@ -460,7 +465,9 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                 const row = [
                     format(new Date(date), "E, dd MMM"),
                     sale.totalQuantity,
-                    `$${convertCentsToDollars((sale.totalAmount * (100 - taxRate)) / 100)}`,
+                    getDollarString(sale.totalPaymentAmounts.cash),
+                    getDollarString(sale.totalPaymentAmounts.eftpos),
+                    getDollarString(sale.totalPaymentAmounts.online),
                     `$${convertCentsToDollars(sale.totalAmount * (taxRate / 100))}`,
                     `$${convertCentsToDollars(sale.totalAmount)}`,
                 ];
@@ -469,7 +476,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
 
             // CSV Export Data
             const hourlySalesExport = {} as UnparseObject<Array<string | number>>;
-            hourlySalesExport.fields = ["Time", "Orders", "Net", "Tax", "Total"];
+            hourlySalesExport.fields = ["Time", "Orders", "Cash", "Eftpos", "Online", "Tax", "Total"];
             hourlySalesExport.data = [];
 
             Object.entries(hourlySales)
@@ -483,7 +490,9 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                     const row = [
                         getTwelveHourFormat(Number(hour)),
                         sale.totalQuantity,
-                        `$${convertCentsToDollars((sale.totalAmount * (100 - taxRate)) / 100)}`,
+                        getDollarString(sale.totalPaymentAmounts.cash),
+                        getDollarString(sale.totalPaymentAmounts.eftpos),
+                        getDollarString(sale.totalPaymentAmounts.online),
                         `$${convertCentsToDollars(sale.totalAmount * (taxRate / 100))}`,
                         `$${convertCentsToDollars(sale.totalAmount)}`,
                     ];
@@ -492,7 +501,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
 
             // CSV Export Data
             const mostSoldCategoriesExport = {} as UnparseObject<Array<string | number>>;
-            mostSoldCategoriesExport.fields = ["Category", "Quantity", "Net", "Tax", "Total", "% Of Sale"];
+            mostSoldCategoriesExport.fields = ["Category", "Quantity", "Tax", "Total", "% Of Sale"];
             mostSoldCategoriesExport.data = [];
 
             Object.entries(mostSoldCategories).forEach(([categoryId, category]) => {
@@ -504,7 +513,6 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                 const row = [
                     category.item.name,
                     category.totalQuantity,
-                    `$${convertCentsToDollars((category.totalAmount * (100 - taxRate)) / 100)}`,
                     `$${convertCentsToDollars(category.totalAmount * (taxRate / 100))}`,
                     `$${convertCentsToDollars(category.totalAmount)}`,
                     `${((category.totalAmount * 100) / totalSubTotal).toFixed(2)}%`,
@@ -518,7 +526,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
 
             // CSV Export Data
             const mostSoldProductsExport = {} as UnparseObject<Array<string | number>>;
-            mostSoldProductsExport.fields = ["Product", "Quantity", "Net", "Tax", "Total", "% Of Sale"];
+            mostSoldProductsExport.fields = ["Product", "Quantity", "Tax", "Total", "% Of Sale"];
             mostSoldProductsExport.data = [];
 
             Object.entries(mostSoldProducts).forEach(([productId, product]) => {
@@ -530,7 +538,6 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                 const row = [
                     product.item.name,
                     product.totalQuantity,
-                    `$${convertCentsToDollars((product.totalAmount * (100 - taxRate)) / 100)}`,
                     `$${convertCentsToDollars(product.totalAmount * (taxRate / 100))}`,
                     `$${convertCentsToDollars(product.totalAmount)}`,
                     `${((product.totalAmount * 100) / totalSubTotal).toFixed(2)}%`,
