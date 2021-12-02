@@ -1,12 +1,12 @@
+import { useSalesAnalytics } from "../../context/salesAnalytics-context";
 import { getTwelveHourFormat, taxRate } from "../../model/util";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { convertCentsToDollars } from "../../util/util";
-import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { Table } from "../../tabin/components/table";
-import { useSalesAnalytics } from "../../context/salesAnalytics-context";
+import { getDollarString } from "../../util/util";
+import "./salesAnalytics.scss";
+import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 
-import "./salesAnalytics.scss";
 
 export const SalesAnalyticsHourlySales = () => {
     const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
@@ -37,6 +37,9 @@ export const SalesAnalyticsHourlySales = () => {
                                     <tr>
                                         <th className="text-left">Time</th>
                                         <th className="text-right">Orders</th>
+                                        <th className="text-right">Cash</th>
+                                        <th className="text-right">Eftpos</th>
+                                        <th className="text-right">Online</th>
                                         <th className="text-right">Tax</th>
                                         <th className="text-right">Total</th>
                                     </tr>
@@ -48,8 +51,11 @@ export const SalesAnalyticsHourlySales = () => {
                                             <tr key={index}>
                                                 <td className="sales-analytics-table-time-cell">{getTwelveHourFormat(Number(hour))}</td>
                                                 <td className="text-right">{sale.totalQuantity}</td>
-                                                <td className="text-right">{`$${convertCentsToDollars(sale.totalAmount * (taxRate / 100))}`}</td>
-                                                <td className="text-right">{`$${convertCentsToDollars(sale.totalAmount)}`}</td>
+                                                <td className="text-right">{getDollarString(sale.totalPaymentAmounts.cash)}</td>
+                                                <td className="text-right">{getDollarString(sale.totalPaymentAmounts.eftpos)}</td>
+                                                <td className="text-right">{getDollarString(sale.totalPaymentAmounts.online)}</td>
+                                                <td className="text-right">{getDollarString(sale.totalAmount * (taxRate / 100))}</td>
+                                                <td className="text-right">{getDollarString(sale.totalAmount)}</td>
                                             </tr>
                                         ))}
                                 </tbody>
