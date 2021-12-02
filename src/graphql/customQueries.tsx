@@ -1001,7 +1001,7 @@ export const GET_PROMOTION_BY_CODE = gql`
 export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
     ${ORDER_FIELDS_FRAGMENT}
     query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAt: String!) {
-        getOrdersByRestaurantByPlacedAt(orderRestaurantId: $orderRestaurantId, placedAt: { beginsWith: $placedAt }) {
+        getOrdersByRestaurantByPlacedAt(sortDirection: DESC, orderRestaurantId: $orderRestaurantId, placedAt: { beginsWith: $placedAt }) {
             items {
                 ...OrderFieldsFragment
             }
