@@ -16,7 +16,7 @@ export const useGetRestaurantOrdersByBeginWithPlacedAt = (orderRestaurantId: str
 
     // pass saved data down when refetching instead of null
     useEffect(() => {
-        if (_data) {
+        if (!error && !loading) {
             setSavedData(_data.getOrdersByRestaurantByPlacedAt.items);
         }
     }, [_data]);

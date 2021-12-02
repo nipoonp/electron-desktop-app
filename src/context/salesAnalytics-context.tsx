@@ -6,7 +6,7 @@ import {
     IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT,
     IGET_RESTAURANT_ORDER_FRAGMENT,
     IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT,
-    IOrderPaymentAmounts
+    IOrderPaymentAmounts,
 } from "../graphql/customFragments";
 import { EOrderStatus, EOrderType, IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { useGetRestaurantOrdersByBetweenPlacedAt } from "../hooks/useGetRestaurantOrdersByBetweenPlacedAt";
@@ -625,4 +625,3 @@ const useSalesAnalytics = () => {
 };
 
 export { SalesAnalyticsProvider, useSalesAnalytics };
-
