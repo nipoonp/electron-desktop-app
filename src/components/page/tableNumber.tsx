@@ -1,19 +1,19 @@
 import { useNavigate } from "react-router";
-import { checkoutPath } from "../main";
 import { useCart } from "../../context/cart-context";
-import { PageWrapper } from "../../tabin/components/pageWrapper";
+import { useRestaurant } from "../../context/restaurant-context";
 import { Button } from "../../tabin/components/button";
 import { Input } from "../../tabin/components/input";
-import { useRestaurant } from "../../context/restaurant-context";
-
+import { PageWrapper } from "../../tabin/components/pageWrapper";
+import { checkoutPath } from "../main";
 import "./tableNumber.scss";
+
 
 export const TableNumber = () => {
     const navigate = useNavigate();
     const { tableNumber, setTableNumber } = useCart();
     const { restaurant } = useRestaurant();
 
-    if (restaurant == null) {
+    if (restaurant === null) {
         throw "Restaurant is invalid!";
     }
 

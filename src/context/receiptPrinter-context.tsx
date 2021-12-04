@@ -1,7 +1,7 @@
-import { useEffect, createContext, useContext } from "react";
+import { createContext, useContext, useEffect } from "react";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
 import { useGetRestaurantOrdersByBetweenPlacedAt } from "../hooks/useGetRestaurantOrdersByBetweenPlacedAt";
-import { IPrintReceiptDataOutput, IOrderReceipt, IPrintSalesByDayDataInput } from "../model/model";
+import { IOrderReceipt, IPrintReceiptDataOutput, IPrintSalesByDayDataInput } from "../model/model";
 import { toast } from "../tabin/components/toast";
 import { convertProductTypesForPrint, filterPrintProducts, toLocalISOString } from "../util/util";
 import { useErrorLogging } from "./errorLogging-context";
@@ -182,14 +182,14 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
         const failedPrintQueue = JSON.parse(storedFiledPrintQueue) as IPrintReceiptDataOutput[];
 
-        const updatedFailedPrintQueue = failedPrintQueue.filter((o) => o.order.orderId != successPrintOrder.order.orderId);
+        const updatedFailedPrintQueue = failedPrintQueue.filter((o) => o.order.orderId !== successPrintOrder.order.orderId);
 
         localStorage.setItem("failedPrintQueue", JSON.stringify(updatedFailedPrintQueue));
     };
 
     const printNewOrderReceipts = async (orders: IGET_RESTAURANT_ORDER_FRAGMENT[]) => {
         if (!restaurant) return;
-        if (!register || register.printers.items.length == 0) return;
+        if (!register || register.printers.items.length === 0) return;
 
         for (var i = 0; i < register.printers.items.length; i++) {
             const printer = register.printers.items[i];
@@ -266,3 +266,4 @@ const useReceiptPrinter = () => {
 };
 
 export { ReceiptPrinterProvider, useReceiptPrinter };
+

@@ -2,15 +2,10 @@ import { format, getDay, isWithinInterval } from "date-fns";
 import { IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
 import {
     EDiscountType,
-    ERegisterType,
-    IGET_RESTAURANT_PROMOTION,
-    IGET_RESTAURANT_PROMOTION_DISCOUNT,
-    IGET_RESTAURANT_PROMOTION_ITEMS,
-    IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS,
-    IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES,
-    IGET_RESTAURANT_PROMOTION_AVAILABILITY,
-    IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES,
-    IGET_RESTAURANT_REGISTER_PRINTER,
+    ERegisterType, IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS,
+    IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES, IGET_RESTAURANT_PROMOTION, IGET_RESTAURANT_PROMOTION_AVAILABILITY,
+    IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES, IGET_RESTAURANT_PROMOTION_DISCOUNT,
+    IGET_RESTAURANT_PROMOTION_ITEMS, IGET_RESTAURANT_REGISTER_PRINTER
 } from "../graphql/customQueries";
 import {
     CheckIfPromotionValidResponse,
@@ -18,7 +13,7 @@ import {
     ICartItemQuantitiesByIdValue,
     ICartModifier,
     ICartModifierGroup,
-    ICartProduct,
+    ICartProduct
 } from "../model/model";
 
 export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0);
@@ -37,7 +32,7 @@ export const getOrderNumber = (orderNumberSuffix: string) => {
 
     let orderNumber;
 
-    if (todayDate == orderNumberDateStored) {
+    if (todayDate === orderNumberDateStored) {
         orderNumber = String(Number(orderNumberStored) + 1);
 
         localStorage.setItem("orderNumber", orderNumber);
@@ -51,14 +46,14 @@ export const getOrderNumber = (orderNumberSuffix: string) => {
 };
 
 export const filterPrintProducts = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[], printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
-    if (!printer.ignoreProducts || printer.ignoreProducts.items.length == 0) {
+    if (!printer.ignoreProducts || printer.ignoreProducts.items.length === 0) {
         return products;
     }
 
     printer.ignoreProducts.items.forEach((ignoreProduct) => {
         products.forEach((product) => {
-            if (ignoreProduct.product.id == product.id) {
-                products = products.filter((p) => p.id != product.id);
+            if (ignoreProduct.product.id === product.id) {
+                products = products.filter((p) => p.id !== product.id);
             }
         });
     });
@@ -67,7 +62,7 @@ export const filterPrintProducts = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAG
 };
 
 export const isItemSoldOut = (soldOut?: boolean, soldOutDate?: string) => {
-    if (soldOut || soldOutDate == format(new Date(), "yyyy-MM-dd")) {
+    if (soldOut || soldOutDate === format(new Date(), "yyyy-MM-dd")) {
         return true;
     }
 
@@ -79,7 +74,7 @@ export const isPromotionAvailable = (availability?: IGET_RESTAURANT_PROMOTION_AV
 
     const dayTimes: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[] = getPromotionDayData(availability);
 
-    if (dayTimes.length == 0) return true;
+    if (dayTimes.length === 0) return true;
 
     const currentDateTime = new Date();
     let isWithinTimeSlot = false;
@@ -119,7 +114,7 @@ export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY
 
     const dayTimes: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] = getDayData(availability);
 
-    if (dayTimes.length == 0) return true;
+    if (dayTimes.length === 0) return true;
 
     const currentDateTime = new Date();
     let isWithinTimeSlot = false;
@@ -163,7 +158,7 @@ export const getProductQuantityAvailable = (
 ) => {
     let quantityAvailable = menuProductItem.totalQuantityAvailable;
 
-    if (cartProducts[menuProductItem.id] != undefined) {
+    if (cartProducts[menuProductItem.id] !== undefined) {
         quantityAvailable -= cartProducts[menuProductItem.id].quantity;
     }
 
@@ -196,7 +191,7 @@ export const getModifierQuantityAvailable = (
 ) => {
     let quantityAvailable = menuModifierItem.totalQuantityAvailable;
 
-    if (cartModifiers[menuModifierItem.id] != undefined) {
+    if (cartModifiers[menuModifierItem.id] !== undefined) {
         quantityAvailable -= cartModifiers[menuModifierItem.id].quantity;
     }
 
@@ -221,7 +216,7 @@ export const isModifierQuantityAvailable = (
 };
 
 export const getQuantityRemainingText = (quantityRemaining: number) => {
-    if (quantityRemaining == 1) {
+    if (quantityRemaining === 1) {
         return "Last one!";
     } else {
         return `${quantityRemaining} left!`;
@@ -361,7 +356,7 @@ export const getMatchingPromotionProducts = (
                 quantityCounted += cartCategoryQuantitiesById[c.id].quantity;
 
                 Object.values(cartProductQuantitiesById).forEach((p) => {
-                    if (p.categoryId == cartCategoryQuantitiesById[c.id].id) {
+                    if (p.categoryId === cartCategoryQuantitiesById[c.id].id) {
                         matchingProductsTemp.push(p);
                     }
                 });
@@ -395,7 +390,7 @@ export const getMatchingPromotionProducts = (
             let counter = item.minQuantity;
 
             matchingProductsTempCpySorted.forEach((p) => {
-                if (counter == 0) return;
+                if (counter === 0) return;
 
                 const quantity = p.quantity;
 

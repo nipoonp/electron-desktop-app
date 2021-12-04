@@ -1,38 +1,34 @@
-import { useState, useEffect } from "react";
-import { ICartModifier, IPreSelectedModifiers, ICartProduct, ICartModifierGroup } from "../../model/model";
 import { Logger } from "aws-amplify";
+import { useEffect, useState } from "react";
+import { FiChevronRight } from "react-icons/fi";
+import { useCart } from "../../context/cart-context";
+import { useRegister } from "../../context/register-context";
+import {
+    IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_MODIFIER, IGET_RESTAURANT_MODIFIER_GROUP, IGET_RESTAURANT_PRODUCT
+} from "../../graphql/customQueries";
+import { ICartModifier, ICartModifierGroup, ICartProduct, IPreSelectedModifiers } from "../../model/model";
+import { getCloudFrontDomainName } from "../../private/aws-custom";
+import { Button } from "../../tabin/components/button";
+import { CachedImage } from "../../tabin/components/cachedImage";
+import { Checkbox } from "../../tabin/components/checkbox";
+import { PlusIcon } from "../../tabin/components/icons/plusIcon";
+import { Modal } from "../../tabin/components/modal";
+import { Radio } from "../../tabin/components/radio";
+import { Stepper } from "../../tabin/components/stepper";
+import { TextArea } from "../../tabin/components/textArea";
 import { toast } from "../../tabin/components/toast";
 import {
-    getModifierQuantityAvailable,
+    convertCentsToDollars, getModifierQuantityAvailable,
     getProductQuantityAvailable,
     getQuantityRemainingText,
     isItemAvailable,
     isItemSoldOut,
     isModifierQuantityAvailable,
-    isProductQuantityAvailable,
+    isProductQuantityAvailable
 } from "../../util/util";
-import { convertCentsToDollars } from "../../util/util";
-import { PlusIcon } from "../../tabin/components/icons/plusIcon";
-import {
-    IGET_RESTAURANT_PRODUCT,
-    IGET_RESTAURANT_MODIFIER_GROUP,
-    IGET_RESTAURANT_MODIFIER,
-    IGET_RESTAURANT_CATEGORY,
-} from "../../graphql/customQueries";
-import { Modal } from "../../tabin/components/modal";
-import { Button } from "../../tabin/components/button";
-import { Stepper } from "../../tabin/components/stepper";
-import { Checkbox } from "../../tabin/components/checkbox";
-import { Radio } from "../../tabin/components/radio";
-import { TextArea } from "../../tabin/components/textArea";
-import { getCloudFrontDomainName } from "../../private/aws-custom";
-import { CachedImage } from "../../tabin/components/cachedImage";
-import { useCart } from "../../context/cart-context";
-import { FiChevronRight } from "react-icons/fi";
 import { ProductModifier } from "../shared/productModifier";
-
 import "./product.scss";
-import { useRegister } from "../../context/register-context";
+
 
 const logger = new Logger("productModal");
 
@@ -286,9 +282,9 @@ export const ProductModal = (props: {
             [selectedModifierGroupId]: orderedModifiers[selectedModifierGroupId].filter((m) => m.id !== selectedModifier.id),
         };
 
-        if (!preSelectedModifierQuantity || preSelectedModifierQuantity == 0) {
+        if (!preSelectedModifierQuantity || preSelectedModifierQuantity === 0) {
             // If no selected modifies inside a modifier group. Delete the group.
-            if (newOrderedModifiers[selectedModifierGroupId].length == 0) {
+            if (newOrderedModifiers[selectedModifierGroupId].length === 0) {
                 delete newOrderedModifiers[selectedModifierGroupId];
             }
         } else {
@@ -338,9 +334,9 @@ export const ProductModal = (props: {
         };
 
         // If quantity is 0, don't add a 0 quantity modifier.
-        if (quantity == 0 && (!preSelectedModifierQuantity || preSelectedModifierQuantity == 0)) {
+        if (quantity === 0 && (!preSelectedModifierQuantity || preSelectedModifierQuantity === 0)) {
             // If no selected modifies inside a modifier group. Delete the group.
-            if (newOrderedModifiers[selectedModifierGroupId].length == 0) {
+            if (newOrderedModifiers[selectedModifierGroupId].length === 0) {
                 delete newOrderedModifiers[selectedModifierGroupId];
             }
         } else {
@@ -560,8 +556,8 @@ export const ProductModal = (props: {
         <>
             {product.modifierGroups &&
                 product.modifierGroups.items.map((mg) => {
-                    if (mg.hideForCustomer) return;
-                    if (register && !mg.modifierGroup.availablePlatforms.includes(register.type)) return;
+                    if (mg.hideForCustomer) return null;
+                    if (register && !mg.modifierGroup.availablePlatforms.includes(register.type)) return null;
 
                     return (
                         <>
@@ -836,10 +832,10 @@ export const ModifierGroup = (props: {
             <div className="modifiers">
                 {modifierGroup.modifiers &&
                     modifierGroup.modifiers.items.map((m) => {
-                        if (register && !m.modifier.availablePlatforms.includes(register.type)) return;
+                        if (register && !m.modifier.availablePlatforms.includes(register.type)) return null;
 
                         const isValid = checkModifierIsValid(m.modifier);
-                        const selectedModifier = selectedModifiers.find((modifier) => modifier.id == m.modifier.id);
+                        const selectedModifier = selectedModifiers.find((modifier) => modifier.id === m.modifier.id);
 
                         return (
                             <Modifier
@@ -931,7 +927,7 @@ const Modifier = (props: {
 
     const showRadio = radio;
     const showStepper = choiceDuplicate > 1 && (displayModifierStepper || modifierQuantity > 0);
-    const showCollapsedStepper = choiceDuplicate > 1 && !displayModifierStepper && modifierQuantity == 0;
+    const showCollapsedStepper = choiceDuplicate > 1 && !displayModifierStepper && modifierQuantity === 0;
     const showCheckbox = !showRadio && !showStepper && !showCollapsedStepper;
 
     const getModifierOrProductModifierQuantityAvailable = () => {

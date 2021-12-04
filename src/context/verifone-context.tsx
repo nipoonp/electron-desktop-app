@@ -1,12 +1,10 @@
-import { useState, useEffect, createContext, useContext, useRef } from "react";
-
 import { Logger } from "aws-amplify";
+import { createContext, useContext, useEffect, useRef } from "react";
+import { EEftposTransactionOutcome, EVerifoneTransactionOutcome, IEftposTransactionOutcome } from "../model/model";
 import { delay, getVerifoneSocketErrorMessage, getVerifoneTimeBasedTransactionId } from "../model/util";
-import { useMutation } from "@apollo/client";
-import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
 import { toLocalISOString } from "../util/util";
-import { EEftposTransactionOutcome, IEftposTransactionOutcome, EVerifoneTransactionOutcome } from "../model/model";
 import { useErrorLogging } from "./errorLogging-context";
+
 
 let electron: any;
 let ipcRenderer: any;
@@ -123,10 +121,10 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     payload: dataPayload,
                 };
 
-                if (type == VMT.ReadyToPrintRequest) {
+                if (type === VMT.ReadyToPrintRequest) {
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
                     addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
-                } else if (type == VMT.PrintRequest) {
+                } else if (type === VMT.PrintRequest) {
                     eftposReceipt.current = dataPayload;
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
                     addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
@@ -325,7 +323,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     };
 
     const checkForErrors = () => {
-        if (eftposError.current != "") {
+        if (eftposError.current !== "") {
             const error = getVerifoneSocketErrorMessage(eftposError.current);
 
             console.error(error);
@@ -347,7 +345,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
                 reject("The amount has to be supplied");
                 return;
-            } else if (amount == 0) {
+            } else if (amount === 0) {
                 addToLogs("Reject: The amount must be greater than 0");
                 await createEftposTransactionLog(restaurantId, amount);
 
@@ -398,7 +396,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
             const printingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
             while (
-                eftposData.current.type != VMT.ConfigurePrintingResponse // What if this is OFF?
+                eftposData.current.type !== VMT.ConfigurePrintingResponse // What if this is OFF?
             ) {
                 const errorMessage = checkForErrors();
                 if (errorMessage) {
@@ -492,11 +490,11 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 }
 
                 // @ts-ignore - suppress typescript warning because typescript does not understand that eftposData changes from within the socket hooks
-                if (eftposData.current.type == VMT.ResultAndExtrasResponse) {
+                if (eftposData.current.type === VMT.ResultAndExtrasResponse) {
                     const verifonePurchaseResultArray = eftposData.current.payload.split(",");
                     iSO8583ResponseCode = verifonePurchaseResultArray[2];
 
-                    if (iSO8583ResponseCode != "??") {
+                    if (iSO8583ResponseCode !== "??") {
                         // localStorage.removeItem("verifoneTransactionId");
                         // localStorage.removeItem("verifoneMerchantId");
                         break;
@@ -634,3 +632,4 @@ const useVerifone = () => {
 };
 
 export { VerifoneProvider, useVerifone };
+

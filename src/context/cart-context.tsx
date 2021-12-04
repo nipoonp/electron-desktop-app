@@ -1,17 +1,12 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { EPromotionType, IGET_RESTAURANT_PROMOTION } from "../graphql/customQueries";
-
 import {
-    ICartProduct,
-    EOrderType,
-    ICartItemQuantitiesById,
-    ICartPromotion,
-    CheckIfPromotionValidResponse,
-    ICartPaymentAmounts,
-    ICartPayment,
+    CheckIfPromotionValidResponse, EOrderType,
+    ICartItemQuantitiesById, ICartPayment, ICartPaymentAmounts, ICartProduct, ICartPromotion
 } from "../model/model";
-import { getMatchingPromotionProducts, processPromotionDiscounts, isPromotionAvailable, checkIfPromotionValid } from "../util/util";
+import { checkIfPromotionValid, getMatchingPromotionProducts, processPromotionDiscounts } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
+
 
 const initialOrderType = null;
 const initialTableNumber = null;
@@ -212,8 +207,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     };
 
     useEffect(() => {
-        if (availablePromotions.length == 0) return;
-        if (!products || products.length == 0) return;
+        if (availablePromotions.length === 0) return;
+        if (!products || products.length === 0) return;
 
         let bestPromotion: ICartPromotion | null = null;
 
@@ -402,7 +397,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     };
 
     const updateItem = (index: number, product: ICartProduct) => {
-        if (products == null) {
+        if (products === null) {
             // should never really end up here
             return;
         }
@@ -416,7 +411,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     };
 
     const updateItemQuantity = (index: number, quantity: number) => {
-        if (products == null) {
+        if (products === null) {
             // should never really end up here
             return;
         }
@@ -433,7 +428,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     };
 
     const deleteItem = (index: number) => {
-        if (products == null) {
+        if (products === null) {
             // should never really end up here
             return;
         }
@@ -525,3 +520,4 @@ const useCart = () => {
 };
 
 export { CartProvider, useCart };
+

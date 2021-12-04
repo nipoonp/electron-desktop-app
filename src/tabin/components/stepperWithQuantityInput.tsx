@@ -1,9 +1,9 @@
-import { PlusIcon } from "./icons/plusIcon";
-import { MinusIcon } from "./icons/minusIcon";
-
-import "./stepper.scss";
-import { Input } from "./input";
 import { useEffect, useState } from "react";
+import { MinusIcon } from "./icons/minusIcon";
+import { PlusIcon } from "./icons/plusIcon";
+import { Input } from "./input";
+import "./stepper.scss";
+
 
 export const StepperWithQuantityInput = (props: IProps) => {
     const [value, setValue] = useState(props.count);
@@ -21,11 +21,11 @@ export const StepperWithQuantityInput = (props: IProps) => {
             return;
         }
 
-        if (!props.allowNegative && props.count == 0) {
+        if (!props.allowNegative && props.count === 0) {
             return;
         }
 
-        if (props.min == props.count) {
+        if (props.min === props.count) {
             return;
         }
 
@@ -40,7 +40,7 @@ export const StepperWithQuantityInput = (props: IProps) => {
             return;
         }
 
-        if (props.max == props.count) {
+        if (props.max === props.count) {
             return;
         }
 

@@ -1,11 +1,10 @@
-import { useEffect } from "react";
 import { ICartModifierGroup, ICartProduct } from "../../../model/model";
 import { Button } from "../../../tabin/components/button";
 import { Stepper } from "../../../tabin/components/stepper";
 import { convertCentsToDollars } from "../../../util/util";
 import { ProductModifier } from "../../shared/productModifier";
-
 import "./orderSummary.scss";
+
 
 export const OrderSummary = (props: {
     products: ICartProduct[];
@@ -14,7 +13,7 @@ export const OrderSummary = (props: {
     onUpdateProductQuantity: (displayOrder: number, productQuantity: number) => void;
 }) => {
     const { products, onEditProduct, onRemoveProduct, onUpdateProductQuantity } = props;
-    if (!products || products == []) {
+    if (!products || products === []) {
         return (
             <>
                 <h1>No items in cart!</h1>
@@ -119,7 +118,7 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
         const changedQuantity = quantity - preSelectedQuantity;
         let mStr = "";
 
-        if (changedQuantity < 0 && Math.abs(changedQuantity) == preSelectedQuantity) {
+        if (changedQuantity < 0 && Math.abs(changedQuantity) === preSelectedQuantity) {
             mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)} x ` : ""}${name}`;
         } else {
             mStr = `${quantity > 1 ? `${Math.abs(quantity)} x ` : ""}${name}`;

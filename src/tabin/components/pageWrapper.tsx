@@ -11,7 +11,7 @@ export const PageWrapper = (props: IProps) => {
     const { clearCart } = useCart();
     const { register } = useRegister();
 
-    const resetAfterSeconds = register && register.type == ERegisterType.KIOSK ? 3 * 60 : 10000 * 60; //3 mins
+    const resetAfterSeconds = register && register.type === ERegisterType.KIOSK ? 3 * 60 : 10000 * 60; //3 mins
     const userInactiveSecondsCounter: React.MutableRefObject<number> = useRef(0);
 
     const resetUserInactiveSecondsCounter = () => {

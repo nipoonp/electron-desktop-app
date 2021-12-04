@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { FiX } from "react-icons/fi";
 import { useCart } from "../../context/cart-context";
 import { useRegister } from "../../context/register-context";
-import { EEftposTransactionOutcome, EPaymentModalState, ICartPaymentAmounts, IEftposTransactionOutcome } from "../../model/model";
+import { EEftposTransactionOutcome, EPaymentModalState, IEftposTransactionOutcome } from "../../model/model";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { Button } from "../../tabin/components/button";
 import { CachedImage } from "../../tabin/components/cachedImage";
@@ -10,8 +10,8 @@ import { Input } from "../../tabin/components/input";
 import { Link } from "../../tabin/components/link";
 import { Modal } from "../../tabin/components/modal";
 import { convertCentsToDollars, convertDollarsToCents } from "../../util/util";
-
 import "./paymentModal.scss";
+
 
 const AMOUNT_5 = "5.00";
 const AMOUNT_10 = "10.00";
@@ -82,7 +82,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
 
         console.log("xxx..eftposAmountCents", eftposAmountCents);
 
-        if (eftposAmountCentsInt == 0) {
+        if (eftposAmountCentsInt === 0) {
             setAmountError("Value cannot be 0.00");
             return;
         } else if (eftposAmountCentsInt <= 0) {
@@ -101,7 +101,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         const cashAmountCents = convertDollarsToCents(cashAmountFloat);
         const cashAmountCentsInt = parseInt(cashAmountCents);
 
-        if (cashAmountCentsInt == 0) {
+        if (cashAmountCentsInt === 0) {
             setAmountError("Value cannot be 0.00");
             return;
         }
@@ -114,10 +114,10 @@ export const PaymentModal = (props: IPaymentModalProps) => {
             return <CreateOrderFailed createOrderError={createOrderError} onCancelOrder={onCancelOrder} />;
         }
 
-        if (paymentModalState == EPaymentModalState.AwaitingCard) {
+        if (paymentModalState === EPaymentModalState.AwaitingCard) {
             return <AwaitingCard />;
-        } else if (paymentModalState == EPaymentModalState.EftposResult && eftposTransactionOutcome) {
-            if (eftposTransactionOutcome.transactionOutcome == EEftposTransactionOutcome.Success) {
+        } else if (paymentModalState === EPaymentModalState.EftposResult && eftposTransactionOutcome) {
+            if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.Success) {
                 return (
                     <PaymentAccepted
                         paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
@@ -126,12 +126,12 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                         onContinueToNextPayment={onContinueToNextPayment}
                     />
                 );
-            } else if (eftposTransactionOutcome.transactionOutcome == EEftposTransactionOutcome.Fail) {
+            } else if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.Fail) {
                 return <PaymentFailed errorMessage={eftposTransactionOutcome.message} onRetry={onRetry} onCancelPayment={onCancelPayment} />;
-            } else if (eftposTransactionOutcome.transactionOutcome == EEftposTransactionOutcome.Delay) {
+            } else if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.Delay) {
                 return <PaymentDelayed errorMessage={eftposTransactionOutcome.message} />;
             }
-        } else if (paymentModalState == EPaymentModalState.CashResult) {
+        } else if (paymentModalState === EPaymentModalState.CashResult) {
             return (
                 <PaymentCashPayment
                     cashTransactionChangeAmount={cashTransactionChangeAmount}
@@ -140,7 +140,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     onContinueToNextOrder={onContinueToNextOrder}
                 />
             );
-        } else if (paymentModalState == EPaymentModalState.PayLater) {
+        } else if (paymentModalState === EPaymentModalState.PayLater) {
             return (
                 <PaymentPayLater
                     paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
@@ -355,7 +355,7 @@ const POSPaymentScreen = (props: {
                         onBlur={onBlurAmount}
                         error={amountError}
                     />
-                    {parseFloat(amount) == parseFloat(totalRemainingInDollars) ? (
+                    {parseFloat(amount) === parseFloat(totalRemainingInDollars) ? (
                         <div className="payment-modal-partial-payment-label ml-10 text-left">Edit to make a partial payment</div>
                     ) : (
                         <div className="payment-modal-partial-payment-label ml-10 text-left">Remaining: ${totalRemainingInDollars}</div>
@@ -398,13 +398,13 @@ const POSPaymentScreen = (props: {
                     {payments.map((payment, index) => (
                         <>
                             {payment.type === "CASH" ? (
-                                <div className="mb-2">
+                                <div className="mb-2" key={index}>
                                     Cash: ${convertCentsToDollars(payment.amount)}{" "}
                                     <Link onClick={() => onRemoveCashTransaction(index)}>(Remove)</Link>
                                 </div>
                             ) : (
                                 //For all Eftpos types Verifone, Smartpay, Windcave
-                                <div className="mb-2">Eftpos: ${convertCentsToDollars(payment.amount)}</div>
+                                <div className="mb-2" key={index}>Eftpos: ${convertCentsToDollars(payment.amount)}</div>
                             )}
                         </>
                     ))}

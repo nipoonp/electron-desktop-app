@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Verifone } from "./configureNewEftpos/verifone";
-import { SmartPay } from "./configureNewEftpos/smartpay";
-import { ReceiptPrinter } from "./configureNewEftpos/receiptPrinter";
 import { Radio } from "../../tabin/components/radio";
-
 import "./configureNewEftpos.scss";
+import { ReceiptPrinter } from "./configureNewEftpos/receiptPrinter";
+import { SmartPay } from "./configureNewEftpos/smartpay";
+import { Verifone } from "./configureNewEftpos/verifone";
 import { Windcave } from "./configureNewEftpos/windcave";
+
 
 enum EftposProvider {
     VERIFONE,
@@ -24,7 +24,7 @@ export const ConfigureNewEftpos = () => {
 
                 <Radio
                     className="mb-2"
-                    selected={eftposProvider == EftposProvider.VERIFONE}
+                    selected={eftposProvider === EftposProvider.VERIFONE}
                     onSelect={() => setEftposProvider(EftposProvider.VERIFONE)}
                 >
                     Verifone
@@ -32,7 +32,7 @@ export const ConfigureNewEftpos = () => {
 
                 <Radio
                     className="mb-2"
-                    selected={eftposProvider == EftposProvider.SMARTPAY}
+                    selected={eftposProvider === EftposProvider.SMARTPAY}
                     onSelect={() => setEftposProvider(EftposProvider.SMARTPAY)}
                 >
                     Smart Pay
@@ -40,17 +40,17 @@ export const ConfigureNewEftpos = () => {
 
                 <Radio
                     className="mb-6"
-                    selected={eftposProvider == EftposProvider.WINDCAVE}
+                    selected={eftposProvider === EftposProvider.WINDCAVE}
                     onSelect={() => setEftposProvider(EftposProvider.WINDCAVE)}
                 >
                     Windcave
                 </Radio>
 
-                {eftposProvider == EftposProvider.VERIFONE ? (
+                {eftposProvider === EftposProvider.VERIFONE ? (
                     <Verifone />
-                ) : eftposProvider == EftposProvider.SMARTPAY ? (
+                ) : eftposProvider === EftposProvider.SMARTPAY ? (
                     <SmartPay />
-                ) : eftposProvider == EftposProvider.WINDCAVE ? (
+                ) : eftposProvider === EftposProvider.WINDCAVE ? (
                     <Windcave />
                 ) : (
                     <></>

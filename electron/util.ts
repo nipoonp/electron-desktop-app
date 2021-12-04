@@ -1,24 +1,19 @@
-import { printer as ThermalPrinter, types as PrinterTypes } from "node-thermal-printer";
-import {
-    IOrderReceipt,
-    ICartProduct,
-    ICartModifierGroup,
-    ICartModifier,
-    EReceiptPrinterType,
-    IPrintReceiptOutput,
-    IPrintSalesByDayDataInput,
-} from "./model";
 import usbPrinter from "@thiagoelg/node-printer";
 import { format } from "date-fns";
+import { printer as ThermalPrinter, types as PrinterTypes } from "node-thermal-printer";
+import {
+    EReceiptPrinterType, ICartModifier, ICartModifierGroup, ICartProduct, IOrderReceipt, IPrintReceiptOutput,
+    IPrintSalesByDayDataInput
+} from "./model";
 
 export const calculateLRC = (str: string): string => {
     var bytes: number[] = [];
     var lrc = 0;
-    for (var i = 0; i < str.length; i++) {
+    for (let i = 0; i < str.length; i++) {
         bytes.push(str.charCodeAt(i));
     }
 
-    for (var i = 0; i < str.length; i++) {
+    for (let i = 0; i < str.length; i++) {
         lrc ^= bytes[i];
     }
 
@@ -47,27 +42,6 @@ export const decodeCommandBuffer = (data: Buffer): string => {
     dataBuffer = dataBuffer.slice(0, -1);
 
     return dataBuffer.toString();
-};
-
-const getCurrentDate = (date: Date) => {
-    const pad = (num: number) => {
-        var norm = Math.floor(Math.abs(num));
-        return (norm < 10 ? "0" : "") + norm;
-    };
-
-    return (
-        pad(date.getDate()) +
-        "-" +
-        pad(date.getMonth() + 1) +
-        "-" +
-        date.getFullYear() +
-        " " +
-        pad(date.getHours()) +
-        ":" +
-        pad(date.getMinutes()) +
-        ":" +
-        pad(date.getSeconds())
-    );
 };
 
 export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0);
@@ -109,13 +83,13 @@ const getProductTotal = (product: ICartProduct) => {
 export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: boolean): Promise<IPrintReceiptOutput> => {
     let printer;
 
-    if (order.printerType == EReceiptPrinterType.WIFI) {
+    if (order.printerType === EReceiptPrinterType.WIFI) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
             interface: `tcp://${order.printerAddress}`,
         });
-    } else if (order.printerType == EReceiptPrinterType.USB) {
+    } else if (order.printerType === EReceiptPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
@@ -192,7 +166,7 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
     printer.newLine();
     printer.setTextNormal();
 
-    if (order.paid == false) {
+    if (order.paid === false) {
         printer.underlineThick(true);
         printer.println("Payment Required");
         printer.underlineThick(false);
@@ -221,7 +195,7 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
         ]);
 
         product.modifierGroups.forEach((modifierGroup: ICartModifierGroup) => {
-            if (order.hideModifierGroupsForCustomer == true && modifierGroup.hideForCustomer == true) {
+            if (order.hideModifierGroupsForCustomer === true && modifierGroup.hideForCustomer === true) {
                 return;
             }
 
@@ -235,7 +209,7 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
                 const changedQuantity = modifier.quantity - modifier.preSelectedQuantity;
                 let mStr = "";
 
-                if (changedQuantity < 0 && Math.abs(changedQuantity) == modifier.preSelectedQuantity) {
+                if (changedQuantity < 0 && Math.abs(changedQuantity) === modifier.preSelectedQuantity) {
                     mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)} x ` : ""}${modifier.name}`;
                 } else {
                     mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)} x ` : ""}${modifier.name}`;
@@ -263,7 +237,7 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
 
                         if (productModifier_product.modifierGroups.length > 0) {
                             productModifier_product.modifierGroups.forEach((productModifier_modifierGroup, index2) => {
-                                if (order.hideModifierGroupsForCustomer == true && productModifier_modifierGroup.hideForCustomer == true) {
+                                if (order.hideModifierGroupsForCustomer === true && productModifier_modifierGroup.hideForCustomer === true) {
                                     return;
                                 }
 
@@ -278,7 +252,7 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
                                     const changedQuantity = productModifier_modifier.quantity - productModifier_modifier.preSelectedQuantity;
                                     let mStr = "";
 
-                                    if (changedQuantity < 0 && Math.abs(changedQuantity) == productModifier_modifier.preSelectedQuantity) {
+                                    if (changedQuantity < 0 && Math.abs(changedQuantity) === productModifier_modifier.preSelectedQuantity) {
                                         mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)} x ` : ""}${
                                             productModifier_modifier.name
                                         }`;
@@ -395,9 +369,9 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
     }
 
     try {
-        if (order.printerType == EReceiptPrinterType.WIFI) {
+        if (order.printerType === EReceiptPrinterType.WIFI) {
             await printer.execute();
-        } else if (order.printerType == EReceiptPrinterType.USB) {
+        } else if (order.printerType === EReceiptPrinterType.USB) {
             await usbPrinterExecute(order.printerAddress, printer.getBuffer());
             printer.clear();
         } else {
@@ -413,13 +387,13 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
 export const printSalesByDayReceipt = async (printSalesByDayDataInput: IPrintSalesByDayDataInput): Promise<IPrintReceiptOutput> => {
     let printer;
 
-    if (printSalesByDayDataInput.printerType == EReceiptPrinterType.WIFI) {
+    if (printSalesByDayDataInput.printerType === EReceiptPrinterType.WIFI) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
             interface: `tcp://${printSalesByDayDataInput.printerAddress}`,
         });
-    } else if (printSalesByDayDataInput.printerType == EReceiptPrinterType.USB) {
+    } else if (printSalesByDayDataInput.printerType === EReceiptPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
@@ -463,9 +437,9 @@ export const printSalesByDayReceipt = async (printSalesByDayDataInput: IPrintSal
     printer.partialCut();
 
     try {
-        if (printSalesByDayDataInput.printerType == EReceiptPrinterType.WIFI) {
+        if (printSalesByDayDataInput.printerType === EReceiptPrinterType.WIFI) {
             await printer.execute();
-        } else if (printSalesByDayDataInput.printerType == EReceiptPrinterType.USB) {
+        } else if (printSalesByDayDataInput.printerType === EReceiptPrinterType.USB) {
             await usbPrinterExecute(printSalesByDayDataInput.printerAddress, printer.getBuffer());
             printer.clear();
         } else {

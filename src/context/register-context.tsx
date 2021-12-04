@@ -1,10 +1,10 @@
-import { useState, useEffect, createContext, useContext } from "react";
-
 import { useMutation } from "@apollo/client";
+import { createContext, useContext, useEffect, useState } from "react";
 import { UPDATE_REGISTER_KEY } from "../graphql/customMutations";
 import { ERegisterType, IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { getCloudFrontDomainName } from "../private/aws-custom";
 import { useRestaurant } from "./restaurant-context";
+
 
 type ContextProps = {
     register: IGET_RESTAURANT_REGISTER | null;
@@ -36,7 +36,7 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
 
         restaurant &&
             restaurant.registers.items.forEach((r) => {
-                if (storedRegisterKey == r.id && r.active == true) {
+                if (storedRegisterKey === r.id && r.active === true) {
                     matchingRegister = r;
                 }
             });
@@ -53,7 +53,7 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
 
         restaurant &&
             restaurant.registers.items.forEach((register) => {
-                if (key == register.id && register.active == false) {
+                if (key === register.id && register.active === false) {
                     keyValid = true;
                 }
             });
@@ -89,7 +89,7 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
         <RegisterContext.Provider
             value={{
                 register: register,
-                isPOS: register ? register.type == ERegisterType.POS : null,
+                isPOS: register ? register.type === ERegisterType.POS : null,
                 connectRegister: connectRegister,
                 disconnectRegister: disconnectRegister,
             }}
@@ -120,3 +120,4 @@ const useRegister = () => {
 };
 
 export { RegisterProvider, useRegister };
+

@@ -1,9 +1,9 @@
-import { createContext, useContext, useEffect } from "react";
-
 import axios from "axios";
+import { createContext, useContext, useEffect } from "react";
+import { EEftposTransactionOutcome, ESmartpayTransactionOutcome, IEftposTransactionOutcome } from "../model/model";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
-import { EEftposTransactionOutcome, ESmartpayTransactionOutcome, IEftposTransactionOutcome } from "../model/model";
+
 // ******************************************************************************
 // The code below will handle the SmartConnect API endpoint communication.
 // SmartConnect API endpoints are CORS-enabled, so the calls can be made from the front-end.
@@ -139,7 +139,7 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
                     console.log(`Pairing response received (${response.status}) ${response.data.result}`);
 
                     // Trust, but verify
-                    if (response.status == 200) {
+                    if (response.status === 200) {
                         // No object passed back
                         resolve();
                         return;
@@ -198,7 +198,7 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
             if (!amount) {
                 reject("The amount has to be supplied");
                 return;
-            } else if (amount == 0) {
+            } else if (amount === 0) {
                 reject("The amount must be greater than 0");
                 return;
             } else if (!transactionType) {
@@ -246,7 +246,7 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
                         console.log(`Transaction POST response received (${response.status}) ${response.data.result}`);
 
                         // Trust, but verify
-                        if (response.status == 200) {
+                        if (response.status === 200) {
                             // Extract the polling URL
                             let res = response.data;
 
@@ -348,7 +348,7 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
                     let transactionComplete = false;
                     let transactionOutcome: IEftposTransactionOutcome | null = null;
 
-                    if (response.status == 200) {
+                    if (response.status === 200) {
                         let res = response.data;
 
                         if (res && res.data) {
@@ -356,33 +356,33 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
                             let transactionResult = res.data.TransactionResult;
                             let result = res.data.Result;
 
-                            if (transactionStatus == "COMPLETED") {
+                            if (transactionStatus === "COMPLETED") {
                                 // Transaction is concluded, no need to continue polling
                                 transactionComplete = true;
 
                                 // Determine the outcome of the transaction
-                                if (transactionResult == "OK-ACCEPTED") {
+                                if (transactionResult === "OK-ACCEPTED") {
                                     transactionOutcome = {
                                         platformTransactionOutcome: ESmartpayTransactionOutcome.Accepted,
                                         transactionOutcome: EEftposTransactionOutcome.Success,
                                         message: "Transaction Accepted!",
                                         eftposReceipt: null,
                                     };
-                                } else if (transactionResult == "OK-DECLINED") {
+                                } else if (transactionResult === "OK-DECLINED") {
                                     transactionOutcome = {
                                         platformTransactionOutcome: ESmartpayTransactionOutcome.Declined,
                                         transactionOutcome: EEftposTransactionOutcome.Fail,
                                         message: "Transaction Declined! Please try again.",
                                         eftposReceipt: null,
                                     };
-                                } else if (transactionResult == "CANCELLED" && result != "FAILED-INTERFACE") {
+                                } else if (transactionResult === "CANCELLED" && result !== "FAILED-INTERFACE") {
                                     transactionOutcome = {
                                         platformTransactionOutcome: ESmartpayTransactionOutcome.Cancelled,
                                         transactionOutcome: EEftposTransactionOutcome.Fail,
                                         message: "Transaction Cancelled!",
                                         eftposReceipt: null,
                                     };
-                                } else if (transactionResult == "CANCELLED" && result == "FAILED-INTERFACE") {
+                                } else if (transactionResult === "CANCELLED" && result === "FAILED-INTERFACE") {
                                     transactionOutcome = {
                                         platformTransactionOutcome: ESmartpayTransactionOutcome.DeviceOffline,
                                         transactionOutcome: EEftposTransactionOutcome.Fail,
@@ -398,7 +398,7 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
                                         eftposReceipt: null,
                                     };
                                 }
-                            } else if (transactionStatus == "PENDING" && transactionResult == "OK-DELAYED" && delayed) {
+                            } else if (transactionStatus === "PENDING" && transactionResult === "OK-DELAYED" && delayed) {
                                 // Transaction still not done, but server reporting it's taking longer than usual
                                 // Invoke the delayed function - POS may choose to display a visual indication to the user
                                 // (in case e.g. the device lost connectivity and is not able to upload the outcome)
@@ -477,3 +477,4 @@ const useSmartpay = () => {
 };
 
 export { SmartpayProvider, useSmartpay };
+

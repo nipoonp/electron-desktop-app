@@ -1,6 +1,6 @@
+import { useMutation } from "@apollo/client";
 import { format } from "date-fns";
 import { useState } from "react";
-import { useMutation } from "@apollo/client";
 import { useRestaurant } from "../../context/restaurant-context";
 import { UPDATE_MODIFIER, UPDATE_PRODUCT } from "../../graphql/customMutations";
 import { GET_RESTAURANT, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_MODIFIER, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
@@ -11,8 +11,8 @@ import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { Input } from "../../tabin/components/input";
 import { Link } from "../../tabin/components/link";
 import { StepperWithQuantityInput } from "../../tabin/components/stepperWithQuantityInput";
-
 import "./stock.scss";
+
 
 enum TabSelected {
     Products,
@@ -117,11 +117,11 @@ export const Stock = () => {
             <div className="stock-container">
                 <div className="h2 mb-6">Update Stock Levels</div>
                 <div className="stock-tabs-wrapper mb-6">
-                    <div className={`tab ${tabSelected == TabSelected.Products ? "selected" : ""}`} onClick={() => onClickTab(TabSelected.Products)}>
+                    <div className={`tab ${tabSelected === TabSelected.Products ? "selected" : ""}`} onClick={() => onClickTab(TabSelected.Products)}>
                         Products
                     </div>
                     <div
-                        className={`tab ${tabSelected == TabSelected.Modifiers ? "selected" : ""}`}
+                        className={`tab ${tabSelected === TabSelected.Modifiers ? "selected" : ""}`}
                         onClick={() => onClickTab(TabSelected.Modifiers)}
                     >
                         Modifiers
@@ -138,7 +138,7 @@ export const Stock = () => {
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(event.target.value)}
                 />
 
-                {tabSelected == TabSelected.Products && searchTerm ? (
+                {tabSelected === TabSelected.Products && searchTerm ? (
                     <div>
                         {restaurant &&
                             restaurant.categories.items.map(
@@ -153,7 +153,7 @@ export const Stock = () => {
                                     ))
                             )}
                     </div>
-                ) : tabSelected == TabSelected.Products && !searchTerm ? (
+                ) : tabSelected === TabSelected.Products && !searchTerm ? (
                     <div>
                         {restaurant &&
                             restaurant.categories.items.map((category) => <CategoryItem category={category} onUpdateProduct={onUpdateProduct} />)}
@@ -205,7 +205,7 @@ const Item = (props: {
     const getItemAvailability = () => {
         if (item.soldOut) {
             return ItemAvailability.SoldOut;
-        } else if (item.soldOutDate == format(new Date(), "yyyy-MM-dd")) {
+        } else if (item.soldOutDate === format(new Date(), "yyyy-MM-dd")) {
             return ItemAvailability.SoldOutToday;
         } else {
             return ItemAvailability.Available;
@@ -244,11 +244,11 @@ const Item = (props: {
                 <div>
                     <span className="text-bold">{item.name}</span>{" "}
                     <span>
-                        {item.totalQuantityAvailable && itemAvailability == ItemAvailability.Available
+                        {item.totalQuantityAvailable && itemAvailability === ItemAvailability.Available
                             ? `(${item.totalQuantityAvailable} Available)`
-                            : itemAvailability == ItemAvailability.SoldOut
+                            : itemAvailability === ItemAvailability.SoldOut
                             ? "(SOLD OUT)"
-                            : itemAvailability == ItemAvailability.SoldOutToday
+                            : itemAvailability === ItemAvailability.SoldOutToday
                             ? "(SOLD OUT TODAY)"
                             : ""}
                     </span>
@@ -274,13 +274,13 @@ const Item = (props: {
                         )}
                     </div>
                     <div className="availability-button-container mt-3">
-                        <Button className={`${itemAvailability == ItemAvailability.Available ? "" : "unselected"}`} onClick={onAvailable}>
+                        <Button className={`${itemAvailability === ItemAvailability.Available ? "" : "unselected"}`} onClick={onAvailable}>
                             Available
                         </Button>
-                        <Button className={`${itemAvailability == ItemAvailability.SoldOutToday ? "" : "unselected"}`} onClick={onSoldOutToday}>
+                        <Button className={`${itemAvailability === ItemAvailability.SoldOutToday ? "" : "unselected"}`} onClick={onSoldOutToday}>
                             Sold Out Today
                         </Button>
-                        <Button className={`${itemAvailability == ItemAvailability.SoldOut ? "" : "unselected"}`} onClick={onSoldOut}>
+                        <Button className={`${itemAvailability === ItemAvailability.SoldOut ? "" : "unselected"}`} onClick={onSoldOut}>
                             Sold Out
                         </Button>
                     </div>

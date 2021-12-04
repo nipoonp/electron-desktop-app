@@ -1,51 +1,41 @@
-import { useState, useEffect, useRef } from "react";
-import { Logger } from "aws-amplify";
-import { useCart } from "../../context/cart-context";
-import { useNavigate } from "react-router-dom";
-import { convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
 import { useMutation } from "@apollo/client";
-import { CREATE_ORDER } from "../../graphql/customMutations";
-import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, EPromotionType, ERegisterType } from "../../graphql/customQueries";
-import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath } from "../main";
-import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
-import { ProductModal } from "../modals/product";
-import {
-    ICartProduct,
-    IPreSelectedModifiers,
-    IMatchingUpSellCrossSellProductItem,
-    IMatchingUpSellCrossSellCategoryItem,
-    EEftposTransactionOutcome,
-    IEftposTransactionOutcome,
-    EPaymentModalState,
-    EEftposProvider,
-    ICartPaymentAmounts,
-    ICartPayment,
-} from "../../model/model";
-import { useUser } from "../../context/user-context";
-import { PageWrapper } from "../../tabin/components/pageWrapper";
-import { useSmartpay } from "../../context/smartpay-context";
-import { Button } from "../../tabin/components/button";
-import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
-import { useVerifone } from "../../context/verifone-context";
-import { useRegister } from "../../context/register-context";
-import { useReceiptPrinter } from "../../context/receiptPrinter-context";
-import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
-import { toLocalISOString } from "../../util/util";
-import { useRestaurant } from "../../context/restaurant-context";
-import { UpSellProductModal } from "../modals/upSellProduct";
-import { Link } from "../../tabin/components/link";
-import { TextArea } from "../../tabin/components/textArea";
-import { useWindcave } from "../../context/windcave-context";
-import { CachedImage } from "../../tabin/components/cachedImage";
-import { UpSellCategoryModal } from "../modals/upSellCategory";
+import { Logger } from "aws-amplify";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useCart } from "../../context/cart-context";
 import { useErrorLogging } from "../../context/errorLogging-context";
-import { PromotionCodeModal } from "../modals/promotionCodeModal";
+import { useReceiptPrinter } from "../../context/receiptPrinter-context";
+import { useRegister } from "../../context/register-context";
+import { useRestaurant } from "../../context/restaurant-context";
+import { useSmartpay } from "../../context/smartpay-context";
+import { useUser } from "../../context/user-context";
+import { useVerifone } from "../../context/verifone-context";
+import { useWindcave } from "../../context/windcave-context";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
-import { OrderSummary } from "./checkout/orderSummary";
-import { PaymentModal } from "../modals/paymentModal";
+import { CREATE_ORDER } from "../../graphql/customMutations";
+import { EPromotionType, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
+import {
+    EEftposProvider, EEftposTransactionOutcome, EPaymentModalState, ICartPayment, ICartPaymentAmounts, ICartProduct, IEftposTransactionOutcome, IMatchingUpSellCrossSellCategoryItem, IMatchingUpSellCrossSellProductItem, IPreSelectedModifiers
+} from "../../model/model";
+import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { useAlert } from "../../tabin/components/alert";
-
+import { Button } from "../../tabin/components/button";
+import { CachedImage } from "../../tabin/components/cachedImage";
+import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
+import { Link } from "../../tabin/components/link";
+import { PageWrapper } from "../../tabin/components/pageWrapper";
+import { TextArea } from "../../tabin/components/textArea";
+import { convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber, toLocalISOString } from "../../util/util";
+import { beginOrderPath, orderTypePath, restaurantPath, tableNumberPath } from "../main";
+import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
+import { PaymentModal } from "../modals/paymentModal";
+import { ProductModal } from "../modals/product";
+import { PromotionCodeModal } from "../modals/promotionCodeModal";
+import { UpSellCategoryModal } from "../modals/upSellCategory";
+import { UpSellProductModal } from "../modals/upSellProduct";
 import "./checkout.scss";
+import { OrderSummary } from "./checkout/orderSummary";
+
 
 const logger = new Logger("checkout");
 
@@ -292,7 +282,7 @@ export const Checkout = () => {
             setPaymentOutcomeApprovedRedirectTimeLeft((prevPaymentOutcomeApprovedRedirectTimeLeft) => prevPaymentOutcomeApprovedRedirectTimeLeft - 1);
             timeLeft = timeLeft - 1;
 
-            if (timeLeft == 0) {
+            if (timeLeft === 0) {
                 transactionCompleteTimeoutIntervalId.current && clearInterval(transactionCompleteTimeoutIntervalId.current);
 
                 navigate(beginOrderPath);
@@ -385,7 +375,7 @@ export const Checkout = () => {
             throw "Invalid restaurant";
         }
 
-        if (!products || products.length == 0) {
+        if (!products || products.length === 0) {
             await logError("No products have been selected", JSON.stringify({ products: products }));
             throw "No products have been selected";
         }
@@ -450,28 +440,28 @@ export const Checkout = () => {
         }
 
         try {
-            if (tableNumber == null || tableNumber == "") {
+            if (tableNumber === null || tableNumber === "") {
                 delete variables.table;
             }
 
-            if (notes == null || notes == "") {
+            if (notes === null || notes === "") {
                 delete variables.notes;
             }
 
             variables.products.forEach((product) => {
-                if (product.modifierGroups.length == 0) {
+                if (product.modifierGroups.length === 0) {
                     delete product.modifierGroups;
                 }
 
-                if (product.image == null) {
+                if (product.image === null) {
                     delete product.image;
                 }
 
-                if (product.notes == null || product.notes == "") {
+                if (product.notes === null || product.notes === "") {
                     delete product.notes;
                 }
 
-                if (product.category.image == null) {
+                if (product.category.image === null) {
                     delete product.category.image;
                 }
             });
@@ -496,7 +486,7 @@ export const Checkout = () => {
         try {
             let outcome: IEftposTransactionOutcome | null = null;
 
-            if (register.eftposProvider == EEftposProvider.SMARTPAY) {
+            if (register.eftposProvider === EEftposProvider.SMARTPAY) {
                 let delayedShown = false;
 
                 const delayed = (outcome: IEftposTransactionOutcome) => {
@@ -509,10 +499,10 @@ export const Checkout = () => {
 
                 const pollingUrl = await smartpayCreateTransaction(amount, "Card.Purchase");
                 outcome = await smartpayPollForOutcome(pollingUrl, delayed);
-            } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
+            } else if (register.eftposProvider === EEftposProvider.WINDCAVE) {
                 const txnRef = await windcaveCreateTransaction(register.windcaveStationId, amount, "Purchase");
                 outcome = await windcavePollForOutcome(register.windcaveStationId, txnRef);
-            } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
+            } else if (register.eftposProvider === EEftposProvider.VERIFONE) {
                 outcome = await verifoneCreateTransaction(amount, register.eftposIpAddress, register.eftposPortNumber, restaurant.id);
             }
 
@@ -549,7 +539,7 @@ export const Checkout = () => {
         if (outcome.eftposReceipt) setTransactionEftposReceipts(transactionEftposReceipts + "\n" + outcome.eftposReceipt);
 
         //If paid for everything
-        if (outcome.transactionOutcome == EEftposTransactionOutcome.Success) {
+        if (outcome.transactionOutcome === EEftposTransactionOutcome.Success) {
             try {
                 const newEftposPaymentAmounts = paymentAmounts.eftpos + amount;
                 const newTotalPaymentAmounts = newEftposPaymentAmounts + paymentAmounts.cash;
@@ -716,13 +706,13 @@ export const Checkout = () => {
         }
 
         restaurant.categories.items.forEach((c) => {
-            if (c.id == productToEdit.product.category.id) {
+            if (c.id === productToEdit.product.category.id) {
                 category = c;
             }
 
             c.products &&
                 c.products.items.forEach((p) => {
-                    if (p.product.id == productToEdit.product.id) {
+                    if (p.product.id === productToEdit.product.id) {
                         product = p.product;
                     }
                 });
@@ -946,7 +936,7 @@ export const Checkout = () => {
                         Complete Order
                     </Button>
                 </div>
-                {payments.length == 0 && register.enablePayLater && (
+                {payments.length === 0 && register.enablePayLater && (
                     <div className="pay-later-link mt-4">
                         <Link onClick={onClickPayLater}>Pay cash at counter...</Link>
                     </div>
@@ -967,7 +957,7 @@ export const Checkout = () => {
                 <div className="checkout">
                     <div className="order-wrapper">
                         <div className="order">
-                            {(!products || products.length == 0) && cartEmptyDisplay}
+                            {(!products || products.length === 0) && cartEmptyDisplay}
                             {products && products.length > 0 && order}
                         </div>
                     </div>

@@ -8,8 +8,8 @@ import { Input } from "../../tabin/components/input";
 import { ModalV2 } from "../../tabin/components/modalv2";
 import { toast } from "../../tabin/components/toast";
 import { convertCentsToDollars } from "../../util/util";
-
 import "./promotionCodeModal.scss";
+
 
 interface IPromotionCodeModalProps {
     isOpen: boolean;
@@ -39,7 +39,7 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
         if (getPromotionsByCodeData) {
             console.log("Got getPromotionsByCodeData", getPromotionsByCodeData);
 
-            if (getPromotionsByCodeData.length == 0) {
+            if (getPromotionsByCodeData.length === 0) {
                 setError("Invalid promo code applied");
                 return;
             } else {
@@ -62,11 +62,11 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
 
                 const status = setUserAppliedPromotion(appliedPromotion); //Apply the first one if there are many with the same code.
 
-                if (status == CheckIfPromotionValidResponse.UNAVAILABLE) {
+                if (status === CheckIfPromotionValidResponse.UNAVAILABLE) {
                     setError("This code is currently unavailable. Please try again later");
-                } else if (status == CheckIfPromotionValidResponse.EXPIRED) {
+                } else if (status === CheckIfPromotionValidResponse.EXPIRED) {
                     setError("This code is expired. Please try another code");
-                } else if (status == CheckIfPromotionValidResponse.INVALID_PLATFORM) {
+                } else if (status === CheckIfPromotionValidResponse.INVALID_PLATFORM) {
                     const platform = process.env.REACT_APP_PLATFORM;
 
                     if (platform) {

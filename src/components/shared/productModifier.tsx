@@ -2,8 +2,8 @@ import { IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT, IGET_RESTAURANT_ORDER_PR
 import { ICartModifierGroup, ICartProduct } from "../../model/model";
 import { Link } from "../../tabin/components/link";
 import { convertCentsToDollars } from "../../util/util";
-
 import "./productModifier.scss";
+
 
 export const ProductModifier = (props: {
     selectionIndex?: number;
@@ -39,7 +39,7 @@ const OrderItemDetails = (props: { modifierGroups: ICartModifierGroup[] | IGET_R
         const changedQuantity = quantity - preSelectedQuantity;
         let mStr = "";
 
-        if (changedQuantity < 0 && Math.abs(changedQuantity) == preSelectedQuantity) {
+        if (changedQuantity < 0 && Math.abs(changedQuantity) === preSelectedQuantity) {
             mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)} x ` : ""}${name}`;
         } else {
             mStr = `${quantity > 1 ? `${Math.abs(quantity)} x ` : ""}${name}`;

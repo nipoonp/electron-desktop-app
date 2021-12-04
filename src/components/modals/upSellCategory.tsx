@@ -1,13 +1,13 @@
-import { Button } from "../../tabin/components/button";
-import { isItemAvailable } from "../../util/util";
-import { ModalV2 } from "../../tabin/components/modalv2";
-import { getCloudFrontDomainName } from "../../private/aws-custom";
-import { IMatchingUpSellCrossSellCategoryItem } from "../../model/model";
 import { useRef } from "react";
-import { CachedImage } from "../../tabin/components/cachedImage";
 import { IGET_RESTAURANT_CATEGORY } from "../../graphql/customQueries";
-
+import { IMatchingUpSellCrossSellCategoryItem } from "../../model/model";
+import { getCloudFrontDomainName } from "../../private/aws-custom";
+import { Button } from "../../tabin/components/button";
+import { CachedImage } from "../../tabin/components/cachedImage";
+import { ModalV2 } from "../../tabin/components/modalv2";
+import { isItemAvailable } from "../../util/util";
 import "./upSellCategory.scss";
+
 
 interface IUpSellCategoryModalProps {
     isOpen: boolean;
@@ -56,7 +56,7 @@ export const UpSellCategoryModal = (props: IUpSellCategoryModalProps) => {
     const Categories = (
         <div className="categories pt-2">
             {upSellCrossSaleCategoryItems.map((item, index) => {
-                if (randomItem.current.category.id == item.category.id) return;
+                if (randomItem.current.category.id === item.category.id) return null;
 
                 return categoryDisplay(item.category);
             })}

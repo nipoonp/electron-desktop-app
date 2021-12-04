@@ -1,9 +1,9 @@
-import { useState, useEffect, createContext, useContext } from "react";
-
-import { useUser } from "./user-context";
+import { createContext, useContext, useEffect, useState } from "react";
 import { IGET_RESTAURANT, IGET_USER_RESTAURANT } from "../graphql/customQueries";
 import { useGetRestaurantQuery } from "../hooks/useGetRestaurantQuery";
 import { getCloudFrontDomainName } from "../private/aws-custom";
+import { useUser } from "./user-context";
+
 
 type ContextProps = {
     selectRestaurant: (id: string | null) => void;
@@ -103,7 +103,7 @@ const RestaurantProvider = (props: { children: React.ReactNode }) => {
 
         userRestaurants &&
             userRestaurants.forEach((userRestaurant) => {
-                if (userRestaurant.id == id) {
+                if (userRestaurant.id === id) {
                     setSelectedRestaurantId(id);
                     localStorage.setItem("selectedRestaurantId", id);
                 }
@@ -139,3 +139,4 @@ const useRestaurant = () => {
 };
 
 export { RestaurantProvider, useRestaurant };
+

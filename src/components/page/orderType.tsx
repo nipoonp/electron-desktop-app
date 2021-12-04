@@ -1,13 +1,13 @@
 import { useNavigate } from "react-router";
-import { checkoutPath, tableNumberPath } from "../main";
-import { EOrderType } from "../../model/model";
 import { useCart } from "../../context/cart-context";
-import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { useRegister } from "../../context/register-context";
+import { EOrderType } from "../../model/model";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
-
-import "./orderType.scss";
 import { CachedImage } from "../../tabin/components/cachedImage";
+import { PageWrapper } from "../../tabin/components/pageWrapper";
+import { checkoutPath, tableNumberPath } from "../main";
+import "./orderType.scss";
+
 
 export const OrderType = (props: {}) => {
     const navigate = useNavigate();
@@ -21,7 +21,7 @@ export const OrderType = (props: {}) => {
     const onSelectOrderType = (orderType: EOrderType) => {
         setOrderType(orderType);
 
-        if (register.enableTableFlags && orderType == EOrderType.DINEIN) {
+        if (register.enableTableFlags && orderType === EOrderType.DINEIN) {
             navigate(tableNumberPath);
         } else {
             navigate(checkoutPath);

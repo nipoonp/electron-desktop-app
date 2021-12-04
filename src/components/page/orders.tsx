@@ -1,22 +1,22 @@
-import { useState } from "react";
 import { useMutation } from "@apollo/client";
+import { format } from "date-fns";
+import { useState } from "react";
+import { useParams } from "react-router-dom";
+import { useReceiptPrinter } from "../../context/receiptPrinter-context";
+import { useRegister } from "../../context/register-context";
 import { useRestaurant } from "../../context/restaurant-context";
+import { IGET_RESTAURANT_ORDER_FRAGMENT, IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT } from "../../graphql/customFragments";
 import { UPDATE_ORDER_STATUS } from "../../graphql/customMutations";
 import { EOrderStatus, GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT } from "../../graphql/customQueries";
+import { useGetRestaurantOrdersByBeginWithPlacedAt } from "../../hooks/useGetRestaurantOrdersByBeginWithPlacedAt";
+import { Button } from "../../tabin/components/button";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { Input } from "../../tabin/components/input";
-import { useGetRestaurantOrdersByBeginWithPlacedAt } from "../../hooks/useGetRestaurantOrdersByBeginWithPlacedAt";
-import { convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, toLocalISOString } from "../../util/util";
-import { format } from "date-fns";
-import { Button } from "../../tabin/components/button";
 import { toast } from "../../tabin/components/toast";
-import { IGET_RESTAURANT_ORDER_FRAGMENT, IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT } from "../../graphql/customFragments";
-import { useRegister } from "../../context/register-context";
-import { useReceiptPrinter } from "../../context/receiptPrinter-context";
+import { convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, toLocalISOString } from "../../util/util";
 import { ProductModifier } from "../shared/productModifier";
-import { useParams } from "react-router-dom";
-
 import "./orders.scss";
+
 
 export const Orders = () => {
     const { dateParam } = useParams();
@@ -184,23 +184,23 @@ export const Orders = () => {
                 <div className="h2 mb-6">Orders</div>
                 <Input label="Date" type="date" name="date" placeholder="Enter a date" value={date} onChange={onChangeDate} className="mb-4" />
                 <div className="order-tabs-wrapper mb-6">
-                    <div className={`tab ${eOrderStatus == EOrderStatus.NEW ? "selected" : ""}`} onClick={() => onClickTab(EOrderStatus.NEW)}>
+                    <div className={`tab ${eOrderStatus === EOrderStatus.NEW ? "selected" : ""}`} onClick={() => onClickTab(EOrderStatus.NEW)}>
                         New
                     </div>
                     <div
-                        className={`tab ${eOrderStatus == EOrderStatus.COMPLETED ? "selected" : ""}`}
+                        className={`tab ${eOrderStatus === EOrderStatus.COMPLETED ? "selected" : ""}`}
                         onClick={() => onClickTab(EOrderStatus.COMPLETED)}
                     >
                         Completed
                     </div>
                     <div
-                        className={`tab ${eOrderStatus == EOrderStatus.CANCELLED ? "selected" : ""}`}
+                        className={`tab ${eOrderStatus === EOrderStatus.CANCELLED ? "selected" : ""}`}
                         onClick={() => onClickTab(EOrderStatus.CANCELLED)}
                     >
                         Cancelled
                     </div>
                     <div
-                        className={`tab ${eOrderStatus == EOrderStatus.REFUNDED ? "selected" : ""}`}
+                        className={`tab ${eOrderStatus === EOrderStatus.REFUNDED ? "selected" : ""}`}
                         onClick={() => onClickTab(EOrderStatus.REFUNDED)}
                     >
                         Refunded
@@ -220,7 +220,7 @@ export const Orders = () => {
                 <div className="orders-wrapper">
                     {orders.map(
                         (order) =>
-                            order.status == eOrderStatus && (
+                            order.status === eOrderStatus && (
                                 <Order
                                     key={order.id}
                                     searchTerm={searchTerm}
@@ -298,7 +298,7 @@ const OrderItemDetails = (props: {
         const changedQuantity = quantity - preSelectedQuantity;
         let mStr = "";
 
-        if (changedQuantity < 0 && Math.abs(changedQuantity) == preSelectedQuantity) {
+        if (changedQuantity < 0 && Math.abs(changedQuantity) === preSelectedQuantity) {
             mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)} x ` : ""}${name}`;
         } else {
             mStr = `${quantity > 1 ? `${Math.abs(quantity)} x ` : ""}${name}`;

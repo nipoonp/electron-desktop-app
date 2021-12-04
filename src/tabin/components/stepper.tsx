@@ -1,7 +1,7 @@
-import { PlusIcon } from "./icons/plusIcon";
 import { MinusIcon } from "./icons/minusIcon";
-
+import { PlusIcon } from "./icons/plusIcon";
 import "./stepper.scss";
+
 
 export const Stepper = (props: IProps) => {
     const iconHeight = String(props.size / 1.8) + "px";
@@ -13,11 +13,11 @@ export const Stepper = (props: IProps) => {
             return;
         }
 
-        if (!props.allowNegative && props.count == 0) {
+        if (!props.allowNegative && props.count === 0) {
             return;
         }
 
-        if (props.min == props.count) {
+        if (props.min === props.count) {
             return;
         }
 
@@ -32,7 +32,7 @@ export const Stepper = (props: IProps) => {
             return;
         }
 
-        if (props.max == props.count) {
+        if (props.max === props.count) {
             return;
         }
 

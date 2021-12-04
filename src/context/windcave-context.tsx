@@ -1,12 +1,12 @@
-import { createContext, useContext } from "react";
-
-import axios from "axios";
-
-import { convertCentsToDollars, toLocalISOString } from "../util/util";
-import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
 import { useMutation } from "@apollo/client";
-import { useRestaurant } from "./restaurant-context";
+import axios from "axios";
+import { createContext, useContext } from "react";
+import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
 import { EEftposTransactionOutcome, EWindcaveTransactionOutcome, IEftposTransactionOutcome } from "../model/model";
+import { convertCentsToDollars, toLocalISOString } from "../util/util";
+import { useRestaurant } from "./restaurant-context";
+
+
 var convert = require("xml-js");
 
 export enum EWindcaveStatus {
@@ -196,7 +196,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
             if (!amount) {
                 reject("The amount has to be supplied");
                 return;
-            } else if (amount == 0) {
+            } else if (amount === 0) {
                 reject("The amount must be greater than 0");
                 return;
             } else if (!transactionType) {
@@ -258,7 +258,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
 
                 // console.log(`Transaction POST response received (${response.status}) ${response.data}`);
 
-                if (response.status == 200) {
+                if (response.status === 200) {
                     const resJSON = convert.xml2json(response.data, { compact: true, spaces: 4 });
                     const res = JSON.parse(resJSON) as IWindcaveInitTransactionResponse;
 
@@ -353,7 +353,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                 let transactionOutcome: IEftposTransactionOutcome | null = null;
                 let eftposReceipt;
 
-                if (response.status == 200) {
+                if (response.status === 200) {
                     const resJSON = convert.xml2json(response.data, { compact: true, spaces: 4 });
                     const res = JSON.parse(resJSON) as IWindcaveStatusResponse;
 
@@ -415,8 +415,8 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                             if (
                                 res.Scr.StatusId &&
                                 res.Scr.TxnStatusId &&
-                                res.Scr.StatusId._text == EWindcaveStatus.TransactionCompleted &&
-                                res.Scr.TxnStatusId._text == EWindcaveTxnStatus.VerifyingSignature
+                                res.Scr.StatusId._text === EWindcaveStatus.TransactionCompleted &&
+                                res.Scr.TxnStatusId._text === EWindcaveTxnStatus.VerifyingSignature
                             ) {
                                 transactionOutcome = transactionOutcome = {
                                     platformTransactionOutcome: EWindcaveTransactionOutcome.Failed,
@@ -485,3 +485,4 @@ const useWindcave = () => {
 };
 
 export { WindcaveProvider, useWindcave };
+

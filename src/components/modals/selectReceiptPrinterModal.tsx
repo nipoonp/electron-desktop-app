@@ -2,8 +2,8 @@ import { useRegister } from "../../context/register-context";
 import { IGET_RESTAURANT_REGISTER_PRINTER } from "../../graphql/customQueries";
 import { Button } from "../../tabin/components/button";
 import { ModalV2 } from "../../tabin/components/modalv2";
-
 import "./selectReceiptPrinterModal.scss";
+
 
 interface ISelectReceiptPrinterModalProps {
     isOpen: boolean;
@@ -21,7 +21,7 @@ export const SelectReceiptPrinterModal = (props: ISelectReceiptPrinterModalProps
                 {register &&
                     register.printers.items.map((printer, index) => (
                         <div key={printer.id}>
-                            {index != 0 && <div className="separator-4"></div>}
+                            {index !== 0 && <div className="separator-4"></div>}
                             <div className="register-printer-list-item">
                                 <div>{printer.name}</div>
                                 <Button

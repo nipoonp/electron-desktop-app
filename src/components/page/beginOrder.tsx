@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { restaurantPath } from "../main";
-import { PageWrapper } from "../../tabin/components/pageWrapper";
-import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
-import { IGET_RESTAURANT_ADVERTISEMENT } from "../../graphql/customQueries";
 import { useRestaurant } from "../../context/restaurant-context";
-
-import "./beginOrder.scss";
+import { IGET_RESTAURANT_ADVERTISEMENT } from "../../graphql/customQueries";
+import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { CachedImage } from "../../tabin/components/cachedImage";
+import { PageWrapper } from "../../tabin/components/pageWrapper";
+import { restaurantPath } from "../main";
+import "./beginOrder.scss";
+
 
 export const BeginOrder = (props: {}) => {
     const { restaurant } = useRestaurant();
@@ -44,7 +44,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
         if (numberOfAds <= 1) return;
 
         const timerId = setInterval(() => {
-            setCurrentAd((prevCurrentAd) => (prevCurrentAd == numberOfAds - 1 ? 0 : prevCurrentAd + 1));
+            setCurrentAd((prevCurrentAd) => (prevCurrentAd === numberOfAds - 1 ? 0 : prevCurrentAd + 1));
         }, 6000);
 
         return () => {
@@ -79,7 +79,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
                         restaurant.advertisements.items.map((advertisement, index) => (
                             <div
                                 key={advertisement.id}
-                                className={`image-wrapper ${numberOfAds > 1 ? "slide-animation" : ""} ${currentAd == index ? "active" : "inactive"}`}
+                                className={`image-wrapper ${numberOfAds > 1 ? "slide-animation" : ""} ${currentAd === index ? "active" : "inactive"}`}
                             >
                                 <CachedImage
                                     className="image"

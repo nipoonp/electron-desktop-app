@@ -1,15 +1,13 @@
-import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
-import { Button } from "../../tabin/components/button";
-import { isItemAvailable, isProductQuantityAvailable, isItemSoldOut, getQuantityRemainingText } from "../../util/util";
-import { convertCentsToDollars } from "../../util/util";
-import { ModalV2 } from "../../tabin/components/modalv2";
-import { getCloudFrontDomainName } from "../../private/aws-custom";
-
-import "./upSellProduct.scss";
-import { IMatchingUpSellCrossSellProductItem } from "../../model/model";
 import { useRef } from "react";
-import { CachedImage } from "../../tabin/components/cachedImage";
 import { useCart } from "../../context/cart-context";
+import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
+import { IMatchingUpSellCrossSellProductItem } from "../../model/model";
+import { getCloudFrontDomainName } from "../../private/aws-custom";
+import { Button } from "../../tabin/components/button";
+import { CachedImage } from "../../tabin/components/cachedImage";
+import { ModalV2 } from "../../tabin/components/modalv2";
+import { convertCentsToDollars, getQuantityRemainingText, isItemAvailable, isItemSoldOut, isProductQuantityAvailable } from "../../util/util";
+import "./upSellProduct.scss";
 
 interface IUpSellProductModalProps {
     isOpen: boolean;
@@ -35,7 +33,7 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
         onSelectUpSellCrossSellProduct(category, product);
     };
 
-    const productDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
+    const productDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT, key = product.id) => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
         const isAvailable = isItemAvailable(product.availability);
         const isQuantityAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById);
@@ -43,44 +41,44 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
         const isValid = !isSoldOut && isAvailable && isQuantityAvailable;
 
         return (
-            <>
-                <div key={product.id} className={`product ${isValid ? "" : "sold-out"}`} onClick={() => isValid && onAddToOrder(category, product)}>
-                    {product.totalQuantityAvailable && product.totalQuantityAvailable <= 5 && (
-                        <span className="quantity-remaining ml-2">{getQuantityRemainingText(product.totalQuantityAvailable)}</span>
-                    )}
+            <div key={key} className={`product ${isValid ? "" : "sold-out"}`} onClick={() => isValid && onAddToOrder(category, product)}>
+                {product.totalQuantityAvailable && product.totalQuantityAvailable <= 5 && (
+                    <span className="quantity-remaining ml-2">{getQuantityRemainingText(product.totalQuantityAvailable)}</span>
+                )}
 
-                    {product.image && (
-                        <CachedImage
-                            className="image mb-2"
-                            url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
-                            alt="product-image"
-                        />
-                    )}
+                {product.image && (
+                    <CachedImage
+                        className="image mb-2"
+                        url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                        alt="product-image"
+                    />
+                )}
 
-                    <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
+                <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
 
-                    {product.description && <div className="description mt-2">{product.description}</div>}
+                {product.description && <div className="description mt-2">{product.description}</div>}
 
-                    {product.tags && (
-                        <div className="tags mt-2">
-                            {product.tags.split(";").map((tag) => (
-                                <div className="tag">{tag}</div>
-                            ))}
-                        </div>
-                    )}
+                {product.tags && (
+                    <div className="tags mt-2">
+                        {product.tags.split(";").map((tag) => (
+                            <div className="tag" key={tag}>
+                                {tag}
+                            </div>
+                        ))}
+                    </div>
+                )}
 
-                    <div className="price mt-4">${convertCentsToDollars(product.price)}</div>
-                </div>
-            </>
+                <div className="price mt-4">${convertCentsToDollars(product.price)}</div>
+            </div>
         );
     };
 
     const products = (
         <div className="products pt-2">
             {upSellCrossSaleProductItems.map((item, index) => {
-                if (index == randomItemIndex) return;
+                if (index === randomItemIndex) return null;
 
-                return productDisplay(item.category, item.product);
+                return productDisplay(item.category, item.product, `p-${index}-${item.product.id}`);
             })}
         </div>
     );
