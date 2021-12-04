@@ -560,7 +560,7 @@ export const ProductModal = (props: {
                     if (register && !mg.modifierGroup.availablePlatforms.includes(register.type)) return null;
 
                     return (
-                        <>
+                        <div key={mg.id}>
                             <ModifierGroup
                                 modifierGroup={mg.modifierGroup}
                                 onEditSelectionsProductModifier={(
@@ -599,7 +599,7 @@ export const ProductModal = (props: {
                                 disabled={false}
                             />
                             <div className="separator-6"></div>
-                        </>
+                        </div>
                     );
                 })}
         </>
@@ -838,7 +838,7 @@ export const ModifierGroup = (props: {
                         const selectedModifier = selectedModifiers.find((modifier) => modifier.id === m.modifier.id);
 
                         return (
-                            <Modifier
+                            <Modifier key={m.id}
                                 radio={modifierGroup.choiceMin !== 0 && modifierGroup.choiceMax === 1}
                                 modifier={m.modifier}
                                 selectedModifier={selectedModifier}

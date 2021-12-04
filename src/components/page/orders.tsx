@@ -331,7 +331,7 @@ const OrderItemDetails = (props: {
                                         {m.productModifiers && (
                                             <div className="mb-2">
                                                 {m.productModifiers.map((productModifier, index) => (
-                                                    <div>
+                                                    <div key={productModifier.id}>
                                                         <div className="mt-2"></div>
                                                         <ProductModifier
                                                             selectionIndex={

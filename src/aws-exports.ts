@@ -2,7 +2,7 @@ const awsenv = process.env.REACT_APP_AWS_ENV || "prod";
 
 let awsmobile: any;
 
-if (awsenv == "dev") {
+if (awsenv === "dev") {
     awsmobile = {
         aws_project_region: "ap-southeast-2",
         aws_cognito_identity_pool_id: "ap-southeast-2:3a3ee547-3658-4232-ac02-5dd6486261ae",

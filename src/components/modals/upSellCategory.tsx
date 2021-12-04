@@ -8,7 +8,6 @@ import { ModalV2 } from "../../tabin/components/modalv2";
 import { isItemAvailable } from "../../util/util";
 import "./upSellCategory.scss";
 
-
 interface IUpSellCategoryModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -31,25 +30,23 @@ export const UpSellCategoryModal = (props: IUpSellCategoryModalProps) => {
         onSelectUpSellCrossSellCategory(category);
     };
 
-    const categoryDisplay = (category: IGET_RESTAURANT_CATEGORY) => {
+    const categoryDisplay = (category: IGET_RESTAURANT_CATEGORY, key = category.id) => {
         const isAvailable = isItemAvailable(category.availability);
 
         const isValid = isAvailable;
 
         return (
-            <>
-                <div key={category.id} className={`category ${isValid ? "" : "unavailable"}`} onClick={() => isValid && onAddToOrder(category)}>
-                    {category.image && (
-                        <CachedImage
-                            className="image mb-2"
-                            url={`${getCloudFrontDomainName()}/protected/${category.image.identityPoolId}/${category.image.key}`}
-                            alt="category-image"
-                        />
-                    )}
+            <div key={key} className={`category ${isValid ? "" : "unavailable"}`} onClick={() => isValid && onAddToOrder(category)}>
+                {category.image && (
+                    <CachedImage
+                        className="image mb-2"
+                        url={`${getCloudFrontDomainName()}/protected/${category.image.identityPoolId}/${category.image.key}`}
+                        alt="category-image"
+                    />
+                )}
 
-                    <div className="name text-bold">{isValid ? `${category.name}` : `${category.name} (UNAVAILABLE)`}</div>
-                </div>
-            </>
+                <div className="name text-bold">{isValid ? `${category.name}` : `${category.name} (UNAVAILABLE)`}</div>
+            </div>
         );
     };
 
@@ -58,7 +55,7 @@ export const UpSellCategoryModal = (props: IUpSellCategoryModalProps) => {
             {upSellCrossSaleCategoryItems.map((item, index) => {
                 if (randomItem.current.category.id === item.category.id) return null;
 
-                return categoryDisplay(item.category);
+                return categoryDisplay(item.category, `c-${index}-${item.category.id}`);
             })}
         </div>
     );
