@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { toast } from "../../tabin/components/toast";
-import { useRegister } from "../../context/register-context";
 import { useNavigate } from "react-router-dom";
-import { beginOrderPath } from "../main";
+import { useRegister } from "../../context/register-context";
 import { useRestaurant } from "../../context/restaurant-context";
-import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { Button } from "../../tabin/components/button";
-
+import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
+import { toast } from "../../tabin/components/toast";
+import { beginOrderPath } from "../main";
 import "./registerList.scss";
+
 
 export const RegisterList = () => {
     const navigate = useNavigate();
@@ -49,11 +49,11 @@ export const RegisterList = () => {
             <div className="register-list">
                 <div className="h2 mb-6">Select a register to use</div>
                 {restaurant.registers.items.map((reg, index) => (
-                    <>
-                        {index != 0 && <div className="separator-4"></div>}
+                    <div key={index}>
+                        {index !== 0 && <div className="separator-4"></div>}
                         <div className="register-list-item">
                             <div>{reg.name}</div>
-                            {register && register.id == reg.id ? (
+                            {register && register.id === reg.id ? (
                                 <>
                                     <Button
                                         onClick={() => {
@@ -76,7 +76,7 @@ export const RegisterList = () => {
                                 </>
                             )}
                         </div>
-                    </>
+                    </div>
                 ))}
             </div>
         </>

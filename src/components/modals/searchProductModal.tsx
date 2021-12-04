@@ -1,19 +1,17 @@
 import { useState } from "react";
-
-import { Modal } from "../../tabin/components/modal";
-import { getCloudFrontDomainName } from "../../private/aws-custom";
-import { isItemAvailable, isProductQuantityAvailable, isItemSoldOut, getQuantityRemainingText } from "../../util/util";
-import { convertCentsToDollars } from "../../util/util";
-import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
-import { Button } from "../../tabin/components/button";
-import { useRestaurant } from "../../context/restaurant-context";
-
-import "./searchProductModal.scss";
-import { Input } from "../../tabin/components/input";
-import { CachedImage } from "../../tabin/components/cachedImage";
-import { useCart } from "../../context/cart-context";
 import { FiX } from "react-icons/fi";
+import { useCart } from "../../context/cart-context";
 import { useRegister } from "../../context/register-context";
+import { useRestaurant } from "../../context/restaurant-context";
+import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
+import { getCloudFrontDomainName } from "../../private/aws-custom";
+import { CachedImage } from "../../tabin/components/cachedImage";
+import { Input } from "../../tabin/components/input";
+import { Modal } from "../../tabin/components/modal";
+import { convertCentsToDollars, getQuantityRemainingText, isItemAvailable, isItemSoldOut, isProductQuantityAvailable } from "../../util/util";
+import "./searchProductModal.scss";
+
+
 
 interface IFilteredProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -67,29 +65,7 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
         setFilteredProducts(newFilteredProducts);
     };
 
-    const formatProductName = (name: string) => {
-        const regex = new RegExp(searchTerm, "i");
-        const nameArray = name.split(regex);
-
-        if (nameArray.length == 1) {
-            return <span>{nameArray[0]}</span>;
-        } else {
-            return nameArray.map((item, index) => {
-                if (index != 0) {
-                    return (
-                        <>
-                            <span style={{ color: "orange" }}>{searchTerm.toUpperCase()}</span>
-                            <span>{item}</span>
-                        </>
-                    );
-                } else {
-                    return <span>{item}</span>;
-                }
-            });
-        }
-    };
-
-    const productDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
+    const productDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT, key = product.id) => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
         const isAvailable = isItemAvailable(product.availability);
         const isQuantityAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById);
@@ -101,8 +77,7 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
         };
 
         return (
-            <>
-                <div key={product.id} className={`product ${isValid ? "" : "sold-out"}`} onClick={() => isValid && onClickProduct(category, product)}>
+                <div key={key} className={`product ${isValid ? "" : "sold-out"}`} onClick={() => isValid && onClickProduct(category, product)}>
                     {product.totalQuantityAvailable && product.totalQuantityAvailable <= 5 && (
                         <span className="quantity-remaining ml-2">{getQuantityRemainingText(product.totalQuantityAvailable)}</span>
                     )}
@@ -124,22 +99,21 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
                     {product.tags && (
                         <div className="tags mt-2">
                             {product.tags.split(";").map((tag) => (
-                                <div className="tag">{tag}</div>
+                                <div className="tag" key={tag}>{tag}</div>
                             ))}
                         </div>
                     )}
 
                     <div className="price mt-4">${convertCentsToDollars(product.price)}</div>
                 </div>
-            </>
         );
     };
 
     const menuProducts = (
         <div className="products-wrapper">
             <div className="products">
-                {filteredProducts.map((filteredProduct) => {
-                    return <>{productDisplay(filteredProduct.category, filteredProduct.product)}</>;
+                {filteredProducts.map((filteredProduct,index) => {
+                    return productDisplay(filteredProduct.category, filteredProduct.product, `m-${index}-${filteredProduct.product.id}`);
                 })}
             </div>
         </div>
@@ -153,7 +127,7 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
                 </div>
                 <div className="h1 mb-6">What do you feel like eating today?</div>
                 <Input className="product-search-field mb-6" name="name" type="text" placeholder="Search..." onChange={onChange} />
-                {searchTerm != "" && filteredProducts.length == 0 ? <div className="text-bold">No results found</div> : <>{menuProducts}</>}
+                {searchTerm !== "" && filteredProducts.length === 0 ? <div className="text-bold">No results found</div> : <>{menuProducts}</>}
                 <div className="mb-12"></div>
             </div>
         </>

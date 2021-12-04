@@ -1,10 +1,10 @@
-import { useEffect, useState, useRef } from "react";
-
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { beginOrderPath } from "../../components/main";
 import { useCart } from "../../context/cart-context";
 import { useRegister } from "../../context/register-context";
 import { ERegisterType } from "../../graphql/customQueries";
+
 
 export const PageWrapper = (props: IProps) => {
     const navigate = useNavigate();
@@ -20,7 +20,7 @@ export const PageWrapper = (props: IProps) => {
 
     useEffect(() => {
         const ticker = setInterval(() => {
-            if (userInactiveSecondsCounter.current == resetAfterSeconds) {
+            if (userInactiveSecondsCounter.current === resetAfterSeconds) {
                 navigate(beginOrderPath);
                 clearCart();
             }

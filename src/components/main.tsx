@@ -1,38 +1,38 @@
+import { Logger } from "aws-amplify";
+import { createBrowserHistory } from "history";
 import { useEffect } from "react";
+import Modal from "react-modal";
 import { Navigate, Route, Routes, useNavigate } from "react-router";
 import { HashRouter } from "react-router-dom";
-import { Restaurant } from "./page/restaurant";
+import "react-toastify/dist/ReactToastify.min.css";
+import { AuthenticationStatus, useAuth } from "../context/auth-context";
+import { useRestaurant } from "../context/restaurant-context";
+import { useUser } from "../context/user-context";
+import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
+import { AlertProvider } from "../tabin/components/alert";
+import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
+import { ToastContainer } from "../tabin/components/toast";
+import { Login } from "./page/auth/login";
+import { Logout } from "./page/auth/logout";
+import { BeginOrder } from "./page/beginOrder";
+import { Checkout } from "./page/checkout";
+import { ConfigureNewEftpos } from "./page/configureNewEftpos";
 import { NoMatch } from "./page/error/404";
 import Unauthorised from "./page/error/unauthorised";
-import Modal from "react-modal";
-import { Login } from "./page/auth/login";
-import { Checkout } from "./page/checkout";
-import { useAuth, AuthenticationStatus } from "../context/auth-context";
-import { Logger } from "aws-amplify";
-import { useUser } from "../context/user-context";
-import { ToastContainer } from "../tabin/components/toast";
-import { RestaurantList } from "./page/restaurantList";
-import { RegisterList } from "./page/registerList";
-import { createBrowserHistory } from "history";
-import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
-import { BeginOrder } from "./page/beginOrder";
-import { OrderType } from "./page/orderType";
-import { ConfigureNewEftpos } from "./page/configureNewEftpos";
-import { TableNumber } from "./page/tableNumber";
-import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
-import { useRestaurant } from "../context/restaurant-context";
-import { Logout } from "./page/auth/logout";
-import { Stock } from "./page/stock";
-import { Reports } from "./page/reports";
 import { Orders } from "./page/orders";
-import { AlertProvider } from "../tabin/components/alert";
+import { OrderType } from "./page/orderType";
+import { RegisterList } from "./page/registerList";
+import { Reports } from "./page/reports";
+import { Restaurant } from "./page/restaurant";
+import { RestaurantList } from "./page/restaurantList";
 import { SalesAnalytics } from "./page/salesAnalytics";
 import { SalesAnalyticsDailySales } from "./page/salesAnalyticsDailySales";
 import { SalesAnalyticsHourlySales } from "./page/salesAnalyticsHourlySales";
 import { SalesAnalyticsTopCategory } from "./page/salesAnalyticsTopCategory";
 import { SalesAnalyticsTopProduct } from "./page/salesAnalyticsTopProduct";
+import { Stock } from "./page/stock";
+import { TableNumber } from "./page/tableNumber";
 
-import "react-toastify/dist/ReactToastify.min.css";
 
 let electron: any;
 let ipcRenderer: any;
@@ -213,7 +213,7 @@ const RestaurantRegisterPrivateRoute = ({ element }) => {
 
     restaurant &&
         restaurant.registers.items.forEach((r) => {
-            if (storedRegisterKey == r.id) {
+            if (storedRegisterKey === r.id) {
                 matchingRegister = r;
             }
         });

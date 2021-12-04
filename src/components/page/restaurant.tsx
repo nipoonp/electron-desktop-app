@@ -1,29 +1,26 @@
 import { useEffect, useRef, useState } from "react";
-
 import { useNavigate } from "react-router";
 import { useParams } from "react-router-dom";
-import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
-import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { checkoutPath, beginOrderPath, orderTypePath, tableNumberPath } from "../main";
-import { convertCentsToDollars, getQuantityRemainingText, isProductQuantityAvailable } from "../../util/util";
-import { ProductModal } from "../modals/product";
-import { SearchProductModal } from "../modals/searchProductModal";
-import { IGET_RESTAURANT_PRODUCT, IGET_RESTAURANT_CATEGORY, IS3Object, EOrderType } from "../../graphql/customQueries";
-import { useCart } from "../../context/cart-context";
-import { PageWrapper } from "../../tabin/components/pageWrapper";
-import { Button } from "../../tabin/components/button";
-import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
-import { ICartProduct } from "../../model/model";
-import { isItemAvailable, isItemSoldOut } from "../../util/util";
-import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
 //@ts-ignore as it does not have the types
 import { Shake } from "reshake";
-import { useRestaurant } from "../../context/restaurant-context";
-
-import "./restaurant.scss";
-import { CachedImage } from "../../tabin/components/cachedImage";
-import { useAlert } from "../../tabin/components/alert";
+import { useCart } from "../../context/cart-context";
 import { useRegister } from "../../context/register-context";
+import { useRestaurant } from "../../context/restaurant-context";
+import { EOrderType, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object } from "../../graphql/customQueries";
+import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
+import { ICartProduct } from "../../model/model";
+import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
+import { useAlert } from "../../tabin/components/alert";
+import { Button } from "../../tabin/components/button";
+import { CachedImage } from "../../tabin/components/cachedImage";
+import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
+import { PageWrapper } from "../../tabin/components/pageWrapper";
+import { convertCentsToDollars, getQuantityRemainingText, isItemAvailable, isItemSoldOut, isProductQuantityAvailable } from "../../util/util";
+import { beginOrderPath, checkoutPath, orderTypePath, tableNumberPath } from "../main";
+import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
+import { ProductModal } from "../modals/product";
+import { SearchProductModal } from "../modals/searchProductModal";
+import "./restaurant.scss";
 
 interface IMostPopularProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -61,11 +58,11 @@ export const Restaurant = () => {
 
     useEffect(() => {
         const ticker = setInterval(() => {
-            if (userOnPageDuration.current % startShakeAfterSeconds == 0) {
+            if (userOnPageDuration.current % startShakeAfterSeconds === 0) {
                 setIsShakeAnimationActive(true);
             }
 
-            if (userOnPageDuration.current % startShakeAfterSeconds == shakeButtonDurationSeconds) {
+            if (userOnPageDuration.current % startShakeAfterSeconds === shakeButtonDurationSeconds) {
                 setIsShakeAnimationActive(false);
             }
 
@@ -89,7 +86,7 @@ export const Restaurant = () => {
 
             if (selectedCategoryId) {
                 restaurant.categories.items.forEach((c) => {
-                    if (c.id == selectedCategoryId) {
+                    if (c.id === selectedCategoryId) {
                         setSelectedCategory(c);
                     }
                 });
@@ -99,7 +96,7 @@ export const Restaurant = () => {
                 restaurant.categories.items.forEach((c) => {
                     c.products &&
                         c.products.items.forEach((p) => {
-                            if (p.id == selectedProductId) {
+                            if (p.id === selectedProductId) {
                                 setSelectedProductForProductModal(p.product);
                                 setShowProductModal(true);
                             }
@@ -153,7 +150,7 @@ export const Restaurant = () => {
     const onClickCart = () => {
         if (register && register.availableOrderTypes.length > 1 && orderType == null) {
             navigate(orderTypePath);
-        } else if (register && register.availableOrderTypes.length == 1) {
+        } else if (register && register.availableOrderTypes.length === 1) {
             setOrderType(register.availableOrderTypes[0]);
 
             if (register.availableOrderTypes[0] === EOrderType.DINEIN && register.enableTableFlags) {
@@ -271,7 +268,7 @@ export const Restaurant = () => {
         </>
     );
 
-    const productDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
+    const productDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT, key: string = product.id) => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
         const isAvailable = isItemAvailable(product.availability);
         const isQuantityAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById);
@@ -279,35 +276,35 @@ export const Restaurant = () => {
         const isValid = !isSoldOut && isAvailable && isQuantityAvailable;
 
         return (
-            <>
-                <div key={product.id} className={`product ${isValid ? "" : "sold-out"}`} onClick={() => isValid && onClickProduct(category, product)}>
-                    {product.totalQuantityAvailable && product.totalQuantityAvailable <= 5 && (
-                        <span className="quantity-remaining ml-2">{getQuantityRemainingText(product.totalQuantityAvailable)}</span>
-                    )}
+            <div key={key} className={`product ${isValid ? "" : "sold-out"}`} onClick={() => isValid && onClickProduct(category, product)}>
+                {product.totalQuantityAvailable && product.totalQuantityAvailable <= 5 && (
+                    <span className="quantity-remaining ml-2">{getQuantityRemainingText(product.totalQuantityAvailable)}</span>
+                )}
 
-                    {product.image && (
-                        <CachedImage
-                            url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
-                            className="image mb-2"
-                            alt="product-image"
-                        />
-                    )}
+                {product.image && (
+                    <CachedImage
+                        url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                        className="image mb-2"
+                        alt="product-image"
+                    />
+                )}
 
-                    <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
+                <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
 
-                    {product.description && <div className="description mt-2">{product.description}</div>}
+                {product.description && <div className="description mt-2">{product.description}</div>}
 
-                    {product.tags && (
-                        <div className="tags mt-2">
-                            {product.tags.split(";").map((tag) => (
-                                <div className="tag">{tag}</div>
-                            ))}
-                        </div>
-                    )}
+                {product.tags && (
+                    <div className="tags mt-2">
+                        {product.tags.split(";").map((tag) => (
+                            <div className="tag" key={tag}>
+                                {tag}
+                            </div>
+                        ))}
+                    </div>
+                )}
 
-                    <div className="price mt-4">${convertCentsToDollars(product.price)}</div>
-                </div>
-            </>
+                <div className="price mt-4">${convertCentsToDollars(product.price)}</div>
+            </div>
         );
     };
 
@@ -341,13 +338,13 @@ export const Restaurant = () => {
 
     const menuCategories = (
         <>
-            {restaurant.categories.items.map((c, index) => {
-                if (!c.availablePlatforms.includes(register.type)) return;
+            {restaurant.categories.items.map((c) => {
+                if (!c.availablePlatforms.includes(register.type)) return null;
 
                 return (
                     <Category
                         key={c.id}
-                        isSelected={selectedCategory != null && selectedCategory.id == c.id}
+                        isSelected={selectedCategory != null && selectedCategory.id === c.id}
                         category={c}
                         onCategorySelected={(category: IGET_RESTAURANT_CATEGORY) => {
                             setSelectedCategory(category);
@@ -392,7 +389,9 @@ export const Restaurant = () => {
                 <>
                     <div className="h1 mb-6">Most Popular</div>
                     <div className="products">
-                        {mostPopularProducts.map((mostPopularProduct) => productDisplay(mostPopularProduct.category, mostPopularProduct.product))}
+                        {mostPopularProducts.map((mostPopularProduct, index) =>
+                            productDisplay(mostPopularProduct.category, mostPopularProduct.product, `m-${index}-${mostPopularProduct.product.id}`)
+                        )}
                     </div>
                 </>
             )}
@@ -403,21 +402,21 @@ export const Restaurant = () => {
         <div>
             {selectedCategory &&
                 restaurant.categories.items.map((c) => {
-                    if (selectedCategory.id !== c.id) return;
-                    if (!c.availablePlatforms.includes(register.type)) return;
+                    if (selectedCategory.id !== c.id) return null;
+                    if (!c.availablePlatforms.includes(register.type)) return null;
 
                     return (
-                        <>
+                        <div key={c.id}>
                             <div className="h1 mb-6">{c.name}</div>
                             <div className="products">
                                 {c.products &&
                                     c.products.items.map((p) => {
-                                        if (!p.product.availablePlatforms.includes(register.type)) return;
+                                        if (!p.product.availablePlatforms.includes(register.type)) return null;
 
                                         return productDisplay(c, p.product);
                                     })}
                             </div>
-                        </>
+                        </div>
                     );
                 })}
         </div>
@@ -434,7 +433,7 @@ export const Restaurant = () => {
                     />
                     <div className="h2">Total: ${convertCentsToDollars(subTotal)}</div>
                 </div>
-                <Button className="large" disabled={!products || products.length == 0} onClick={onClickCart}>
+                <Button className="large" disabled={!products || products.length === 0} onClick={onClickCart}>
                     View My Order
                 </Button>
             </div>

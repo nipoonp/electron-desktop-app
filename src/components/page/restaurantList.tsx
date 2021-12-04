@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useRestaurant } from "../../context/restaurant-context";
-import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { beginOrderPath } from "../main";
 import { useRegister } from "../../context/register-context";
-import { toast } from "../../tabin/components/toast";
+import { useRestaurant } from "../../context/restaurant-context";
 import { Button } from "../../tabin/components/button";
-
+import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
+import { toast } from "../../tabin/components/toast";
+import { beginOrderPath } from "../main";
 import "./restaurantList.scss";
+
 
 export const RestaurantList = () => {
     const navigate = useNavigate();
@@ -17,7 +17,7 @@ export const RestaurantList = () => {
     const [showFullScreenSpinner, setShowFullScreenSpinner] = useState(false);
 
     useEffect(() => {
-        if (userRestaurants && userRestaurants.length == 1) {
+        if (userRestaurants && userRestaurants.length === 1) {
             onConnect(userRestaurants[0].id);
         }
     }, [userRestaurants]);
@@ -52,10 +52,10 @@ export const RestaurantList = () => {
                 {userRestaurants &&
                     userRestaurants.map((userRestaurant, index) => (
                         <div key={userRestaurant.id}>
-                            {index != 0 && <div className="separator-4"></div>}
+                            {index !== 0 && <div className="separator-4"></div>}
                             <div className="restaurant-list-item">
                                 <div>{userRestaurant.name}</div>
-                                {storedSelectedRestaurantId == userRestaurant.id ? (
+                                {storedSelectedRestaurantId === userRestaurant.id ? (
                                     <>
                                         <Button
                                             onClick={() => {
