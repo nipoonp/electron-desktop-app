@@ -15,8 +15,8 @@ import { Input } from "../../tabin/components/input";
 import { toast } from "../../tabin/components/toast";
 import { convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, toLocalISOString } from "../../util/util";
 import { ProductModifier } from "../shared/productModifier";
-import "./orders.scss";
 
+import "./orders.scss";
 
 export const Orders = () => {
     const { dateParam } = useParams();
@@ -44,18 +44,9 @@ export const Orders = () => {
     });
 
     if (!restaurant) return <div>Please select a restaurant.</div>;
-
-    if (loading) {
-        return <FullScreenSpinner show={true} text="Loading restaurant" />;
-    }
-
-    if (error) {
-        return <h1>Couldn't fetch orders. Try Refreshing</h1>;
-    }
-
-    if (!orders) {
-        return <>Couldn't fetch orders.</>;
-    }
+    if (loading) return <FullScreenSpinner show={true} text="Loading restaurant" />;
+    if (error) return <h1>Couldn't fetch orders. Try Refreshing</h1>;
+    if (!orders) return <>Couldn't fetch orders.</>;
 
     const onOrderComplete = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         const now = new Date();

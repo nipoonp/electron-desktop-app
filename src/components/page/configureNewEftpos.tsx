@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Radio } from "../../tabin/components/radio";
-import "./configureNewEftpos.scss";
 import { ReceiptPrinter } from "./configureNewEftpos/receiptPrinter";
 import { SmartPay } from "./configureNewEftpos/smartpay";
 import { Verifone } from "./configureNewEftpos/verifone";
 import { Windcave } from "./configureNewEftpos/windcave";
 
+import "./configureNewEftpos.scss";
 
 enum EftposProvider {
     VERIFONE,

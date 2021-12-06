@@ -5,7 +5,6 @@ import { ERegisterType, IGET_RESTAURANT_REGISTER } from "../graphql/customQuerie
 import { getCloudFrontDomainName } from "../private/aws-custom";
 import { useRestaurant } from "./restaurant-context";
 
-
 type ContextProps = {
     register: IGET_RESTAURANT_REGISTER | null;
     isPOS: boolean | null;
@@ -120,4 +119,3 @@ const useRegister = () => {
 };
 
 export { RegisterProvider, useRegister };
-

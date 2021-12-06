@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useParams } from "react-router-dom";
-//@ts-ignore as it does not have the types
 import { Shake } from "reshake";
 import { useCart } from "../../context/cart-context";
 import { useRegister } from "../../context/register-context";
@@ -20,6 +19,7 @@ import { beginOrderPath, checkoutPath, orderTypePath, tableNumberPath } from "..
 import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
 import { ProductModal } from "../modals/product";
 import { SearchProductModal } from "../modals/searchProductModal";
+
 import "./restaurant.scss";
 
 interface IMostPopularProduct {
@@ -201,25 +201,11 @@ export const Restaurant = () => {
     };
 
     // displays THAT SHOULD BE IN CONTEXT
-    if (getRestaurantLoading) {
-        return <FullScreenSpinner show={true} text="Loading restaurant" />;
-    }
-
-    if (getRestaurantError) {
-        return <h1>Couldn't get restaurant. Try Refreshing</h1>;
-    }
-
-    if (!restaurant) {
-        return <>Restaurant does not exist</>;
-    }
-
-    if (!register) {
-        return <>Register not selected</>;
-    }
-
-    if (!restaurant.verified) {
-        return <div>Restaurant is not verified</div>;
-    }
+    if (getRestaurantLoading) return <FullScreenSpinner show={true} text="Loading restaurant" />;
+    if (getRestaurantError) return <h1>Couldn't get restaurant. Try Refreshing</h1>;
+    if (!restaurant) return <>Restaurant does not exist</>;
+    if (!register) return <>Register not selected</>;
+    if (!restaurant.verified) return <div>Restaurant is not verified</div>;
 
     const onClickProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
         setSelectedCategoryForProductModal(category);

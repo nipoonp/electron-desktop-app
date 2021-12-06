@@ -4,7 +4,6 @@ import { useGetRestaurantQuery } from "../hooks/useGetRestaurantQuery";
 import { getCloudFrontDomainName } from "../private/aws-custom";
 import { useUser } from "./user-context";
 
-
 type ContextProps = {
     selectRestaurant: (id: string | null) => void;
     userRestaurants: IGET_USER_RESTAURANT[] | null;
@@ -139,4 +138,3 @@ const useRestaurant = () => {
 };
 
 export { RestaurantProvider, useRestaurant };
-

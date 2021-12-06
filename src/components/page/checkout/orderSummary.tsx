@@ -3,8 +3,8 @@ import { Button } from "../../../tabin/components/button";
 import { Stepper } from "../../../tabin/components/stepper";
 import { convertCentsToDollars } from "../../../util/util";
 import { ProductModifier } from "../../shared/productModifier";
-import "./orderSummary.scss";
 
+import "./orderSummary.scss";
 
 export const OrderSummary = (props: {
     products: ICartProduct[];
@@ -13,13 +13,7 @@ export const OrderSummary = (props: {
     onUpdateProductQuantity: (displayOrder: number, productQuantity: number) => void;
 }) => {
     const { products, onEditProduct, onRemoveProduct, onUpdateProductQuantity } = props;
-    if (!products || products === []) {
-        return (
-            <>
-                <h1>No items in cart!</h1>
-            </>
-        );
-    }
+    if (!products || products === []) return <h1>No items in cart!</h1>;
 
     const orderItems = (
         <>

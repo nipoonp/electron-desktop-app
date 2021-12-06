@@ -6,8 +6,8 @@ import { Button } from "../../tabin/components/button";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { toast } from "../../tabin/components/toast";
 import { beginOrderPath } from "../main";
-import "./registerList.scss";
 
+import "./registerList.scss";
 
 export const RegisterList = () => {
     const navigate = useNavigate();
@@ -49,7 +49,7 @@ export const RegisterList = () => {
             <div className="register-list">
                 <div className="h2 mb-6">Select a register to use</div>
                 {restaurant.registers.items.map((reg, index) => (
-                    <div key={index}>
+                    <div key={reg.id}>
                         {index !== 0 && <div className="separator-4"></div>}
                         <div className="register-list-item">
                             <div>{reg.name}</div>

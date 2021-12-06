@@ -6,17 +6,15 @@ import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { checkoutPath, tableNumberPath } from "../main";
-import "./orderType.scss";
 
+import "./orderType.scss";
 
 export const OrderType = (props: {}) => {
     const navigate = useNavigate();
     const { setOrderType } = useCart();
     const { register } = useRegister();
 
-    if (!register) {
-        throw "Register is not valid";
-    }
+    if (!register) throw "Register is not valid";
 
     const onSelectOrderType = (orderType: EOrderType) => {
         setOrderType(orderType);

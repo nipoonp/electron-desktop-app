@@ -2,10 +2,15 @@ import { format, getDay, isWithinInterval } from "date-fns";
 import { IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
 import {
     EDiscountType,
-    ERegisterType, IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS,
-    IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES, IGET_RESTAURANT_PROMOTION, IGET_RESTAURANT_PROMOTION_AVAILABILITY,
-    IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES, IGET_RESTAURANT_PROMOTION_DISCOUNT,
-    IGET_RESTAURANT_PROMOTION_ITEMS, IGET_RESTAURANT_REGISTER_PRINTER
+    ERegisterType,
+    IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS,
+    IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES,
+    IGET_RESTAURANT_PROMOTION,
+    IGET_RESTAURANT_PROMOTION_AVAILABILITY,
+    IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES,
+    IGET_RESTAURANT_PROMOTION_DISCOUNT,
+    IGET_RESTAURANT_PROMOTION_ITEMS,
+    IGET_RESTAURANT_REGISTER_PRINTER,
 } from "../graphql/customQueries";
 import {
     CheckIfPromotionValidResponse,
@@ -13,7 +18,7 @@ import {
     ICartItemQuantitiesByIdValue,
     ICartModifier,
     ICartModifierGroup,
-    ICartProduct
+    ICartProduct,
 } from "../model/model";
 
 export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0);
@@ -600,11 +605,11 @@ export const convertProductTypesForPrint = (products: IGET_RESTAURANT_ORDER_PROD
     return convertedP;
 };
 
-export const downloadFile = (blob: Blob, fileName: string, extention: string) => {
+export const downloadFile = (blob: Blob, fileName: string, extension: string) => {
     var fileURL = window.URL.createObjectURL(blob);
 
     var fileLink = document.createElement("a");
     fileLink.href = fileURL;
-    fileLink.setAttribute("download", `${fileName}${extention}`);
+    fileLink.setAttribute("download", `${fileName}${extension}`);
     fileLink.click();
 };

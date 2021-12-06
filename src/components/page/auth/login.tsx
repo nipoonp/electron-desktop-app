@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-
 import { useNavigate } from "react-router-dom";
 import { useAuth, AuthenticationStatus } from "../../../context/auth-context";
 import { Logger } from "aws-amplify";

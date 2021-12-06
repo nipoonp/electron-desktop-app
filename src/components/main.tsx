@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import Modal from "react-modal";
 import { Navigate, Route, Routes, useNavigate } from "react-router";
 import { HashRouter } from "react-router-dom";
-import "react-toastify/dist/ReactToastify.min.css";
 import { AuthenticationStatus, useAuth } from "../context/auth-context";
 import { useRestaurant } from "../context/restaurant-context";
 import { useUser } from "../context/user-context";
@@ -33,6 +32,7 @@ import { SalesAnalyticsTopProduct } from "./page/salesAnalyticsTopProduct";
 import { Stock } from "./page/stock";
 import { TableNumber } from "./page/tableNumber";
 
+import "react-toastify/dist/ReactToastify.min.css";
 
 let electron: any;
 let ipcRenderer: any;

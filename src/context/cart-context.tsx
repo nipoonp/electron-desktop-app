@@ -1,12 +1,16 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { EPromotionType, IGET_RESTAURANT_PROMOTION } from "../graphql/customQueries";
 import {
-    CheckIfPromotionValidResponse, EOrderType,
-    ICartItemQuantitiesById, ICartPayment, ICartPaymentAmounts, ICartProduct, ICartPromotion
+    CheckIfPromotionValidResponse,
+    EOrderType,
+    ICartItemQuantitiesById,
+    ICartPayment,
+    ICartPaymentAmounts,
+    ICartProduct,
+    ICartPromotion,
 } from "../model/model";
 import { checkIfPromotionValid, getMatchingPromotionProducts, processPromotionDiscounts } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
-
 
 const initialOrderType = null;
 const initialTableNumber = null;
@@ -520,4 +524,3 @@ const useCart = () => {
 };
 
 export { CartProvider, useCart };
-

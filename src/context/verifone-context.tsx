@@ -5,7 +5,6 @@ import { delay, getVerifoneSocketErrorMessage, getVerifoneTimeBasedTransactionId
 import { toLocalISOString } from "../util/util";
 import { useErrorLogging } from "./errorLogging-context";
 
-
 let electron: any;
 let ipcRenderer: any;
 try {
@@ -632,4 +631,3 @@ const useVerifone = () => {
 };
 
 export { VerifoneProvider, useVerifone };
-

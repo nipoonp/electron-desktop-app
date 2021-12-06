@@ -477,4 +477,3 @@ const useSmartpay = () => {
 };
 
 export { SmartpayProvider, useSmartpay };
-

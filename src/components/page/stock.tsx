@@ -11,8 +11,8 @@ import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { Input } from "../../tabin/components/input";
 import { Link } from "../../tabin/components/link";
 import { StepperWithQuantityInput } from "../../tabin/components/stepperWithQuantityInput";
-import "./stock.scss";
 
+import "./stock.scss";
 
 enum TabSelected {
     Products,
@@ -28,15 +28,12 @@ enum ItemAvailability {
 export const Stock = () => {
     const { restaurant: savedRestaurantItem } = useRestaurant();
     const [tabSelected, setTabSelected] = useState(TabSelected.Products);
-
     const [showSpinner, setShowSpinner] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
 
-    const {
-        data: restaurant,
-        error: getRestaurantError,
-        loading: getRestaurantLoading,
-    } = useGetRestaurantQuery(savedRestaurantItem ? savedRestaurantItem.id : "");
+    const { data: restaurant, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(
+        savedRestaurantItem ? savedRestaurantItem.id : ""
+    );
 
     const refetchRestaurant = [
         {
@@ -56,18 +53,9 @@ export const Stock = () => {
     });
 
     if (!savedRestaurantItem) return <div>Please select a restaurant before updating stock.</div>;
-
-    if (getRestaurantLoading) {
-        return <FullScreenSpinner show={true} text="Loading restaurant" />;
-    }
-
-    if (getRestaurantError) {
-        return <h1>Couldn't get restaurant. Try Refreshing</h1>;
-    }
-
-    if (!restaurant) {
-        return <>Restaurant does not exist</>;
-    }
+    if (getRestaurantLoading) return <FullScreenSpinner show={true} text="Loading restaurant" />;
+    if (getRestaurantError) return <h1>Couldn't get restaurant. Try Refreshing</h1>;
+    if (!restaurant) return <>Restaurant does not exist</>;
 
     const onUpdateProduct = async (id: string, soldOut?: boolean | null, soldOutDate?: string | null, totalQuantityAvailable?: number | null) => {
         try {

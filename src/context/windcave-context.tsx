@@ -6,7 +6,6 @@ import { EEftposTransactionOutcome, EWindcaveTransactionOutcome, IEftposTransact
 import { convertCentsToDollars, toLocalISOString } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
 
-
 var convert = require("xml-js");
 
 export enum EWindcaveStatus {
@@ -485,4 +484,3 @@ const useWindcave = () => {
 };
 
 export { WindcaveProvider, useWindcave };
-

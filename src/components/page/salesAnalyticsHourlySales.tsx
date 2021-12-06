@@ -3,23 +3,17 @@ import { getTwelveHourFormat, taxRate } from "../../model/util";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { Table } from "../../tabin/components/table";
 import { getDollarString } from "../../util/util";
-import "./salesAnalytics.scss";
 import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 
+import "./salesAnalytics.scss";
 
 export const SalesAnalyticsHourlySales = () => {
     const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
-
     const graphColor = getComputedStyle(document.documentElement).getPropertyValue("--primary-color");
 
-    if (error) {
-        return <h1>Couldn't fetch orders. Try Refreshing</h1>;
-    }
-
-    if (loading) {
-        return <FullScreenSpinner show={loading} text={"Loading report details..."} />;
-    }
+    if (error) return <h1>Couldn't fetch orders. Try Refreshing</h1>;
+    if (loading) return <FullScreenSpinner show={loading} text={"Loading report details..."} />;
 
     return (
         <>

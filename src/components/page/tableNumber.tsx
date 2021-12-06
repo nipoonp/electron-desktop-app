@@ -5,17 +5,15 @@ import { Button } from "../../tabin/components/button";
 import { Input } from "../../tabin/components/input";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { checkoutPath } from "../main";
-import "./tableNumber.scss";
 
+import "./tableNumber.scss";
 
 export const TableNumber = () => {
     const navigate = useNavigate();
     const { tableNumber, setTableNumber } = useCart();
     const { restaurant } = useRestaurant();
 
-    if (restaurant === null) {
-        throw "Restaurant is invalid!";
-    }
+    if (restaurant === null) throw "Restaurant is invalid!";
 
     const onNext = () => {
         navigate(checkoutPath);

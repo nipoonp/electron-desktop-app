@@ -1,5 +1,4 @@
 import { useState } from "react";
-
 import { Input } from "../../../tabin/components/input";
 import { FullScreenSpinner } from "../../../tabin/components/fullScreenSpinner";
 import { useVerifone } from "../../../context/verifone-context";

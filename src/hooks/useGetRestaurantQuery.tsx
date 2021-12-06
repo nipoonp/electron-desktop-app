@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { useQuery } from "@apollo/client";
 import { GET_RESTAURANT } from "../graphql/customQueries";
 
 import { Logger } from "aws-amplify";
 import { IGET_RESTAURANT } from "../graphql/customQueries";
-import { useGetRestaurantQueryFetchPolicy } from "./useGetRestaurantQueryFetchPolicy";
 
 const logger = new Logger("useGetRestaurantQuery");
 

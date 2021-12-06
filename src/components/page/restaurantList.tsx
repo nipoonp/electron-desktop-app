@@ -6,8 +6,8 @@ import { Button } from "../../tabin/components/button";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { toast } from "../../tabin/components/toast";
 import { beginOrderPath } from "../main";
-import "./restaurantList.scss";
 
+import "./restaurantList.scss";
 
 export const RestaurantList = () => {
     const navigate = useNavigate();

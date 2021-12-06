@@ -266,4 +266,3 @@ const useReceiptPrinter = () => {
 };
 
 export { ReceiptPrinterProvider, useReceiptPrinter };
-

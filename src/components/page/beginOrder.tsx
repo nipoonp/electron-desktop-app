@@ -6,15 +6,13 @@ import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../pr
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { restaurantPath } from "../main";
+
 import "./beginOrder.scss";
 
-
-export const BeginOrder = (props: {}) => {
+export const BeginOrder = () => {
     const { restaurant } = useRestaurant();
 
-    if (!restaurant) {
-        return <div>This user has not selected any restaurant</div>;
-    }
+    if (!restaurant) return <div>This user has not selected any restaurant</div>;
 
     const ads = restaurant && restaurant.advertisements.items;
 
@@ -52,9 +50,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
         };
     }, []);
 
-    if (!restaurant) {
-        return <div>This user has not selected any restaurant</div>;
-    }
+    if (!restaurant) return <div>This user has not selected any restaurant</div>;
 
     return (
         <PageWrapper>
@@ -100,9 +96,7 @@ const BeginOrderDefault = () => {
     const navigate = useNavigate();
     const { restaurant } = useRestaurant();
 
-    if (!restaurant) {
-        return <div>This user has not selected any restaurant</div>;
-    }
+    if (!restaurant) return <div>This user has not selected any restaurant</div>;
 
     return (
         <>

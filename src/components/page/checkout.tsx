@@ -15,7 +15,16 @@ import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
 import { CREATE_ORDER } from "../../graphql/customMutations";
 import { EPromotionType, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
 import {
-    EEftposProvider, EEftposTransactionOutcome, EPaymentModalState, ICartPayment, ICartPaymentAmounts, ICartProduct, IEftposTransactionOutcome, IMatchingUpSellCrossSellCategoryItem, IMatchingUpSellCrossSellProductItem, IPreSelectedModifiers
+    EEftposProvider,
+    EEftposTransactionOutcome,
+    EPaymentModalState,
+    ICartPayment,
+    ICartPaymentAmounts,
+    ICartProduct,
+    IEftposTransactionOutcome,
+    IMatchingUpSellCrossSellCategoryItem,
+    IMatchingUpSellCrossSellProductItem,
+    IPreSelectedModifiers,
 } from "../../model/model";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { useAlert } from "../../tabin/components/alert";
@@ -33,9 +42,9 @@ import { ProductModal } from "../modals/product";
 import { PromotionCodeModal } from "../modals/promotionCodeModal";
 import { UpSellCategoryModal } from "../modals/upSellCategory";
 import { UpSellProductModal } from "../modals/upSellProduct";
-import "./checkout.scss";
 import { OrderSummary } from "./checkout/orderSummary";
 
+import "./checkout.scss";
 
 const logger = new Logger("checkout");
 
@@ -115,9 +124,7 @@ export const Checkout = () => {
 
     const { register, isPOS } = useRegister();
 
-    if (!register) {
-        throw "Register is not valid";
-    }
+    if (!register) throw "Register is not valid";
 
     useEffect(() => {
         setTimeout(() => {
@@ -125,13 +132,8 @@ export const Checkout = () => {
         }, 1000);
     }, []);
 
-    if (!restaurant) {
-        navigate(beginOrderPath);
-    }
-
-    if (!restaurant) {
-        throw "Restaurant is invalid";
-    }
+    if (!restaurant) navigate(beginOrderPath);
+    if (!restaurant) throw "Restaurant is invalid";
 
     const onCancelOrder = () => {
         const cancelOrder = () => {

@@ -1,17 +1,9 @@
-import {
-    createContext,
-    useLayoutEffect,
-    useContext,
-    useState,
-    useEffect,
-    useReducer,
-} from "react";
+import { createContext, useLayoutEffect, useContext, useState, useEffect, useReducer } from "react";
 import { useAsync } from "react-async";
 import { Auth } from "aws-amplify";
 import { Hub, Logger } from "aws-amplify";
 import { HubCapsule } from "@aws-amplify/core/lib/Hub";
 import { ICognitoUser } from "../model/model";
-import { loginPath } from "../components/main";
 
 const logger = new Logger("AuthContext");
 
@@ -66,7 +58,7 @@ const logout = () => {
     logger.info("Logging out...");
     // window.analytics.reset();
     return Auth.signOut().then((data) => {
-        // need to clear cognitoIdentityID in localstorage after signing out
+        // need to clear cognitoIdentityID in localStorage after signing out
         localStorage.clear();
     });
 };

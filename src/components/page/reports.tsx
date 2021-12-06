@@ -12,7 +12,7 @@ export const Reports = () => {
     const { restaurant } = useRestaurant();
     const [showSpinner, setShowSpinner] = useState(false);
 
-    const [emailSalesReportsMutation, { data, loading, error }] = useMutation(EMAIL_SALES_REPORTS, {
+    const [emailSalesReportsMutation] = useMutation(EMAIL_SALES_REPORTS, {
         update: (proxy, mutationResult: any) => {},
     });
 

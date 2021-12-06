@@ -4,24 +4,18 @@ import { PieGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { Table } from "../../tabin/components/table";
 import { useSalesAnalytics } from "../../context/salesAnalytics-context";
 import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
-
-import "./salesAnalytics.scss";
 import { taxRate } from "../../model/util";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
 
+import "./salesAnalytics.scss";
+
 export const SalesAnalyticsTopCategory = () => {
     const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
-
     const graphColor = getComputedStyle(document.documentElement).getPropertyValue("--primary-color");
 
-    if (error) {
-        return <h1>Couldn't fetch orders. Try Refreshing</h1>;
-    }
-
-    if (loading) {
-        return <FullScreenSpinner show={loading} text={"Loading report details..."} />;
-    }
+    if (error) return <h1>Couldn't fetch orders. Try Refreshing</h1>;
+    if (loading) return <FullScreenSpinner show={loading} text={"Loading report details..."} />;
 
     return (
         <>

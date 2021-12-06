@@ -1,5 +1,4 @@
 import { useState } from "react";
-
 import { Input } from "../../../tabin/components/input";
 import { useReceiptPrinter } from "../../../context/receiptPrinter-context";
 import { EOrderType, EReceiptPrinterType, ICartProduct } from "../../../model/model";
