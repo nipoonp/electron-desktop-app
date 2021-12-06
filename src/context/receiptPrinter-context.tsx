@@ -56,23 +56,24 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         const ordersFetchTimer = setInterval(async () => {
             try {
                 const ordersLastFetched = localStorage.getItem("ordersLastFetched");
+                const now = toLocalISOString(new Date());
 
                 if (!ordersLastFetched) {
-                    localStorage.setItem("ordersLastFetched", toLocalISOString(new Date()));
+                    localStorage.setItem("ordersLastFetched", now);
                     return;
                 }
 
                 const res = await refetch({
                     orderRestaurantId: restaurant ? restaurant.id : "",
                     placedAtStartDate: ordersLastFetched,
-                    placedAtEndDate: toLocalISOString(new Date()),
+                    placedAtEndDate: now,
                 });
 
                 const orders: IGET_RESTAURANT_ORDER_FRAGMENT[] = res.data.getOrdersByRestaurantByPlacedAt.items;
 
                 await printNewOrderReceipts(orders);
 
-                localStorage.setItem("ordersLastFetched", toLocalISOString(new Date()));
+                localStorage.setItem("ordersLastFetched", now);
             } catch (e) {
                 console.error("Error", e);
                 await logError("Error polling for new orders", JSON.stringify({ error: e, restaurant: restaurant }));
