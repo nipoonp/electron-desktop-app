@@ -93,7 +93,7 @@ jobs:
     #               CSC_LINK: ${{ secrets.MAC_CERTIFICATE_AUTO_DOWNLOAD_GITHUB_LINK }}
     #               CSC_KEY_PASSWORD: ""
     slack_message_complete:
-        needs: [slack_message_start, create_release, windows, macos]
+        needs: [slack_message_start, create_release, windows]
         runs-on: ubuntu-latest
         steps:
             - name: Post to a Slack channel
