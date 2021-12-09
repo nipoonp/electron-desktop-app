@@ -1,10 +1,6 @@
-import electron from "electron";
-const app = electron.app;
-const BrowserWindow = electron.BrowserWindow;
-
+import { app, BrowserWindow, globalShortcut } from "electron";
 import { ipcMain, Menu } from "electron";
 import path from "path";
-import { autoUpdater } from "electron-updater";
 import net from "net";
 import { encodeCommandBuffer, decodeCommandBuffer, printReceipt, printSalesByDayReceipt } from "./util";
 import { IOrderReceipt, IPrintReceiptDataOutput, IPrintReceiptOutput, IPrintSalesByDayDataInput, IPrintSalesByDayDataOutput } from "./model";
@@ -12,26 +8,43 @@ import { IOrderReceipt, IPrintReceiptDataOutput, IPrintReceiptOutput, IPrintSale
 let mainWindow: any;
 let verifoneClient = new net.Socket();
 
+let isDevToolsOpen = false;
+
 app.disableHardwareAcceleration();
 
-function createWindow() {
-    // mainWindow = new BrowserWindow({width: 900, height: 680, fullscreen: true});
+const createWindow = () => {
     mainWindow = new BrowserWindow({
-        // kiosk: true,
-        width: 1024,
-        height: 900,
-        fullscreen: true,
-        frame: false,
+        kiosk: true,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
-            preload: path.join(__dirname, "preload.js"),
         },
     });
-    // mainWindow.loadURL(`file://${path.join(__dirname, '../build/index.html')}`);
+
     mainWindow.loadFile(path.join(__dirname, "index.html"));
+
     mainWindow.on("closed", () => {
         mainWindow = null;
+    });
+
+    mainWindow.on("unresponsive", () => {
+        app.relaunch();
+        app.exit();
+    });
+
+    mainWindow.webContents.on("unresponsive", () => {
+        app.relaunch();
+        app.exit();
+    });
+
+    mainWindow.on("crashed", () => {
+        app.relaunch();
+        app.exit();
+    });
+
+    globalShortcut.register("Shift+CommandOrControl+I", () => {
+        isDevToolsOpen ? mainWindow.webContents.closeDevTools() : mainWindow.webContents.openDevTools();
+        isDevToolsOpen = !isDevToolsOpen;
     });
 
     // Check for app updates every 3 seconds after launch
@@ -40,36 +53,34 @@ function createWindow() {
     // setInterval(checkForUpdates, 10 * 1000);
 
     // Hide the menu bar
-    mainWindow.setMenu(null);
-
-    // mainWindow.webContents.openDevTools();
-}
-
-const checkForUpdates = () => {
-    autoUpdater.checkForUpdates();
+    // mainWindow.setMenu(null);
 };
 
-const initUpdater = () => {
-    // autoUpdater.autoDownload = true;
+// const checkForUpdates = () => {
+//     autoUpdater.checkForUpdates();
+// };
 
-    autoUpdater.on("update-available", () => {
-        mainWindow.webContents.send("ELECTRON_UPDATER", "Found new update. Downloading now...");
-        autoUpdater.downloadUpdate();
-    });
+// const initUpdater = () => {
+//     // autoUpdater.autoDownload = true;
 
-    autoUpdater.on("update-downloaded", (info) => {
-        mainWindow.webContents.send("ELECTRON_UPDATER", `Update downloaded. Version: ${info.releaseName}. App is restarting.`);
-        autoUpdater.quitAndInstall(false, true);
-    });
+//     autoUpdater.on("update-available", () => {
+//         mainWindow.webContents.send("ELECTRON_UPDATER", "Found new update. Downloading now...");
+//         autoUpdater.downloadUpdate();
+//     });
 
-    autoUpdater.on("download-progress", (info) => {
-        mainWindow.webContents.send("ELECTRON_UPDATER", `Downloading new update... Progress: ${info.percent}%.`);
-    });
+//     autoUpdater.on("update-downloaded", (info) => {
+//         mainWindow.webContents.send("ELECTRON_UPDATER", `Update downloaded. Version: ${info.releaseName}. App is restarting.`);
+//         autoUpdater.quitAndInstall(false, true);
+//     });
 
-    autoUpdater.on("error", (error) => {
-        mainWindow.webContents.send("ELECTRON_UPDATER", `There was an error updating. ${error}`);
-    });
-};
+//     autoUpdater.on("download-progress", (info) => {
+//         mainWindow.webContents.send("ELECTRON_UPDATER", `Downloading new update... Progress: ${info.percent}%.`);
+//     });
+
+//     autoUpdater.on("error", (error) => {
+//         mainWindow.webContents.send("ELECTRON_UPDATER", `There was an error updating. ${error}`);
+//     });
+// };
 
 const gotTheLock = app.requestSingleInstanceLock();
 
