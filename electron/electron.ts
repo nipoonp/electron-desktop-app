@@ -1,13 +1,12 @@
 import { app, BrowserWindow, globalShortcut } from "electron";
 import { ipcMain, Menu } from "electron";
-import path from "path";
-import net from "net";
 import { encodeCommandBuffer, decodeCommandBuffer, printReceipt, printSalesByDayReceipt } from "./util";
 import { IOrderReceipt, IPrintReceiptDataOutput, IPrintReceiptOutput, IPrintSalesByDayDataInput, IPrintSalesByDayDataOutput } from "./model";
+import path from "path";
+import net from "net";
 
 let mainWindow: any;
 let verifoneClient = new net.Socket();
-
 let isDevToolsOpen = false;
 
 app.disableHardwareAcceleration();
@@ -27,17 +26,47 @@ const createWindow = () => {
         mainWindow = null;
     });
 
+    mainWindow.on("render-process-gone", (event, webContents, details) => {
+        //When process.crash()
+        console.log("xxx...render-process-gone", event, webContents, details);
+        app.relaunch();
+        app.exit();
+    });
+
+    mainWindow.on("child-process-gone", (event, details) => {
+        console.log("xxx...child-process-gone", event, details);
+        app.relaunch();
+        app.exit();
+    });
+
     mainWindow.on("unresponsive", () => {
+        console.log("xxx...unresponsive");
+        app.relaunch();
+        app.exit();
+    });
+
+    //Deprecated
+    mainWindow.on("crashed", (event, killed) => {
+        console.log("xxx...crashed", event, killed);
         app.relaunch();
         app.exit();
     });
 
     mainWindow.webContents.on("unresponsive", () => {
+        //When process.hang()
+        console.log("xxx...webContents.unresponsive");
         app.relaunch();
         app.exit();
     });
 
-    mainWindow.on("crashed", () => {
+    mainWindow.webContents.on("render-process-gone", (event, webContents, details) => {
+        console.log("xxx...webContents.render-process-gone", event, webContents, details);
+        app.relaunch();
+        app.exit();
+    });
+
+    mainWindow.webContents.on("plugin-crashed", (event, name, version) => {
+        console.log("xxx...webContents.plugin-crashed", event, name, version);
         app.relaunch();
         app.exit();
     });
@@ -53,7 +82,7 @@ const createWindow = () => {
     // setInterval(checkForUpdates, 10 * 1000);
 
     // Hide the menu bar
-    // mainWindow.setMenu(null);
+    mainWindow.setMenu(null);
 };
 
 // const checkForUpdates = () => {
