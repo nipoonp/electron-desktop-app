@@ -4,7 +4,6 @@ import path from "path";
 import net from "net";
 import { encodeCommandBuffer, decodeCommandBuffer, printReceipt, printSalesByDayReceipt } from "./util";
 import { IOrderReceipt, IPrintReceiptDataOutput, IPrintReceiptOutput, IPrintSalesByDayDataInput, IPrintSalesByDayDataOutput } from "./model";
-const { dialog } = require("electron");
 
 let mainWindow: any;
 let verifoneClient = new net.Socket();
