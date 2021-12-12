@@ -61,10 +61,7 @@ const createWindow = () => {
     });
 
     mainWindow.on("render-process-gone", async (event, webContents, details) => {
-        //When process.crash()
-        const message = `xxx...render-process-gone: ${simpleStringify({ event, webContents, details })}`;
-
-        console.log(message);
+        console.log("xxx...child-process-gone", event, webContents, details);
         dialog.showMessageBox(mainWindow, {
             title: "Restarting...",
             buttons: [],
@@ -72,7 +69,7 @@ const createWindow = () => {
             message: "Application is restarting…",
         });
 
-        Sentry.captureException(new Error(message));
+        Sentry.captureException(new Error("child-process-gone: " + simpleStringify({ event, webContents, details })));
         await delay(2000);
 
         app.relaunch();
@@ -80,9 +77,7 @@ const createWindow = () => {
     });
 
     mainWindow.on("child-process-gone", async (event, details) => {
-        const message = `xxx...child-process-gone: ${simpleStringify({ event, details })}`;
-
-        console.log(message);
+        console.log("xxx...child-process-gone", event, details);
         dialog.showMessageBox(mainWindow, {
             title: "Restarting...",
             buttons: [],
@@ -90,7 +85,7 @@ const createWindow = () => {
             message: "Application is restarting…",
         });
 
-        Sentry.captureException(new Error(message));
+        Sentry.captureException(new Error("child-process-gone: " + simpleStringify({ event, details })));
         await delay(2000);
 
         app.relaunch();
@@ -117,9 +112,7 @@ const createWindow = () => {
 
     //Deprecated
     mainWindow.on("crashed", async (event, killed) => {
-        const message = `xxx...crashed: ${simpleStringify({ event, killed })}`;
-
-        console.log(message);
+        console.log("xxx...child-process-gone", event, killed);
         dialog.showMessageBox(mainWindow, {
             title: "Restarting...",
             buttons: [],
@@ -127,7 +120,7 @@ const createWindow = () => {
             message: "Application is restarting…",
         });
 
-        Sentry.captureException(new Error(message));
+        Sentry.captureException(new Error("child-process-gone: " + simpleStringify({ event, killed })));
         await delay(2000);
 
         app.relaunch();
@@ -154,9 +147,7 @@ const createWindow = () => {
     });
 
     mainWindow.webContents.on("render-process-gone", async (event, webContents, details) => {
-        const message = `xxx...webContents.render-process-gone: ${simpleStringify({ event, webContents, details })}`;
-
-        console.log(message);
+        console.log("xxx...child-process-gone", event, webContents, details);
         dialog.showMessageBox(mainWindow, {
             title: "Restarting...",
             buttons: [],
@@ -164,7 +155,7 @@ const createWindow = () => {
             message: "Application is restarting…",
         });
 
-        Sentry.captureException(new Error(message));
+        Sentry.captureException(new Error("child-process-gone: " + simpleStringify({ event, webContents, details })));
         await delay(2000);
 
         app.relaunch();
@@ -172,9 +163,7 @@ const createWindow = () => {
     });
 
     mainWindow.webContents.on("plugin-crashed", async (event, name, version) => {
-        const message = `xxx...webContents.plugin-crashed: ${simpleStringify({ event, name, version })}`;
-
-        console.log(message);
+        console.log("xxx...child-process-gone", event, name, version);
         dialog.showMessageBox(mainWindow, {
             title: "Restarting...",
             buttons: [],
@@ -182,7 +171,7 @@ const createWindow = () => {
             message: "Application is restarting…",
         });
 
-        Sentry.captureException(new Error(message));
+        Sentry.captureException(new Error("child-process-gone: " + simpleStringify({ event, name, version })));
         await delay(2000);
 
         app.relaunch();
