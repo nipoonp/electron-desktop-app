@@ -32,19 +32,6 @@ const simpleStringify = (object: Object) => {
     return JSON.stringify(simpleObject); // returns cleaned up JSON
 };
 
-// const showAlertAndLogToSentry = async (message: string) => {
-//     console.log(message);
-//     dialog.showMessageBox(mainWindow, {
-//         title: "Restarting...",
-//         buttons: [],
-//         type: "warning",
-//         message: "Application is restarting…",
-//     });
-
-//     Sentry.captureException(new Error(message));
-//     await delay(2000);
-// };
-
 const createWindow = () => {
     mainWindow = new BrowserWindow({
         kiosk: true,
