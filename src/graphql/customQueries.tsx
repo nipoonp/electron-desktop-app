@@ -398,7 +398,8 @@ export const GET_RESTAURANT = gql`
                             endTime
                         }
                     }
-                    products(limit: 100) {
+
+                    products(limit: 10) {
                         items {
                             id
                             displaySequence
@@ -447,6 +448,52 @@ export const GET_RESTAURANT = gql`
                                     sunday {
                                         startTime
                                         endTime
+                                    }
+                                }
+                                categories {
+                                    items {
+                                        category {
+                                            id
+                                            name
+                                            image {
+                                                key
+                                                bucket
+                                                region
+                                                identityPoolId
+                                            }
+                                            displaySequence
+                                            availablePlatforms
+                                            availability {
+                                                monday {
+                                                    startTime
+                                                    endTime
+                                                }
+                                                tuesday {
+                                                    startTime
+                                                    endTime
+                                                }
+                                                wednesday {
+                                                    startTime
+                                                    endTime
+                                                }
+                                                thursday {
+                                                    startTime
+                                                    endTime
+                                                }
+                                                friday {
+                                                    startTime
+                                                    endTime
+                                                }
+                                                saturday {
+                                                    startTime
+                                                    endTime
+                                                }
+                                                sunday {
+                                                    startTime
+                                                    endTime
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                                 modifierGroups(limit: 500) {
@@ -854,6 +901,7 @@ export interface IGET_RESTAURANT_PRODUCT {
     image?: IS3Object;
     availablePlatforms: ERegisterType[];
     availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
+    categories: { items: IGET_RESTAURANT_CATEGORY[] };
     modifierGroups?: {
         items: IGET_RESTAURANT_MODIFIER_GROUP_LINK[];
     };
@@ -1077,6 +1125,52 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                     sunday {
                         startTime
                         endTime
+                    }
+                }
+                categories {
+                    items {
+                        category {
+                            id
+                            name
+                            image {
+                                key
+                                bucket
+                                region
+                                identityPoolId
+                            }
+                            displaySequence
+                            availablePlatforms
+                            availability {
+                                monday {
+                                    startTime
+                                    endTime
+                                }
+                                tuesday {
+                                    startTime
+                                    endTime
+                                }
+                                wednesday {
+                                    startTime
+                                    endTime
+                                }
+                                thursday {
+                                    startTime
+                                    endTime
+                                }
+                                friday {
+                                    startTime
+                                    endTime
+                                }
+                                saturday {
+                                    startTime
+                                    endTime
+                                }
+                                sunday {
+                                    startTime
+                                    endTime
+                                }
+                            }
+                        }
                     }
                 }
                 modifierGroups(limit: 500) {

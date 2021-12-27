@@ -27,6 +27,7 @@ import { useRegister } from "../../context/register-context";
 import { Input } from "../../tabin/components/input";
 import { useGetProductsBySKUCodeByRestaurant } from "../../hooks/useGetProductsBySKUCodeByRestaurant";
 import { Checkout } from "./checkout";
+import { toast } from "../../tabin/components/toast";
 
 interface IMostPopularProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -158,6 +159,34 @@ export const Restaurant = () => {
             document.body.style.overflow = "unset";
         }
     }, [showProductModal]);
+
+    // useEffect(() => {
+    //     if (!restaurant) return;
+    //     if (searchProductSKUCode.length < 6) return;
+
+    //     const delayDebounceFn = setTimeout(async () => {
+    //         console.log("xxx...", searchProductSKUCode);
+
+    //         const res = await searchSKUProductRefetch({
+    //             skuCode: searchProductSKUCode,
+    //             productRestaurantId: restaurant.id,
+    //         });
+
+    //         console.log("xxx...product", res.data.getProductsBySKUCodeByRestaurant);
+
+    //         const products: IGET_RESTAURANT_PRODUCT[] = res.data.getProductsBySKUCodeByRestaurant.items;
+
+    //         if (products.length > 0) {
+    //             onAddProductToCart(products[0].categories.items[0], products[0]);
+    //             setSearchProductSKUCode("");
+    //         }
+    //     }, 500);
+
+    //     return () => {
+    //         console.log("xxx...cleared");
+    //         clearTimeout(delayDebounceFn);
+    //     };
+    // }, [searchProductSKUCode]);
 
     // callbacks
     const onClickCart = () => {
@@ -437,17 +466,27 @@ export const Restaurant = () => {
         </>
     );
 
-    const onChangeSearchProductSKUCode = async (event) => {
-        const value = event.target.value;
-        setSearchProductSKUCode(value);
+    const onChangeSearchProductSKUCode = async (e) => {
+        const value = e.target.value;
 
-        if (value.length > 5) {
-            const product = await searchSKUProductRefetch({
-                skuCode: value,
+        setSearchProductSKUCode(value);
+    };
+
+    const onKeyDownSearchProductSKUCode = async (e) => {
+        if (e.key === "Enter") {
+            const res = await searchSKUProductRefetch({
+                skuCode: searchProductSKUCode,
                 productRestaurantId: restaurant.id,
             });
 
-            console.log("xxx...product", product);
+            const products: IGET_RESTAURANT_PRODUCT[] = res.data.getProductsBySKUCodeByRestaurant.items;
+
+            if (products.length > 0) {
+                onAddProductToCart(products[0].categories.items[0], products[0]);
+                setSearchProductSKUCode("");
+            } else {
+                toast.error("No product found");
+            }
         }
     };
 
@@ -458,9 +497,9 @@ export const Restaurant = () => {
                     name="searchProductSKUCode"
                     value={searchProductSKUCode}
                     autoFocus={true}
-                    placeholder="123-456-789"
+                    placeholder="123456789"
                     onChange={onChangeSearchProductSKUCode}
-                    // onBlur={onBlurAmount}
+                    onKeyDown={onKeyDownSearchProductSKUCode}
                 />
             </div>
         </>
