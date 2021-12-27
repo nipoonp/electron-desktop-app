@@ -11,6 +11,8 @@ import {
 import usbPrinter from "@thiagoelg/node-printer";
 import { format } from "date-fns";
 
+export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
 export const calculateLRC = (str: string): string => {
     var bytes: number[] = [];
     var lrc = 0;
