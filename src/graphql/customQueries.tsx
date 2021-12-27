@@ -398,7 +398,7 @@ export const GET_RESTAURANT = gql`
                             endTime
                         }
                     }
-                    products(limit: 500) {
+                    products(limit: 100) {
                         items {
                             id
                             displaySequence
@@ -1024,6 +1024,184 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
         ) {
             items {
                 ...OrderFieldsFragment
+            }
+        }
+    }
+`;
+
+export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
+    query GetProductsBySKUCodeByRestaurant($skuCode: String!, $productRestaurantId: ID!) {
+        getProductsBySKUCodeByRestaurant(limit: 1, sortDirection: DESC, skuCode: $skuCode, productRestaurantId: { eq: $productRestaurantId }) {
+            items {
+                id
+                name
+                description
+                price
+                tags
+                totalQuantitySold
+                totalQuantityAvailable
+                soldOut
+                soldOutDate
+                image {
+                    key
+                    bucket
+                    region
+                    identityPoolId
+                }
+                availablePlatforms
+                availability {
+                    monday {
+                        startTime
+                        endTime
+                    }
+                    tuesday {
+                        startTime
+                        endTime
+                    }
+                    wednesday {
+                        startTime
+                        endTime
+                    }
+                    thursday {
+                        startTime
+                        endTime
+                    }
+                    friday {
+                        startTime
+                        endTime
+                    }
+                    saturday {
+                        startTime
+                        endTime
+                    }
+                    sunday {
+                        startTime
+                        endTime
+                    }
+                }
+                modifierGroups(limit: 500) {
+                    items {
+                        id
+                        displaySequence
+                        hideForCustomer
+                        modifierGroup {
+                            id
+                            name
+                            choiceMin
+                            choiceMax
+                            choiceDuplicate
+                            availablePlatforms
+                            modifiers(limit: 500) {
+                                items {
+                                    id
+                                    displaySequence
+                                    preSelectedQuantity
+                                    modifier {
+                                        id
+                                        name
+                                        price
+                                        image {
+                                            key
+                                            bucket
+                                            region
+                                            identityPoolId
+                                        }
+                                        totalQuantitySold
+                                        totalQuantityAvailable
+                                        soldOut
+                                        soldOutDate
+                                        availablePlatforms
+                                        productModifier {
+                                            id
+                                            name
+                                            description
+                                            price
+                                            tags
+                                            totalQuantitySold
+                                            totalQuantityAvailable
+                                            soldOut
+                                            soldOutDate
+                                            image {
+                                                key
+                                                bucket
+                                                region
+                                                identityPoolId
+                                            }
+                                            availability {
+                                                monday {
+                                                    startTime
+                                                    endTime
+                                                }
+                                                tuesday {
+                                                    startTime
+                                                    endTime
+                                                }
+                                                wednesday {
+                                                    startTime
+                                                    endTime
+                                                }
+                                                thursday {
+                                                    startTime
+                                                    endTime
+                                                }
+                                                friday {
+                                                    startTime
+                                                    endTime
+                                                }
+                                                saturday {
+                                                    startTime
+                                                    endTime
+                                                }
+                                                sunday {
+                                                    startTime
+                                                    endTime
+                                                }
+                                            }
+                                            modifierGroups(limit: 500) {
+                                                items {
+                                                    id
+                                                    displaySequence
+                                                    hideForCustomer
+                                                    modifierGroup {
+                                                        id
+                                                        name
+                                                        choiceMin
+                                                        choiceMax
+                                                        choiceDuplicate
+                                                        availablePlatforms
+                                                        modifiers(limit: 500) {
+                                                            items {
+                                                                id
+                                                                displaySequence
+                                                                preSelectedQuantity
+                                                                modifier {
+                                                                    id
+                                                                    name
+                                                                    price
+                                                                    image {
+                                                                        key
+                                                                        bucket
+                                                                        region
+                                                                        identityPoolId
+                                                                    }
+                                                                    totalQuantitySold
+                                                                    totalQuantityAvailable
+                                                                    soldOut
+                                                                    soldOutDate
+                                                                    availablePlatforms
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }

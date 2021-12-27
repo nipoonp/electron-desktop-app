@@ -38,10 +38,10 @@ type ContextProps = {
     products: ICartProduct[] | null;
     cartProductQuantitiesById: ICartItemQuantitiesById;
     cartModifierQuantitiesById: ICartItemQuantitiesById;
-    addItem: (product: ICartProduct) => void;
-    updateItem: (index: number, product: ICartProduct) => void;
-    updateItemQuantity: (index: number, quantity: number) => void;
-    deleteItem: (index: number) => void; // has a index input because multiple products in cart could have the same id
+    addProduct: (product: ICartProduct) => void;
+    updateProduct: (index: number, product: ICartProduct) => void;
+    updateProductQuantity: (index: number, quantity: number) => void;
+    deleteProduct: (index: number) => void; // has a index input because multiple products in cart could have the same id
     clearCart: () => void;
     notes: string;
     setNotes: (notes: string) => void;
@@ -69,10 +69,10 @@ const CartContext = createContext<ContextProps>({
     products: initialProducts,
     cartProductQuantitiesById: {},
     cartModifierQuantitiesById: {},
-    addItem: () => {},
-    updateItem: () => {},
-    updateItemQuantity: () => {},
-    deleteItem: () => {},
+    addProduct: () => {},
+    updateProduct: () => {},
+    updateProductQuantity: () => {},
+    deleteProduct: () => {},
     clearCart: () => {},
     notes: initialNotes,
     setNotes: () => {},
@@ -387,7 +387,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setTableNumber(tableNumber);
     };
 
-    const addItem = (product: ICartProduct) => {
+    const addProduct = (product: ICartProduct) => {
         let newProducts = products;
 
         if (newProducts != null) {
@@ -401,7 +401,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         updateCartQuantities(newProducts);
     };
 
-    const updateItem = (index: number, product: ICartProduct) => {
+    const updateProduct = (index: number, product: ICartProduct) => {
         if (products == null) {
             // should never really end up here
             return;
@@ -415,7 +415,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         updateCartQuantities(newProducts);
     };
 
-    const updateItemQuantity = (index: number, quantity: number) => {
+    const updateProductQuantity = (index: number, quantity: number) => {
         if (products == null) {
             // should never really end up here
             return;
@@ -432,7 +432,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         updateCartQuantities(newProducts);
     };
 
-    const deleteItem = (index: number) => {
+    const deleteProduct = (index: number) => {
         if (products == null) {
             // should never really end up here
             return;
@@ -491,10 +491,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 products: products,
                 cartProductQuantitiesById: cartProductQuantitiesById,
                 cartModifierQuantitiesById: cartModifierQuantitiesById,
-                addItem: addItem,
-                updateItem: updateItem,
-                updateItemQuantity: updateItemQuantity,
-                deleteItem: deleteItem,
+                addProduct: addProduct,
+                updateProduct: updateProduct,
+                updateProductQuantity: updateProductQuantity,
+                deleteProduct: deleteProduct,
                 clearCart: clearCart,
                 notes: notes,
                 setNotes: setNotes,

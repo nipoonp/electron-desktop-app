@@ -13,9 +13,7 @@ export const TableNumber = () => {
     const { tableNumber, setTableNumber } = useCart();
     const { restaurant } = useRestaurant();
 
-    if (restaurant == null) {
-        throw "Restaurant is invalid!";
-    }
+    if (restaurant == null) throw "Restaurant is invalid!";
 
     const onNext = () => {
         navigate(checkoutPath);

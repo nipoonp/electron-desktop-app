@@ -24,6 +24,9 @@ import "./restaurant.scss";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { useAlert } from "../../tabin/components/alert";
 import { useRegister } from "../../context/register-context";
+import { Input } from "../../tabin/components/input";
+import { useGetProductsBySKUCodeByRestaurant } from "../../hooks/useGetProductsBySKUCodeByRestaurant";
+import { Checkout } from "./checkout";
 
 interface IMostPopularProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -36,12 +39,18 @@ export const Restaurant = () => {
     const navigate = useNavigate();
     const { showAlert } = useAlert();
 
-    const { payments, clearCart, orderType, subTotal, products, cartProductQuantitiesById, addItem, setOrderType } = useCart();
+    const { payments, clearCart, orderType, subTotal, products, cartProductQuantitiesById, addProduct, setOrderType } = useCart();
     const { setRestaurant } = useRestaurant();
-    const { register } = useRegister();
+    const { register, isPOS } = useRegister();
 
     // query
     const { data: restaurant, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(restaurantId || "");
+    const {
+        data: searchSKUProduct,
+        error: searchSKUProductError,
+        loading: searchSKUProductLoading,
+        refetch: searchSKUProductRefetch,
+    } = useGetProductsBySKUCodeByRestaurant("", "");
 
     // states
     const [selectedCategory, setSelectedCategory] = useState<IGET_RESTAURANT_CATEGORY | null>(null);
@@ -52,6 +61,7 @@ export const Restaurant = () => {
     const [showItemAddedModal, setShowItemAddedModal] = useState(false);
     const [showSearchProductModal, setShowSearchProductModal] = useState(false);
 
+    const [searchProductSKUCode, setSearchProductSKUCode] = useState("");
     const [mostPopularProducts, setMostPopularProducts] = useState<IMostPopularProduct[]>([]);
 
     const [isShakeAnimationActive, setIsShakeAnimationActive] = useState(false);
@@ -190,8 +200,8 @@ export const Restaurant = () => {
         setShowProductModal(false);
     };
 
-    const onAddItem = (product: ICartProduct) => {
-        addItem(product);
+    const onAddProduct = (product: ICartProduct) => {
+        addProduct(product);
         setShowItemAddedModal(true);
     };
 
@@ -224,17 +234,59 @@ export const Restaurant = () => {
         return <div>Restaurant is not verified</div>;
     }
 
+    const onAddProductToCart = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
+        const productToOrder: ICartProduct = {
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            image: product.image
+                ? {
+                      key: product.image.key,
+                      region: product.image.region,
+                      bucket: product.image.bucket,
+                      identityPoolId: product.image.identityPoolId,
+                  }
+                : null,
+            quantity: 1,
+            notes: null,
+            category: {
+                id: category.id,
+                name: category.name,
+                image: category.image
+                    ? {
+                          key: category.image.key,
+                          region: category.image.region,
+                          bucket: category.image.bucket,
+                          identityPoolId: category.image.identityPoolId,
+                      }
+                    : null,
+            },
+            modifierGroups: [],
+        };
+
+        onAddProduct(productToOrder);
+    };
+
     const onClickProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
-        setSelectedCategoryForProductModal(category);
-        setSelectedProductForProductModal(product);
-        setShowProductModal(true);
+        if (!isPOS && product.modifierGroups && product.modifierGroups.items.length > 0) {
+            setSelectedCategoryForProductModal(category);
+            setSelectedProductForProductModal(product);
+            setShowProductModal(true);
+        } else {
+            onAddProductToCart(category, product);
+        }
     };
 
     const onClickSearchProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
-        setSelectedCategoryForProductModal(category);
-        setSelectedProductForProductModal(product);
-        onCloseSearchProductModal();
-        setShowProductModal(true);
+        if (!isPOS && product.modifierGroups && product.modifierGroups.items.length > 0) {
+            setSelectedCategoryForProductModal(category);
+            setSelectedProductForProductModal(product);
+            onCloseSearchProductModal();
+            setShowProductModal(true);
+        } else {
+            onAddProductToCart(category, product);
+            onCloseSearchProductModal();
+        }
     };
 
     const productModal = (
@@ -245,7 +297,7 @@ export const Restaurant = () => {
                     onClose={onCloseProductModal}
                     category={selectedCategoryForProductModal}
                     product={selectedProductForProductModal}
-                    onAddItem={onAddItem}
+                    onAddProduct={onAddProduct}
                 />
             )}
         </>
@@ -360,7 +412,18 @@ export const Restaurant = () => {
 
     const menuSearchProduct = (
         <>
-            <Shake active={isShakeAnimationActive} h={5} v={5} r={3} dur={300} int={10} max={100} fixed={true} fixedStop={false} freez={false}>
+            <Shake
+                active={isPOS ? false : isShakeAnimationActive}
+                h={5}
+                v={5}
+                r={3}
+                dur={300}
+                int={10}
+                max={100}
+                fixed={true}
+                fixedStop={false}
+                freez={false}
+            >
                 <div
                     className="category background-grey"
                     onClick={() => {
@@ -371,6 +434,35 @@ export const Restaurant = () => {
                     <div className="name">Search</div>
                 </div>
             </Shake>
+        </>
+    );
+
+    const onChangeSearchProductSKUCode = async (event) => {
+        const value = event.target.value;
+        setSearchProductSKUCode(value);
+
+        if (value.length > 5) {
+            const product = await searchSKUProductRefetch({
+                skuCode: value,
+                productRestaurantId: restaurant.id,
+            });
+
+            console.log("xxx...product", product);
+        }
+    };
+
+    const menuBarcodeSearchProduct = (
+        <>
+            <div className="category background-grey">
+                <Input
+                    name="searchProductSKUCode"
+                    value={searchProductSKUCode}
+                    autoFocus={true}
+                    placeholder="123-456-789"
+                    onChange={onChangeSearchProductSKUCode}
+                    // onBlur={onBlurAmount}
+                />
+            </div>
         </>
     );
 
@@ -447,20 +539,28 @@ export const Restaurant = () => {
     return (
         <>
             <PageWrapper>
-                <div className="restaurant">
-                    <div className="restaurant-container">
-                        <div className="categories-wrapper">
-                            {restaurant.logo && <RestaurantLogo image={restaurant.logo} />}
-                            {menuSearchProduct}
-                            {menuMostPopularCategory}
-                            {menuCategories}
+                <div className="restaurant-wrapper">
+                    <div className="restaurant">
+                        <div className="restaurant-container">
+                            <div className="categories-wrapper">
+                                {restaurant.logo && <RestaurantLogo image={restaurant.logo} />}
+                                {menuSearchProduct}
+                                {menuBarcodeSearchProduct}
+                                {menuMostPopularCategory}
+                                {menuCategories}
+                            </div>
+                            <div className="products-wrapper">
+                                {menuMostPopularProducts}
+                                {menuProducts}
+                            </div>
                         </div>
-                        <div className="products-wrapper">
-                            {menuMostPopularProducts}
-                            {menuProducts}
-                        </div>
+                        {!isPOS && <div className="footer-wrapper">{restaurantFooter}</div>}
                     </div>
-                    <div className="footer-wrapper">{restaurantFooter}</div>
+                    {products && products.length > 0 && isPOS && (
+                        <div className="restaurant-checkout">
+                            <Checkout />
+                        </div>
+                    )}
                 </div>
                 {modals}
             </PageWrapper>
