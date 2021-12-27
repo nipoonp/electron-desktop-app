@@ -1,15 +1,36 @@
-import { app, BrowserWindow, globalShortcut } from "electron";
+import { app, BrowserWindow, dialog, globalShortcut } from "electron";
 import { ipcMain, Menu } from "electron";
-import { encodeCommandBuffer, decodeCommandBuffer, printReceipt, printSalesByDayReceipt } from "./util";
+import { encodeCommandBuffer, decodeCommandBuffer, printReceipt, printSalesByDayReceipt, delay } from "./util";
 import { IOrderReceipt, IPrintReceiptDataOutput, IPrintReceiptOutput, IPrintSalesByDayDataInput, IPrintSalesByDayDataOutput } from "./model";
 import path from "path";
 import net from "net";
+import * as Sentry from "@sentry/electron";
+
+Sentry.init({ dsn: "https://43d342efd1534e1b80c9ab4251b385a6@o1087887.ingest.sentry.io/6102047" });
 
 let mainWindow: any;
 let verifoneClient = new net.Socket();
 let isDevToolsOpen = false;
 
 app.disableHardwareAcceleration();
+
+const simpleStringify = (object: Object) => {
+    var simpleObject = {};
+    for (var prop in object) {
+        if (!object.hasOwnProperty(prop)) {
+            continue;
+        }
+        if (typeof object[prop] == "object") {
+            continue;
+        }
+        if (typeof object[prop] == "function") {
+            continue;
+        }
+        simpleObject[prop] = object[prop];
+    }
+
+    return JSON.stringify(simpleObject); // returns cleaned up JSON
+};
 
 const createWindow = () => {
     mainWindow = new BrowserWindow({
@@ -26,47 +47,120 @@ const createWindow = () => {
         mainWindow = null;
     });
 
-    mainWindow.on("render-process-gone", (event, webContents, details) => {
-        //When process.crash()
-        console.log("xxx...render-process-gone", event, webContents, details);
+    mainWindow.on("render-process-gone", async (event, webContents, details) => {
+        console.log("xxx...child-process-gone", event, webContents, details);
+        dialog.showMessageBox(mainWindow, {
+            title: "Restarting...",
+            buttons: [],
+            type: "warning",
+            message: "Application is restarting…",
+        });
+
+        Sentry.captureException(new Error("child-process-gone: " + simpleStringify({ event, webContents, details })));
+        await delay(2000);
+
         app.relaunch();
         app.exit();
     });
 
-    mainWindow.on("child-process-gone", (event, details) => {
+    mainWindow.on("child-process-gone", async (event, details) => {
         console.log("xxx...child-process-gone", event, details);
+        dialog.showMessageBox(mainWindow, {
+            title: "Restarting...",
+            buttons: [],
+            type: "warning",
+            message: "Application is restarting…",
+        });
+
+        Sentry.captureException(new Error("child-process-gone: " + simpleStringify({ event, details })));
+        await delay(2000);
+
         app.relaunch();
         app.exit();
     });
 
-    mainWindow.on("unresponsive", () => {
-        console.log("xxx...unresponsive");
+    mainWindow.on("unresponsive", async () => {
+        const message = `xxx...unresponsive`;
+
+        console.log(message);
+        dialog.showMessageBox(mainWindow, {
+            title: "Restarting...",
+            buttons: [],
+            type: "warning",
+            message: "Application is restarting…",
+        });
+
+        Sentry.captureException(new Error(message));
+        await delay(2000);
+
         app.relaunch();
         app.exit();
     });
 
     //Deprecated
-    mainWindow.on("crashed", (event, killed) => {
-        console.log("xxx...crashed", event, killed);
+    mainWindow.on("crashed", async (event, killed) => {
+        console.log("xxx...child-process-gone", event, killed);
+        dialog.showMessageBox(mainWindow, {
+            title: "Restarting...",
+            buttons: [],
+            type: "warning",
+            message: "Application is restarting…",
+        });
+
+        Sentry.captureException(new Error("child-process-gone: " + simpleStringify({ event, killed })));
+        await delay(2000);
+
         app.relaunch();
         app.exit();
     });
 
-    mainWindow.webContents.on("unresponsive", () => {
+    mainWindow.webContents.on("unresponsive", async () => {
         //When process.hang()
-        console.log("xxx...webContents.unresponsive");
+        const message = `xxx...webContents.unresponsive`;
+
+        console.log(message);
+        dialog.showMessageBox(mainWindow, {
+            title: "Restarting...",
+            buttons: [],
+            type: "warning",
+            message: "Application is restarting…",
+        });
+
+        Sentry.captureException(new Error(message));
+        await delay(2000);
+
         app.relaunch();
         app.exit();
     });
 
-    mainWindow.webContents.on("render-process-gone", (event, webContents, details) => {
-        console.log("xxx...webContents.render-process-gone", event, webContents, details);
+    mainWindow.webContents.on("render-process-gone", async (event, webContents, details) => {
+        console.log("xxx...child-process-gone", event, webContents, details);
+        dialog.showMessageBox(mainWindow, {
+            title: "Restarting...",
+            buttons: [],
+            type: "warning",
+            message: "Application is restarting…",
+        });
+
+        Sentry.captureException(new Error("child-process-gone: " + simpleStringify({ event, webContents, details })));
+        await delay(2000);
+
         app.relaunch();
         app.exit();
     });
 
-    mainWindow.webContents.on("plugin-crashed", (event, name, version) => {
-        console.log("xxx...webContents.plugin-crashed", event, name, version);
+    mainWindow.webContents.on("plugin-crashed", async (event, name, version) => {
+        console.log("xxx...child-process-gone", event, name, version);
+        dialog.showMessageBox(mainWindow, {
+            title: "Restarting...",
+            buttons: [],
+            type: "warning",
+            message: "Application is restarting…",
+        });
+
+        Sentry.captureException(new Error("child-process-gone: " + simpleStringify({ event, name, version })));
+        await delay(2000);
+
         app.relaunch();
         app.exit();
     });
