@@ -1,12 +1,11 @@
 import { createContext, useContext } from "react";
-
 import axios from "axios";
-
 import { convertCentsToDollars, toLocalISOString } from "../util/util";
 import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
 import { useMutation } from "@apollo/client";
 import { useRestaurant } from "./restaurant-context";
 import { EEftposTransactionOutcome, EWindcaveTransactionOutcome, IEftposTransactionOutcome } from "../model/model";
+
 var convert = require("xml-js");
 
 export enum EWindcaveStatus {
@@ -131,31 +130,27 @@ const windcaveResponseCodeMessages = {
 
 // --- FOR PROD ---
 const ACTION: string = "doScrHIT";
-const USER: string = "TripoliFoodsLtd";
-const KEY: string = "102ad77c997dcd4cfccd332af6c34f9b";
 const BASE_URL: string = "https://sec.windcave.com/pxmi3/pos.aspx";
 const CURRENCY: string = "NZD";
 
 // --- FOR DEV ---
 // // const stationId: string = "3801585856";
 // const ACTION: string = "doScrHIT";
-// const USER: string = "TabinHIT_Dev";
-// const KEY: string = "6b06b931c1942fa4222903055c9ac749c77fa4b86471d91b2909da74a69d928c";
 // const BASE_URL: string = "https://uat.windcave.com/pxmi3/pos.aspx";
 // const CURRENCY: string = "NZD";
 
 type ContextProps = {
-    createTransaction: (stationId: string, amount: number, transactionType: string, action?: string, user?: string, key?: string) => Promise<string>;
-    pollForOutcome: (stationId: string, txnRef: string, action?: string, user?: string, key?: string) => Promise<IEftposTransactionOutcome>;
+    createTransaction: (stationId: string, user: string, key: string, amount: number, transactionType: string, action?: string) => Promise<string>;
+    pollForOutcome: (stationId: string, user: string, key: string, txnRef: string, action?: string) => Promise<IEftposTransactionOutcome>;
 };
 
 const WindcaveContext = createContext<ContextProps>({
-    createTransaction: (stationId: string, amount: number, transactionType: string, action?: string, user?: string, key?: string) => {
+    createTransaction: (stationId: string, user: string, key: string, amount: number, transactionType: string, action?: string) => {
         return new Promise(() => {
             console.log("");
         });
     },
-    pollForOutcome: (stationId: string, txnRef: string, action?: string, user?: string, key?: string) => {
+    pollForOutcome: (stationId: string, user: string, key: string, txnRef: string, action?: string) => {
         return new Promise(() => {
             console.log("");
         });
@@ -186,11 +181,11 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
 
     const createTransaction = (
         stationId: string,
+        user: string,
+        key: string,
         amount: number,
         transactionType: string,
-        action: string = ACTION,
-        user: string = USER,
-        key: string = KEY
+        action: string = ACTION
     ): Promise<string> => {
         return new Promise(async (resolve, reject) => {
             if (!amount) {
@@ -308,10 +303,10 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
 
     const pollForOutcome = (
         stationId: string,
+        user: string,
+        key: string,
         txnRef: string,
-        action: string = ACTION,
-        user: string = USER,
-        key: string = KEY
+        action: string = ACTION
     ): Promise<IEftposTransactionOutcome> => {
         const interval = 2 * 1000; // 2 seconds
         const timeout = 30 * 60 * 1000; // 10 minutes

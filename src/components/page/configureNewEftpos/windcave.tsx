@@ -20,9 +20,9 @@ export const Windcave = () => {
         setShowSpinner(true);
 
         try {
-            const txnRef = await createTransaction(stationId, amount, "Purchase", action, user, key);
+            const txnRef = await createTransaction(stationId, user, key, amount, "Purchase", action);
 
-            let res: IEftposTransactionOutcome = await pollForOutcome(stationId, txnRef, action, user, key);
+            let res: IEftposTransactionOutcome = await pollForOutcome(stationId, user, key, txnRef, action);
 
             alert(res.message);
         } catch (errorMessage) {
