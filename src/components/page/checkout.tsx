@@ -72,6 +72,7 @@ export const Checkout = () => {
         setPayments,
         updateProduct,
         updateProductQuantity,
+        updateProductPrice,
         deleteProduct,
         addProduct,
         userAppliedPromotionCode,
@@ -248,6 +249,10 @@ export const Checkout = () => {
 
     const onUpdateProductQuantity = (displayOrder: number, productQuantity: number) => {
         updateProductQuantity(displayOrder, productQuantity);
+    };
+
+    const onUpdateProductPrice = (displayOrder: number, productPrice: number) => {
+        updateProductPrice(displayOrder, productPrice);
     };
 
     const onRemoveProduct = (displayOrder: number) => {
@@ -907,6 +912,7 @@ export const Checkout = () => {
             products={products || []}
             onEditProduct={onEditProduct}
             onUpdateProductQuantity={onUpdateProductQuantity}
+            onUpdateProductPrice={onUpdateProductPrice}
             onRemoveProduct={onRemoveProduct}
         />
     );

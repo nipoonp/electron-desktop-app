@@ -41,6 +41,7 @@ type ContextProps = {
     addProduct: (product: ICartProduct) => void;
     updateProduct: (index: number, product: ICartProduct) => void;
     updateProductQuantity: (index: number, quantity: number) => void;
+    updateProductPrice: (index: number, price: number) => void;
     deleteProduct: (index: number) => void; // has a index input because multiple products in cart could have the same id
     clearCart: () => void;
     notes: string;
@@ -72,6 +73,7 @@ const CartContext = createContext<ContextProps>({
     addProduct: () => {},
     updateProduct: () => {},
     updateProductQuantity: () => {},
+    updateProductPrice: () => {},
     deleteProduct: () => {},
     clearCart: () => {},
     notes: initialNotes,
@@ -402,10 +404,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     };
 
     const updateProduct = (index: number, product: ICartProduct) => {
-        if (products == null) {
-            // should never really end up here
-            return;
-        }
+        // should never really end up here
+        if (products == null) return;
 
         const newProducts = products;
         newProducts[index] = product;
@@ -416,10 +416,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     };
 
     const updateProductQuantity = (index: number, quantity: number) => {
-        if (products == null) {
-            // should never really end up here
-            return;
-        }
+        // should never really end up here
+        if (products == null) return;
 
         const newProducts = products;
         const productAtIndex = newProducts[index];
@@ -432,11 +430,24 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         updateCartQuantities(newProducts);
     };
 
+    const updateProductPrice = (index: number, price: number) => {
+        // should never really end up here
+        if (products == null) return;
+
+        const newProducts = products;
+        const productAtIndex = newProducts[index];
+
+        productAtIndex.price = price;
+        newProducts[index] = productAtIndex;
+
+        _setProducts(newProducts);
+        _setTotal(recalculateTotal(newProducts));
+        updateCartQuantities(newProducts);
+    };
+
     const deleteProduct = (index: number) => {
-        if (products == null) {
-            // should never really end up here
-            return;
-        }
+        // should never really end up here
+        if (products == null) return;
 
         let newProducts = products;
         newProducts.splice(index, 1);
@@ -494,6 +505,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 addProduct: addProduct,
                 updateProduct: updateProduct,
                 updateProductQuantity: updateProductQuantity,
+                updateProductPrice: updateProductPrice,
                 deleteProduct: deleteProduct,
                 clearCart: clearCart,
                 notes: notes,

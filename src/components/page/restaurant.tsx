@@ -297,7 +297,7 @@ export const Restaurant = () => {
     };
 
     const onClickProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
-        if (!isPOS && product.modifierGroups && product.modifierGroups.items.length > 0) {
+        if (product.modifierGroups && product.modifierGroups.items.length > 0) {
             setSelectedCategoryForProductModal(category);
             setSelectedProductForProductModal(product);
             setShowProductModal(true);
