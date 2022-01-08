@@ -30,6 +30,7 @@ export const Input = (props: {
                 onKeyPress={props.onKeyPress}
                 onKeyDown={props.onKeyDown}
                 onChange={props.onChange}
+                onWheel={(event) => event.currentTarget.blur()} //This disables the scroll/wheel event on input when type of number
                 onBlur={props.onBlur}
                 value={props.value}
                 disabled={props.disabled}

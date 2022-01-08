@@ -34,6 +34,10 @@ interface IMostPopularProduct {
     product: IGET_RESTAURANT_PRODUCT;
 }
 
+export interface IMostPopularProductObj {
+    [id: string]: boolean;
+}
+
 export const Restaurant = () => {
     // context
     const { restaurantId, selectedCategoryId, selectedProductId } = useParams();
@@ -131,6 +135,7 @@ export const Restaurant = () => {
         if (!restaurant || !register) return;
 
         const newMostPopularProducts: IMostPopularProduct[] = [];
+        const newMostPopularProductsObj: IMostPopularProductObj[] = [];
 
         restaurant.categories.items.forEach((c) => {
             if (!c.availablePlatforms.includes(register.type)) return;
@@ -140,15 +145,20 @@ export const Restaurant = () => {
                     if (!p.product.availablePlatforms.includes(register.type)) return;
 
                     if (p.product.totalQuantitySold) {
-                        newMostPopularProducts.push({
-                            category: c,
-                            product: p.product,
-                        });
+                        //Insert item if its not already in there.
+                        if (newMostPopularProductsObj[p.product.id] === undefined) {
+                            newMostPopularProducts.push({
+                                category: c,
+                                product: p.product,
+                            });
+                            newMostPopularProductsObj[p.product.id] = true;
+                        }
                     }
                 });
         });
 
         newMostPopularProducts.sort(compareSortFunc);
+
         setMostPopularProducts(newMostPopularProducts.slice(0, 20));
     }, [restaurant]);
 
