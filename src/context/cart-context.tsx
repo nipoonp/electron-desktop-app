@@ -10,7 +10,7 @@ import {
     ICartPaymentAmounts,
     ICartPayment,
 } from "../model/model";
-import { getMatchingPromotionProducts, processPromotionDiscounts, isPromotionAvailable, checkIfPromotionValid } from "../util/util";
+import { getMatchingPromotionProducts, processPromotionDiscounts, checkIfPromotionValid } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
 
 const initialOrderType = null;
@@ -41,7 +41,7 @@ type ContextProps = {
     addProduct: (product: ICartProduct) => void;
     updateProduct: (index: number, product: ICartProduct) => void;
     updateProductQuantity: (index: number, quantity: number) => void;
-    updateProductPrice: (index: number, price: number) => void;
+    applyProductDiscount: (index: number, discount: number) => void;
     deleteProduct: (index: number) => void; // has a index input because multiple products in cart could have the same id
     clearCart: () => void;
     notes: string;
@@ -73,7 +73,7 @@ const CartContext = createContext<ContextProps>({
     addProduct: () => {},
     updateProduct: () => {},
     updateProductQuantity: () => {},
-    updateProductPrice: () => {},
+    applyProductDiscount: () => {},
     deleteProduct: () => {},
     clearCart: () => {},
     notes: initialNotes,
@@ -280,6 +280,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         const newCartCategoryQuantitiesById: ICartItemQuantitiesById = {};
         const newCartProductQuantitiesById: ICartItemQuantitiesById = {};
         const newCartModifierQuantitiesById: ICartItemQuantitiesById = {};
+
         products &&
             products.forEach((product) => {
                 if (newCartCategoryQuantitiesById[product.category.id]) {
@@ -338,6 +339,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                     });
                 });
             });
+
         _setCartCategoryQuantitiesById(newCartCategoryQuantitiesById);
         _setCartProductQuantitiesById(newCartProductQuantitiesById);
         _setCartModifierQuantitiesById(newCartModifierQuantitiesById);
@@ -348,7 +350,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         products &&
             products.forEach((p) => {
-                let price = p.price;
+                let price = p.price - p.discount;
 
                 p.modifierGroups.forEach((mg) => {
                     mg.modifiers.forEach((m) => {
@@ -430,14 +432,14 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         updateCartQuantities(newProducts);
     };
 
-    const updateProductPrice = (index: number, price: number) => {
+    const applyProductDiscount = (index: number, discount: number) => {
         // should never really end up here
         if (products == null) return;
 
         const newProducts = products;
         const productAtIndex = newProducts[index];
 
-        productAtIndex.price = price;
+        productAtIndex.discount = discount;
         newProducts[index] = productAtIndex;
 
         _setProducts(newProducts);
@@ -505,7 +507,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 addProduct: addProduct,
                 updateProduct: updateProduct,
                 updateProductQuantity: updateProductQuantity,
-                updateProductPrice: updateProductPrice,
+                applyProductDiscount: applyProductDiscount,
                 deleteProduct: deleteProduct,
                 clearCart: clearCart,
                 notes: notes,

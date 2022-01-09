@@ -75,7 +75,7 @@ export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0)
 export const convertCentsToDollars = (price: number) => (price / 100).toFixed(2);
 
 const getProductTotal = (product: ICartProduct) => {
-    let price = product.price;
+    let price = product.price - product.discount;
 
     product.modifierGroups.forEach((mg) => {
         mg.modifiers.forEach((m) => {

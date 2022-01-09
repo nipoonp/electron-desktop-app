@@ -15,9 +15,9 @@ export const OrderSummary = (props: {
     onEditProduct: (product: ICartProduct, displayOrder: number) => void;
     onRemoveProduct: (displayOrder: number) => void;
     onUpdateProductQuantity: (displayOrder: number, productQuantity: number) => void;
-    onUpdateProductPrice: (displayOrder: number, productPrice: number) => void;
+    onApplyProductDiscount: (displayOrder: number, discount: number) => void;
 }) => {
-    const { products, onEditProduct, onRemoveProduct, onUpdateProductQuantity, onUpdateProductPrice } = props;
+    const { products, onEditProduct, onRemoveProduct, onUpdateProductQuantity, onApplyProductDiscount } = props;
 
     if (!products || products == []) return <h1>No items in cart!</h1>;
 
@@ -34,7 +34,7 @@ export const OrderSummary = (props: {
                                     displayOrder={index}
                                     onEditProduct={onEditProduct}
                                     onUpdateProductQuantity={onUpdateProductQuantity}
-                                    onUpdateProductPrice={onUpdateProductPrice}
+                                    onApplyProductDiscount={onApplyProductDiscount}
                                     onRemoveProduct={onRemoveProduct}
                                 />
                                 <div className="separator-6"></div>
@@ -53,19 +53,19 @@ const OrderItem = (props: {
     displayOrder: number;
     onEditProduct: (product: ICartProduct, displayOrder: number) => void;
     onUpdateProductQuantity: (displayOrder: number, productQuantity: number) => void;
-    onUpdateProductPrice: (displayOrder: number, productPrice: number) => void;
+    onApplyProductDiscount: (displayOrder: number, discount: number) => void;
     onRemoveProduct: (displayOrder: number) => void;
 }) => {
-    const { product, displayOrder, onEditProduct, onUpdateProductQuantity, onUpdateProductPrice, onRemoveProduct } = props;
+    const { product, displayOrder, onEditProduct, onUpdateProductQuantity, onApplyProductDiscount, onRemoveProduct } = props;
     const { isPOS } = useRegister();
 
-    const [displayPrice, setDisplayPrice] = useState(product.price);
-    const [price, setPrice] = useState(convertCentsToDollars(product.price));
+    const [displayPrice, setDisplayPrice] = useState(product.price - product.discount);
+    const [price, setPrice] = useState(convertCentsToDollars(displayPrice));
     const [quantity, setQuantity] = useState(product.quantity.toString());
     const [isOptionsExpanded, setIsOptionsExpanded] = useState(false);
 
     useEffect(() => {
-        let productPrice = product.price;
+        let productPrice = product.price - product.discount;
 
         product.modifierGroups.forEach((mg) => {
             mg.modifiers.forEach((m) => {
@@ -93,8 +93,9 @@ const OrderItem = (props: {
 
         productPrice = productPrice * product.quantity;
 
+        setPrice(convertCentsToDollars(productPrice));
         setDisplayPrice(productPrice);
-    }, [product.quantity, product.price]);
+    }, [product.quantity, product.price, product.discount]);
 
     const onChangeStepperQuantity = (newQuantity: number) => {
         setQuantity(newQuantity.toString());
@@ -128,15 +129,12 @@ const OrderItem = (props: {
 
         if (newPrice === "") {
             setPrice("0.00");
-            onUpdateProductPrice(displayOrder, convertDollarsToCentsReturnInt(0));
-        } else if (newPriceFloat < 0) {
-            setPrice("0.00");
-            onUpdateProductPrice(displayOrder, convertDollarsToCentsReturnInt(0));
+            onApplyProductDiscount(displayOrder, 0);
         } else {
             const rounded = Math.round(newPriceFloat * 100) / 100; //To 2 dp
 
             setPrice(rounded.toFixed(2));
-            onUpdateProductPrice(displayOrder, convertDollarsToCentsReturnInt(rounded));
+            onApplyProductDiscount(displayOrder, product.price - convertDollarsToCentsReturnInt(rounded));
         }
     };
 
@@ -154,6 +152,7 @@ const OrderItem = (props: {
         <div className="expand-options-container pt-3">
             <div>
                 <Input
+                    key={`quantity-${product.id}`}
                     type="number"
                     label="Quantity"
                     name="quantity"
@@ -164,6 +163,7 @@ const OrderItem = (props: {
             </div>
             <div>
                 <Input
+                    key={`price-${product.id}`}
                     type="number"
                     label="Price"
                     name="price"

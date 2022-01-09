@@ -170,34 +170,6 @@ export const Restaurant = () => {
         }
     }, [showProductModal]);
 
-    // useEffect(() => {
-    //     if (!restaurant) return;
-    //     if (searchProductSKUCode.length < 6) return;
-
-    //     const delayDebounceFn = setTimeout(async () => {
-    //         console.log("xxx...", searchProductSKUCode);
-
-    //         const res = await searchSKUProductRefetch({
-    //             skuCode: searchProductSKUCode,
-    //             productRestaurantId: restaurant.id,
-    //         });
-
-    //         console.log("xxx...product", res.data.getProductsBySKUCodeByRestaurant);
-
-    //         const products: IGET_RESTAURANT_PRODUCT[] = res.data.getProductsBySKUCodeByRestaurant.items;
-
-    //         if (products.length > 0) {
-    //             onAddProductToCart(products[0].categories.items[0], products[0]);
-    //             setSearchProductSKUCode("");
-    //         }
-    //     }, 500);
-
-    //     return () => {
-    //         console.log("xxx...cleared");
-    //         clearTimeout(delayDebounceFn);
-    //     };
-    // }, [searchProductSKUCode]);
-
     // callbacks
     const onClickCart = () => {
         if (register && register.availableOrderTypes.length > 1 && orderType == null) {
@@ -241,7 +213,8 @@ export const Restaurant = () => {
 
     const onAddProduct = (product: ICartProduct) => {
         addProduct(product);
-        setShowItemAddedModal(true);
+
+        if (!isPOS) setShowItemAddedModal(true);
     };
 
     const onCloseItemAddedModal = () => {
@@ -278,6 +251,7 @@ export const Restaurant = () => {
             id: product.id,
             name: product.name,
             price: product.price,
+            discount: 0,
             image: product.image
                 ? {
                       key: product.image.key,

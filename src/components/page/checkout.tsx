@@ -72,7 +72,7 @@ export const Checkout = () => {
         setPayments,
         updateProduct,
         updateProductQuantity,
-        updateProductPrice,
+        applyProductDiscount,
         deleteProduct,
         addProduct,
         userAppliedPromotionCode,
@@ -213,6 +213,7 @@ export const Checkout = () => {
                 id: product.id,
                 name: product.name,
                 price: product.price,
+                discount: 0,
                 image: product.image
                     ? {
                           key: product.image.key,
@@ -251,8 +252,8 @@ export const Checkout = () => {
         updateProductQuantity(displayOrder, productQuantity);
     };
 
-    const onUpdateProductPrice = (displayOrder: number, productPrice: number) => {
-        updateProductPrice(displayOrder, productPrice);
+    const onApplyProductDiscount = (displayOrder: number, discount: number) => {
+        applyProductDiscount(displayOrder, discount);
     };
 
     const onRemoveProduct = (displayOrder: number) => {
@@ -912,7 +913,7 @@ export const Checkout = () => {
             products={products || []}
             onEditProduct={onEditProduct}
             onUpdateProductQuantity={onUpdateProductQuantity}
-            onUpdateProductPrice={onUpdateProductPrice}
+            onApplyProductDiscount={onApplyProductDiscount}
             onRemoveProduct={onRemoveProduct}
         />
     );

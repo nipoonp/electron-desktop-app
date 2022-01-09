@@ -37,6 +37,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
             id
             name
             price
+            discount
             quantity
             notes
             image {
@@ -158,6 +159,7 @@ export interface IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT {
     id: string;
     name: string;
     price: number;
+    discount: number;
     quantity: number;
     notes: string | null;
     image: IS3Object | null;

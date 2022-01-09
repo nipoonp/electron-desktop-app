@@ -514,6 +514,7 @@ export const ProductModal = (props: {
             id: product.id,
             name: product.name,
             price: product.price,
+            discount: 0,
             image: product.image
                 ? {
                       key: product.image.key,

@@ -96,6 +96,7 @@ export interface ICartProduct {
     id: string;
     name: string;
     price: number;
+    discount: number;
     image: IS3Object | null;
     quantity: number;
     notes: string | null;
