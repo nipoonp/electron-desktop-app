@@ -7,6 +7,7 @@ export interface ICartProduct {
     id: string;
     name: string;
     price: number;
+    totalPrice: number;
     discount: number;
     quantity: number;
     notes: string | null;

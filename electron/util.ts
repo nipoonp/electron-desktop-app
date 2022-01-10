@@ -49,27 +49,6 @@ export const decodeCommandBuffer = (data: Buffer): string => {
     return dataBuffer.toString();
 };
 
-const getCurrentDate = (date: Date) => {
-    const pad = (num: number) => {
-        var norm = Math.floor(Math.abs(num));
-        return (norm < 10 ? "0" : "") + norm;
-    };
-
-    return (
-        pad(date.getDate()) +
-        "-" +
-        pad(date.getMonth() + 1) +
-        "-" +
-        date.getFullYear() +
-        " " +
-        pad(date.getHours()) +
-        ":" +
-        pad(date.getMinutes()) +
-        ":" +
-        pad(date.getSeconds())
-    );
-};
-
 export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0);
 
 export const convertCentsToDollars = (price: number) => (price / 100).toFixed(2);

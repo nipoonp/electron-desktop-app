@@ -59,42 +59,17 @@ const OrderItem = (props: {
     const { product, displayOrder, onEditProduct, onUpdateProductQuantity, onApplyProductDiscount, onRemoveProduct } = props;
     const { isPOS } = useRegister();
 
-    const [displayPrice, setDisplayPrice] = useState(product.price - product.discount);
-    const [price, setPrice] = useState(convertCentsToDollars(displayPrice));
+    const [displayPrice, setDisplayPrice] = useState(convertCentsToDollars(product.price - product.discount));
+    const [price, setPrice] = useState(displayPrice);
     const [quantity, setQuantity] = useState(product.quantity.toString());
     const [isOptionsExpanded, setIsOptionsExpanded] = useState(false);
 
     useEffect(() => {
-        let productPrice = product.price - product.discount;
-
-        product.modifierGroups.forEach((mg) => {
-            mg.modifiers.forEach((m) => {
-                const changedQuantity = m.quantity - m.preSelectedQuantity;
-
-                if (changedQuantity > 0) {
-                    productPrice += m.price * changedQuantity;
-                }
-
-                if (m.productModifiers) {
-                    m.productModifiers.forEach((productModifier) => {
-                        productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
-                            orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
-                                const changedQuantity = orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
-
-                                if (changedQuantity > 0) {
-                                    productPrice += orderedProductModifierModifier.price * changedQuantity;
-                                }
-                            });
-                        });
-                    });
-                }
-            });
-        });
-
-        productPrice = productPrice * product.quantity;
+        let productPrice = product.totalPrice - product.discount;
+        let totalProductPrice = productPrice * product.quantity;
 
         setPrice(convertCentsToDollars(productPrice));
-        setDisplayPrice(productPrice);
+        setDisplayPrice(convertCentsToDollars(totalProductPrice));
     }, [product.quantity, product.price, product.discount]);
 
     const onChangeStepperQuantity = (newQuantity: number) => {
@@ -134,7 +109,7 @@ const OrderItem = (props: {
             const rounded = Math.round(newPriceFloat * 100) / 100; //To 2 dp
 
             setPrice(rounded.toFixed(2));
-            onApplyProductDiscount(displayOrder, product.price - convertDollarsToCentsReturnInt(rounded));
+            onApplyProductDiscount(displayOrder, product.totalPrice - convertDollarsToCentsReturnInt(rounded));
         }
     };
 
@@ -165,7 +140,7 @@ const OrderItem = (props: {
                 <Input
                     key={`price-${product.id}`}
                     type="number"
-                    label="Price"
+                    label="Price (each)"
                     name="price"
                     value={price}
                     onChange={(event) => onChangePrice(event.target.value)}
@@ -189,7 +164,7 @@ const OrderItem = (props: {
                     onEditProduct={() => onEditProduct(product, displayOrder)}
                 />
                 <div className="text-center">
-                    <div className="h2 text-primary mb-2">${convertCentsToDollars(displayPrice)}</div>
+                    <div className="h2 text-primary mb-2">${displayPrice}</div>
                     <Button className="remove-button" onClick={() => onRemoveProduct(displayOrder)}>
                         Remove
                     </Button>

@@ -213,6 +213,7 @@ export const Checkout = () => {
                 id: product.id,
                 name: product.name,
                 price: product.price,
+                totalPrice: product.price,
                 discount: 0,
                 image: product.image
                     ? {
