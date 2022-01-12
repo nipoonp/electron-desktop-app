@@ -2,7 +2,7 @@ name: Tabin CI/CD
 
 on:
     push:
-        branches: [main]
+        branches: [feature]
 
 jobs:
     slack_message_start:
