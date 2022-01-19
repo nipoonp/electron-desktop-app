@@ -64,6 +64,8 @@ export const GET_USER = gql`
                             eftposIpAddress
                             eftposPortNumber
                             windcaveStationId
+                            windcaveStationUser
+                            windcaveStationKey
                             orderNumberSuffix
                             customStyleSheet {
                                 key
@@ -238,6 +240,8 @@ export const GET_RESTAURANT = gql`
                     eftposIpAddress
                     eftposPortNumber
                     windcaveStationId
+                    windcaveStationUser
+                    windcaveStationKey
                     orderNumberSuffix
                     customStyleSheet {
                         key
@@ -650,6 +654,8 @@ export interface IGET_RESTAURANT_REGISTER {
     eftposIpAddress: string;
     eftposPortNumber: string;
     windcaveStationId: string;
+    windcaveStationUser: string;
+    windcaveStationKey: string;
     orderNumberSuffix: string;
     customStyleSheet?: IS3Object;
     printers: {
