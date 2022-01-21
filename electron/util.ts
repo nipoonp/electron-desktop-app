@@ -228,10 +228,11 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
             }
 
             printer.newLine();
-            printer.bold(false);
-            printer.underline(true);
+            printer.bold(true);
+            printer.underlineThick(true);
             printer.println(`${modifierGroup.name}`);
-            printer.underline(false);
+            printer.underlineThick(false);
+            printer.bold(false);
 
             modifierGroup.modifiers.forEach((modifier: ICartModifier) => {
                 const changedQuantity = modifier.quantity - modifier.preSelectedQuantity;
@@ -273,8 +274,12 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
                                     printer.newLine();
                                 }
 
+                                printer.print(`     `);
+                                printer.bold(true);
+                                printer.underlineThick(true);
+                                printer.println(`${productModifier_modifierGroup.name}`);
+                                printer.underlineThick(false);
                                 printer.bold(false);
-                                printer.println(`     ${productModifier_modifierGroup.name}`);
 
                                 productModifier_modifierGroup.modifiers.forEach((productModifier_modifier: ICartModifier) => {
                                     const changedQuantity = productModifier_modifier.quantity - productModifier_modifier.preSelectedQuantity;
