@@ -3,18 +3,14 @@ import { useCart } from "../../context/cart-context";
 import { convertCentsToDollars } from "../../util/util";
 import { Modal } from "../../tabin/components/modal";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
+import { CachedImage } from "../../tabin/components/cachedImage";
 
 import "./itemAddedUpdatedModal.scss";
-import { CachedImage } from "../../tabin/components/cachedImage";
-import { useRegister } from "../../context/register-context";
-import { ERegisterType } from "../../graphql/customQueries";
 
 export const ItemAddedUpdatedModal = (props: { isOpen: boolean; onClose: () => void; isProductUpdate: boolean }) => {
-    const { register } = useRegister();
-
     const { subTotal } = useCart();
 
-    const timeoutDelay = register && register.type == ERegisterType.KIOSK ? 1500 : 0;
+    const timeoutDelay = 1500;
 
     useEffect(() => {
         setTimeout(() => {

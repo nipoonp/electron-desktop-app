@@ -12,6 +12,8 @@ const TEST_PRODUCT: ICartProduct[] = [
         id: "",
         name: "Samosa",
         price: 1,
+        totalPrice: 0,
+        discount: 0,
         image: null,
         quantity: 2,
         category: {
@@ -40,6 +42,8 @@ const TEST_PRODUCT: ICartProduct[] = [
                                 id: "",
                                 name: "Samosa",
                                 price: 1,
+                                totalPrice: 0,
+                                discount: 0,
                                 image: null,
                                 quantity: 2,
                                 category: {

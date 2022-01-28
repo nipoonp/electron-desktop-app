@@ -50,8 +50,8 @@ export const ProductModal = (props: {
     product: IGET_RESTAURANT_PRODUCT;
     isProductModifier?: boolean;
     isOpen: boolean;
-    onAddItem?: (product: ICartProduct) => void;
-    onUpdateItem?: (index: number, product: ICartProduct) => void;
+    onAddProduct?: (product: ICartProduct) => void;
+    onUpdateProduct?: (index: number, product: ICartProduct) => void;
     onClose: () => void;
     editProduct?: {
         orderedModifiers: IPreSelectedModifiers;
@@ -61,7 +61,7 @@ export const ProductModal = (props: {
     };
 }) => {
     const { register } = useRegister();
-    const { category, product, isProductModifier, isOpen, onAddItem, onUpdateItem, onClose, editProduct } = props;
+    const { category, product, isProductModifier, isOpen, onAddProduct, onUpdateProduct, onClose, editProduct } = props;
     const { cartProductQuantitiesById } = useCart();
 
     const [orderedModifiers, setOrderedModifiers] = useState<IPreSelectedModifiers>(editProduct ? editProduct.orderedModifiers : {});
@@ -514,6 +514,8 @@ export const ProductModal = (props: {
             id: product.id,
             name: product.name,
             price: product.price,
+            totalPrice: totalDisplayPrice / quantity,
+            discount: 0,
             image: product.image
                 ? {
                       key: product.image.key,
@@ -540,9 +542,9 @@ export const ProductModal = (props: {
         };
 
         if (editProduct) {
-            onUpdateItem && onUpdateItem(editProduct.productCartIndex, productToOrder);
+            onUpdateProduct && onUpdateProduct(editProduct.productCartIndex, productToOrder);
         } else {
-            onAddItem && onAddItem(productToOrder);
+            onAddProduct && onAddProduct(productToOrder);
         }
 
         onClose();
@@ -708,8 +710,8 @@ export const ProductModal = (props: {
                     category={category}
                     product={selectedProductModifier.product}
                     isProductModifier={true}
-                    onAddItem={onAddProductModifierProduct}
-                    onUpdateItem={onUpdateProductModifierProduct}
+                    onAddProduct={onAddProductModifierProduct}
+                    onUpdateProduct={onUpdateProductModifierProduct}
                     editProduct={
                         selectedProductModifier.editSelectionsProductModifierIndex !== undefined
                             ? {

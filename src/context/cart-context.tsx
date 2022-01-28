@@ -10,7 +10,7 @@ import {
     ICartPaymentAmounts,
     ICartPayment,
 } from "../model/model";
-import { getMatchingPromotionProducts, processPromotionDiscounts, isPromotionAvailable, checkIfPromotionValid } from "../util/util";
+import { getMatchingPromotionProducts, processPromotionDiscounts, checkIfPromotionValid } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
 
 const initialOrderType = null;
@@ -38,10 +38,11 @@ type ContextProps = {
     products: ICartProduct[] | null;
     cartProductQuantitiesById: ICartItemQuantitiesById;
     cartModifierQuantitiesById: ICartItemQuantitiesById;
-    addItem: (product: ICartProduct) => void;
-    updateItem: (index: number, product: ICartProduct) => void;
-    updateItemQuantity: (index: number, quantity: number) => void;
-    deleteItem: (index: number) => void; // has a index input because multiple products in cart could have the same id
+    addProduct: (product: ICartProduct) => void;
+    updateProduct: (index: number, product: ICartProduct) => void;
+    updateProductQuantity: (index: number, quantity: number) => void;
+    applyProductDiscount: (index: number, discount: number) => void;
+    deleteProduct: (index: number) => void; // has a index input because multiple products in cart could have the same id
     clearCart: () => void;
     notes: string;
     setNotes: (notes: string) => void;
@@ -69,10 +70,11 @@ const CartContext = createContext<ContextProps>({
     products: initialProducts,
     cartProductQuantitiesById: {},
     cartModifierQuantitiesById: {},
-    addItem: () => {},
-    updateItem: () => {},
-    updateItemQuantity: () => {},
-    deleteItem: () => {},
+    addProduct: () => {},
+    updateProduct: () => {},
+    updateProductQuantity: () => {},
+    applyProductDiscount: () => {},
+    deleteProduct: () => {},
     clearCart: () => {},
     notes: initialNotes,
     setNotes: () => {},
@@ -278,6 +280,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         const newCartCategoryQuantitiesById: ICartItemQuantitiesById = {};
         const newCartProductQuantitiesById: ICartItemQuantitiesById = {};
         const newCartModifierQuantitiesById: ICartItemQuantitiesById = {};
+
         products &&
             products.forEach((product) => {
                 if (newCartCategoryQuantitiesById[product.category.id]) {
@@ -336,6 +339,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                     });
                 });
             });
+
         _setCartCategoryQuantitiesById(newCartCategoryQuantitiesById);
         _setCartProductQuantitiesById(newCartProductQuantitiesById);
         _setCartModifierQuantitiesById(newCartModifierQuantitiesById);
@@ -346,7 +350,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         products &&
             products.forEach((p) => {
-                let price = p.price;
+                let price = p.price - p.discount;
 
                 p.modifierGroups.forEach((mg) => {
                     mg.modifiers.forEach((m) => {
@@ -387,7 +391,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setTableNumber(tableNumber);
     };
 
-    const addItem = (product: ICartProduct) => {
+    const addProduct = (product: ICartProduct) => {
         let newProducts = products;
 
         if (newProducts != null) {
@@ -401,11 +405,9 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         updateCartQuantities(newProducts);
     };
 
-    const updateItem = (index: number, product: ICartProduct) => {
-        if (products == null) {
-            // should never really end up here
-            return;
-        }
+    const updateProduct = (index: number, product: ICartProduct) => {
+        // should never really end up here
+        if (products == null) return;
 
         const newProducts = products;
         newProducts[index] = product;
@@ -415,11 +417,9 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         updateCartQuantities(newProducts);
     };
 
-    const updateItemQuantity = (index: number, quantity: number) => {
-        if (products == null) {
-            // should never really end up here
-            return;
-        }
+    const updateProductQuantity = (index: number, quantity: number) => {
+        // should never really end up here
+        if (products == null) return;
 
         const newProducts = products;
         const productAtIndex = newProducts[index];
@@ -432,11 +432,24 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         updateCartQuantities(newProducts);
     };
 
-    const deleteItem = (index: number) => {
-        if (products == null) {
-            // should never really end up here
-            return;
-        }
+    const applyProductDiscount = (index: number, discount: number) => {
+        // should never really end up here
+        if (products == null) return;
+
+        const newProducts = products;
+        const productAtIndex = newProducts[index];
+
+        productAtIndex.discount = discount;
+        newProducts[index] = productAtIndex;
+
+        _setProducts(newProducts);
+        _setTotal(recalculateTotal(newProducts));
+        updateCartQuantities(newProducts);
+    };
+
+    const deleteProduct = (index: number) => {
+        // should never really end up here
+        if (products == null) return;
 
         let newProducts = products;
         newProducts.splice(index, 1);
@@ -491,10 +504,11 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 products: products,
                 cartProductQuantitiesById: cartProductQuantitiesById,
                 cartModifierQuantitiesById: cartModifierQuantitiesById,
-                addItem: addItem,
-                updateItem: updateItem,
-                updateItemQuantity: updateItemQuantity,
-                deleteItem: deleteItem,
+                addProduct: addProduct,
+                updateProduct: updateProduct,
+                updateProductQuantity: updateProductQuantity,
+                applyProductDiscount: applyProductDiscount,
+                deleteProduct: deleteProduct,
                 clearCart: clearCart,
                 notes: notes,
                 setNotes: setNotes,

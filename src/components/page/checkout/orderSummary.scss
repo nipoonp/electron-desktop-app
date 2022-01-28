@@ -10,6 +10,7 @@
         border: 1px solid #e0e0e0;
         padding: 10px 18px;
         font-weight: 300;
+        margin: 0 auto;
     }
 
     .detail {
@@ -30,4 +31,11 @@
             font-weight: 300;
         }
     }
+}
+
+.expand-options-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-column-gap: 24px;
+    align-items: center;
 }

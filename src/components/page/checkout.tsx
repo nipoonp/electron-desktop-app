@@ -70,14 +70,16 @@ export const Checkout = () => {
         setPaymentAmounts,
         payments,
         setPayments,
-        updateItem,
-        updateItemQuantity,
-        deleteItem,
-        addItem,
+        updateProduct,
+        updateProductQuantity,
+        applyProductDiscount,
+        deleteProduct,
+        addProduct,
         userAppliedPromotionCode,
         removeUserAppliedPromotion,
     } = useCart();
     const { restaurant } = useRestaurant();
+    const { register, isPOS } = useRegister();
     const { printReceipt } = useReceiptPrinter();
     const { user } = useUser();
     const { logError } = useErrorLogging();
@@ -123,25 +125,15 @@ export const Checkout = () => {
 
     // const isUserFocusedOnEmailAddressInput = useRef(false);
 
-    const { register, isPOS } = useRegister();
-
-    if (!register) {
-        throw "Register is not valid";
-    }
-
     useEffect(() => {
         setTimeout(() => {
             setShowUpSellCategoryModal(true);
         }, 1000);
     }, []);
 
-    if (!restaurant) {
-        navigate(beginOrderPath);
-    }
-
-    if (!restaurant) {
-        throw "Restaurant is invalid";
-    }
+    if (!register) throw "Register is not valid";
+    if (!restaurant) navigate(beginOrderPath);
+    if (!restaurant) throw "Restaurant is invalid";
 
     const onCancelOrder = () => {
         const cancelOrder = () => {
@@ -202,8 +194,8 @@ export const Checkout = () => {
         setNotes(e.target.value);
     };
 
-    const onAddItem = (product: ICartProduct) => {
-        addItem(product);
+    const onAddProduct = (product: ICartProduct) => {
+        addProduct(product);
     };
 
     const onSelectUpSellCrossSellCategory = (category: IGET_RESTAURANT_CATEGORY) => {
@@ -217,10 +209,12 @@ export const Checkout = () => {
 
             setShowProductModal(true);
         } else {
-            addItem({
+            addProduct({
                 id: product.id,
                 name: product.name,
                 price: product.price,
+                totalPrice: product.price,
+                discount: 0,
                 image: product.image
                     ? {
                           key: product.image.key,
@@ -256,11 +250,15 @@ export const Checkout = () => {
     };
 
     const onUpdateProductQuantity = (displayOrder: number, productQuantity: number) => {
-        updateItemQuantity(displayOrder, productQuantity);
+        updateProductQuantity(displayOrder, productQuantity);
+    };
+
+    const onApplyProductDiscount = (displayOrder: number, discount: number) => {
+        applyProductDiscount(displayOrder, discount);
     };
 
     const onRemoveProduct = (displayOrder: number) => {
-        deleteItem(displayOrder);
+        deleteProduct(displayOrder);
     };
 
     const onClickOrderButton = async () => {
@@ -296,6 +294,11 @@ export const Checkout = () => {
                 transactionCompleteTimeoutIntervalId.current && clearInterval(transactionCompleteTimeoutIntervalId.current);
 
                 navigate(beginOrderPath);
+                //     if (isPOS) {
+                //     navigate(restaurantPath + "/" + restaurant.id);
+                // } else {
+                //     navigate(beginOrderPath);
+                // }
                 clearCart();
             }
         }, 1000);
@@ -303,8 +306,12 @@ export const Checkout = () => {
 
     const clearTransactionCompleteTimeout = () => {
         transactionCompleteTimeoutIntervalId.current && clearInterval(transactionCompleteTimeoutIntervalId.current);
-
         navigate(beginOrderPath);
+        //     if (isPOS) {
+        //     navigate(restaurantPath + "/" + restaurant.id);
+        // } else {
+        //     navigate(beginOrderPath);
+        // }
         clearCart();
     };
 
@@ -375,9 +382,9 @@ export const Checkout = () => {
             throw "Invalid user";
         }
 
-        if (!orderType) {
-            await logError("Invalid order type", JSON.stringify({ orderType: orderType }));
-            throw "Invalid order type";
+        if (register.availableOrderTypes.length === 0) {
+            await logError("Invalid available order types", JSON.stringify({ register: register }));
+            throw "Invalid available order types";
         }
 
         if (!restaurant) {
@@ -396,7 +403,7 @@ export const Checkout = () => {
             variables = {
                 status: "NEW",
                 paid: paid,
-                type: orderType,
+                type: orderType ? orderType : register.availableOrderTypes[0],
                 number: orderNumber,
                 table: tableNumber,
                 notes: notes,
@@ -535,8 +542,8 @@ export const Checkout = () => {
         }
     };
 
-    const onUpdateItem = (index: number, product: ICartProduct) => {
-        updateItem(index, product);
+    const onUpdateProduct = (index: number, product: ICartProduct) => {
+        updateProduct(index, product);
         setShowItemUpdatedModal(true);
     };
 
@@ -752,7 +759,7 @@ export const Checkout = () => {
                 onClose={onCloseEditProductModal}
                 category={category}
                 product={product}
-                onUpdateItem={onUpdateItem}
+                onUpdateProduct={onUpdateProduct}
                 editProduct={{
                     orderedModifiers: orderedModifiers,
                     quantity: productToEdit.product.quantity,
@@ -771,7 +778,7 @@ export const Checkout = () => {
                     onClose={onCloseProductModal}
                     category={selectedCategoryForProductModal}
                     product={selectedProductForProductModal}
-                    onAddItem={onAddItem}
+                    onAddProduct={onAddProduct}
                 />
             );
         }
@@ -907,6 +914,7 @@ export const Checkout = () => {
             products={products || []}
             onEditProduct={onEditProduct}
             onUpdateProductQuantity={onUpdateProductQuantity}
+            onApplyProductDiscount={onApplyProductDiscount}
             onRemoveProduct={onRemoveProduct}
         />
     );
@@ -920,7 +928,7 @@ export const Checkout = () => {
 
     const order = (
         <>
-            <div className="mt-10"></div>
+            <div className={isPOS ? "mt-4" : "mt-10"}></div>
             {title}
             {register && register.availableOrderTypes.length > 1 && restaurantOrderType}
             {promotionInformation}
@@ -928,6 +936,7 @@ export const Checkout = () => {
             <div className="separator-6"></div>
             {orderSummary}
             {restaurantNotes}
+            <div className={isPOS ? "mb-4" : "mb-10"}></div>
         </>
     );
 
@@ -942,28 +951,32 @@ export const Checkout = () => {
                 </div>
             )}
             {paidSoFar > 0 && <div className="h3 text-center mb-2">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div>}
-            <div className="h1 text-center mb-4">Total: ${convertCentsToDollars(subTotal)}</div>
-            <div className="mb-4">
+            <div className={`h1 text-center ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
+            <div className={`${isPOS ? "mb-0" : "mb-4"}`}>
                 <div className="checkout-buttons-container">
-                    <Button onClick={onOrderMore} className="button large mr-3 order-more-button">
-                        Order More
-                    </Button>
+                    {!isPOS && (
+                        <Button onClick={onOrderMore} className="button large mr-3 order-more-button">
+                            Order More
+                        </Button>
+                    )}
                     <Button onClick={onClickOrderButton} className="button large complete-order-button">
                         Complete Order
                     </Button>
                 </div>
                 {payments.length == 0 && register.enablePayLater && (
-                    <div className="pay-later-link mt-4">
+                    <div className={`pay-later-link ${isPOS ? "mt-3" : "mt-4"}`}>
                         <Link onClick={onClickPayLater}>Pay cash at counter...</Link>
                     </div>
                 )}
-                <div className="pay-later-link mt-4">
+                <div className={`pay-later-link  ${isPOS ? "mt-3" : "mt-4"}`}>
                     <Link onClick={onClickApplyPromotionCode}>Apply promo code</Link>
                 </div>
             </div>
-            <Button className="cancel-button" onClick={onCancelOrder}>
-                Cancel Order
-            </Button>
+            {!isPOS && (
+                <Button className="cancel-button" onClick={onCancelOrder}>
+                    Cancel Order
+                </Button>
+            )}
         </div>
     );
 
@@ -972,12 +985,12 @@ export const Checkout = () => {
             <PageWrapper>
                 <div className="checkout">
                     <div className="order-wrapper">
-                        <div className="order">
+                        <div className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`}>
                             {(!products || products.length == 0) && cartEmptyDisplay}
                             {products && products.length > 0 && order}
                         </div>
                     </div>
-                    {products && products.length > 0 && <div className="footer">{checkoutFooter}</div>}
+                    {products && products.length > 0 && <div className="footer p-4">{checkoutFooter}</div>}
                 </div>
                 {modalsAndSpinners}
             </PageWrapper>

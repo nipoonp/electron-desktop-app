@@ -1,22 +1,23 @@
 import { useNavigate } from "react-router";
-import { checkoutPath, tableNumberPath } from "../main";
+import { checkoutPath, restaurantPath, tableNumberPath } from "../main";
 import { EOrderType } from "../../model/model";
 import { useCart } from "../../context/cart-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { useRegister } from "../../context/register-context";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
+import { CachedImage } from "../../tabin/components/cachedImage";
+import { useRestaurant } from "../../context/restaurant-context";
 
 import "./orderType.scss";
-import { CachedImage } from "../../tabin/components/cachedImage";
 
-export const OrderType = (props: {}) => {
+export const OrderType = () => {
     const navigate = useNavigate();
     const { setOrderType } = useCart();
-    const { register } = useRegister();
+    const { register, isPOS } = useRegister();
+    const { restaurant } = useRestaurant();
 
-    if (!register) {
-        throw "Register is not valid";
-    }
+    if (!register) throw "Register is not valid";
+    if (restaurant == null) throw "Restaurant is invalid!";
 
     const onSelectOrderType = (orderType: EOrderType) => {
         setOrderType(orderType);
@@ -24,7 +25,11 @@ export const OrderType = (props: {}) => {
         if (register.enableTableFlags && orderType == EOrderType.DINEIN) {
             navigate(tableNumberPath);
         } else {
-            navigate(checkoutPath);
+            if (isPOS) {
+                navigate(restaurantPath + "/" + restaurant.id);
+            } else {
+                navigate(checkoutPath);
+            }
         }
     };
 

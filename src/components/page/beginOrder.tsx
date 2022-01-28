@@ -5,9 +5,9 @@ import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { IGET_RESTAURANT_ADVERTISEMENT } from "../../graphql/customQueries";
 import { useRestaurant } from "../../context/restaurant-context";
+import { CachedImage } from "../../tabin/components/cachedImage";
 
 import "./beginOrder.scss";
-import { CachedImage } from "../../tabin/components/cachedImage";
 
 export const BeginOrder = (props: {}) => {
     const { restaurant } = useRestaurant();
@@ -52,9 +52,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
         };
     }, []);
 
-    if (!restaurant) {
-        return <div>This user has not selected any restaurant</div>;
-    }
+    if (!restaurant) return <div>This user has not selected any restaurant</div>;
 
     return (
         <PageWrapper>

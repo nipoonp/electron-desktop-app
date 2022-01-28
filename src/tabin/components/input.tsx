@@ -3,6 +3,7 @@ import "./input.scss";
 export const Input = (props: {
     autoFocus?: boolean;
     onKeyPress?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+    onKeyDown?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
     onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
     onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;
     label?: string;
@@ -27,7 +28,9 @@ export const Input = (props: {
                 name={props.name}
                 type={props.type}
                 onKeyPress={props.onKeyPress}
+                onKeyDown={props.onKeyDown}
                 onChange={props.onChange}
+                onWheel={(event) => event.currentTarget.blur()} //This disables the scroll/wheel event on input when type of number
                 onBlur={props.onBlur}
                 value={props.value}
                 disabled={props.disabled}
