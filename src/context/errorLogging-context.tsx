@@ -15,21 +15,29 @@ export interface IAddVerifoneLog {
 }
 
 type ContextProps = {
-    logError: (error: string, context: string) => void;
-    addVerifoneLog: (log: IAddVerifoneLog) => void;
+    logError: (error: string, context: string) => Promise<void>;
+    addVerifoneLog: (log: IAddVerifoneLog) => Promise<void>;
 };
 
 const ErrorLoggingContext = createContext<ContextProps>({
-    logError: (error: string, context: string) => {},
-    addVerifoneLog: (log: IAddVerifoneLog) => {},
+    logError: (error: string, context: string) => {
+        return new Promise(() => {
+            console.log("");
+        });
+    },
+    addVerifoneLog: (log: IAddVerifoneLog) => {
+        return new Promise(() => {
+            console.log("");
+        });
+    },
 });
 
 const ErrorLoggingProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
+
     const [logSlackErrorMutation, { data, loading, error }] = useMutation(LOG_SLACK_ERROR, {
         update: (proxy, mutationResult) => {},
     });
-
     const [createEftposTransactionLogMutation] = useMutation(CREATE_EFTPOS_TRANSACTION_LOG, {
         update: (proxy, mutationResult) => {},
     });
@@ -44,17 +52,21 @@ const ErrorLoggingProvider = (props: { children: React.ReactNode }) => {
         }
     };
 
-    const logError = (error: string, context: string) => {
-        return logSlackErrorMutation({
-            variables: {
-                message: JSON.stringify({
-                    restaurantId: restaurant ? restaurant.id : "invalid",
-                    restaurantName: restaurant ? restaurant.name : "invalid",
-                    error: error,
-                    context: context,
-                }),
-            },
-        });
+    const logError = async (error: string, context: string) => {
+        try {
+            await logSlackErrorMutation({
+                variables: {
+                    message: JSON.stringify({
+                        restaurantId: restaurant ? restaurant.id : "invalid",
+                        restaurantName: restaurant ? restaurant.name : "invalid",
+                        error: error,
+                        context: context,
+                    }),
+                },
+            });
+        } catch (e) {
+            console.log("Error in creating slack error log", e);
+        }
     };
 
     return (

@@ -2,14 +2,14 @@ import { useEffect, useState } from "react";
 import { FiX } from "react-icons/fi";
 import { useCart } from "../../context/cart-context";
 import { useRegister } from "../../context/register-context";
-import { EEftposTransactionOutcome, EPaymentModalState, ICartPaymentAmounts, IEftposTransactionOutcome } from "../../model/model";
+import { EEftposTransactionOutcome, EPaymentModalState, IEftposTransactionOutcome } from "../../model/model";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { Button } from "../../tabin/components/button";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { Input } from "../../tabin/components/input";
 import { Link } from "../../tabin/components/link";
 import { Modal } from "../../tabin/components/modal";
-import { convertCentsToDollars, convertDollarsToCents } from "../../util/util";
+import { convertCentsToDollars, convertDollarsToCentsReturnInt } from "../../util/util";
 
 import "./paymentModal.scss";
 
@@ -74,39 +74,35 @@ export const PaymentModal = (props: IPaymentModalProps) => {
 
     const onClickEftpos = (eftposAmount: string) => {
         const eftposAmountFloat = parseFloat(eftposAmount);
-        const eftposAmountCents = convertDollarsToCents(eftposAmountFloat);
-        const eftposAmountCentsInt = parseInt(eftposAmountCents);
+        const eftposAmountCents = convertDollarsToCentsReturnInt(eftposAmountFloat);
 
         const totalPaymentAmounts = paymentAmounts.cash + paymentAmounts.eftpos;
         const totalRemaining = subTotal - totalPaymentAmounts;
 
-        console.log("xxx..eftposAmountCents", eftposAmountCents);
-
-        if (eftposAmountCentsInt == 0) {
+        if (eftposAmountCents == 0) {
             setAmountError("Value cannot be 0.00");
             return;
-        } else if (eftposAmountCentsInt <= 0) {
+        } else if (eftposAmountCents <= 0) {
             setAmountError("Value must be greater than 0");
             return;
-        } else if (eftposAmountCentsInt > totalRemaining) {
+        } else if (eftposAmountCents > totalRemaining) {
             setAmountError("Amount cannot be greater than remaining");
             return;
         }
 
-        onConfirmTotalOrRetryEftposTransaction(eftposAmountCentsInt);
+        onConfirmTotalOrRetryEftposTransaction(eftposAmountCents);
     };
 
     const onClickCash = (cashAmount: string) => {
         const cashAmountFloat = parseFloat(cashAmount);
-        const cashAmountCents = convertDollarsToCents(cashAmountFloat);
-        const cashAmountCentsInt = parseInt(cashAmountCents);
+        const cashAmountCents = convertDollarsToCentsReturnInt(cashAmountFloat);
 
-        if (cashAmountCentsInt == 0) {
+        if (cashAmountCents == 0) {
             setAmountError("Value cannot be 0.00");
             return;
         }
 
-        onConfirmCashTransaction(cashAmountCentsInt);
+        onConfirmCashTransaction(cashAmountCents);
     };
 
     const getActivePaymentModalComponent = () => {
