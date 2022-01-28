@@ -37,6 +37,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
             id
             name
             price
+            totalPrice
             discount
             quantity
             notes

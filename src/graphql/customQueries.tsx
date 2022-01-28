@@ -402,8 +402,7 @@ export const GET_RESTAURANT = gql`
                             endTime
                         }
                     }
-
-                    products(limit: 10) {
+                    products(limit: 100) {
                         items {
                             id
                             displaySequence
