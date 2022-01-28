@@ -23,6 +23,8 @@ import {
 
 export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0);
 
+export const convertDollarsToCentsReturnInt = (price: number) => parseInt((price * 100).toFixed(0));
+
 export const convertCentsToDollars = (price: number) => (price / 100).toFixed(2);
 
 export const convertCentsToDollarsReturnFloat = (price: number) => parseFloat((price / 100).toFixed(2));
@@ -540,6 +542,8 @@ export const convertProductTypesForPrint = (products: IGET_RESTAURANT_ORDER_PROD
                                 id: pm_p.id,
                                 name: pm_p.name,
                                 price: pm_p.price,
+                                totalPrice: pm_p.totalPrice,
+                                discount: pm_p.discount,
                                 image: pm_p.image,
                                 quantity: pm_p.quantity,
                                 notes: pm_p.notes,
@@ -584,6 +588,8 @@ export const convertProductTypesForPrint = (products: IGET_RESTAURANT_ORDER_PROD
             id: p.id,
             name: p.name,
             price: p.price,
+            totalPrice: p.totalPrice,
+            discount: p.discount,
             image: p.image,
             quantity: p.quantity,
             notes: p.notes,

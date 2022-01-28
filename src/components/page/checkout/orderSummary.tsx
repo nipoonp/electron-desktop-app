@@ -1,9 +1,12 @@
-import { useEffect } from "react";
+import { useRegister } from "../../../context/register-context";
 import { ICartModifierGroup, ICartProduct } from "../../../model/model";
 import { Button } from "../../../tabin/components/button";
 import { Stepper } from "../../../tabin/components/stepper";
-import { convertCentsToDollars } from "../../../util/util";
+import { convertCentsToDollars, convertDollarsToCents, convertDollarsToCentsReturnInt } from "../../../util/util";
 import { ProductModifier } from "../../shared/productModifier";
+import { FiChevronDown, FiChevronRight } from "react-icons/fi";
+import { useEffect, useState } from "react";
+import { Input } from "../../../tabin/components/input";
 
 import "./orderSummary.scss";
 
@@ -12,15 +15,11 @@ export const OrderSummary = (props: {
     onEditProduct: (product: ICartProduct, displayOrder: number) => void;
     onRemoveProduct: (displayOrder: number) => void;
     onUpdateProductQuantity: (displayOrder: number, productQuantity: number) => void;
+    onApplyProductDiscount: (displayOrder: number, discount: number) => void;
 }) => {
-    const { products, onEditProduct, onRemoveProduct, onUpdateProductQuantity } = props;
-    if (!products || products == []) {
-        return (
-            <>
-                <h1>No items in cart!</h1>
-            </>
-        );
-    }
+    const { products, onEditProduct, onRemoveProduct, onUpdateProductQuantity, onApplyProductDiscount } = props;
+
+    if (!products || products == []) return <h1>No items in cart!</h1>;
 
     const orderItems = (
         <>
@@ -35,6 +34,7 @@ export const OrderSummary = (props: {
                                     displayOrder={index}
                                     onEditProduct={onEditProduct}
                                     onUpdateProductQuantity={onUpdateProductQuantity}
+                                    onApplyProductDiscount={onApplyProductDiscount}
                                     onRemoveProduct={onRemoveProduct}
                                 />
                                 <div className="separator-6"></div>
@@ -53,67 +53,137 @@ const OrderItem = (props: {
     displayOrder: number;
     onEditProduct: (product: ICartProduct, displayOrder: number) => void;
     onUpdateProductQuantity: (displayOrder: number, productQuantity: number) => void;
+    onApplyProductDiscount: (displayOrder: number, discount: number) => void;
     onRemoveProduct: (displayOrder: number) => void;
 }) => {
-    const { product, displayOrder, onEditProduct, onUpdateProductQuantity, onRemoveProduct } = props;
+    const { product, displayOrder, onEditProduct, onUpdateProductQuantity, onApplyProductDiscount, onRemoveProduct } = props;
+    const { isPOS } = useRegister();
 
-    let price = product.price;
+    const [displayPrice, setDisplayPrice] = useState(convertCentsToDollars(product.price - product.discount));
+    const [price, setPrice] = useState(displayPrice);
+    const [quantity, setQuantity] = useState(product.quantity.toString());
+    const [isOptionsExpanded, setIsOptionsExpanded] = useState(false);
 
-    product.modifierGroups.forEach((mg) => {
-        mg.modifiers.forEach((m) => {
-            const changedQuantity = m.quantity - m.preSelectedQuantity;
+    useEffect(() => {
+        let productPrice = product.totalPrice - product.discount;
+        let totalProductPrice = productPrice * product.quantity;
 
-            if (changedQuantity > 0) {
-                price += m.price * changedQuantity;
-            }
+        setPrice(convertCentsToDollars(productPrice));
+        setDisplayPrice(convertCentsToDollars(totalProductPrice));
+    }, [product.quantity, product.price, product.discount]);
 
-            if (m.productModifiers) {
-                m.productModifiers.forEach((productModifier) => {
-                    productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
-                        orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
-                            const changedQuantity = orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
+    const onChangeStepperQuantity = (newQuantity: number) => {
+        setQuantity(newQuantity.toString());
+    };
 
-                            if (changedQuantity > 0) {
-                                price += orderedProductModifierModifier.price * changedQuantity;
-                            }
-                        });
-                    });
-                });
-            }
-        });
-    });
+    const onChangeQuantity = (newQuantity: string) => {
+        setQuantity(newQuantity);
+    };
 
-    price = price * product.quantity;
+    const onBlurQuantity = (newQuantity: string) => {
+        let newQuantityInt = parseInt(newQuantity);
 
-    const quantity = (
-        <Stepper count={product.quantity} min={1} onUpdate={(count: number) => onUpdateProductQuantity(displayOrder, count)} size={32} />
+        if (newQuantity === "") {
+            setQuantity("1");
+            onUpdateProductQuantity(displayOrder, 1);
+        } else if (newQuantityInt < 1) {
+            setQuantity("1");
+            onUpdateProductQuantity(displayOrder, 1);
+        } else {
+            setQuantity(newQuantityInt.toString());
+            onUpdateProductQuantity(displayOrder, newQuantityInt);
+        }
+    };
+
+    const onChangePrice = (newPrice: string) => {
+        setPrice(newPrice);
+    };
+
+    const onBlurPrice = (newPrice: string) => {
+        let newPriceFloat = parseFloat(newPrice);
+
+        if (newPrice === "") {
+            setPrice("0.00");
+            onApplyProductDiscount(displayOrder, 0);
+        } else {
+            const rounded = Math.round(newPriceFloat * 100) / 100; //To 2 dp
+
+            setPrice(rounded.toFixed(2));
+            onApplyProductDiscount(displayOrder, product.totalPrice - convertDollarsToCentsReturnInt(rounded));
+        }
+    };
+
+    const expandOptionsArrow = (
+        <>
+            {isOptionsExpanded ? (
+                <FiChevronDown size="26" onClick={() => setIsOptionsExpanded(false)} className="cursor-pointer" />
+            ) : (
+                <FiChevronRight size="26" onClick={() => setIsOptionsExpanded(true)} className="cursor-pointer" />
+            )}
+        </>
     );
+
+    const expandOptions = (
+        <div className="expand-options-container pt-3">
+            <div>
+                <Input
+                    key={`quantity-${product.id}`}
+                    type="number"
+                    label="Quantity"
+                    name="quantity"
+                    value={quantity}
+                    onChange={(event) => onChangeQuantity(event.target.value)}
+                    onBlur={(event) => onBlurQuantity(event.target.value)}
+                />
+            </div>
+            <div>
+                <Input
+                    key={`price-${product.id}`}
+                    type="number"
+                    label="Price (each)"
+                    name="price"
+                    value={price}
+                    onChange={(event) => onChangePrice(event.target.value)}
+                    onBlur={(event) => onBlurPrice(event.target.value)}
+                />
+            </div>
+        </div>
+    );
+
+    const quantityStepper = <Stepper count={parseInt(quantity)} min={1} onUpdate={(count: number) => onChangeStepperQuantity(count)} size={32} />;
 
     return (
         <>
             <div className="order-item">
-                {quantity}
+                {isPOS ? expandOptionsArrow : quantityStepper}
                 <OrderItemDetails
                     name={product.name}
+                    quantity={product.quantity}
                     notes={product.notes}
                     modifierGroups={product.modifierGroups}
                     onEditProduct={() => onEditProduct(product, displayOrder)}
                 />
                 <div className="text-center">
-                    <div className="h2 text-primary mb-2">${convertCentsToDollars(price)}</div>
-                    {
-                        <Button className="remove-button" onClick={() => onRemoveProduct(displayOrder)}>
-                            Remove
-                        </Button>
-                    }
+                    <div className="h2 text-primary mb-2">${displayPrice}</div>
+                    <Button className="remove-button" onClick={() => onRemoveProduct(displayOrder)}>
+                        Remove
+                    </Button>
                 </div>
             </div>
+            {isPOS && isOptionsExpanded && expandOptions}
         </>
     );
 };
 
-const OrderItemDetails = (props: { name: string; notes: string | null; modifierGroups: ICartModifierGroup[]; onEditProduct: () => void }) => {
-    const { name, notes, modifierGroups, onEditProduct } = props;
+const OrderItemDetails = (props: {
+    name: string;
+    quantity: number;
+    notes: string | null;
+    modifierGroups: ICartModifierGroup[];
+    onEditProduct: () => void;
+}) => {
+    const { name, quantity, notes, modifierGroups, onEditProduct } = props;
+    const { isPOS } = useRegister();
 
     const modifierString = (preSelectedQuantity: number, quantity: number, name: string, price: number) => {
         const changedQuantity = quantity - preSelectedQuantity;
@@ -140,9 +210,11 @@ const OrderItemDetails = (props: { name: string; notes: string | null; modifierG
         </>
     );
 
+    const nameDisplayString = isPOS ? `${quantity > 1 ? `${quantity} x ` : ""}${name}` : `${name}`;
+
     const nameDisplay = (
         <div className="name-edit-button">
-            <div className="h2 mr-2">{name}</div> {editButton}
+            <div className="h2 mr-2">{nameDisplayString}</div> {editButton}
         </div>
     );
 

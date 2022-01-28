@@ -1,12 +1,11 @@
 import { createContext, useContext } from "react";
-
 import axios from "axios";
-
 import { convertCentsToDollars, toLocalISOString } from "../util/util";
 import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
 import { useMutation } from "@apollo/client";
 import { useRestaurant } from "./restaurant-context";
 import { EEftposTransactionOutcome, EWindcaveTransactionOutcome, IEftposTransactionOutcome } from "../model/model";
+
 var convert = require("xml-js");
 
 export enum EWindcaveStatus {
