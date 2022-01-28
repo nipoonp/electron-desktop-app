@@ -2,13 +2,14 @@
     display: flex;
 
     .restaurant-checkout {
-        min-width: 600px;
+        width: 600px;
         border-left: 1px solid #e0e0e0;
     }
 
     .restaurant {
         height: 100vh;
         display: flex;
+        flex: 1;
         flex-direction: column;
 
         .restaurant-logo {
