@@ -31,6 +31,7 @@
         "npm": "^8.1.4",
         "papaparse": "^5.3.1",
         "react": "^17.0.2",
+        "react-apollo-hooks": "^0.4.5",
         "react-async": "^10.0.1",
         "react-axios": "^2.0.5",
         "react-clock": "^3.0.0",
