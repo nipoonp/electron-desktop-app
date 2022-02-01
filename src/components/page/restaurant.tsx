@@ -389,7 +389,7 @@ export const Restaurant = () => {
         return (
             <div
                 key={category.id}
-                className={`category ${isSelected ? "selected" : ""}`}
+                className={`category ${isSelected ? "selected" : ""} ${isAvailable ? "" : "unavailable"}`}
                 onClick={() => {
                     isAvailable && onCategorySelected(category);
                 }}

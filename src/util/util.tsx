@@ -1,4 +1,4 @@
-import { format, getDay, isWithinInterval, startOfDay } from "date-fns";
+import { format, getDay, isAfter, isWithinInterval, startOfDay } from "date-fns";
 import { addDays, isEqual } from "date-fns/esm";
 import { IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
 import {
@@ -152,6 +152,8 @@ export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY
             0,
             0
         );
+
+        if (isAfter(startDateTime, endDateTime)) return;
 
         //Check if endDateTime is set for 12:00AM, if it is add one day because it should be start of next day.
         if (isEqual(endDateTime, startOfDay(endDateTime))) {
