@@ -205,7 +205,6 @@ const createWindow = () => {
 //     });
 // };
 
-//This is to make sure we dont have two instances of the app running at the same time.
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
