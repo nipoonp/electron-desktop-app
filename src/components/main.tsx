@@ -111,7 +111,7 @@ const AppRoutes = () => {
         ipcRenderer &&
             ipcRenderer.on("CONTEXT_MENU_COMMAND", (e: any, command: any) => {
                 switch (command) {
-                    case "kioskMode":
+                    case "saleMode":
                         navigate(beginOrderPath);
                         break;
                     case "stock":

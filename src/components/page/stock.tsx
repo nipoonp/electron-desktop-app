@@ -264,11 +264,13 @@ const Item = (props: {
                         >
                             Track Stock
                         </Checkbox>
-                        {item.totalQuantityAvailable && (
+                        {item.totalQuantityAvailable ? (
                             <div className="available-quantity-stepper-container mt-3">
                                 <div className="mr-2">Available Quantity</div>
                                 <StepperWithQuantityInput count={item.totalQuantityAvailable} min={1} onUpdate={onUpdateStepper} size={32} />
                             </div>
+                        ) : (
+                            <></>
                         )}
                     </div>
                     <div className="availability-button-container mt-3">

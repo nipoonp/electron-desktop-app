@@ -304,9 +304,9 @@ verifoneClient.on("close", (had_error: boolean) => {
 ipcMain.on("SHOW_CONTEXT_MENU", (event) => {
     const template = [
         {
-            label: "Kiosk Mode",
+            label: "Sale Mode",
             click: () => {
-                event.sender.send("CONTEXT_MENU_COMMAND", "kioskMode");
+                event.sender.send("CONTEXT_MENU_COMMAND", "saleMode");
             },
         },
         {
@@ -321,12 +321,12 @@ ipcMain.on("SHOW_CONTEXT_MENU", (event) => {
                 event.sender.send("CONTEXT_MENU_COMMAND", "orders");
             },
         },
-        {
-            label: "Reports",
-            click: () => {
-                event.sender.send("CONTEXT_MENU_COMMAND", "reports");
-            },
-        },
+        // {
+        //     label: "Reports",
+        //     click: () => {
+        //         event.sender.send("CONTEXT_MENU_COMMAND", "reports");
+        //     },
+        // },
         {
             label: "Sales Analytics",
             click: () => {
@@ -334,28 +334,33 @@ ipcMain.on("SHOW_CONTEXT_MENU", (event) => {
             },
         },
         {
-            label: "Configure New Eftpos & Printers",
-            click: () => {
-                event.sender.send("CONTEXT_MENU_COMMAND", "configureEftposAndPrinters");
-            },
-        },
-        {
-            label: "Configure Restaurant",
-            click: () => {
-                event.sender.send("CONTEXT_MENU_COMMAND", "configureRestaurant");
-            },
-        },
-        {
-            label: "Configure Register",
-            click: () => {
-                event.sender.send("CONTEXT_MENU_COMMAND", "configureRegister");
-            },
-        },
-        {
-            label: "Log Out",
-            click: () => {
-                event.sender.send("CONTEXT_MENU_COMMAND", "logout");
-            },
+            label: "Admin",
+            submenu: [
+                {
+                    label: "Configure New Eftpos & Printers",
+                    click: () => {
+                        event.sender.send("CONTEXT_MENU_COMMAND", "configureEftposAndPrinters");
+                    },
+                },
+                {
+                    label: "Configure Restaurant",
+                    click: () => {
+                        event.sender.send("CONTEXT_MENU_COMMAND", "configureRestaurant");
+                    },
+                },
+                {
+                    label: "Configure Register",
+                    click: () => {
+                        event.sender.send("CONTEXT_MENU_COMMAND", "configureRegister");
+                    },
+                },
+                {
+                    label: "Log Out",
+                    click: () => {
+                        event.sender.send("CONTEXT_MENU_COMMAND", "logout");
+                    },
+                },
+            ],
         },
     ];
     //@ts-ignore
