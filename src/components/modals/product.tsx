@@ -72,9 +72,9 @@ export const ProductModal = (props: {
 
     const [selectedProductModifier, setSelectedProductModifier] = useState<ISelectedProductModifier | null>(null);
 
-    // useEffect(() => {
-    //     console.log("xxx...", orderedModifiers);
-    // }, [orderedModifiers]);
+    useEffect(() => {
+        console.log("xxx...", orderedModifiers);
+    }, [orderedModifiers]);
 
     useEffect(() => {
         //Set preselected modifiers logic
@@ -182,7 +182,7 @@ export const ProductModal = (props: {
                             price: modifier.price,
                             preSelectedQuantity: modifier.preSelectedQuantity,
                             quantity: modifier.quantity,
-                            productModifiers: null,
+                            productModifiers: modifier.productModifiers,
                             image: modifier.image
                                 ? {
                                       key: modifier.image.key,
@@ -218,13 +218,57 @@ export const ProductModal = (props: {
             orderedModifiers[selectedModifierGroupId] = [];
         }
 
+        const requiresProcessProductModifier =
+            selectedModifier.productModifier &&
+            selectedModifier.productModifier.modifierGroups &&
+            selectedModifier.productModifier.modifierGroups.items.length > 0;
+
+        //We only only to add pms only if we are not going to open another product modal for productModifier with modifier groups
+        const pms =
+            !requiresProcessProductModifier && selectedModifier.productModifier
+                ? [
+                      {
+                          id: selectedModifier.productModifier.id,
+                          name: selectedModifier.productModifier.name,
+                          price: selectedModifier.productModifier.price,
+                          totalPrice: selectedModifier.productModifier.price,
+                          discount: 0,
+                          image: selectedModifier.productModifier.image
+                              ? {
+                                    key: selectedModifier.productModifier.image.key,
+                                    region: selectedModifier.productModifier.image.region,
+                                    bucket: selectedModifier.productModifier.image.bucket,
+                                    identityPoolId: selectedModifier.productModifier.image.identityPoolId,
+                                }
+                              : null,
+                          quantity: 1,
+                          notes: null,
+                          category: selectedModifier.productModifier.categories
+                              ? {
+                                    id: selectedModifier.productModifier.categories.items[0].id,
+                                    name: selectedModifier.productModifier.categories.items[0].name,
+                                    image: selectedModifier.productModifier.categories.items[0].image
+                                        ? {
+                                              key: selectedModifier.productModifier.categories.items[0].image.key,
+                                              region: selectedModifier.productModifier.categories.items[0].image.region,
+                                              bucket: selectedModifier.productModifier.categories.items[0].image.bucket,
+                                              identityPoolId: selectedModifier.productModifier.categories.items[0].image.identityPoolId,
+                                          }
+                                        : null,
+                                }
+                              : null,
+                          modifierGroups: [],
+                      },
+                  ]
+                : null;
+
         const newOrderedModifierItem: ICartModifier = {
             id: selectedModifier.id,
             name: selectedModifier.name,
             price: selectedModifier.price,
             preSelectedQuantity: preSelectedModifierQuantity,
             quantity: 1,
-            productModifiers: null,
+            productModifiers: pms,
             image: selectedModifier.image
                 ? {
                       key: selectedModifier.image.key,
@@ -246,11 +290,7 @@ export const ProductModal = (props: {
             [selectedModifierGroupId]: [...newOrderedModifiers[selectedModifierGroupId], newOrderedModifierItem],
         };
 
-        if (
-            selectedModifier.productModifier &&
-            selectedModifier.productModifier.modifierGroups &&
-            selectedModifier.productModifier.modifierGroups.items.length > 0
-        ) {
+        if (requiresProcessProductModifier && selectedModifier.productModifier) {
             onProcessProductModifier(newOrderedModifierItem, selectedModifierGroupId, selectedModifier.productModifier, newOrderedModifiers2);
         } else {
             setOrderedModifiers(newOrderedModifiers2);
@@ -314,13 +354,57 @@ export const ProductModal = (props: {
             orderedModifiers[selectedModifierGroupId] = [];
         }
 
+        const requiresProcessProductModifier =
+            selectedModifier.productModifier &&
+            selectedModifier.productModifier.modifierGroups &&
+            selectedModifier.productModifier.modifierGroups.items.length > 0;
+
+        //We only only to add pms only if we are not going to open another product modal for productModifier with modifier groups
+        const pms =
+            !requiresProcessProductModifier && selectedModifier.productModifier
+                ? [
+                      {
+                          id: selectedModifier.productModifier.id,
+                          name: selectedModifier.productModifier.name,
+                          price: selectedModifier.productModifier.price,
+                          totalPrice: selectedModifier.productModifier.price,
+                          discount: 0,
+                          image: selectedModifier.productModifier.image
+                              ? {
+                                    key: selectedModifier.productModifier.image.key,
+                                    region: selectedModifier.productModifier.image.region,
+                                    bucket: selectedModifier.productModifier.image.bucket,
+                                    identityPoolId: selectedModifier.productModifier.image.identityPoolId,
+                                }
+                              : null,
+                          quantity: 1,
+                          notes: null,
+                          category: selectedModifier.productModifier.categories
+                              ? {
+                                    id: selectedModifier.productModifier.categories.items[0].id,
+                                    name: selectedModifier.productModifier.categories.items[0].name,
+                                    image: selectedModifier.productModifier.categories.items[0].image
+                                        ? {
+                                              key: selectedModifier.productModifier.categories.items[0].image.key,
+                                              region: selectedModifier.productModifier.categories.items[0].image.region,
+                                              bucket: selectedModifier.productModifier.categories.items[0].image.bucket,
+                                              identityPoolId: selectedModifier.productModifier.categories.items[0].image.identityPoolId,
+                                          }
+                                        : null,
+                                }
+                              : null,
+                          modifierGroups: [],
+                      },
+                  ]
+                : null;
+
         const newOrderedModifierItem: ICartModifier = {
             id: selectedModifier.id,
             name: selectedModifier.name,
             price: selectedModifier.price,
             preSelectedQuantity: preSelectedModifierQuantity,
             quantity: quantity,
-            productModifiers: null,
+            productModifiers: pms,
             image: selectedModifier.image
                 ? {
                       key: selectedModifier.image.key,
@@ -365,12 +449,7 @@ export const ProductModal = (props: {
             };
         }
 
-        if (
-            selectedModifier.productModifier &&
-            selectedModifier.productModifier.modifierGroups &&
-            selectedModifier.productModifier.modifierGroups.items.length > 0 &&
-            isIncremented
-        ) {
+        if (requiresProcessProductModifier && selectedModifier.productModifier && isIncremented) {
             onProcessProductModifier(newOrderedModifierItem, selectedModifierGroupId, selectedModifier.productModifier, newOrderedModifiers);
         } else {
             setOrderedModifiers(newOrderedModifiers);
@@ -384,13 +463,57 @@ export const ProductModal = (props: {
     ) => {
         setError({});
 
+        const requiresProcessProductModifier =
+            selectedModifier.productModifier &&
+            selectedModifier.productModifier.modifierGroups &&
+            selectedModifier.productModifier.modifierGroups.items.length > 0;
+
+        //We only only to add pms only if we are not going to open another product modal for productModifier with modifier groups
+        const pms =
+            !requiresProcessProductModifier && selectedModifier.productModifier
+                ? [
+                      {
+                          id: selectedModifier.productModifier.id,
+                          name: selectedModifier.productModifier.name,
+                          price: selectedModifier.productModifier.price,
+                          totalPrice: selectedModifier.productModifier.price,
+                          discount: 0,
+                          image: selectedModifier.productModifier.image
+                              ? {
+                                    key: selectedModifier.productModifier.image.key,
+                                    region: selectedModifier.productModifier.image.region,
+                                    bucket: selectedModifier.productModifier.image.bucket,
+                                    identityPoolId: selectedModifier.productModifier.image.identityPoolId,
+                                }
+                              : null,
+                          quantity: 1,
+                          notes: null,
+                          category: selectedModifier.productModifier.categories
+                              ? {
+                                    id: selectedModifier.productModifier.categories.items[0].id,
+                                    name: selectedModifier.productModifier.categories.items[0].name,
+                                    image: selectedModifier.productModifier.categories.items[0].image
+                                        ? {
+                                              key: selectedModifier.productModifier.categories.items[0].image.key,
+                                              region: selectedModifier.productModifier.categories.items[0].image.region,
+                                              bucket: selectedModifier.productModifier.categories.items[0].image.bucket,
+                                              identityPoolId: selectedModifier.productModifier.categories.items[0].image.identityPoolId,
+                                          }
+                                        : null,
+                                }
+                              : null,
+                          modifierGroups: [],
+                      },
+                  ]
+                : null;
+
         const newOrderedModifierItem: ICartModifier = {
             id: selectedModifier.id,
             name: selectedModifier.name,
             price: selectedModifier.price,
             preSelectedQuantity: preSelectedModifierQuantity,
             quantity: 1,
-            productModifiers: null,
+            productModifiers: pms,
             image: selectedModifier.image
                 ? {
                       key: selectedModifier.image.key,
@@ -403,11 +526,7 @@ export const ProductModal = (props: {
 
         let newOrderedModifiers: IPreSelectedModifiers = { ...orderedModifiers, [selectedModifierGroupId]: [newOrderedModifierItem] };
 
-        if (
-            selectedModifier.productModifier &&
-            selectedModifier.productModifier.modifierGroups &&
-            selectedModifier.productModifier.modifierGroups.items.length > 0
-        ) {
+        if (requiresProcessProductModifier && selectedModifier.productModifier) {
             onProcessProductModifier(newOrderedModifierItem, selectedModifierGroupId, selectedModifier.productModifier, newOrderedModifiers);
         } else {
             setOrderedModifiers(newOrderedModifiers);
@@ -541,6 +660,8 @@ export const ProductModal = (props: {
             modifierGroups: selectedModifierGroups,
         };
 
+        console.log("xxx...productToOrder", productToOrder);
+
         if (editProduct) {
             onUpdateProduct && onUpdateProduct(editProduct.productCartIndex, productToOrder);
         } else {
@@ -666,12 +787,14 @@ export const ProductModal = (props: {
         </>
     );
 
-    const onCloseProductModifierModifier = () => {
+    const onModalCloseProductModifier = () => {
         setSelectedProductModifier(null);
     };
 
     const onAddProductModifierProduct = (product: ICartProduct) => {
         if (!selectedProductModifier) return;
+
+        console.log("xxx...I AM HERE", selectedProductModifier);
 
         const newOrderedModifiers = { ...selectedProductModifier.newOrderedModifiers };
         const lastIndex = newOrderedModifiers[selectedProductModifier.selectedModifierGroupId].length - 1;
@@ -706,7 +829,7 @@ export const ProductModal = (props: {
             {selectedProductModifier && (
                 <ProductModal
                     isOpen={selectedProductModifier ? true : false}
-                    onClose={onCloseProductModifierModifier}
+                    onClose={onModalCloseProductModifier}
                     category={category}
                     product={selectedProductModifier.product}
                     isProductModifier={true}

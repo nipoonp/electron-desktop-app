@@ -101,7 +101,7 @@ export interface ICartProduct {
     image: IS3Object | null;
     quantity: number;
     notes: string | null;
-    category: ICartCategory;
+    category: ICartCategory | null; //Product modifier do not have category
     modifierGroups: ICartModifierGroup[];
 }
 

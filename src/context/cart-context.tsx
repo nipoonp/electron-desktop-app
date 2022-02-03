@@ -283,6 +283,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         products &&
             products.forEach((product) => {
+                if (!product.category) return; //Product will not have a product.category only if its productModifier
+
                 if (newCartCategoryQuantitiesById[product.category.id]) {
                     //We use product.quantity here because category does not have quantity assigned to it. The number of products select is same as the quantity for the category.
                     newCartCategoryQuantitiesById[product.category.id].quantity += product.quantity;
@@ -307,35 +309,37 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                         categoryId: product.category.id,
                     };
                 }
+
                 product.modifierGroups.forEach((modifierGroup) => {
                     modifierGroup.modifiers.forEach((modifier) => {
-                        if (modifier.productModifiers) {
-                            modifier.productModifiers.forEach((productModifier) => {
-                                if (newCartProductQuantitiesById[productModifier.id]) {
-                                    newCartProductQuantitiesById[productModifier.id].quantity += product.quantity * modifier.quantity;
-                                } else {
-                                    newCartProductQuantitiesById[productModifier.id] = {
-                                        id: product.id,
-                                        name: product.name,
-                                        quantity: product.quantity,
-                                        price: product.price,
-                                        categoryId: product.category.id,
-                                    };
-                                }
-                            });
+                        //Not sure if we should be calculating quantity of productModifiers.
+                        // if (modifier.productModifiers) {
+                        //     modifier.productModifiers.forEach((productModifier) => {
+                        //         if (newCartProductQuantitiesById[productModifier.id]) {
+                        //             newCartProductQuantitiesById[productModifier.id].quantity += product.quantity * modifier.quantity;
+                        //         } else {
+                        //             newCartProductQuantitiesById[productModifier.id] = {
+                        //                 id: product.id,
+                        //                 name: product.name,
+                        //                 quantity: product.quantity,
+                        //                 price: product.price,
+                        //                 categoryId: product.category.id,
+                        //             };
+                        //         }
+                        //     });
+                        // } else {
+                        if (newCartModifierQuantitiesById[modifier.id]) {
+                            newCartModifierQuantitiesById[modifier.id].quantity += product.quantity * modifier.quantity;
                         } else {
-                            if (newCartModifierQuantitiesById[modifier.id]) {
-                                newCartModifierQuantitiesById[modifier.id].quantity += product.quantity * modifier.quantity;
-                            } else {
-                                newCartModifierQuantitiesById[modifier.id] = {
-                                    id: product.id,
-                                    name: product.name,
-                                    quantity: product.quantity,
-                                    price: product.price,
-                                    categoryId: null,
-                                };
-                            }
+                            newCartModifierQuantitiesById[modifier.id] = {
+                                id: product.id,
+                                name: product.name,
+                                quantity: product.quantity,
+                                price: product.price,
+                                categoryId: null,
+                            };
                         }
+                        // }
                     });
                 });
             });

@@ -729,7 +729,7 @@ export const Checkout = () => {
         }
 
         restaurant.categories.items.forEach((c) => {
-            if (c.id == productToEdit.product.category.id) {
+            if (productToEdit.product.category && productToEdit.product.category.id === c.id) {
                 category = c;
             }
 

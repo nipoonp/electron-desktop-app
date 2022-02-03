@@ -607,6 +607,7 @@ export const GET_RESTAURANT = gql`
                                                                                     productModifier {
                                                                                         id
                                                                                         name
+                                                                                        price
                                                                                     }
                                                                                     totalQuantitySold
                                                                                     totalQuantityAvailable
@@ -650,6 +651,8 @@ export const GET_RESTAURANT = gql`
                     totalQuantityAvailable
                     productModifier {
                         id
+                        name
+                        price
                     }
                 }
             }
