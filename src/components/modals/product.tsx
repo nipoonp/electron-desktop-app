@@ -245,14 +245,14 @@ export const ProductModal = (props: {
                           notes: null,
                           category: selectedModifier.productModifier.categories
                               ? {
-                                    id: selectedModifier.productModifier.categories.items[0].id,
-                                    name: selectedModifier.productModifier.categories.items[0].name,
-                                    image: selectedModifier.productModifier.categories.items[0].image
+                                    id: selectedModifier.productModifier.categories.items[0].category.id,
+                                    name: selectedModifier.productModifier.categories.items[0].category.name,
+                                    image: selectedModifier.productModifier.categories.items[0].category.image
                                         ? {
-                                              key: selectedModifier.productModifier.categories.items[0].image.key,
-                                              region: selectedModifier.productModifier.categories.items[0].image.region,
-                                              bucket: selectedModifier.productModifier.categories.items[0].image.bucket,
-                                              identityPoolId: selectedModifier.productModifier.categories.items[0].image.identityPoolId,
+                                              key: selectedModifier.productModifier.categories.items[0].category.image.key,
+                                              region: selectedModifier.productModifier.categories.items[0].category.image.region,
+                                              bucket: selectedModifier.productModifier.categories.items[0].category.image.bucket,
+                                              identityPoolId: selectedModifier.productModifier.categories.items[0].category.image.identityPoolId,
                                           }
                                         : null,
                                 }
@@ -381,14 +381,14 @@ export const ProductModal = (props: {
                           notes: null,
                           category: selectedModifier.productModifier.categories
                               ? {
-                                    id: selectedModifier.productModifier.categories.items[0].id,
-                                    name: selectedModifier.productModifier.categories.items[0].name,
-                                    image: selectedModifier.productModifier.categories.items[0].image
+                                    id: selectedModifier.productModifier.categories.items[0].category.id,
+                                    name: selectedModifier.productModifier.categories.items[0].category.name,
+                                    image: selectedModifier.productModifier.categories.items[0].category.image
                                         ? {
-                                              key: selectedModifier.productModifier.categories.items[0].image.key,
-                                              region: selectedModifier.productModifier.categories.items[0].image.region,
-                                              bucket: selectedModifier.productModifier.categories.items[0].image.bucket,
-                                              identityPoolId: selectedModifier.productModifier.categories.items[0].image.identityPoolId,
+                                              key: selectedModifier.productModifier.categories.items[0].category.image.key,
+                                              region: selectedModifier.productModifier.categories.items[0].category.image.region,
+                                              bucket: selectedModifier.productModifier.categories.items[0].category.image.bucket,
+                                              identityPoolId: selectedModifier.productModifier.categories.items[0].category.image.identityPoolId,
                                           }
                                         : null,
                                 }
@@ -490,14 +490,14 @@ export const ProductModal = (props: {
                           notes: null,
                           category: selectedModifier.productModifier.categories
                               ? {
-                                    id: selectedModifier.productModifier.categories.items[0].id,
-                                    name: selectedModifier.productModifier.categories.items[0].name,
-                                    image: selectedModifier.productModifier.categories.items[0].image
+                                    id: selectedModifier.productModifier.categories.items[0].category.id,
+                                    name: selectedModifier.productModifier.categories.items[0].category.name,
+                                    image: selectedModifier.productModifier.categories.items[0].category.image
                                         ? {
-                                              key: selectedModifier.productModifier.categories.items[0].image.key,
-                                              region: selectedModifier.productModifier.categories.items[0].image.region,
-                                              bucket: selectedModifier.productModifier.categories.items[0].image.bucket,
-                                              identityPoolId: selectedModifier.productModifier.categories.items[0].image.identityPoolId,
+                                              key: selectedModifier.productModifier.categories.items[0].category.image.key,
+                                              region: selectedModifier.productModifier.categories.items[0].category.image.region,
+                                              bucket: selectedModifier.productModifier.categories.items[0].category.image.bucket,
+                                              identityPoolId: selectedModifier.productModifier.categories.items[0].category.image.identityPoolId,
                                           }
                                         : null,
                                 }

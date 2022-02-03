@@ -897,6 +897,10 @@ export interface IGET_RESTAURANT_CATEGORY {
     };
 }
 
+export interface IGET_RESTAURANT_CATEGORY_LINK {
+    category: IGET_RESTAURANT_CATEGORY;
+}
+
 export interface IGET_RESTAURANT_PRODUCT_LINK {
     id: string;
     displaySequence: number;
@@ -916,7 +920,7 @@ export interface IGET_RESTAURANT_PRODUCT {
     image?: IS3Object;
     availablePlatforms: ERegisterType[];
     availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
-    categories: { items: IGET_RESTAURANT_CATEGORY[] };
+    categories: { items: IGET_RESTAURANT_CATEGORY_LINK[] };
     modifierGroups?: {
         items: IGET_RESTAURANT_MODIFIER_GROUP_LINK[];
     };

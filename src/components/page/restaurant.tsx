@@ -467,7 +467,17 @@ export const Restaurant = () => {
             const products: IGET_RESTAURANT_PRODUCT[] = res.data.getProductsBySKUCodeByRestaurant.items;
 
             if (products.length > 0) {
-                onAddProductToCart(products[0].categories.items[0], products[0]);
+                const skuProduct = products[0];
+                const skuCategory = skuProduct.categories.items[0].category;
+
+                if (skuProduct.modifierGroups && skuProduct.modifierGroups.items.length > 0) {
+                    setSelectedCategoryForProductModal(skuCategory);
+                    setSelectedProductForProductModal(skuProduct);
+                    setShowProductModal(true);
+                } else {
+                    onAddProductToCart(skuCategory, skuProduct);
+                }
+
                 setSearchProductSKUCode("");
             } else {
                 toast.error("No product found");
