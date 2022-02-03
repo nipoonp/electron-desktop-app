@@ -604,6 +604,10 @@ export const GET_RESTAURANT = gql`
                                                                                         region
                                                                                         identityPoolId
                                                                                     }
+                                                                                    productModifier {
+                                                                                        id
+                                                                                        name
+                                                                                    }
                                                                                     totalQuantitySold
                                                                                     totalQuantityAvailable
                                                                                     soldOut
@@ -644,6 +648,9 @@ export const GET_RESTAURANT = gql`
                     soldOut
                     soldOutDate
                     totalQuantityAvailable
+                    productModifier {
+                        id
+                    }
                 }
             }
         }

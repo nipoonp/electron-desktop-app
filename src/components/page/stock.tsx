@@ -32,11 +32,9 @@ export const Stock = () => {
     const [showSpinner, setShowSpinner] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
 
-    const {
-        data: restaurant,
-        error: getRestaurantError,
-        loading: getRestaurantLoading,
-    } = useGetRestaurantQuery(savedRestaurantItem ? savedRestaurantItem.id : "");
+    const { data: restaurant, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(
+        savedRestaurantItem ? savedRestaurantItem.id : ""
+    );
 
     const refetchRestaurant = [
         {
@@ -164,7 +162,7 @@ export const Stock = () => {
                             {restaurant &&
                                 restaurant.modifiers.items.map((modifier) => (
                                     <>
-                                        {modifier.name.toLowerCase().includes(searchTerm.toLowerCase()) && (
+                                        {!modifier.productModifier && modifier.name.toLowerCase().includes(searchTerm.toLowerCase()) && (
                                             <Item item={modifier} onUpdate={onUpdateModifier} />
                                         )}
                                     </>

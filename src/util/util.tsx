@@ -508,121 +508,78 @@ export const processPromotionDiscounts = (
     };
 };
 
-export const convertProductTypesForPrint = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[]): ICartProduct[] => {
+const processProductForPrint = (p: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT) => {
     const convertedP: ICartProduct[] = [];
+    const convertedMG: ICartModifierGroup[] = [];
 
-    products.forEach((p) => {
-        const convertedMG: ICartModifierGroup[] = [];
+    p.modifierGroups &&
+        p.modifierGroups.forEach((mg) => {
+            const convertedM: ICartModifier[] = [];
 
-        p.modifierGroups &&
-            p.modifierGroups.forEach((mg) => {
-                const convertedM: ICartModifier[] = [];
+            mg.modifiers.forEach((m) => {
+                let converted_PM_P: ICartProduct[] = [];
 
-                mg.modifiers.forEach((m) => {
-                    const converted_PM_P: ICartProduct[] = [];
-
-                    m.productModifiers &&
-                        m.productModifiers.forEach((pm_p) => {
-                            const converted_PM_MG: ICartModifierGroup[] = [];
-
-                            pm_p.modifierGroups &&
-                                pm_p.modifierGroups.forEach((pm_mg) => {
-                                    const converted_PM_M: ICartModifier[] = [];
-
-                                    pm_mg.modifiers.forEach((pm_m) => {
-                                        converted_PM_M.push({
-                                            id: pm_m.id,
-                                            name: pm_m.name,
-                                            price: pm_m.price,
-                                            preSelectedQuantity: pm_m.preSelectedQuantity,
-                                            quantity: pm_m.quantity,
-                                            productModifiers: null,
-                                            image: pm_m.image,
-                                        });
-                                    });
-
-                                    converted_PM_MG.push({
-                                        id: pm_mg.id,
-                                        name: pm_mg.name,
-                                        choiceDuplicate: pm_mg.choiceDuplicate,
-                                        choiceMin: pm_mg.choiceMin,
-                                        choiceMax: pm_mg.choiceMax,
-                                        hideForCustomer: pm_mg.hideForCustomer,
-                                        modifiers: converted_PM_M,
-                                    });
-                                });
-
-                            converted_PM_P.push({
-                                id: pm_p.id,
-                                name: pm_p.name,
-                                price: pm_p.price,
-                                totalPrice: pm_p.totalPrice,
-                                discount: pm_p.discount,
-                                image: pm_p.image,
-                                quantity: pm_p.quantity,
-                                notes: pm_p.notes,
-                                category: pm_p.category
-                                    ? {
-                                          id: pm_p.category.id,
-                                          name: pm_p.category.name,
-                                          image: pm_p.category.image,
-                                      }
-                                    : {
-                                          id: "invalid",
-                                          name: "invalid",
-                                          image: null,
-                                      },
-                                modifierGroups: converted_PM_MG,
-                            });
-                        });
-
-                    convertedM.push({
-                        id: m.id,
-                        name: m.name,
-                        price: m.price,
-                        preSelectedQuantity: m.preSelectedQuantity,
-                        quantity: m.quantity,
-                        productModifiers: converted_PM_P,
-                        image: m.image,
+                m.productModifiers &&
+                    m.productModifiers.forEach((pm_p) => {
+                        converted_PM_P = processProductForPrint(pm_p);
                     });
-                });
 
-                convertedMG.push({
-                    id: mg.id,
-                    name: mg.name,
-                    choiceDuplicate: mg.choiceDuplicate,
-                    choiceMin: mg.choiceMin,
-                    choiceMax: mg.choiceMax,
-                    hideForCustomer: mg.hideForCustomer,
-                    modifiers: convertedM,
+                convertedM.push({
+                    id: m.id,
+                    name: m.name,
+                    price: m.price,
+                    preSelectedQuantity: m.preSelectedQuantity,
+                    quantity: m.quantity,
+                    productModifiers: converted_PM_P,
+                    image: m.image,
                 });
             });
 
-        convertedP.push({
-            id: p.id,
-            name: p.name,
-            price: p.price,
-            totalPrice: p.totalPrice,
-            discount: p.discount,
-            image: p.image,
-            quantity: p.quantity,
-            notes: p.notes,
-            category: p.category
-                ? {
-                      id: p.category.id,
-                      name: p.category.name,
-                      image: p.category.image,
-                  }
-                : {
-                      id: "invalid",
-                      name: "invalid",
-                      image: null,
-                  },
-            modifierGroups: convertedMG,
+            convertedMG.push({
+                id: mg.id,
+                name: mg.name,
+                choiceDuplicate: mg.choiceDuplicate,
+                choiceMin: mg.choiceMin,
+                choiceMax: mg.choiceMax,
+                hideForCustomer: mg.hideForCustomer,
+                modifiers: convertedM,
+            });
         });
+
+    convertedP.push({
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        totalPrice: p.totalPrice,
+        discount: p.discount,
+        image: p.image,
+        quantity: p.quantity,
+        notes: p.notes,
+        category: p.category
+            ? {
+                  id: p.category.id,
+                  name: p.category.name,
+                  image: p.category.image,
+              }
+            : {
+                  id: "invalid",
+                  name: "invalid",
+                  image: null,
+              },
+        modifierGroups: convertedMG,
     });
 
     return convertedP;
+};
+
+export const convertProductTypesForPrint = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[]): ICartProduct[] => {
+    let convertedReturnP: ICartProduct[] = [];
+
+    products.forEach((p) => {
+        convertedReturnP = processProductForPrint(p);
+    });
+
+    return convertedReturnP;
 };
 
 export const downloadFile = (blob: Blob, fileName: string, extention: string) => {

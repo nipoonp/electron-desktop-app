@@ -569,7 +569,7 @@ export const Restaurant = () => {
                             <div className="categories-wrapper">
                                 {restaurant.logo && <RestaurantLogo image={restaurant.logo} />}
                                 {menuSearchProduct}
-                                {menuBarcodeSearchProduct}
+                                {isPOS && menuBarcodeSearchProduct}
                                 {menuMostPopularCategory}
                                 {menuCategories}
                             </div>
