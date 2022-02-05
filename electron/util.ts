@@ -6,7 +6,10 @@ import {
     ICartModifier,
     EReceiptPrinterType,
     IPrintReceiptOutput,
-    IPrintSalesByDayDataInput,
+    IPrintSalesDataInput,
+    IPrintSalesDataInputDailySales,
+    IPrintSalesDataInputMostSoldCategories,
+    IPrintSalesDataInputMostSoldProducts,
 } from "./model";
 import usbPrinter from "@thiagoelg/node-printer";
 import { format } from "date-fns";
@@ -396,38 +399,23 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
     }
 };
 
-export const printSalesByDayReceipt = async (printSalesByDayDataInput: IPrintSalesByDayDataInput): Promise<IPrintReceiptOutput> => {
-    let printer;
-
-    if (printSalesByDayDataInput.printerType == EReceiptPrinterType.WIFI) {
-        //@ts-ignore
-        printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
-            interface: `tcp://${printSalesByDayDataInput.printerAddress}`,
-        });
-    } else if (printSalesByDayDataInput.printerType == EReceiptPrinterType.USB) {
-        //@ts-ignore
-        printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
-        });
-    } else {
-        //Bluetooth
-    }
-
+const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
     printer.alignCenter();
     printer.bold(true);
     printer.setTextSize(1, 1);
-    printer.println("Sales Report");
+    printer.println("Category Report");
     printer.setTextNormal();
     printer.bold(false);
 
     printer.alignLeft();
 
     printer.newLine();
+    printer.println(`Date Range: ${format(new Date(data.startDate), "dd MMM yyyy")} - ${format(new Date(data.endDate), "dd MMM yyyy")}`);
+    printer.newLine();
     printer.println(`Printed On: ${format(new Date(), "dd MMM yyyy HH:mm aa")}`);
     printer.newLine();
 
-    Object.entries(printSalesByDayDataInput.saleData).forEach(([date, data], index) => {
+    Object.entries(data.dailySales).forEach(([date, data]) => {
         printer.bold(true);
         printer.underline(true);
         printer.println(date);
@@ -446,13 +434,124 @@ export const printSalesByDayReceipt = async (printSalesByDayDataInput: IPrintSal
         printer.newLine();
     });
 
+    return printer;
+};
+
+const printSalesByCategoryReceipt = (printer: any, data: IPrintSalesDataInput) => {
+    printer.alignCenter();
+    printer.bold(true);
+    printer.setTextSize(1, 1);
+    printer.println("Category Report");
+    printer.setTextNormal();
+    printer.bold(false);
+
+    printer.alignLeft();
+
+    printer.newLine();
+    printer.println(`Date Range: ${format(new Date(data.startDate), "dd MMM yyyy")} - ${format(new Date(data.endDate), "dd MMM yyyy")}`);
+    printer.newLine();
+    printer.println(`Printed On: ${format(new Date(), "dd MMM yyyy HH:mm aa")}`);
+    printer.newLine();
+
+    Object.values(data.mostSoldCategories).forEach((record) => {
+        printer.tableCustom([
+            {
+                text: record.item.name,
+                width: 0.5,
+            },
+            {
+                text: record.totalQuantity,
+                align: "RIGHT",
+                width: 0.25,
+            },
+            {
+                text: `\$${convertCentsToDollars(record.totalAmount)}`,
+                align: "RIGHT",
+                width: 0.25,
+            },
+        ]);
+    });
+
+    return printer;
+};
+
+const printSalesByProductReceipt = (printer: any, data: IPrintSalesDataInput) => {
+    printer.alignCenter();
+    printer.bold(true);
+    printer.setTextSize(1, 1);
+    printer.println("Product Report");
+    printer.setTextNormal();
+    printer.bold(false);
+
+    printer.alignLeft();
+
+    printer.newLine();
+    printer.println(`Date Range: ${format(new Date(data.startDate), "dd MMM yyyy")} - ${format(new Date(data.endDate), "dd MMM yyyy")}`);
+    printer.newLine();
+    printer.println(`Printed On: ${format(new Date(), "dd MMM yyyy HH:mm aa")}`);
+    printer.newLine();
+
+    Object.values(data.mostSoldProducts).forEach((record) => {
+        printer.tableCustom([
+            {
+                text: record.item.name,
+                width: 0.5,
+            },
+            {
+                text: record.totalQuantity,
+                align: "RIGHT",
+                width: 0.25,
+            },
+            {
+                text: `\$${convertCentsToDollars(record.totalAmount)}`,
+                align: "RIGHT",
+                width: 0.25,
+            },
+        ]);
+    });
+
+    return printer;
+};
+
+export const printSalesDataReceipt = async (printSalesDataInput: IPrintSalesDataInput): Promise<IPrintReceiptOutput> => {
+    let printer;
+
+    if (printSalesDataInput.printerType == EReceiptPrinterType.WIFI) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            interface: `tcp://${printSalesDataInput.printerAddress}`,
+        });
+    } else if (printSalesDataInput.printerType == EReceiptPrinterType.USB) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+        });
+    } else {
+        //Bluetooth
+    }
+
+    switch (printSalesDataInput.type) {
+        case "DAY":
+            printer = printSalesByDayReceipt(printer, printSalesDataInput);
+            break;
+        case "CATEGORY":
+            printer = printSalesByCategoryReceipt(printer, printSalesDataInput);
+            break;
+        case "PRODUCT":
+            printer = printSalesByProductReceipt(printer, printSalesDataInput);
+            break;
+        default:
+            break;
+    }
+
     printer.partialCut();
 
     try {
-        if (printSalesByDayDataInput.printerType == EReceiptPrinterType.WIFI) {
+        if (printSalesDataInput.printerType == EReceiptPrinterType.WIFI) {
             await printer.execute();
-        } else if (printSalesByDayDataInput.printerType == EReceiptPrinterType.USB) {
-            await usbPrinterExecute(printSalesByDayDataInput.printerAddress, printer.getBuffer());
+        } else if (printSalesDataInput.printerType == EReceiptPrinterType.USB) {
+            await usbPrinterExecute(printSalesDataInput.printerAddress, printer.getBuffer());
             printer.clear();
         } else {
             //Bluetooth

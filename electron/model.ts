@@ -71,16 +71,48 @@ export interface IOrderReceipt {
     orderScheduledAt: string | null;
 }
 
-export interface IPrintSalesByDayDataInput {
+export interface IPrintSalesDataInputDailySales {
+    [date: string]: {
+        totalAmount: number;
+        totalQuantity: number;
+        totalPaymentAmounts: IOrderPaymentAmounts;
+    };
+}
+
+export interface IPrintSalesDataInputMostSoldCategories {
+    [id: string]: {
+        item: {
+            name: string;
+        };
+        totalQuantity: number;
+        totalAmount: number;
+    };
+}
+
+export interface IPrintSalesDataInputMostSoldProducts {
+    [id: string]: {
+        item: {
+            name: string;
+        };
+        totalQuantity: number;
+        totalAmount: number;
+    };
+}
+
+export interface IPrintSalesDataInput {
     printerType: EReceiptPrinterType;
     printerAddress: string;
-    saleData: {
-        [date: string]: {
-            totalAmount: number;
-            totalQuantity: number;
-            totalPaymentAmounts: IOrderPaymentAmounts;
-        };
-    };
+    type: "DAY" | "CATEGORY" | "PRODUCT";
+    startDate: string;
+    endDate: string;
+    dailySales: IPrintSalesDataInputDailySales;
+    mostSoldCategories: IPrintSalesDataInputMostSoldCategories;
+    mostSoldProducts: IPrintSalesDataInputMostSoldProducts;
+}
+
+export interface IPrintSalesDataOutput {
+    error: any;
+    printSalesDataInput: IPrintSalesDataInput;
 }
 
 export interface IOrderPaymentAmounts {
@@ -92,11 +124,6 @@ export interface IOrderPaymentAmounts {
 export interface IPrintReceiptDataOutput {
     error: any;
     order: IOrderReceipt;
-}
-
-export interface IPrintSalesByDayDataOutput {
-    error: any;
-    printSalesByDayDataInput: IPrintSalesByDayDataInput;
 }
 
 export interface IPrintReceiptOutput {

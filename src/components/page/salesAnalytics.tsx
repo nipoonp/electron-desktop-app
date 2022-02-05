@@ -31,8 +31,9 @@ export const SalesAnalytics = () => {
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
     const { refetchRestaurantOrdersByBetweenPlacedAt, startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
-    const { printSalesByDay } = useReceiptPrinter();
+    const { printSalesData } = useReceiptPrinter();
     const [showSelectReceiptPrinterModal, setShowSelectReceiptPrinterModal] = useState(false);
+    const [receiptPrinterModalType, setReceiptPrinterModalType] = useState<"DAY" | "CATEGORY" | "PRODUCT">("DAY");
 
     const graphColor = getComputedStyle(document.documentElement).getPropertyValue("--primary-color");
 
@@ -87,12 +88,14 @@ export const SalesAnalytics = () => {
         }
     };
 
-    const onPrintDailySales = async () => {
+    const onPrintData = async (type: "DAY" | "CATEGORY" | "PRODUCT") => {
+        setReceiptPrinterModalType(type);
+
         if (salesAnalytics && register) {
             if (register.printers.items.length > 1) {
                 setShowSelectReceiptPrinterModal(true);
             } else if (register.printers.items.length === 1) {
-                await printDailySalesData(register.printers.items[0].type, register.printers.items[0].address);
+                await printDailySalesData(type, register.printers.items[0].type, register.printers.items[0].address);
             } else {
                 toast.error("No receipt printers configured");
             }
@@ -341,13 +344,18 @@ export const SalesAnalytics = () => {
         downloadFile(csvData, fileName, ".csv");
     };
 
-    const printDailySalesData = async (type: EReceiptPrinterType, address: string) => {
+    const printDailySalesData = async (type: "DAY" | "CATEGORY" | "PRODUCT", printerType: EReceiptPrinterType, address: string) => {
         if (!salesAnalytics) return;
 
-        await printSalesByDay({
-            printerType: type,
+        await printSalesData({
+            printerType: printerType,
             printerAddress: address,
-            saleData: salesAnalytics.dailySales,
+            type: type,
+            startDate: startDate || "",
+            endDate: endDate || "",
+            dailySales: salesAnalytics.dailySales,
+            mostSoldCategories: salesAnalytics.mostSoldCategories,
+            mostSoldProducts: salesAnalytics.mostSoldProducts,
         });
     };
 
@@ -364,7 +372,7 @@ export const SalesAnalytics = () => {
     };
 
     const onSelectPrinter = async (printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
-        await printDailySalesData(printer.type, printer.address);
+        await printDailySalesData(receiptPrinterModalType, printer.type, printer.address);
     };
 
     const selectReceiptPrinterModal = () => {
@@ -391,7 +399,7 @@ export const SalesAnalytics = () => {
                 ) : salesAnalytics && salesAnalytics.totalSoldItems > 0 ? (
                     <div className="sales-analytics-grid">
                         <div className="sales-analytics-grid-item1">
-                            <Card title="Sales By Day" onOpen={onClickDailySales} onExport={onExportDailySales} onPrint={onPrintDailySales}>
+                            <Card title="Sales By Day" onOpen={onClickDailySales} onExport={onExportDailySales} onPrint={() => onPrintData("DAY")}>
                                 <div style={{ width: "100%", height: "300px" }}>
                                     <LineGraph xAxis="date" lines={["sales"]} graphData={salesAnalytics.dayByGraphData} fill={graphColor} />
                                 </div>
@@ -433,7 +441,12 @@ export const SalesAnalytics = () => {
                         )}
                         {salesAnalytics.topSoldCategory && (
                             <div className="sales-analytics-grid-item5">
-                                <Card title="Top Category" onOpen={onClickTopCategory} onExport={onExportMostSoldCategory}>
+                                <Card
+                                    title="Top Category"
+                                    onOpen={onClickTopCategory}
+                                    onExport={onExportMostSoldCategory}
+                                    onPrint={() => onPrintData("CATEGORY")}
+                                >
                                     <div className="top-item-container" style={{ alignItems: "center" }}>
                                         <div className="top-item-image text-center">
                                             {salesAnalytics.topSoldCategory.item?.image && (
@@ -466,7 +479,12 @@ export const SalesAnalytics = () => {
                         )}
                         {salesAnalytics.topSoldProduct && (
                             <div className="sales-analytics-grid-item6">
-                                <Card title="Top Product" onOpen={onClickTopProduct} onExport={onExportMostSoldProduct}>
+                                <Card
+                                    title="Top Product"
+                                    onOpen={onClickTopProduct}
+                                    onExport={onExportMostSoldProduct}
+                                    onPrint={() => onPrintData("PRODUCT")}
+                                >
                                     <div className="top-item-container" style={{ alignItems: "center" }}>
                                         <div className="top-item-image text-center">
                                             {salesAnalytics.topSoldProduct.item?.image && (

@@ -1,3 +1,4 @@
+import { IMostSoldItems } from "../context/salesAnalytics-context";
 import { IOrderPaymentAmounts } from "../graphql/customFragments";
 import { IGET_RESTAURANT_PROMOTION, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object } from "../graphql/customQueries";
 
@@ -189,17 +190,47 @@ export interface IOrderReceipt {
     placedAt: string;
     orderScheduledAt: string | null;
 }
+export interface IPrintSalesDataInputDailySales {
+    [date: string]: {
+        totalAmount: number;
+        totalQuantity: number;
+        totalPaymentAmounts: IOrderPaymentAmounts;
+    };
+}
 
-export interface IPrintSalesByDayDataInput {
+export interface IPrintSalesDataInputMostSoldCategories {
+    [id: string]: {
+        item: {
+            id: string;
+            name: string;
+            price: number;
+        };
+        totalQuantity: number;
+        totalAmount: number;
+    };
+}
+
+export interface IPrintSalesDataInputMostSoldProducts {
+    [id: string]: {
+        item: {
+            id: string;
+            name: string;
+            price: number;
+        };
+        totalQuantity: number;
+        totalAmount: number;
+    };
+}
+
+export interface IPrintSalesDataInput {
     printerType: EReceiptPrinterType;
     printerAddress: string;
-    saleData: {
-        [date: string]: {
-            totalAmount: number;
-            totalQuantity: number;
-            totalPaymentAmounts: IOrderPaymentAmounts;
-        };
-    };
+    type: "DAY" | "CATEGORY" | "PRODUCT";
+    startDate: string;
+    endDate: string;
+    dailySales: IPrintSalesDataInputDailySales;
+    mostSoldCategories: IMostSoldItems;
+    mostSoldProducts: IMostSoldItems;
 }
 
 export interface IMatchingUpSellCrossSellCategoryItem {

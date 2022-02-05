@@ -270,13 +270,38 @@ const Order = (props: {
             {order.products.map((product) => (
                 <div key={product.id}>
                     <div className="separator-2"></div>
-                    <OrderItemDetails name={product.name} quantity={product.quantity} notes={product.notes} modifierGroups={product.modifierGroups} />
+                    <OrderItemDetails
+                        name={product.name}
+                        quantity={product.quantity}
+                        notes={product.notes}
+                        price={product.price}
+                        modifierGroups={product.modifierGroups}
+                    />
                 </div>
             ))}
 
             <div className="separator-2"></div>
             {order.discount && <div className="mb-1">Discount: -${convertCentsToDollars(order.discount)}</div>}
             <div className="h4">Total: ${convertCentsToDollars(order.subTotal || 0)}</div>
+
+            <div className="separator-2"></div>
+            <div className="text-underline mb-2">Payment Method</div>
+            {order.paymentAmounts && order.paymentAmounts.cash ? (
+                <div className="mt-1">Cash: ${convertCentsToDollars(order.paymentAmounts.cash)}</div>
+            ) : (
+                <></>
+            )}
+            {order.paymentAmounts && order.paymentAmounts.eftpos ? (
+                <div className="mt-1">Eftpos: ${convertCentsToDollars(order.paymentAmounts.eftpos)}</div>
+            ) : (
+                <></>
+            )}
+            {order.paymentAmounts && order.paymentAmounts.online ? (
+                <div className="mt-1">Online: ${convertCentsToDollars(order.paymentAmounts.online)}</div>
+            ) : (
+                <></>
+            )}
+            <div className="separator-2"></div>
 
             <div className="order-action-buttons-container mt-2">
                 {order.status !== EOrderStatus.COMPLETED && <Button onClick={() => onOrderComplete(order)}>Complete</Button>}
@@ -292,6 +317,7 @@ const OrderItemDetails = (props: {
     name: string;
     quantity: number;
     notes: string | null;
+    price: number;
     modifierGroups: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] | null;
 }) => {
     const modifierString = (preSelectedQuantity: number, quantity: number, name: string, price: number) => {
@@ -311,7 +337,12 @@ const OrderItemDetails = (props: {
         return mStr;
     };
 
-    const nameDisplay = <div className="h4">{`${props.quantity > 1 ? `${props.quantity} x ` : ""}${props.name}`}</div>;
+    const nameDisplay = (
+        <div className="product-detail">
+            <div className="h4">{`${props.quantity > 1 ? `${props.quantity} x ` : ""}${props.name}`}</div>
+            <div className="h4">{`$${convertCentsToDollars(props.price)}`}</div>
+        </div>
+    );
 
     const modifiersDisplay = (
         <>
@@ -355,7 +386,7 @@ const OrderItemDetails = (props: {
     const notesDisplay = <div className="mt-2">{props.notes && <div className="text-grey">Notes: {props.notes}</div>}</div>;
 
     return (
-        <div className="detail">
+        <div>
             {nameDisplay}
             {modifiersDisplay}
             {notesDisplay}

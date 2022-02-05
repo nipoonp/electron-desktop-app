@@ -1,7 +1,7 @@
 import { app, BrowserWindow, dialog, globalShortcut } from "electron";
 import { ipcMain, Menu } from "electron";
-import { encodeCommandBuffer, decodeCommandBuffer, printReceipt, printSalesByDayReceipt, delay } from "./util";
-import { IOrderReceipt, IPrintReceiptDataOutput, IPrintReceiptOutput, IPrintSalesByDayDataInput, IPrintSalesByDayDataOutput } from "./model";
+import { encodeCommandBuffer, decodeCommandBuffer, printReceipt, printSalesDataReceipt, delay } from "./util";
+import { IOrderReceipt, IPrintReceiptDataOutput, IPrintReceiptOutput, IPrintSalesDataInput, IPrintSalesDataOutput } from "./model";
 import path from "path";
 import net from "net";
 import * as Sentry from "@sentry/electron";
@@ -254,16 +254,16 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
-    "RECEIPT_SALES_BY_DAY_PRINTER_DATA",
-    async (event: any, printSalesByDayDataInput: IPrintSalesByDayDataInput): Promise<IPrintSalesByDayDataOutput> => {
+    "RECEIPT_SALES_DATA",
+    async (event: any, printSalesDataInput: IPrintSalesDataInput): Promise<IPrintSalesDataOutput> => {
         try {
-            const result: IPrintReceiptOutput = await printSalesByDayReceipt(printSalesByDayDataInput);
+            const result: IPrintReceiptOutput = await printSalesDataReceipt(printSalesDataInput);
 
-            if (result.error) return { error: result.error, printSalesByDayDataInput: printSalesByDayDataInput };
+            if (result.error) return { error: result.error, printSalesDataInput: printSalesDataInput };
 
-            return { error: null, printSalesByDayDataInput: printSalesByDayDataInput };
+            return { error: null, printSalesDataInput: printSalesDataInput };
         } catch (e) {
-            return { error: e, printSalesByDayDataInput: printSalesByDayDataInput };
+            return { error: e, printSalesDataInput: printSalesDataInput };
         }
     }
 );
