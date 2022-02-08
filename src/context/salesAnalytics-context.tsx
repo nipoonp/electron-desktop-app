@@ -445,7 +445,6 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
             });
 
             // Graph Data
-
             const dayByGraphData: { date: string; sales: number }[] = [];
             const hourByGraphData: { hour: string; sales: number }[] = [];
             const categoryByGraphData: { name: string; value: number }[] = [];

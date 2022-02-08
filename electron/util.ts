@@ -403,7 +403,7 @@ const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
     printer.alignCenter();
     printer.bold(true);
     printer.setTextSize(1, 1);
-    printer.println("Category Report");
+    printer.println("Sales Report");
     printer.setTextNormal();
     printer.bold(false);
 
@@ -453,7 +453,7 @@ const printSalesByCategoryReceipt = (printer: any, data: IPrintSalesDataInput) =
     printer.println(`Printed On: ${format(new Date(), "dd MMM yyyy HH:mm aa")}`);
     printer.newLine();
 
-    Object.values(data.mostSoldCategories).forEach((record) => {
+    Object.values(data.mostSoldCategories).sort((a, b) => a.item.name.localeCompare(b.item.name)).forEach((record) => {
         printer.tableCustom([
             {
                 text: record.item.name,
@@ -491,7 +491,7 @@ const printSalesByProductReceipt = (printer: any, data: IPrintSalesDataInput) =>
     printer.println(`Printed On: ${format(new Date(), "dd MMM yyyy HH:mm aa")}`);
     printer.newLine();
 
-    Object.values(data.mostSoldProducts).forEach((record) => {
+    Object.values(data.mostSoldProducts).sort((a, b) => a.item.name.localeCompare(b.item.name)).forEach((record) => {
         printer.tableCustom([
             {
                 text: record.item.name,
