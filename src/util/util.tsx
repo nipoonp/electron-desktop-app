@@ -508,65 +508,66 @@ export const processPromotionDiscounts = (
     };
 };
 
-const processProductForPrint = (p: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT) => {
+const processProductsForPrint = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[]) => {
     const convertedP: ICartProduct[] = [];
     const convertedMG: ICartModifierGroup[] = [];
 
-    p.modifierGroups &&
-        p.modifierGroups.forEach((mg) => {
-            const convertedM: ICartModifier[] = [];
+    products.forEach((p) => {
+        p.modifierGroups &&
+            p.modifierGroups.forEach((mg) => {
+                const convertedM: ICartModifier[] = [];
 
-            mg.modifiers.forEach((m) => {
-                let converted_PM_P: ICartProduct[] = [];
+                mg.modifiers.forEach((m) => {
+                    let converted_PM_P: ICartProduct[] | null = null;
 
-                m.productModifiers &&
-                    m.productModifiers.forEach((pm_p) => {
-                        converted_PM_P = processProductForPrint(pm_p);
+                    if (m.productModifiers) {
+                        converted_PM_P = processProductsForPrint(m.productModifiers);
+                    }
+
+                    convertedM.push({
+                        id: m.id,
+                        name: m.name,
+                        price: m.price,
+                        preSelectedQuantity: m.preSelectedQuantity,
+                        quantity: m.quantity,
+                        productModifiers: converted_PM_P,
+                        image: m.image,
                     });
+                });
 
-                convertedM.push({
-                    id: m.id,
-                    name: m.name,
-                    price: m.price,
-                    preSelectedQuantity: m.preSelectedQuantity,
-                    quantity: m.quantity,
-                    productModifiers: converted_PM_P,
-                    image: m.image,
+                convertedMG.push({
+                    id: mg.id,
+                    name: mg.name,
+                    choiceDuplicate: mg.choiceDuplicate,
+                    choiceMin: mg.choiceMin,
+                    choiceMax: mg.choiceMax,
+                    hideForCustomer: mg.hideForCustomer,
+                    modifiers: convertedM,
                 });
             });
 
-            convertedMG.push({
-                id: mg.id,
-                name: mg.name,
-                choiceDuplicate: mg.choiceDuplicate,
-                choiceMin: mg.choiceMin,
-                choiceMax: mg.choiceMax,
-                hideForCustomer: mg.hideForCustomer,
-                modifiers: convertedM,
-            });
+        convertedP.push({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            totalPrice: p.totalPrice,
+            discount: p.discount,
+            image: p.image,
+            quantity: p.quantity,
+            notes: p.notes,
+            category: p.category
+                ? {
+                      id: p.category.id,
+                      name: p.category.name,
+                      image: p.category.image,
+                  }
+                : {
+                      id: "invalid",
+                      name: "invalid",
+                      image: null,
+                  },
+            modifierGroups: convertedMG,
         });
-
-    convertedP.push({
-        id: p.id,
-        name: p.name,
-        price: p.price,
-        totalPrice: p.totalPrice,
-        discount: p.discount,
-        image: p.image,
-        quantity: p.quantity,
-        notes: p.notes,
-        category: p.category
-            ? {
-                  id: p.category.id,
-                  name: p.category.name,
-                  image: p.category.image,
-              }
-            : {
-                  id: "invalid",
-                  name: "invalid",
-                  image: null,
-              },
-        modifierGroups: convertedMG,
     });
 
     return convertedP;
@@ -575,9 +576,7 @@ const processProductForPrint = (p: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT) => {
 export const convertProductTypesForPrint = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[]): ICartProduct[] => {
     let convertedReturnP: ICartProduct[] = [];
 
-    products.forEach((p) => {
-        convertedReturnP = processProductForPrint(p);
-    });
+    convertedReturnP = processProductsForPrint(products);
 
     return convertedReturnP;
 };

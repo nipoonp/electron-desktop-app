@@ -199,7 +199,7 @@ export const ReceiptPrinter = () => {
                 eftposReceipt: "",
                 restaurant: {
                     name: "Test Tabin Restaurant",
-                    address: "Receipt Printer 1",
+                    address: "Receipt Printer 1 Restaurant Address",
                     gstNumber: "123-456-789",
                 },
                 customerInformation: {
@@ -213,12 +213,12 @@ export const ReceiptPrinter = () => {
                 total: 100,
                 discount: 10,
                 subTotal: 90,
-                paid: true,
+                paid: false,
                 type: EOrderType.TAKEAWAY,
                 number: "Web",
                 table: "8",
                 placedAt: new Date().toISOString(),
-                orderScheduledAt: null,
+                orderScheduledAt: new Date().toISOString(),
             });
         }
 

@@ -968,7 +968,7 @@ export const Checkout = () => {
                         <Link onClick={onClickPayLater}>Pay cash at counter...</Link>
                     </div>
                 )}
-                <div className={`pay-later-link  ${isPOS ? "mt-3" : "mt-4"}`}>
+                <div className={`apply-promo-code-link ${isPOS ? "mt-3" : "mt-4"}`}>
                     <Link onClick={onClickApplyPromotionCode}>Apply promo code</Link>
                 </div>
             </div>

@@ -90,7 +90,7 @@ const getProductTotal = (product: ICartProduct) => {
     return price;
 };
 
-export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: boolean): Promise<IPrintReceiptOutput> => {
+export const printReceipt = async (order: IOrderReceipt, isCustomerReceipt: boolean): Promise<IPrintReceiptOutput> => {
     let printer;
 
     if (order.printerType == EReceiptPrinterType.WIFI) {
@@ -114,75 +114,68 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
     printer.alignCenter();
     printer.bold(true);
     printer.setTextSize(1, 1);
+    printer.underlineThick(true);
     printer.println(order.restaurant.name);
-
+    printer.underlineThick(false);
+    printer.setTextNormal();
+    printer.bold(false);
     printer.newLine();
 
-    if (printCustomerReceipt) {
-        printer.bold(false);
-        printer.setTextNormal();
+    if (isCustomerReceipt && order.restaurant.gstNumber) {
+        printer.println(`GST: ${order.restaurant.gstNumber}`);
+    }
+
+    if (isCustomerReceipt) {
         printer.println(order.restaurant.address);
     }
 
-    if (printCustomerReceipt) {
+    if (isCustomerReceipt) {
         printer.newLine();
-
-        if (order.restaurant.gstNumber) {
-            printer.bold(false);
-            printer.setTextNormal();
-            printer.println(`GST: ${order.restaurant.gstNumber}`);
-
-            printer.newLine();
-        }
     }
 
-    printer.setTextNormal();
-    printer.println(`Order Placed ${format(new Date(order.placedAt), "dd MMM HH:mm aa")} for ${order.type}`);
+    printer.println(`Order Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
 
     if (order.orderScheduledAt) {
-        printer.newLine();
         printer.bold(true);
         printer.underlineThick(true);
-        printer.println(`Order Scheduled ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+        printer.println(`Order Scheduled: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
         printer.underlineThick(false);
         printer.bold(false);
     }
 
     if (order.customerInformation) {
-        printer.newLine();
         printer.println(`Customer: ${order.customerInformation.firstName} (${order.customerInformation.phoneNumber})`);
     }
 
-    if (order.table) {
-        printer.println("Your table number is");
+    if (isCustomerReceipt) {
         printer.newLine();
+        printer.println(`${order.type} ${order.table ? `(Table: ${order.table})` : ""}`);
+    } else {
+        printer.newLine();
+        printer.bold(true);
         printer.setTextSize(1, 1);
-        printer.println(order.table);
-        printer.newLine();
+        printer.println(`${order.type} ${order.table ? `(Table: ${order.table})` : ""}`);
+        printer.setTextNormal();
+        printer.bold(false);
     }
 
     printer.newLine();
-
-    printer.setTextNormal();
-    printer.println("Your order number is");
-    printer.newLine();
-
-    //If table number is present display table number in big, order number in small
-    if (!order.table) {
-        printer.setTextSize(1, 1);
-    }
-
+    printer.bold(true);
+    printer.setTextSize(1, 1);
     printer.println(order.number);
-    printer.newLine();
     printer.setTextNormal();
+    printer.bold(false);
 
     if (order.paid == false) {
+        printer.newLine();
+        printer.bold(true);
         printer.underlineThick(true);
         printer.println("Payment Required");
         printer.underlineThick(false);
-        printer.newLine();
+        printer.bold(false);
     }
 
+    printer.newLine();
     printer.alignLeft();
 
     order.products.forEach((product: ICartProduct) => {
@@ -368,7 +361,7 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
     printer.newLine();
     printer.alignCenter();
 
-    if (order.eftposReceipt && printCustomerReceipt) {
+    if (order.eftposReceipt && isCustomerReceipt) {
         printer.println(order.eftposReceipt);
     }
 
@@ -379,7 +372,7 @@ export const printReceipt = async (order: IOrderReceipt, printCustomerReceipt: b
 
     printer.partialCut();
 
-    if (order.paymentAmounts && order.paymentAmounts.cash > 0 && !printCustomerReceipt) {
+    if (order.paymentAmounts && order.paymentAmounts.cash > 0 && !isCustomerReceipt) {
         printer.openCashDrawer();
     }
 
@@ -453,24 +446,26 @@ const printSalesByCategoryReceipt = (printer: any, data: IPrintSalesDataInput) =
     printer.println(`Printed On: ${format(new Date(), "dd MMM yyyy HH:mm aa")}`);
     printer.newLine();
 
-    Object.values(data.mostSoldCategories).sort((a, b) => a.item.name.localeCompare(b.item.name)).forEach((record) => {
-        printer.tableCustom([
-            {
-                text: record.item.name,
-                width: 0.5,
-            },
-            {
-                text: record.totalQuantity,
-                align: "RIGHT",
-                width: 0.25,
-            },
-            {
-                text: `\$${convertCentsToDollars(record.totalAmount)}`,
-                align: "RIGHT",
-                width: 0.25,
-            },
-        ]);
-    });
+    Object.values(data.mostSoldCategories)
+        .sort((a, b) => a.item.name.localeCompare(b.item.name))
+        .forEach((record) => {
+            printer.tableCustom([
+                {
+                    text: record.item.name,
+                    width: 0.5,
+                },
+                {
+                    text: record.totalQuantity,
+                    align: "RIGHT",
+                    width: 0.25,
+                },
+                {
+                    text: `\$${convertCentsToDollars(record.totalAmount)}`,
+                    align: "RIGHT",
+                    width: 0.25,
+                },
+            ]);
+        });
 
     return printer;
 };
@@ -491,24 +486,26 @@ const printSalesByProductReceipt = (printer: any, data: IPrintSalesDataInput) =>
     printer.println(`Printed On: ${format(new Date(), "dd MMM yyyy HH:mm aa")}`);
     printer.newLine();
 
-    Object.values(data.mostSoldProducts).sort((a, b) => a.item.name.localeCompare(b.item.name)).forEach((record) => {
-        printer.tableCustom([
-            {
-                text: record.item.name,
-                width: 0.5,
-            },
-            {
-                text: record.totalQuantity,
-                align: "RIGHT",
-                width: 0.25,
-            },
-            {
-                text: `\$${convertCentsToDollars(record.totalAmount)}`,
-                align: "RIGHT",
-                width: 0.25,
-            },
-        ]);
-    });
+    Object.values(data.mostSoldProducts)
+        .sort((a, b) => a.item.name.localeCompare(b.item.name))
+        .forEach((record) => {
+            printer.tableCustom([
+                {
+                    text: record.item.name,
+                    width: 0.5,
+                },
+                {
+                    text: record.totalQuantity,
+                    align: "RIGHT",
+                    width: 0.25,
+                },
+                {
+                    text: `\$${convertCentsToDollars(record.totalAmount)}`,
+                    align: "RIGHT",
+                    width: 0.25,
+                },
+            ]);
+        });
 
     return printer;
 };
