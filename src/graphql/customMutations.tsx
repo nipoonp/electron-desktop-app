@@ -60,6 +60,8 @@ export const CREATE_ORDER = gql`
         $products: [OrderProductInput!]
         $placedAt: String!
         $placedAtUtc: String!
+        $completedAt: String
+        $completedAtUtc: String
         $orderUserId: ID!
         $orderRestaurantId: ID!
     ) {
@@ -82,6 +84,8 @@ export const CREATE_ORDER = gql`
                 products: $products
                 placedAt: $placedAt
                 placedAtUtc: $placedAtUtc
+                completedAt: $completedAt
+                completedAtUtc: $completedAtUtc
                 orderUserId: $orderUserId
                 orderRestaurantId: $orderRestaurantId
             }

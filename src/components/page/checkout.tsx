@@ -426,7 +426,7 @@ export const Checkout = () => {
                 variables.status = "COMPLETED";
                 variables.completedAt = toLocalISOString(now);
                 variables.completedAtUtc = now.toISOString();
-                // variables.paid = true; //Comment out becuase if you set paid = true then "Payment Required" does not come up on the receipt.
+                // variables.paid = true; //Comment out because if you set paid = true then "Payment Required" does not come up on the receipt.
             }
         } catch (e) {
             await logError(
