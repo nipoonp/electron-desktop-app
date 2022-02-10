@@ -607,7 +607,49 @@ export const GET_RESTAURANT = gql`
                                                                                     productModifier {
                                                                                         id
                                                                                         name
+                                                                                        description
                                                                                         price
+                                                                                        tags
+                                                                                        totalQuantitySold
+                                                                                        totalQuantityAvailable
+                                                                                        soldOut
+                                                                                        soldOutDate
+                                                                                        image {
+                                                                                            key
+                                                                                            bucket
+                                                                                            region
+                                                                                            identityPoolId
+                                                                                        }
+                                                                                        availability {
+                                                                                            monday {
+                                                                                                startTime
+                                                                                                endTime
+                                                                                            }
+                                                                                            tuesday {
+                                                                                                startTime
+                                                                                                endTime
+                                                                                            }
+                                                                                            wednesday {
+                                                                                                startTime
+                                                                                                endTime
+                                                                                            }
+                                                                                            thursday {
+                                                                                                startTime
+                                                                                                endTime
+                                                                                            }
+                                                                                            friday {
+                                                                                                startTime
+                                                                                                endTime
+                                                                                            }
+                                                                                            saturday {
+                                                                                                startTime
+                                                                                                endTime
+                                                                                            }
+                                                                                            sunday {
+                                                                                                startTime
+                                                                                                endTime
+                                                                                            }
+                                                                                        }
                                                                                     }
                                                                                     totalQuantitySold
                                                                                     totalQuantityAvailable
