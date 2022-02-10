@@ -510,9 +510,10 @@ export const processPromotionDiscounts = (
 
 const processProductsForPrint = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[]) => {
     const convertedP: ICartProduct[] = [];
-    const convertedMG: ICartModifierGroup[] = [];
 
     products.forEach((p) => {
+        const convertedMG: ICartModifierGroup[] = [];
+
         p.modifierGroups &&
             p.modifierGroups.forEach((mg) => {
                 const convertedM: ICartModifier[] = [];
