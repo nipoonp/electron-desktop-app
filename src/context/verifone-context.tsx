@@ -7,6 +7,7 @@ import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
 import { toLocalISOString } from "../util/util";
 import { EEftposTransactionOutcome, IEftposTransactionOutcome, EVerifoneTransactionOutcome } from "../model/model";
 import { useErrorLogging } from "./errorLogging-context";
+import { useRegister } from "./register-context";
 
 let electron: any;
 let ipcRenderer: any;
@@ -78,6 +79,7 @@ const VerifoneContext = createContext<ContextProps>({
 
 const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const { addVerifoneLog } = useErrorLogging();
+    const { isPOS } = useRegister();
 
     const interval = 1 * 500; // 0.5 seconds
     const timeout = 3 * 60 * 1000; // 3 minutes
@@ -531,12 +533,22 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     break;
                 case "09":
                     // We should not come in here if its on kiosk mode, unattended mode for Verifone
-                    transactionOutcome = {
-                        platformTransactionOutcome: EVerifoneTransactionOutcome.ApprovedWithSignature,
-                        transactionOutcome: EEftposTransactionOutcome.Fail,
-                        message: "Transaction Approved With Signature Not Allowed In Kiosk Mode!",
-                        eftposReceipt: eftposReceipt.current,
-                    };
+                    if (isPOS) {
+                        transactionOutcome = {
+                            platformTransactionOutcome: EVerifoneTransactionOutcome.Approved,
+                            transactionOutcome: EEftposTransactionOutcome.Success,
+                            message: "Transaction Approved With Signature!",
+                            eftposReceipt: eftposReceipt.current,
+                        };
+                    } else {
+                        transactionOutcome = {
+                            platformTransactionOutcome: EVerifoneTransactionOutcome.ApprovedWithSignature,
+                            transactionOutcome: EEftposTransactionOutcome.Fail,
+                            message: "Transaction Approved With Signature Not Allowed In Kiosk Mode!",
+                            eftposReceipt: eftposReceipt.current,
+                        };
+                    }
+
                     break;
                 case "CC":
                     transactionOutcome = {
