@@ -103,6 +103,15 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     };
 
     useEffect(() => {
+        const logonTimer = setInterval(async () => {
+            /// Hotifx: Do a manual logon before each transaction.
+            ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.Logon},${0},${0}`);
+        }, 5000);
+
+        return () => clearInterval(logonTimer);
+    }, []);
+
+    useEffect(() => {
         ipcRenderer &&
             ipcRenderer.on("EFTPOS_CONNECT", (event: any, arg: any) => {
                 console.log("EFTPOS_CONNECT:", arg);
