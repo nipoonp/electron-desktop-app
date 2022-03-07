@@ -229,44 +229,42 @@ if (!gotTheLock) {
 }
 
 // Webapp Receipt Printer Side
-ipcMain.handle(
-    "RECEIPT_PRINTER_DATA",
-    async (event: any, order: IOrderReceipt): Promise<IPrintReceiptDataOutput> => {
-        try {
-            // A receipt request could have print customer receipts and kitchen receipts enabled. So we would have to print 2 copies.
-            if (order.customerPrinter) {
-                const result: IPrintReceiptOutput = await printReceipt(order, true);
+ipcMain.handle("RECEIPT_PRINTER_DATA", async (event: any, order: IOrderReceipt): Promise<IPrintReceiptDataOutput> => {
+    try {
+        // A receipt request could have print customer receipts and kitchen receipts enabled. So we would have to print 2 copies.
+        if (order.customerPrinter) {
+            const result: IPrintReceiptOutput = await printReceipt(order, true);
 
-                if (result.error) return { error: result.error, order: order };
-            }
-
-            if (order.kitchenPrinter) {
-                const result: IPrintReceiptOutput = await printReceipt(order, false);
-
-                if (result.error) return { error: result.error, order: order };
-            }
-
-            return { error: null, order: order };
-        } catch (e) {
-            return { error: e, order: order };
+            if (result.error) return { error: result.error, order: order };
         }
-    }
-);
 
-ipcMain.handle(
-    "RECEIPT_SALES_DATA",
-    async (event: any, printSalesDataInput: IPrintSalesDataInput): Promise<IPrintSalesDataOutput> => {
-        try {
-            const result: IPrintReceiptOutput = await printSalesDataReceipt(printSalesDataInput);
+        if (order.kitchenPrinter) {
+            const result: IPrintReceiptOutput = await printReceipt(order, false);
 
-            if (result.error) return { error: result.error, printSalesDataInput: printSalesDataInput };
-
-            return { error: null, printSalesDataInput: printSalesDataInput };
-        } catch (e) {
-            return { error: e, printSalesDataInput: printSalesDataInput };
+            if (result.error) return { error: result.error, order: order };
         }
+
+        return { error: null, order: order };
+    } catch (e) {
+        return { error: e, order: order };
     }
-);
+});
+
+ipcMain.handle("RECEIPT_SALES_DATA", async (event: any, printSalesDataInput: IPrintSalesDataInput): Promise<IPrintSalesDataOutput> => {
+    try {
+        const result: IPrintReceiptOutput = await printSalesDataReceipt(printSalesDataInput);
+
+        if (result.error) return { error: result.error, printSalesDataInput: printSalesDataInput };
+
+        return { error: null, printSalesDataInput: printSalesDataInput };
+    } catch (e) {
+        return { error: e, printSalesDataInput: printSalesDataInput };
+    }
+});
+
+ipcMain.on("SENTRY_CURRENT_USER", (event: any, data: any) => {
+    Sentry.setUser({ email: `${data.email} ${data.register}` });
+});
 
 // Webapp Side
 ipcMain.on("BROWSER_EFTPOS_CONNECT", (event: any, data: any) => {
