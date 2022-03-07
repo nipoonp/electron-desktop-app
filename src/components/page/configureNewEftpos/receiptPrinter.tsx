@@ -194,7 +194,7 @@ export const ReceiptPrinter = () => {
                 printerType: printerType,
                 printerAddress: printerAddress1,
                 customerPrinter: true,
-                kitchenPrinter: true,
+                kitchenPrinter: false,
                 hideModifierGroupsForCustomer: false,
                 eftposReceipt: "",
                 restaurant: {
