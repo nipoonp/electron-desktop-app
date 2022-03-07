@@ -83,6 +83,15 @@ export const GET_USER = gql`
                                     kitchenPrinter
                                     printAllOrderReceipts
                                     printOnlineOrderReceipts
+                                    ignoreCategories(limit: 500) {
+                                        items {
+                                            id
+                                            category {
+                                                id
+                                                name
+                                            }
+                                        }
+                                    }
                                     ignoreProducts(limit: 500) {
                                         items {
                                             id
@@ -125,8 +134,19 @@ export interface IGET_USER_REGISTER_PRINTER {
     address: string;
     customerPrinter: boolean;
     kitchenPrinter: boolean;
+    ignoreCategories: {
+        items: IGET_USER_REGISTER_PRINTER_IGNORE_CATEGORY[];
+    };
     ignoreProducts: {
         items: IGET_USER_REGISTER_PRINTER_IGNORE_PRODUCT[];
+    };
+}
+
+export interface IGET_USER_REGISTER_PRINTER_IGNORE_CATEGORY {
+    id: string;
+    category: {
+        id: string;
+        name: string;
     };
 }
 
@@ -259,6 +279,15 @@ export const GET_RESTAURANT = gql`
                             kitchenPrinter
                             printAllOrderReceipts
                             printOnlineOrderReceipts
+                            ignoreCategories(limit: 500) {
+                                items {
+                                    id
+                                    category {
+                                        id
+                                        name
+                                    }
+                                }
+                            }
                             ignoreProducts(limit: 500) {
                                 items {
                                     id
@@ -770,8 +799,19 @@ export interface IGET_RESTAURANT_REGISTER_PRINTER {
     kitchenPrinter: boolean;
     printAllOrderReceipts: boolean;
     printOnlineOrderReceipts: boolean;
+    ignoreCategories: {
+        items: IGET_RESTAURANT_REGISTER_PRINTER_IGNORE_CATEGORY[];
+    };
     ignoreProducts: {
         items: IGET_RESTAURANT_REGISTER_PRINTER_IGNORE_PRODUCT[];
+    };
+}
+
+export interface IGET_RESTAURANT_REGISTER_PRINTER_IGNORE_CATEGORY {
+    id: string;
+    category: {
+        id: string;
+        name: string;
     };
 }
 
