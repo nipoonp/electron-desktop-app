@@ -147,7 +147,7 @@ export const Orders = () => {
                             },
                             customerInformation: null,
                             notes: order.notes,
-                            products: convertProductTypesForPrint(order.products),
+                            products: convertProductTypesForPrint(productsToPrint),
                             eftposReceipt: order.eftposReceipt,
                             paymentAmounts: order.paymentAmounts,
                             total: order.total,
