@@ -54,14 +54,22 @@ export const getOrderNumber = (orderNumberSuffix: string) => {
 };
 
 export const filterPrintProducts = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[], printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
-    if (!printer.ignoreProducts || printer.ignoreProducts.items.length == 0) {
+    if (
+        (!printer.ignoreCategories || printer.ignoreCategories.items.length == 0) &&
+        (!printer.ignoreProducts || printer.ignoreProducts.items.length == 0)
+    )
         return products;
-    }
 
-    printer.ignoreProducts.items.forEach((ignoreProduct) => {
-        products.forEach((product) => {
-            if (ignoreProduct.product.id == product.id) {
-                products = products.filter((p) => p.id != product.id);
+    products.forEach((product) => {
+        printer.ignoreCategories.items.forEach((ignoreCategory) => {
+            if (product.category && product.category.id === ignoreCategory.category.id) {
+                products = products.filter((p) => p.category && p.category.id != ignoreCategory.category.id);
+            }
+        });
+
+        printer.ignoreProducts.items.forEach((ignoreProduct) => {
+            if (ignoreProduct.product.id === product.id) {
+                products = products.filter((p) => p.id != ignoreProduct.product.id);
             }
         });
     });

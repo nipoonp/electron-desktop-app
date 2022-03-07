@@ -225,7 +225,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                               }
                             : null,
                         notes: order.notes,
-                        products: convertProductTypesForPrint(order.products),
+                        products: convertProductTypesForPrint(productsToPrint),
                         paymentAmounts: order.paymentAmounts,
                         total: order.total,
                         discount: order.promotionId && order.discount ? order.discount : null,
