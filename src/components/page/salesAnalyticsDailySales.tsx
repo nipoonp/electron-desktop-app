@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import "./salesAnalytics.scss";
 import "./salesAnalytics.scss";
 
-export const SalesAnalyticsDailySales = () => {
+export default () => {
     const navigate = useNavigate();
     const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
 

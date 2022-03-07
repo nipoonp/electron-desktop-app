@@ -26,7 +26,7 @@ import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 import "react-clock/dist/Clock.css";
 import "./salesAnalytics.scss";
 
-export const SalesAnalytics = () => {
+export default () => {
     const navigate = useNavigate();
     const { restaurant } = useRestaurant();
     const { register } = useRegister();

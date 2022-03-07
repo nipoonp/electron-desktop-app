@@ -22,7 +22,7 @@ const passwordSchema = yup
     .min(8, "Password must be at least 8 characters long")
     .required("Password is required");
 
-export const Login = () => {
+export default () => {
     const { login } = useAuth();
     const navigate = useNavigate();
 

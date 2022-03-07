@@ -9,7 +9,7 @@ import { Button } from "../../tabin/components/button";
 
 import "./registerList.scss";
 
-export const RegisterList = () => {
+export default () => {
     const navigate = useNavigate();
     const { restaurant } = useRestaurant();
     const { register, connectRegister, disconnectRegister } = useRegister();

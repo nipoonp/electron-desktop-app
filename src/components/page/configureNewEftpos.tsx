@@ -12,7 +12,7 @@ enum EftposProvider {
     SMARTPAY,
     WINDCAVE,
 }
-export const ConfigureNewEftpos = () => {
+export default () => {
     const [eftposProvider, setEftposProvider] = useState(EftposProvider.WINDCAVE);
 
     return (

@@ -9,7 +9,7 @@ import { CachedImage } from "../../tabin/components/cachedImage";
 
 import "./beginOrder.scss";
 
-export const BeginOrder = (props: {}) => {
+export default (props: {}) => {
     const { restaurant } = useRestaurant();
 
     if (!restaurant) {

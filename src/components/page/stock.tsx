@@ -25,7 +25,7 @@ enum ItemAvailability {
     SoldOut,
 }
 
-export const Stock = () => {
+export default () => {
     const { restaurant: savedRestaurantItem } = useRestaurant();
     const [tabSelected, setTabSelected] = useState(TabSelected.Products);
 

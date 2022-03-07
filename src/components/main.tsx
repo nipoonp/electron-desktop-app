@@ -1,38 +1,42 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router";
 import { HashRouter } from "react-router-dom";
-import { Restaurant } from "./page/restaurant";
-import { NoMatch } from "./page/error/404";
-import Unauthorised from "./page/error/unauthorised";
 import Modal from "react-modal";
-import { Login } from "./page/auth/login";
-import { Checkout } from "./page/checkout";
-import { useAuth, AuthenticationStatus } from "../context/auth-context";
 import { Logger } from "aws-amplify";
-import { useUser } from "../context/user-context";
-import { ToastContainer } from "../tabin/components/toast";
-import { RestaurantList } from "./page/restaurantList";
-import { RegisterList } from "./page/registerList";
 import { createBrowserHistory } from "history";
-import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
-import { BeginOrder } from "./page/beginOrder";
-import { OrderType } from "./page/orderType";
-import { ConfigureNewEftpos } from "./page/configureNewEftpos";
-import { TableNumber } from "./page/tableNumber";
-import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
-import { useRestaurant } from "../context/restaurant-context";
-import { Logout } from "./page/auth/logout";
-import { Stock } from "./page/stock";
-import { Reports } from "./page/reports";
-import { Orders } from "./page/orders";
+
 import { AlertProvider } from "../tabin/components/alert";
-import { SalesAnalytics } from "./page/salesAnalytics";
-import { SalesAnalyticsDailySales } from "./page/salesAnalyticsDailySales";
-import { SalesAnalyticsHourlySales } from "./page/salesAnalyticsHourlySales";
-import { SalesAnalyticsTopCategory } from "./page/salesAnalyticsTopCategory";
-import { SalesAnalyticsTopProduct } from "./page/salesAnalyticsTopProduct";
+import { ToastContainer } from "../tabin/components/toast";
+import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
+import { useAuth, AuthenticationStatus } from "../context/auth-context";
+import { useUser } from "../context/user-context";
+import { useRestaurant } from "../context/restaurant-context";
+import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 
 import "react-toastify/dist/ReactToastify.min.css";
+
+const Login = lazy(() => import("./page/auth/login"));
+const Logout = lazy(() => import("./page/auth/logout"));
+const Restaurant = lazy(() => import("./page/restaurant"));
+const RestaurantList = lazy(() => import("./page/restaurantList"));
+const RegisterList = lazy(() => import("./page/registerList"));
+const BeginOrder = lazy(() => import("./page/beginOrder"));
+const OrderType = lazy(() => import("./page/orderType"));
+const ConfigureNewEftpos = lazy(() => import("./page/configureNewEftpos"));
+const TableNumber = lazy(() => import("./page/tableNumber"));
+const Checkout = lazy(() => import("./page/checkout"));
+
+const Stock = lazy(() => import("./page/stock"));
+const Reports = lazy(() => import("./page/reports"));
+const Orders = lazy(() => import("./page/orders"));
+const SalesAnalytics = lazy(() => import("./page/salesAnalytics"));
+const SalesAnalyticsDailySales = lazy(() => import("./page/salesAnalyticsDailySales"));
+const SalesAnalyticsHourlySales = lazy(() => import("./page/salesAnalyticsHourlySales"));
+const SalesAnalyticsTopCategory = lazy(() => import("./page/salesAnalyticsTopCategory"));
+const SalesAnalyticsTopProduct = lazy(() => import("./page/salesAnalyticsTopProduct"));
+
+const NoMatch = lazy(() => import("./page/error/404"));
+const Unauthorised = lazy(() => import("./page/error/unauthorised"));
 
 let electron: any;
 let ipcRenderer: any;
@@ -80,7 +84,9 @@ export default () => {
             <AlertProvider>
                 {/* Cannot use BrowserRouter in electron. Should use HashRouter: https://github.com/remix-run/react-router/issues/6726 */}
                 <HashRouter>
-                    <AppRoutes />
+                    <Suspense fallback={<FullScreenSpinner show={true} text="Loading page..." />}>
+                        <AppRoutes />
+                    </Suspense>
                 </HashRouter>
             </AlertProvider>
             <ToastContainer />

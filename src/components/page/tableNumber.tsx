@@ -8,7 +8,7 @@ import { useRestaurant } from "../../context/restaurant-context";
 
 import "./tableNumber.scss";
 
-export const TableNumber = () => {
+export default () => {
     const navigate = useNavigate();
     const { tableNumber, setTableNumber } = useCart();
     const { restaurant } = useRestaurant();

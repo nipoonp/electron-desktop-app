@@ -5,7 +5,7 @@ import { useRestaurant } from "../../../context/restaurant-context";
 import { FullScreenSpinner } from "../../../tabin/components/fullScreenSpinner";
 import { toast } from "../../../tabin/components/toast";
 
-export const Logout = () => {
+export default () => {
     const { logout } = useAuth();
     const { register, disconnectRegister } = useRegister();
     const { selectRestaurant } = useRestaurant();

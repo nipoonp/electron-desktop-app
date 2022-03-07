@@ -7,8 +7,7 @@ import "./salesAnalytics.scss";
 import { LineGraph } from "./salesAnalytics/salesAnalyticsGraphs";
 import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 
-
-export const SalesAnalyticsHourlySales = () => {
+export default () => {
     const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
 
     const graphColor = getComputedStyle(document.documentElement).getPropertyValue("--primary-color");

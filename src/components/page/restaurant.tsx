@@ -38,7 +38,7 @@ export interface IMostPopularProductObj {
     [id: string]: boolean;
 }
 
-export const Restaurant = () => {
+export default () => {
     // context
     const { restaurantId, selectedCategoryId, selectedProductId } = useParams();
     const navigate = useNavigate();

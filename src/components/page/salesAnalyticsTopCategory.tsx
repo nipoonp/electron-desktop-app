@@ -10,7 +10,7 @@ import { taxRate } from "../../model/util";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
 
-export const SalesAnalyticsTopCategory = () => {
+export default () => {
     const { startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
 
     const graphColor = getComputedStyle(document.documentElement).getPropertyValue("--primary-color");

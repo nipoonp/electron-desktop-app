@@ -8,7 +8,7 @@ import { toast } from "../../tabin/components/toast";
 
 import "./reports.scss";
 
-export const Reports = () => {
+export default () => {
     const { restaurant } = useRestaurant();
     const [showSpinner, setShowSpinner] = useState(false);
 

@@ -18,7 +18,7 @@ import { useParams } from "react-router-dom";
 
 import "./orders.scss";
 
-export const Orders = () => {
+export default () => {
     const { dateParam } = useParams();
     const { restaurant } = useRestaurant();
     const { register } = useRegister();

@@ -10,7 +10,7 @@ import { useRestaurant } from "../../context/restaurant-context";
 
 import "./orderType.scss";
 
-export const OrderType = () => {
+export default () => {
     const navigate = useNavigate();
     const { setOrderType } = useCart();
     const { register, isPOS } = useRegister();
