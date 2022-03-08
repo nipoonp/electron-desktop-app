@@ -220,7 +220,7 @@ export const printReceipt = async (order: IOrderReceipt, isCustomerReceipt: bool
                 }
 
                 if (modifier.price > 0 && changedQuantity > 0) {
-                    mStr += ` ($${convertCentsToDollars(modifier.price)})`;
+                    mStr += ` (+$${convertCentsToDollars(modifier.price)})`;
                 }
 
                 printer.println(mStr);
@@ -271,7 +271,7 @@ export const printReceipt = async (order: IOrderReceipt, isCustomerReceipt: bool
                                     }
 
                                     if (productModifier_modifier.price > 0 && changedQuantity > 0) {
-                                        mStr += ` ($${convertCentsToDollars(productModifier_modifier.price)})`;
+                                        mStr += ` (+$${convertCentsToDollars(productModifier_modifier.price)})`;
                                     }
 
                                     printer.println(`     ${mStr}`);
