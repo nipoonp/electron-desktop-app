@@ -594,12 +594,13 @@ export const Checkout = () => {
 
     const onConfirmCashTransaction = async (amount: number) => {
         try {
+            const nonCashPayments = paymentAmounts.eftpos + paymentAmounts.online;
             const newCashPaymentAmounts = paymentAmounts.cash + amount;
             const newTotalPaymentAmounts = newCashPaymentAmounts + paymentAmounts.eftpos;
 
             const newPaymentAmounts: ICartPaymentAmounts = {
                 ...paymentAmounts,
-                cash: newTotalPaymentAmounts >= subTotal ? subTotal : newCashPaymentAmounts, //Cannot pay more than subTotal amount
+                cash: newTotalPaymentAmounts >= subTotal ? subTotal - nonCashPayments : newCashPaymentAmounts, //Cannot pay more than subTotal amount
             };
             const newPayments: ICartPayment[] = [...payments, { type: "CASH", amount: amount }];
 

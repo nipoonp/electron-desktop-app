@@ -14,6 +14,7 @@ import { useRestaurant } from "../context/restaurant-context";
 import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 
 import "react-toastify/dist/ReactToastify.min.css";
+import { useRegister } from "../context/register-context";
 
 const Login = lazy(() => import("./page/auth/login"));
 const Logout = lazy(() => import("./page/auth/logout"));
@@ -95,6 +96,8 @@ export default () => {
 };
 
 const AppRoutes = () => {
+    const { user } = useAuth();
+    const { register } = useRegister();
     const navigate = useNavigate();
     let timerId: NodeJS.Timeout;
 
@@ -102,6 +105,17 @@ const AppRoutes = () => {
     useEffect(() => {
         navigate(beginOrderPath);
     }, []);
+
+    useEffect(() => {
+        const e = user ? user.attributes.email : "invalid email";
+        const r = register ? `${register.name} (${register.id})` : "invalid register";
+
+        ipcRenderer &&
+            ipcRenderer.send("SENTRY_CURRENT_USER", {
+                email: e,
+                register: r,
+            });
+    }, [user, register]);
 
     useEffect(() => {
         document.body.onmousedown = () => {
