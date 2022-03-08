@@ -1149,7 +1149,7 @@ const Modifier = (props: {
 
                 {isValid ? (
                     <div>
-                        {modifier.name} {modifier.price > 0 && `($${convertCentsToDollars(modifier.price)})`}
+                        {modifier.name} {modifier.price > 0 && `(+$${convertCentsToDollars(modifier.price)})`}
                         {modifierQuantityAvailable && modifierQuantityAvailable <= 5 ? (
                             <span className="quantity-remaining ml-2">{getQuantityRemainingText(modifierQuantityAvailable)}</span>
                         ) : (
@@ -1158,7 +1158,7 @@ const Modifier = (props: {
                     </div>
                 ) : (
                     <div>
-                        {modifier.name} {modifier.price > 0 && `($${convertCentsToDollars(modifier.price)})`} (SOLD OUT)
+                        {modifier.name} {modifier.price > 0 && `(+$${convertCentsToDollars(modifier.price)})`} (SOLD OUT)
                     </div>
                 )}
 

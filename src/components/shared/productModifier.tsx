@@ -46,7 +46,7 @@ const OrderItemDetails = (props: { modifierGroups: ICartModifierGroup[] | IGET_R
         }
 
         if (price > 0 && changedQuantity > 0) {
-            mStr += ` ($${convertCentsToDollars(price)})`;
+            mStr += ` (+$${convertCentsToDollars(price)})`;
         }
 
         return mStr;
