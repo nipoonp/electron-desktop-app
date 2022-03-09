@@ -27,6 +27,7 @@ const initialPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online:
 const initialSubTotal = 0;
 const initialPayments = [];
 const initialTransactionEftposReceipts = "";
+const initialIsShownUpSellCrossSellModal = false;
 
 type ContextProps = {
     // restaurant: IGET_RESTAURANT | null;
@@ -58,6 +59,8 @@ type ContextProps = {
     setPaymentAmounts: (paymentAmounts: ICartPaymentAmounts) => void;
     transactionEftposReceipts: string;
     setTransactionEftposReceipts: (receipt: string) => void;
+    isShownUpSellCrossSellModal: boolean;
+    setIsShownUpSellCrossSellModal: (isShownUpSellCrossSellModal: boolean) => void;
 };
 
 const CartContext = createContext<ContextProps>({
@@ -90,6 +93,8 @@ const CartContext = createContext<ContextProps>({
     setPaymentAmounts: () => {},
     transactionEftposReceipts: initialTransactionEftposReceipts,
     setTransactionEftposReceipts: () => {},
+    isShownUpSellCrossSellModal: initialIsShownUpSellCrossSellModal,
+    setIsShownUpSellCrossSellModal: () => {},
 });
 
 const CartProvider = (props: { children: React.ReactNode }) => {
@@ -104,6 +109,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
     const [payments, _setPayments] = useState<ICartPayment[]>(initialPayments);
     const [transactionEftposReceipts, _setTransactionEftposReceipts] = useState<string>(initialTransactionEftposReceipts);
+    const [isShownUpSellCrossSellModal, _setIsShownUpSellCrossSellModal] = useState<boolean>(initialIsShownUpSellCrossSellModal);
 
     const [userAppliedPromotionCode, _setUserAppliedPromotionCode] = useState<string | null>(initialUserAppliedPromotionCode);
     const [promotion, _setPromotion] = useState<ICartPromotion | null>(initialPromotion);
@@ -479,6 +485,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setTransactionEftposReceipts(receipt);
     };
 
+    const setIsShownUpSellCrossSellModal = (isShownUpSellCrossSellModal: boolean) => {
+        _setIsShownUpSellCrossSellModal(isShownUpSellCrossSellModal);
+    };
+
     const clearCart = () => {
         _setOrderType(initialOrderType);
         _setTableNumber(initialTableNumber);
@@ -494,6 +504,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setSubTotal(initialSubTotal);
         _setPayments(initialPayments);
         _setTransactionEftposReceipts(initialTransactionEftposReceipts);
+        _setIsShownUpSellCrossSellModal(initialIsShownUpSellCrossSellModal);
     };
 
     return (
@@ -528,6 +539,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setPayments: setPayments,
                 transactionEftposReceipts: transactionEftposReceipts,
                 setTransactionEftposReceipts: setTransactionEftposReceipts,
+                isShownUpSellCrossSellModal: isShownUpSellCrossSellModal,
+                setIsShownUpSellCrossSellModal: setIsShownUpSellCrossSellModal,
             }}
             children={props.children}
         />
