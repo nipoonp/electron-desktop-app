@@ -70,10 +70,12 @@ const OrderItem = (props: {
 
         setPrice(convertCentsToDollars(productPrice));
         setDisplayPrice(convertCentsToDollars(totalProductPrice));
-    }, [product.quantity, product.price, product.discount]);
+        setQuantity(product.quantity.toString());
+    }, [product.quantity, product.price, product.discount, product.modifierGroups]);
 
     const onChangeStepperQuantity = (newQuantity: number) => {
         setQuantity(newQuantity.toString());
+        onUpdateProductQuantity(displayOrder, newQuantity);
     };
 
     const onChangeQuantity = (newQuantity: string) => {
