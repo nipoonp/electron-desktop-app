@@ -77,6 +77,8 @@ export const Checkout = () => {
         addProduct,
         userAppliedPromotionCode,
         removeUserAppliedPromotion,
+        isShownUpSellCrossSellModal,
+        setIsShownUpSellCrossSellModal,
     } = useCart();
     const { restaurant } = useRestaurant();
     const { register, isPOS } = useRegister();
@@ -126,8 +128,11 @@ export const Checkout = () => {
     // const isUserFocusedOnEmailAddressInput = useRef(false);
 
     useEffect(() => {
+        if (isShownUpSellCrossSellModal) return;
+
         setTimeout(() => {
             setShowUpSellCategoryModal(true);
+            setIsShownUpSellCrossSellModal(true);
         }, 1000);
     }, []);
 
@@ -544,7 +549,8 @@ export const Checkout = () => {
 
     const onUpdateProduct = (index: number, product: ICartProduct) => {
         updateProduct(index, product);
-        setShowItemUpdatedModal(true);
+
+        if (!isPOS) setShowItemUpdatedModal(true);
     };
 
     const onClickApplyPromotionCode = async () => {
