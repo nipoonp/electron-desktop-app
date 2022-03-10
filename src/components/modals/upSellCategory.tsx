@@ -32,9 +32,9 @@ export const UpSellCategoryModal = (props: IUpSellCategoryModalProps) => {
     };
 
     const categoryDisplay = (category: IGET_RESTAURANT_CATEGORY) => {
-        const isAvailable = isItemAvailable(category.availability);
+        const isCategoryAvailable = isItemAvailable(category.availability);
 
-        const isValid = isAvailable;
+        const isValid = isCategoryAvailable;
 
         return (
             <>
