@@ -91,10 +91,11 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
 
     const productDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
-        const isAvailable = isItemAvailable(product.availability);
+        const isProductAvailable = isItemAvailable(product.availability);
+        const isCategoryAvailable = isItemAvailable(category.availability);
         const isQuantityAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById);
 
-        const isValid = !isSoldOut && isAvailable && isQuantityAvailable;
+        const isValid = !isSoldOut && isProductAvailable && isCategoryAvailable && isQuantityAvailable;
 
         const onClickProduct = (category: any, product: any) => {
             props.onClickSearchProduct(category, product);

@@ -214,6 +214,7 @@ export const GET_RESTAURANT = gql`
                 identityPoolId
             }
             autoCompleteOrders
+            preparationTimeInMinutes
             salesReportMailingList
             advertisements {
                 items {
@@ -735,7 +736,6 @@ export interface IGET_RESTAURANT {
     id: string;
     name: string;
     description: string;
-    // averagePreparationTimeInMinutes: number;
     isAcceptingOrders: boolean;
     verified: boolean;
     address: {
@@ -747,6 +747,7 @@ export interface IGET_RESTAURANT {
     gstNumber: string | null;
     customStyleSheet?: IS3Object;
     autoCompleteOrders: boolean | null;
+    preparationTimeInMinutes: number | null;
     salesReportMailingList: string | null;
     advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
     upSellCrossSell?: IGET_RESTAURANT_UP_SELL_CROSS_SELL;

@@ -339,10 +339,11 @@ export default () => {
 
     const productDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
-        const isAvailable = isItemAvailable(product.availability);
+        const isProductAvailable = isItemAvailable(product.availability);
+        const isCategoryAvailable = isItemAvailable(category.availability);
         const isQuantityAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById);
 
-        const isValid = !isSoldOut && isAvailable && isQuantityAvailable;
+        const isValid = !isSoldOut && isProductAvailable && isCategoryAvailable && isQuantityAvailable;
 
         return (
             <>
@@ -397,9 +398,9 @@ export default () => {
                 }}
             >
                 {!isAvailable ? (
-                    <div className={`name ${isAvailable ? "available" : "unavailable"}`}>{category.name} (UNAVAILABLE)</div>
+                    <div className={`name unavailable`}>{category.name} (UNAVAILABLE)</div>
                 ) : isSelected ? (
-                    <div className="text-bold">{category.name}</div>
+                    <div className="name text-bold">{category.name}</div>
                 ) : (
                     <div className="name">{category.name}</div>
                 )}
