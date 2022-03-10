@@ -150,15 +150,15 @@
                 background-color: #e0e0e0;
             }
 
+            .unavailable {
+                opacity: 0.5;
+            }
+
             .name {
                 font-weight: 300;
 
                 .available {
                     opacity: 1;
-                }
-
-                .unavailable {
-                    opacity: 0.5;
                 }
             }
 

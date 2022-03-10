@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FiX } from "react-icons/fi";
 import { useCart } from "../../context/cart-context";
 import { useRegister } from "../../context/register-context";
+import { useRestaurant } from "../../context/restaurant-context";
 import { EEftposTransactionOutcome, EPaymentModalState, IEftposTransactionOutcome } from "../../model/model";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { Button } from "../../tabin/components/button";
@@ -250,6 +251,7 @@ const PaymentPayLater = (props: {
     onContinueToNextOrder: () => void;
 }) => {
     const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { restaurant } = useRestaurant();
 
     return (
         <>
@@ -257,6 +259,12 @@ const PaymentPayLater = (props: {
             <div className="h2 mb-6">Please pay later at the counter.</div>
             <div className="mb-1">Your order number is</div>
             <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+            {restaurant && restaurant.preparationTimeInMinutes && (
+                <div className="preparation-time h2 mt-3 mb-6">
+                    Your order will be ready in {restaurant.preparationTimeInMinutes} {restaurant.preparationTimeInMinutes > 1 ? "minutes" : "minute"}
+                </div>
+            )}
+
             <div className="separator-6 mb-6"></div>
             <RedirectingIn
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
@@ -273,6 +281,7 @@ const PaymentCashPayment = (props: {
     onContinueToNextOrder: () => void;
 }) => {
     const { cashTransactionChangeAmount, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { restaurant } = useRestaurant();
 
     return (
         <>
@@ -281,6 +290,12 @@ const PaymentCashPayment = (props: {
             <div className="h1 mb-6">Change: ${convertCentsToDollars(cashTransactionChangeAmount || 0)}</div>
             <div className="mb-1">Your order number is</div>
             <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+            {restaurant && restaurant.preparationTimeInMinutes && (
+                <div className="preparation-time h2 mt-3 mb-6">
+                    Your order will be ready in {restaurant.preparationTimeInMinutes} {restaurant.preparationTimeInMinutes > 1 ? "minutes" : "minute"}
+                </div>
+            )}
+
             <div className="separator-6 mb-6"></div>
             <RedirectingIn
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
