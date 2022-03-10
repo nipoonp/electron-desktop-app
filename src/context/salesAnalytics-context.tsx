@@ -126,14 +126,19 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
 
     const [salesAnalytics, setSalesAnalytics] = useState<ISalesAnalytics | null>(null);
-    const [startDate, setStartDate] = useState<string | null>(format(subDays(new Date(), 7), "yyyy-MM-dd"));
+    const [startDate, setStartDate] = useState<string | null>(format(subDays(new Date(), 6), "yyyy-MM-dd"));
     const [endDate, setEndDate] = useState<string | null>(format(new Date(), "yyyy-MM-dd")); //Adding extra day because GraphQL query is not inclusive of endDate
 
     // Filters
     const [registerFilters, setRegisterFilter] = useState<IGET_RESTAURANT_REGISTER[]>([]);
     const [orderFilters, setOrderFilter] = useState(Object.values(EOrderType));
 
-    const { data: orders, error, loading, refetch } = useGetRestaurantOrdersByBetweenPlacedAt(
+    const {
+        data: orders,
+        error,
+        loading,
+        refetch,
+    } = useGetRestaurantOrdersByBetweenPlacedAt(
         restaurant ? restaurant.id : "",
         startDate,
         endDate ? format(addDays(new Date(endDate), 1), "yyyy-MM-dd") : null //Adding extra day because GraphQL query is not inclusive of endDate
