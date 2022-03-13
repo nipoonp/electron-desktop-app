@@ -390,7 +390,7 @@ export const GET_RESTAURANT = gql`
                     }
                 }
             }
-            categories(limit: 500) {
+            categories(limit: 20) {
                 items {
                     id
                     name
@@ -529,7 +529,7 @@ export const GET_RESTAURANT = gql`
                                         }
                                     }
                                 }
-                                modifierGroups(limit: 500) {
+                                modifierGroups(limit: 20) {
                                     items {
                                         id
                                         displaySequence
@@ -541,7 +541,7 @@ export const GET_RESTAURANT = gql`
                                             choiceMax
                                             choiceDuplicate
                                             availablePlatforms
-                                            modifiers(limit: 500) {
+                                            modifiers(limit: 50) {
                                                 items {
                                                     id
                                                     displaySequence
@@ -607,7 +607,7 @@ export const GET_RESTAURANT = gql`
                                                                     endTime
                                                                 }
                                                             }
-                                                            modifierGroups(limit: 500) {
+                                                            modifierGroups(limit: 20) {
                                                                 items {
                                                                     id
                                                                     displaySequence
@@ -619,7 +619,7 @@ export const GET_RESTAURANT = gql`
                                                                         choiceMax
                                                                         choiceDuplicate
                                                                         availablePlatforms
-                                                                        modifiers(limit: 500) {
+                                                                        modifiers(limit: 50) {
                                                                             items {
                                                                                 id
                                                                                 displaySequence
