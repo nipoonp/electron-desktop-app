@@ -8,6 +8,7 @@ import { toLocalISOString } from "../util/util";
 import { EEftposTransactionOutcome, IEftposTransactionOutcome, EVerifoneTransactionOutcome } from "../model/model";
 import { useErrorLogging } from "./errorLogging-context";
 import { useRegister } from "./register-context";
+import { format } from "date-fns";
 
 let electron: any;
 let ipcRenderer: any;
@@ -253,7 +254,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     // });
 
     const addToLogs = (log: string) => {
-        logs.current += log + "\n";
+        logs.current += format(new Date(), "dd/MM/yy HH:mm:ss ") + log + "\n";
     };
 
     const createEftposTransactionLog = async (restaurantId: string, amount: number) => {
@@ -337,60 +338,35 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         }
     };
 
-    const createTransaction = (amount: number, ipAddress: string, portNumber: string, restaurantId: string): Promise<IEftposTransactionOutcome> => {
-        resetVariables();
-
+    const createOrRefetchTransaction = (
+        amount: number,
+        ipAddress: string,
+        portNumber: string,
+        refetchOutcomeTransactionId?: string
+    ): Promise<IEftposTransactionOutcome> => {
         return new Promise(async (resolve, reject) => {
-            addToLogs("Transaction Started.");
-
-            if (!amount) {
-                addToLogs("Reject: The amount has to be supplied");
-                await createEftposTransactionLog(restaurantId, amount);
-
-                reject("The amount has to be supplied");
-                return;
-            } else if (amount == 0) {
-                addToLogs("Reject: The amount must be greater than 0");
-                await createEftposTransactionLog(restaurantId, amount);
-
-                reject("The amount must be greater than 0");
-                return;
-            } else if (!ipAddress) {
-                addToLogs("Reject: The IP address has to be supplied");
-                await createEftposTransactionLog(restaurantId, amount);
-
-                reject("The IP address has to be supplied");
-                return;
-            } else if (!portNumber) {
-                addToLogs("Reject: The port number has to be supplied");
-                await createEftposTransactionLog(restaurantId, amount);
-
-                reject("The port number has to be supplied");
-                return;
-            }
-
             // Create Variables -------------------------------------------------------------------------------------------------------------------------------- //
             const endTime = Number(new Date()) + timeout;
-            const transactionId = getVerifoneTimeBasedTransactionId();
+            const transactionId = refetchOutcomeTransactionId ? refetchOutcomeTransactionId : getVerifoneTimeBasedTransactionId();
             const merchantId = 0;
             let iSO8583ResponseCode;
 
             // Connect To EFTPOS -------------------------------------------------------------------------------------------------------------------------------- //
             const connectTimedOut = await connectToEftpos(ipAddress, portNumber);
             if (connectTimedOut) {
-                addToLogs("Reject: There was an issue connecting to the Eftpos.");
-                await createEftposTransactionLog(restaurantId, amount);
-
-                reject("There was an issue connecting to the Eftpos.");
+                reject({
+                    transactionId: null, //Set value only after perform transaction command has actually been sent
+                    message: "There was an issue connecting to the Eftpos.",
+                });
                 return;
             }
 
             const errorMessage = checkForErrors();
             if (errorMessage) {
-                addToLogs(`Reject: ${errorMessage}`);
-                await createEftposTransactionLog(restaurantId, amount);
-
-                reject(errorMessage);
+                reject({
+                    transactionId: null,
+                    message: errorMessage,
+                });
                 return;
             }
 
@@ -404,14 +380,13 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             ) {
                 const errorMessage = checkForErrors();
                 if (errorMessage) {
-                    addToLogs(`Reject: ${errorMessage}`);
-                    await createEftposTransactionLog(restaurantId, amount);
-
-                    reject(errorMessage);
+                    reject({
+                        transactionId: null,
+                        message: errorMessage,
+                    });
                     return;
                 }
 
-                console.log("Waiting to receive Configure Printing Response (CP,ON)...");
                 addToLogs("Waiting to receive Configure Printing Response (CP,ON)...");
 
                 await delay(interval);
@@ -419,26 +394,23 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 if (!(Number(new Date()) < printingTimeoutEndTime)) {
                     const disconnectTimedOut = await disconnectEftpos();
                     if (disconnectTimedOut) {
-                        addToLogs("Reject: There was an issue disconnecting to the Eftpos.");
-                        await createEftposTransactionLog(restaurantId, amount);
-
-                        reject("There was an issue disconnecting to the Eftpos.");
+                        reject({ transactionId: null, message: "There was an issue disconnecting to the Eftpos." });
                         return;
                     }
 
-                    addToLogs("Reject: There was an issue configuring Eftpos Printing.");
-                    await createEftposTransactionLog(restaurantId, amount);
-
-                    reject("There was an issue configuring Eftpos Printing.");
+                    reject({ transactionId: null, message: "There was an issue configuring Eftpos Printing." });
                     return;
                 }
             }
 
             // Create A Transaction -------------------------------------------------------------------------------------------------------------------------------- //
-            ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.Purchase},${transactionId},${merchantId},${amount}`);
-            addToLogs(`BROWSER_DATA: ${VMT.Purchase},${transactionId},${merchantId},${amount}`);
-            // localStorage.setItem("verifoneTransactionId", transactionId.toString());
-            // localStorage.setItem("verifoneMerchantId", merchantId.toString());
+            // We only want to create a new transaction if we are not refetching the result of an existing one
+            if (!refetchOutcomeTransactionId) {
+                ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.Purchase},${transactionId},${merchantId},${amount}`);
+                addToLogs(`BROWSER_DATA: ${VMT.Purchase},${transactionId},${merchantId},${amount}`);
+                // localStorage.setItem("verifoneTransactionId", transactionId.toString());
+                // localStorage.setItem("verifoneMerchantId", merchantId.toString());
+            }
 
             // Poll For Transaction Result -------------------------------------------------------------------------------------------------------------------------------- //
             while (true) {
@@ -447,10 +419,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
                 const errorMessage = checkForErrors();
                 if (errorMessage) {
-                    addToLogs(`Reject: ${errorMessage}`);
-                    await createEftposTransactionLog(restaurantId, amount);
-
-                    reject(errorMessage);
+                    reject({ transactionId: transactionId, message: errorMessage });
                     return;
                 }
 
@@ -462,34 +431,22 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 if (!(loopDate < endTime)) {
                     const disconnectTimedOut = await disconnectEftpos();
                     if (disconnectTimedOut) {
-                        addToLogs("Reject: There was an issue disconnecting to the Eftpos.");
-                        await createEftposTransactionLog(restaurantId, amount);
-
-                        reject("There was an issue disconnecting to the Eftpos.");
+                        reject({ transactionId: transactionId, message: "There was an issue disconnecting to the Eftpos." });
                         return;
                     }
 
-                    addToLogs("Reject: Transaction timed out.");
-                    await createEftposTransactionLog(restaurantId, amount);
-
-                    reject("Transaction timed out.");
+                    reject({ transactionId: transactionId, message: "Transaction timed out." });
                     return;
                 }
 
                 if (!(loopDate < lastMessageReceived.current + noResponseTimeout)) {
                     const disconnectTimedOut = await disconnectEftpos();
                     if (disconnectTimedOut) {
-                        addToLogs("Reject: There was an issue disconnecting to the Eftpos.");
-                        await createEftposTransactionLog(restaurantId, amount);
-
-                        reject("There was an issue disconnecting to the Eftpos.");
+                        reject({ transactionId: transactionId, message: "There was an issue disconnecting to the Eftpos." });
                         return;
                     }
 
-                    addToLogs("Reject: Eftpos unresponsive. Please make sure your Eftpos is powered on and working.");
-                    await createEftposTransactionLog(restaurantId, amount);
-
-                    reject("Eftpos unresponsive. Please make sure your Eftpos is powered on and working.");
+                    reject({ transactionId: transactionId, message: "Eftpos unresponsive. Please make sure your Eftpos is powered on and working." });
                     return;
                 }
 
@@ -512,10 +469,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
             const disconnectTimedOut = await disconnectEftpos();
             if (disconnectTimedOut) {
-                addToLogs("Reject: There was an issue disconnecting to the Eftpos.");
-                await createEftposTransactionLog(restaurantId, amount);
-
-                reject("There was an issue disconnecting to the Eftpos.");
+                reject({ transactionId: transactionId, message: "There was an issue disconnecting to the Eftpos." });
                 return;
             }
 
@@ -548,7 +502,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                             eftposReceipt: eftposReceipt.current,
                         };
                     }
-
                     break;
                 case "CC":
                     transactionOutcome = {
@@ -619,9 +572,78 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             }
 
             addToLogs("Success: Transaction Completed.");
-            await createEftposTransactionLog(restaurantId, amount);
-
             resolve(transactionOutcome);
+        });
+    };
+
+    const createTransaction = (amount: number, ipAddress: string, portNumber: string, restaurantId: string): Promise<IEftposTransactionOutcome> => {
+        resetVariables();
+
+        return new Promise(async (resolve, reject) => {
+            addToLogs("Transaction Started.");
+
+            if (!amount) {
+                addToLogs("Reject: The amount has to be supplied");
+                await createEftposTransactionLog(restaurantId, amount);
+
+                reject("The amount has to be supplied");
+                return;
+            } else if (amount == 0) {
+                addToLogs("Reject: The amount must be greater than 0");
+                await createEftposTransactionLog(restaurantId, amount);
+
+                reject("The amount must be greater than 0");
+                return;
+            } else if (!ipAddress) {
+                addToLogs("Reject: The IP address has to be supplied");
+                await createEftposTransactionLog(restaurantId, amount);
+
+                reject("The IP address has to be supplied");
+                return;
+            } else if (!portNumber) {
+                addToLogs("Reject: The port number has to be supplied");
+                await createEftposTransactionLog(restaurantId, amount);
+
+                reject("The port number has to be supplied");
+                return;
+            }
+
+            try {
+                const outcome = await createOrRefetchTransaction(amount, ipAddress, portNumber);
+
+                await createEftposTransactionLog(restaurantId, amount);
+
+                resolve(outcome);
+            } catch (error) {
+                addToLogs("Reject: " + error.message);
+
+                // We only want to create a new transaction if we are not refetching the result of an existing one
+                if (error.transactionId) {
+                    try {
+                        addToLogs("Refetching transaction outcome ------------------");
+                        console.log("Refetching transaction outcome ------------------");
+
+                        const outcome = await createOrRefetchTransaction(amount, ipAddress, portNumber, error.transactionId);
+
+                        await createEftposTransactionLog(restaurantId, amount);
+
+                        resolve(outcome);
+                    } catch (error2) {
+                        addToLogs("Reject: " + error2.message);
+
+                        await createEftposTransactionLog(restaurantId, amount);
+                        console.log("error2.message", error2.message);
+                        reject(error2.message);
+                        return;
+                    }
+                } else {
+                    await createEftposTransactionLog(restaurantId, amount);
+
+                    console.log("error.message", error.message);
+                    reject(error.message);
+                    return;
+                }
+            }
         });
     };
 
