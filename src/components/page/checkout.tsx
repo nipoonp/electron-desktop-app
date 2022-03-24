@@ -110,6 +110,7 @@ export const Checkout = () => {
 
     const [paymentModalState, setPaymentModalState] = useState<EPaymentModalState>(EPaymentModalState.None);
 
+    const [eftposTransactionDelayed, setEftposTransactionDelayed] = useState<boolean>(false);
     const [eftposTransactionOutcome, setEftposTransactionOutcome] = useState<IEftposTransactionOutcome | null>(null);
     const [cashTransactionChangeAmount, setCashTransactionChangeAmount] = useState<number | null>(null);
 
@@ -512,11 +513,10 @@ export const Checkout = () => {
                 let delayedShown = false;
 
                 const delayed = (outcome: IEftposTransactionOutcome) => {
-                    // if (!delayedShown) {
-                    //     delayedShown = true;
-                    //     // Might want to let the user know to check if everything is ok with the device
-                    //     setEftposTransactionOutcome(outcome);
-                    // }
+                    if (!delayedShown) {
+                        delayedShown = true;
+                        setEftposTransactionDelayed(true);
+                    }
                 };
 
                 const pollingUrl = await smartpayCreateTransaction(amount, "Card.Purchase");
@@ -531,7 +531,9 @@ export const Checkout = () => {
                 );
                 outcome = await windcavePollForOutcome(register.windcaveStationId, register.windcaveStationUser, register.windcaveStationKey, txnRef);
             } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
-                outcome = await verifoneCreateTransaction(amount, register.eftposIpAddress, register.eftposPortNumber, restaurant.id);
+                const delayed = () => setEftposTransactionDelayed(true);
+
+                outcome = await verifoneCreateTransaction(amount, register.eftposIpAddress, register.eftposPortNumber, restaurant.id, delayed);
             }
 
             if (!outcome) throw "Invalid Eftpos Transaction outcome.";
@@ -544,6 +546,8 @@ export const Checkout = () => {
                 message: errorMessage,
                 eftposReceipt: null,
             };
+        } finally {
+            setEftposTransactionDelayed(false);
         }
     };
 
@@ -813,6 +817,7 @@ export const Checkout = () => {
                         isOpen={showPaymentModal}
                         onClose={onClosePaymentModal}
                         paymentModalState={paymentModalState}
+                        eftposTransactionDelayed={eftposTransactionDelayed}
                         eftposTransactionOutcome={eftposTransactionOutcome}
                         cashTransactionChangeAmount={cashTransactionChangeAmount}
                         paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
