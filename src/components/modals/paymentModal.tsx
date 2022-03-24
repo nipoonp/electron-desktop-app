@@ -24,6 +24,7 @@ interface IPaymentModalProps {
     isOpen: boolean;
     onClose: () => void;
     paymentModalState: EPaymentModalState;
+    eftposTransactionDelayed: boolean;
     eftposTransactionOutcome: IEftposTransactionOutcome | null;
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
@@ -46,6 +47,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         paymentOutcomeOrderNumber,
         paymentOutcomeApprovedRedirectTimeLeft,
         onContinueToNextOrder,
+        eftposTransactionDelayed,
         eftposTransactionOutcome,
         cashTransactionChangeAmount,
         createOrderError,
@@ -109,6 +111,10 @@ export const PaymentModal = (props: IPaymentModalProps) => {
     const getActivePaymentModalComponent = () => {
         if (createOrderError) {
             return <CreateOrderFailed createOrderError={createOrderError} onCancelOrder={onCancelOrder} />;
+        }
+
+        if (eftposTransactionDelayed) {
+            return <PaymentDelayed errorMessage={"This transaction is delayed. Please wait..."} />;
         }
 
         if (paymentModalState == EPaymentModalState.AwaitingCard) {
