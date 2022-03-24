@@ -124,6 +124,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const interval = 1 * 500; // 0.5 seconds
     const timeout = 3 * 60 * 1000; // 3 minutes
     const noResponseTimeout = 10 * 1000; // 10 seconds
+    const refetchFailedTransactionsTimeout = 10 * 60 * 1000; //10 minutes
 
     const lastMessageReceived = useRef<number>(initialLastMessageReceived);
     const isEftposConnected = useRef<boolean>(initialIsEftposConnected);
@@ -201,7 +202,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             }
 
             localStorage.setItem("unresolvedVerifoneTransactions", JSON.stringify(unresolvedVerifoneTransactionsObj));
-        }, 10000);
+        }, refetchFailedTransactionsTimeout);
 
         return () => {
             clearInterval(timerId);
