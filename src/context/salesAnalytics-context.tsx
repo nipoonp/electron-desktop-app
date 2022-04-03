@@ -2,6 +2,7 @@ import { ApolloError } from "@apollo/client";
 import { addDays, differenceInDays, format, subDays } from "date-fns";
 import { UnparseObject } from "papaparse";
 import { createContext, useContext, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
     IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT,
     IGET_RESTAURANT_ORDER_FRAGMENT,
@@ -9,7 +10,7 @@ import {
     IOrderPaymentAmounts,
 } from "../graphql/customFragments";
 import { EOrderStatus, EOrderType, IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
-import { useGetRestaurantOrdersByBetweenPlacedAt } from "../hooks/useGetRestaurantOrdersByBetweenPlacedAt";
+import { useGetRestaurantOrdersByBetweenPlacedAtLazyQuery } from "../hooks/useGetRestaurantOrdersByBetweenPlacedAtLazyQuery";
 import { getTwelveHourFormat, taxRate } from "../model/util";
 import { toast } from "../tabin/components/toast";
 import { convertCentsToDollars, convertCentsToDollarsReturnFloat, getDollarString } from "../util/util";
@@ -93,7 +94,7 @@ export interface ISalesAnalytics {
 }
 
 type ContextProps = {
-    refetchRestaurantOrdersByBetweenPlacedAt: () => void;
+    refetchSalesAnalyticsData: () => void;
     startDate: string | null;
     endDate: string | null;
     registerFilters: IGET_RESTAURANT_REGISTER[];
@@ -107,7 +108,7 @@ type ContextProps = {
 };
 
 const SalesAnalyticsContext = createContext<ContextProps>({
-    refetchRestaurantOrdersByBetweenPlacedAt: () => {},
+    refetchSalesAnalyticsData: () => {},
     startDate: null,
     endDate: null,
     registerFilters: [],
@@ -127,22 +128,13 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
 
     const [salesAnalytics, setSalesAnalytics] = useState<ISalesAnalytics | null>(null);
     const [startDate, setStartDate] = useState<string | null>(format(subDays(new Date(), 6), "yyyy-MM-dd"));
-    const [endDate, setEndDate] = useState<string | null>(format(new Date(), "yyyy-MM-dd")); //Adding extra day because GraphQL query is not inclusive of endDate
+    const [endDate, setEndDate] = useState<string | null>(format(subDays(new Date(), 1), "yyyy-MM-dd")); //Adding extra day because GraphQL query is not inclusive of endDate
 
     // Filters
     const [registerFilters, setRegisterFilter] = useState<IGET_RESTAURANT_REGISTER[]>([]);
     const [orderFilters, setOrderFilter] = useState(Object.values(EOrderType));
 
-    const {
-        data: orders,
-        error,
-        loading,
-        refetch,
-    } = useGetRestaurantOrdersByBetweenPlacedAt(
-        restaurant ? restaurant.id : "",
-        startDate,
-        endDate ? format(addDays(new Date(endDate), 1), "yyyy-MM-dd") : null //Adding extra day because GraphQL query is not inclusive of endDate
-    );
+    const { getRestaurantOrdersByBetweenPlacedAt, data: orders, error, loading } = useGetRestaurantOrdersByBetweenPlacedAtLazyQuery();
 
     useEffect(() => {
         const registers = restaurant && restaurant.registers.items ? restaurant.registers.items : [];
@@ -153,11 +145,17 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
         processSalesData(getFilteredOrders(orders));
     }, [orders, orderFilters, registerFilters]);
 
-    const refetchRestaurantOrdersByBetweenPlacedAt = () => {
-        refetch({
-            orderRestaurantId: restaurant ? restaurant.id : "",
-            placedAtStartDate: startDate,
-            placedAtEndDate: endDate ? format(addDays(new Date(endDate), 1), "yyyy-MM-dd") : null, //Adding extra day because GraphQL query is not inclusive of endDate
+    useEffect(() => {
+        if (restaurant && startDate && endDate) refetchSalesAnalyticsData();
+    }, [startDate, endDate]);
+
+    const refetchSalesAnalyticsData = async () => {
+        await getRestaurantOrdersByBetweenPlacedAt({
+            variables: {
+                orderRestaurantId: restaurant ? restaurant.id : "",
+                placedAtStartDate: startDate,
+                placedAtEndDate: endDate ? format(addDays(new Date(endDate), 1), "yyyy-MM-dd") : null, //Adding extra day because GraphQL query is not inclusive of endDate
+            },
         });
     };
 
@@ -583,6 +581,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                 exportSalesDates,
             });
         } catch (e) {
+            console.error("Error: ", e);
             toast.error("There was an error processing sales analytics data. Please try again later.");
         }
     };
@@ -603,7 +602,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
     return (
         <SalesAnalyticsContext.Provider
             value={{
-                refetchRestaurantOrdersByBetweenPlacedAt: refetchRestaurantOrdersByBetweenPlacedAt,
+                refetchSalesAnalyticsData: refetchSalesAnalyticsData,
                 startDate: startDate,
                 endDate: endDate,
                 registerFilters,

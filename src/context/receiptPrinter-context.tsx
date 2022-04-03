@@ -1,6 +1,6 @@
 import { useEffect, createContext, useContext } from "react";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
-import { useGetRestaurantOrdersByBetweenPlacedAt } from "../hooks/useGetRestaurantOrdersByBetweenPlacedAt";
+import { useGetRestaurantOrdersByBetweenPlacedAtLazyQuery } from "../hooks/useGetRestaurantOrdersByBetweenPlacedAtLazyQuery";
 import { IPrintReceiptDataOutput, IOrderReceipt, IPrintSalesDataInput } from "../model/model";
 import { toast } from "../tabin/components/toast";
 import { convertProductTypesForPrint, filterPrintProducts, toLocalISOString } from "../util/util";
@@ -34,7 +34,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     const { register } = useRegister();
     const { logError } = useErrorLogging();
 
-    const { refetch } = useGetRestaurantOrdersByBetweenPlacedAt(restaurant ? restaurant.id : "", null, null); //Skip the first iteration. Get new orders from refetch.
+    const { getRestaurantOrdersByBetweenPlacedAt } = useGetRestaurantOrdersByBetweenPlacedAtLazyQuery(); //Skip the first iteration. Get new orders from refetch.
 
     const fetchOrdersLoopTime = 15 * 1000; //15 seconds
     const retryPrintLoopTime = 20 * 1000; //20 seconds
@@ -63,10 +63,12 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                     return;
                 }
 
-                const res = await refetch({
-                    orderRestaurantId: restaurant ? restaurant.id : "",
-                    placedAtStartDate: ordersLastFetched,
-                    placedAtEndDate: now,
+                const res = await getRestaurantOrdersByBetweenPlacedAt({
+                    variables: {
+                        orderRestaurantId: restaurant ? restaurant.id : "",
+                        placedAtStartDate: ordersLastFetched,
+                        placedAtEndDate: now,
+                    },
                 });
 
                 const orders: IGET_RESTAURANT_ORDER_FRAGMENT[] = res.data.getOrdersByRestaurantByPlacedAt.items;
