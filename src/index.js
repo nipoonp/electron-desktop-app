@@ -1,4 +1,4 @@
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 
 import "react-dates/initialize";
 import "react-dates/lib/css/_datepicker.css";
@@ -7,6 +7,6 @@ import "react-dates/lib/css/_datepicker.css";
 import "./styles/index.scss";
 import App from "./App.tsx";
 
-const rootElement = document.getElementById("root");
-
-ReactDOM.render(<App />, rootElement);
+const container = document.getElementById("root");
+const root = createRoot(container);
+root.render(<App />);
