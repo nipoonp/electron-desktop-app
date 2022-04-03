@@ -577,6 +577,20 @@ export const GET_RESTAURANT = gql`
                                                                 region
                                                                 identityPoolId
                                                             }
+                                                            categories {
+                                                                items {
+                                                                    category {
+                                                                        id
+                                                                        name
+                                                                        image {
+                                                                            key
+                                                                            bucket
+                                                                            region
+                                                                            identityPoolId
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
                                                             availability {
                                                                 monday {
                                                                     startTime
@@ -649,6 +663,20 @@ export const GET_RESTAURANT = gql`
                                                                                             bucket
                                                                                             region
                                                                                             identityPoolId
+                                                                                        }
+                                                                                        categories {
+                                                                                            items {
+                                                                                                category {
+                                                                                                    id
+                                                                                                    name
+                                                                                                    image {
+                                                                                                        key
+                                                                                                        bucket
+                                                                                                        region
+                                                                                                        identityPoolId
+                                                                                                    }
+                                                                                                }
+                                                                                            }
                                                                                         }
                                                                                         availability {
                                                                                             monday {
@@ -1322,6 +1350,20 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                 bucket
                                                 region
                                                 identityPoolId
+                                            }
+                                            categories {
+                                                items {
+                                                    category {
+                                                        id
+                                                        name
+                                                        image {
+                                                            key
+                                                            bucket
+                                                            region
+                                                            identityPoolId
+                                                        }
+                                                    }
+                                                }
                                             }
                                             availability {
                                                 monday {

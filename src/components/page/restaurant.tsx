@@ -25,7 +25,7 @@ import { CachedImage } from "../../tabin/components/cachedImage";
 import { useAlert } from "../../tabin/components/alert";
 import { useRegister } from "../../context/register-context";
 import { Input } from "../../tabin/components/input";
-import { useGetProductsBySKUCodeByRestaurant } from "../../hooks/useGetProductsBySKUCodeByRestaurant";
+import { useGetProductsBySKUCodeByRestaurantLazyQuery } from "../../hooks/useGetProductsBySKUCodeByRestaurantLazyQuery";
 import { Checkout } from "./checkout";
 import { toast } from "../../tabin/components/toast";
 
@@ -51,11 +51,11 @@ export default () => {
     // query
     const { data: restaurant, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(restaurantId || "");
     const {
+        getProductsBySKUCodeByRestaurant,
         data: searchSKUProduct,
         error: searchSKUProductError,
         loading: searchSKUProductLoading,
-        refetch: searchSKUProductRefetch,
-    } = useGetProductsBySKUCodeByRestaurant("", "");
+    } = useGetProductsBySKUCodeByRestaurantLazyQuery();
 
     // states
     const [selectedCategory, setSelectedCategory] = useState<IGET_RESTAURANT_CATEGORY | null>(null);
@@ -462,9 +462,11 @@ export default () => {
 
     const onKeyDownSearchProductSKUCode = async (e) => {
         if (e.key === "Enter") {
-            const res = await searchSKUProductRefetch({
-                skuCode: searchProductSKUCode,
-                productRestaurantId: restaurant.id,
+            const res = await getProductsBySKUCodeByRestaurant({
+                variables: {
+                    skuCode: searchProductSKUCode,
+                    productRestaurantId: restaurant.id,
+                },
             });
 
             const products: IGET_RESTAURANT_PRODUCT[] = res.data.getProductsBySKUCodeByRestaurant.items;
