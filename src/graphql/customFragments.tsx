@@ -111,6 +111,50 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                                     key
                                     identityPoolId
                                 }
+                                productModifiers {
+                                    id
+                                    name
+                                    price
+                                    quantity
+                                    notes
+                                    image {
+                                        bucket
+                                        region
+                                        key
+                                        identityPoolId
+                                    }
+                                    category {
+                                        id
+                                        name
+                                        image {
+                                            bucket
+                                            region
+                                            key
+                                            identityPoolId
+                                        }
+                                    }
+                                    modifierGroups {
+                                        id
+                                        name
+                                        choiceDuplicate
+                                        choiceMin
+                                        choiceMax
+                                        hideForCustomer
+                                        modifiers {
+                                            id
+                                            name
+                                            price
+                                            preSelectedQuantity
+                                            quantity
+                                            image {
+                                                bucket
+                                                region
+                                                key
+                                                identityPoolId
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
