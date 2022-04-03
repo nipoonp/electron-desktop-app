@@ -30,7 +30,7 @@ export default () => {
     const navigate = useNavigate();
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
-    const { refetchRestaurantOrdersByBetweenPlacedAt, startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
+    const { refetchSalesAnalyticsData, startDate, endDate, salesAnalytics, error, loading } = useSalesAnalytics();
     const { printSalesData } = useReceiptPrinter();
     const [showSelectReceiptPrinterModal, setShowSelectReceiptPrinterModal] = useState(false);
     const [receiptPrinterModalType, setReceiptPrinterModalType] = useState<"DAY" | "CATEGORY" | "PRODUCT">("DAY");
@@ -38,7 +38,7 @@ export default () => {
     const graphColor = getComputedStyle(document.documentElement).getPropertyValue("--primary-color");
 
     useEffect(() => {
-        refetchRestaurantOrdersByBetweenPlacedAt();
+        refetchSalesAnalyticsData();
     }, []);
 
     const BestHourCard = (props: { bestHour: IBestHour }) => {

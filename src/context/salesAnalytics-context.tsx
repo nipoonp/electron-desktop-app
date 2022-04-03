@@ -2,6 +2,7 @@ import { ApolloError } from "@apollo/client";
 import { addDays, differenceInDays, format, subDays } from "date-fns";
 import { UnparseObject } from "papaparse";
 import { createContext, useContext, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
     IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT,
     IGET_RESTAURANT_ORDER_FRAGMENT,
@@ -9,7 +10,7 @@ import {
     IOrderPaymentAmounts,
 } from "../graphql/customFragments";
 import { EOrderStatus, EOrderType, IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
-import { useGetRestaurantOrdersByBetweenPlacedAt } from "../hooks/useGetRestaurantOrdersByBetweenPlacedAt";
+import { useGetRestaurantOrdersByBetweenPlacedAtLazyQuery } from "../hooks/useGetRestaurantOrdersByBetweenPlacedAtLazyQuery";
 import { getTwelveHourFormat, taxRate } from "../model/util";
 import { toast } from "../tabin/components/toast";
 import { convertCentsToDollars, convertCentsToDollarsReturnFloat, getDollarString } from "../util/util";
@@ -93,7 +94,7 @@ export interface ISalesAnalytics {
 }
 
 type ContextProps = {
-    refetchRestaurantOrdersByBetweenPlacedAt: () => void;
+    refetchSalesAnalyticsData: () => void;
     startDate: string | null;
     endDate: string | null;
     registerFilters: IGET_RESTAURANT_REGISTER[];
@@ -107,7 +108,7 @@ type ContextProps = {
 };
 
 const SalesAnalyticsContext = createContext<ContextProps>({
-    refetchRestaurantOrdersByBetweenPlacedAt: () => {},
+    refetchSalesAnalyticsData: () => {},
     startDate: null,
     endDate: null,
     registerFilters: [],
@@ -133,16 +134,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
     const [registerFilters, setRegisterFilter] = useState<IGET_RESTAURANT_REGISTER[]>([]);
     const [orderFilters, setOrderFilter] = useState(Object.values(EOrderType));
 
-    const {
-        data: orders,
-        error,
-        loading,
-        refetch,
-    } = useGetRestaurantOrdersByBetweenPlacedAt(
-        restaurant ? restaurant.id : "",
-        startDate,
-        endDate ? format(addDays(new Date(endDate), 1), "yyyy-MM-dd") : null //Adding extra day because GraphQL query is not inclusive of endDate
-    );
+    const { getRestaurantOrdersByBetweenPlacedAt, data: orders, error, loading } = useGetRestaurantOrdersByBetweenPlacedAtLazyQuery();
 
     useEffect(() => {
         const registers = restaurant && restaurant.registers.items ? restaurant.registers.items : [];
@@ -153,11 +145,17 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
         processSalesData(getFilteredOrders(orders));
     }, [orders, orderFilters, registerFilters]);
 
-    const refetchRestaurantOrdersByBetweenPlacedAt = () => {
-        refetch({
-            orderRestaurantId: restaurant ? restaurant.id : "",
-            placedAtStartDate: startDate,
-            placedAtEndDate: endDate ? format(addDays(new Date(endDate), 1), "yyyy-MM-dd") : null, //Adding extra day because GraphQL query is not inclusive of endDate
+    useEffect(() => {
+        if (restaurant && startDate && endDate) refetchSalesAnalyticsData();
+    }, [startDate, endDate]);
+
+    const refetchSalesAnalyticsData = async () => {
+        await getRestaurantOrdersByBetweenPlacedAt({
+            variables: {
+                orderRestaurantId: restaurant ? restaurant.id : "",
+                placedAtStartDate: startDate,
+                placedAtEndDate: endDate ? format(addDays(new Date(endDate), 1), "yyyy-MM-dd") : null, //Adding extra day because GraphQL query is not inclusive of endDate
+            },
         });
     };
 
@@ -333,118 +331,105 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                     }
 
                     // MOST POPULAR CATEGORY //////////////////////////////////
+                    const processCategory = (product: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT, parentQuantity: number) => {
+                        if (!product.category) return;
+
+                        const productQuantity = product.quantity * parentQuantity;
+
+                        let totalQuantity: number;
+                        let totalAmount: number;
+
+                        product.modifierGroups &&
+                            product.modifierGroups.forEach((modifierGroup) => {
+                                modifierGroup.modifiers.forEach((modifier) => {
+                                    totalAmount += productQuantity * modifier.price * modifier.quantity;
+
+                                    modifier.productModifiers &&
+                                        modifier.productModifiers.forEach((productModifier) => {
+                                            if (!productModifier.category) return;
+
+                                            processCategory(productModifier, productQuantity);
+                                        });
+                                });
+                            });
+
+                        if (mostSoldCategories[product.category.id]) {
+                            totalQuantity = mostSoldCategories[product.category.id].totalQuantity + productQuantity;
+                            totalAmount = mostSoldCategories[product.category.id].totalAmount + product.price * productQuantity;
+                        } else {
+                            totalQuantity = productQuantity;
+                            totalAmount = product.price * productQuantity;
+                        }
+
+                        mostSoldCategories[product.category.id] = {
+                            item: product.category,
+                            totalQuantity: totalQuantity,
+                            totalAmount: totalAmount,
+                        };
+
+                        if (totalAmount > topSoldCategory.totalAmount) {
+                            topSoldCategory = {
+                                item: product.category,
+                                totalQuantity: totalQuantity,
+                                totalAmount: totalAmount,
+                            };
+                        }
+
+                        // Total sold items
+                        totalSoldItems += productQuantity;
+                    };
+
                     order.products &&
                         order.products.forEach((product) => {
-                            if (!product.category) return;
-
-                            if (mostSoldCategories[product.category.id]) {
-                                const newTotalQuantity = mostSoldCategories[product.category.id].totalQuantity + product.quantity;
-                                let newTotalAmount = mostSoldCategories[product.category.id].totalAmount + product.price * product.quantity;
-
-                                product.modifierGroups &&
-                                    product.modifierGroups.forEach((modifierGroup) => {
-                                        modifierGroup.modifiers.forEach((modifier) => {
-                                            newTotalAmount += product.quantity * modifier.price * modifier.quantity;
-                                        });
-                                    });
-
-                                mostSoldCategories[product.category.id] = {
-                                    item: product.category,
-                                    totalQuantity: newTotalQuantity,
-                                    totalAmount: newTotalAmount,
-                                };
-
-                                if (newTotalAmount > topSoldCategory.totalAmount) {
-                                    topSoldCategory = {
-                                        item: product.category,
-                                        totalQuantity: newTotalQuantity,
-                                        totalAmount: newTotalAmount,
-                                    };
-                                }
-                            } else {
-                                const totalQuantity = product.quantity;
-                                let totalAmount = product.price * product.quantity;
-
-                                product.modifierGroups &&
-                                    product.modifierGroups.forEach((modifierGroup) => {
-                                        modifierGroup.modifiers.forEach((modifier) => {
-                                            totalAmount += product.quantity * modifier.price * modifier.quantity;
-                                        });
-                                    });
-
-                                mostSoldCategories[product.category.id] = {
-                                    item: product.category,
-                                    totalQuantity: totalQuantity,
-                                    totalAmount: totalAmount,
-                                };
-
-                                if (totalAmount > topSoldCategory.totalAmount) {
-                                    topSoldCategory = {
-                                        item: product.category,
-                                        totalQuantity: totalQuantity,
-                                        totalAmount: totalAmount,
-                                    };
-                                }
-                            }
-
-                            // Total sold items
-                            totalSoldItems += product.quantity;
+                            processCategory(product, 1);
                         });
 
                     //MOST POPULAR PRODUCT //////////////////////////////////
+                    const processProduct = (product: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT, parentQuantity: number) => {
+                        const productQuantity = product.quantity * parentQuantity;
+                        numberOfProductsSold = numberOfProductsSold + productQuantity;
+
+                        let totalQuantity: number;
+                        let totalAmount: number;
+
+                        product.modifierGroups &&
+                            product.modifierGroups.forEach((modifierGroup) => {
+                                modifierGroup.modifiers.forEach((modifier) => {
+                                    totalAmount += productQuantity * modifier.price * modifier.quantity;
+
+                                    modifier.productModifiers &&
+                                        modifier.productModifiers.forEach((productModifier) => {
+                                            processProduct(productModifier, productQuantity);
+                                        });
+                                });
+                            });
+
+                        if (mostSoldProducts[product.id]) {
+                            totalQuantity = mostSoldProducts[product.id].totalQuantity + productQuantity;
+                            totalAmount = mostSoldProducts[product.id].totalAmount + product.price * productQuantity;
+                        } else {
+                            totalQuantity = productQuantity;
+                            totalAmount = product.price * productQuantity;
+                        }
+
+                        mostSoldProducts[product.id] = {
+                            item: product,
+                            totalQuantity: totalQuantity,
+                            totalAmount: totalAmount,
+                        };
+
+                        if (totalAmount > topSoldProduct.totalAmount) {
+                            topSoldProduct = {
+                                item: product,
+                                totalQuantity: totalQuantity,
+                                totalAmount: totalAmount,
+                            };
+                        }
+                    };
+
                     order.products &&
-                        order.products.forEach((product, index) => {
-                            numberOfProductsSold = numberOfProductsSold + product.quantity;
-
-                            if (mostSoldProducts[product.id]) {
-                                const newTotalQuantity = mostSoldProducts[product.id].totalQuantity + product.quantity;
-                                let newTotalAmount = mostSoldProducts[product.id].totalAmount + product.price * product.quantity;
-
-                                product.modifierGroups &&
-                                    product.modifierGroups.forEach((modifierGroup) => {
-                                        modifierGroup.modifiers.forEach((modifier) => {
-                                            newTotalAmount += product.quantity * modifier.price * modifier.quantity;
-                                        });
-                                    });
-
-                                mostSoldProducts[product.id] = {
-                                    item: product,
-                                    totalQuantity: newTotalQuantity,
-                                    totalAmount: newTotalAmount,
-                                };
-
-                                if (newTotalAmount > topSoldProduct.totalAmount) {
-                                    topSoldProduct = {
-                                        item: product,
-                                        totalQuantity: newTotalQuantity,
-                                        totalAmount: newTotalAmount,
-                                    };
-                                }
-                            } else {
-                                const totalQuantity = product.quantity;
-                                let totalAmount = product.price * product.quantity;
-
-                                product.modifierGroups &&
-                                    product.modifierGroups.forEach((modifierGroup) => {
-                                        modifierGroup.modifiers.forEach((modifier) => {
-                                            totalAmount += product.quantity * modifier.price * modifier.quantity;
-                                        });
-                                    });
-
-                                mostSoldProducts[product.id] = {
-                                    item: product,
-                                    totalQuantity: totalQuantity,
-                                    totalAmount: totalAmount,
-                                };
-
-                                if (totalAmount > topSoldProduct.totalAmount) {
-                                    topSoldProduct = {
-                                        item: product,
-                                        totalQuantity: totalQuantity,
-                                        totalAmount: totalAmount,
-                                    };
-                                }
-                            }
+                        order.products.forEach((product) => {
+                            processProduct(product, 1);
                         });
                 }
             });
@@ -583,6 +568,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
                 exportSalesDates,
             });
         } catch (e) {
+            console.error("Error: ", e);
             toast.error("There was an error processing sales analytics data. Please try again later.");
         }
     };
@@ -603,7 +589,7 @@ const SalesAnalyticsProvider = (props: { children: React.ReactNode }) => {
     return (
         <SalesAnalyticsContext.Provider
             value={{
-                refetchRestaurantOrdersByBetweenPlacedAt: refetchRestaurantOrdersByBetweenPlacedAt,
+                refetchSalesAnalyticsData: refetchSalesAnalyticsData,
                 startDate: startDate,
                 endDate: endDate,
                 registerFilters,
