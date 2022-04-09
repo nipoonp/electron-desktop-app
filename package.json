@@ -50,6 +50,7 @@
         "recharts": "^2.1.9",
         "reshake": "^1.2.3",
         "save": "^2.4.0",
+        "smooth-scrollbar": "^8.7.4",
         "smooth-scrollbar-react": "^2.3.0",
         "socket.io": "^4.4.1",
         "socket.io-client": "^4.4.1",
