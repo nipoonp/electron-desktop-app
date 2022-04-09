@@ -28,6 +28,8 @@ import { Input } from "../../tabin/components/input";
 import { useGetProductsBySKUCodeByRestaurantLazyQuery } from "../../hooks/useGetProductsBySKUCodeByRestaurantLazyQuery";
 import { Checkout } from "./checkout";
 import { toast } from "../../tabin/components/toast";
+import { Scrollbar } from "smooth-scrollbar-react";
+import type { Scrollbar as BaseScrollbar } from "smooth-scrollbar/scrollbar";
 
 interface IMostPopularProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -47,6 +49,8 @@ export default () => {
     const { payments, clearCart, orderType, subTotal, products, cartProductQuantitiesById, addProduct, setOrderType } = useCart();
     const { setRestaurant } = useRestaurant();
     const { register, isPOS } = useRegister();
+
+    const scrollbar = useRef<BaseScrollbar | null>(null);
 
     // query
     const { data: restaurant, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(restaurantId || "");
@@ -522,6 +526,7 @@ export default () => {
             {!selectedCategory && (
                 <>
                     <div className="h1 mb-6">Most Popular</div>
+
                     <div className="products">
                         {mostPopularProducts.map((mostPopularProduct) => productDisplay(mostPopularProduct.category, mostPopularProduct.product))}
                     </div>
@@ -540,14 +545,23 @@ export default () => {
                     return (
                         <>
                             <div className="h1 mb-6">{c.name}</div>
-                            <div className="products">
-                                {c.products &&
-                                    c.products.items.map((p) => {
-                                        if (!p.product.availablePlatforms.includes(register.type)) return;
+                            <Scrollbar
+                                ref={scrollbar}
+                                plugins={{
+                                    overscroll: {
+                                        effect: "bounce",
+                                    } as const,
+                                }}
+                            >
+                                <div className="products">
+                                    {c.products &&
+                                        c.products.items.map((p) => {
+                                            if (!p.product.availablePlatforms.includes(register.type)) return;
 
-                                        return productDisplay(c, p.product);
-                                    })}
-                            </div>
+                                            return productDisplay(c, p.product);
+                                        })}
+                                </div>
+                            </Scrollbar>
                         </>
                     );
                 })}
