@@ -2,13 +2,19 @@ import { GET_USER, IGET_USER } from "../graphql/customQueries";
 import { useQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
 
-export const useGetUserQuery = (userID: string | null) => {
+export const useGetUserQuery = (userId: string | null) => {
     const [data, setSavedData] = useState<IGET_USER | null>(null);
-    const { data: _data, error, loading, refetch, networkStatus } = useQuery(GET_USER, {
+    const {
+        data: _data,
+        error,
+        loading,
+        refetch,
+        networkStatus,
+    } = useQuery(GET_USER, {
         variables: {
-            userID: userID,
+            userId: userId,
         },
-        skip: !userID,
+        skip: !userId,
         fetchPolicy: "network-only",
         notifyOnNetworkStatusChange: true,
     });

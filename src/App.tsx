@@ -3,9 +3,7 @@ import awsconfig from "./aws-exports";
 import Main from "./components/main";
 
 import { CartProvider } from "./context/cart-context";
-
 import { AuthProvider, useAuth, AuthenticationStatus } from "./context/auth-context";
-
 import { UserProvider } from "./context/user-context";
 import { SmartpayProvider } from "./context/smartpay-context";
 import { VerifoneProvider } from "./context/verifone-context";
@@ -117,7 +115,7 @@ const App = () => {
             return (
                 <ApolloProvider client={cognitoClient}>
                     <ErrorLoggingProvider>
-                        <UserProvider userID={user!.username}>
+                        <UserProvider userId={user!.username}>
                             <RestaurantProvider>
                                 <RegisterProvider>
                                     <ReceiptPrinterProvider>
@@ -143,7 +141,7 @@ const App = () => {
             return (
                 <ApolloProvider client={iamClient}>
                     <ErrorLoggingProvider>
-                        <UserProvider userID={null}>
+                        <UserProvider userId={null}>
                             <CartProvider>
                                 <Main />
                             </CartProvider>
