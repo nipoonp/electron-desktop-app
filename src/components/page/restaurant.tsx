@@ -545,23 +545,14 @@ export default () => {
                     return (
                         <>
                             <div className="h1 mb-6">{c.name}</div>
-                            <Scrollbar
-                                ref={scrollbar}
-                                plugins={{
-                                    overscroll: {
-                                        effect: "bounce",
-                                    } as const,
-                                }}
-                            >
-                                <div className="products">
-                                    {c.products &&
-                                        c.products.items.map((p) => {
-                                            if (!p.product.availablePlatforms.includes(register.type)) return;
+                            <div className="products">
+                                {c.products &&
+                                    c.products.items.map((p) => {
+                                        if (!p.product.availablePlatforms.includes(register.type)) return;
 
-                                            return productDisplay(c, p.product);
-                                        })}
-                                </div>
-                            </Scrollbar>
+                                        return productDisplay(c, p.product);
+                                    })}
+                            </div>
                         </>
                     );
                 })}
@@ -602,10 +593,20 @@ export default () => {
                                 {menuMostPopularCategory}
                                 {menuCategories}
                             </div>
-                            <div className="products-wrapper">
-                                {menuMostPopularProducts}
-                                {menuProducts}
-                            </div>
+                            <Scrollbar
+                                ref={scrollbar}
+                                damping={0.5}
+                                plugins={{
+                                    overscroll: {
+                                        effect: "bounce",
+                                    } as const,
+                                }}
+                            >
+                                <div className="products-wrapper">
+                                    {menuMostPopularProducts}
+                                    {menuProducts}
+                                </div>
+                            </Scrollbar>
                         </div>
                         {!isPOS && <div className="footer-wrapper">{restaurantFooter}</div>}
                     </div>
