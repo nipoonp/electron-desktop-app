@@ -60,6 +60,7 @@
     },
     "scripts": {
         "start": "react-scripts start",
+        "build": "react-scripts build",
         "start:web": "react-scripts start",
         "build:web": "cross-env PUBLIC_URL=./ react-scripts build",
         "start:desktop": "npm run build:desktop && electron ./build/electron.js",
