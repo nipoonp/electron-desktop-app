@@ -4,6 +4,8 @@ import { FiX } from "react-icons/fi";
 export const ModalV2 = (
     props: Props & {
         // centered?: boolean;
+        width?: string;
+        padding?: string;
         disableClose?: boolean;
         children: React.ReactNode;
     }
@@ -33,10 +35,10 @@ export const ModalV2 = (
                         backgroundColor: "rgb(255, 255, 255)",
                         overflow: "auto",
                         borderRadius: "10px",
-                        padding: "24px",
+                        padding: props.padding || "0",
                         margin: "40px",
                         inset: "auto",
-                        width: "450px",
+                        width: props.width || "450px",
                     },
                 }}
                 {...props}

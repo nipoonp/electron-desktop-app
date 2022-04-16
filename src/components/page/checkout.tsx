@@ -132,7 +132,7 @@ export const Checkout = () => {
         if (isShownUpSellCrossSellModal) return;
 
         setTimeout(() => {
-            setShowUpSellCategoryModal(true);
+            setShowUpSellProductModal(true);
             setIsShownUpSellCrossSellModal(true);
         }, 1000);
     }, []);

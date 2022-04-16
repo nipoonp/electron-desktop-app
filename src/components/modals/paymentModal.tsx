@@ -180,6 +180,7 @@ const AwaitingCard = () => {
         <>
             <div className="h2 mb-6 awaiting-card-text">Swipe or insert your card on the terminal to complete your payment.</div>
             <CachedImage className="awaiting-card-image" url={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} alt="awaiting-card-gif" />
+            <div className="awaiting-card-image-override"></div>
         </>
     );
 };
