@@ -4,12 +4,12 @@ import { isItemAvailable, isProductQuantityAvailable, isItemSoldOut, getQuantity
 import { convertCentsToDollars } from "../../util/util";
 import { ModalV2 } from "../../tabin/components/modalv2";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
-
-import "./upSellProduct.scss";
 import { IMatchingUpSellCrossSellProductItem } from "../../model/model";
 import { useRef } from "react";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { useCart } from "../../context/cart-context";
+
+import "./upSellCrossSell.scss";
 
 interface IUpSellProductModalProps {
     isOpen: boolean;
@@ -100,7 +100,7 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
                     alt="product-image"
                 />
             )}
-            <div className="button-container mb-12">
+            <div className="button-container">
                 <Button className="button large no-thank-you-button mr-3" onClick={onModalClose}>
                     No Thank You
                 </Button>
@@ -130,7 +130,7 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
 
     return (
         <>
-            <ModalV2 isOpen={props.isOpen} disableClose={true} onRequestClose={onModalClose}>
+            <ModalV2 padding="0" width="650px" isOpen={props.isOpen} disableClose={true} onRequestClose={onModalClose}>
                 <div className="up-sell-cross-sell">{content}</div>
             </ModalV2>
         </>

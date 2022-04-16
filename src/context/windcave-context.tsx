@@ -139,7 +139,7 @@ const CURRENCY: string = "NZD";
 // const CURRENCY: string = "NZD";
 //// ScrHITUserId: TabinHIT_Dev
 //// ScrHITKey: 6b06b931c1942fa4222903055c9ac749c77fa4b86471d91b2909da74a69d928c
-//// StationID: 3801585856
+//// StationId: 3801585856
 
 type ContextProps = {
     createTransaction: (stationId: string, user: string, key: string, amount: number, transactionType: string, action?: string) => Promise<string>;

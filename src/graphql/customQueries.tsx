@@ -28,8 +28,8 @@ export enum ERegisterPrinterType {
 }
 
 export const GET_USER = gql`
-    query GetUser($userID: ID!) {
-        getUser(id: $userID) {
+    query GetUser($userId: ID!) {
+        getUser(id: $userId) {
             id
             identityPoolId
             firstName
