@@ -2,7 +2,7 @@
     "name": "Tabin",
     "description": "Tabin Self Service Kiosk",
     "author": "Tabin",
-    "version": "1.4.112",
+    "version": "1.4.114",
     "repository": "https://github.com/zeal-ltd/electron-desktop-app",
     "homepage": "https://github.com/zeal-ltd/electron-desktop-app",
     "main": "public/electron.ts",
@@ -60,7 +60,6 @@
     },
     "scripts": {
         "start": "react-scripts start",
-        "build": "react-scripts build",
         "start:web": "react-scripts start",
         "build:web": "cross-env PUBLIC_URL=./ react-scripts build",
         "start:desktop": "npm run build:desktop && electron ./build/electron.js",
