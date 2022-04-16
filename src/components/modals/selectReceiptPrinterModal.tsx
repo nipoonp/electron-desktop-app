@@ -16,7 +16,7 @@ export const SelectReceiptPrinterModal = (props: ISelectReceiptPrinterModalProps
 
     return (
         <>
-            <ModalV2 isOpen={props.isOpen} disableClose={false} onRequestClose={props.onClose}>
+            <ModalV2 padding="24px" isOpen={props.isOpen} disableClose={false} onRequestClose={props.onClose}>
                 <div className="h2 mb-6">Please select a printer</div>
                 {register &&
                     register.printers.items.map((printer, index) => (

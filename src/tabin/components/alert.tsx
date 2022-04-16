@@ -53,7 +53,7 @@ const AlertProvider = (props: { children: React.ReactNode }) => {
 
 export const Alert = (props: IProps) => {
     return (
-        <ModalV2 isOpen={true} disableClose={false} onRequestClose={props.onFalse}>
+        <ModalV2 padding="24px" isOpen={true} disableClose={false} onRequestClose={props.onFalse}>
             <div className={`alert ${props.className}`} style={props.style}>
                 <div className="mb-3">
                     <div className="h3 mb-2">{props.heading}</div>
