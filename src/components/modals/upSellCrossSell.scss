@@ -2,10 +2,11 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    padding: 24px;
 
     .content {
         flex: 1;
-        padding: 68px;
+        padding: 36px;
         overflow: scroll;
 
         -ms-overflow-style: none;

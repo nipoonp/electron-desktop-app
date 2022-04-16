@@ -16,7 +16,11 @@ export const useGetRestaurantQuery = (restaurantId: string, skip?: boolean) => {
     // const { data: _data, error, loading, refetch, networkStatus } = useQuery(GET_RESTAURANT, {
 
     //The fetchPolicy "cache-and-network" did not work for some reason. So just are making the two calls separately. First get it from the cache, and then use the network to update the cache.
-    const { data: _data, error, loading } = useQuery(GET_RESTAURANT, {
+    const {
+        data: _data,
+        error,
+        loading,
+    } = useQuery(GET_RESTAURANT, {
         variables: {
             restaurantId: restaurantId,
         },
@@ -25,7 +29,11 @@ export const useGetRestaurantQuery = (restaurantId: string, skip?: boolean) => {
         // notifyOnNetworkStatusChange: true,
     });
 
-    const { data: _data1, error: error1, loading: loading1 } = useQuery(GET_RESTAURANT, {
+    const {
+        data: _data1,
+        error: error1,
+        loading: loading1,
+    } = useQuery(GET_RESTAURANT, {
         variables: {
             restaurantId: restaurantId,
         },
@@ -39,7 +47,7 @@ export const useGetRestaurantQuery = (restaurantId: string, skip?: boolean) => {
         data = _data.getRestaurant as IGET_RESTAURANT;
         cachedData.current = data;
     }
-    logger.debug("RestaurantID: ", restaurantId);
+    logger.debug("RestaurantId: ", restaurantId);
 
     // const refetching = networkStatus === 4;
 

@@ -20,9 +20,9 @@ const UserContext = createContext<ContextProps>({
 });
 
 // Exports
-const C = (props: { userID: string | null; children: React.ReactNode }) => {
+const C = (props: { userId: string | null; children: React.ReactNode }) => {
     // queries
-    const { user: getUserData, error: getUserError, loading: getUserLoading } = useGetUserQuery(props.userID);
+    const { user: getUserData, error: getUserError, loading: getUserLoading } = useGetUserQuery(props.userId);
 
     const [isLoading, setIsLoading] = useState(true);
     const [user, setUser] = useState<IGET_USER | null>(null);
@@ -53,8 +53,8 @@ const C = (props: { userID: string | null; children: React.ReactNode }) => {
     );
 };
 
-const UserProvider = (props: { userID: string | null; children: React.ReactNode }) => {
-    if (props.userID) {
+const UserProvider = (props: { userId: string | null; children: React.ReactNode }) => {
+    if (props.userId) {
         return <C {...props} />;
     } else {
         return (

@@ -9,8 +9,6 @@ import { ModalV2 } from "../../tabin/components/modalv2";
 import { toast } from "../../tabin/components/toast";
 import { convertCentsToDollars } from "../../util/util";
 
-import "./promotionCodeModal.scss";
-
 interface IPromotionCodeModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -98,7 +96,7 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
 
     return (
         <>
-            <ModalV2 isOpen={props.isOpen} disableClose={false} onRequestClose={props.onClose}>
+            <ModalV2 padding="24px" isOpen={props.isOpen} disableClose={false} onRequestClose={props.onClose}>
                 <div>
                     <div className="h3 mb-3">Please enter your promotion code</div>
                     <Input
