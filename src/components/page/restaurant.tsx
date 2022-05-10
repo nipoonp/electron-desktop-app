@@ -521,7 +521,7 @@ export default () => {
         <div>
             {!selectedCategory && (
                 <>
-                    <div className="h1 mb-6">Most Popular</div>
+                    <div className="product-category-name h1 mb-6">Most Popular</div>
                     <div className="products">
                         {mostPopularProducts.map((mostPopularProduct) => productDisplay(mostPopularProduct.category, mostPopularProduct.product))}
                     </div>
@@ -539,7 +539,7 @@ export default () => {
 
                     return (
                         <>
-                            <div className="h1 mb-6">{c.name}</div>
+                            <div className="product-category-name h1 mb-6">{c.name}</div>
                             <div className="products">
                                 {c.products &&
                                     c.products.items.map((p) => {
