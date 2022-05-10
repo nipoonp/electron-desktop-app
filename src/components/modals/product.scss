@@ -18,57 +18,63 @@
             line-height: 1.5em;
         }
 
-        .modifier {
-            &.sold-out {
-                opacity: 0.5;
-            }
+        .modifiers {
+            display: grid;
+            grid-gap: 12px;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
 
-            .collapsed-stepper-container {
-                display: flex;
-                align-items: center;
-
-                .collapsed-stepper {
-                    cursor: pointer;
-                    border: 1px solid #c8c8c8;
-                    border-radius: 50%;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-
-                    &.disabled {
-                        border: 1px solid #dcdcdc;
-                        color: #dcdcdc;
-                    }
+            .modifier {
+                &.sold-out {
+                    opacity: 0.5;
                 }
 
-                .collapsed-stepper-children {
-                    line-height: 1.5;
-                }
-            }
-
-            .modifier-item-wrapper {
-                width: 100%;
-
-                .modifier-item {
+                .collapsed-stepper-container {
                     display: flex;
                     align-items: center;
 
-                    .image {
-                        height: 120px;
-                        border-radius: 8px;
-                        object-fit: cover;
+                    .collapsed-stepper {
+                        cursor: pointer;
+                        border: 1px solid #c8c8c8;
+                        border-radius: 50%;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+
+                        &.disabled {
+                            border: 1px solid #dcdcdc;
+                            color: #dcdcdc;
+                        }
                     }
 
-                    .quantity-remaining {
-                        padding: 5px 10px;
-                        background-color: var(--primary-color);
-                        color: #ffffff;
-                        border-radius: 5px;
-                        font-size: 12px;
+                    .collapsed-stepper-children {
+                        line-height: 1.5;
                     }
+                }
 
-                    .product-modifier-chevron-right {
-                        margin-left: auto;
+                .modifier-item-wrapper {
+                    width: 100%;
+
+                    .modifier-item {
+                        display: flex;
+                        align-items: center;
+
+                        .image {
+                            height: 120px;
+                            border-radius: 8px;
+                            object-fit: cover;
+                        }
+
+                        .quantity-remaining {
+                            padding: 5px 10px;
+                            background-color: var(--primary-color);
+                            color: #ffffff;
+                            border-radius: 5px;
+                            font-size: 12px;
+                        }
+
+                        .product-modifier-chevron-right {
+                            margin-left: auto;
+                        }
                     }
                 }
             }
