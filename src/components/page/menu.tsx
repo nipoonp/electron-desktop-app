@@ -22,7 +22,7 @@ export default () => {
     return (
         <>
             <div className="menu-item-wrapper">
-                <div className="h3 mb-3">Select a page you would like to access</div>
+                <div className="h2 mb-3">Select a page</div>
                 <Button className="mb-3" onClick={onStock}>
                     Stock
                 </Button>
