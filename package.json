@@ -1,38 +1,114 @@
 {
-  "name": "electron-desktop-app",
-  "version": "0.1.0",
-  "private": true,
-  "dependencies": {
-    "@testing-library/jest-dom": "^5.16.4",
-    "@testing-library/react": "^13.2.0",
-    "@testing-library/user-event": "^13.5.0",
-    "react": "^18.1.0",
-    "react-dom": "^18.1.0",
-    "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4"
-  },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  }
+    "name": "Tabin",
+    "description": "Tabin Self Service Kiosk",
+    "author": "Tabin",
+    "version": "1.4.115",
+    "repository": "https://github.com/zeal-ltd/electron-desktop-app",
+    "homepage": "https://github.com/zeal-ltd/electron-desktop-app",
+    "main": "public/electron.ts",
+    "dependencies": {
+        "@apollo/client": "^3.5.10",
+        "@aws-amplify/cli": "^7.6.26",
+        "@sentry/electron": "^3.0.6",
+        "@thiagoelg/node-printer": "^0.6.2",
+        "@types/papaparse": "^5.3.2",
+        "@types/react": "^17.0.43",
+        "@types/react-dom": "^17.0.14",
+        "@types/react-modal": "^3.13.1",
+        "@types/socket.io-client": "^3.0.0",
+        "@types/yup": "^0.29.13",
+        "aws-amplify": "^4.3.18",
+        "aws-amplify-react": "^5.1.9",
+        "aws-appsync-auth-link": "^3.0.7",
+        "aws-appsync-subscription-link": "^3.0.10",
+        "cross-env": "^7.0.3",
+        "date-fns": "^2.28.0",
+        "electron-is-dev": "^2.0.0",
+        "electron-log": "^4.4.6",
+        "electron-updater": "^4.6.5",
+        "graphql": "^16.3.0",
+        "node-sass": "^7.0.1",
+        "node-thermal-printer": "^4.1.2",
+        "npm": "^8.6.0",
+        "papaparse": "^5.3.2",
+        "react": "^18.0.0",
+        "react-apollo-hooks": "^0.5.0",
+        "react-async": "^10.0.1",
+        "react-axios": "^2.0.5",
+        "react-clock": "^3.1.0",
+        "react-dates": "^21.8.0",
+        "react-device-detect": "^2.1.2",
+        "react-dom": "^18.0.0",
+        "react-icons": "^4.3.1",
+        "react-load-script": "0.0.6",
+        "react-modal": "^3.14.4",
+        "react-router": "^6.3.0",
+        "react-router-dom": "^6.3.0",
+        "react-script-hook": "^1.6.0",
+        "react-scripts": "^5.0.0",
+        "react-toastify": "^8.2.0",
+        "recharts": "^2.1.9",
+        "reshake": "^1.2.3",
+        "save": "^2.4.0",
+        "socket.io": "^4.4.1",
+        "socket.io-client": "^4.4.1",
+        "start": "^5.1.0",
+        "styled-components": "^5.3.5",
+        "typescript": "^4.6.3",
+        "xml-js": "^1.6.11",
+        "yup": "^0.32.11"
+    },
+    "scripts": {
+        "start": "react-scripts start",
+        "start:web": "react-scripts start",
+        "build:web": "cross-env PUBLIC_URL=./ react-scripts build",
+        "start:desktop": "npm run build:desktop && electron ./build/electron.js",
+        "build:desktop": "tsc -p electron/tsconfig.json",
+        "test": "react-scripts test",
+        "eject": "react-scripts eject",
+        "release:windows": "electron-builder -w -p 'onTagOrDraft'",
+        "release:macos": "electron-builder -m -p 'onTagOrDraft'",
+        "window-cert": "electron-builder create-self-signed-cert -p tabinWindowsCertificate"
+    },
+    "eslintConfig": {
+        "extends": "react-app"
+    },
+    "devDependencies": {
+        "@types/node": "^17.0.21",
+        "concurrently": "^7.0.0",
+        "electron": "^17.1.0",
+        "electron-builder": "^22.14.13",
+        "electron-rebuild": "^3.2.7",
+        "wait-on": "^6.0.1"
+    },
+    "build": {
+        "appId": "com.tabin.desktop",
+        "copyright": "Copyright 2021 Zeal Private Ltd",
+        "publish": {
+            "provider": "github"
+        },
+        "mac": {
+            "category": "public.app-category.business",
+            "icon": "icons/icon.icns"
+        },
+        "win": {
+            "icon": "icons/icon.ico"
+        },
+        "linux": {
+            "category": "Office",
+            "icon": "icons/icon.png"
+        }
+    },
+    "browserslist": {
+        "production": [
+            ">0.2%",
+            "not dead",
+            "not op_mini all"
+        ],
+        "development": [
+            "last 1 chrome version",
+            "last 1 firefox version",
+            "last 1 safari version"
+        ]
+    }
 }
