@@ -32,9 +32,11 @@ export default () => {
     const [showSpinner, setShowSpinner] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
 
-    const { data: restaurant, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(
-        savedRestaurantItem ? savedRestaurantItem.id : ""
-    );
+    const {
+        data: restaurant,
+        error: getRestaurantError,
+        loading: getRestaurantLoading,
+    } = useGetRestaurantQuery(savedRestaurantItem ? savedRestaurantItem.id : "");
 
     const refetchRestaurant = [
         {
@@ -111,7 +113,7 @@ export default () => {
 
     return (
         <>
-            <FullScreenSpinner show={showSpinner} />;
+            <FullScreenSpinner show={showSpinner} />
             <div className="stock-container">
                 <div className="h2 mb-6">Update Stock Levels</div>
                 <div className="stock-tabs-wrapper mb-6">

@@ -21,6 +21,7 @@ const Logout = lazy(() => import("./page/auth/logout"));
 const Restaurant = lazy(() => import("./page/restaurant"));
 const RestaurantList = lazy(() => import("./page/restaurantList"));
 const RegisterList = lazy(() => import("./page/registerList"));
+const Menu = lazy(() => import("./page/menu"));
 const BeginOrder = lazy(() => import("./page/beginOrder"));
 const OrderType = lazy(() => import("./page/orderType"));
 const ConfigureNewEftpos = lazy(() => import("./page/configureNewEftpos"));
@@ -60,6 +61,7 @@ Modal.setAppElement("#root");
 
 // Auth routes
 export const loginPath = "/login";
+export const menuPath = "/menu";
 export const stockPath = "/stock";
 export const ordersPath = "/orders";
 export const reportsPath = "/reports";
@@ -103,7 +105,7 @@ const AppRoutes = () => {
 
     // This is for electron, as it doesn't start at '/' route for some reason.
     useEffect(() => {
-        navigate(beginOrderPath);
+        navigate(menuPath);
     }, []);
 
     useEffect(() => {
@@ -170,6 +172,7 @@ const AppRoutes = () => {
             <Route path={logoutPath} element={<Logout />} />
             <Route path={restaurantListPath} element={<PrivateRoute element={<RestaurantList />} />} />
             <Route path={registerListPath} element={<PrivateRoute element={<RegisterList />} />} />
+            <Route path={menuPath} element={<RestaurantPrivateRoute element={<Menu />} />} />
             <Route path={stockPath} element={<PrivateRoute element={<Stock />} />} />
             <Route path={`${ordersPath}`} element={<PrivateRoute element={<Orders />} />}>
                 <Route path=":date" element={<PrivateRoute element={<Orders />} />} />
@@ -216,6 +219,18 @@ const PrivateRoute = ({ element }) => {
     if (!user) throw "Signed in but no user found in database";
 
     return element; // Route to original path
+};
+
+const RestaurantPrivateRoute = ({ element }) => {
+    const { user } = useUser();
+    const { restaurant, isLoading, isError } = useRestaurant();
+
+    if (user && isLoading) return <FullScreenSpinner show={true} text="Loading restaurant..." />;
+    if (isError) return <div>There was an error loading your restaurant.</div>;
+    if (!restaurant) return <Navigate to={restaurantListPath} />;
+
+    // Route to original path
+    return element;
 };
 
 const RestaurantRegisterPrivateRoute = ({ element }) => {
