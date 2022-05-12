@@ -3,7 +3,6 @@
     "description": "Tabin Self Service Kiosk",
     "author": "Tabin",
     "version": "1.4.115",
-    "repository": "https://github.com/zeal-ltd/electron-desktop-app",
     "main": "public/electron.ts",
     "dependencies": {
         "@apollo/client": "^3.5.10",
