@@ -1,13 +1,11 @@
-import { createRoot } from "react-dom/client";
+import React from "react";
+import ReactDOM from "react-dom/client";
+import "./index.css";
+import App from "./App";
 
-import "react-dates/initialize";
-import "react-dates/lib/css/_datepicker.css";
-
-// Keep this before app.tsx
-import "./styles/index.scss";
-import App from "./App.tsx";
-
-const container = document.getElementById("root");
-const root = createRoot(container);
-
-root.render(<App />);
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(
+    <React.StrictMode>
+        <App />
+    </React.StrictMode>
+);
