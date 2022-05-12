@@ -1,0 +1,20 @@
+.order-type {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    margin-top: 128px;
+
+    .images-wrapper {
+        display: flex;
+        text-align: center;
+        margin-bottom: 32px;
+
+        .dine-in-image {
+            height: 250px;
+        }
+
+        .take-away-image {
+            height: 250px;
+        }
+    }
+}
