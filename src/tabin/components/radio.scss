@@ -1,0 +1,36 @@
+.radio-container {
+    display: flex;
+    align-items: center;
+
+    .radio {
+        min-height: 28px;
+        min-width: 28px;
+        height: 28px;
+        width: 28px;
+        border: 1px solid #c8c8c8;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+
+        &.disabled {
+            border: 1px solid #dbdbdb;
+        }
+
+        .dot {
+            height: 60%;
+            width: 60%;
+            background-color: transparent;
+            border-radius: 50%;
+
+            &.selected {
+                background-color: var(--primary-color);
+            }
+        }
+    }
+
+    .radio-children {
+        line-height: 1.5em;
+    }
+}
