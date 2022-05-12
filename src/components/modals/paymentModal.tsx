@@ -180,6 +180,7 @@ const AwaitingCard = () => {
         <>
             <div className="h2 mb-6 awaiting-card-text">Swipe or insert your card on the terminal to complete your payment.</div>
             <CachedImage className="awaiting-card-image" url={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} alt="awaiting-card-gif" />
+            <div className="awaiting-card-image-override"></div>
         </>
     );
 };
@@ -261,7 +262,7 @@ const PaymentPayLater = (props: {
 
     return (
         <>
-            <div className="h3 mb-4">All Done!</div>
+            <div className="all-done h3 mb-4">All Done!</div>
             <div className="h2 mb-6">Please pay later at the counter.</div>
             <div className="mb-1">Your order number is</div>
             <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
@@ -291,7 +292,7 @@ const PaymentCashPayment = (props: {
 
     return (
         <>
-            <div className="h3 mb-4">All Done!</div>
+            <div className="all-done h3 mb-4">All Done!</div>
             <div className="h2 mb-6">Please give correct change.</div>
             <div className="h1 mb-6">Change: ${convertCentsToDollars(cashTransactionChangeAmount || 0)}</div>
             <div className="mb-1">Your order number is</div>

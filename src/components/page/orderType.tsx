@@ -45,7 +45,8 @@ export default () => {
                                 url={`${getPublicCloudFrontDomainName()}/images/order-type-dine-in.png`}
                                 alt="dine-in-image"
                             />
-                            <div className="h2">Dine In</div>
+                            <div className="dine-in-image-override"></div>
+                            <div className="dine-in-text h2">Dine In</div>
                         </div>
                         <div className="take-away-image-wrapper" onClick={() => onSelectOrderType(EOrderType.TAKEAWAY)}>
                             <CachedImage
@@ -53,7 +54,8 @@ export default () => {
                                 url={`${getPublicCloudFrontDomainName()}/images/order-type-take-away.png`}
                                 alt="take-away-image"
                             />
-                            <div className="h2">Takeaway</div>
+                            <div className="take-away-image-override"></div>
+                            <div className="take-away-text h2">Takeaway</div>
                         </div>
                     </div>
                 </div>

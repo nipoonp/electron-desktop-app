@@ -7,7 +7,7 @@ import { useRef } from "react";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { IGET_RESTAURANT_CATEGORY } from "../../graphql/customQueries";
 
-import "./upSellCategory.scss";
+import "./upSellCrossSell.scss";
 
 interface IUpSellCategoryModalProps {
     isOpen: boolean;
@@ -102,7 +102,7 @@ export const UpSellCategoryModal = (props: IUpSellCategoryModalProps) => {
 
     return (
         <>
-            <ModalV2 isOpen={props.isOpen} disableClose={true} onRequestClose={onModalClose}>
+            <ModalV2 padding="0" width="650px" isOpen={props.isOpen} disableClose={true} onRequestClose={onModalClose}>
                 <div className="up-sell-cross-sell">{content}</div>
             </ModalV2>
         </>
