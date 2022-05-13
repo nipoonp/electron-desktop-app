@@ -58,5 +58,12 @@ export const salesAnalyticsTopProductPath = "/sales_analytics/top_product";
 export const unauthorizedPath = "/unauthorized";
 
 export default () => {
-    return <div>Hi</div>;
+    return (
+        <div>
+            <div>Hi</div>
+            <div>
+                <iframe style={{ height: "100vh", width: "100%", border: "0" }} src="https://restaurants.tabin.co.nz"></iframe>
+            </div>
+        </div>
+    );
 };
