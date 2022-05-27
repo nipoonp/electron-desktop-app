@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { FiX } from "react-icons/fi";
+import { useEffect, useRef, useState } from "react";
+import { FiArrowDown, FiX } from "react-icons/fi";
 import { useCart } from "../../context/cart-context";
 import { useRegister } from "../../context/register-context";
 import { useRestaurant } from "../../context/restaurant-context";
@@ -206,7 +206,7 @@ const PaymentAccepted = (props: {
                     <div className="mb-1">Your order number is</div>
                     <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
                     <div className="separator-6 mb-6"></div>
-                    <RedirectingIn
+                    <PaymentModalFooter
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                         onContinueToNextOrder={onContinueToNextOrder}
                     />
@@ -258,7 +258,6 @@ const PaymentPayLater = (props: {
     onContinueToNextOrder: () => void;
 }) => {
     const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
-    const { restaurant } = useRestaurant();
 
     return (
         <>
@@ -266,14 +265,9 @@ const PaymentPayLater = (props: {
             <div className="h2 mb-6">Please pay later at the counter.</div>
             <div className="mb-1">Your order number is</div>
             <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
-            {restaurant && restaurant.preparationTimeInMinutes && (
-                <div className="preparation-time h2 mt-3 mb-6">
-                    Your order will be ready in {restaurant.preparationTimeInMinutes} {restaurant.preparationTimeInMinutes > 1 ? "minutes" : "minute"}
-                </div>
-            )}
-
+            <PreparationTime />
             <div className="separator-6 mb-6"></div>
-            <RedirectingIn
+            <PaymentModalFooter
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                 onContinueToNextOrder={onContinueToNextOrder}
             />
@@ -288,7 +282,6 @@ const PaymentCashPayment = (props: {
     onContinueToNextOrder: () => void;
 }) => {
     const { cashTransactionChangeAmount, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
-    const { restaurant } = useRestaurant();
 
     return (
         <>
@@ -297,14 +290,9 @@ const PaymentCashPayment = (props: {
             <div className="h1 mb-6">Change: ${convertCentsToDollars(cashTransactionChangeAmount || 0)}</div>
             <div className="mb-1">Your order number is</div>
             <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
-            {restaurant && restaurant.preparationTimeInMinutes && (
-                <div className="preparation-time h2 mt-3 mb-6">
-                    Your order will be ready in {restaurant.preparationTimeInMinutes} {restaurant.preparationTimeInMinutes > 1 ? "minutes" : "minute"}
-                </div>
-            )}
-
+            <PreparationTime />
             <div className="separator-6 mb-6"></div>
-            <RedirectingIn
+            <PaymentModalFooter
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                 onContinueToNextOrder={onContinueToNextOrder}
             />
@@ -447,23 +435,53 @@ const CreateOrderFailed = (props: { createOrderError: string; onCancelOrder: () 
     );
 };
 
-const RedirectingIn = (props: { paymentOutcomeApprovedRedirectTimeLeft: number; onContinueToNextOrder: () => void }) => {
-    const { paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+const PreparationTime = () => {
+    const { restaurant } = useRestaurant();
     const { isPOS } = useRegister();
 
     return (
         <>
-            <div className="redirecting-in-text text-grey">
+            {!isPOS && restaurant && restaurant.preparationTimeInMinutes && (
+                <div className="preparation-time h2 mt-3 mb-6">
+                    Your order will be ready in {restaurant.preparationTimeInMinutes} {restaurant.preparationTimeInMinutes > 1 ? "minutes" : "minute"}
+                </div>
+            )}
+        </>
+    );
+};
+
+const PaymentModalFooter = (props: { paymentOutcomeApprovedRedirectTimeLeft: number; onContinueToNextOrder: () => void }) => {
+    const { paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { isPOS, register } = useRegister();
+
+    const showTakeYourReceiptSign = useRef(false);
+
+    useEffect(() => {
+        register &&
+            register.printers.items.forEach((printer) => {
+                if (printer.customerPrinter) showTakeYourReceiptSign.current = true;
+            });
+    }, [register]);
+
+    return (
+        <>
+            <div className="redirecting-in-text">
                 {isPOS && (
                     <Button className="mb-2" onClick={onContinueToNextOrder}>
                         Continue To Next Transaction
                     </Button>
                 )}
-                <div>
+                <div className="text-grey">
                     Redirecting in {paymentOutcomeApprovedRedirectTimeLeft}
                     {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
                     ...
                 </div>
+                {!isPOS && showTakeYourReceiptSign.current && (
+                    <div className="please-take-your-receipt-wrapper mt-4">
+                        <div className="h2 mb-4">Please take your receipt</div>
+                        <FiArrowDown size="100px" />
+                    </div>
+                )}
             </div>
         </>
     );
