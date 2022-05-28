@@ -374,7 +374,11 @@ export default () => {
                         </div>
                     )}
 
-                    <div className="price mt-4">${convertCentsToDollars(product.price)}</div>
+                    {product.displayPrice ? (
+                        <div className="display-price mt-4">{product.displayPrice}</div>
+                    ) : (
+                        <div className="price mt-4">${convertCentsToDollars(product.price)}</div>
+                    )}
                 </div>
             </>
         );
