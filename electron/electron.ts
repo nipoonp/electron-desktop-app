@@ -228,6 +228,11 @@ if (!gotTheLock) {
     });
 }
 
+ipcMain.on("RESTART_ELECTRON_APP", (event: any) => {
+    app.relaunch();
+    app.exit();
+});
+
 // Webapp Receipt Printer Side
 ipcMain.handle("RECEIPT_PRINTER_DATA", async (event: any, order: IOrderReceipt): Promise<IPrintReceiptDataOutput> => {
     try {
