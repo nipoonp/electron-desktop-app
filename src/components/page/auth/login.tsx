@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 
 import { useNavigate } from "react-router-dom";
 import { useAuth, AuthenticationStatus } from "../../../context/auth-context";
-import { Logger } from "aws-amplify";
+import { Auth, Logger } from "aws-amplify";
 import * as yup from "yup";
 import { beginOrderPath } from "../../main";
 import { Button } from "../../../tabin/components/button";
@@ -10,17 +10,19 @@ import { Input } from "../../../tabin/components/input";
 import config from "./../../../../package.json";
 
 import "./login.scss";
+import { useErrorLogging } from "../../../context/errorLogging-context";
+
+let electron: any;
+let ipcRenderer: any;
+try {
+    electron = window.require("electron");
+    ipcRenderer = electron.ipcRenderer;
+} catch (e) {}
 
 const logger = new Logger("Login");
 
-const emailSchema = yup
-    .string()
-    .email("Please enter a valid email address")
-    .required("Email is required");
-const passwordSchema = yup
-    .string()
-    .min(8, "Password must be at least 8 characters long")
-    .required("Password is required");
+const emailSchema = yup.string().email("Please enter a valid email address").required("Email is required");
+const passwordSchema = yup.string().min(8, "Password must be at least 8 characters long").required("Password is required");
 
 export default () => {
     const { login } = useAuth();
@@ -35,12 +37,32 @@ export default () => {
     const [passwordError, setPasswordError] = useState("");
 
     const { status } = useAuth();
+    const { logError } = useErrorLogging();
 
     useEffect(() => {
         if (status === AuthenticationStatus.SignedIn) {
             navigate(beginOrderPath, { replace: true });
         }
     }, [status]);
+
+    useEffect(() => {
+        const timerId = setTimeout(async () => {
+            try {
+                const user = await Auth.currentAuthenticatedUser({
+                    bypassCache: false, // Optional, By default is false. If set to true, this call will send a request to Cognito to get the latest user data
+                });
+
+                await logError("Invalid user, rebooting app", JSON.stringify({ user: user }));
+
+                ipcRenderer && ipcRenderer.send("RESTART_ELECTRON_APP");
+            } catch (e) {
+                //Means not logged in
+                console.log("User not logged in");
+            }
+        }, 1000 * 60); //1 min
+
+        return () => clearTimeout(timerId);
+    }, []);
 
     const onChangeEmail = (event: React.ChangeEvent<HTMLInputElement>) => {
         setEmail(event.target.value);

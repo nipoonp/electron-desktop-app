@@ -605,7 +605,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
                 reject("The amount has to be supplied");
                 return;
-            } else if (amount == 0) {
+            } else if (amount <= 0) {
                 addToLogs("Reject: The amount must be greater than 0");
                 await createEftposTransactionLog(restaurantId, amount);
 

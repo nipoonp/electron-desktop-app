@@ -12,7 +12,6 @@ import { SalesAnalyticsWrapper } from "./salesAnalytics/salesAnalyticsWrapper";
 import { useNavigate } from "react-router-dom";
 
 import "./salesAnalytics.scss";
-import "./salesAnalytics.scss";
 
 export default () => {
     const navigate = useNavigate();
