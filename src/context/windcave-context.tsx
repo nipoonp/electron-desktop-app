@@ -193,7 +193,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
             if (!amount) {
                 reject("The amount has to be supplied");
                 return;
-            } else if (amount == 0) {
+            } else if (amount <= 0) {
                 reject("The amount must be greater than 0");
                 return;
             } else if (!transactionType) {

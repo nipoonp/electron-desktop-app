@@ -92,15 +92,6 @@ export const GET_USER = gql`
                                             }
                                         }
                                     }
-                                    ignoreProducts(limit: 500) {
-                                        items {
-                                            id
-                                            product {
-                                                id
-                                                name
-                                            }
-                                        }
-                                    }
                                 }
                             }
                         }
@@ -441,6 +432,7 @@ export const GET_RESTAURANT = gql`
                                 name
                                 description
                                 price
+                                displayPrice
                                 tags
                                 totalQuantitySold
                                 totalQuantityAvailable
@@ -1023,6 +1015,7 @@ export interface IGET_RESTAURANT_PRODUCT {
     name: string;
     description?: string;
     price: number;
+    displayPrice: string;
     tags: string | null;
     totalQuantitySold?: number;
     totalQuantityAvailable?: number;
