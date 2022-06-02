@@ -544,11 +544,11 @@ export default () => {
                     return (
                         <>
                             <div className="product-category-name h1 mb-6">{c.name}</div>
-                            <div>
+                            <div className="product-category-image-wrapper mb-6">
                                 {c.image && (
                                     <CachedImage
                                         url={`${getCloudFrontDomainName()}/protected/${c.image.identityPoolId}/${c.image.key}`}
-                                        className="product-category-image mb-6"
+                                        className="product-category-image"
                                         alt="category-image"
                                     />
                                 )}
