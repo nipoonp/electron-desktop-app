@@ -58,6 +58,13 @@
             padding: 48px 32px 32px 32px;
             width: 100%;
 
+            .product-category-image {
+                width: 100%;
+                height: 300px;
+                border-radius: 10px;
+                object-fit: cover;
+            }
+
             .products {
                 display: grid;
                 grid-gap: 32px;
