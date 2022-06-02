@@ -66,41 +66,41 @@ jobs:
               env:
                   CSC_LINK: ${{ secrets.WINDOWS_CERTS }}
                   CSC_KEY_PASSWORD: ""
-    macos:
-        runs-on: macos-latest
-        env:
-            CI: false #Need this otherwise github actions will do this => "Treating warnings as errors because process.env.CI = true"
-        steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v1
-              with:
-                  node-version: 14
-            - name: Install dependencies
-              run: npm install
-            - name: Build native dependencies
-              run: ./node_modules/.bin/electron-rebuild
-            - name: Build web
-              run: npm run build:web
-            - name: Build desktop
-              run: npm run build:desktop
-            - name: Release Electron app
-              uses: samuelmeuli/action-electron-builder@v1
-              with:
-                  github_token: ${{ secrets.github_token }}
-                  release: ${{ startsWith(github.ref, 'refs/tags/v') }}
-                  args: "-m"
-              env:
-                  CSC_LINK: ${{ secrets.MAC_CERTIFICATE_AUTO_DOWNLOAD_GITHUB_LINK }}
-                  CSC_KEY_PASSWORD: ""
-    slack_message_complete:
-        needs: [slack_message_start, create_release, windows]
-        runs-on: ubuntu-latest
-        steps:
-            - name: Post to a Slack channel
-              id: slack
-              uses: slackapi/slack-github-action@v1.14.0
-              with:
-                  channel-id: ${{ secrets.SLACK_BOT_CHANNEL_ID }}
-                  slack-message: "Electron build completed! 🚀🚀🔥"
-              env:
-                  SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+    # macos:
+    #     runs-on: macos-latest
+    #     env:
+    #         CI: false #Need this otherwise github actions will do this => "Treating warnings as errors because process.env.CI = true"
+    #     steps:
+    #         - uses: actions/checkout@v2
+    #         - uses: actions/setup-node@v1
+    #           with:
+    #               node-version: 14
+    #         - name: Install dependencies
+    #           run: npm install
+    #         - name: Build native dependencies
+    #           run: ./node_modules/.bin/electron-rebuild
+    #         - name: Build web
+    #           run: npm run build:web
+    #         - name: Build desktop
+    #           run: npm run build:desktop
+    #         - name: Release Electron app
+    #           uses: samuelmeuli/action-electron-builder@v1
+    #           with:
+    #               github_token: ${{ secrets.github_token }}
+    #               release: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    #               args: "-m"
+    #           env:
+    #               CSC_LINK: ${{ secrets.MAC_CERTIFICATE_AUTO_DOWNLOAD_GITHUB_LINK }}
+    #               CSC_KEY_PASSWORD: ""
+    # slack_message_complete:
+    #     needs: [slack_message_start, create_release, windows]
+    #     runs-on: ubuntu-latest
+    #     steps:
+    #         - name: Post to a Slack channel
+    #           id: slack
+    #           uses: slackapi/slack-github-action@v1.14.0
+    #           with:
+    #               channel-id: ${{ secrets.SLACK_BOT_CHANNEL_ID }}
+    #               slack-message: "Electron build completed! 🚀🚀🔥"
+    #           env:
+    #               SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
