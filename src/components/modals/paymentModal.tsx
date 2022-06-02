@@ -478,8 +478,8 @@ const PaymentModalFooter = (props: { paymentOutcomeApprovedRedirectTimeLeft: num
                 </div>
                 {!isPOS && showTakeYourReceiptSign.current && (
                     <div className="please-take-your-receipt-wrapper mt-4">
-                        <div className="h2 mb-4">Please take your receipt</div>
-                        <FiArrowDown size="100px" />
+                        <div className="h1 mb-4">Please take your receipt</div>
+                        <FiArrowDown size="150px" />
                     </div>
                 )}
             </div>
