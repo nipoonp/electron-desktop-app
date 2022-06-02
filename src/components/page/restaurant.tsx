@@ -544,6 +544,15 @@ export default () => {
                     return (
                         <>
                             <div className="product-category-name h1 mb-6">{c.name}</div>
+                            <div>
+                                {c.image && (
+                                    <CachedImage
+                                        url={`${getCloudFrontDomainName()}/protected/${c.image.identityPoolId}/${c.image.key}`}
+                                        className="product-category-image mb-6"
+                                        alt="category-image"
+                                    />
+                                )}
+                            </div>
                             <div className="products">
                                 {c.products &&
                                     c.products.items.map((p) => {
