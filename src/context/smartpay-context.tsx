@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 
 import axios from "axios";
 import { useRegister } from "./register-context";
@@ -11,22 +11,22 @@ import { EEftposTransactionOutcome, ESmartpayTransactionOutcome, IEftposTransact
 
 // This base URL points to the DEV environment, against which all development and testing should be done.
 // When deploying your app to production, make sure to remember to have a way to change this URL to use PROD endpoints.
-// const _baseUrl = "https://api-dev.smart-connect.cloud/POS";
+// const baseUrl = "https://api-dev.smart-connect.cloud/POS";
 
 // Register ID. *Must* be unique across *all* of your customers using your POS. The same ID must be sent for both
 // pairing and transaction requests. A UUID is generally convenient here, though it doesn't need to be a UUID.
-// const _posRegisterId = "6bd3bf1c-11cb-42ae-92c7-46ac39680166";
+// const posRegisterId = "6bd3bf1c-11cb-42ae-92c7-46ac39680166";
 
 // The name of the register. Only used during pairing. This will be displayed on the device itself (to easily
 // visually identify where it is paired to).
-// const _posRegisterName = "Register 1";
+// const posRegisterName = "Register 1";
 
 // The merchant name of your customer. *Must* be consistent between pairing and transaction requests.
 // Side note: If the customer chooses to change their business name, a new pairing request needs to be issued.
-// const _posBusinessName = "Demo Shop";
+// const posBusinessName = "Demo Shop";
 
 // The name of your POS application. *Must* be consistent between pairing and transaction requests.
-// const _posVendorName = "Test POS";
+// const posVendorName = "Test POS";
 
 // This "enum" will be used to return back the final transaction outcome after polling is complete.
 //
@@ -77,17 +77,22 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
     const { register } = useRegister();
     const { restaurant } = useRestaurant();
 
-    const _baseUrl: string = "https://api.smart-connect.cloud/POS";
-    let _posRegisterId: string | null = register ? register.id : null;
-    const _posRegisterName: string | null = register ? register.name : null;
-    let _posBusinessName: string;
-    const _posVendorName: string = "Tabin";
+    const [baseUrl, setBaseUrl] = useState<string>("https://api.smart-connect.cloud/POS");
+    let [posRegisterId, setPosRegisterId] = useState<string | null>(null);
+    const [posRegisterName, setPosRegisterName] = useState<string | null>(null);
+    let [posBusinessName, setPosBusinessName] = useState<string | null>(null);
+    const [posVendorName, setPosVendorName] = useState<string>("Tabin");
 
     useEffect(() => {
-        if (restaurant) {
-            _posBusinessName = restaurant.name;
-        }
+        if (restaurant) setPosBusinessName(restaurant.name);
     }, [restaurant]);
+
+    useEffect(() => {
+        if (register) {
+            setPosRegisterId(register.id);
+            setPosRegisterName(register.name);
+        }
+    }, [register]);
 
     // ======================================================
     // PAIRING REQUEST
@@ -105,23 +110,28 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
                 return;
             }
 
-            if (!_posRegisterId) {
+            if (!posRegisterId) {
                 reject("A posRegisterId has to be supplied.");
                 return;
             }
 
-            if (!_posRegisterName) {
+            if (!posRegisterName) {
                 reject("A posRegisterName has to be supplied.");
                 return;
             }
 
-            const pairingEndpoint = _baseUrl + "/Pairing/" + pairingCode;
+            if (!posBusinessName) {
+                reject("A posBusinessName has to be supplied.");
+                return;
+            }
+
+            const pairingEndpoint = baseUrl + "/Pairing/" + pairingCode;
 
             const params = new URLSearchParams();
-            params.append("POSRegisterID", _posRegisterId);
-            params.append("POSRegisterName", _posRegisterName);
-            params.append("POSBusinessName", _posBusinessName);
-            params.append("POSVendorName", _posVendorName);
+            params.append("POSRegisterID", posRegisterId);
+            params.append("POSRegisterName", posRegisterName);
+            params.append("POSBusinessName", posBusinessName);
+            params.append("POSVendorName", posVendorName);
 
             console.log("Sending pairing request to: " + pairingEndpoint);
             console.log("Pairing parameters: " + params.toString());
@@ -187,7 +197,6 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
     //     - reject(string) - the string will contain the error message
     // ======================================================
     const createTransaction = (amount: number, transactionType: string): Promise<string> => {
-        // To get the transaction outcome, at least two asynchronous requests will be needed.
         // The first request will POST the transaction parameters to the endpoint, and obtain a
         // polling URL. The client will then continue polling (executing GET against that URL)
         // until the actual final outcome of the transaction is received.
@@ -208,25 +217,25 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
                 // in case it is invalid.
             }
 
-            if (!_posRegisterId) {
+            if (!posRegisterId) {
                 reject("A posRegisterId has to be supplied.");
                 return;
             }
 
-            if (!_posRegisterName) {
-                reject("A posRegisterName has to be supplied.");
+            if (!posBusinessName) {
+                reject("A posBusinessName has to be supplied.");
                 return;
             }
 
-            const transactionEndpoint = _baseUrl + "/Transaction";
+            const transactionEndpoint = baseUrl + "/Transaction";
 
             // Some transaction types allow for additional fields (e.g. Card.PurchasePlusCash will require the
             // AmountCash value to be supplied as well), however for simplicity reasons those will be omitted here.
             // For the full API reference, see: http://www.smartpayinvestor.com/smartconnect-api-integration-guide/
             const params = new URLSearchParams();
-            params.append("POSRegisterID", _posRegisterId);
-            params.append("POSBusinessName", _posBusinessName);
-            params.append("POSVendorName", _posVendorName);
+            params.append("POSRegisterID", posRegisterId);
+            params.append("POSBusinessName", posBusinessName);
+            params.append("POSVendorName", posVendorName);
             params.append("TransactionMode", "ASYNC");
             params.append("TransactionType", transactionType);
             params.append("AmountTotal", String(amount));
