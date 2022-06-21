@@ -1,7 +1,8 @@
+import axios from "axios";
 import { useEffect, createContext, useContext } from "react";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
 import { useGetRestaurantOrdersByBetweenPlacedAtLazyQuery } from "../hooks/useGetRestaurantOrdersByBetweenPlacedAtLazyQuery";
-import { IPrintReceiptDataOutput, IOrderReceipt, IPrintSalesDataInput } from "../model/model";
+import { IPrintReceiptDataOutput, IOrderReceipt, IPrintSalesDataInput, IOrderLabel } from "../model/model";
 import { toast } from "../tabin/components/toast";
 import { convertProductTypesForPrint, filterPrintProducts, toLocalISOString } from "../util/util";
 import { useErrorLogging } from "./errorLogging-context";
@@ -17,11 +18,15 @@ try {
 
 type ContextProps = {
     printReceipt: (payload: IOrderReceipt) => Promise<any>;
+    printLabel: (payload: IOrderLabel) => Promise<any>;
     printSalesData: (printSalesDataInput: IPrintSalesDataInput) => Promise<any>;
 };
 
 const ReceiptPrinterContext = createContext<ContextProps>({
     printReceipt: (payload: IOrderReceipt) => {
+        return new Promise(() => {});
+    },
+    printLabel: (payload: IOrderLabel) => {
         return new Promise(() => {});
     },
     printSalesData: (printSalesDataInput: IPrintSalesDataInput) => {
@@ -143,6 +148,146 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         }
     };
 
+    const makeResultInquiryData = (requestId, responseId, timeout) => {
+        return '{"RequestID":' + requestId + ',"ResponseID":"' + responseId + '","Timeout":' + timeout + "}";
+    };
+
+    const checkResult = async (serverURL, requestId, responseId) => {
+        const requestURL = serverURL + "/checkStatus";
+        const inquiryData = makeResultInquiryData(requestId, responseId, 30);
+
+        try {
+            const response = await axios.post(requestURL, inquiryData);
+
+            if (response.request.readyState === 4 && response.status === 200) {
+                const res = response.data;
+
+                if (res.Result === "ready" || res.Result === "progress") {
+                    await checkResult(serverURL, res.RequestID, res.ResponseID);
+                } else if (res.Result === "error") {
+                    throw "Error";
+                } else {
+                    //Label has completed printing
+                    console.log(res.ResponseID + ":" + res.Result);
+                }
+            } else if (response.request.readyState === 4 && response.status === 404) {
+                throw "No printers";
+            } else if (response.request.readyState === 4) {
+                throw "Cannot connect to server";
+            }
+        } catch (e) {
+            throw e;
+        }
+    };
+
+    const requestPrint = async (serverAddress, printerName, payload) => {
+        const serverURL = `http://${serverAddress}:18080/WebPrintSDK/${printerName}`;
+
+        try {
+            const response = await axios.post(serverURL, payload);
+
+            if (response.request.readyState === 4 && response.status === 200) {
+                const res = response.data;
+
+                if (res.Result === "ready" || res.Result === "progress") {
+                    await checkResult(serverURL, res.RequestID, res.ResponseID);
+                } else if (res.Result === "error") {
+                    throw "Error";
+                } else if (res.Result === "duplicated") {
+                    throw "Duplicated receipt";
+                } else {
+                    throw "Undefined error";
+                }
+            } else if (response.request.readyState === 4 && response.status === 404) {
+                throw "No printers";
+            } else if (response.request.readyState === 4) {
+                throw "Cannot connect to server";
+            }
+        } catch (e) {
+            throw e;
+        }
+    };
+
+    const printLabel = async (order: IOrderLabel) => {
+        try {
+            let productCounter = 0;
+            let totalProductCount = 0;
+
+            order.products.forEach((product) => {
+                totalProductCount += product.quantity;
+            });
+
+            for (var i = 0; i < order.products.length; i++) {
+                const product = order.products[i];
+
+                for (var qty = 0; qty < product.quantity; qty++) {
+                    let funcCounter = 0;
+                    productCounter++;
+
+                    const emptyClearBuffer = `"func${funcCounter}":{"clearBuffer":[]}`;
+                    funcCounter++;
+                    const setPaperWidth = `"func${funcCounter}":{"setWidth":[300]}`;
+                    funcCounter++;
+
+                    const orderNumberString = `"func${funcCounter}":{"drawTrueTypeFont":["Order: ${order.number} (${productCounter}/${totalProductCount})",0,0,"Arial",20,0,false,false,false,true]}`;
+                    funcCounter++;
+                    const productString = `"func${funcCounter}":{"drawTrueTypeFont":["${product.name}",0,${
+                        (funcCounter - 2) * 30 + 5
+                    },"Arial",20,0,false,true,false,false]}`;
+                    funcCounter++;
+
+                    let modifierGroupString = "";
+                    let mgString = "";
+
+                    product.modifierGroups.forEach((modifierGroup, index) => {
+                        mgString = `${modifierGroup.name}: `;
+
+                        //Show only first 2 on first line
+                        modifierGroup.modifiers.slice(0, 2).forEach((modifier, index2) => {
+                            if (index2 !== 0) mgString += `, `;
+
+                            mgString += modifier.name;
+                        });
+
+                        if (index !== 0) modifierGroupString += `,`;
+                        modifierGroupString += `"func${funcCounter}":{"drawTrueTypeFont":["${mgString}",0,${
+                            (funcCounter - 2) * 30 + 10
+                        },"Arial",18,0,false,false,false,true]}`;
+                        funcCounter++;
+
+                        if (modifierGroup.modifiers.length > 2) {
+                            mgString = ""; //Reset
+                            //Show only first 2 on first line
+                            modifierGroup.modifiers.slice(2).forEach((modifier, index2) => {
+                                if (index2 !== 0) mgString += `, `;
+
+                                mgString += modifier.name;
+                            });
+
+                            if (index !== 0) modifierGroupString += `,`;
+                            modifierGroupString += `"func${funcCounter}":{"drawTrueTypeFont":["${mgString}",0,${
+                                (funcCounter - 2) * 30 + 10
+                            },"Arial",18,0,false,false,false,true]}`;
+                            funcCounter++;
+                        }
+                    });
+
+                    const timestampString = `"func${funcCounter}":{"drawTrueTypeFont":["${order.placedAt}",0,200,"Arial",16,0,false,false,false,true]}`;
+                    funcCounter++;
+                    const emptyPrintBuffer = `"func${funcCounter}":{"printBuffer":[]}`;
+                    funcCounter++;
+                    const payload = `{"id":1,"functions":{${emptyClearBuffer},${setPaperWidth},${orderNumberString},${productString},${modifierGroupString},${timestampString},${emptyPrintBuffer}}}`;
+
+                    await requestPrint(order.printerAddress, order.printerName, payload);
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("There was an error printing your order");
+            await logError("There was an error printing your order", JSON.stringify({ error: e, order: order }));
+        }
+    };
+
     const printSalesData = async (printSalesDataInput: IPrintSalesDataInput) => {
         if (ipcRenderer) {
             try {
@@ -248,6 +393,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         <ReceiptPrinterContext.Provider
             value={{
                 printReceipt: printReceipt,
+                printLabel: printLabel,
                 printSalesData: printSalesData,
             }}
             children={props.children}
