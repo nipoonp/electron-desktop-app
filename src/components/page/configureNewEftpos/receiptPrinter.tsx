@@ -185,7 +185,7 @@ export const ReceiptPrinter = () => {
     const [printerAddress2, setPrinterAddress2] = useState(register?.printers?.items[1]?.address || "192.168.1.201");
     const [printerAddress3, setPrinterAddress3] = useState(register?.printers?.items[2]?.address || "192.168.1.202");
 
-    const { printReceipt } = useReceiptPrinter();
+    const { printReceipt, printLabel } = useReceiptPrinter();
 
     const onPrintTestReceipt = async () => {
         if (printerAddress1) {
