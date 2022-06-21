@@ -66,6 +66,7 @@ export const GET_USER = gql`
                             windcaveStationId
                             windcaveStationUser
                             windcaveStationKey
+                            skipEftposReceiptSignature
                             orderNumberSuffix
                             customStyleSheet {
                                 key
@@ -256,6 +257,7 @@ export const GET_RESTAURANT = gql`
                     windcaveStationId
                     windcaveStationUser
                     windcaveStationKey
+                    skipEftposReceiptSignature
                     orderNumberSuffix
                     customStyleSheet {
                         key
@@ -807,6 +809,7 @@ export interface IGET_RESTAURANT_REGISTER {
     windcaveStationId: string;
     windcaveStationUser: string;
     windcaveStationKey: string;
+    skipEftposReceiptSignature: boolean;
     orderNumberSuffix: string;
     customStyleSheet?: IS3Object;
     printers: {

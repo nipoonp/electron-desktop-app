@@ -5,6 +5,7 @@ import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
 import { useMutation } from "@apollo/client";
 import { useRestaurant } from "./restaurant-context";
 import { EEftposTransactionOutcome, EWindcaveTransactionOutcome, IEftposTransactionOutcome } from "../model/model";
+import { useRegister } from "./register-context";
 
 var convert = require("xml-js");
 
@@ -46,6 +47,10 @@ interface IWindcaveInitTransactionResponse {
             _text?: string;
         };
         ReCo?: {
+            _text?: string;
+        };
+        //This is for button request response
+        Success?: {
             _text?: string;
         };
         //Not in spec but it is returned at times
@@ -161,6 +166,7 @@ const WindcaveContext = createContext<ContextProps>({
 
 const WindcaveProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
+    const { register } = useRegister();
 
     const formatReceipt = (receipt: string, width: number) => {
         let result = "";
@@ -303,6 +309,91 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         });
     };
 
+    const sendButtonRequest = (
+        stationId: string,
+        user: string,
+        key: string,
+        action: string = ACTION,
+        name: string,
+        val: string,
+        txnRef: string
+    ): Promise<string> => {
+        return new Promise(async (resolve, reject) => {
+            const params = {
+                Scr: {
+                    _attributes: {
+                        action: action,
+                        user: user,
+                        key: key,
+                    },
+                    Station: {
+                        _text: stationId,
+                    },
+                    TxnType: {
+                        _text: "UI",
+                    },
+                    UiType: {
+                        _text: "Bn",
+                    },
+                    Name: {
+                        _text: name,
+                    },
+                    Val: {
+                        _text: val,
+                    },
+                    TxnRef: {
+                        _text: txnRef,
+                    },
+                },
+            };
+
+            const paramsXML = convert.json2xml(params, { compact: true, spaces: 4 });
+
+            try {
+                const response = await axios.post(BASE_URL, paramsXML, {
+                    headers: {
+                        "Content-Type": "application/xml",
+                    },
+                });
+
+                // console.log(`Transaction POST response received (${response.status}) ${response.data}`);
+
+                if (response.status == 200) {
+                    const resJSON = convert.xml2json(response.data, { compact: true, spaces: 4 });
+                    const res = JSON.parse(resJSON) as IWindcaveInitTransactionResponse;
+
+                    const now = new Date();
+
+                    await createEftposTransactionLogMutation({
+                        variables: {
+                            eftposProvider: "WINDCAVE",
+                            transactionId: txnRef,
+                            type: "UI",
+                            payload: response.data,
+                            restaurantId: restaurant ? restaurant.id : "Invalid",
+                            timestamp: toLocalISOString(now),
+                            expiry: Number(Math.floor(Number(now) / 1000) + 2592000), // Add 30 days to timeStamp for DynamoDB TTL
+                        },
+                    });
+
+                    if (res.Scr && res.Scr.Success) {
+                        resolve(txnRef);
+                        return;
+                    } else {
+                        reject("SendButtonRequest: Button request unsuccessful");
+                        return;
+                    }
+                } else {
+                    reject("SendButtonRequest: Invalid status code received");
+                    return;
+                }
+            } catch (err) {
+                reject(err);
+                return;
+            }
+        });
+    };
+
     const pollForOutcome = (
         stationId: string,
         user: string,
@@ -378,7 +469,6 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                                 };
                             } else if (res.Scr.Result.AP._text === "0") {
                                 //Declined or some other issue
-
                                 if (
                                     (res.Scr.Result && res.Scr.Result.RC && res.Scr.Result.RC._text === "VW") ||
                                     (res.Scr.ReCo && res.Scr.ReCo._text === "VW")
@@ -408,21 +498,6 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                                 }
                             }
 
-                            //Fail any transaction approved with signature
-                            if (
-                                res.Scr.StatusId &&
-                                res.Scr.TxnStatusId &&
-                                res.Scr.StatusId._text == EWindcaveStatus.TransactionCompleted &&
-                                res.Scr.TxnStatusId._text == EWindcaveTxnStatus.VerifyingSignature
-                            ) {
-                                transactionOutcome = transactionOutcome = {
-                                    platformTransactionOutcome: EWindcaveTransactionOutcome.Failed,
-                                    transactionOutcome: EEftposTransactionOutcome.Fail,
-                                    message: "Transaction Approved With Signature Not Allowed In Kiosk Mode!",
-                                    eftposReceipt: eftposReceipt,
-                                };
-                            }
-
                             if (res.Scr.Rcpt) {
                                 eftposReceipt = res.Scr.Rcpt._text;
 
@@ -435,6 +510,27 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                             if (res.Scr.Result && res.Scr.Result.RC && res.Scr.Result.RC._text) {
                                 reject(windcaveResponseCodeMessages[res.Scr.Result.RC._text] || "Unknown error");
                                 return;
+                            }
+                        }
+                    } else {
+                        //Transaction still processing, we need to handle signature stage
+                        if (
+                            res.Scr.StatusId &&
+                            res.Scr.TxnStatusId &&
+                            res.Scr.StatusId._text == EWindcaveStatus.Processing &&
+                            res.Scr.TxnStatusId._text == EWindcaveTxnStatus.VerifyingSignature
+                        ) {
+                            if (register && register.skipEftposReceiptSignature) {
+                                //Auto send "YES" button press on signature stage
+                                await sendButtonRequest(stationId, user, key, action, "B1", "YES", txnRef);
+                            } else {
+                                //Fail any transaction approved with signature
+                                transactionOutcome = transactionOutcome = {
+                                    platformTransactionOutcome: EWindcaveTransactionOutcome.Failed,
+                                    transactionOutcome: EEftposTransactionOutcome.Fail,
+                                    message: "Transaction Approved With Signature Not Allowed!",
+                                    eftposReceipt: eftposReceipt,
+                                };
                             }
                         }
                     }
