@@ -20,6 +20,7 @@ import {
     EEftposProvider,
     ICartPaymentAmounts,
     ICartPayment,
+    EReceiptPrinterPrinterType,
 } from "../../model/model";
 import { useUser } from "../../context/user-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -46,6 +47,7 @@ import { PaymentModal } from "../modals/paymentModal";
 import { useAlert } from "../../tabin/components/alert";
 
 import "./checkout.scss";
+import { format } from "date-fns";
 
 const logger = new Logger("checkout");
 
@@ -82,7 +84,7 @@ export const Checkout = () => {
     } = useCart();
     const { restaurant } = useRestaurant();
     const { register, isPOS } = useRegister();
-    const { printReceipt } = useReceiptPrinter();
+    const { printReceipt, printLabel } = useReceiptPrinter();
     const { user } = useUser();
     const { logError } = useErrorLogging();
 
@@ -327,33 +329,46 @@ export const Checkout = () => {
                 const productsToPrint = filterPrintProducts(order.products, printer);
 
                 if (productsToPrint.length > 0) {
-                    await printReceipt({
-                        orderId: order.id,
-                        printerType: printer.type,
-                        printerAddress: printer.address,
-                        customerPrinter: printer.customerPrinter,
-                        kitchenPrinter: printer.kitchenPrinter,
-                        hideModifierGroupsForCustomer: false,
-                        restaurant: {
-                            name: restaurant.name,
-                            address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
-                            gstNumber: restaurant.gstNumber,
-                        },
-                        customerInformation: null,
-                        notes: order.notes,
-                        products: convertProductTypesForPrint(productsToPrint),
-                        eftposReceipt: order.eftposReceipt,
-                        paymentAmounts: order.paymentAmounts,
-                        total: order.total,
-                        discount: order.promotionId && order.discount ? order.discount : null,
-                        subTotal: order.subTotal,
-                        paid: order.paid,
-                        type: order.type,
-                        number: order.number,
-                        table: order.table,
-                        placedAt: order.placedAt,
-                        orderScheduledAt: order.orderScheduledAt,
-                    });
+                    if (printer.printerType === EReceiptPrinterPrinterType.LABEL) {
+                        await printLabel({
+                            orderId: order.id,
+                            printerName: printer.name, //For label printer name is important
+                            printerType: printer.type,
+                            printerAddress: printer.address,
+                            products: convertProductTypesForPrint(productsToPrint),
+                            number: order.number,
+                            placedAt: format(new Date(order.placedAt), "dd MMM HH:mm aa"),
+                        });
+                    } else {
+                        //Not checking if its printerType receipt
+                        await printReceipt({
+                            orderId: order.id,
+                            printerType: printer.type,
+                            printerAddress: printer.address,
+                            customerPrinter: printer.customerPrinter,
+                            kitchenPrinter: printer.kitchenPrinter,
+                            hideModifierGroupsForCustomer: false,
+                            restaurant: {
+                                name: restaurant.name,
+                                address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
+                                gstNumber: restaurant.gstNumber,
+                            },
+                            customerInformation: null,
+                            notes: order.notes,
+                            products: convertProductTypesForPrint(productsToPrint),
+                            eftposReceipt: order.eftposReceipt,
+                            paymentAmounts: order.paymentAmounts,
+                            total: order.total,
+                            discount: order.promotionId && order.discount ? order.discount : null,
+                            subTotal: order.subTotal,
+                            paid: order.paid,
+                            type: order.type,
+                            number: order.number,
+                            table: order.table,
+                            placedAt: order.placedAt,
+                            orderScheduledAt: order.orderScheduledAt,
+                        });
+                    }
                 }
             });
     };

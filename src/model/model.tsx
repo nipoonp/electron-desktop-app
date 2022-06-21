@@ -159,6 +159,11 @@ export enum EReceiptPrinterType {
     USB = "USB",
 }
 
+export enum EReceiptPrinterPrinterType {
+    RECEIPT = "RECEIPT",
+    LABEL = "LABEL",
+}
+
 export interface IOrderReceipt {
     orderId: string;
     printerType: EReceiptPrinterType;
@@ -190,6 +195,17 @@ export interface IOrderReceipt {
     placedAt: string;
     orderScheduledAt: string | null;
 }
+
+export interface IOrderLabel {
+    orderId: string;
+    printerName: string;
+    printerType: EReceiptPrinterType;
+    printerAddress: string;
+    products: ICartProduct[];
+    number: string;
+    placedAt: string;
+}
+
 export interface IPrintSalesDataInputDailySales {
     [date: string]: {
         totalAmount: number;

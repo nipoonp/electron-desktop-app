@@ -205,6 +205,7 @@ const PaymentAccepted = (props: {
                     <div className="h2 mb-6">Transaction Accepted!</div>
                     <div className="mb-1">Your order number is</div>
                     <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+                    <PreparationTime />
                     <div className="separator-6 mb-6"></div>
                     <PaymentModalFooter
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
