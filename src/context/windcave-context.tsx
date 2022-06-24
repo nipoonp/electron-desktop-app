@@ -455,7 +455,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                         },
                     });
 
-                    if (res.Scr.Complete) {
+                    if (res.Scr.Complete && res.Scr.Complete._text === "1") {
                         transactionComplete = res.Scr.Complete._text === "1"; //If transaction is completed this field will be set to 1.
 
                         if (res.Scr.Result && res.Scr.Result.AP) {

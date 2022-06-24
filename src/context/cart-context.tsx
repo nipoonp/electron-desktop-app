@@ -301,18 +301,31 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                         quantity: product.quantity,
                         price: product.price,
                         categoryId: null,
+                        modifiers: null,
                     };
                 }
                 //We do this because there could be the same product in the products array twice.
                 if (newCartProductQuantitiesById[product.id]) {
                     newCartProductQuantitiesById[product.id].quantity += product.quantity;
                 } else {
+                    const modifiers: {
+                        id: string;
+                        quantity: number;
+                        price: number;
+                    }[] = [];
+
+                    product.modifierGroups.forEach((modifierGroup) => {
+                        modifierGroup.modifiers.forEach((modifier) => {
+                            modifiers.push({ id: modifier.id, quantity: modifier.quantity, price: modifier.price });
+                        });
+                    });
                     newCartProductQuantitiesById[product.id] = {
                         id: product.id,
                         name: product.name,
                         quantity: product.quantity,
                         price: product.price,
                         categoryId: product.category.id,
+                        modifiers: modifiers,
                     };
                 }
 
@@ -343,6 +356,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                                 quantity: product.quantity,
                                 price: product.price,
                                 categoryId: null,
+                                modifiers: null,
                             };
                         }
                         // }
