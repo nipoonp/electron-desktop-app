@@ -5,8 +5,9 @@ import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { useRegister } from "../../context/register-context";
 import { useRestaurant } from "../../context/restaurant-context";
 import { IGET_RESTAURANT_REGISTER_PRINTER } from "../../graphql/customQueries";
-import { ERegisterPrinterType, IPrintSalesData } from "../../model/model";
+import { ERegisterPrinterType, IOrderReceipt, IPrintSalesData } from "../../model/model";
 import { toast } from "../../tabin/components/toast";
+import { convertProductTypesForPrint, filterPrintProducts } from "../../util/util";
 import { beginOrderPath } from "../main";
 import { SelectReceiptPrinterModal } from "../modals/selectReceiptPrinterModal";
 
@@ -16,16 +17,17 @@ export default () => {
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
     const { printSalesData } = useReceiptPrinter();
+    const { printReceipt } = useReceiptPrinter();
     const navigate = useNavigate();
 
     const [showSelectReceiptPrinterModal, setShowSelectReceiptPrinterModal] = useState(false);
-    const [receiptPrinterModalPrintData, setReceiptPrinterModalPrintData] = useState<IPrintSalesData | null>(null);
+    const [receiptPrinterModalPrintSalesData, setReceiptPrinterModalPrintSalesData] = useState<IPrintSalesData | null>(null);
+    const [receiptPrinterModalPrintReorderData, setReceiptPrinterModalPrintReorderData] = useState<IOrderReceipt | null>(null);
 
-    const onPrintData = async (type: "DAY" | "CATEGORY" | "PRODUCT", printData: IPrintSalesData) => {
-        setReceiptPrinterModalPrintData(printData);
-
+    const onPrintData = async (printData: IPrintSalesData) => {
         if (register) {
             if (register.printers.items.length > 1) {
+                setReceiptPrinterModalPrintSalesData(printData);
                 setShowSelectReceiptPrinterModal(true);
             } else if (register.printers.items.length === 1) {
                 await printSales({ printerType: register.printers.items[0].type, printerAddress: register.printers.items[0].address }, printData);
@@ -35,32 +37,58 @@ export default () => {
         }
     };
 
+    const onReprintReceipt = async (order: IOrderReceipt) => {
+        if (register) {
+            if (register.printers.items.length > 1) {
+                setReceiptPrinterModalPrintReorderData(order);
+                setShowSelectReceiptPrinterModal(true);
+            } else if (register.printers.items.length === 1) {
+                const productsToPrint = filterPrintProducts(order.products, register.printers.items[0]);
+
+                await printReceipt({
+                    ...order,
+                    printerType: register.printers.items[0].type,
+                    printerAddress: register.printers.items[0].address,
+                    customerPrinter: register.printers.items[0].customerPrinter,
+                    kitchenPrinter: register.printers.items[0].kitchenPrinter,
+                    products: convertProductTypesForPrint(productsToPrint),
+                });
+            } else {
+                toast.error("No receipt printers configured");
+            }
+        }
+    };
+
     useEffect(() => {
-        window.addEventListener("message", (event) => {
+        window.addEventListener("message", async (event) => {
             console.log("Got message from child", event);
 
             const data = event.data;
 
             if (data.action === "printSalesData") {
                 try {
-                    onPrintData(data.type, data.printData);
-                } catch (err) {
-                    console.error(err);
+                    await onPrintData(data.printData);
+                } catch (e) {
+                    console.error(e);
                     toast.error("There was an error printing your sales data.");
+                }
+            } else if (data.action === "orderReprint") {
+                try {
+                    await onReprintReceipt(data.order);
+                } catch (e) {
+                    console.error(e);
+                    toast.error("There was an error reprinting your order.");
                 }
             }
         });
 
-        // return () => window.removeEventListener("message", () => {});
+        return () => window.removeEventListener("message", () => {});
     }, []);
 
     if (!restaurant) return <>No Restaurant</>;
     if (!register) return <>No Register</>;
 
     const defaultPath = `https://restaurants.tabin.co.nz/${restaurant.id}/sales_analytics`;
-
-    console.log(window.location.href);
-    console.log(window.location.origin);
 
     const printSales = async (
         printer: {
@@ -81,9 +109,24 @@ export default () => {
     };
 
     const onSelectPrinter = async (printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
-        if (!receiptPrinterModalPrintData) return;
+        if (receiptPrinterModalPrintSalesData) {
+            await printSales({ printerType: printer.type, printerAddress: printer.address }, receiptPrinterModalPrintSalesData);
 
-        await printSales({ printerType: printer.type, printerAddress: printer.address }, receiptPrinterModalPrintData);
+            setReceiptPrinterModalPrintSalesData(null);
+        } else if (receiptPrinterModalPrintReorderData) {
+            const productsToPrint = filterPrintProducts(receiptPrinterModalPrintReorderData.products, register.printers.items[0]);
+
+            await printReceipt({
+                ...receiptPrinterModalPrintReorderData,
+                printerType: register.printers.items[0].type,
+                printerAddress: register.printers.items[0].address,
+                customerPrinter: register.printers.items[0].customerPrinter,
+                kitchenPrinter: register.printers.items[0].kitchenPrinter,
+                products: convertProductTypesForPrint(productsToPrint),
+            });
+
+            setReceiptPrinterModalPrintReorderData(null);
+        }
     };
 
     const selectReceiptPrinterModal = () => {
@@ -127,6 +170,8 @@ export default () => {
 
     const onCloseSelectReceiptPrinterModal = () => {
         setShowSelectReceiptPrinterModal(false);
+        setReceiptPrinterModalPrintSalesData(null);
+        setReceiptPrinterModalPrintReorderData(null);
     };
 
     const modalsAndSpinners = <>{selectReceiptPrinterModal()}</>;

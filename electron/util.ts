@@ -513,13 +513,13 @@ const printSalesByProductReceipt = (printer: any, data: IPrintSalesDataInput) =>
 export const printSalesDataReceipt = async (printSalesDataInput: IPrintSalesDataInput): Promise<IPrintReceiptOutput> => {
     let printer;
 
-    if (printSalesDataInput.printerType == ERegisterPrinterType.WIFI) {
+    if (printSalesDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
-            interface: `tcp://${printSalesDataInput.printerAddress}`,
+            interface: `tcp://${printSalesDataInput.printer.printerAddress}`,
         });
-    } else if (printSalesDataInput.printerType == ERegisterPrinterType.USB) {
+    } else if (printSalesDataInput.printer.printerType == ERegisterPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
@@ -545,10 +545,10 @@ export const printSalesDataReceipt = async (printSalesDataInput: IPrintSalesData
     printer.partialCut();
 
     try {
-        if (printSalesDataInput.printerType == ERegisterPrinterType.WIFI) {
+        if (printSalesDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
             await printer.execute();
-        } else if (printSalesDataInput.printerType == ERegisterPrinterType.USB) {
-            await usbPrinterExecute(printSalesDataInput.printerAddress, printer.getBuffer());
+        } else if (printSalesDataInput.printer.printerType == ERegisterPrinterType.USB) {
+            await usbPrinterExecute(printSalesDataInput.printer.printerAddress, printer.getBuffer());
             printer.clear();
         } else {
             //Bluetooth
