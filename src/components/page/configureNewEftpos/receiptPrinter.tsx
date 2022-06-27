@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { Input } from "../../../tabin/components/input";
 import { useReceiptPrinter } from "../../../context/receiptPrinter-context";
-import { EOrderType, EReceiptPrinterType, ICartProduct } from "../../../model/model";
+import { EOrderType, ERegisterPrinterType, ICartProduct } from "../../../model/model";
 import { useRegister } from "../../../context/register-context";
 import { Button } from "../../../tabin/components/button";
 import { Select } from "../../../tabin/components/select";
@@ -180,7 +180,7 @@ const TEST_PRODUCT: ICartProduct[] = [
 
 export const ReceiptPrinter = () => {
     const { register } = useRegister();
-    const [printerType, setPrinterType] = useState(EReceiptPrinterType.USB);
+    const [printerType, setPrinterType] = useState(ERegisterPrinterType.USB);
     const [printerAddress1, setPrinterAddress1] = useState(register?.printers?.items[0]?.address || "192.168.1.200");
     const [printerAddress2, setPrinterAddress2] = useState(register?.printers?.items[1]?.address || "192.168.1.201");
     const [printerAddress3, setPrinterAddress3] = useState(register?.printers?.items[2]?.address || "192.168.1.202");
@@ -284,7 +284,7 @@ export const ReceiptPrinter = () => {
     };
 
     const handleSelectType = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        setPrinterType(EReceiptPrinterType[event.target.value]);
+        setPrinterType(ERegisterPrinterType[event.target.value]);
     };
 
     return (

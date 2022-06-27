@@ -12,30 +12,21 @@ import { useAuth, AuthenticationStatus } from "../context/auth-context";
 import { useUser } from "../context/user-context";
 import { useRestaurant } from "../context/restaurant-context";
 import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
+import { useRegister } from "../context/register-context";
 
 import "react-toastify/dist/ReactToastify.min.css";
-import { useRegister } from "../context/register-context";
 
 const Login = lazy(() => import("./page/auth/login"));
 const Logout = lazy(() => import("./page/auth/logout"));
 const Restaurant = lazy(() => import("./page/restaurant"));
 const RestaurantList = lazy(() => import("./page/restaurantList"));
 const RegisterList = lazy(() => import("./page/registerList"));
+const Dashboard = lazy(() => import("./page/dashboard"));
 const BeginOrder = lazy(() => import("./page/beginOrder"));
 const OrderType = lazy(() => import("./page/orderType"));
 const ConfigureNewEftpos = lazy(() => import("./page/configureNewEftpos"));
 const TableNumber = lazy(() => import("./page/tableNumber"));
 const Checkout = lazy(() => import("./page/checkout"));
-
-const Stock = lazy(() => import("./page/stock"));
-const Reports = lazy(() => import("./page/reports"));
-const Orders = lazy(() => import("./page/orders"));
-const SalesAnalytics = lazy(() => import("./page/salesAnalytics"));
-const SalesAnalyticsDailySales = lazy(() => import("./page/salesAnalyticsDailySales"));
-const SalesAnalyticsHourlySales = lazy(() => import("./page/salesAnalyticsHourlySales"));
-const SalesAnalyticsTopCategory = lazy(() => import("./page/salesAnalyticsTopCategory"));
-const SalesAnalyticsTopProduct = lazy(() => import("./page/salesAnalyticsTopProduct"));
-
 const NoMatch = lazy(() => import("./page/error/404"));
 const Unauthorised = lazy(() => import("./page/error/unauthorised"));
 
@@ -60,23 +51,16 @@ Modal.setAppElement("#root");
 
 // Auth routes
 export const loginPath = "/login";
-export const stockPath = "/stock";
-export const ordersPath = "/orders";
-export const reportsPath = "/reports";
+export const logoutPath = "/log_out";
 export const restaurantListPath = "/restaurant_list";
 export const registerListPath = "/register_list";
+export const dashboardPath = "/dashboard";
 export const configureNewEftposPath = "/configure_new_eftpos";
 export const beginOrderPath = "/";
 export const orderTypePath = "/order_type";
 export const tableNumberPath = "/table_number";
 export const restaurantPath = "/restaurant";
 export const checkoutPath = "/checkout";
-export const logoutPath = "/log_out";
-export const salesAnalyticsPath = "/sales_analytics";
-export const salesAnalyticsDailySalesPath = "/sales_analytics/daily_sales";
-export const salesAnalyticsHourlySalesPath = "/sales_analytics/hourly_sales";
-export const salesAnalyticsTopCategoryPath = "/sales_analytics/top_category";
-export const salesAnalyticsTopProductPath = "/sales_analytics/top_product";
 export const unauthorizedPath = "/unauthorized";
 
 export default () => {
@@ -134,17 +118,8 @@ const AppRoutes = () => {
                     case "saleMode":
                         navigate(beginOrderPath);
                         break;
-                    case "stock":
-                        navigate(stockPath);
-                        break;
-                    case "orders":
-                        navigate(ordersPath);
-                        break;
-                    case "reports":
-                        navigate(reportsPath);
-                        break;
-                    case "salesAnalytics":
-                        navigate(salesAnalyticsPath);
+                    case "dashboard":
+                        navigate(dashboardPath);
                         break;
                     case "configureEftposAndPrinters":
                         navigate(configureNewEftposPath);
@@ -170,21 +145,12 @@ const AppRoutes = () => {
             <Route path={logoutPath} element={<Logout />} />
             <Route path={restaurantListPath} element={<PrivateRoute element={<RestaurantList />} />} />
             <Route path={registerListPath} element={<PrivateRoute element={<RegisterList />} />} />
-            <Route path={stockPath} element={<PrivateRoute element={<Stock />} />} />
-            <Route path={`${ordersPath}`} element={<PrivateRoute element={<Orders />} />}>
-                <Route path=":date" element={<PrivateRoute element={<Orders />} />} />
-            </Route>
-            <Route path={reportsPath} element={<PrivateRoute element={<Reports />} />} />
-            <Route path={salesAnalyticsPath} element={<PrivateRoute element={<SalesAnalytics />} />} />
-            <Route path={salesAnalyticsDailySalesPath} element={<PrivateRoute element={<SalesAnalyticsDailySales />} />} />
-            <Route path={salesAnalyticsHourlySalesPath} element={<PrivateRoute element={<SalesAnalyticsHourlySales />} />} />
-            <Route path={salesAnalyticsTopCategoryPath} element={<PrivateRoute element={<SalesAnalyticsTopCategory />} />} />
-            <Route path={salesAnalyticsTopProductPath} element={<PrivateRoute element={<SalesAnalyticsTopProduct />} />} />
+            <Route path={dashboardPath} element={<RestaurantRegisterPrivateRoute element={<Dashboard />} />} />
             <Route path={configureNewEftposPath} element={<RestaurantRegisterPrivateRoute element={<ConfigureNewEftpos />} />} />
             <Route path={beginOrderPath} element={<RestaurantRegisterPrivateRoute element={<BeginOrder />} />} />
             <Route path={`${restaurantPath}/:restaurantId`} element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />}>
-                <Route path=":selectedCategoryId" element={<PrivateRoute element={<Orders />} />}>
-                    <Route path=":selectedProductId" element={<PrivateRoute element={<Orders />} />} />
+                <Route path=":selectedCategoryId" element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />}>
+                    <Route path=":selectedProductId" element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />} />
                 </Route>
             </Route>
             <Route path={orderTypePath} element={<RestaurantRegisterPrivateRoute element={<OrderType />} />} />

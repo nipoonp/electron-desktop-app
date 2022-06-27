@@ -313,27 +313,9 @@ ipcMain.on("SHOW_CONTEXT_MENU", (event) => {
             },
         },
         {
-            label: "Stock",
+            label: "Dashboard",
             click: () => {
-                event.sender.send("CONTEXT_MENU_COMMAND", "stock");
-            },
-        },
-        {
-            label: "Orders",
-            click: () => {
-                event.sender.send("CONTEXT_MENU_COMMAND", "orders");
-            },
-        },
-        // {
-        //     label: "Reports",
-        //     click: () => {
-        //         event.sender.send("CONTEXT_MENU_COMMAND", "reports");
-        //     },
-        // },
-        {
-            label: "Sales Analytics",
-            click: () => {
-                event.sender.send("CONTEXT_MENU_COMMAND", "salesAnalytics");
+                event.sender.send("CONTEXT_MENU_COMMAND", "dashboard");
             },
         },
         {

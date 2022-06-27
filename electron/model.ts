@@ -3,6 +3,12 @@ export enum EOrderType {
     TAKEAWAY = "TAKEAWAY",
 }
 
+export enum ERegisterPrinterType {
+    BLUETOOTH = "BLUETOOTH",
+    WIFI = "WIFI",
+    USB = "USB",
+}
+
 export interface ICartProduct {
     id: string;
     name: string;
@@ -33,15 +39,9 @@ export interface IPreSelectedModifiers {
     [modifierGroupId: string]: ICartModifier[];
 }
 
-export enum EReceiptPrinterType {
-    BLUETOOTH = "BLUETOOTH",
-    WIFI = "WIFI",
-    USB = "USB",
-}
-
 export interface IOrderReceipt {
     orderId: string;
-    printerType: EReceiptPrinterType;
+    printerType: ERegisterPrinterType;
     printerAddress: string;
     customerPrinter: boolean | null;
     kitchenPrinter: boolean | null;
@@ -100,7 +100,7 @@ export interface IPrintSalesDataInputMostSoldProducts {
 }
 
 export interface IPrintSalesDataInput {
-    printerType: EReceiptPrinterType;
+    printerType: ERegisterPrinterType;
     printerAddress: string;
     type: "DAY" | "CATEGORY" | "PRODUCT";
     startDate: string;

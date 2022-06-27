@@ -1,5 +1,9 @@
-import { IMostSoldItems } from "../context/salesAnalytics-context";
-import { IOrderPaymentAmounts } from "../graphql/customFragments";
+import {
+    IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT,
+    IGET_RESTAURANT_ORDER_FRAGMENT,
+    IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT,
+    IOrderPaymentAmounts,
+} from "../graphql/customFragments";
 import { IGET_RESTAURANT_PROMOTION, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object } from "../graphql/customQueries";
 
 export interface IPrintReceiptDataOutput {
@@ -160,7 +164,7 @@ export interface ICartPayment {
     amount: number;
 }
 
-export enum EReceiptPrinterType {
+export enum ERegisterPrinterType {
     BLUETOOTH = "BLUETOOTH",
     WIFI = "WIFI",
     USB = "USB",
@@ -173,7 +177,7 @@ export enum EReceiptPrinterPrinterType {
 
 export interface IOrderReceipt {
     orderId: string;
-    printerType: EReceiptPrinterType;
+    printerType: ERegisterPrinterType;
     printerAddress: string;
     customerPrinter: boolean | null;
     kitchenPrinter: boolean | null;
@@ -206,7 +210,7 @@ export interface IOrderReceipt {
 export interface IOrderLabel {
     orderId: string;
     printerName: string;
-    printerType: EReceiptPrinterType;
+    printerType: ERegisterPrinterType;
     printerAddress: string;
     products: ICartProduct[];
     number: string;
@@ -245,13 +249,47 @@ export interface IPrintSalesDataInputMostSoldProducts {
     };
 }
 
+export interface IDailySales {
+    [date: string]: {
+        totalAmount: number;
+        totalQuantity: number;
+        orders: IGET_RESTAURANT_ORDER_FRAGMENT[];
+        totalPaymentAmounts: IOrderPaymentAmounts;
+    };
+}
+
+export interface ITopSoldItem {
+    item: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT | null;
+    totalQuantity: number;
+    totalAmount: number;
+}
+
+export interface IMostSoldItems {
+    [id: string]: {
+        item: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT;
+        totalQuantity: number;
+        totalAmount: number;
+    };
+}
+
 export interface IPrintSalesDataInput {
-    printerType: EReceiptPrinterType;
-    printerAddress: string;
+    type: "DAY" | "CATEGORY" | "PRODUCT";
+    printer: {
+        printerType: ERegisterPrinterType;
+        printerAddress: string;
+    } | null;
+    startDate: string;
+    endDate: string;
+    dailySales: IDailySales;
+    mostSoldCategories: IMostSoldItems;
+    mostSoldProducts: IMostSoldItems;
+}
+
+export interface IPrintSalesData {
     type: "DAY" | "CATEGORY" | "PRODUCT";
     startDate: string;
     endDate: string;
-    dailySales: IPrintSalesDataInputDailySales;
+    dailySales: IDailySales;
     mostSoldCategories: IMostSoldItems;
     mostSoldProducts: IMostSoldItems;
 }
