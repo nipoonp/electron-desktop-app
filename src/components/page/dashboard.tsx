@@ -57,7 +57,10 @@ export default () => {
     if (!restaurant) return <>No Restaurant</>;
     if (!register) return <>No Register</>;
 
-    const defaultPath = `http://localhost:3000/${restaurant.id}/sales_analytics`;
+    const defaultPath = `https://restaurants.tabin.co.nz/${restaurant.id}/sales_analytics`;
+
+    console.log(window.location.href);
+    console.log(window.location.origin);
 
     const printSales = async (
         printer: {
@@ -101,14 +104,14 @@ export default () => {
         const iframe = document.querySelector("iframe");
 
         //@ts-ignore
-        iframe.contentWindow.postMessage("goBack", "http://localhost:3000/");
+        iframe.contentWindow.postMessage("goBack", "https://restaurants.tabin.co.nz/");
     };
 
     const onIFrameForward = () => {
         const iframe = document.querySelector("iframe");
 
         //@ts-ignore
-        iframe.contentWindow.postMessage("goForward", "http://localhost:3000/");
+        iframe.contentWindow.postMessage("goForward", "https://restaurants.tabin.co.nz/");
     };
 
     const onBackToSale = () => {
@@ -119,7 +122,7 @@ export default () => {
         const iframe = document.querySelector("iframe");
 
         //@ts-ignore
-        iframe.contentWindow.postMessage("refresh", "http://localhost:3000/");
+        iframe.contentWindow.postMessage("refresh", "https://restaurants.tabin.co.nz/");
     };
 
     const onCloseSelectReceiptPrinterModal = () => {

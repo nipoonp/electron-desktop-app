@@ -87,7 +87,7 @@ const AppRoutes = () => {
 
     // This is for electron, as it doesn't start at '/' route for some reason.
     useEffect(() => {
-        navigate(dashboardPath);
+        navigate(beginOrderPath);
     }, []);
 
     useEffect(() => {
