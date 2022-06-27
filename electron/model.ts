@@ -100,9 +100,11 @@ export interface IPrintSalesDataInputMostSoldProducts {
 }
 
 export interface IPrintSalesDataInput {
-    printerType: ERegisterPrinterType;
-    printerAddress: string;
     type: "DAY" | "CATEGORY" | "PRODUCT";
+    printer: {
+        printerType: ERegisterPrinterType;
+        printerAddress: string;
+    };
     startDate: string;
     endDate: string;
     dailySales: IPrintSalesDataInputDailySales;

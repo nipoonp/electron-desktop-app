@@ -23,7 +23,10 @@ export const SelectReceiptPrinterModal = (props: ISelectReceiptPrinterModalProps
                         <div key={printer.id}>
                             {index != 0 && <div className="separator-4"></div>}
                             <div className="register-printer-list-item">
-                                <div>{printer.name}</div>
+                                <div>
+                                    <div>{printer.name}</div>
+                                    <div className="text-grey mt-2">{printer.address}</div>
+                                </div>
                                 <Button
                                     onClick={() => {
                                         props.onSelectPrinter(printer);
