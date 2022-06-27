@@ -1,5 +1,5 @@
 import { gql } from "@apollo/client";
-import { EReceiptPrinterPrinterType, EReceiptPrinterType } from "../model/model";
+import { EReceiptPrinterPrinterType } from "../model/model";
 import { ORDER_FIELDS_FRAGMENT } from "./customFragments";
 
 export enum EOrderStatus {
@@ -123,7 +123,7 @@ export interface IGET_USER_RESTAURANT {
 export interface IGET_USER_REGISTER_PRINTER {
     id: string;
     name: string;
-    type: EReceiptPrinterType;
+    type: ERegisterPrinterType;
     printerType: EReceiptPrinterPrinterType;
     address: string;
     customerPrinter: boolean;
@@ -820,7 +820,7 @@ export interface IGET_RESTAURANT_REGISTER {
 export interface IGET_RESTAURANT_REGISTER_PRINTER {
     id: string;
     name: string;
-    type: EReceiptPrinterType;
+    type: ERegisterPrinterType;
     printerType: EReceiptPrinterPrinterType;
     address: string;
     customerPrinter: boolean;

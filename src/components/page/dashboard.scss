@@ -1,0 +1,28 @@
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    height: 42px;
+    background-color: #f2f2f2;
+    border-bottom: 1px solid #dddddd;
+
+    .dashboard-header-nav-item-wrapper {
+        display: flex;
+        align-items: center;
+        padding: 8px;
+
+        .dashboard-header-nav-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            color: #484848;
+            cursor: pointer;
+            font-size: 14px;
+        }
+    }
+}
+
+.dashboard-iframe {
+    width: 100%;
+    height: calc(100vh - 42px);
+    border: none;
+}
