@@ -4,7 +4,7 @@ import {
     ICartProduct,
     ICartModifierGroup,
     ICartModifier,
-    EReceiptPrinterType,
+    ERegisterPrinterType,
     IPrintReceiptOutput,
     IPrintSalesDataInput,
     IPrintSalesDataInputDailySales,
@@ -93,13 +93,13 @@ const getProductTotal = (product: ICartProduct) => {
 export const printReceipt = async (order: IOrderReceipt, isCustomerReceipt: boolean): Promise<IPrintReceiptOutput> => {
     let printer;
 
-    if (order.printerType == EReceiptPrinterType.WIFI) {
+    if (order.printerType == ERegisterPrinterType.WIFI) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
             interface: `tcp://${order.printerAddress}`,
         });
-    } else if (order.printerType == EReceiptPrinterType.USB) {
+    } else if (order.printerType == ERegisterPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
@@ -377,9 +377,9 @@ export const printReceipt = async (order: IOrderReceipt, isCustomerReceipt: bool
     }
 
     try {
-        if (order.printerType == EReceiptPrinterType.WIFI) {
+        if (order.printerType == ERegisterPrinterType.WIFI) {
             await printer.execute();
-        } else if (order.printerType == EReceiptPrinterType.USB) {
+        } else if (order.printerType == ERegisterPrinterType.USB) {
             await usbPrinterExecute(order.printerAddress, printer.getBuffer());
             printer.clear();
         } else {
@@ -513,13 +513,13 @@ const printSalesByProductReceipt = (printer: any, data: IPrintSalesDataInput) =>
 export const printSalesDataReceipt = async (printSalesDataInput: IPrintSalesDataInput): Promise<IPrintReceiptOutput> => {
     let printer;
 
-    if (printSalesDataInput.printerType == EReceiptPrinterType.WIFI) {
+    if (printSalesDataInput.printerType == ERegisterPrinterType.WIFI) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
             interface: `tcp://${printSalesDataInput.printerAddress}`,
         });
-    } else if (printSalesDataInput.printerType == EReceiptPrinterType.USB) {
+    } else if (printSalesDataInput.printerType == ERegisterPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
@@ -545,9 +545,9 @@ export const printSalesDataReceipt = async (printSalesDataInput: IPrintSalesData
     printer.partialCut();
 
     try {
-        if (printSalesDataInput.printerType == EReceiptPrinterType.WIFI) {
+        if (printSalesDataInput.printerType == ERegisterPrinterType.WIFI) {
             await printer.execute();
-        } else if (printSalesDataInput.printerType == EReceiptPrinterType.USB) {
+        } else if (printSalesDataInput.printerType == ERegisterPrinterType.USB) {
             await usbPrinterExecute(printSalesDataInput.printerAddress, printer.getBuffer());
             printer.clear();
         } else {
