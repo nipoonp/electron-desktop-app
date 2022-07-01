@@ -962,7 +962,7 @@ export const Checkout = () => {
             {tableNumber && <div className="mb-4">{restaurantTableNumber}</div>}
             <div className="separator-6"></div>
             {orderSummary}
-            {restaurantNotes}
+            <div className="restaurant-notes-wrapper">{restaurantNotes}</div>
             <div className={isPOS ? "mb-4" : "mb-10"}></div>
         </>
     );

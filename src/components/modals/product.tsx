@@ -782,7 +782,7 @@ export const ProductModal = (props: {
                 {product.description && <div className="description">{product.description}</div>}
                 <div className="separator-6"></div>
                 {modifierGroups}
-                {!currentSelectedProductModifier && productNotes}
+                <div className="product-notes-wrapper">{!currentSelectedProductModifier && productNotes}</div>
             </div>
             <div className="footer">{footer}</div>
         </>
