@@ -19,8 +19,6 @@ import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../pr
 //@ts-ignore as it does not have the types
 import { Shake } from "reshake";
 import { useRestaurant } from "../../context/restaurant-context";
-
-import "./restaurant.scss";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { useAlert } from "../../tabin/components/alert";
 import { useRegister } from "../../context/register-context";
@@ -28,6 +26,8 @@ import { Input } from "../../tabin/components/input";
 import { useGetProductsBySKUCodeByRestaurantLazyQuery } from "../../hooks/useGetProductsBySKUCodeByRestaurantLazyQuery";
 import { Checkout } from "./checkout";
 import { toast } from "../../tabin/components/toast";
+
+import "./restaurant.scss";
 
 interface IMostPopularProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -50,12 +50,7 @@ export default () => {
 
     // query
     const { data: restaurant, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(restaurantId || "");
-    const {
-        getProductsBySKUCodeByRestaurant,
-        data: searchSKUProduct,
-        error: searchSKUProductError,
-        loading: searchSKUProductLoading,
-    } = useGetProductsBySKUCodeByRestaurantLazyQuery();
+    const { getProductsBySKUCodeByRestaurant } = useGetProductsBySKUCodeByRestaurantLazyQuery();
 
     // states
     const [selectedCategory, setSelectedCategory] = useState<IGET_RESTAURANT_CATEGORY | null>(null);
@@ -94,17 +89,15 @@ export default () => {
         if (restaurant) {
             setRestaurant(restaurant);
 
-            // restaurant.categories.items.every((c) => {
-            //     if (isItemAvailable(c.availability)) {
-            //         setSelectedCategory(c);
-            //         return false;
-            //     }
-            //     return true;
-            // });
-
             if (selectedCategoryId) {
                 restaurant.categories.items.forEach((c) => {
-                    if (c.id == selectedCategoryId) {
+                    if (c.id === selectedCategoryId) {
+                        setSelectedCategory(c);
+                    }
+                });
+            } else if (register && register.defaultCategoryView) {
+                restaurant.categories.items.forEach((c) => {
+                    if (c.id === register.defaultCategoryView && isItemAvailable(c.availability)) {
                         setSelectedCategory(c);
                     }
                 });
@@ -114,7 +107,7 @@ export default () => {
                 restaurant.categories.items.forEach((c) => {
                     c.products &&
                         c.products.items.forEach((p) => {
-                            if (p.id == selectedProductId) {
+                            if (p.id === selectedProductId) {
                                 setSelectedProductForProductModal(p.product);
                                 setShowProductModal(true);
                             }
