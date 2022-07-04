@@ -337,7 +337,7 @@ export const Checkout = () => {
                             printerAddress: printer.address,
                             products: convertProductTypesForPrint(productsToPrint),
                             number: order.number,
-                            placedAt: format(new Date(order.placedAt), "dd MMM HH:mm aa"),
+                            placedAt: format(new Date(order.placedAt), "dd/MM HH:mm"),
                         });
                     } else {
                         //Not checking if its printerType receipt
