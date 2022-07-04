@@ -229,11 +229,11 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                     const setPaperWidth = `"func${funcCounter}":{"setWidth":[300]}`;
                     funcCounter++;
 
-                    const orderNumberString = `"func${funcCounter}":{"drawTrueTypeFont":["Order: ${order.number} (${productCounter}/${totalProductCount})",0,0,"Arial",20,0,false,false,false,true]}`;
+                    const orderNumberString = `"func${funcCounter}":{"drawTrueTypeFont":["#${order.number} (${productCounter}/${totalProductCount}) - ${order.placedAt}",0,0,"Arial",20,0,false,false,false,true]}`;
                     funcCounter++;
                     const productString = `"func${funcCounter}":{"drawTrueTypeFont":["${product.name}",0,${
                         (funcCounter - 2) * 30 + 5
-                    },"Arial",20,0,false,true,false,false]}`;
+                    },"Arial",18,0,false,true,false,false]}`;
                     funcCounter++;
 
                     let modifierGroupString = "";
@@ -243,7 +243,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                         mgString = `${modifierGroup.name}: `;
 
                         //Show only first 2 on first line
-                        modifierGroup.modifiers.slice(0, 2).forEach((modifier, index2) => {
+                        modifierGroup.modifiers.slice(0, 1).forEach((modifier, index2) => {
                             if (index2 !== 0) mgString += `, `;
 
                             mgString += modifier.name;
@@ -252,13 +252,13 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                         if (index !== 0) modifierGroupString += `,`;
                         modifierGroupString += `"func${funcCounter}":{"drawTrueTypeFont":["${mgString}",0,${
                             (funcCounter - 2) * 30 + 10
-                        },"Arial",18,0,false,false,false,true]}`;
+                        },"Arial",16,0,false,false,false,true]}`;
                         funcCounter++;
 
-                        if (modifierGroup.modifiers.length > 2) {
+                        if (modifierGroup.modifiers.length > 1) {
                             mgString = ""; //Reset
                             //Show only first 2 on first line
-                            modifierGroup.modifiers.slice(2).forEach((modifier, index2) => {
+                            modifierGroup.modifiers.slice(1).forEach((modifier, index2) => {
                                 if (index2 !== 0) mgString += `, `;
 
                                 mgString += modifier.name;
@@ -267,16 +267,14 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                             if (index !== 0) modifierGroupString += `,`;
                             modifierGroupString += `"func${funcCounter}":{"drawTrueTypeFont":["${mgString}",0,${
                                 (funcCounter - 2) * 30 + 10
-                            },"Arial",18,0,false,false,false,true]}`;
+                            },"Arial",16,0,false,false,false,true]}`;
                             funcCounter++;
                         }
                     });
 
-                    const timestampString = `"func${funcCounter}":{"drawTrueTypeFont":["${order.placedAt}",0,200,"Arial",16,0,false,false,false,true]}`;
-                    funcCounter++;
                     const emptyPrintBuffer = `"func${funcCounter}":{"printBuffer":[]}`;
                     funcCounter++;
-                    const payload = `{"id":1,"functions":{${emptyClearBuffer},${setPaperWidth},${orderNumberString},${productString},${modifierGroupString},${timestampString},${emptyPrintBuffer}}}`;
+                    const payload = `{"id":1,"functions":{${emptyClearBuffer},${setPaperWidth},${orderNumberString},${productString},${modifierGroupString},${emptyPrintBuffer}}}`;
 
                     await requestPrint(order.printerAddress, order.printerName, payload);
                 }
