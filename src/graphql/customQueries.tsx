@@ -68,6 +68,7 @@ export const GET_USER = gql`
                             windcaveStationKey
                             skipEftposReceiptSignature
                             orderNumberSuffix
+                            defaultCategoryView
                             customStyleSheet {
                                 key
                                 bucket
@@ -259,6 +260,7 @@ export const GET_RESTAURANT = gql`
                     windcaveStationKey
                     skipEftposReceiptSignature
                     orderNumberSuffix
+                    defaultCategoryView
                     customStyleSheet {
                         key
                         bucket
@@ -811,6 +813,7 @@ export interface IGET_RESTAURANT_REGISTER {
     windcaveStationKey: string;
     skipEftposReceiptSignature: boolean;
     orderNumberSuffix: string;
+    defaultCategoryView: string;
     customStyleSheet?: IS3Object;
     printers: {
         items: IGET_RESTAURANT_REGISTER_PRINTER[];
