@@ -10,15 +10,23 @@ import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
 import { IGET_RESTAURANT_REGISTER_PRINTER } from "../../graphql/customQueries";
 import { ERegisterPrinterType, IOrderReceipt, IPrintSalesData } from "../../model/model";
 import { toast } from "../../tabin/components/toast";
-import { convertProductTypesForPrint, filterPrintProducts } from "../../util/util";
+import {
+    convertProductTypesForPrint,
+    filterPrintProducts,
+    isItemAvailable,
+    isItemSoldOut,
+    isModifierQuantityAvailable,
+    isProductQuantityAvailable,
+} from "../../util/util";
 import { beginOrderPath, restaurantPath } from "../main";
 import { SelectReceiptPrinterModal } from "../modals/selectReceiptPrinterModal";
 
 import "./dashboard.scss";
 
 export default () => {
-    const { restaurant } = useRestaurant();
-    const { clearCart, setParkedOrderId, setParkedOrderNumber, setOrderType, setTableNumber, setNotes, setProducts } = useCart();
+    const { restaurant, menuCategories, menuProducts, menuModifierGroups, menuModifiers } = useRestaurant();
+    const { clearCart, setParkedOrderId, setParkedOrderNumber, setOrderType, setTableNumber, setNotes, setProducts, cartProductQuantitiesById } =
+        useCart();
     const { register } = useRegister();
     const { printSalesData } = useReceiptPrinter();
     const { printReceipt } = useReceiptPrinter();
@@ -78,13 +86,41 @@ export default () => {
 
         const newCartProducts: ICartProduct[] = [];
 
+        let invalidItemsFound = 0;
+
         order.products.forEach((product) => {
+            const menuProduct = menuProducts[product.id];
+
+            if (!menuProduct) {
+                invalidItemsFound++;
+                return;
+            }
+
+            const menuProductCategory = product.category ? menuCategories[product.category.id] : null;
+
+            if (!menuProductCategory) {
+                invalidItemsFound++;
+                return;
+            }
+
+            const isProductSoldOut = isItemSoldOut(menuProduct.soldOut, menuProduct.soldOutDate);
+            const isProductAvailable = isItemAvailable(menuProduct.availability);
+            const isProductCategoryAvailable = isItemAvailable(menuProductCategory.availability);
+            const isProductQtyAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById);
+
+            const isProductValid = !isProductSoldOut && isProductAvailable && isProductCategoryAvailable && isProductQtyAvailable;
+
+            if (!isProductValid) {
+                invalidItemsFound++;
+                return;
+            }
+
             const newCartProduct: ICartProduct = {
                 id: product.id,
                 name: product.name,
                 price: product.price,
                 totalPrice: product.totalPrice,
-                discount: 0,
+                discount: 0, //Set discount to total because we do not want to add any discount or promotions to parked orders
                 image: product.image
                     ? {
                           key: product.image.key,
@@ -116,6 +152,13 @@ export default () => {
 
             product.modifierGroups &&
                 product.modifierGroups.forEach((modifierGroup) => {
+                    const menuModifierGroup = menuModifierGroups[modifierGroup.id];
+
+                    if (!menuModifierGroup) {
+                        invalidItemsFound++;
+                        return;
+                    }
+
                     const newCartModifierGroup: ICartModifierGroup = {
                         id: modifierGroup.id,
                         name: modifierGroup.name,
@@ -130,6 +173,23 @@ export default () => {
 
                     modifierGroup.modifiers &&
                         modifierGroup.modifiers.forEach((modifier) => {
+                            const menuModifier = menuModifiers[modifier.id];
+
+                            if (!menuModifier) {
+                                invalidItemsFound++;
+                                return;
+                            }
+
+                            const isModifierSoldOut = isItemSoldOut(menuModifier.soldOut, menuModifier.soldOutDate);
+                            const isModifierQtyAvailable = isModifierQuantityAvailable(product, cartProductQuantitiesById);
+
+                            const isModifierValid = !isModifierSoldOut && isModifierQtyAvailable;
+
+                            if (!isModifierValid) {
+                                invalidItemsFound++;
+                                return;
+                            }
+
                             const newCartModifier: ICartModifier = {
                                 id: modifier.id,
                                 name: modifier.name,
@@ -159,6 +219,8 @@ export default () => {
         });
 
         setProducts(newCartProducts);
+
+        if (invalidItemsFound > 0) toast.error("One or more items in this parked orders is invalid. Please recheck the order.");
     };
 
     useEffect(() => {
@@ -197,7 +259,7 @@ export default () => {
     if (!restaurant) return <>No Restaurant</>;
     if (!register) return <>No Register</>;
 
-    const defaultPath = `https://restaurants.tabin.co.nz/${restaurant.id}/sales_analytics`;
+    const iFrameBaseUrl = "http://localhost:3001";
     const defaultPath = `${iFrameBaseUrl}/${restaurant.id}/orders`;
 
     const printSales = async (

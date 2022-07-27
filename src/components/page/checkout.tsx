@@ -464,6 +464,7 @@ export const Checkout = () => {
                 variables.parkedAtUtc = now.toISOString();
                 variables.discount = undefined;
                 variables.promotionId = undefined;
+                variables.subTotal = total; //Set subTotal to total because we do not want to add any discount or promotions. Also product.discount is set to 0 in dashboard.tsx
             } else if (restaurant.autoCompleteOrders) {
                 variables.status = "COMPLETED";
                 variables.completedAt = toLocalISOString(now);
@@ -1041,12 +1042,12 @@ export const Checkout = () => {
                     </div>
                 )}
                 {isPOS && payments.length === 0 && (
-                    <div className={`pay-later-link ${isPOS ? "mt-3" : "mt-4"}`}>
+                    <div className={`park-order-link ${isPOS ? "mt-3" : "mt-4"}`}>
                         <Link onClick={() => onParkOrder(false)}>Park Order</Link>
                     </div>
                 )}
                 {isPOS && payments.length === 0 && (
-                    <div className={`pay-later-link ${isPOS ? "mt-3" : "mt-4"}`}>
+                    <div className={`park-and-print-order-link ${isPOS ? "mt-3" : "mt-4"}`}>
                         <Link onClick={() => onParkOrder(true)}>Park and Print Order</Link>
                     </div>
                 )}
