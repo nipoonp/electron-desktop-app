@@ -6,7 +6,7 @@ import { useCart } from "../../context/cart-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { useRegister } from "../../context/register-context";
 import { useRestaurant } from "../../context/restaurant-context";
-import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
+import { IGET_RESTAURANT_ORDER_FRAGMENT, IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../../graphql/customFragments";
 import { IGET_RESTAURANT_REGISTER_PRINTER } from "../../graphql/customQueries";
 import { ERegisterPrinterType, IOrderReceipt, IPrintSalesData } from "../../model/model";
 import { toast } from "../../tabin/components/toast";
@@ -71,24 +71,10 @@ export default () => {
         }
     };
 
-    const onOpenParkedOrder = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
-        if (!restaurant) return;
-
-        navigate(restaurantPath + "/" + restaurant.id);
-
-        clearCart();
-
-        setParkedOrderId(order.id);
-        setParkedOrderNumber(order.number);
-        setOrderType(order.type);
-        if (order.table) setTableNumber(order.table);
-        if (order.notes) setNotes(order.notes);
-
+    const getParkedOrderProducts = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[], invalidItemsFound: number) => {
         const newCartProducts: ICartProduct[] = [];
 
-        let invalidItemsFound = 0;
-
-        order.products.forEach((product) => {
+        products.forEach((product) => {
             const menuProduct = menuProducts[product.id];
 
             if (!menuProduct) {
@@ -190,13 +176,26 @@ export default () => {
                                 return;
                             }
 
+                            console.log("xxx...modifier.productModifiers", modifier.productModifiers);
+
+                            const processedProductModifiers = modifier.productModifiers
+                                ? getParkedOrderProducts(modifier.productModifiers, invalidItemsFound)
+                                : null;
+
+                            console.log("xxx...processedProductModifiers", processedProductModifiers);
+
+                            if (processedProductModifiers && processedProductModifiers.invalidItemsFound) {
+                                invalidItemsFound = invalidItemsFound + processedProductModifiers.invalidItemsFound;
+                                return;
+                            }
+
                             const newCartModifier: ICartModifier = {
                                 id: modifier.id,
                                 name: modifier.name,
                                 price: modifier.price,
                                 preSelectedQuantity: modifier.preSelectedQuantity,
                                 quantity: modifier.quantity,
-                                productModifiers: null,
+                                productModifiers: processedProductModifiers ? processedProductModifiers.newCartProducts : null,
                                 image: modifier.image
                                     ? {
                                           key: modifier.image.key,
@@ -218,9 +217,27 @@ export default () => {
             newCartProducts.push(newCartProduct);
         });
 
-        setProducts(newCartProducts);
+        return { newCartProducts, invalidItemsFound };
+    };
 
-        if (invalidItemsFound > 0) toast.error("One or more items in this parked orders is invalid. Please recheck the order.");
+    const onOpenParkedOrder = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+        if (!restaurant) return;
+
+        navigate(restaurantPath + "/" + restaurant.id);
+
+        clearCart();
+
+        setParkedOrderId(order.id);
+        setParkedOrderNumber(order.number);
+        setOrderType(order.type);
+        if (order.table) setTableNumber(order.table);
+        if (order.notes) setNotes(order.notes);
+
+        const orderedProducts = getParkedOrderProducts(order.products, 0);
+
+        setProducts(orderedProducts.newCartProducts);
+
+        if (orderedProducts.invalidItemsFound > 0) toast.error("One or more items in this parked orders is invalid. Please recheck the order.");
     };
 
     useEffect(() => {
