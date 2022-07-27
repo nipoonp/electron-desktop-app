@@ -151,6 +151,14 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     onContinueToNextOrder={onContinueToNextOrder}
                 />
             );
+        } else if (paymentModalState == EPaymentModalState.Park) {
+            return (
+                <PaymentPark
+                    paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
+                    paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                    onContinueToNextOrder={onContinueToNextOrder}
+                />
+            );
         } else {
             return (
                 <POSPaymentScreen
@@ -267,6 +275,27 @@ const PaymentPayLater = (props: {
             <div className="mb-1">Your order number is</div>
             <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
             <PreparationTime />
+            <div className="separator-6 mb-6"></div>
+            <PaymentModalFooter
+                paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                onContinueToNextOrder={onContinueToNextOrder}
+            />
+        </>
+    );
+};
+
+const PaymentPark = (props: {
+    paymentOutcomeOrderNumber: string | null;
+    paymentOutcomeApprovedRedirectTimeLeft: number;
+    onContinueToNextOrder: () => void;
+}) => {
+    const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+
+    return (
+        <>
+            <div className="h2 mb-6">This order has been parked for now.</div>
+            <div className="mb-1">Reference order number is</div>
+            <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}

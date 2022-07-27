@@ -69,6 +69,7 @@ export enum EPaymentModalState {
     EftposResult,
     CashResult,
     PayLater,
+    Park,
     None,
 }
 
