@@ -90,7 +90,7 @@ const getProductTotal = (product: ICartProduct) => {
     return price;
 };
 
-export const printReceipt = async (order: IOrderReceipt, isCustomerReceipt: boolean): Promise<IPrintReceiptOutput> => {
+export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrintReceiptOutput> => {
     let printer;
 
     if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -121,18 +121,10 @@ export const printReceipt = async (order: IOrderReceipt, isCustomerReceipt: bool
     printer.bold(false);
     printer.newLine();
 
-    if (isCustomerReceipt && order.restaurant.gstNumber) {
-        printer.println(`GST: ${order.restaurant.gstNumber}`);
-    }
+    if (order.restaurant.gstNumber) printer.println(`GST: ${order.restaurant.gstNumber}`);
 
-    if (isCustomerReceipt) {
-        printer.println(order.restaurant.address);
-    }
-
-    if (isCustomerReceipt) {
-        printer.newLine();
-    }
-
+    printer.println(order.restaurant.address);
+    printer.newLine();
     printer.println(`Order Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
 
     if (order.orderScheduledAt) {
@@ -147,17 +139,8 @@ export const printReceipt = async (order: IOrderReceipt, isCustomerReceipt: bool
         printer.println(`Customer: ${order.customerInformation.firstName} (${order.customerInformation.phoneNumber})`);
     }
 
-    if (isCustomerReceipt) {
-        printer.newLine();
-        printer.println(`${order.type} ${order.table ? `(Table: ${order.table})` : ""}`);
-    } else {
-        printer.newLine();
-        printer.bold(true);
-        printer.setTextSize(1, 1);
-        printer.println(`${order.type} ${order.table ? `(Table: ${order.table})` : ""}`);
-        printer.setTextNormal();
-        printer.bold(false);
-    }
+    printer.newLine();
+    printer.println(`${order.type} ${order.table ? `(Table: ${order.table})` : ""}`);
 
     printer.newLine();
     printer.bold(true);
@@ -184,7 +167,7 @@ export const printReceipt = async (order: IOrderReceipt, isCustomerReceipt: bool
 
         printer.tableCustom([
             {
-                text: `${product.quantity > 1 ? product.quantity + " x " : ""}${product.name}`,
+                text: `${product.quantity > 1 ? product.quantity + "x " : ""}${product.name}`,
                 align: "LEFT",
                 width: 0.75,
                 bold: true,
@@ -198,9 +181,7 @@ export const printReceipt = async (order: IOrderReceipt, isCustomerReceipt: bool
         ]);
 
         product.modifierGroups.forEach((modifierGroup: ICartModifierGroup) => {
-            if (order.hideModifierGroupsForCustomer == true && modifierGroup.hideForCustomer == true) {
-                return;
-            }
+            if (order.hideModifierGroupsForCustomer == true && modifierGroup.hideForCustomer == true) return;
 
             printer.newLine();
             printer.bold(true);
@@ -214,9 +195,9 @@ export const printReceipt = async (order: IOrderReceipt, isCustomerReceipt: bool
                 let mStr = "";
 
                 if (changedQuantity < 0 && Math.abs(changedQuantity) == modifier.preSelectedQuantity) {
-                    mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)} x ` : ""}${modifier.name}`;
+                    mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${modifier.name}`;
                 } else {
-                    mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)} x ` : ""}${modifier.name}`;
+                    mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)}x ` : ""}${modifier.name}`;
                 }
 
                 if (modifier.price > 0 && changedQuantity > 0) {
@@ -228,13 +209,12 @@ export const printReceipt = async (order: IOrderReceipt, isCustomerReceipt: bool
                 modifier.productModifiers &&
                     modifier.productModifiers.forEach((productModifier_product: ICartProduct, index) => {
                         if (modifier.productModifiers && modifier.productModifiers.length > 1) {
-                            if (index !== 0) {
-                                printer.newLine();
-                            }
-
+                            printer.newLine();
                             printer.print(`     `);
                             printer.underlineThick(true);
+                            printer.setTypeFontB();
                             printer.print(`Selection ${index + 1}`);
+                            printer.setTypeFontA();
                             printer.println(``);
                             printer.underlineThick(false);
                         }
@@ -261,11 +241,11 @@ export const printReceipt = async (order: IOrderReceipt, isCustomerReceipt: bool
                                     let mStr = "";
 
                                     if (changedQuantity < 0 && Math.abs(changedQuantity) == productModifier_modifier.preSelectedQuantity) {
-                                        mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)} x ` : ""}${
+                                        mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${
                                             productModifier_modifier.name
                                         }`;
                                     } else {
-                                        mStr = `${productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)} x ` : ""}${
+                                        mStr = `${productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""}${
                                             productModifier_modifier.name
                                         }`;
                                     }
@@ -361,9 +341,7 @@ export const printReceipt = async (order: IOrderReceipt, isCustomerReceipt: bool
     printer.newLine();
     printer.alignCenter();
 
-    if (order.eftposReceipt && isCustomerReceipt) {
-        printer.println(order.eftposReceipt);
-    }
+    if (order.eftposReceipt) printer.println(order.eftposReceipt);
 
     printer.newLine();
     printer.alignCenter();
@@ -372,9 +350,214 @@ export const printReceipt = async (order: IOrderReceipt, isCustomerReceipt: bool
 
     printer.partialCut();
 
-    if (order.paymentAmounts && order.paymentAmounts.cash > 0 && !isCustomerReceipt) {
-        printer.openCashDrawer();
+    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
+
+    try {
+        if (order.printerType == ERegisterPrinterType.WIFI) {
+            await printer.execute();
+        } else if (order.printerType == ERegisterPrinterType.USB) {
+            await usbPrinterExecute(order.printerAddress, printer.getBuffer());
+            printer.clear();
+        } else {
+            //Bluetooth
+        }
+
+        return { error: null };
+    } catch (e) {
+        return { error: e };
     }
+};
+
+export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintReceiptOutput> => {
+    let printer;
+
+    if (order.printerType == ERegisterPrinterType.WIFI) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            interface: `tcp://${order.printerAddress}`,
+        });
+    } else if (order.printerType == ERegisterPrinterType.USB) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+        });
+    } else {
+        //Bluetooth
+    }
+
+    // let isConnected = await printer.isPrinterConnected();
+    // console.log("Printer connected:", isConnected);
+
+    if (order.paid == false) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Payment Required");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
+
+    printer.alignCenter();
+    printer.bold(true);
+    printer.underlineThick(true);
+    printer.println(order.restaurant.name);
+    printer.underlineThick(false);
+    printer.bold(false);
+    printer.newLine();
+
+    printer.println(`Order Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
+
+    if (order.orderScheduledAt) {
+        printer.invert(true);
+        printer.bold(true);
+        printer.println(`Order Scheduled: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+        printer.bold(false);
+        printer.invert(false);
+    }
+
+    if (order.customerInformation) {
+        printer.println(`Customer: ${order.customerInformation.firstName} (${order.customerInformation.phoneNumber})`);
+    }
+
+    printer.newLine();
+    printer.bold(true);
+    printer.setTextSize(1, 1);
+    printer.println(`${order.type} ${order.table ? `(Table: ${order.table})` : ""}`);
+    printer.setTextNormal();
+    printer.bold(false);
+
+    printer.newLine();
+    printer.bold(true);
+    printer.setTextSize(1, 1);
+    printer.println(order.number);
+    printer.setTextNormal();
+    printer.bold(false);
+
+    printer.newLine();
+    printer.alignLeft();
+
+    order.products.forEach((product: ICartProduct) => {
+        printer.drawLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`${product.quantity > 1 ? product.quantity + "x " : ""}${product.name}`);
+        printer.setTextNormal();
+        printer.bold(false);
+
+        product.modifierGroups.forEach((modifierGroup: ICartModifierGroup) => {
+            if (order.hideModifierGroupsForCustomer == true && modifierGroup.hideForCustomer == true) return;
+
+            printer.newLine();
+            printer.bold(true);
+            printer.underlineThick(true);
+            printer.println(`${modifierGroup.name}`);
+            printer.underlineThick(false);
+            printer.bold(false);
+
+            modifierGroup.modifiers.forEach((modifier: ICartModifier) => {
+                const changedQuantity = modifier.quantity - modifier.preSelectedQuantity;
+                let mStr = "";
+
+                if (changedQuantity < 0 && Math.abs(changedQuantity) == modifier.preSelectedQuantity) {
+                    mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${modifier.name}`;
+                } else {
+                    mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)}x ` : ""}${modifier.name}`;
+                }
+
+                if (modifier.price > 0 && changedQuantity > 0) {
+                    mStr += ` (+$${convertCentsToDollars(modifier.price)})`;
+                }
+
+                printer.println(mStr);
+
+                modifier.productModifiers &&
+                    modifier.productModifiers.forEach((productModifier_product: ICartProduct, index) => {
+                        if (modifier.productModifiers && modifier.productModifiers.length > 1) {
+                            printer.newLine();
+                            printer.print(`     `);
+                            printer.underlineThick(true);
+                            printer.setTypeFontB();
+                            printer.print(`Selection ${index + 1}`);
+                            printer.setTypeFontA();
+                            printer.println(``);
+                            printer.underlineThick(false);
+                        }
+
+                        if (productModifier_product.modifierGroups.length > 0) {
+                            productModifier_product.modifierGroups.forEach((productModifier_modifierGroup, index2) => {
+                                if (order.hideModifierGroupsForCustomer == true && productModifier_modifierGroup.hideForCustomer == true) {
+                                    return;
+                                }
+
+                                if (index2 !== 0) {
+                                    printer.newLine();
+                                }
+
+                                printer.print(`     `);
+                                printer.bold(true);
+                                printer.underlineThick(true);
+                                printer.println(`${productModifier_modifierGroup.name}`);
+                                printer.underlineThick(false);
+                                printer.bold(false);
+
+                                productModifier_modifierGroup.modifiers.forEach((productModifier_modifier: ICartModifier) => {
+                                    const changedQuantity = productModifier_modifier.quantity - productModifier_modifier.preSelectedQuantity;
+                                    let mStr = "";
+
+                                    if (changedQuantity < 0 && Math.abs(changedQuantity) == productModifier_modifier.preSelectedQuantity) {
+                                        mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${
+                                            productModifier_modifier.name
+                                        }`;
+                                    } else {
+                                        mStr = `${productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""}${
+                                            productModifier_modifier.name
+                                        }`;
+                                    }
+
+                                    if (productModifier_modifier.price > 0 && changedQuantity > 0) {
+                                        mStr += ` (+$${convertCentsToDollars(productModifier_modifier.price)})`;
+                                    }
+
+                                    printer.println(`     ${mStr}`);
+                                });
+                            });
+                        } else {
+                            printer.println(`     No extra selections made`);
+                        }
+                    });
+            });
+        });
+
+        if (product.notes) {
+            printer.bold(false);
+            printer.newLine();
+            printer.println(`Notes: ${product.notes}`);
+        }
+    });
+
+    printer.drawLine();
+
+    if (order.notes) {
+        printer.bold(false);
+        printer.println(`Notes: ${order.notes}`);
+        printer.newLine();
+    }
+
+    printer.newLine();
+    printer.alignCenter();
+
+    printer.alignCenter();
+    printer.setTypeFontB();
+    printer.println("Order Placed on Tabin Kiosk");
+
+    printer.partialCut();
+
+    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {

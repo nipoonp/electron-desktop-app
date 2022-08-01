@@ -176,13 +176,9 @@ export default () => {
                                 return;
                             }
 
-                            console.log("xxx...modifier.productModifiers", modifier.productModifiers);
-
                             const processedProductModifiers = modifier.productModifiers
                                 ? getParkedOrderProducts(modifier.productModifiers, invalidItemsFound)
                                 : null;
-
-                            console.log("xxx...processedProductModifiers", processedProductModifiers);
 
                             if (processedProductModifiers && processedProductModifiers.invalidItemsFound) {
                                 invalidItemsFound = invalidItemsFound + processedProductModifiers.invalidItemsFound;
@@ -276,7 +272,7 @@ export default () => {
     if (!restaurant) return <>No Restaurant</>;
     if (!register) return <>No Register</>;
 
-    const iFrameBaseUrl = "http://localhost:3001";
+    const iFrameBaseUrl = "https://restaurants.tabin.co.nz";
     const defaultPath = `${iFrameBaseUrl}/${restaurant.id}/orders`;
 
     const printSales = async (

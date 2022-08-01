@@ -1,6 +1,6 @@
 import { app, BrowserWindow, dialog, globalShortcut } from "electron";
 import { ipcMain, Menu } from "electron";
-import { encodeCommandBuffer, decodeCommandBuffer, printReceipt, printSalesDataReceipt, delay } from "./util";
+import { encodeCommandBuffer, decodeCommandBuffer, printCustomerReceipt, printKitchenReceipt, printSalesDataReceipt, delay } from "./util";
 import { IOrderReceipt, IPrintReceiptDataOutput, IPrintReceiptOutput, IPrintSalesDataInput, IPrintSalesDataOutput } from "./model";
 import path from "path";
 import net from "net";
@@ -238,13 +238,13 @@ ipcMain.handle("RECEIPT_PRINTER_DATA", async (event: any, order: IOrderReceipt):
     try {
         // A receipt request could have print customer receipts and kitchen receipts enabled. So we would have to print 2 copies.
         if (order.customerPrinter) {
-            const result: IPrintReceiptOutput = await printReceipt(order, true);
+            const result: IPrintReceiptOutput = await printCustomerReceipt(order);
 
             if (result.error) return { error: result.error, order: order };
         }
 
         if (order.kitchenPrinter) {
-            const result: IPrintReceiptOutput = await printReceipt(order, false);
+            const result: IPrintReceiptOutput = await printKitchenReceipt(order);
 
             if (result.error) return { error: result.error, order: order };
         }

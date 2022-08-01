@@ -496,7 +496,7 @@ export default () => {
 
     const menuMostPopularCategory = (
         <div
-            className={`category background-grey ${!selectedCategory ? "selected" : ""}`}
+            className={`category most-popular-category background-grey ${!selectedCategory ? "selected" : ""}`}
             onClick={() => {
                 setSelectedCategory(null);
             }}
