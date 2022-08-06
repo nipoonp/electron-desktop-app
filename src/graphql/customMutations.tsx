@@ -58,10 +58,12 @@ export const CREATE_ORDER = gql`
         $subTotal: Int!
         $registerId: ID!
         $products: [OrderProductInput!]
-        $placedAt: String!
-        $placedAtUtc: String!
+        $placedAt: String
+        $placedAtUtc: String
         $completedAt: String
         $completedAtUtc: String
+        $parkedAt: String
+        $parkedAtUtc: String
         $orderUserId: ID!
         $orderRestaurantId: ID!
     ) {
@@ -86,6 +88,69 @@ export const CREATE_ORDER = gql`
                 placedAtUtc: $placedAtUtc
                 completedAt: $completedAt
                 completedAtUtc: $completedAtUtc
+                parkedAt: $parkedAt
+                parkedAtUtc: $parkedAtUtc
+                orderUserId: $orderUserId
+                orderRestaurantId: $orderRestaurantId
+            }
+        ) {
+            ...OrderFieldsFragment
+        }
+    }
+`;
+
+export const UPDATE_ORDER = gql`
+    ${ORDER_FIELDS_FRAGMENT}
+    mutation updateOrder(
+        $orderId: ID!
+        $status: OrderStatus!
+        $paid: Boolean!
+        $type: OrderType!
+        $number: String!
+        $table: String
+        $notes: String
+        $eftposReceipt: String
+        $payments: [OrderPaymentInput]
+        $paymentAmounts: OrderPaymentAmountsInput
+        $total: Int!
+        $discount: Int
+        $promotionId: ID
+        $subTotal: Int!
+        $registerId: ID!
+        $products: [OrderProductInput!]
+        $placedAt: String
+        $placedAtUtc: String
+        $completedAt: String
+        $completedAtUtc: String
+        $parkedAt: String
+        $parkedAtUtc: String
+        $orderUserId: ID!
+        $orderRestaurantId: ID!
+    ) {
+        updateOrder(
+            input: {
+                id: $orderId
+                status: $status
+                paid: $paid
+                type: $type
+                number: $number
+                table: $table
+                notes: $notes
+                eftposReceipt: $eftposReceipt
+                payments: $payments
+                paymentAmounts: $paymentAmounts
+                total: $total
+                discount: $discount
+                promotionId: $promotionId
+                subTotal: $subTotal
+                registerId: $registerId
+                products: $products
+                placedAt: $placedAt
+                placedAtUtc: $placedAtUtc
+                completedAt: $completedAt
+                completedAtUtc: $completedAtUtc
+                parkedAt: $parkedAt
+                parkedAtUtc: $parkedAtUtc
                 orderUserId: $orderUserId
                 orderRestaurantId: $orderRestaurantId
             }
