@@ -68,7 +68,10 @@ export enum EPaymentModalState {
     AwaitingCard,
     EftposResult,
     CashResult,
+    UberEatsResult,
+    MenulogResult,
     PayLater,
+    Park,
     None,
 }
 
@@ -157,6 +160,8 @@ export interface ICartPaymentAmounts {
     cash: number;
     eftpos: number;
     online: number;
+    uberEats: number;
+    menulog: number;
 }
 
 export interface ICartPayment {
