@@ -25,7 +25,8 @@ const initialCartModifierQuantitiesById = {};
 const initialUserAppliedPromotionCode = null;
 const initialPromotion = null;
 const initialTotal = 0;
-const initialPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0 };
+const initialPaidSoFar = 0;
+const initialPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0 };
 const initialSubTotal = 0;
 const initialPayments = [];
 const initialTransactionEftposReceipts = "";
@@ -60,6 +61,7 @@ type ContextProps = {
     removeUserAppliedPromotion: () => void;
     total: number;
     subTotal: number;
+    paidSoFar: number;
     payments: ICartPayment[];
     setPayments: (payment: ICartPayment[]) => void;
     paymentAmounts: ICartPaymentAmounts;
@@ -99,6 +101,7 @@ const CartContext = createContext<ContextProps>({
     removeUserAppliedPromotion: () => {},
     total: initialTotal,
     subTotal: initialSubTotal,
+    paidSoFar: initialPaidSoFar,
     payments: initialPayments,
     setPayments: () => {},
     paymentAmounts: initialPaymentAmounts,
@@ -581,9 +584,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setUserAppliedPromotion: setUserAppliedPromotion,
                 removeUserAppliedPromotion: removeUserAppliedPromotion,
                 total: total,
+                subTotal: subTotal,
+                paidSoFar: paymentAmounts.cash + paymentAmounts.eftpos + paymentAmounts.online + paymentAmounts.uberEats + paymentAmounts.menulog,
                 paymentAmounts: paymentAmounts,
                 setPaymentAmounts: setPaymentAmounts,
-                subTotal: subTotal,
                 payments: payments,
                 setPayments: setPayments,
                 transactionEftposReceipts: transactionEftposReceipts,

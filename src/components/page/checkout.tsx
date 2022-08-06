@@ -68,6 +68,7 @@ export const Checkout = () => {
         promotion,
         total,
         subTotal,
+        paidSoFar,
         transactionEftposReceipts,
         setTransactionEftposReceipts,
         paymentAmounts,
@@ -133,10 +134,6 @@ export const Checkout = () => {
     const [showUpSellProductModal, setShowUpSellProductModal] = useState(false);
 
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
-
-    const paidSoFar = paymentAmounts.cash + paymentAmounts.eftpos;
-
-    // const isUserFocusedOnEmailAddressInput = useRef(false);
 
     useEffect(() => {
         if (isShownUpSellCrossSellModal) return;
@@ -648,9 +645,9 @@ export const Checkout = () => {
 
     const onConfirmCashTransaction = async (amount: number) => {
         try {
-            const nonCashPayments = paymentAmounts.eftpos + paymentAmounts.online;
+            const nonCashPayments = paidSoFar - paymentAmounts.cash;
             const newCashPaymentAmounts = paymentAmounts.cash + amount;
-            const newTotalPaymentAmounts = newCashPaymentAmounts + paymentAmounts.eftpos;
+            const newTotalPaymentAmounts = nonCashPayments + newCashPaymentAmounts;
 
             const newPaymentAmounts: ICartPaymentAmounts = {
                 ...paymentAmounts,
@@ -678,6 +675,64 @@ export const Checkout = () => {
         }
     };
 
+    const onConfirmUberEatsTransaction = async (amount: number) => {
+        try {
+            const nonUberEatsPayments = paidSoFar - paymentAmounts.uberEats;
+            const newUberEatsPaymentAmounts = paymentAmounts.uberEats + amount;
+            const newTotalPaymentAmounts = nonUberEatsPayments + newUberEatsPaymentAmounts;
+
+            const newPaymentAmounts: ICartPaymentAmounts = {
+                ...paymentAmounts,
+                uberEats: newTotalPaymentAmounts >= subTotal ? subTotal - nonUberEatsPayments : newUberEatsPaymentAmounts, //Cannot pay more than subTotal amount
+            };
+            const newPayments: ICartPayment[] = [...payments, { type: "UBEREATS", amount: amount }];
+
+            setPaymentAmounts(newPaymentAmounts);
+            setPayments(newPayments);
+
+            //If paid for everything
+            if (newTotalPaymentAmounts >= subTotal) {
+                setPaymentModalState(EPaymentModalState.UberEatsResult);
+
+                beginTransactionCompleteTimeout();
+
+                //Passing paymentAmounts, payments via params so we send the most updated values
+                await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
+            }
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
+    const onConfirmMenulogTransaction = async (amount: number) => {
+        try {
+            const nonMenulogPayments = paidSoFar - paymentAmounts.menulog;
+            const newMenulogPaymentAmounts = paymentAmounts.menulog + amount;
+            const newTotalPaymentAmounts = nonMenulogPayments + newMenulogPaymentAmounts;
+
+            const newPaymentAmounts: ICartPaymentAmounts = {
+                ...paymentAmounts,
+                menulog: newTotalPaymentAmounts >= subTotal ? subTotal - nonMenulogPayments : newMenulogPaymentAmounts, //Cannot pay more than subTotal amount
+            };
+            const newPayments: ICartPayment[] = [...payments, { type: "MENULOG", amount: amount }];
+
+            setPaymentAmounts(newPaymentAmounts);
+            setPayments(newPayments);
+
+            //If paid for everything
+            if (newTotalPaymentAmounts >= subTotal) {
+                setPaymentModalState(EPaymentModalState.MenulogResult);
+
+                beginTransactionCompleteTimeout();
+
+                //Passing paymentAmounts, payments via params so we send the most updated values
+                await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
+            }
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
     const onContinueToNextOrder = () => {
         clearTransactionCompleteTimeout();
     };
@@ -689,7 +744,7 @@ export const Checkout = () => {
     const onClickPayLater = async () => {
         setShowPaymentModal(true);
 
-        const newPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0 };
+        const newPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0 };
         const newPayments: ICartPayment[] = [];
 
         setPaymentModalState(EPaymentModalState.PayLater);
@@ -706,7 +761,7 @@ export const Checkout = () => {
     const onParkOrder = async (printOrder: boolean) => {
         setShowPaymentModal(true);
 
-        const newPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0 };
+        const newPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0 };
         const newPayments: ICartPayment[] = [];
 
         setPaymentModalState(EPaymentModalState.Park);
@@ -887,6 +942,8 @@ export const Checkout = () => {
                         createOrderError={createOrderError}
                         onConfirmTotalOrRetryEftposTransaction={onConfirmTotalOrRetryEftposTransaction}
                         onConfirmCashTransaction={onConfirmCashTransaction}
+                        onConfirmUberEatsTransaction={onConfirmUberEatsTransaction}
+                        onConfirmMenulogTransaction={onConfirmMenulogTransaction}
                         onContinueToNextPayment={onContinueToNextPayment}
                         onCancelPayment={onCancelPayment}
                         onCancelOrder={onCancelOrder}

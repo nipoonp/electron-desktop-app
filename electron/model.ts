@@ -121,6 +121,8 @@ export interface IOrderPaymentAmounts {
     cash: number;
     eftpos: number;
     online: number;
+    uberEats: number;
+    menulog: number;
 }
 
 export interface IPrintReceiptDataOutput {

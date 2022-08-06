@@ -33,13 +33,15 @@ interface IPaymentModalProps {
     createOrderError: string | null;
     onConfirmTotalOrRetryEftposTransaction: (amount: number) => void;
     onConfirmCashTransaction: (amount: number) => void;
+    onConfirmUberEatsTransaction: (amount: number) => void;
+    onConfirmMenulogTransaction: (amount: number) => void;
     onContinueToNextPayment: () => void;
     onCancelPayment: () => void;
     onCancelOrder: () => void;
 }
 
 export const PaymentModal = (props: IPaymentModalProps) => {
-    const { subTotal, paymentAmounts } = useCart();
+    const { paidSoFar, subTotal, paymentAmounts } = useCart();
     const {
         isOpen,
         onClose,
@@ -53,6 +55,8 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         createOrderError,
         onConfirmTotalOrRetryEftposTransaction,
         onConfirmCashTransaction,
+        onConfirmUberEatsTransaction,
+        onConfirmMenulogTransaction,
         onContinueToNextPayment,
         onCancelPayment,
         onCancelOrder,
@@ -62,7 +66,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
     const [amountError, setAmountError] = useState("");
 
     useEffect(() => {
-        const amountRemaining = subTotal - paymentAmounts.cash - paymentAmounts.eftpos;
+        const amountRemaining = subTotal - paidSoFar;
 
         setAmount(convertCentsToDollars(amountRemaining));
     }, [paymentAmounts, subTotal]);
@@ -78,9 +82,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
     const onClickEftpos = (eftposAmount: string) => {
         const eftposAmountFloat = parseFloat(eftposAmount);
         const eftposAmountCents = convertDollarsToCentsReturnInt(eftposAmountFloat);
-
-        const totalPaymentAmounts = paymentAmounts.cash + paymentAmounts.eftpos;
-        const totalRemaining = subTotal - totalPaymentAmounts;
+        const totalRemaining = subTotal - paidSoFar;
 
         if (eftposAmountCents == 0) {
             setAmountError("Value cannot be 0.00");
@@ -106,6 +108,30 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         }
 
         onConfirmCashTransaction(cashAmountCents);
+    };
+
+    const onClickUberEats = (uberEatsAmount: string) => {
+        const uberEatsAmountFloat = parseFloat(uberEatsAmount);
+        const uberEatsAmountCents = convertDollarsToCentsReturnInt(uberEatsAmountFloat);
+
+        if (uberEatsAmountCents == 0) {
+            setAmountError("Value cannot be 0.00");
+            return;
+        }
+
+        onConfirmUberEatsTransaction(uberEatsAmountCents);
+    };
+
+    const onClickMenulog = (menuLogAmount: string) => {
+        const menuLogAmountFloat = parseFloat(menuLogAmount);
+        const menuLogAmountCents = convertDollarsToCentsReturnInt(menuLogAmountFloat);
+
+        if (menuLogAmountCents == 0) {
+            setAmountError("Value cannot be 0.00");
+            return;
+        }
+
+        onConfirmMenulogTransaction(menuLogAmountCents);
     };
 
     const getActivePaymentModalComponent = () => {
@@ -143,6 +169,22 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     onContinueToNextOrder={onContinueToNextOrder}
                 />
             );
+        } else if (paymentModalState == EPaymentModalState.UberEatsResult) {
+            return (
+                <PaymentUberEatsPayment
+                    paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
+                    paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                    onContinueToNextOrder={onContinueToNextOrder}
+                />
+            );
+        } else if (paymentModalState == EPaymentModalState.MenulogResult) {
+            return (
+                <PaymentMenulogPayment
+                    paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
+                    paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                    onContinueToNextOrder={onContinueToNextOrder}
+                />
+            );
         } else if (paymentModalState == EPaymentModalState.PayLater) {
             return (
                 <PaymentPayLater
@@ -168,6 +210,8 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     onAmountErrorChange={setAmountError}
                     onClickCash={onClickCash}
                     onClickEftpos={onClickEftpos}
+                    onClickUberEats={onClickUberEats}
+                    onClickMenulog={onClickMenulog}
                     onClose={onClose}
                 />
             );
@@ -200,11 +244,10 @@ const PaymentAccepted = (props: {
     onContinueToNextPayment: () => void;
 }) => {
     const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder, onContinueToNextPayment } = props;
-    const { subTotal, paymentAmounts } = useCart();
+    const { paidSoFar, subTotal, paymentAmounts } = useCart();
 
-    const totalPaymentAmounts = paymentAmounts.cash + paymentAmounts.eftpos;
-    const totalRemaining = subTotal - totalPaymentAmounts;
-    const paymentComplete = totalPaymentAmounts >= subTotal;
+    const totalRemaining = subTotal - paidSoFar;
+    const paymentComplete = paidSoFar >= subTotal;
 
     return (
         <>
@@ -330,6 +373,50 @@ const PaymentCashPayment = (props: {
     );
 };
 
+const PaymentUberEatsPayment = (props: {
+    paymentOutcomeOrderNumber: string | null;
+    paymentOutcomeApprovedRedirectTimeLeft: number;
+    onContinueToNextOrder: () => void;
+}) => {
+    const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+
+    return (
+        <>
+            <div className="all-done h3 mb-4">All Done!</div>
+            <div className="mb-1">Your order number is</div>
+            <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+            <PreparationTime />
+            <div className="separator-6 mb-6"></div>
+            <PaymentModalFooter
+                paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                onContinueToNextOrder={onContinueToNextOrder}
+            />
+        </>
+    );
+};
+
+const PaymentMenulogPayment = (props: {
+    paymentOutcomeOrderNumber: string | null;
+    paymentOutcomeApprovedRedirectTimeLeft: number;
+    onContinueToNextOrder: () => void;
+}) => {
+    const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+
+    return (
+        <>
+            <div className="all-done h3 mb-4">All Done!</div>
+            <div className="mb-1">Your order number is</div>
+            <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+            <PreparationTime />
+            <div className="separator-6 mb-6"></div>
+            <PaymentModalFooter
+                paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                onContinueToNextOrder={onContinueToNextOrder}
+            />
+        </>
+    );
+};
+
 const POSPaymentScreen = (props: {
     amount: string;
     onAmountChange: (amount: string) => void;
@@ -337,13 +424,14 @@ const POSPaymentScreen = (props: {
     onAmountErrorChange: (error: string) => void;
     onClickCash: (amount: string) => void;
     onClickEftpos: (amount: string) => void;
+    onClickUberEats: (amount: string) => void;
+    onClickMenulog: (amount: string) => void;
     onClose: () => void;
 }) => {
-    const { amount, onAmountChange, amountError, onAmountErrorChange, onClickCash, onClickEftpos, onClose } = props;
-    const { subTotal, payments, setPayments, paymentAmounts, setPaymentAmounts } = useCart();
+    const { amount, onAmountChange, amountError, onAmountErrorChange, onClickCash, onClickEftpos, onClickUberEats, onClickMenulog, onClose } = props;
+    const { subTotal, payments, setPayments, paymentAmounts, setPaymentAmounts, paidSoFar } = useCart();
 
-    const totalPaymentAmounts = paymentAmounts.cash + paymentAmounts.eftpos;
-    const totalRemaining = subTotal - totalPaymentAmounts;
+    const totalRemaining = subTotal - paidSoFar;
     const totalRemainingInDollars = convertCentsToDollars(totalRemaining);
 
     const onRemoveCashTransaction = (index: number) => {
@@ -355,6 +443,28 @@ const POSPaymentScreen = (props: {
 
         setPayments(newPayments);
         setPaymentAmounts({ ...paymentAmounts, cash: newPaymentAmounts });
+    };
+
+    const onRemoveUberEatsTransaction = (index: number) => {
+        const payment = payments[index];
+        const newPayments = [...payments];
+        const newPaymentAmounts = paymentAmounts.uberEats - payment.amount;
+
+        newPayments.splice(index, 1);
+
+        setPayments(newPayments);
+        setPaymentAmounts({ ...paymentAmounts, uberEats: newPaymentAmounts });
+    };
+
+    const onRemoveMenulogTransaction = (index: number) => {
+        const payment = payments[index];
+        const newPayments = [...payments];
+        const newPaymentAmounts = paymentAmounts.menulog - payment.amount;
+
+        newPayments.splice(index, 1);
+
+        setPayments(newPayments);
+        setPaymentAmounts({ ...paymentAmounts, menulog: newPaymentAmounts });
     };
 
     const onBlurAmount = () => {
@@ -400,13 +510,23 @@ const POSPaymentScreen = (props: {
             </div>
 
             <div className="h3 mb-4">Payment Methods</div>
-            <div className="payment-modal-payment-button-wrapper mb-8">
-                <Button className="large payment-modal-cash-button" onClick={() => onClickCash(amount)}>
-                    Cash
-                </Button>
-                <Button className="large payment-modal-eftpos-button ml-2" onClick={() => onClickEftpos(amount)}>
-                    Eftpos
-                </Button>
+            <div className="payment-modal-payment-buttons-wrapper mb-8">
+                <div className="payment-modal-payment-button-wrapper">
+                    <Button className="large payment-modal-cash-button" onClick={() => onClickCash(amount)}>
+                        Cash
+                    </Button>
+                    <Button className="large payment-modal-eftpos-button ml-2" onClick={() => onClickEftpos(amount)}>
+                        Eftpos
+                    </Button>
+                </div>
+                <div className="payment-modal-payment-button-wrapper">
+                    <Button className="large payment-modal-uber-eats-button" onClick={() => onClickUberEats(amount)}>
+                        Uber Eats
+                    </Button>
+                    <Button className="large payment-modal-menulog-button ml-2" onClick={() => onClickMenulog(amount)}>
+                        Menulog
+                    </Button>
+                </div>
             </div>
 
             <div className="h3 mb-4">Quick Cash Options</div>
@@ -437,6 +557,16 @@ const POSPaymentScreen = (props: {
                                 <div className="mb-2">
                                     Cash: ${convertCentsToDollars(payment.amount)}{" "}
                                     <Link onClick={() => onRemoveCashTransaction(index)}>(Remove)</Link>
+                                </div>
+                            ) : payment.type === "UBEREATS" ? (
+                                <div className="mb-2">
+                                    Uber Eats: ${convertCentsToDollars(payment.amount)}{" "}
+                                    <Link onClick={() => onRemoveUberEatsTransaction(index)}>(Remove)</Link>
+                                </div>
+                            ) : payment.type === "MENULOG" ? (
+                                <div className="mb-2">
+                                    Menulog: ${convertCentsToDollars(payment.amount)}{" "}
+                                    <Link onClick={() => onRemoveMenulogTransaction(index)}>(Remove)</Link>
                                 </div>
                             ) : (
                                 //For all Eftpos types Verifone, Smartpay, Windcave

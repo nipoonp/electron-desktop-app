@@ -45,15 +45,34 @@
         }
     }
 
-    .payment-modal-payment-button-wrapper {
-        display: flex;
+    .payment-modal-payment-buttons-wrapper {
+        .payment-modal-payment-button-wrapper {
+            display: flex;
+            gap: 16px;
 
-        .payment-modal-cash-button {
-            width: 300px;
-        }
+            .payment-modal-cash-button {
+                width: 300px;
+            }
 
-        .payment-modal-eftpos-button {
-            width: 300px;
+            .payment-modal-eftpos-button {
+                width: 300px;
+            }
+
+            .payment-modal-uber-eats-button {
+                width: 300px;
+                margin-top: 16px;
+                border: 1px solid #000000;
+                color: #000000;
+                background-color: #ffffff;
+            }
+
+            .payment-modal-menulog-button {
+                width: 300px;
+                margin-top: 16px;
+                border: 1px solid #000000;
+                color: #000000;
+                background-color: #ffffff;
+            }
         }
     }
 
