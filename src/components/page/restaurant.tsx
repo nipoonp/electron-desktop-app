@@ -45,7 +45,7 @@ export default () => {
     const { showAlert } = useAlert();
 
     const { payments, clearCart, orderType, subTotal, products, cartProductQuantitiesById, addProduct, setOrderType } = useCart();
-    const { setRestaurant } = useRestaurant();
+    const { setRestaurant, menuCategories: restaurantCategories, menuProducts: restaurantProducts } = useRestaurant();
     const { register, isPOS } = useRegister();
 
     // query
@@ -90,29 +90,21 @@ export default () => {
             setRestaurant(restaurant);
 
             if (selectedCategoryId) {
-                restaurant.categories.items.forEach((c) => {
-                    if (c.id === selectedCategoryId) {
-                        setSelectedCategory(c);
-                    }
-                });
+                const selectedCategoryItem = restaurantCategories[selectedCategoryId];
+
+                if (selectedCategoryItem) setSelectedCategory(selectedCategoryItem);
             } else if (register && register.defaultCategoryView) {
-                restaurant.categories.items.forEach((c) => {
-                    if (c.id === register.defaultCategoryView && isItemAvailable(c.availability)) {
-                        setSelectedCategory(c);
-                    }
-                });
+                const selectedCategoryItem = restaurantCategories[register.defaultCategoryView];
+
+                if (selectedCategoryItem) setSelectedCategory(selectedCategoryItem);
             }
 
             if (selectedProductId) {
-                restaurant.categories.items.forEach((c) => {
-                    c.products &&
-                        c.products.items.forEach((p) => {
-                            if (p.id === selectedProductId) {
-                                setSelectedProductForProductModal(p.product);
-                                setShowProductModal(true);
-                            }
-                        });
-                });
+                const selectedProductItem = restaurantProducts[selectedProductId];
+
+                if (selectedProductItem) setSelectedProductForProductModal(selectedProductItem);
+
+                setShowProductModal(true);
             }
         }
     }, [restaurant]);
@@ -504,7 +496,7 @@ export default () => {
 
     const menuMostPopularCategory = (
         <div
-            className={`category background-grey ${!selectedCategory ? "selected" : ""}`}
+            className={`category most-popular-category background-grey ${!selectedCategory ? "selected" : ""}`}
             onClick={() => {
                 setSelectedCategory(null);
             }}

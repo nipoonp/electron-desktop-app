@@ -4,7 +4,7 @@ import { useCart } from "../../context/cart-context";
 import { useNavigate } from "react-router-dom";
 import { convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
 import { useMutation } from "@apollo/client";
-import { CREATE_ORDER } from "../../graphql/customMutations";
+import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
 import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, EPromotionType, ERegisterType } from "../../graphql/customQueries";
 import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath } from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
@@ -57,6 +57,8 @@ export const Checkout = () => {
     const navigate = useNavigate();
     const { showAlert } = useAlert();
     const {
+        parkedOrderId,
+        parkedOrderNumber,
         orderType,
         products,
         notes,
@@ -66,6 +68,7 @@ export const Checkout = () => {
         promotion,
         total,
         subTotal,
+        paidSoFar,
         transactionEftposReceipts,
         setTransactionEftposReceipts,
         paymentAmounts,
@@ -92,9 +95,15 @@ export const Checkout = () => {
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
     const { createTransaction: windcaveCreateTransaction, pollForOutcome: windcavePollForOutcome } = useWindcave();
 
-    const [createOrderMutation, { data, loading, error }] = useMutation(CREATE_ORDER, {
+    const [createOrderMutation] = useMutation(CREATE_ORDER, {
         update: (proxy, mutationResult) => {
-            logger.debug("mutation result: ", mutationResult);
+            logger.debug("create order mutation result: ", mutationResult);
+        },
+    });
+
+    const [updateOrderMutation] = useMutation(UPDATE_ORDER, {
+        update: (proxy, mutationResult) => {
+            logger.debug("update order mutation result: ", mutationResult);
         },
     });
 
@@ -125,10 +134,6 @@ export const Checkout = () => {
     const [showUpSellProductModal, setShowUpSellProductModal] = useState(false);
 
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
-
-    const paidSoFar = paymentAmounts.cash + paymentAmounts.eftpos;
-
-    // const isUserFocusedOnEmailAddressInput = useRef(false);
 
     useEffect(() => {
         if (isShownUpSellCrossSellModal) return;
@@ -373,15 +378,22 @@ export const Checkout = () => {
             });
     };
 
-    const onSubmitOrder = async (paid: boolean, newPaymentAmounts: ICartPaymentAmounts, newPayments: ICartPayment[]) => {
-        const orderNumber = getOrderNumber(register.orderNumberSuffix);
+    const onSubmitOrder = async (
+        paid: boolean,
+        parkOrder: boolean,
+        printOrder: boolean,
+        newPaymentAmounts: ICartPaymentAmounts,
+        newPayments: ICartPayment[]
+    ) => {
+        //If parked order do not generate order number
+        let orderNumber = parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix);
 
         setPaymentOutcomeOrderNumber(orderNumber);
 
         try {
-            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(orderNumber, paid, newPaymentAmounts, newPayments);
+            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(orderNumber, paid, parkOrder, newPaymentAmounts, newPayments);
 
-            if (register.printers && register.printers.items.length > 0) {
+            if (register.printers && register.printers.items.length > 0 && printOrder) {
                 await printReceipts(newOrder);
             }
         } catch (e) {
@@ -389,10 +401,10 @@ export const Checkout = () => {
         }
     };
 
-    // Submit callback
     const createOrder = async (
         orderNumber: string,
         paid: boolean,
+        parkOrder: boolean,
         newPaymentAmounts: ICartPaymentAmounts,
         newPayments: ICartPayment[]
     ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
@@ -443,7 +455,14 @@ export const Checkout = () => {
                 orderRestaurantId: restaurant.id,
             };
 
-            if (restaurant.autoCompleteOrders) {
+            if (parkOrder) {
+                variables.status = "PARKED";
+                variables.parkedAt = toLocalISOString(now);
+                variables.parkedAtUtc = now.toISOString();
+                variables.discount = undefined;
+                variables.promotionId = undefined;
+                variables.subTotal = total; //Set subTotal to total because we do not want to add any discount or promotions. Also product.discount is set to 0 in dashboard.tsx
+            } else if (restaurant.autoCompleteOrders) {
                 variables.status = "COMPLETED";
                 variables.completedAt = toLocalISOString(now);
                 variables.completedAtUtc = now.toISOString();
@@ -504,14 +523,21 @@ export const Checkout = () => {
                 }
             });
 
-            // process order
-            const res: any = await createOrderMutation({
-                variables: variables,
-            });
+            if (parkedOrderId) {
+                const res: any = await updateOrderMutation({
+                    variables: { orderId: parkedOrderId, ...variables },
+                });
 
-            console.log("process order mutation result: ", res);
+                console.log("update order mutation result: ", res);
+                return res.data.updateOrder;
+            } else {
+                const res: any = await createOrderMutation({
+                    variables: variables,
+                });
 
-            return res.data.createOrder;
+                console.log("create order mutation result: ", res);
+                return res.data.createOrder;
+            }
         } catch (e) {
             console.log("process order mutation error: ", e);
 
@@ -602,7 +628,7 @@ export const Checkout = () => {
                     beginTransactionCompleteTimeout();
 
                     //Passing paymentAmounts, payments via params so we send the most updated values
-                    await onSubmitOrder(true, newPaymentAmounts, newPayments);
+                    await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
                 }
             } catch (e) {
                 setCreateOrderError(e);
@@ -619,9 +645,9 @@ export const Checkout = () => {
 
     const onConfirmCashTransaction = async (amount: number) => {
         try {
-            const nonCashPayments = paymentAmounts.eftpos + paymentAmounts.online;
+            const nonCashPayments = paidSoFar - paymentAmounts.cash;
             const newCashPaymentAmounts = paymentAmounts.cash + amount;
-            const newTotalPaymentAmounts = newCashPaymentAmounts + paymentAmounts.eftpos;
+            const newTotalPaymentAmounts = nonCashPayments + newCashPaymentAmounts;
 
             const newPaymentAmounts: ICartPaymentAmounts = {
                 ...paymentAmounts,
@@ -642,7 +668,65 @@ export const Checkout = () => {
                 beginTransactionCompleteTimeout();
 
                 //Passing paymentAmounts, payments via params so we send the most updated values
-                await onSubmitOrder(true, newPaymentAmounts, newPayments);
+                await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
+            }
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
+    const onConfirmUberEatsTransaction = async (amount: number) => {
+        try {
+            const nonUberEatsPayments = paidSoFar - paymentAmounts.uberEats;
+            const newUberEatsPaymentAmounts = paymentAmounts.uberEats + amount;
+            const newTotalPaymentAmounts = nonUberEatsPayments + newUberEatsPaymentAmounts;
+
+            const newPaymentAmounts: ICartPaymentAmounts = {
+                ...paymentAmounts,
+                uberEats: newTotalPaymentAmounts >= subTotal ? subTotal - nonUberEatsPayments : newUberEatsPaymentAmounts, //Cannot pay more than subTotal amount
+            };
+            const newPayments: ICartPayment[] = [...payments, { type: "UBEREATS", amount: amount }];
+
+            setPaymentAmounts(newPaymentAmounts);
+            setPayments(newPayments);
+
+            //If paid for everything
+            if (newTotalPaymentAmounts >= subTotal) {
+                setPaymentModalState(EPaymentModalState.UberEatsResult);
+
+                beginTransactionCompleteTimeout();
+
+                //Passing paymentAmounts, payments via params so we send the most updated values
+                await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
+            }
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
+    const onConfirmMenulogTransaction = async (amount: number) => {
+        try {
+            const nonMenulogPayments = paidSoFar - paymentAmounts.menulog;
+            const newMenulogPaymentAmounts = paymentAmounts.menulog + amount;
+            const newTotalPaymentAmounts = nonMenulogPayments + newMenulogPaymentAmounts;
+
+            const newPaymentAmounts: ICartPaymentAmounts = {
+                ...paymentAmounts,
+                menulog: newTotalPaymentAmounts >= subTotal ? subTotal - nonMenulogPayments : newMenulogPaymentAmounts, //Cannot pay more than subTotal amount
+            };
+            const newPayments: ICartPayment[] = [...payments, { type: "MENULOG", amount: amount }];
+
+            setPaymentAmounts(newPaymentAmounts);
+            setPayments(newPayments);
+
+            //If paid for everything
+            if (newTotalPaymentAmounts >= subTotal) {
+                setPaymentModalState(EPaymentModalState.MenulogResult);
+
+                beginTransactionCompleteTimeout();
+
+                //Passing paymentAmounts, payments via params so we send the most updated values
+                await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
             }
         } catch (e) {
             setCreateOrderError(e);
@@ -660,7 +744,7 @@ export const Checkout = () => {
     const onClickPayLater = async () => {
         setShowPaymentModal(true);
 
-        const newPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0 };
+        const newPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0 };
         const newPayments: ICartPayment[] = [];
 
         setPaymentModalState(EPaymentModalState.PayLater);
@@ -668,7 +752,24 @@ export const Checkout = () => {
         beginTransactionCompleteTimeout();
 
         try {
-            await onSubmitOrder(false, newPaymentAmounts, newPayments);
+            await onSubmitOrder(false, false, true, newPaymentAmounts, newPayments);
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
+    const onParkOrder = async (printOrder: boolean) => {
+        setShowPaymentModal(true);
+
+        const newPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0 };
+        const newPayments: ICartPayment[] = [];
+
+        setPaymentModalState(EPaymentModalState.Park);
+
+        beginTransactionCompleteTimeout();
+
+        try {
+            await onSubmitOrder(false, true, printOrder, newPaymentAmounts, newPayments);
         } catch (e) {
             setCreateOrderError(e);
         }
@@ -841,6 +942,8 @@ export const Checkout = () => {
                         createOrderError={createOrderError}
                         onConfirmTotalOrRetryEftposTransaction={onConfirmTotalOrRetryEftposTransaction}
                         onConfirmCashTransaction={onConfirmCashTransaction}
+                        onConfirmUberEatsTransaction={onConfirmUberEatsTransaction}
+                        onConfirmMenulogTransaction={onConfirmMenulogTransaction}
                         onContinueToNextPayment={onContinueToNextPayment}
                         onCancelPayment={onCancelPayment}
                         onCancelOrder={onCancelOrder}
@@ -967,6 +1070,17 @@ export const Checkout = () => {
         </>
     );
 
+    const parkOrderFooter = (
+        <div className="park-order-footer">
+            <div className="park-order-link p-2">
+                <Link onClick={() => onParkOrder(false)}>Park Order</Link>
+            </div>
+            <div className="park-and-print-order-link p-2">
+                <Link onClick={() => onParkOrder(true)}>Park and Print Order</Link>
+            </div>
+        </div>
+    );
+
     const checkoutFooter = (
         <div>
             {promotion && (
@@ -990,7 +1104,7 @@ export const Checkout = () => {
                         Complete Order
                     </Button>
                 </div>
-                {payments.length == 0 && register.enablePayLater && (
+                {payments.length === 0 && register.enablePayLater && (
                     <div className={`pay-later-link ${isPOS ? "mt-3" : "mt-4"}`}>
                         <Link onClick={onClickPayLater}>Pay cash at counter...</Link>
                     </div>
@@ -1017,6 +1131,7 @@ export const Checkout = () => {
                             {products && products.length > 0 && order}
                         </div>
                     </div>
+                    {isPOS && payments.length === 0 && <div>{parkOrderFooter}</div>}
                     {products && products.length > 0 && <div className="footer p-4">{checkoutFooter}</div>}
                 </div>
                 {modalsAndSpinners}

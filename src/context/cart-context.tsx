@@ -13,6 +13,8 @@ import {
 import { getMatchingPromotionProducts, processPromotionDiscounts, checkIfPromotionValid } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
 
+const initialParkedOrderId = null;
+const initialParkedOrderNumber = null;
 const initialOrderType = null;
 const initialTableNumber = null;
 const initialProducts = null;
@@ -23,7 +25,8 @@ const initialCartModifierQuantitiesById = {};
 const initialUserAppliedPromotionCode = null;
 const initialPromotion = null;
 const initialTotal = 0;
-const initialPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0 };
+const initialPaidSoFar = 0;
+const initialPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0 };
 const initialSubTotal = 0;
 const initialPayments = [];
 const initialTransactionEftposReceipts = "";
@@ -32,6 +35,10 @@ const initialIsShownUpSellCrossSellModal = false;
 type ContextProps = {
     // restaurant: IGET_RESTAURANT | null;
     // setRestaurant: (restaurant: IGET_RESTAURANT) => void;
+    parkedOrderId: string | null;
+    setParkedOrderId: (parkedOrderId: string | null) => void;
+    parkedOrderNumber: string | null;
+    setParkedOrderNumber: (parkedOrderNumber: string | null) => void;
     orderType: EOrderType | null;
     setOrderType: (orderType: EOrderType) => void;
     tableNumber: string | null;
@@ -39,6 +46,7 @@ type ContextProps = {
     products: ICartProduct[] | null;
     cartProductQuantitiesById: ICartItemQuantitiesById;
     cartModifierQuantitiesById: ICartItemQuantitiesById;
+    setProducts: (products: ICartProduct[]) => void;
     addProduct: (product: ICartProduct) => void;
     updateProduct: (index: number, product: ICartProduct) => void;
     updateProductQuantity: (index: number, quantity: number) => void;
@@ -53,6 +61,7 @@ type ContextProps = {
     removeUserAppliedPromotion: () => void;
     total: number;
     subTotal: number;
+    paidSoFar: number;
     payments: ICartPayment[];
     setPayments: (payment: ICartPayment[]) => void;
     paymentAmounts: ICartPaymentAmounts;
@@ -66,6 +75,10 @@ type ContextProps = {
 const CartContext = createContext<ContextProps>({
     // restaurant: initialRestaurant,
     // setRestaurant: () => {},
+    parkedOrderId: initialParkedOrderId,
+    setParkedOrderId: () => {},
+    parkedOrderNumber: initialParkedOrderNumber,
+    setParkedOrderNumber: () => {},
     orderType: initialOrderType,
     setOrderType: () => {},
     tableNumber: initialTableNumber,
@@ -73,6 +86,7 @@ const CartContext = createContext<ContextProps>({
     products: initialProducts,
     cartProductQuantitiesById: {},
     cartModifierQuantitiesById: {},
+    setProducts: () => {},
     addProduct: () => {},
     updateProduct: () => {},
     updateProductQuantity: () => {},
@@ -87,6 +101,7 @@ const CartContext = createContext<ContextProps>({
     removeUserAppliedPromotion: () => {},
     total: initialTotal,
     subTotal: initialSubTotal,
+    paidSoFar: initialPaidSoFar,
     payments: initialPayments,
     setPayments: () => {},
     paymentAmounts: initialPaymentAmounts,
@@ -100,6 +115,8 @@ const CartContext = createContext<ContextProps>({
 const CartProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
 
+    const [parkedOrderId, _setParkedOrderId] = useState<string | null>(initialParkedOrderId);
+    const [parkedOrderNumber, _setParkedOrderNumber] = useState<string | null>(initialParkedOrderNumber);
     const [orderType, _setOrderType] = useState<EOrderType | null>(initialOrderType);
     const [tableNumber, _setTableNumber] = useState<string | null>(initialTableNumber);
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
@@ -407,12 +424,26 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         return totalPrice;
     };
 
+    const setParkedOrderId = (parkedOrderId: string | null) => {
+        _setParkedOrderId(parkedOrderId);
+    };
+
+    const setParkedOrderNumber = (parkedOrderNumber: string | null) => {
+        _setParkedOrderNumber(parkedOrderNumber);
+    };
+
     const setOrderType = (orderType: EOrderType) => {
         _setOrderType(orderType);
     };
 
     const setTableNumber = (tableNumber: string) => {
         _setTableNumber(tableNumber);
+    };
+
+    const setProducts = (products: ICartProduct[]) => {
+        _setProducts(products);
+        _setTotal(recalculateTotal(products));
+        updateCartQuantities(products);
     };
 
     const addProduct = (product: ICartProduct) => {
@@ -504,6 +535,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     };
 
     const clearCart = () => {
+        _setParkedOrderId(initialParkedOrderId);
+        _setParkedOrderNumber(initialParkedOrderNumber);
         _setOrderType(initialOrderType);
         _setTableNumber(initialTableNumber);
         _setProducts(initialProducts);
@@ -526,6 +559,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
             value={{
                 // restaurant: restaurant,
                 // setRestaurant: setRestaurant,
+                parkedOrderId: parkedOrderId,
+                setParkedOrderId: setParkedOrderId,
+                parkedOrderNumber: parkedOrderNumber,
+                setParkedOrderNumber: setParkedOrderNumber,
                 orderType: orderType,
                 setOrderType: setOrderType,
                 tableNumber: tableNumber,
@@ -533,6 +570,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 products: products,
                 cartProductQuantitiesById: cartProductQuantitiesById,
                 cartModifierQuantitiesById: cartModifierQuantitiesById,
+                setProducts: setProducts,
                 addProduct: addProduct,
                 updateProduct: updateProduct,
                 updateProductQuantity: updateProductQuantity,
@@ -546,9 +584,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setUserAppliedPromotion: setUserAppliedPromotion,
                 removeUserAppliedPromotion: removeUserAppliedPromotion,
                 total: total,
+                subTotal: subTotal,
+                paidSoFar: paymentAmounts.cash + paymentAmounts.eftpos + paymentAmounts.online + paymentAmounts.uberEats + paymentAmounts.menulog,
                 paymentAmounts: paymentAmounts,
                 setPaymentAmounts: setPaymentAmounts,
-                subTotal: subTotal,
                 payments: payments,
                 setPayments: setPayments,
                 transactionEftposReceipts: transactionEftposReceipts,

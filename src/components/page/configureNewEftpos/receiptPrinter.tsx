@@ -22,81 +22,81 @@ const TEST_PRODUCT: ICartProduct[] = [
             image: null,
         },
         modifierGroups: [
-            {
-                id: "",
-                name: "Choice of Sauce 1",
-                choiceDuplicate: 1,
-                choiceMin: 0,
-                choiceMax: 1,
-                hideForCustomer: true,
-                modifiers: [
-                    {
-                        id: "",
-                        name: "Sauce",
-                        price: 50,
-                        preSelectedQuantity: 0,
-                        quantity: 1,
-                        image: null,
-                        productModifiers: [
-                            {
-                                id: "",
-                                name: "Samosa",
-                                price: 1,
-                                totalPrice: 0,
-                                discount: 0,
-                                image: null,
-                                quantity: 2,
-                                category: {
-                                    id: "",
-                                    name: "Test Category",
-                                    image: null,
-                                },
-                                modifierGroups: [
-                                    {
-                                        id: "",
-                                        name: "Choice of Sauce 1",
-                                        choiceDuplicate: 1,
-                                        choiceMin: 0,
-                                        choiceMax: 1,
-                                        hideForCustomer: true,
-                                        modifiers: [
-                                            {
-                                                id: "",
-                                                name: "Sauce",
-                                                price: 50,
-                                                preSelectedQuantity: 0,
-                                                quantity: 1,
-                                                image: null,
-                                                productModifiers: null,
-                                            },
-                                        ],
-                                    },
-                                    {
-                                        id: "",
-                                        name: "Choice of Sauce 1",
-                                        choiceDuplicate: 1,
-                                        choiceMin: 0,
-                                        choiceMax: 1,
-                                        hideForCustomer: true,
-                                        modifiers: [
-                                            {
-                                                id: "",
-                                                name: "Sauce",
-                                                price: 50,
-                                                preSelectedQuantity: 0,
-                                                quantity: 1,
-                                                image: null,
-                                                productModifiers: null,
-                                            },
-                                        ],
-                                    },
-                                ],
-                                notes: "Product notes",
-                            },
-                        ],
-                    },
-                ],
-            },
+            // {
+            //     id: "",
+            //     name: "Choice of Sauce 1",
+            //     choiceDuplicate: 1,
+            //     choiceMin: 0,
+            //     choiceMax: 1,
+            //     hideForCustomer: true,
+            //     modifiers: [
+            //         {
+            //             id: "",
+            //             name: "Sauce",
+            //             price: 50,
+            //             preSelectedQuantity: 0,
+            //             quantity: 1,
+            //             image: null,
+            //             productModifiers: [
+            //                 {
+            //                     id: "",
+            //                     name: "Samosa",
+            //                     price: 1,
+            //                     totalPrice: 0,
+            //                     discount: 0,
+            //                     image: null,
+            //                     quantity: 2,
+            //                     category: {
+            //                         id: "",
+            //                         name: "Test Category",
+            //                         image: null,
+            //                     },
+            //                     modifierGroups: [
+            //                         {
+            //                             id: "",
+            //                             name: "Choice of Sauce 1",
+            //                             choiceDuplicate: 1,
+            //                             choiceMin: 0,
+            //                             choiceMax: 1,
+            //                             hideForCustomer: true,
+            //                             modifiers: [
+            //                                 {
+            //                                     id: "",
+            //                                     name: "Sauce",
+            //                                     price: 50,
+            //                                     preSelectedQuantity: 0,
+            //                                     quantity: 1,
+            //                                     image: null,
+            //                                     productModifiers: null,
+            //                                 },
+            //                             ],
+            //                         },
+            //                         {
+            //                             id: "",
+            //                             name: "Choice of Sauce 1",
+            //                             choiceDuplicate: 1,
+            //                             choiceMin: 0,
+            //                             choiceMax: 1,
+            //                             hideForCustomer: true,
+            //                             modifiers: [
+            //                                 {
+            //                                     id: "",
+            //                                     name: "Sauce",
+            //                                     price: 50,
+            //                                     preSelectedQuantity: 0,
+            //                                     quantity: 1,
+            //                                     image: null,
+            //                                     productModifiers: null,
+            //                                 },
+            //                             ],
+            //                         },
+            //                     ],
+            //                     notes: "Product notes",
+            //                 },
+            //             ],
+            //         },
+            //     ],
+            // },
             {
                 id: "",
                 name: "Choice of Sauce 2",
@@ -116,63 +116,63 @@ const TEST_PRODUCT: ICartProduct[] = [
                     },
                 ],
             },
-            {
-                id: "",
-                name: "Choice of Sauce 3",
-                choiceDuplicate: 1,
-                choiceMin: 0,
-                choiceMax: 1,
-                hideForCustomer: false,
-                modifiers: [
-                    {
-                        id: "",
-                        name: "Sauce",
-                        price: 50,
-                        preSelectedQuantity: 1,
-                        quantity: 1,
-                        image: null,
-                        productModifiers: null,
-                    },
-                ],
-            },
-            {
-                id: "",
-                name: "Choice of Sauce 4",
-                choiceDuplicate: 1,
-                choiceMin: 0,
-                choiceMax: 1,
-                hideForCustomer: false,
-                modifiers: [
-                    {
-                        id: "",
-                        name: "Sauce",
-                        price: 50,
-                        preSelectedQuantity: 1,
-                        quantity: 0,
-                        image: null,
-                        productModifiers: null,
-                    },
-                ],
-            },
-            {
-                id: "",
-                name: "Choice of Sauce 5",
-                choiceDuplicate: 1,
-                choiceMin: 0,
-                choiceMax: 1,
-                hideForCustomer: false,
-                modifiers: [
-                    {
-                        id: "",
-                        name: "Sauce",
-                        price: 50,
-                        preSelectedQuantity: 2,
-                        quantity: 1,
-                        image: null,
-                        productModifiers: null,
-                    },
-                ],
-            },
+            // {
+            //     id: "",
+            //     name: "Choice of Sauce 3",
+            //     choiceDuplicate: 1,
+            //     choiceMin: 0,
+            //     choiceMax: 1,
+            //     hideForCustomer: false,
+            //     modifiers: [
+            //         {
+            //             id: "",
+            //             name: "Sauce",
+            //             price: 50,
+            //             preSelectedQuantity: 1,
+            //             quantity: 1,
+            //             image: null,
+            //             productModifiers: null,
+            //         },
+            //     ],
+            // },
+            // {
+            //     id: "",
+            //     name: "Choice of Sauce 4",
+            //     choiceDuplicate: 1,
+            //     choiceMin: 0,
+            //     choiceMax: 1,
+            //     hideForCustomer: false,
+            //     modifiers: [
+            //         {
+            //             id: "",
+            //             name: "Sauce",
+            //             price: 50,
+            //             preSelectedQuantity: 1,
+            //             quantity: 0,
+            //             image: null,
+            //             productModifiers: null,
+            //         },
+            //     ],
+            // },
+            // {
+            //     id: "",
+            //     name: "Choice of Sauce 5",
+            //     choiceDuplicate: 1,
+            //     choiceMin: 0,
+            //     choiceMax: 1,
+            //     hideForCustomer: false,
+            //     modifiers: [
+            //         {
+            //             id: "",
+            //             name: "Sauce",
+            //             price: 50,
+            //             preSelectedQuantity: 2,
+            //             quantity: 1,
+            //             image: null,
+            //             productModifiers: null,
+            //         },
+            //     ],
+            // },
         ],
         notes: "Product notes",
     },
@@ -180,10 +180,10 @@ const TEST_PRODUCT: ICartProduct[] = [
 
 export const ReceiptPrinter = () => {
     const { register } = useRegister();
-    const [printerType, setPrinterType] = useState(ERegisterPrinterType.USB);
-    const [printerAddress1, setPrinterAddress1] = useState(register?.printers?.items[0]?.address || "192.168.1.200");
-    const [printerAddress2, setPrinterAddress2] = useState(register?.printers?.items[1]?.address || "192.168.1.201");
-    const [printerAddress3, setPrinterAddress3] = useState(register?.printers?.items[2]?.address || "192.168.1.202");
+    const [printerType, setPrinterType] = useState(ERegisterPrinterType.WIFI);
+    const [printerAddress1, setPrinterAddress1] = useState(register?.printers?.items[0]?.address || "192.168.1.211");
+    const [printerAddress2, setPrinterAddress2] = useState(register?.printers?.items[1]?.address || "192.168.1.212");
+    const [printerAddress3, setPrinterAddress3] = useState(register?.printers?.items[2]?.address || "192.168.1.213");
 
     const { printReceipt, printLabel } = useReceiptPrinter();
 
@@ -193,8 +193,8 @@ export const ReceiptPrinter = () => {
                 orderId: "123",
                 printerType: printerType,
                 printerAddress: printerAddress1,
-                customerPrinter: true,
-                kitchenPrinter: false,
+                customerPrinter: false,
+                kitchenPrinter: true,
                 hideModifierGroupsForCustomer: false,
                 eftposReceipt: "",
                 restaurant: {
