@@ -430,6 +430,7 @@ const POSPaymentScreen = (props: {
 }) => {
     const { amount, onAmountChange, amountError, onAmountErrorChange, onClickCash, onClickEftpos, onClickUberEats, onClickMenulog, onClose } = props;
     const { subTotal, payments, setPayments, paymentAmounts, setPaymentAmounts, paidSoFar } = useCart();
+    const { register } = useRegister();
 
     const totalRemaining = subTotal - paidSoFar;
     const totalRemainingInDollars = convertCentsToDollars(totalRemaining);
@@ -519,14 +520,20 @@ const POSPaymentScreen = (props: {
                         Eftpos
                     </Button>
                 </div>
-                <div className="payment-modal-payment-button-wrapper">
-                    <Button className="large payment-modal-uber-eats-button" onClick={() => onClickUberEats(amount)}>
-                        Uber Eats
-                    </Button>
-                    <Button className="large payment-modal-menulog-button ml-2" onClick={() => onClickMenulog(amount)}>
-                        Menulog
-                    </Button>
-                </div>
+                {register && register.enableUberEatsPayments && (
+                    <div className="payment-modal-payment-button-wrapper">
+                        {register && register.enableUberEatsPayments && (
+                            <Button className="large payment-modal-uber-eats-button" onClick={() => onClickUberEats(amount)}>
+                                Uber Eats
+                            </Button>
+                        )}
+                        {register && register.enableMenulogPayments && (
+                            <Button className="large payment-modal-menulog-button ml-2" onClick={() => onClickMenulog(amount)}>
+                                Menulog
+                            </Button>
+                        )}
+                    </div>
+                )}
             </div>
 
             <div className="h3 mb-4">Quick Cash Options</div>

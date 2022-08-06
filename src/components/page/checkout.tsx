@@ -1070,6 +1070,17 @@ export const Checkout = () => {
         </>
     );
 
+    const parkOrderFooter = (
+        <div className="park-order-footer p-2">
+            <div className={`park-order-link`}>
+                <Link onClick={() => onParkOrder(false)}>Park Order</Link>
+            </div>
+            <div className={`park-and-print-order-link`}>
+                <Link onClick={() => onParkOrder(true)}>Park and Print Order</Link>
+            </div>
+        </div>
+    );
+
     const checkoutFooter = (
         <div>
             {promotion && (
@@ -1098,16 +1109,6 @@ export const Checkout = () => {
                         <Link onClick={onClickPayLater}>Pay cash at counter...</Link>
                     </div>
                 )}
-                {isPOS && payments.length === 0 && (
-                    <div className={`park-order-link ${isPOS ? "mt-3" : "mt-4"}`}>
-                        <Link onClick={() => onParkOrder(false)}>Park Order</Link>
-                    </div>
-                )}
-                {isPOS && payments.length === 0 && (
-                    <div className={`park-and-print-order-link ${isPOS ? "mt-3" : "mt-4"}`}>
-                        <Link onClick={() => onParkOrder(true)}>Park and Print Order</Link>
-                    </div>
-                )}
                 <div className={`apply-promo-code-link ${isPOS ? "mt-3" : "mt-4"}`}>
                     <Link onClick={onClickApplyPromotionCode}>Apply promo code</Link>
                 </div>
@@ -1130,6 +1131,7 @@ export const Checkout = () => {
                             {products && products.length > 0 && order}
                         </div>
                     </div>
+                    {isPOS && payments.length === 0 && <div>{parkOrderFooter}</div>}
                     {products && products.length > 0 && <div className="footer p-4">{checkoutFooter}</div>}
                 </div>
                 {modalsAndSpinners}
