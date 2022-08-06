@@ -1071,11 +1071,11 @@ export const Checkout = () => {
     );
 
     const parkOrderFooter = (
-        <div className="park-order-footer p-2">
-            <div className={`park-order-link`}>
+        <div className="park-order-footer">
+            <div className="park-order-link p-2">
                 <Link onClick={() => onParkOrder(false)}>Park Order</Link>
             </div>
-            <div className={`park-and-print-order-link`}>
+            <div className="park-and-print-order-link p-2">
                 <Link onClick={() => onParkOrder(true)}>Park and Print Order</Link>
             </div>
         </div>

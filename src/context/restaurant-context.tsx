@@ -82,29 +82,33 @@ const C = (props: {
         const modifierGroups: IMENU_MODIFIER_GROUPS = {};
         const modifiers: IMENU_MODIFIERS = {};
 
+        const processProduct = (product) => {
+            if (!products[product.id]) products[product.id] = product;
+
+            if (!product.modifierGroups) return;
+            product.modifierGroups.items.forEach((pmgLink) => {
+                const modifierGroup = pmgLink.modifierGroup;
+
+                if (!modifierGroups[modifierGroup.id]) modifierGroups[modifierGroup.id] = modifierGroup;
+
+                if (!modifierGroup.modifiers) return;
+                modifierGroup.modifiers.items.forEach((mgmLink) => {
+                    const modifier = mgmLink.modifier;
+
+                    if (!modifiers[modifier.id]) modifiers[modifier.id] = modifier;
+
+                    if (modifier.productModifier) processProduct(modifier.productModifier);
+                });
+            });
+        };
+
         if (getRestaurantData) {
             getRestaurantData.categories.items.forEach((category) => {
-                categories[category.id] = category;
+                if (!categories[category.id]) categories[category.id] = category;
 
                 if (!category.products) return;
                 category.products.items.forEach((cpLink) => {
-                    const product = cpLink.product;
-
-                    products[product.id] = product;
-
-                    if (!product.modifierGroups) return;
-                    product.modifierGroups.items.forEach((pmgLink) => {
-                        const modifierGroup = pmgLink.modifierGroup;
-
-                        modifierGroups[modifierGroup.id] = modifierGroup;
-
-                        if (!modifierGroup.modifiers) return;
-                        modifierGroup.modifiers.items.forEach((mgmLink) => {
-                            const modifier = mgmLink.modifier;
-
-                            modifiers[modifier.id] = modifier;
-                        });
-                    });
+                    processProduct(cpLink.product);
                 });
             });
 

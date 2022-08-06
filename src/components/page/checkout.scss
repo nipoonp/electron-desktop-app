@@ -69,11 +69,21 @@
 
     .park-order-footer {
         border-top: 1px solid #e0e0e0;
-
         display: flex;
         gap: 24px;
-        align-items: center;
-        justify-content: center;
+
+        .park-order-link {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        .park-and-print-order-link {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
     }
 
     .footer {
