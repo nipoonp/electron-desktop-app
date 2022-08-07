@@ -351,6 +351,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 if (productsToPrint.length > 0) {
                     await printReceipt({
                         orderId: order.id,
+                        status: order.status,
                         printerType: printer.type,
                         printerAddress: printer.address,
                         customerPrinter: printer.customerPrinter,
