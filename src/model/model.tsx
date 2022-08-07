@@ -4,7 +4,7 @@ import {
     IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT,
     IOrderPaymentAmounts,
 } from "../graphql/customFragments";
-import { IGET_RESTAURANT_PROMOTION, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object } from "../graphql/customQueries";
+import { IGET_RESTAURANT_PROMOTION, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object, EOrderStatus } from "../graphql/customQueries";
 
 export interface IPrintReceiptDataOutput {
     error: any;
@@ -182,6 +182,7 @@ export enum EReceiptPrinterPrinterType {
 
 export interface IOrderReceipt {
     orderId: string;
+    status: EOrderStatus;
     printerType: ERegisterPrinterType;
     printerAddress: string;
     customerPrinter: boolean | null;

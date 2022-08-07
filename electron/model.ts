@@ -1,3 +1,11 @@
+export enum EOrderStatus {
+    NEW = "NEW",
+    COMPLETED = "COMPLETED",
+    CANCELLED = "CANCELLED",
+    REFUNDED = "REFUNDED",
+    PARKED = "PARKED",
+}
+
 export enum EOrderType {
     DINEIN = "DINEIN",
     TAKEAWAY = "TAKEAWAY",
@@ -41,6 +49,7 @@ export interface IPreSelectedModifiers {
 
 export interface IOrderReceipt {
     orderId: string;
+    status: EOrderStatus;
     printerType: ERegisterPrinterType;
     printerAddress: string;
     customerPrinter: boolean | null;

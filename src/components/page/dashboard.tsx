@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FiArrowLeft, FiArrowRight, FiRotateCw, FiX } from "react-icons/fi";
 import { useNavigate } from "react-router";
 import { ICartModifier, ICartModifierGroup, ICartProduct } from "../../model/model";
@@ -236,43 +236,48 @@ export default () => {
         if (orderedProducts.invalidItemsFound > 0) toast.error("One or more items in this parked orders is invalid. Please recheck the order.");
     };
 
-    useEffect(() => {
-        window.addEventListener("message", async (event) => {
-            console.log("Got message from child", event);
+    const onMessage = async (event) => {
+        console.log("Got message from child", event);
 
-            const data = event.data;
+        const data = event.data;
 
-            if (data.action === "printSalesData") {
-                try {
-                    await onPrintData(data.printData);
-                } catch (e) {
-                    console.error(e);
-                    toast.error("There was an error printing your sales data.");
-                }
-            } else if (data.action === "orderReprint") {
-                try {
-                    await onReprintReceipt(data.order);
-                } catch (e) {
-                    console.error(e);
-                    toast.error("There was an error reprinting your order.");
-                }
-            } else if (data.action === "orderOpenParked") {
-                try {
-                    onOpenParkedOrder(data.order);
-                } catch (e) {
-                    console.error(e);
-                    toast.error("There was an error opening your parked order.");
-                }
+        if (data.action === "printSalesData") {
+            try {
+                await onPrintData(data.printData);
+            } catch (e) {
+                console.error(e);
+                toast.error("There was an error printing your sales data.");
             }
-        });
+        } else if (data.action === "orderReprint") {
+            try {
+                await onReprintReceipt(data.order);
+            } catch (e) {
+                console.error(e);
+                toast.error("There was an error reprinting your order.");
+            }
+        } else if (data.action === "orderOpenParked") {
+            try {
+                onOpenParkedOrder(data.order);
+            } catch (e) {
+                console.error(e);
+                toast.error("There was an error opening your parked order.");
+            }
+        }
+    };
 
-        return () => window.removeEventListener("message", () => {});
+    useEffect(() => {
+        window.addEventListener("message", onMessage, false);
+
+        return () => {
+            console.log("xxx...I AM HERE");
+            window.removeEventListener("message", onMessage, false);
+        };
     }, []);
 
     if (!restaurant) return <>No Restaurant</>;
     if (!register) return <>No Register</>;
 
-    const iFrameBaseUrl = "https://restaurants.tabin.co.nz";
+    const iFrameBaseUrl = "http://localhost:3000";
     const defaultPath = `${iFrameBaseUrl}/${restaurant.id}/orders`;
 
     const printSales = async (
