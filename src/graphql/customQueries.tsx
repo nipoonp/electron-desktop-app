@@ -7,6 +7,7 @@ export enum EOrderStatus {
     COMPLETED = "COMPLETED",
     CANCELLED = "CANCELLED",
     REFUNDED = "REFUNDED",
+    PARKED = "PARKED",
 }
 
 export enum EOrderType {

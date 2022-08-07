@@ -348,6 +348,7 @@ export const Checkout = () => {
                         //Not checking if its printerType receipt
                         await printReceipt({
                             orderId: order.id,
+                            status: order.status,
                             printerType: printer.type,
                             printerAddress: printer.address,
                             customerPrinter: printer.customerPrinter,

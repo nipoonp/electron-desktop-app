@@ -6,6 +6,7 @@ import { EOrderType, ERegisterPrinterType, ICartProduct } from "../../../model/m
 import { useRegister } from "../../../context/register-context";
 import { Button } from "../../../tabin/components/button";
 import { Select } from "../../../tabin/components/select";
+import { EOrderStatus } from "../../../graphql/customQueries";
 
 const TEST_PRODUCT: ICartProduct[] = [
     {
@@ -191,6 +192,7 @@ export const ReceiptPrinter = () => {
         if (printerAddress1) {
             await printReceipt({
                 orderId: "123",
+                status: EOrderStatus.NEW,
                 printerType: printerType,
                 printerAddress: printerAddress1,
                 customerPrinter: false,
@@ -225,6 +227,7 @@ export const ReceiptPrinter = () => {
         if (printerAddress2) {
             await printReceipt({
                 orderId: "456",
+                status: EOrderStatus.NEW,
                 printerType: printerType,
                 printerAddress: printerAddress2,
                 customerPrinter: true,
@@ -255,6 +258,7 @@ export const ReceiptPrinter = () => {
         if (printerAddress3) {
             await printReceipt({
                 orderId: "789",
+                status: EOrderStatus.NEW,
                 printerType: printerType,
                 printerAddress: printerAddress3,
                 customerPrinter: false,
