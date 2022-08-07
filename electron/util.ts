@@ -7,9 +7,7 @@ import {
     ERegisterPrinterType,
     IPrintReceiptOutput,
     IPrintSalesDataInput,
-    IPrintSalesDataInputDailySales,
-    IPrintSalesDataInputMostSoldCategories,
-    IPrintSalesDataInputMostSoldProducts,
+    EOrderStatus,
 } from "./model";
 import usbPrinter from "@thiagoelg/node-printer";
 import { format } from "date-fns";
@@ -446,6 +444,15 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
         printer.println(`Customer: ${order.customerInformation.firstName} (${order.customerInformation.phoneNumber})`);
     }
 
+    if (order.status === EOrderStatus.PARKED && order.notes) {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`Notes: ${order.notes}`);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
+
     printer.newLine();
     printer.bold(true);
     printer.setTextSize(1, 1);
@@ -565,7 +572,6 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
     printer.drawLine();
 
     if (order.notes) {
-        printer.bold(false);
         printer.println(`Notes: ${order.notes}`);
         printer.newLine();
     }
