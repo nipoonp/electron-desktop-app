@@ -277,7 +277,7 @@ export default () => {
     if (!restaurant) return <>No Restaurant</>;
     if (!register) return <>No Register</>;
 
-    const iFrameBaseUrl = "http://localhost:3000";
+    const iFrameBaseUrl = "https://restaurants.tabin.co.nz";
     const defaultPath = `${iFrameBaseUrl}/${restaurant.id}/orders`;
 
     const printSales = async (
