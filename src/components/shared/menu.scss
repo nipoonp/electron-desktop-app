@@ -1,0 +1,45 @@
+.menu {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: 48px;
+    z-index: 101;
+    background-color: #ffffff;
+}
+
+.menu-logo {
+    height: 80px;
+}
+
+.menu-tab-wrapper {
+    .menu-tab {
+        cursor: pointer;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        font-size: 18px;
+        font-weight: 500;
+
+        .menu-tab-icon {
+            font-size: 24px;
+        }
+
+        .menu-tab-text {
+            margin-left: 24px;
+        }
+    }
+
+    .menu-subTab {
+        cursor: pointer;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+
+        .menu-subTab-text {
+            margin-left: 48px;
+        }
+    }
+}
