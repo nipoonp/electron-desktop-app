@@ -1,10 +1,9 @@
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect, lazy, Suspense, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router";
 import { HashRouter } from "react-router-dom";
 import Modal from "react-modal";
 import { Logger } from "aws-amplify";
 import { createBrowserHistory } from "history";
-
 import { AlertProvider } from "../tabin/components/alert";
 import { ToastContainer } from "../tabin/components/toast";
 import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
@@ -13,8 +12,11 @@ import { useUser } from "../context/user-context";
 import { useRestaurant } from "../context/restaurant-context";
 import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { useRegister } from "../context/register-context";
+import { Menu } from "./shared/menu";
 
 import "react-toastify/dist/ReactToastify.min.css";
+import { ITab } from "../model/model";
+import { FiDollarSign, FiLock, FiMenu } from "react-icons/fi";
 
 const Login = lazy(() => import("./page/auth/login"));
 const Logout = lazy(() => import("./page/auth/logout"));
@@ -63,7 +65,66 @@ export const restaurantPath = "/restaurant";
 export const checkoutPath = "/checkout";
 export const unauthorizedPath = "/unauthorized";
 
+export const tabs: ITab[] = [
+    {
+        id: "saleMode",
+        name: "Sale Mode",
+        icon: <FiDollarSign height="20px" />,
+        route: beginOrderPath,
+        showOnMobile: true,
+    },
+    {
+        id: "dashboard",
+        name: "Dashboard",
+        icon: <FiMenu height="20px" />,
+        route: dashboardPath,
+        showOnMobile: true,
+    },
+    {
+        id: "admin",
+        name: "Admin",
+        icon: <FiLock height="20px" />,
+        showOnMobile: true,
+        subTabs: [
+            {
+                id: "configureEftposAndPrinters",
+                name: "Configure New Eftpos and Printers",
+                route: configureNewEftposPath,
+            },
+            {
+                id: "configureRestaurant",
+                name: "Configure Restaurant",
+                route: restaurantListPath,
+            },
+            {
+                id: "configureRegister",
+                name: "Configure Register",
+                route: registerListPath,
+            },
+            {
+                id: "logout",
+                name: "Log Out",
+                route: logoutPath,
+            },
+        ],
+    },
+];
+
 export default () => {
+    const { user } = useAuth();
+    const { register } = useRegister();
+
+    useEffect(() => {
+        const e = user ? user.attributes.email : "invalid email";
+        const r = register ? `${register.name} (${register.id})` : "invalid register";
+
+        ipcRenderer &&
+            ipcRenderer.send("SENTRY_CURRENT_USER", {
+                email: e,
+                register: r,
+            });
+    }, [user, register]);
+
     return (
         <>
             <AlertProvider>
@@ -80,10 +141,11 @@ export default () => {
 };
 
 const AppRoutes = () => {
-    const { user } = useAuth();
-    const { register } = useRegister();
     const navigate = useNavigate();
+
     let timerId: NodeJS.Timeout;
+
+    const [showMobileMenu, setShowMobileMenu] = useState(false);
 
     // This is for electron, as it doesn't start at '/' route for some reason.
     useEffect(() => {
@@ -91,20 +153,9 @@ const AppRoutes = () => {
     }, []);
 
     useEffect(() => {
-        const e = user ? user.attributes.email : "invalid email";
-        const r = register ? `${register.name} (${register.id})` : "invalid register";
-
-        ipcRenderer &&
-            ipcRenderer.send("SENTRY_CURRENT_USER", {
-                email: e,
-                register: r,
-            });
-    }, [user, register]);
-
-    useEffect(() => {
         document.body.onmousedown = () => {
             timerId = setTimeout(() => {
-                ipcRenderer && ipcRenderer.send("SHOW_CONTEXT_MENU");
+                setShowMobileMenu(true);
             }, 1000);
         };
 
@@ -112,53 +163,47 @@ const AppRoutes = () => {
             clearTimeout(timerId);
         };
 
-        ipcRenderer &&
-            ipcRenderer.on("CONTEXT_MENU_COMMAND", (e: any, command: any) => {
-                switch (command) {
-                    case "saleMode":
-                        navigate(beginOrderPath);
-                        break;
-                    case "dashboard":
-                        navigate(dashboardPath);
-                        break;
-                    case "configureEftposAndPrinters":
-                        navigate(configureNewEftposPath);
-                        break;
-                    case "configureRestaurant":
-                        navigate(restaurantListPath);
-                        break;
-                    case "configureRegister":
-                        navigate(registerListPath);
-                        break;
-                    case "logout":
-                        navigate(logoutPath);
-                        break;
-                    default:
-                        break;
-                }
-            });
+        document.body.ontouchstart = (e) => {
+            if (e.touches.length === 5) return;
+
+            timerId = setTimeout(() => {
+                setShowMobileMenu(true);
+            }, 1000);
+        };
+
+        document.body.ontouchend = (e) => {
+            clearTimeout(timerId);
+        };
     }, []);
 
+    const onClickMenuRoute = (route: string) => {
+        setShowMobileMenu(false);
+        navigate(route);
+    };
+
     return (
-        <Routes>
-            <Route path={loginPath} element={<Login />} />
-            <Route path={logoutPath} element={<Logout />} />
-            <Route path={restaurantListPath} element={<PrivateRoute element={<RestaurantList />} />} />
-            <Route path={registerListPath} element={<PrivateRoute element={<RegisterList />} />} />
-            <Route path={dashboardPath} element={<RestaurantRegisterPrivateRoute element={<Dashboard />} />} />
-            <Route path={configureNewEftposPath} element={<RestaurantRegisterPrivateRoute element={<ConfigureNewEftpos />} />} />
-            <Route path={beginOrderPath} element={<RestaurantRegisterPrivateRoute element={<BeginOrder />} />} />
-            <Route path={`${restaurantPath}/:restaurantId`} element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />}>
-                <Route path=":selectedCategoryId" element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />}>
-                    <Route path=":selectedProductId" element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />} />
+        <>
+            <Routes>
+                <Route path={loginPath} element={<Login />} />
+                <Route path={logoutPath} element={<Logout />} />
+                <Route path={restaurantListPath} element={<PrivateRoute element={<RestaurantList />} />} />
+                <Route path={registerListPath} element={<PrivateRoute element={<RegisterList />} />} />
+                <Route path={dashboardPath} element={<RestaurantRegisterPrivateRoute element={<Dashboard />} />} />
+                <Route path={configureNewEftposPath} element={<RestaurantRegisterPrivateRoute element={<ConfigureNewEftpos />} />} />
+                <Route path={beginOrderPath} element={<RestaurantRegisterPrivateRoute element={<BeginOrder />} />} />
+                <Route path={`${restaurantPath}/:restaurantId`} element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />}>
+                    <Route path=":selectedCategoryId" element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />}>
+                        <Route path=":selectedProductId" element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />} />
+                    </Route>
                 </Route>
-            </Route>
-            <Route path={orderTypePath} element={<RestaurantRegisterPrivateRoute element={<OrderType />} />} />
-            <Route path={tableNumberPath} element={<RestaurantRegisterPrivateRoute element={<TableNumber />} />} />
-            <Route path={checkoutPath} element={<RestaurantRegisterPrivateRoute element={<Checkout />} />} />
-            <Route path={unauthorizedPath} element={<Unauthorised />} />
-            <Route path="*" element={<NoMatch />} />
-        </Routes>
+                <Route path={orderTypePath} element={<RestaurantRegisterPrivateRoute element={<OrderType />} />} />
+                <Route path={tableNumberPath} element={<RestaurantRegisterPrivateRoute element={<TableNumber />} />} />
+                <Route path={checkoutPath} element={<RestaurantRegisterPrivateRoute element={<Checkout />} />} />
+                <Route path={unauthorizedPath} element={<Unauthorised />} />
+                <Route path="*" element={<NoMatch />} />
+            </Routes>
+            {showMobileMenu && <Menu tabs={tabs} onClickMenuRoute={onClickMenuRoute} />}
+        </>
     );
 };
 

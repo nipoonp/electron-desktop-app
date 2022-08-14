@@ -268,10 +268,7 @@ export default () => {
     useEffect(() => {
         window.addEventListener("message", onMessage, false);
 
-        return () => {
-            console.log("xxx...I AM HERE");
-            window.removeEventListener("message", onMessage, false);
-        };
+        return () => window.removeEventListener("message", onMessage, false);
     }, []);
 
     if (!restaurant) return <>No Restaurant</>;
