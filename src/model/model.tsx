@@ -6,6 +6,21 @@ import {
 } from "../graphql/customFragments";
 import { IGET_RESTAURANT_PROMOTION, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object, EOrderStatus } from "../graphql/customQueries";
 
+export interface ITab {
+    id: string;
+    name: string;
+    icon?: JSX.Element;
+    route?: string;
+    showOnMobile?: boolean;
+    subTabs?: ISubTab[];
+}
+
+export interface ISubTab {
+    id: string;
+    name: string;
+    route?: string;
+}
+
 export interface IPrintReceiptDataOutput {
     error: any;
     order: IOrderReceipt;
