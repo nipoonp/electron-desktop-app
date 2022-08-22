@@ -274,8 +274,13 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
                     const emptyPrintBuffer = `"func${funcCounter}":{"printBuffer":[]}`;
                     funcCounter++;
-                    const payload = `{"id":1,"functions":{${emptyClearBuffer},${setPaperWidth},${orderNumberString},${productString},${modifierGroupString},${emptyPrintBuffer}}}`;
 
+                    let payload = "";
+                    if (modifierGroupString) {
+                        payload = `{"id":1,"functions":{${emptyClearBuffer},${setPaperWidth},${orderNumberString},${productString},${modifierGroupString},${emptyPrintBuffer}}}`;
+                    } else {
+                        payload = `{"id":1,"functions":{${emptyClearBuffer},${setPaperWidth},${orderNumberString},${productString},${emptyPrintBuffer}}}`;
+                    }
                     await requestPrint(order.printerAddress, order.printerName, payload);
                 }
             }
