@@ -34,6 +34,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         type
         number
         table
+        buzzer
         registerId
         products {
             id
@@ -198,6 +199,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     type: EOrderType;
     number: string;
     table: string | null;
+    buzzer: string | null;
     registerId: string;
     products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[];
 }

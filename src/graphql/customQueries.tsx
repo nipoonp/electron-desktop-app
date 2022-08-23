@@ -58,6 +58,7 @@ export const GET_USER = gql`
                             active
                             name
                             enableTableFlags
+                            enableBuzzerNumbers
                             enablePayLater
                             enableUberEatsPayments
                             enableMenulogPayments
@@ -252,6 +253,7 @@ export const GET_RESTAURANT = gql`
                     active
                     name
                     enableTableFlags
+                    enableBuzzerNumbers
                     enablePayLater
                     enableUberEatsPayments
                     enableMenulogPayments
@@ -807,6 +809,7 @@ export interface IGET_RESTAURANT_REGISTER {
     active: boolean;
     name: string;
     enableTableFlags: boolean;
+    enableBuzzerNumbers: boolean;
     enablePayLater: boolean;
     enableUberEatsPayments: boolean;
     enableMenulogPayments: boolean;
