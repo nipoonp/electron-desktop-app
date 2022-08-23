@@ -35,7 +35,14 @@ export default () => {
         <>
             <PageWrapper>
                 <div className="buzzer-number">
-                    <div className="h2 mb-12">Enter your buzzer number (click next if you are unsure)</div>
+                    <div className="h2 mb-6">Enter your buzzer number (click next if you are unsure)</div>
+                    <div className="mb-6 buzzer-image-container">
+                        <img
+                            alt="Buzzer Image"
+                            className="buzzer-image"
+                            src="https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/buzzer-image.png"
+                        />
+                    </div>
                     <div className="mb-12" style={{ width: "300px" }}>
                         <div className="h3 mb-2">Buzzer Number</div>
                         <Input type="number" autoFocus={true} onChange={onChange} value={buzzer ?? ""} />
