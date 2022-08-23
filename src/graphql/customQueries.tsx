@@ -399,6 +399,7 @@ export const GET_RESTAURANT = gql`
                 items {
                     id
                     name
+                    description
                     image {
                         key
                         bucket
@@ -1011,6 +1012,7 @@ export enum EDiscountType {
 export interface IGET_RESTAURANT_CATEGORY {
     id: string;
     name: string;
+    description: string;
     displaySequence: number;
     image?: IS3Object;
     availablePlatforms: ERegisterType[];
