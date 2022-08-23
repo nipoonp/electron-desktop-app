@@ -529,6 +529,7 @@ export default () => {
                     return (
                         <>
                             <div className="product-category-name h1 mb-6">{c.name}</div>
+                            {c.description && <div className="product-category-description text-bold text-center mb-6 h3">{c.description}</div>}
                             {c.image && (
                                 <div className="product-category-image-wrapper mb-6">
                                     <CachedImage
