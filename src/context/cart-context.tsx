@@ -17,6 +17,7 @@ const initialParkedOrderId = null;
 const initialParkedOrderNumber = null;
 const initialOrderType = null;
 const initialTableNumber = null;
+const initialBuzzerNumber = null;
 const initialProducts = null;
 const initialNotes = "";
 const initialCartCategoryQuantitiesById = {};
@@ -42,7 +43,9 @@ type ContextProps = {
     orderType: EOrderType | null;
     setOrderType: (orderType: EOrderType) => void;
     tableNumber: string | null;
-    setTableNumber: (tableNumber: string) => void;
+    setTableNumber: (tableNumber: string | null) => void;
+    buzzerNumber: string | null;
+    setBuzzerNumber: (buzzerNumber: string | null) => void;
     products: ICartProduct[] | null;
     cartProductQuantitiesById: ICartItemQuantitiesById;
     cartModifierQuantitiesById: ICartItemQuantitiesById;
@@ -83,6 +86,8 @@ const CartContext = createContext<ContextProps>({
     setOrderType: () => {},
     tableNumber: initialTableNumber,
     setTableNumber: () => {},
+    buzzerNumber: initialBuzzerNumber,
+    setBuzzerNumber: () => {},
     products: initialProducts,
     cartProductQuantitiesById: {},
     cartModifierQuantitiesById: {},
@@ -119,6 +124,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [parkedOrderNumber, _setParkedOrderNumber] = useState<string | null>(initialParkedOrderNumber);
     const [orderType, _setOrderType] = useState<EOrderType | null>(initialOrderType);
     const [tableNumber, _setTableNumber] = useState<string | null>(initialTableNumber);
+    const [buzzerNumber, _setBuzzerNumber] = useState<string | null>(initialBuzzerNumber);
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
     const [notes, _setNotes] = useState<string>(initialNotes);
     const [total, _setTotal] = useState<number>(initialTotal);
@@ -436,8 +442,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setOrderType(orderType);
     };
 
-    const setTableNumber = (tableNumber: string) => {
+    const setTableNumber = (tableNumber: string | null) => {
         _setTableNumber(tableNumber);
+    };
+
+    const setBuzzerNumber = (buzzerNumber: string | null) => {
+        _setBuzzerNumber(buzzerNumber);
     };
 
     const setProducts = (products: ICartProduct[]) => {
@@ -539,6 +549,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setParkedOrderNumber(initialParkedOrderNumber);
         _setOrderType(initialOrderType);
         _setTableNumber(initialTableNumber);
+        _setBuzzerNumber(initialBuzzerNumber);
         _setProducts(initialProducts);
         _setNotes(initialNotes);
         _setCartCategoryQuantitiesById(initialCartCategoryQuantitiesById);
@@ -567,6 +578,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setOrderType: setOrderType,
                 tableNumber: tableNumber,
                 setTableNumber: setTableNumber,
+                buzzerNumber: buzzerNumber,
+                setBuzzerNumber: setBuzzerNumber,
                 products: products,
                 cartProductQuantitiesById: cartProductQuantitiesById,
                 cartModifierQuantitiesById: cartModifierQuantitiesById,

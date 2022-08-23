@@ -76,6 +76,7 @@ export interface IOrderReceipt {
     type: EOrderType;
     number: string;
     table: string | null;
+    buzzer: string | null;
     placedAt: string;
     orderScheduledAt: string | null;
 }
