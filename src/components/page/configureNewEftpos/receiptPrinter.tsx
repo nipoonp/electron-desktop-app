@@ -219,6 +219,7 @@ export const ReceiptPrinter = () => {
                 type: EOrderType.TAKEAWAY,
                 number: "Web",
                 table: "8",
+                buzzer: "10",
                 placedAt: new Date().toISOString(),
                 orderScheduledAt: new Date().toISOString(),
             });
@@ -250,6 +251,7 @@ export const ReceiptPrinter = () => {
                 type: EOrderType.TAKEAWAY,
                 number: "18",
                 table: "8",
+                buzzer: "10",
                 placedAt: new Date().toISOString(),
                 orderScheduledAt: new Date().toISOString(),
             });
@@ -281,6 +283,7 @@ export const ReceiptPrinter = () => {
                 type: EOrderType.TAKEAWAY,
                 number: "18",
                 table: "8",
+                buzzer: "10",
                 placedAt: new Date().toISOString(),
                 orderScheduledAt: null,
             });

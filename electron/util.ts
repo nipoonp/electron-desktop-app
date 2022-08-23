@@ -140,6 +140,11 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
     printer.newLine();
     printer.println(`${order.type} ${order.table ? `(Table: ${order.table})` : ""}`);
 
+    if (order.buzzer) {
+        printer.newLine();
+        printer.println(`Buzzer: ${order.buzzer}`);
+    }
+
     printer.newLine();
     printer.bold(true);
     printer.setTextSize(1, 1);
@@ -459,6 +464,15 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
     printer.println(`${order.type} ${order.table ? `(Table: ${order.table})` : ""}`);
     printer.setTextNormal();
     printer.bold(false);
+
+    if (order.buzzer) {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`Buzzer: ${order.buzzer}`);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
 
     printer.newLine();
     printer.bold(true);

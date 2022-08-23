@@ -6,7 +6,7 @@ import { convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
 import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, EPromotionType, ERegisterType } from "../../graphql/customQueries";
-import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath } from "../main";
+import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath, buzzerNumberPath } from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
 import {
@@ -45,6 +45,7 @@ import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
 import { OrderSummary } from "./checkout/orderSummary";
 import { PaymentModal } from "../modals/paymentModal";
 import { useAlert } from "../../tabin/components/alert";
+import { useParams } from "react-router-dom";
 
 import "./checkout.scss";
 import { format } from "date-fns";
@@ -55,6 +56,7 @@ const logger = new Logger("checkout");
 export const Checkout = () => {
     // context
     const navigate = useNavigate();
+    const { autoClickCompleteOrderOnLoad } = useParams();
     const { showAlert } = useAlert();
     const {
         parkedOrderId,
@@ -62,6 +64,7 @@ export const Checkout = () => {
         orderType,
         products,
         notes,
+        buzzerNumber,
         setNotes,
         tableNumber,
         clearCart,
@@ -136,6 +139,10 @@ export const Checkout = () => {
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
 
     useEffect(() => {
+        if (autoClickCompleteOrderOnLoad) onClickOrderButton();
+    }, []);
+
+    useEffect(() => {
         if (isShownUpSellCrossSellModal) return;
 
         setTimeout(() => {
@@ -197,6 +204,9 @@ export const Checkout = () => {
     // Callbacks
     const onUpdateTableNumber = () => {
         navigate(tableNumberPath);
+    };
+    const onUpdateBuzzerNumber = () => {
+        navigate(buzzerNumberPath);
     };
 
     const onUpdateOrderType = () => {
@@ -275,6 +285,10 @@ export const Checkout = () => {
     };
 
     const onClickOrderButton = async () => {
+        if (!autoClickCompleteOrderOnLoad && register && register.enableBuzzerNumbers && buzzerNumber == null) {
+            navigate(buzzerNumberPath);
+        }
+
         setShowPaymentModal(true);
 
         if (isPOS) {
@@ -371,6 +385,7 @@ export const Checkout = () => {
                             type: order.type,
                             number: order.number,
                             table: order.table,
+                            buzzer: order.buzzer,
                             placedAt: order.placedAt,
                             orderScheduledAt: order.orderScheduledAt,
                         });
@@ -440,6 +455,7 @@ export const Checkout = () => {
                 type: orderType ? orderType : register.availableOrderTypes[0],
                 number: orderNumber,
                 table: tableNumber,
+                buzzer: buzzerNumber,
                 notes: notes,
                 eftposReceipt: transactionEftposReceipts,
                 paymentAmounts: newPaymentAmounts,
@@ -478,6 +494,7 @@ export const Checkout = () => {
                     type: orderType,
                     number: orderNumber,
                     table: tableNumber,
+                    buzzer: buzzerNumber,
                     notes: notes,
                     eftposReceipt: transactionEftposReceipts,
                     payments: payments,
@@ -500,6 +517,10 @@ export const Checkout = () => {
         try {
             if (tableNumber == null || tableNumber == "") {
                 delete variables.table;
+            }
+
+            if (buzzerNumber == null || buzzerNumber == "") {
+                delete variables.buzzer;
             }
 
             if (notes == null || notes == "") {
@@ -1040,6 +1061,13 @@ export const Checkout = () => {
         </div>
     );
 
+    const restaurantBuzzerNumber = (
+        <div className="checkout-buzzer-number">
+            <div className="h3">Buzzer Number: {buzzerNumber}</div>
+            <Link onClick={onUpdateBuzzerNumber}>Change</Link>
+        </div>
+    );
+
     const orderSummary = (
         <OrderSummary
             products={products || []}
@@ -1064,6 +1092,7 @@ export const Checkout = () => {
             {register && register.availableOrderTypes.length > 1 && restaurantOrderType}
             {promotionInformation}
             {tableNumber && <div className="mb-4">{restaurantTableNumber}</div>}
+            {buzzerNumber && <div className="mb-4">{restaurantBuzzerNumber}</div>}
             <div className="separator-6"></div>
             {orderSummary}
             <div className="restaurant-notes-wrapper">{restaurantNotes}</div>

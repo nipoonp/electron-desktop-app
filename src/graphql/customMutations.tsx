@@ -48,6 +48,7 @@ export const CREATE_ORDER = gql`
         $type: OrderType!
         $number: String!
         $table: String
+        $buzzer: String
         $notes: String
         $eftposReceipt: String
         $payments: [OrderPaymentInput]
@@ -74,6 +75,7 @@ export const CREATE_ORDER = gql`
                 type: $type
                 number: $number
                 table: $table
+                buzzer: $buzzer
                 notes: $notes
                 eftposReceipt: $eftposReceipt
                 payments: $payments
@@ -108,6 +110,7 @@ export const UPDATE_ORDER = gql`
         $type: OrderType!
         $number: String!
         $table: String
+        $buzzer: String
         $notes: String
         $eftposReceipt: String
         $payments: [OrderPaymentInput]
@@ -135,6 +138,7 @@ export const UPDATE_ORDER = gql`
                 type: $type
                 number: $number
                 table: $table
+                buzzer: $buzzer
                 notes: $notes
                 eftposReceipt: $eftposReceipt
                 payments: $payments

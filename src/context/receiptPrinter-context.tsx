@@ -385,6 +385,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                         type: order.type,
                         number: order.number,
                         table: order.table,
+                        buzzer: order.buzzer,
                         placedAt: order.placedAt,
                         orderScheduledAt: order.orderScheduledAt,
                     });
