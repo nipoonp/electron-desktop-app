@@ -25,8 +25,17 @@ import "./dashboard.scss";
 
 export default () => {
     const { restaurant, menuCategories, menuProducts, menuModifierGroups, menuModifiers } = useRestaurant();
-    const { clearCart, setParkedOrderId, setParkedOrderNumber, setOrderType, setTableNumber, setNotes, setProducts, cartProductQuantitiesById } =
-        useCart();
+    const {
+        clearCart,
+        setParkedOrderId,
+        setParkedOrderNumber,
+        setOrderType,
+        setTableNumber,
+        setBuzzerNumber,
+        setNotes,
+        setProducts,
+        cartProductQuantitiesById,
+    } = useCart();
     const { register } = useRegister();
     const { printSalesData } = useReceiptPrinter();
     const { printReceipt } = useReceiptPrinter();
@@ -227,6 +236,7 @@ export default () => {
         setParkedOrderNumber(order.number);
         setOrderType(order.type);
         if (order.table) setTableNumber(order.table);
+        if (order.buzzer) setBuzzerNumber(order.buzzer);
         if (order.notes) setNotes(order.notes);
 
         const orderedProducts = getParkedOrderProducts(order.products, 0);
