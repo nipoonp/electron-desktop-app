@@ -287,6 +287,7 @@ export const Checkout = () => {
     const onClickOrderButton = async () => {
         if (!autoClickCompleteOrderOnLoad && register && register.enableBuzzerNumbers && buzzerNumber == null) {
             navigate(buzzerNumberPath);
+            return;
         }
 
         setShowPaymentModal(true);
