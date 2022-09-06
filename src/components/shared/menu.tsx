@@ -1,13 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { FiX } from "react-icons/fi";
 import { useRestaurant } from "../../context/restaurant-context";
 import { ISubTab, ITab } from "../../model/model";
 
 import "./menu.scss";
 
-export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) => void }) => {
+export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) => void; onHideMenu: () => void }) => {
     const { restaurant } = useRestaurant();
     const [selectedTabId, setSelectedTabId] = useState<string>("");
     const [subTabs, setSubTabs] = useState<ITab[] | null>(null);
+
+    useEffect(() => {
+        const ticker = setTimeout(() => {
+            props.onHideMenu();
+        }, 10 * 1000);
+
+        return () => clearTimeout(ticker);
+    }, []);
 
     if (!restaurant) return <></>;
 
@@ -31,7 +40,12 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
 
     return (
         <div className="menu">
-            <img className="menu-logo" alt="Tabin Logo" src={"https://tabin-public.s3-ap-southeast-2.amazonaws.com/logo/tabin-logo.png"} />
+            <div className="menu-header">
+                <img className="menu-logo" alt="Tabin Logo" src={"https://tabin-public.s3-ap-southeast-2.amazonaws.com/logo/tabin-logo.png"} />
+                <div>
+                    <FiX className="payment-modal-close-button" size={36} onClick={props.onHideMenu} />
+                </div>
+            </div>
             <div className="separator-2"></div>
             <div className="text-bold">{restaurant.name}</div>
             <div className="separator-2"></div>
