@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense, useState } from "react";
+import { useEffect, lazy, Suspense, useState, useRef } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router";
 import { HashRouter } from "react-router-dom";
 import Modal from "react-modal";
@@ -145,9 +145,10 @@ export default () => {
 const AppRoutes = () => {
     const navigate = useNavigate();
 
-    let timerId: NodeJS.Timeout;
+    const [showMenu, setShowMenu] = useState(false);
 
-    const [showMobileMenu, setShowMobileMenu] = useState(false);
+    let timerId: NodeJS.Timeout;
+    let numberOfTouches = 0;
 
     // This is for electron, as it doesn't start at '/' route for some reason.
     useEffect(() => {
@@ -157,7 +158,7 @@ const AppRoutes = () => {
     useEffect(() => {
         document.body.onmousedown = () => {
             timerId = setTimeout(() => {
-                setShowMobileMenu(true);
+                setShowMenu(true);
             }, 1000);
         };
 
@@ -165,22 +166,33 @@ const AppRoutes = () => {
             clearTimeout(timerId);
         };
 
-        document.body.ontouchstart = (e) => {
-            if (e.touches.length === 5) return;
+        document.body.onpointerdown = () => {
+            numberOfTouches++;
 
-            timerId = setTimeout(() => {
-                setShowMobileMenu(true);
-            }, 1000);
+            if (numberOfTouches >= 5) {
+                timerId = setTimeout(() => {
+                    if (numberOfTouches >= 5) {
+                        setShowMenu(true);
+                    }
+
+                    numberOfTouches = 0;
+                }, 1000);
+            }
         };
 
-        document.body.ontouchend = (e) => {
+        document.body.onpointerup = () => {
+            numberOfTouches = 0;
             clearTimeout(timerId);
         };
     }, []);
 
     const onClickMenuRoute = (route: string) => {
-        setShowMobileMenu(false);
+        setShowMenu(false);
         navigate(route);
+    };
+
+    const onHideMenu = () => {
+        setShowMenu(false);
     };
 
     return (
@@ -207,7 +219,7 @@ const AppRoutes = () => {
                 <Route path={unauthorizedPath} element={<Unauthorised />} />
                 <Route path="*" element={<NoMatch />} />
             </Routes>
-            {showMobileMenu && <Menu tabs={tabs} onClickMenuRoute={onClickMenuRoute} />}
+            {showMenu && <Menu tabs={tabs} onClickMenuRoute={onClickMenuRoute} onHideMenu={onHideMenu} />}
         </>
     );
 };
