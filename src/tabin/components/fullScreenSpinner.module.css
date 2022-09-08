@@ -6,7 +6,7 @@
     left: 0;
     bottom: 0;
     display: flex;
-    z-index: 103; /* above homeNav and modal  */
+    z-index: 104; /* above homeNav and modal and menu  */
 }
 
 .fullScreenSpinnerContainer {
