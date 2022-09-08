@@ -19,7 +19,7 @@ export const OrderSummary = (props: {
 }) => {
     const { products, onEditProduct, onRemoveProduct, onUpdateProductQuantity, onApplyProductDiscount } = props;
 
-    if (!products || products == []) return <h1>No items in cart!</h1>;
+    if (!products || products.length === 0) return <h1>No items in cart!</h1>;
 
     const orderItems = (
         <>
