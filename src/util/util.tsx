@@ -517,7 +517,7 @@ export const processPromotionDiscounts = (
 
     return {
         matchingProducts: matchingProducts,
-        discountedAmount: maxDiscountedAmount,
+        discountedAmount: Math.floor(maxDiscountedAmount), //Round to nearest number so we are not working with floats
     };
 };
 
