@@ -121,9 +121,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const { register, isPOS } = useRegister();
     const { restaurant } = useRestaurant();
 
-    const interval = 1 * 500; // 0.5 seconds
+    const interval = 1 * 1000; // 1 second
     const timeout = 3 * 60 * 1000; // 3 minutes
-    const noResponseTimeout = 10 * 1000; // 10 seconds
+    const noResponseTimeout = 20 * 1000; // 20 seconds
     const refetchFailedTransactionsTimeout = 10 * 60 * 1000; //10 minutes
 
     const lastMessageReceived = useRef<number>(initialLastMessageReceived);
