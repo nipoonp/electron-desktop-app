@@ -11,24 +11,26 @@ import "./buzzerNumber.scss";
 
 export default () => {
     const navigate = useNavigate();
-    const { buzzerNumber, setBuzzerNumber } = useCart();
-    const [buzzer, setBuzzer] = useState(buzzerNumber);
     const { restaurant } = useRestaurant();
+    const { buzzerNumber, setBuzzerNumber } = useCart();
+
+    const [buzzer, setBuzzer] = useState(buzzerNumber);
+    const [buzzerError, setBuzzerError] = useState(false);
 
     if (restaurant == null) throw "Restaurant is invalid!";
 
     const onNext = () => {
-        if (buzzerNumber) {
-            setBuzzerNumber(buzzer);
-            navigate(`${checkoutPath}`);
-        } else {
+        if (buzzer) {
             setBuzzerNumber(buzzer);
             navigate(`${checkoutPath}/true`);
+        } else {
+            setBuzzerError(true);
         }
     };
 
     const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setBuzzer(e.target.value);
+        setBuzzerError(false);
     };
 
     return (
@@ -45,7 +47,13 @@ export default () => {
                     </div>
                     <div className="mb-12" style={{ width: "300px" }}>
                         <div className="h3 mb-2">Buzzer Number</div>
-                        <Input type="number" autoFocus={true} onChange={onChange} value={buzzer ? buzzer.slice(0, 2) : ""} />
+                        <Input
+                            type="number"
+                            autoFocus={true}
+                            onChange={onChange}
+                            value={buzzer ? buzzer.slice(0, 2) : ""}
+                            error={buzzerError ? "Required" : ""}
+                        />
                     </div>
                     <Button onClick={onNext}>Next</Button>
                 </div>
