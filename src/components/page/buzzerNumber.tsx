@@ -22,7 +22,7 @@ export default () => {
     const onNext = () => {
         if (buzzer) {
             setBuzzerNumber(buzzer);
-            navigate(`${checkoutPath}`);
+            navigate(`${checkoutPath}/true`);
         } else {
             setBuzzerError(true);
         }
