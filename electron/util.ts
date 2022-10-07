@@ -512,10 +512,6 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
                     mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)}x ` : ""}${modifier.name}`;
                 }
 
-                if (modifier.price > 0 && changedQuantity > 0) {
-                    mStr += ` (+$${convertCentsToDollars(modifier.price)})`;
-                }
-
                 printer.println(mStr);
 
                 modifier.productModifiers &&
@@ -560,10 +556,6 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
                                         mStr = `${productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""}${
                                             productModifier_modifier.name
                                         }`;
-                                    }
-
-                                    if (productModifier_modifier.price > 0 && changedQuantity > 0) {
-                                        mStr += ` (+$${convertCentsToDollars(productModifier_modifier.price)})`;
                                     }
 
                                     printer.println(`     ${mStr}`);
