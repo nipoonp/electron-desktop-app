@@ -242,6 +242,10 @@ ipcMain.on("RESTART_ELECTRON_APP", (event: any) => {
     app.exit();
 });
 
+ipcMain.on("EXIT_ELECTRON_APP", (event: any) => {
+    app.exit();
+});
+
 // Webapp Receipt Printer Side
 ipcMain.handle("RECEIPT_PRINTER_DATA", async (event: any, order: IOrderReceipt): Promise<IPrintReceiptDataOutput> => {
     try {
