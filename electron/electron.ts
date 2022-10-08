@@ -1,6 +1,15 @@
 import { app, BrowserWindow, dialog, globalShortcut } from "electron";
 import { ipcMain, Menu } from "electron";
-import { encodeCommandBuffer, decodeCommandBuffer, printCustomerReceipt, printKitchenReceipt, printSalesDataReceipt, delay } from "./util";
+import {
+    encodeCommandBuffer,
+    decodeCommandBuffer,
+    printCustomerReceipt,
+    printKitchenReceipt,
+    printSalesDataReceipt,
+    delay,
+    printKitchenReceiptSmall,
+    printKitchenReceiptLarge,
+} from "./util";
 import { IOrderReceipt, IPrintReceiptDataOutput, IPrintReceiptOutput, IPrintSalesDataInput, IPrintSalesDataOutput } from "./model";
 import path from "path";
 import net from "net";
@@ -245,6 +254,18 @@ ipcMain.handle("RECEIPT_PRINTER_DATA", async (event: any, order: IOrderReceipt):
 
         if (order.kitchenPrinter) {
             const result: IPrintReceiptOutput = await printKitchenReceipt(order);
+
+            if (result.error) return { error: result.error, order: order };
+        }
+
+        if (order.kitchenPrinterSmall) {
+            const result: IPrintReceiptOutput = await printKitchenReceiptSmall(order);
+
+            if (result.error) return { error: result.error, order: order };
+        }
+
+        if (order.kitchenPrinterLarge) {
+            const result: IPrintReceiptOutput = await printKitchenReceiptLarge(order);
 
             if (result.error) return { error: result.error, order: order };
         }

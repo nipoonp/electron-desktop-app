@@ -197,6 +197,8 @@ export const ReceiptPrinter = () => {
                 printerAddress: printerAddress1,
                 customerPrinter: false,
                 kitchenPrinter: true,
+                kitchenPrinterSmall: false,
+                kitchenPrinterLarge: false,
                 hideModifierGroupsForCustomer: false,
                 eftposReceipt: "",
                 restaurant: {
@@ -233,6 +235,8 @@ export const ReceiptPrinter = () => {
                 printerAddress: printerAddress2,
                 customerPrinter: true,
                 kitchenPrinter: false,
+                kitchenPrinterSmall: false,
+                kitchenPrinterLarge: false,
                 hideModifierGroupsForCustomer: false,
                 eftposReceipt: "",
                 restaurant: {
@@ -265,6 +269,8 @@ export const ReceiptPrinter = () => {
                 printerAddress: printerAddress3,
                 customerPrinter: false,
                 kitchenPrinter: true,
+                kitchenPrinterSmall: false,
+                kitchenPrinterLarge: false,
                 hideModifierGroupsForCustomer: false,
                 eftposReceipt: "",
                 restaurant: {

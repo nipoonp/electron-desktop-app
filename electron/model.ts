@@ -54,6 +54,8 @@ export interface IOrderReceipt {
     printerAddress: string;
     customerPrinter: boolean | null;
     kitchenPrinter: boolean | null;
+    kitchenPrinterSmall: boolean | null;
+    kitchenPrinterLarge: boolean | null;
     hideModifierGroupsForCustomer: boolean | null;
     restaurant: {
         name: string;
