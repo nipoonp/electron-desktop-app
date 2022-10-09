@@ -9,37 +9,30 @@ export const Stepper = (props: IProps) => {
 
     // callbacks
     const onMinusClick = () => {
-        if (props.disabled) {
-            return;
-        }
+        if (props.disabled) return;
+        if (!props.allowNegative && props.count == 0) return;
+        if (props.min == props.count) return;
 
-        if (!props.allowNegative && props.count == 0) {
-            return;
-        }
+        let newCount = props.count - props.stepAmount;
 
-        if (props.min == props.count) {
-            return;
-        }
+        if (props.min && newCount < props.min) newCount = props.min;
 
-        const cnt = props.count - 1;
-        props.setCount && props.setCount(cnt);
-        props.onUpdate && props.onUpdate(cnt);
-        props.onDecrement && props.onDecrement(cnt);
+        props.setCount && props.setCount(newCount);
+        props.onUpdate && props.onUpdate(newCount);
+        props.onDecrement && props.onDecrement(newCount);
     };
 
     const onPlusClick = () => {
-        if (props.disabled) {
-            return;
-        }
+        if (props.disabled) return;
+        if (props.max == props.count) return;
 
-        if (props.max == props.count) {
-            return;
-        }
+        let newCount = props.count + props.stepAmount;
 
-        const cnt = props.count + 1;
-        props.setCount && props.setCount(cnt);
-        props.onUpdate && props.onUpdate(cnt);
-        props.onIncrement && props.onIncrement(cnt);
+        if (props.max && newCount > props.max) newCount = props.max;
+
+        props.setCount && props.setCount(newCount);
+        props.onUpdate && props.onUpdate(newCount);
+        props.onIncrement && props.onIncrement(newCount);
     };
 
     const minusButtonDisabled = props.count === props.min || props.disabled;
@@ -92,6 +85,7 @@ export interface IProps {
     children?: React.ReactNode;
     count: number;
     setCount?: (count: number) => void;
+    stepAmount: number;
     allowNegative?: boolean; // default false
     min?: number;
     max?: number;
@@ -103,3 +97,7 @@ export interface IProps {
     style?: React.CSSProperties;
     className?: string;
 }
+
+Stepper.defaultProps = {
+    stepAmount: 1,
+};

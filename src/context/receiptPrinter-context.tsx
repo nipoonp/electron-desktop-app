@@ -361,6 +361,8 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                         printerAddress: printer.address,
                         customerPrinter: printer.customerPrinter,
                         kitchenPrinter: printer.kitchenPrinter,
+                        kitchenPrinterSmall: printer.kitchenPrinterSmall,
+                        kitchenPrinterLarge: printer.kitchenPrinterLarge,
                         eftposReceipt: order.eftposReceipt || null,
                         hideModifierGroupsForCustomer: false,
                         restaurant: {

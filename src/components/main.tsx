@@ -148,6 +148,7 @@ const AppRoutes = () => {
     const [showMenu, setShowMenu] = useState(false);
 
     let timerId: NodeJS.Timeout;
+    let intervalId: NodeJS.Timer;
     let numberOfTouches = 0;
 
     // This is for electron, as it doesn't start at '/' route for some reason.
@@ -156,6 +157,10 @@ const AppRoutes = () => {
     }, []);
 
     useEffect(() => {
+        intervalId = setInterval(() => {
+            numberOfTouches = 0;
+        }, 5000);
+
         document.body.onmousedown = () => {
             timerId = setTimeout(() => {
                 setShowMenu(true);
@@ -183,6 +188,7 @@ const AppRoutes = () => {
         document.body.onpointerup = () => {
             numberOfTouches = 0;
             clearTimeout(timerId);
+            clearInterval(intervalId);
         };
     }, []);
 
