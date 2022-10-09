@@ -72,6 +72,8 @@ export default () => {
                     printerAddress: register.printers.items[0].address,
                     customerPrinter: register.printers.items[0].customerPrinter,
                     kitchenPrinter: register.printers.items[0].kitchenPrinter,
+                    kitchenPrinterSmall: register.printers.items[0].kitchenPrinterSmall,
+                    kitchenPrinterLarge: register.printers.items[0].kitchenPrinterLarge,
                     products: convertProductTypesForPrint(productsToPrint),
                 });
             } else {
@@ -319,6 +321,8 @@ export default () => {
                 printerAddress: register.printers.items[0].address,
                 customerPrinter: register.printers.items[0].customerPrinter,
                 kitchenPrinter: register.printers.items[0].kitchenPrinter,
+                kitchenPrinterSmall: register.printers.items[0].kitchenPrinterSmall,
+                kitchenPrinterLarge: register.printers.items[0].kitchenPrinterLarge,
                 products: convertProductTypesForPrint(productsToPrint),
             });
 

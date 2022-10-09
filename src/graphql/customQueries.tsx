@@ -88,6 +88,8 @@ export const GET_USER = gql`
                                     address
                                     customerPrinter
                                     kitchenPrinter
+                                    kitchenPrinterSmall
+                                    kitchenPrinterLarge
                                     printAllOrderReceipts
                                     printOnlineOrderReceipts
                                     ignoreCategories(limit: 500) {
@@ -133,6 +135,8 @@ export interface IGET_USER_REGISTER_PRINTER {
     address: string;
     customerPrinter: boolean;
     kitchenPrinter: boolean;
+    kitchenPrinterSmall: boolean;
+    kitchenPrinterLarge: boolean;
     ignoreCategories: {
         items: IGET_USER_REGISTER_PRINTER_IGNORE_CATEGORY[];
     };
@@ -283,6 +287,8 @@ export const GET_RESTAURANT = gql`
                             address
                             customerPrinter
                             kitchenPrinter
+                            kitchenPrinterSmall
+                            kitchenPrinterLarge
                             printAllOrderReceipts
                             printOnlineOrderReceipts
                             ignoreCategories(limit: 500) {
@@ -839,6 +845,8 @@ export interface IGET_RESTAURANT_REGISTER_PRINTER {
     address: string;
     customerPrinter: boolean;
     kitchenPrinter: boolean;
+    kitchenPrinterSmall: boolean;
+    kitchenPrinterLarge: boolean;
     printAllOrderReceipts: boolean;
     printOnlineOrderReceipts: boolean;
     ignoreCategories: {

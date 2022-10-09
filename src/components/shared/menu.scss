@@ -48,3 +48,21 @@
         }
     }
 }
+
+.menu-tab-exit {
+    color: transparent;
+    cursor: pointer;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+    font-weight: 500;
+
+    .menu-tab-icon-exit {
+        font-size: 24px;
+    }
+
+    .menu-tab-text-exit {
+        margin-left: 24px;
+    }
+}

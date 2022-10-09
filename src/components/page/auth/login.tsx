@@ -65,7 +65,7 @@ export default () => {
     }, []);
 
     const onChangeEmail = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setEmail(event.target.value);
+        setEmail(event.target.value.toLocaleLowerCase());
         setEmailError("");
         setServerError("");
     };
