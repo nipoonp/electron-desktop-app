@@ -3,51 +3,42 @@ import { MinusIcon } from "./icons/minusIcon";
 
 import "./stepper.scss";
 import { Input } from "./input";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export const StepperWithQuantityInput = (props: IProps) => {
-    const [value, setValue] = useState(props.count);
-
-    useEffect(() => {
-        setValue(props.count);
-    }, [props.count]);
+    const [value, setValue] = useState(props.count.toString());
 
     const iconHeight = String(props.size / 1.8) + "px";
     const borderHeight = String(props.size) + "px";
 
     // callbacks
     const onMinusClick = () => {
-        if (props.disabled) {
-            return;
-        }
+        if (props.disabled) return;
+        if (!props.allowNegative && props.count == 0) return;
+        if (props.min == props.count) return;
 
-        if (!props.allowNegative && props.count == 0) {
-            return;
-        }
+        let newCount = props.count - props.stepAmount;
 
-        if (props.min == props.count) {
-            return;
-        }
+        if (props.min && newCount < props.min) newCount = props.min;
 
-        const cnt = props.count - 1;
-        props.setCount && props.setCount(cnt);
-        props.onUpdate && props.onUpdate(cnt);
-        props.onDecrement && props.onDecrement(cnt);
+        props.setCount && props.setCount(newCount);
+        props.onUpdate && props.onUpdate(newCount);
+        props.onDecrement && props.onDecrement(newCount);
+        setValue(newCount.toString());
     };
 
     const onPlusClick = () => {
-        if (props.disabled) {
-            return;
-        }
+        if (props.disabled) return;
+        if (props.max == props.count) return;
 
-        if (props.max == props.count) {
-            return;
-        }
+        let newCount = props.count + props.stepAmount;
 
-        const cnt = props.count + 1;
-        props.setCount && props.setCount(cnt);
-        props.onUpdate && props.onUpdate(cnt);
-        props.onIncrement && props.onIncrement(cnt);
+        if (props.max && newCount > props.max) newCount = props.max;
+
+        props.setCount && props.setCount(newCount);
+        props.onUpdate && props.onUpdate(newCount);
+        props.onIncrement && props.onIncrement(newCount);
+        setValue(newCount.toString());
     };
 
     const minusButtonDisabled = props.count === props.min || props.disabled;
@@ -75,13 +66,32 @@ export const StepperWithQuantityInput = (props: IProps) => {
     );
 
     const onQuantityUpdateInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-        props.onUpdate && props.onUpdate(value);
+        let newCount = parseInt(e.target.value);
+
+        if (props.disabled) return;
+
+        if (isNaN(newCount)) {
+            newCount = props.min || 1;
+        } else {
+            if (!props.allowNegative && newCount < 0) return;
+            if (props.min && newCount < props.min) newCount = props.min;
+            if (props.max && newCount > props.max) newCount = props.max;
+        }
+
+        props.setCount && props.setCount(newCount);
+        props.onUpdate && props.onUpdate(newCount);
+
+        if (props.count < newCount) {
+            props.onIncrement && props.onIncrement(newCount);
+        } else if (props.count > newCount) {
+            props.onDecrement && props.onDecrement(newCount);
+        }
+
+        setValue(newCount.toString());
     };
 
     const onChangeValue = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newValue = parseInt(e.target.value);
-
-        setValue(newValue);
+        setValue(e.target.value);
     };
 
     return (
@@ -97,7 +107,14 @@ export const StepperWithQuantityInput = (props: IProps) => {
                         }}
                     >
                         {/* {props.count} */}
-                        <Input type="number" onBlur={onQuantityUpdateInput} value={value} onChange={onChangeValue} />
+                        <Input
+                            className="stepper-input"
+                            type="number"
+                            size="small"
+                            onBlur={onQuantityUpdateInput}
+                            value={value}
+                            onChange={onChangeValue}
+                        />
                     </div>
                     {plusButton}
                 </div>
@@ -111,6 +128,7 @@ export interface IProps {
     children?: React.ReactNode;
     count: number;
     setCount?: (count: number) => void;
+    stepAmount: number;
     allowNegative?: boolean; // default false
     min?: number;
     max?: number;
@@ -122,3 +140,7 @@ export interface IProps {
     style?: React.CSSProperties;
     className?: string;
 }
+
+StepperWithQuantityInput.defaultProps = {
+    stepAmount: 1,
+};
