@@ -368,6 +368,8 @@ export const Checkout = () => {
                             printerAddress: printer.address,
                             customerPrinter: printer.customerPrinter,
                             kitchenPrinter: printer.kitchenPrinter,
+                            kitchenPrinterSmall: printer.kitchenPrinterSmall,
+                            kitchenPrinterLarge: printer.kitchenPrinterLarge,
                             hideModifierGroupsForCustomer: false,
                             restaurant: {
                                 name: restaurant.name,

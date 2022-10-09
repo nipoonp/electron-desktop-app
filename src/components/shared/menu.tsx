@@ -1,9 +1,16 @@
 import { useEffect, useState } from "react";
-import { FiX } from "react-icons/fi";
+import { FiExternalLink, FiX } from "react-icons/fi";
 import { useRestaurant } from "../../context/restaurant-context";
 import { ISubTab, ITab } from "../../model/model";
 
 import "./menu.scss";
+
+let electron: any;
+let ipcRenderer: any;
+try {
+    electron = window.require("electron");
+    ipcRenderer = electron.ipcRenderer;
+} catch (e) {}
 
 export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) => void; onHideMenu: () => void }) => {
     const { restaurant } = useRestaurant();
@@ -38,6 +45,10 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
         }
     };
 
+    const selectTabExit = () => {
+        ipcRenderer && ipcRenderer.send("EXIT_ELECTRON_APP");
+    };
+
     return (
         <div className="menu">
             <div className="menu-header">
@@ -64,6 +75,12 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
                         ))}
                 </div>
             ))}
+            <div onClick={() => selectTabExit()} className="menu-tab-exit">
+                <div className="menu-tab-icon-exit">
+                    <FiExternalLink height="20px" />
+                </div>
+                <div className="menu-tab-text-exit">Exit</div>
+            </div>
         </div>
     );
 };
