@@ -107,14 +107,7 @@ export const StepperWithQuantityInput = (props: IProps) => {
                         }}
                     >
                         {/* {props.count} */}
-                        <Input
-                            className="stepper-input"
-                            type="number"
-                            size="small"
-                            onBlur={onQuantityUpdateInput}
-                            value={value}
-                            onChange={onChangeValue}
-                        />
+                        <Input className="stepper-input" type="number" onBlur={onQuantityUpdateInput} value={value} onChange={onChangeValue} />
                     </div>
                     {plusButton}
                 </div>
