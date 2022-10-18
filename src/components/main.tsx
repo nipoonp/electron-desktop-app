@@ -177,7 +177,7 @@ const AppRoutes = () => {
             if (numberOfTouches >= 5) {
                 timerId = setTimeout(() => {
                     if (numberOfTouches >= 5) {
-                        setShowMenu(true);
+                        // setShowMenu(true);
                     }
 
                     numberOfTouches = 0;
