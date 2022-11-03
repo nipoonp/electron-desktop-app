@@ -261,7 +261,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                             modifierGroup.modifiers.slice(1).forEach((modifier, index2) => {
                                 if (index2 !== 0) mgString += `, `;
 
-                                mgString += modifier.name;
+                                mgString += `${modifier.quantity > 1 ? modifier.quantity + "x " : ""}${modifier.name}`;
                             });
 
                             if (index !== 0) modifierGroupString += `,`;
