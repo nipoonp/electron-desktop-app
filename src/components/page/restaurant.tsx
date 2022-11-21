@@ -359,11 +359,8 @@ export default () => {
                         </div>
                     )}
 
-                    {product.displayPrice ? (
-                        <div className="display-price mt-4">{product.displayPrice}</div>
-                    ) : (
-                        <div className="price mt-4">${convertCentsToDollars(product.price)}</div>
-                    )}
+                    <div className={`display-price mt-4 ${product.displayPrice ? "" : "display-none"}`}>{product.displayPrice}</div>
+                    <div className={`price mt-4 ${product.displayPrice ? "display-none" : ""}`}>${convertCentsToDollars(product.price)}</div>
                 </div>
             </>
         );
@@ -431,7 +428,7 @@ export default () => {
                 freez={false}
             >
                 <div
-                    className="category background-grey"
+                    className="category search-product-button background-grey"
                     onClick={() => {
                         setShowSearchProductModal(true);
                     }}
