@@ -3,7 +3,6 @@ import { Navigate, Route, Routes, useNavigate } from "react-router";
 import { HashRouter } from "react-router-dom";
 import Modal from "react-modal";
 import { Logger } from "aws-amplify";
-import { createBrowserHistory } from "history";
 import { AlertProvider } from "../tabin/components/alert";
 import { ToastContainer } from "../tabin/components/toast";
 import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
@@ -42,7 +41,6 @@ try {
 
 // reset scroll position on change of route
 // https://stackoverflow.com/a/46868707/11460922
-export const navigate = createBrowserHistory();
 
 // history.listen((location, action) => {
 //     window.scrollTo(0, 0);
