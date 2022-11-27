@@ -610,7 +610,8 @@ const PreparationTime = () => {
         <>
             {!isPOS && restaurant && restaurant.preparationTimeInMinutes && (
                 <div className="preparation-time h2 mt-3 mb-6">
-                    Your order will be ready in {restaurant.preparationTimeInMinutes} {restaurant.preparationTimeInMinutes > 1 ? "minutes" : "minute"}
+                    Your order will be ready in approximately {restaurant.preparationTimeInMinutes}{" "}
+                    {restaurant.preparationTimeInMinutes > 1 ? "minutes" : "minute"}
                 </div>
             )}
         </>
