@@ -885,6 +885,30 @@ export const ModifierGroup = (props: {
     const { register } = useRegister();
     const { cartProductQuantitiesById, cartModifierQuantitiesById } = useCart();
 
+    const [subModifierGroups, setSubModifierGroups] = useState<string[]>([]);
+
+    const [selectedSubModifierGroup, setSelectedSubModifierGroup] = useState<string | null>();
+
+    useEffect(() => {
+        const newSubModifierGroups: string[] = [];
+
+        modifierGroup.modifiers &&
+            modifierGroup.modifiers.items.forEach((m) => {
+                m.modifier.subModifierGroups &&
+                    m.modifier.subModifierGroups.split(";").forEach((subModifierGroup) => {
+                        if (!newSubModifierGroups.includes(subModifierGroup)) newSubModifierGroups.push(subModifierGroup);
+                    });
+            });
+
+        setSubModifierGroups(newSubModifierGroups);
+
+        if (newSubModifierGroups.length > 0) {
+            setSelectedSubModifierGroup(newSubModifierGroups[0]);
+        } else {
+            setSelectedSubModifierGroup(null);
+        }
+    }, []);
+
     const modifierQuantity = (modifier: IGET_RESTAURANT_MODIFIER) => {
         let m = selectedModifiers.find((selectedModifier) => selectedModifier.id === modifier.id);
         return m ? m.quantity : 0;
@@ -953,54 +977,87 @@ export const ModifierGroup = (props: {
             : "Make between " + modifierGroup.choiceMin + " and " + modifierGroup.choiceMax + " selections";
     };
 
+    // console.log("xxx...subModifierGroups", subModifierGroups);
+
     return (
         <>
             <div className="h2 mb-2">{modifierGroup.name}</div>
             {error && <div className="text-error mb-2">{error}</div>}
             <div className="mb-2">({getSelectInstructions()})</div>
 
-            <div className="modifiers">
-                {modifierGroup.modifiers &&
-                    modifierGroup.modifiers.items.map((m) => {
-                        if (register && !m.modifier.availablePlatforms.includes(register.type)) return;
+            <div>
+                {subModifierGroups.length > 0 && (
+                    <div className="modifier-sub-modifier-group-wrapper mt-4 mb-4">
+                        {subModifierGroups.map((subModifierGroup) => (
+                            <div
+                                className={`modifier-sub-modifier-group h3 ${selectedSubModifierGroup === subModifierGroup ? "selected" : ""}`}
+                                onClick={() => setSelectedSubModifierGroup(subModifierGroup)}
+                            >
+                                {subModifierGroup}
+                            </div>
+                        ))}
+                        <div
+                            className={`modifier-sub-modifier-group background-grey h3 ${selectedSubModifierGroup === null ? "selected" : ""}`}
+                            onClick={() => setSelectedSubModifierGroup(null)}
+                        >
+                            All
+                        </div>
+                    </div>
+                )}
+                <div className="modifiers">
+                    {modifierGroup.modifiers &&
+                        modifierGroup.modifiers.items.map((m) => {
+                            if (register && !m.modifier.availablePlatforms.includes(register.type)) return;
+                            if (
+                                (selectedSubModifierGroup &&
+                                    m.modifier.subModifierGroups &&
+                                    !m.modifier.subModifierGroups.split(";").includes(selectedSubModifierGroup)) ||
+                                (selectedSubModifierGroup && selectedSubModifierGroup && !m.modifier.subModifierGroups)
+                            )
+                                return;
 
-                        const isValid = checkModifierIsValid(m.modifier);
-                        const selectedModifier = selectedModifiers.find((modifier) => modifier.id == m.modifier.id);
+                            const isValid = checkModifierIsValid(m.modifier);
+                            const selectedModifier = selectedModifiers.find((modifier) => modifier.id == m.modifier.id);
 
-                        return (
-                            <Modifier
-                                radio={modifierGroup.choiceMin !== 0 && modifierGroup.choiceMax === 1}
-                                modifier={m.modifier}
-                                selectedModifier={selectedModifier}
-                                currentSelectedProductModifier={currentSelectedProductModifier}
-                                choiceDuplicate={modifierGroup.choiceDuplicate}
-                                onEditSelectionsProductModifier={(
-                                    index: number,
-                                    selectedModifier: ICartModifier,
-                                    productModifier: IGET_RESTAURANT_PRODUCT
-                                ) => props.onEditSelectionsProductModifier(index, selectedModifier, productModifier)}
-                                onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                    onCheckingModifier(selectedModifier, m.preSelectedQuantity);
-                                }}
-                                onUnCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                    onUnCheckingModifier(selectedModifier, m.preSelectedQuantity);
-                                }}
-                                onChangeModifierQuantity={(selectedModifier: IGET_RESTAURANT_MODIFIER, isIncremented: boolean, quantity: number) => {
-                                    onChangeModifierQuantity(selectedModifier, m.preSelectedQuantity, isIncremented, quantity);
-                                }}
-                                onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                    onSelectRadioModifier(selectedModifier, m.preSelectedQuantity);
-                                }}
-                                modifierQuantity={modifierQuantity(m.modifier)}
-                                productQuantity={productQuantity}
-                                checked={checkModifierSelected(m.modifier)}
-                                maxReached={isMaxReached(modifierGroup.choiceMax, selectedModifiers)}
-                                modifiersSelectedCount={getModifiersSelectedCount(selectedModifiers)}
-                                isValid={isValid}
-                                disabled={disabled || !isValid || checkMaxReached(m.modifier)}
-                            />
-                        );
-                    })}
+                            return (
+                                <Modifier
+                                    radio={modifierGroup.choiceMin !== 0 && modifierGroup.choiceMax === 1}
+                                    modifier={m.modifier}
+                                    selectedModifier={selectedModifier}
+                                    currentSelectedProductModifier={currentSelectedProductModifier}
+                                    choiceDuplicate={modifierGroup.choiceDuplicate}
+                                    onEditSelectionsProductModifier={(
+                                        index: number,
+                                        selectedModifier: ICartModifier,
+                                        productModifier: IGET_RESTAURANT_PRODUCT
+                                    ) => props.onEditSelectionsProductModifier(index, selectedModifier, productModifier)}
+                                    onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
+                                        onCheckingModifier(selectedModifier, m.preSelectedQuantity);
+                                    }}
+                                    onUnCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
+                                        onUnCheckingModifier(selectedModifier, m.preSelectedQuantity);
+                                    }}
+                                    onChangeModifierQuantity={(
+                                        selectedModifier: IGET_RESTAURANT_MODIFIER,
+                                        isIncremented: boolean,
+                                        quantity: number
+                                    ) => {
+                                        onChangeModifierQuantity(selectedModifier, m.preSelectedQuantity, isIncremented, quantity);
+                                    }}
+                                    onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
+                                        onSelectRadioModifier(selectedModifier, m.preSelectedQuantity);
+                                    }}
+                                    modifierQuantity={modifierQuantity(m.modifier)}
+                                    productQuantity={productQuantity}
+                                    checked={checkModifierSelected(m.modifier)}
+                                    maxReached={isMaxReached(modifierGroup.choiceMax, selectedModifiers)}
+                                    modifiersSelectedCount={getModifiersSelectedCount(selectedModifiers)}
+                                    isValid={isValid}
+                                    disabled={disabled || !isValid || checkMaxReached(m.modifier)}
+                                />
+                            );
+                        })}
+                </div>
             </div>
         </>
     );

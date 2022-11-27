@@ -108,6 +108,7 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
 
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
+    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
     printer.alignCenter();
     printer.bold(true);
@@ -372,8 +373,6 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
 
     printer.partialCut();
 
-    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
-
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
             await printer.execute();
@@ -410,6 +409,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
 
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
+    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
     if (order.paid == false) {
         printer.alignCenter();
@@ -599,8 +599,6 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
     printer.partialCut();
-
-    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -638,6 +636,7 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
 
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
+    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
     if (order.paid == false) {
         printer.alignCenter();
@@ -826,8 +825,6 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
 
     printer.partialCut();
 
-    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
-
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
             await printer.execute();
@@ -864,6 +861,8 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
 
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
+
+    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
     if (order.paid == false) {
         printer.alignCenter();
@@ -1065,8 +1064,6 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
     printer.partialCut();
-
-    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {

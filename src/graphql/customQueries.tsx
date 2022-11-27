@@ -496,6 +496,7 @@ export const GET_RESTAURANT = gql`
                                         endTime
                                     }
                                 }
+                                subCategories
                                 categories {
                                     items {
                                         category {
@@ -574,6 +575,7 @@ export const GET_RESTAURANT = gql`
                                                         soldOut
                                                         soldOutDate
                                                         availablePlatforms
+                                                        subModifierGroups
                                                         productModifier {
                                                             id
                                                             name
@@ -1054,6 +1056,7 @@ export interface IGET_RESTAURANT_PRODUCT {
     image?: IS3Object;
     availablePlatforms: ERegisterType[];
     availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
+    subCategories?: string;
     categories: { items: IGET_RESTAURANT_CATEGORY_LINK[] };
     modifierGroups?: {
         items: IGET_RESTAURANT_MODIFIER_GROUP_LINK[];
@@ -1096,6 +1099,7 @@ export interface IGET_RESTAURANT_MODIFIER {
     soldOut?: boolean;
     soldOutDate?: string;
     availablePlatforms: ERegisterType[];
+    subModifierGroups: string;
     productModifier?: IGET_RESTAURANT_PRODUCT;
 }
 
@@ -1280,6 +1284,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                         endTime
                     }
                 }
+                subCategories
                 categories {
                     items {
                         category {
