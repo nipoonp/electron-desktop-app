@@ -41,6 +41,16 @@
             }
         }
 
+        .modifier-group-header-wrapper {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+
+            .modifier-group-header {
+                flex: 1;
+            }
+        }
+
         .modifiers {
             display: grid;
             grid-gap: 12px;

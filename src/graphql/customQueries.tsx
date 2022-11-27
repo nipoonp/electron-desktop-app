@@ -554,6 +554,7 @@ export const GET_RESTAURANT = gql`
                                             choiceMin
                                             choiceMax
                                             choiceDuplicate
+                                            collapsedByDefault
                                             availablePlatforms
                                             modifiers(limit: 50) {
                                                 items {
@@ -648,6 +649,7 @@ export const GET_RESTAURANT = gql`
                                                                         choiceMin
                                                                         choiceMax
                                                                         choiceDuplicate
+                                                                        collapsedByDefault
                                                                         availablePlatforms
                                                                         modifiers(limit: 50) {
                                                                             items {
@@ -1077,6 +1079,7 @@ export interface IGET_RESTAURANT_MODIFIER_GROUP {
     choiceMin: number;
     choiceMax: number;
     choiceDuplicate: number;
+    collapsedByDefault?: boolean | null;
     availablePlatforms: ERegisterType[];
     modifiers?: {
         items: IGET_RESTAURANT_MODIFIER_LINK[];
@@ -1344,6 +1347,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                             choiceMin
                             choiceMax
                             choiceDuplicate
+                            collapsedByDefault
                             availablePlatforms
                             modifiers(limit: 500) {
                                 items {
@@ -1436,6 +1440,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                         choiceMin
                                                         choiceMax
                                                         choiceDuplicate
+                                                        collapsedByDefault
                                                         availablePlatforms
                                                         modifiers(limit: 500) {
                                                             items {
