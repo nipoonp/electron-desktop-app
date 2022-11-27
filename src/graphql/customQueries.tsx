@@ -563,6 +563,7 @@ export const GET_RESTAURANT = gql`
                                                     modifier {
                                                         id
                                                         name
+                                                        description
                                                         price
                                                         image {
                                                             key
@@ -1092,6 +1093,7 @@ export interface IGET_RESTAURANT_MODIFIER_LINK {
 export interface IGET_RESTAURANT_MODIFIER {
     id: string;
     name: string;
+    description: string;
     price: number;
     image?: IS3Object;
     totalQuantitySold?: number;

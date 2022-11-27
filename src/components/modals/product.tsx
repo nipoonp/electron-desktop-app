@@ -1206,21 +1206,25 @@ const Modifier = (props: {
 
                 {isValid ? (
                     <div>
-                        {modifier.name}
-                        {modifier.price > 0
-                            ? ` (+$${convertCentsToDollars(modifier.price)})`
-                            : modifier.price < 0
-                            ? ` (-$${convertCentsToDollars(Math.abs(modifier.price))})`
-                            : ""}
-                        {modifierQuantityAvailable && modifierQuantityAvailable <= 5 ? (
-                            <span className="quantity-remaining ml-2">{getQuantityRemainingText(modifierQuantityAvailable)}</span>
-                        ) : (
-                            <></>
-                        )}
+                        <div>
+                            {modifier.name}
+                            {modifier.price > 0
+                                ? ` (+$${convertCentsToDollars(modifier.price)})`
+                                : modifier.price < 0
+                                ? ` (-$${convertCentsToDollars(Math.abs(modifier.price))})`
+                                : ""}
+                            {modifierQuantityAvailable && modifierQuantityAvailable <= 5 ? (
+                                <span className="quantity-remaining ml-2">{getQuantityRemainingText(modifierQuantityAvailable)}</span>
+                            ) : (
+                                <></>
+                            )}
+                        </div>
+                        <div className="description text-grey">{modifier.description}</div>
                     </div>
                 ) : (
                     <div>
                         {modifier.name} {modifier.price > 0 && `(+$${convertCentsToDollars(modifier.price)})`} (SOLD OUT)
+                        <div className="description text-grey">{modifier.description}</div>
                     </div>
                 )}
 
