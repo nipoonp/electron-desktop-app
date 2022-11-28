@@ -384,6 +384,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                         discount: order.promotionId && order.discount ? order.discount : null,
                         subTotal: order.subTotal,
                         paid: order.paid,
+                        displayPaymentRequiredMessage: !order.paid,
                         type: order.type,
                         number: order.number,
                         table: order.table,

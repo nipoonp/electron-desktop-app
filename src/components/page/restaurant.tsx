@@ -63,6 +63,9 @@ export default () => {
 
     const [searchProductSKUCode, setSearchProductSKUCode] = useState("");
     const [mostPopularProducts, setMostPopularProducts] = useState<IMostPopularProduct[]>([]);
+    const [subCategories, setSubCategories] = useState<string[]>([]);
+
+    const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>();
 
     const [isShakeAnimationActive, setIsShakeAnimationActive] = useState(false);
     const startShakeAfterSeconds = 30;
@@ -146,6 +149,26 @@ export default () => {
 
         setMostPopularProducts(newMostPopularProducts.slice(0, 20));
     }, [restaurant]);
+
+    const onProcessSubCategories = (category: IGET_RESTAURANT_CATEGORY) => {
+        const newSubCategories: string[] = [];
+
+        category.products &&
+            category.products.items.forEach((p) => {
+                p.product.subCategories &&
+                    p.product.subCategories.split(";").forEach((subCategory) => {
+                        if (!newSubCategories.includes(subCategory)) newSubCategories.push(subCategory);
+                    });
+            });
+
+        setSubCategories(newSubCategories);
+
+        if (newSubCategories.length > 0) {
+            setSelectedSubCategory(newSubCategories[0]);
+        } else {
+            setSelectedSubCategory(null);
+        }
+    };
 
     useEffect(() => {
         if (showProductModal) {
@@ -406,6 +429,7 @@ export default () => {
                         category={c}
                         onCategorySelected={(category: IGET_RESTAURANT_CATEGORY) => {
                             setSelectedCategory(category);
+                            onProcessSubCategories(category);
                         }}
                     />
                 );
@@ -507,7 +531,7 @@ export default () => {
         <div>
             {!selectedCategory && (
                 <>
-                    <div className="product-category-name h1 mb-6">Most Popular</div>
+                    <div className="product-category-name h1 text-center mb-6">Most Popular</div>
                     <div className="products">
                         {mostPopularProducts.map((mostPopularProduct) => productDisplay(mostPopularProduct.category, mostPopularProduct.product))}
                     </div>
@@ -525,8 +549,26 @@ export default () => {
 
                     return (
                         <>
-                            <div className="product-category-name h1 mb-6">{c.name}</div>
+                            <div className="product-category-name h1 text-center mb-6">{c.name}</div>
                             {c.description && <div className="product-category-description text-bold text-center mb-6 h3">{c.description}</div>}
+                            {subCategories.length > 0 && (
+                                <div className="product-sub-category-wrapper mb-6">
+                                    {subCategories.map((subCategory) => (
+                                        <div
+                                            className={`product-sub-category h3 ${selectedSubCategory === subCategory ? "selected" : ""}`}
+                                            onClick={() => setSelectedSubCategory(subCategory)}
+                                        >
+                                            {subCategory}
+                                        </div>
+                                    ))}
+                                    <div
+                                        className={`product-sub-category background-grey h3 ${selectedSubCategory === null ? "selected" : ""}`}
+                                        onClick={() => setSelectedSubCategory(null)}
+                                    >
+                                        All
+                                    </div>
+                                </div>
+                            )}
                             {c.image && (
                                 <div className="product-category-image-wrapper mb-6">
                                     <CachedImage
@@ -540,6 +582,13 @@ export default () => {
                                 {c.products &&
                                     c.products.items.map((p) => {
                                         if (!p.product.availablePlatforms.includes(register.type)) return;
+                                        if (
+                                            (selectedSubCategory &&
+                                                p.product.subCategories &&
+                                                !p.product.subCategories.split(";").includes(selectedSubCategory)) ||
+                                            (selectedSubCategory && selectedSubCategory && !p.product.subCategories)
+                                        )
+                                            return;
 
                                         return productDisplay(c, p.product);
                                     })}

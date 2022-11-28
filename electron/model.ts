@@ -75,6 +75,7 @@ export interface IOrderReceipt {
     discount: number | null;
     subTotal: number;
     paid: boolean;
+    displayPaymentRequiredMessage: boolean;
     type: EOrderType;
     number: string;
     table: string | null;

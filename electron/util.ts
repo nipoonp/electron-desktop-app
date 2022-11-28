@@ -108,6 +108,7 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
 
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
+    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
     printer.alignCenter();
     printer.bold(true);
@@ -152,7 +153,7 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
     printer.setTextNormal();
     printer.bold(false);
 
-    if (order.paid == false) {
+    if (order.displayPaymentRequiredMessage) {
         printer.newLine();
         printer.bold(true);
         printer.underlineThick(true);
@@ -363,7 +364,7 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
     printer.newLine();
     printer.alignCenter();
 
-    if (order.eftposReceipt) printer.println(order.eftposReceipt);
+    // if (order.eftposReceipt) printer.println(order.eftposReceipt);
 
     printer.newLine();
     printer.alignCenter();
@@ -371,8 +372,6 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
     printer.partialCut();
-
-    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -410,8 +409,9 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
 
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
+    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
-    if (order.paid == false) {
+    if (order.displayPaymentRequiredMessage) {
         printer.alignCenter();
         printer.setTextSize(1, 1);
         printer.invert(true);
@@ -599,8 +599,6 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
     printer.partialCut();
-
-    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -638,8 +636,9 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
 
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
+    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
-    if (order.paid == false) {
+    if (order.displayPaymentRequiredMessage) {
         printer.alignCenter();
         printer.setTextSize(1, 1);
         printer.invert(true);
@@ -825,8 +824,6 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
     printer.partialCut();
-
-    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -865,7 +862,9 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
 
-    if (order.paid == false) {
+    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
+
+    if (order.displayPaymentRequiredMessage) {
         printer.alignCenter();
         printer.setTextSize(1, 1);
         printer.invert(true);
@@ -1065,8 +1064,6 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
     printer.partialCut();
-
-    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
