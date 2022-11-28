@@ -9,6 +9,7 @@ import {
     CheckIfPromotionValidResponse,
     ICartPaymentAmounts,
     ICartPayment,
+    EPaymentMethod,
 } from "../model/model";
 import { getMatchingPromotionProducts, processPromotionDiscounts, checkIfPromotionValid } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
@@ -16,6 +17,7 @@ import { useRestaurant } from "./restaurant-context";
 const initialParkedOrderId = null;
 const initialParkedOrderNumber = null;
 const initialOrderType = null;
+const initialPaymentMethod = null;
 const initialTableNumber = null;
 const initialBuzzerNumber = null;
 const initialProducts = null;
@@ -42,6 +44,8 @@ type ContextProps = {
     setParkedOrderNumber: (parkedOrderNumber: string | null) => void;
     orderType: EOrderType | null;
     setOrderType: (orderType: EOrderType) => void;
+    paymentMethod: EPaymentMethod | null;
+    setPaymentMethod: (paymentMethod: EPaymentMethod | null) => void;
     tableNumber: string | null;
     setTableNumber: (tableNumber: string | null) => void;
     buzzerNumber: string | null;
@@ -84,6 +88,8 @@ const CartContext = createContext<ContextProps>({
     setParkedOrderNumber: () => {},
     orderType: initialOrderType,
     setOrderType: () => {},
+    paymentMethod: initialPaymentMethod,
+    setPaymentMethod: () => {},
     tableNumber: initialTableNumber,
     setTableNumber: () => {},
     buzzerNumber: initialBuzzerNumber,
@@ -123,6 +129,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [parkedOrderId, _setParkedOrderId] = useState<string | null>(initialParkedOrderId);
     const [parkedOrderNumber, _setParkedOrderNumber] = useState<string | null>(initialParkedOrderNumber);
     const [orderType, _setOrderType] = useState<EOrderType | null>(initialOrderType);
+    const [paymentMethod, _setPaymentMethod] = useState<EPaymentMethod | null>(initialPaymentMethod);
     const [tableNumber, _setTableNumber] = useState<string | null>(initialTableNumber);
     const [buzzerNumber, _setBuzzerNumber] = useState<string | null>(initialBuzzerNumber);
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
@@ -442,6 +449,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setOrderType(orderType);
     };
 
+    const setPaymentMethod = (paymentMethod: EPaymentMethod | null) => {
+        _setPaymentMethod(paymentMethod);
+    };
+
     const setTableNumber = (tableNumber: string | null) => {
         _setTableNumber(tableNumber);
     };
@@ -550,6 +561,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setOrderType(initialOrderType);
         _setTableNumber(initialTableNumber);
         _setBuzzerNumber(initialBuzzerNumber);
+        _setPaymentMethod(initialPaymentMethod);
         _setProducts(initialProducts);
         _setNotes(initialNotes);
         _setCartCategoryQuantitiesById(initialCartCategoryQuantitiesById);
@@ -576,6 +588,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setParkedOrderNumber: setParkedOrderNumber,
                 orderType: orderType,
                 setOrderType: setOrderType,
+                paymentMethod: paymentMethod,
+                setPaymentMethod: setPaymentMethod,
                 tableNumber: tableNumber,
                 setTableNumber: setTableNumber,
                 buzzerNumber: buzzerNumber,

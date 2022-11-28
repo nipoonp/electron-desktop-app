@@ -41,6 +41,7 @@ interface IPaymentModalProps {
 }
 
 export const PaymentModal = (props: IPaymentModalProps) => {
+    const { isPOS } = useRegister();
     const { paidSoFar, subTotal, paymentAmounts } = useCart();
     const {
         isOpen,
@@ -161,14 +162,25 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                 return <PaymentDelayed errorMessage={eftposTransactionOutcome.message} />;
             }
         } else if (paymentModalState == EPaymentModalState.CashResult) {
-            return (
-                <PaymentCashPayment
-                    cashTransactionChangeAmount={cashTransactionChangeAmount}
-                    paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
-                    paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
-                    onContinueToNextOrder={onContinueToNextOrder}
-                />
-            );
+            if (isPOS) {
+                return (
+                    <PaymentCashPaymentPOS
+                        cashTransactionChangeAmount={cashTransactionChangeAmount}
+                        paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
+                        paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                        onContinueToNextOrder={onContinueToNextOrder}
+                    />
+                );
+            } else {
+                return (
+                    <PaymentCashPayment
+                        cashTransactionChangeAmount={cashTransactionChangeAmount}
+                        paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
+                        paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                        onContinueToNextOrder={onContinueToNextOrder}
+                    />
+                );
+            }
         } else if (paymentModalState == EPaymentModalState.UberEatsResult) {
             return (
                 <PaymentUberEatsPayment
@@ -244,7 +256,7 @@ const PaymentAccepted = (props: {
     onContinueToNextPayment: () => void;
 }) => {
     const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder, onContinueToNextPayment } = props;
-    const { paidSoFar, subTotal, paymentAmounts } = useCart();
+    const { paidSoFar, subTotal } = useCart();
 
     const totalRemaining = subTotal - paidSoFar;
     const paymentComplete = paidSoFar >= subTotal;
@@ -349,6 +361,30 @@ const PaymentPark = (props: {
 };
 
 const PaymentCashPayment = (props: {
+    cashTransactionChangeAmount: number | null;
+    paymentOutcomeOrderNumber: string | null;
+    paymentOutcomeApprovedRedirectTimeLeft: number;
+    onContinueToNextOrder: () => void;
+}) => {
+    const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+
+    return (
+        <>
+            <div className="all-done h3 mb-4">All Done!</div>
+            <div className="h2 mb-6">Please pay cash at the counter.</div>
+            <div className="mb-1">Your order number is</div>
+            <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+            <PreparationTime />
+            <div className="separator-6 mb-6"></div>
+            <PaymentModalFooter
+                paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                onContinueToNextOrder={onContinueToNextOrder}
+            />
+        </>
+    );
+};
+
+const PaymentCashPaymentPOS = (props: {
     cashTransactionChangeAmount: number | null;
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
@@ -610,7 +646,8 @@ const PreparationTime = () => {
         <>
             {!isPOS && restaurant && restaurant.preparationTimeInMinutes && (
                 <div className="preparation-time h2 mt-3 mb-6">
-                    Your order will be ready in {restaurant.preparationTimeInMinutes} {restaurant.preparationTimeInMinutes > 1 ? "minutes" : "minute"}
+                    Your order will be ready in approximately {restaurant.preparationTimeInMinutes}{" "}
+                    {restaurant.preparationTimeInMinutes > 1 ? "minutes" : "minute"}
                 </div>
             )}
         </>

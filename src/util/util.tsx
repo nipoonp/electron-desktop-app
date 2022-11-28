@@ -32,25 +32,27 @@ export const convertCentsToDollarsReturnFloat = (price: number) => parseFloat((p
 
 export const getDollarString = (price: number) => `$${convertCentsToDollars(price)}`;
 
-export const getOrderNumber = (orderNumberSuffix: string) => {
+export const getOrderNumber = (orderNumberSuffix: string, orderNumberStart: number) => {
     let todayDate = format(new Date(), "dd/MM/yyyy");
 
     let orderNumberStored: string | null = localStorage.getItem("orderNumber");
     let orderNumberDateStored: string | null = localStorage.getItem("orderNumberDate");
 
-    let orderNumber;
+    let orderNumber: number;
 
     if (todayDate == orderNumberDateStored) {
-        orderNumber = String(Number(orderNumberStored) + 1);
+        orderNumber = Number(orderNumberStored) + 1;
 
-        localStorage.setItem("orderNumber", orderNumber);
+        localStorage.setItem("orderNumber", String(orderNumber));
     } else {
-        orderNumber = String(1);
-        localStorage.setItem("orderNumber", orderNumber);
+        orderNumber = 1;
+        localStorage.setItem("orderNumber", String(orderNumber));
         localStorage.setItem("orderNumberDate", todayDate);
     }
 
-    return orderNumber + (orderNumberSuffix || "");
+    const orderNumberWithStart = orderNumberStart + orderNumber;
+
+    return String(orderNumberWithStart) + (orderNumberSuffix || "");
 };
 
 export const filterPrintProducts = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[], printer: IGET_RESTAURANT_REGISTER_PRINTER) => {

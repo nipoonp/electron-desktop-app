@@ -28,6 +28,7 @@ const OrderType = lazy(() => import("./page/orderType"));
 const ConfigureNewEftpos = lazy(() => import("./page/configureNewEftpos"));
 const TableNumber = lazy(() => import("./page/tableNumber"));
 const BuzzerNumber = lazy(() => import("./page/buzzerNumber"));
+const PaymentMethod = lazy(() => import("./page/paymentMethod"));
 const Checkout = lazy(() => import("./page/checkout"));
 const NoMatch = lazy(() => import("./page/error/404"));
 const Unauthorised = lazy(() => import("./page/error/unauthorised"));
@@ -61,6 +62,7 @@ export const beginOrderPath = "/";
 export const orderTypePath = "/order_type";
 export const tableNumberPath = "/table_number";
 export const buzzerNumberPath = "/buzzer_number";
+export const paymentMethodPath = "/payment_method";
 export const restaurantPath = "/restaurant";
 export const checkoutPath = "/checkout";
 export const unauthorizedPath = "/unauthorized";
@@ -217,6 +219,7 @@ const AppRoutes = () => {
                 <Route path={orderTypePath} element={<RestaurantRegisterPrivateRoute element={<OrderType />} />} />
                 <Route path={tableNumberPath} element={<RestaurantRegisterPrivateRoute element={<TableNumber />} />} />
                 <Route path={buzzerNumberPath} element={<RestaurantRegisterPrivateRoute element={<BuzzerNumber />} />} />
+                <Route path={paymentMethodPath} element={<RestaurantRegisterPrivateRoute element={<PaymentMethod />} />} />
                 <Route path={checkoutPath} element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}>
                     <Route path=":autoClickCompleteOrderOnLoad" element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}></Route>
                 </Route>

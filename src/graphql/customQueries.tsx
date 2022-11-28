@@ -60,6 +60,8 @@ export const GET_USER = gql`
                             enableTableFlags
                             enableBuzzerNumbers
                             enablePayLater
+                            enableCashPayments
+                            enableEftposPayments
                             enableUberEatsPayments
                             enableMenulogPayments
                             availableOrderTypes
@@ -72,6 +74,7 @@ export const GET_USER = gql`
                             windcaveStationKey
                             skipEftposReceiptSignature
                             orderNumberSuffix
+                            orderNumberStart
                             defaultCategoryView
                             customStyleSheet {
                                 key
@@ -259,6 +262,8 @@ export const GET_RESTAURANT = gql`
                     enableTableFlags
                     enableBuzzerNumbers
                     enablePayLater
+                    enableCashPayments
+                    enableEftposPayments
                     enableUberEatsPayments
                     enableMenulogPayments
                     availableOrderTypes
@@ -271,6 +276,7 @@ export const GET_RESTAURANT = gql`
                     windcaveStationKey
                     skipEftposReceiptSignature
                     orderNumberSuffix
+                    orderNumberStart
                     defaultCategoryView
                     customStyleSheet {
                         key
@@ -496,6 +502,7 @@ export const GET_RESTAURANT = gql`
                                         endTime
                                     }
                                 }
+                                subCategories
                                 categories {
                                     items {
                                         category {
@@ -553,6 +560,7 @@ export const GET_RESTAURANT = gql`
                                             choiceMin
                                             choiceMax
                                             choiceDuplicate
+                                            collapsedByDefault
                                             availablePlatforms
                                             modifiers(limit: 50) {
                                                 items {
@@ -562,6 +570,7 @@ export const GET_RESTAURANT = gql`
                                                     modifier {
                                                         id
                                                         name
+                                                        description
                                                         price
                                                         image {
                                                             key
@@ -574,6 +583,7 @@ export const GET_RESTAURANT = gql`
                                                         soldOut
                                                         soldOutDate
                                                         availablePlatforms
+                                                        subModifierGroups
                                                         productModifier {
                                                             id
                                                             name
@@ -645,6 +655,7 @@ export const GET_RESTAURANT = gql`
                                                                         choiceMin
                                                                         choiceMax
                                                                         choiceDuplicate
+                                                                        collapsedByDefault
                                                                         availablePlatforms
                                                                         modifiers(limit: 50) {
                                                                             items {
@@ -818,6 +829,8 @@ export interface IGET_RESTAURANT_REGISTER {
     enableTableFlags: boolean;
     enableBuzzerNumbers: boolean;
     enablePayLater: boolean;
+    enableCashPayments: boolean;
+    enableEftposPayments: boolean;
     enableUberEatsPayments: boolean;
     enableMenulogPayments: boolean;
     availableOrderTypes: EOrderType[];
@@ -830,6 +843,7 @@ export interface IGET_RESTAURANT_REGISTER {
     windcaveStationKey: string;
     skipEftposReceiptSignature: boolean;
     orderNumberSuffix: string;
+    orderNumberStart: number;
     defaultCategoryView: string;
     customStyleSheet?: IS3Object;
     printers: {
@@ -1054,6 +1068,7 @@ export interface IGET_RESTAURANT_PRODUCT {
     image?: IS3Object;
     availablePlatforms: ERegisterType[];
     availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
+    subCategories?: string;
     categories: { items: IGET_RESTAURANT_CATEGORY_LINK[] };
     modifierGroups?: {
         items: IGET_RESTAURANT_MODIFIER_GROUP_LINK[];
@@ -1073,6 +1088,7 @@ export interface IGET_RESTAURANT_MODIFIER_GROUP {
     choiceMin: number;
     choiceMax: number;
     choiceDuplicate: number;
+    collapsedByDefault?: boolean | null;
     availablePlatforms: ERegisterType[];
     modifiers?: {
         items: IGET_RESTAURANT_MODIFIER_LINK[];
@@ -1089,6 +1105,7 @@ export interface IGET_RESTAURANT_MODIFIER_LINK {
 export interface IGET_RESTAURANT_MODIFIER {
     id: string;
     name: string;
+    description: string;
     price: number;
     image?: IS3Object;
     totalQuantitySold?: number;
@@ -1096,6 +1113,7 @@ export interface IGET_RESTAURANT_MODIFIER {
     soldOut?: boolean;
     soldOutDate?: string;
     availablePlatforms: ERegisterType[];
+    subModifierGroups: string;
     productModifier?: IGET_RESTAURANT_PRODUCT;
 }
 
@@ -1280,6 +1298,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                         endTime
                     }
                 }
+                subCategories
                 categories {
                     items {
                         category {
@@ -1337,6 +1356,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                             choiceMin
                             choiceMax
                             choiceDuplicate
+                            collapsedByDefault
                             availablePlatforms
                             modifiers(limit: 500) {
                                 items {
@@ -1429,6 +1449,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                         choiceMin
                                                         choiceMax
                                                         choiceDuplicate
+                                                        collapsedByDefault
                                                         availablePlatforms
                                                         modifiers(limit: 500) {
                                                             items {
