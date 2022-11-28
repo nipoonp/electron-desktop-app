@@ -18,6 +18,39 @@
             line-height: 1.5em;
         }
 
+        .modifier-sub-modifier-group-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+
+            .modifier-sub-modifier-group {
+                padding: 8px 24px;
+                border: 1px solid #e0e0e0;
+                border-radius: 30px;
+                cursor: pointer;
+
+                &.background-grey {
+                    background-color: #e0e0e0;
+                }
+
+                &.selected {
+                    background-color: var(--primary-color);
+                    color: var(--secondary-text-color);
+                    border: none;
+                }
+            }
+        }
+
+        .modifier-group-header-wrapper {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+
+            .modifier-group-header {
+                flex: 1;
+            }
+        }
+
         .modifiers {
             display: grid;
             grid-gap: 12px;
@@ -53,11 +86,16 @@
 
                 .modifier-item-wrapper {
                     width: 100%;
+                    cursor: pointer;
 
                     .modifier-item {
                         display: flex;
                         align-items: center;
                         font-size: 18px;
+
+                        .description {
+                            font-size: 16px;
+                        }
 
                         .image {
                             height: 120px;
@@ -68,7 +106,7 @@
                         .quantity-remaining {
                             padding: 5px 10px;
                             background-color: var(--primary-color);
-                            color: #ffffff;
+                            color: var(--secondary-text-color);
                             border-radius: 5px;
                             font-size: 12px;
                         }
@@ -108,7 +146,7 @@
         }
 
         .cancel-button {
-            background-color: #ffffff;
+            background-color: var(--background-color);
             color: #484848;
             border: 1px solid #e0e0e0;
             width: 350px;

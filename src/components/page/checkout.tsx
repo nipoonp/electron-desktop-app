@@ -6,7 +6,7 @@ import { convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
 import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, EPromotionType, ERegisterType } from "../../graphql/customQueries";
-import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath, buzzerNumberPath } from "../main";
+import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath, buzzerNumberPath, paymentMethodPath } from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
 import {
@@ -21,6 +21,7 @@ import {
     ICartPaymentAmounts,
     ICartPayment,
     EReceiptPrinterPrinterType,
+    EPaymentMethod,
 } from "../../model/model";
 import { useUser } from "../../context/user-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -65,6 +66,8 @@ export const Checkout = () => {
         products,
         notes,
         buzzerNumber,
+        paymentMethod,
+        setPaymentMethod,
         setNotes,
         tableNumber,
         clearCart,
@@ -205,6 +208,7 @@ export const Checkout = () => {
     const onUpdateTableNumber = () => {
         navigate(tableNumberPath);
     };
+
     const onUpdateBuzzerNumber = () => {
         navigate(buzzerNumberPath);
     };
@@ -285,8 +289,13 @@ export const Checkout = () => {
     };
 
     const onClickOrderButton = async () => {
-        if (!autoClickCompleteOrderOnLoad && register && register.enableBuzzerNumbers && buzzerNumber == null) {
+        if (!autoClickCompleteOrderOnLoad && register && register.enableBuzzerNumbers && buzzerNumber === null) {
             navigate(buzzerNumberPath);
+            return;
+        }
+
+        if (!isPOS && register.enableEftposPayments && register.enableCashPayments && paymentMethod === null) {
+            navigate(paymentMethodPath);
             return;
         }
 
@@ -295,7 +304,13 @@ export const Checkout = () => {
         if (isPOS) {
             setPaymentModalState(EPaymentModalState.POSScreen);
         } else {
-            await onConfirmTotalOrRetryEftposTransaction(subTotal);
+            if ((paymentMethod === null && register.enableEftposPayments) || paymentMethod === EPaymentMethod.EFTPOS) {
+                await onConfirmTotalOrRetryEftposTransaction(subTotal);
+            } else if ((paymentMethod === null && register.enableCashPayments) || paymentMethod === EPaymentMethod.CASH) {
+                await onConfirmCashTransaction(subTotal);
+            } else if ((paymentMethod === null && register.enablePayLater) || paymentMethod === EPaymentMethod.LATER) {
+                await onClickPayLater();
+            }
         }
     };
 
@@ -308,6 +323,7 @@ export const Checkout = () => {
             setPaymentModalState(EPaymentModalState.POSScreen);
         } else {
             onClosePaymentModal();
+            setPaymentMethod(null);
         }
     };
 
@@ -385,6 +401,11 @@ export const Checkout = () => {
                             discount: order.promotionId && order.discount ? order.discount : null,
                             subTotal: order.subTotal,
                             paid: order.paid,
+                            //display payment required message if kiosk and paid cash
+                            displayPaymentRequiredMessage:
+                                !order.paid || (!isPOS && order.paid && order.paymentAmounts && order.paymentAmounts.cash === order.subTotal)
+                                    ? true
+                                    : false,
                             type: order.type,
                             number: order.number,
                             table: order.table,
@@ -405,7 +426,8 @@ export const Checkout = () => {
         newPayments: ICartPayment[]
     ) => {
         //If parked order do not generate order number
-        let orderNumber = parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix);
+        let orderNumber =
+            parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
 
         setPaymentOutcomeOrderNumber(orderNumber);
 
@@ -1139,7 +1161,7 @@ export const Checkout = () => {
                 </div>
                 {payments.length === 0 && register.enablePayLater && (
                     <div className={`pay-later-link ${isPOS ? "mt-3" : "mt-4"}`}>
-                        <Link onClick={onClickPayLater}>Pay cash at counter...</Link>
+                        <Link onClick={onClickPayLater}>Pay later at counter...</Link>
                     </div>
                 )}
                 <div className={`apply-promo-code-link ${isPOS ? "mt-3" : "mt-4"}`}>

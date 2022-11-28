@@ -1,0 +1,19 @@
+.payment-method {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    margin-top: 128px;
+
+    .payment-method-payment-button-wrapper {
+        display: flex;
+        gap: 16px;
+
+        .payment-method-cash-button {
+            width: 300px;
+        }
+
+        .payment-method-eftpos-button {
+            width: 300px;
+        }
+    }
+}
