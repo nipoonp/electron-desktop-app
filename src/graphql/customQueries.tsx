@@ -60,6 +60,8 @@ export const GET_USER = gql`
                             enableTableFlags
                             enableBuzzerNumbers
                             enablePayLater
+                            enableCashPayments
+                            enableEftposPayments
                             enableUberEatsPayments
                             enableMenulogPayments
                             availableOrderTypes
@@ -72,6 +74,7 @@ export const GET_USER = gql`
                             windcaveStationKey
                             skipEftposReceiptSignature
                             orderNumberSuffix
+                            orderNumberStart
                             defaultCategoryView
                             customStyleSheet {
                                 key
@@ -259,6 +262,8 @@ export const GET_RESTAURANT = gql`
                     enableTableFlags
                     enableBuzzerNumbers
                     enablePayLater
+                    enableCashPayments
+                    enableEftposPayments
                     enableUberEatsPayments
                     enableMenulogPayments
                     availableOrderTypes
@@ -271,6 +276,7 @@ export const GET_RESTAURANT = gql`
                     windcaveStationKey
                     skipEftposReceiptSignature
                     orderNumberSuffix
+                    orderNumberStart
                     defaultCategoryView
                     customStyleSheet {
                         key
@@ -823,6 +829,8 @@ export interface IGET_RESTAURANT_REGISTER {
     enableTableFlags: boolean;
     enableBuzzerNumbers: boolean;
     enablePayLater: boolean;
+    enableCashPayments: boolean;
+    enableEftposPayments: boolean;
     enableUberEatsPayments: boolean;
     enableMenulogPayments: boolean;
     availableOrderTypes: EOrderType[];
@@ -835,6 +843,7 @@ export interface IGET_RESTAURANT_REGISTER {
     windcaveStationKey: string;
     skipEftposReceiptSignature: boolean;
     orderNumberSuffix: string;
+    orderNumberStart: number;
     defaultCategoryView: string;
     customStyleSheet?: IS3Object;
     printers: {

@@ -96,6 +96,12 @@ export enum EOrderType {
     DELIVERY = "DELIVERY",
 }
 
+export enum EPaymentMethod {
+    CASH = "CASH",
+    EFTPOS = "EFTPOS",
+    LATER = "LATER",
+}
+
 export enum EEftposProvider {
     SMARTPAY = "SMARTPAY",
     VERIFONE = "VERIFONE",
@@ -223,6 +229,7 @@ export interface IOrderReceipt {
     discount: number | null;
     subTotal: number;
     paid: boolean;
+    displayPaymentRequiredMessage: boolean;
     type: EOrderType;
     number: string;
     table: string | null;

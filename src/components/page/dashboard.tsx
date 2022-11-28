@@ -75,6 +75,7 @@ export default () => {
                     kitchenPrinterSmall: register.printers.items[0].kitchenPrinterSmall,
                     kitchenPrinterLarge: register.printers.items[0].kitchenPrinterLarge,
                     products: convertProductTypesForPrint(productsToPrint),
+                    displayPaymentRequiredMessage: !order.paid,
                 });
             } else {
                 toast.error("No receipt printers configured");
