@@ -89,6 +89,7 @@ export const GET_USER = gql`
                                     type
                                     printerType
                                     address
+                                    receiptFooterText
                                     customerPrinter
                                     kitchenPrinter
                                     kitchenPrinterSmall
@@ -136,6 +137,7 @@ export interface IGET_USER_REGISTER_PRINTER {
     type: ERegisterPrinterType;
     printerType: EReceiptPrinterPrinterType;
     address: string;
+    receiptFooterText: string | null;
     customerPrinter: boolean;
     kitchenPrinter: boolean;
     kitchenPrinterSmall: boolean;
@@ -232,6 +234,36 @@ export const GET_RESTAURANT = gql`
                         region
                         identityPoolId
                     }
+                    availability {
+                        monday {
+                            startTime
+                            endTime
+                        }
+                        tuesday {
+                            startTime
+                            endTime
+                        }
+                        wednesday {
+                            startTime
+                            endTime
+                        }
+                        thursday {
+                            startTime
+                            endTime
+                        }
+                        friday {
+                            startTime
+                            endTime
+                        }
+                        saturday {
+                            startTime
+                            endTime
+                        }
+                        sunday {
+                            startTime
+                            endTime
+                        }
+                    }
                 }
             }
             upSellCrossSell {
@@ -291,6 +323,7 @@ export const GET_RESTAURANT = gql`
                             type
                             printerType
                             address
+                            receiptFooterText
                             customerPrinter
                             kitchenPrinter
                             kitchenPrinterSmall
@@ -820,6 +853,23 @@ export interface IGET_RESTAURANT_ADVERTISEMENT {
     id: string;
     name: string;
     content: IS3Object;
+    availability: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_HOURS;
+}
+
+export interface IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_HOURS {
+    monday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES[];
+    tuesday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES[];
+    wednesday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES[];
+    thursday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES[];
+    friday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES[];
+    saturday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES[];
+    sunday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES[];
+    [key: string]: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES[]; //this is used to map over the operating hours object, https://www.logicbig.com/tutorials/misc/typescript/indexable-types.html
+}
+
+export interface IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES {
+    startTime: string;
+    endTime: string;
 }
 
 export interface IGET_RESTAURANT_REGISTER {
@@ -857,6 +907,7 @@ export interface IGET_RESTAURANT_REGISTER_PRINTER {
     type: ERegisterPrinterType;
     printerType: EReceiptPrinterPrinterType;
     address: string;
+    receiptFooterText: string | null;
     customerPrinter: boolean;
     kitchenPrinter: boolean;
     kitchenPrinterSmall: boolean;

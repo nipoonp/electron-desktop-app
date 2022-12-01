@@ -8,6 +8,7 @@ import { useRestaurant } from "../../context/restaurant-context";
 import { CachedImage } from "../../tabin/components/cachedImage";
 
 import "./beginOrder.scss";
+import { isItemAvailable } from "../../util/util";
 
 export default (props: {}) => {
     const { restaurant } = useRestaurant();
@@ -36,15 +37,27 @@ export default (props: {}) => {
 const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] }) => {
     const navigate = useNavigate();
 
-    const numberOfAds = props.ads.length;
+    const [availableAds, setAvailableAds] = useState<IGET_RESTAURANT_ADVERTISEMENT[]>([]);
     const [currentAd, setCurrentAd] = useState(0);
     const { restaurant } = useRestaurant();
 
     useEffect(() => {
-        if (numberOfAds <= 1) return;
+        const availableAds: IGET_RESTAURANT_ADVERTISEMENT[] = [];
+
+        props.ads.forEach((ad) => {
+            if (isItemAvailable(ad.availability)) {
+                availableAds.push(ad);
+            }
+        });
+
+        setAvailableAds(availableAds);
+    }, []);
+
+    useEffect(() => {
+        if (availableAds.length <= 1) return;
 
         const timerId = setInterval(() => {
-            setCurrentAd((prevCurrentAd) => (prevCurrentAd == numberOfAds - 1 ? 0 : prevCurrentAd + 1));
+            setCurrentAd((prevCurrentAd) => (prevCurrentAd == availableAds.length - 1 ? 0 : prevCurrentAd + 1));
         }, 6000);
 
         return () => {
@@ -73,21 +86,20 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
                     </div>
                 </div>
                 <div className="advertisements-wrapper">
-                    {restaurant &&
-                        restaurant.advertisements.items.map((advertisement, index) => (
-                            <div
-                                key={advertisement.id}
-                                className={`image-wrapper ${numberOfAds > 1 ? "slide-animation" : ""} ${currentAd == index ? "active" : "inactive"}`}
-                            >
-                                <CachedImage
-                                    className="image"
-                                    url={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${
-                                        advertisement.content.key
-                                    }`}
-                                    alt="advertisement-image"
-                                />
-                            </div>
-                        ))}
+                    {availableAds.map((advertisement, index) => (
+                        <div
+                            key={advertisement.id}
+                            className={`image-wrapper ${availableAds.length > 1 ? "slide-animation" : ""} ${
+                                currentAd == index ? "active" : "inactive"
+                            }`}
+                        >
+                            <CachedImage
+                                className="image"
+                                url={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${advertisement.content.key}`}
+                                alt="advertisement-image"
+                            />
+                        </div>
+                    ))}
                 </div>
             </div>
         </PageWrapper>
