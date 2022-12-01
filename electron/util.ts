@@ -368,8 +368,16 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
 
     printer.newLine();
     printer.alignCenter();
-    printer.setTypeFontB();
-    printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
+    if (order.receiptFooterText) {
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(order.receiptFooterText);
+        printer.setTextNormal();
+        printer.bold(false);
+    } else {
+        printer.setTypeFontB();
+        printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
+    }
 
     printer.partialCut();
 

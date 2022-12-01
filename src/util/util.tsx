@@ -12,6 +12,8 @@ import {
     IGET_RESTAURANT_PROMOTION_AVAILABILITY,
     IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES,
     IGET_RESTAURANT_REGISTER_PRINTER,
+    IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_HOURS,
+    IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES,
 } from "../graphql/customQueries";
 import {
     CheckIfPromotionValidResponse,
@@ -132,7 +134,7 @@ export const isPromotionAvailable = (availability?: IGET_RESTAURANT_PROMOTION_AV
     return isWithinTimeSlot;
 };
 
-export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS) => {
+export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS | IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_HOURS) => {
     if (!availability) return true;
 
     const dayTimes: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] = getDayData(availability);
@@ -277,7 +279,7 @@ const getPromotionDayData = (availability: IGET_RESTAURANT_PROMOTION_AVAILABILIT
     }
 };
 
-const getDayData = (availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS) => {
+const getDayData = (availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS | IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_HOURS) => {
     const day: number = getDay(new Date());
 
     switch (day) {
