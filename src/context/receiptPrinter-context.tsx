@@ -359,6 +359,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                         status: order.status,
                         printerType: printer.type,
                         printerAddress: printer.address,
+                        receiptFooterText: printer.receiptFooterText,
                         customerPrinter: printer.customerPrinter,
                         kitchenPrinter: printer.kitchenPrinter,
                         kitchenPrinterSmall: printer.kitchenPrinterSmall,

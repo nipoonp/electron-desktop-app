@@ -206,6 +206,7 @@ export interface IOrderReceipt {
     status: EOrderStatus;
     printerType: ERegisterPrinterType;
     printerAddress: string;
+    receiptFooterText: string | null;
     customerPrinter: boolean | null;
     kitchenPrinter: boolean | null;
     kitchenPrinterSmall: boolean | null;

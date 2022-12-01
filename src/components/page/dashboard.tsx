@@ -71,6 +71,7 @@ export default () => {
                     printerType: register.printers.items[0].type,
                     printerAddress: register.printers.items[0].address,
                     customerPrinter: register.printers.items[0].customerPrinter,
+                    receiptFooterText: register.printers.items[0].receiptFooterText,
                     kitchenPrinter: register.printers.items[0].kitchenPrinter,
                     kitchenPrinterSmall: register.printers.items[0].kitchenPrinterSmall,
                     kitchenPrinterLarge: register.printers.items[0].kitchenPrinterLarge,
