@@ -340,16 +340,16 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         for (var i = 0; i < register.printers.items.length; i++) {
             const printer = register.printers.items[i];
 
-            if (!printer.printOnlineOrderReceipts && !printer.printAllOrderReceipts) return;
+            if (!printer.printOnlineOrderReceipts && !printer.printAllOrderReceipts) continue;
 
             for (var j = 0; j < orders.length; j++) {
                 const order = orders[j];
 
                 //If new order placed is from the current register do not print
-                if (register.id === order.registerId) return;
+                if (register.id === order.registerId) continue;
 
                 //If print online orders is selected but current order is not online, return
-                if (printer.printOnlineOrderReceipts && !order.onlineOrder) return;
+                if (printer.printOnlineOrderReceipts && !order.onlineOrder) continue;
 
                 const productsToPrint = filterPrintProducts(order.products, printer);
 
