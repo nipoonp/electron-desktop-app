@@ -1299,6 +1299,23 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
     }
 `;
 
+export const GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
+    ${ORDER_FIELDS_FRAGMENT}
+    query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAt: String!) {
+        getOrdersByRestaurantByPlacedAt(
+            limit: 1000000
+            sortDirection: DESC
+            orderRestaurantId: $orderRestaurantId
+            placedAt: { beginsWith: $placedAt }
+            filter: { onlineOrder: { eq: true } }
+        ) {
+            items {
+                ...OrderFieldsFragment
+            }
+        }
+    }
+`;
+
 export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
     query GetProductsBySKUCodeByRestaurant($skuCode: String!, $productRestaurantId: ID!) {
         getProductsBySKUCodeByRestaurant(limit: 1, sortDirection: DESC, skuCode: $skuCode, productRestaurantId: { eq: $productRestaurantId }) {
