@@ -150,11 +150,19 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [availablePromotions, _setAvailablePromotions] = useState<IGET_RESTAURANT_PROMOTION[]>([]);
 
     useEffect(() => {
+        let newSubTotal = 0;
+
         if (promotion) {
-            _setSubTotal(total - promotion.discountedAmount);
+            newSubTotal = total - promotion.discountedAmount;
         } else {
-            _setSubTotal(total);
+            newSubTotal = total;
         }
+
+        if (restaurant && restaurant.surchargePercentage) {
+            newSubTotal = newSubTotal + (newSubTotal * restaurant.surchargePercentage) / 100;
+        }
+
+        _setSubTotal(newSubTotal);
     }, [total, promotion]);
 
     useEffect(() => {
