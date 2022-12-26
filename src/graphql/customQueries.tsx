@@ -223,6 +223,7 @@ export const GET_RESTAURANT = gql`
             }
             autoCompleteOrders
             preparationTimeInMinutes
+            surchargePercentage
             salesReportMailingList
             advertisements {
                 items {
@@ -833,6 +834,7 @@ export interface IGET_RESTAURANT {
     customStyleSheet?: IS3Object;
     autoCompleteOrders: boolean | null;
     preparationTimeInMinutes: number | null;
+    surchargePercentage: number | null;
     salesReportMailingList: string | null;
     advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
     upSellCrossSell?: IGET_RESTAURANT_UP_SELL_CROSS_SELL;
