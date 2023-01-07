@@ -7,10 +7,12 @@ import {
     IGET_RESTAURANT_MODIFIER,
     IGET_RESTAURANT_MODIFIER_GROUP,
     IGET_RESTAURANT_PRODUCT,
-    IGET_USER_RESTAURANT,
+    ILIST_RESTAURANTS,
 } from "../graphql/customQueries";
 import { useGetRestaurantQuery } from "../hooks/useGetRestaurantQuery";
 import { getCloudFrontDomainName } from "../private/aws-custom";
+import { useListRestaurantsQuery } from "../hooks/useListRestaurantsQuery";
+import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
 
 interface IMENU_CATEGORIES {
     [index: string]: IGET_RESTAURANT_CATEGORY;
@@ -30,7 +32,7 @@ interface IMENU_MODIFIERS {
 
 type ContextProps = {
     selectRestaurant: (id: string | null) => void;
-    userRestaurants: IGET_USER_RESTAURANT[] | null;
+    userRestaurants: ILIST_RESTAURANTS[] | null;
     restaurant: IGET_RESTAURANT | null;
     setRestaurant: (restaurant: IGET_RESTAURANT) => void;
     restaurantProductImages: any;
@@ -58,7 +60,7 @@ const RestaurantContext = createContext<ContextProps>({
 
 const C = (props: {
     restaurantId: string;
-    userRestaurants: IGET_USER_RESTAURANT[] | null;
+    userRestaurants: ILIST_RESTAURANTS[] | null;
     selectRestaurant: (id: string | null) => void;
     children: React.ReactNode;
 }) => {
@@ -157,18 +159,37 @@ const C = (props: {
 };
 
 const RestaurantProvider = (props: { children: React.ReactNode }) => {
-    const [userRestaurants, setUserRestaurants] = useState<IGET_USER_RESTAURANT[] | null>(null);
+    const [userRestaurants, setUserRestaurants] = useState<ILIST_RESTAURANTS[] | null>(null);
     const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(null);
 
     const { user } = useUser();
 
+    const { data: restaurants, error: restaurantError, loading: restaurantLoading } = useListRestaurantsQuery();
+
     useEffect(() => {
-        if (user) {
-            setUserRestaurants(user.restaurants.items);
-        } else {
+        if (!user) {
             setUserRestaurants(null);
+            return;
+        } else {
+            if (!restaurants) return;
+            if (!user) return;
+
+            const newOwnRestaurants: ILIST_RESTAURANTS[] = [];
+            const newManageRestaurants: ILIST_RESTAURANTS[] = [];
+
+            restaurants.map((restaurant) => {
+                if (restaurant.restaurantManagerId === user.id) newOwnRestaurants.push(restaurant);
+
+                restaurant.users.items.forEach((u) => {
+                    if (u.user.id === user.id) {
+                        newManageRestaurants.push(restaurant);
+                    }
+                });
+            });
+
+            setUserRestaurants([...newOwnRestaurants, ...newManageRestaurants]);
         }
-    }, [user]);
+    }, [user, restaurants]);
 
     useEffect(() => {
         const storedSelectedRestaurantId = localStorage.getItem("selectedRestaurantId");
@@ -189,6 +210,9 @@ const RestaurantProvider = (props: { children: React.ReactNode }) => {
                 }
             });
     };
+
+    if (restaurantLoading) return <FullScreenSpinner show={true} text="Loading restaurants..." />;
+    if (restaurantError) return <div>Error! {restaurantError.message}</div>;
 
     if (selectedRestaurantId) {
         return <C restaurantId={selectedRestaurantId} userRestaurants={userRestaurants} selectRestaurant={selectRestaurant} {...props} />;

@@ -159,7 +159,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         }
 
         if (restaurant && restaurant.surchargePercentage) {
-            newSubTotal = newSubTotal + (newSubTotal * restaurant.surchargePercentage) / 100;
+            newSubTotal = newSubTotal + Math.round((newSubTotal * restaurant.surchargePercentage) / 100);
         }
 
         _setSubTotal(newSubTotal);
