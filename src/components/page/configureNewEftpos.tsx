@@ -6,6 +6,7 @@ import { Radio } from "../../tabin/components/radio";
 
 import "./configureNewEftpos.scss";
 import { Windcave } from "./configureNewEftpos/windcave";
+import { PageWrapper } from "../../tabin/components/pageWrapper";
 
 enum EftposProvider {
     VERIFONE,
@@ -17,45 +18,47 @@ export default () => {
 
     return (
         <>
-            <div className="configure-new-eftpos">
-                <ReceiptPrinter />
+            <PageWrapper>
+                <div className="configure-new-eftpos">
+                    <ReceiptPrinter />
 
-                <div className="h2 mb-4 mt-4">Select your Eftpos provider</div>
+                    <div className="h2 mb-4 mt-4">Select your Eftpos provider</div>
 
-                <Radio
-                    className="mb-2"
-                    selected={eftposProvider == EftposProvider.VERIFONE}
-                    onSelect={() => setEftposProvider(EftposProvider.VERIFONE)}
-                >
-                    Verifone
-                </Radio>
+                    <Radio
+                        className="mb-2"
+                        selected={eftposProvider == EftposProvider.VERIFONE}
+                        onSelect={() => setEftposProvider(EftposProvider.VERIFONE)}
+                    >
+                        Verifone
+                    </Radio>
 
-                <Radio
-                    className="mb-2"
-                    selected={eftposProvider == EftposProvider.SMARTPAY}
-                    onSelect={() => setEftposProvider(EftposProvider.SMARTPAY)}
-                >
-                    Smart Pay
-                </Radio>
+                    <Radio
+                        className="mb-2"
+                        selected={eftposProvider == EftposProvider.SMARTPAY}
+                        onSelect={() => setEftposProvider(EftposProvider.SMARTPAY)}
+                    >
+                        Smart Pay
+                    </Radio>
 
-                <Radio
-                    className="mb-6"
-                    selected={eftposProvider == EftposProvider.WINDCAVE}
-                    onSelect={() => setEftposProvider(EftposProvider.WINDCAVE)}
-                >
-                    Windcave
-                </Radio>
+                    <Radio
+                        className="mb-6"
+                        selected={eftposProvider == EftposProvider.WINDCAVE}
+                        onSelect={() => setEftposProvider(EftposProvider.WINDCAVE)}
+                    >
+                        Windcave
+                    </Radio>
 
-                {eftposProvider == EftposProvider.VERIFONE ? (
-                    <Verifone />
-                ) : eftposProvider == EftposProvider.SMARTPAY ? (
-                    <SmartPay />
-                ) : eftposProvider == EftposProvider.WINDCAVE ? (
-                    <Windcave />
-                ) : (
-                    <></>
-                )}
-            </div>
+                    {eftposProvider == EftposProvider.VERIFONE ? (
+                        <Verifone />
+                    ) : eftposProvider == EftposProvider.SMARTPAY ? (
+                        <SmartPay />
+                    ) : eftposProvider == EftposProvider.WINDCAVE ? (
+                        <Windcave />
+                    ) : (
+                        <></>
+                    )}
+                </div>
+            </PageWrapper>
         </>
     );
 };

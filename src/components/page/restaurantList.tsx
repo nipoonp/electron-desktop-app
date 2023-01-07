@@ -6,6 +6,7 @@ import { beginOrderPath } from "../main";
 import { useRegister } from "../../context/register-context";
 import { toast } from "../../tabin/components/toast";
 import { Button } from "../../tabin/components/button";
+import { PageWrapper } from "../../tabin/components/pageWrapper";
 
 import "./restaurantList.scss";
 
@@ -45,42 +46,44 @@ export default () => {
 
     return (
         <>
-            {!userRestaurants && <FullScreenSpinner show={true} text={"Loading user"} />}
-            {showFullScreenSpinner && <FullScreenSpinner show={true} />}
-            <div className="restaurant-list">
-                <div className="h2 mb-6">Select a restaurant to access</div>
-                {userRestaurants &&
-                    userRestaurants.map((userRestaurant, index) => (
-                        <div key={userRestaurant.id}>
-                            {index != 0 && <div className="separator-4"></div>}
-                            <div className="restaurant-list-item">
-                                <div>{userRestaurant.name}</div>
-                                {storedSelectedRestaurantId == userRestaurant.id ? (
-                                    <>
-                                        <Button
-                                            onClick={() => {
-                                                onDisconnect();
-                                            }}
-                                        >
-                                            Disconnect
-                                        </Button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Button
-                                            onClick={() => {
-                                                onConnect(userRestaurant.id);
-                                            }}
-                                            disabled={restaurant ? true : false}
-                                        >
-                                            Use
-                                        </Button>
-                                    </>
-                                )}
+            <PageWrapper>
+                {!userRestaurants && <FullScreenSpinner show={true} text={"Loading user"} />}
+                {showFullScreenSpinner && <FullScreenSpinner show={true} />}
+                <div className="restaurant-list">
+                    <div className="h2 mb-6">Select a restaurant to access</div>
+                    {userRestaurants &&
+                        userRestaurants.map((userRestaurant, index) => (
+                            <div key={userRestaurant.id}>
+                                {index != 0 && <div className="separator-4"></div>}
+                                <div className="restaurant-list-item">
+                                    <div>{userRestaurant.name}</div>
+                                    {storedSelectedRestaurantId == userRestaurant.id ? (
+                                        <>
+                                            <Button
+                                                onClick={() => {
+                                                    onDisconnect();
+                                                }}
+                                            >
+                                                Disconnect
+                                            </Button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Button
+                                                onClick={() => {
+                                                    onConnect(userRestaurant.id);
+                                                }}
+                                                disabled={restaurant ? true : false}
+                                            >
+                                                Use
+                                            </Button>
+                                        </>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    ))}
-            </div>
+                        ))}
+                </div>
+            </PageWrapper>
         </>
     );
 };

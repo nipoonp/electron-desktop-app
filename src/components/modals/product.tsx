@@ -1303,6 +1303,8 @@ const Modifier = (props: {
                 style={{
                     height: String(stepperHeight) + "px",
                     width: String(stepperHeight) + "px",
+                    minHeight: String(stepperHeight) + "px",
+                    minWidth: String(stepperHeight) + "px",
                 }}
             >
                 <PlusIcon height={String(stepperHeight / 1.8) + "px"} />
