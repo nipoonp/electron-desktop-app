@@ -94,13 +94,13 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
     if (order.printerType == ERegisterPrinterType.WIFI) {
         //@ts-ignore
         printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            type: PrinterTypes.STAR, // 'star' or 'epson'
             interface: `tcp://${order.printerAddress}`,
         });
     } else if (order.printerType == ERegisterPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            type: PrinterTypes.STAR, // 'star' or 'epson'
         });
     } else {
         //Bluetooth
@@ -403,13 +403,13 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
     if (order.printerType == ERegisterPrinterType.WIFI) {
         //@ts-ignore
         printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            type: PrinterTypes.STAR, // 'star' or 'epson'
             interface: `tcp://${order.printerAddress}`,
         });
     } else if (order.printerType == ERegisterPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            type: PrinterTypes.STAR, // 'star' or 'epson'
         });
     } else {
         //Bluetooth
@@ -630,13 +630,13 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
     if (order.printerType == ERegisterPrinterType.WIFI) {
         //@ts-ignore
         printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            type: PrinterTypes.STAR, // 'star' or 'epson'
             interface: `tcp://${order.printerAddress}`,
         });
     } else if (order.printerType == ERegisterPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            type: PrinterTypes.STAR, // 'star' or 'epson'
         });
     } else {
         //Bluetooth
@@ -855,13 +855,13 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
     if (order.printerType == ERegisterPrinterType.WIFI) {
         //@ts-ignore
         printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            type: PrinterTypes.STAR, // 'star' or 'epson'
             interface: `tcp://${order.printerAddress}`,
         });
     } else if (order.printerType == ERegisterPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            type: PrinterTypes.STAR, // 'star' or 'epson'
         });
     } else {
         //Bluetooth
@@ -1215,13 +1215,13 @@ export const printSalesDataReceipt = async (printSalesDataInput: IPrintSalesData
     if (printSalesDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
         //@ts-ignore
         printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            type: PrinterTypes.STAR, // 'star' or 'epson'
             interface: `tcp://${printSalesDataInput.printer.printerAddress}`,
         });
     } else if (printSalesDataInput.printer.printerType == ERegisterPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            type: PrinterTypes.STAR, // 'star' or 'epson'
         });
     } else {
         //Bluetooth
