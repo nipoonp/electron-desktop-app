@@ -28,6 +28,42 @@ export enum ERegisterPrinterType {
     USB = "USB",
 }
 
+export const LIST_RESTAURANTS = gql`
+    query ListRestaurants {
+        listRestaurants {
+            items {
+                id
+                name
+                description
+                verified
+                restaurantManagerId
+                users {
+                    items {
+                        user {
+                            id
+                        }
+                    }
+                }
+            }
+        }
+    }
+`;
+
+export interface ILIST_RESTAURANTS {
+    id: string;
+    name: string;
+    description: string;
+    verified: boolean;
+    restaurantManagerId: string;
+    users: {
+        items: {
+            user: {
+                id: string;
+            };
+        }[];
+    };
+}
+
 export const GET_USER = gql`
     query GetUser($userId: ID!) {
         getUser(id: $userId) {
@@ -121,14 +157,6 @@ export interface IGET_USER {
     firstName: string;
     lastName: string;
     email: string;
-    restaurants: {
-        items: IGET_USER_RESTAURANT[];
-    };
-}
-
-export interface IGET_USER_RESTAURANT {
-    id: string;
-    name: string;
 }
 
 export interface IGET_USER_REGISTER_PRINTER {
