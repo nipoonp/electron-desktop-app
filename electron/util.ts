@@ -112,7 +112,7 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
 
     printer.alignCenter();
     printer.bold(true);
-    printer.setTextSize(1, 1);
+    //printer.setTextSize(1, 1);
     printer.underlineThick(true);
     printer.println(order.restaurant.name);
     printer.underlineThick(false);
@@ -148,7 +148,7 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
 
     printer.newLine();
     printer.bold(true);
-    printer.setTextSize(1, 1);
+    //printer.setTextSize(1, 1);
     printer.println(`Order: ${order.number}`);
     printer.setTextNormal();
     printer.bold(false);
@@ -370,7 +370,7 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
     printer.alignCenter();
     if (order.receiptFooterText) {
         printer.bold(true);
-        printer.setTextSize(1, 1);
+        //printer.setTextSize(1, 1);
         printer.println(order.receiptFooterText);
         printer.setTextNormal();
         printer.bold(false);
@@ -421,7 +421,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
 
     if (order.displayPaymentRequiredMessage) {
         printer.alignCenter();
-        printer.setTextSize(1, 1);
+        //printer.setTextSize(1, 1);
         printer.invert(true);
         printer.bold(true);
         printer.println("Payment Required");
@@ -457,7 +457,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
     if (order.status === EOrderStatus.PARKED && order.notes) {
         printer.newLine();
         printer.bold(true);
-        printer.setTextSize(1, 1);
+        //printer.setTextSize(1, 1);
         printer.println(`Notes: ${order.notes}`);
         printer.setTextNormal();
         printer.bold(false);
@@ -465,7 +465,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
 
     printer.newLine();
     printer.bold(true);
-    printer.setTextSize(1, 1);
+    //printer.setTextSize(1, 1);
     printer.println(`${order.type} ${order.table ? `(Table: ${order.table})` : ""}`);
     printer.setTextNormal();
     printer.bold(false);
@@ -473,7 +473,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
     if (order.buzzer) {
         printer.newLine();
         printer.bold(true);
-        printer.setTextSize(1, 1);
+        //printer.setTextSize(1, 1);
         printer.println(`Buzzer: ${order.buzzer}`);
         printer.setTextNormal();
         printer.bold(false);
@@ -481,7 +481,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
 
     printer.newLine();
     printer.bold(true);
-    printer.setTextSize(1, 1);
+    //printer.setTextSize(1, 1);
     printer.println(`Order: ${order.number}`);
     printer.setTextNormal();
     printer.bold(false);
@@ -492,7 +492,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
     order.products.forEach((product: ICartProduct) => {
         printer.drawLine();
         printer.bold(true);
-        printer.setTextSize(1, 1);
+        //printer.setTextSize(1, 1);
         printer.println(`${product.quantity > 1 ? product.quantity + "x " : ""}${product.name}`);
         printer.setTextNormal();
         printer.bold(false);
@@ -648,7 +648,7 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
 
     if (order.displayPaymentRequiredMessage) {
         printer.alignCenter();
-        printer.setTextSize(1, 1);
+        //printer.setTextSize(1, 1);
         printer.invert(true);
         printer.bold(true);
         printer.println("Payment Required");
@@ -684,7 +684,7 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
     if (order.status === EOrderStatus.PARKED && order.notes) {
         printer.newLine();
         printer.bold(true);
-        printer.setTextSize(1, 1);
+        //printer.setTextSize(1, 1);
         printer.println(`Notes: ${order.notes}`);
         printer.setTextNormal();
         printer.bold(false);
@@ -692,7 +692,7 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
 
     printer.newLine();
     printer.bold(true);
-    printer.setTextSize(1, 1);
+    //printer.setTextSize(1, 1);
     printer.println(`${order.type} ${order.table ? `(Table: ${order.table})` : ""}`);
     printer.setTextNormal();
     printer.bold(false);
@@ -700,7 +700,7 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
     if (order.buzzer) {
         printer.newLine();
         printer.bold(true);
-        printer.setTextSize(1, 1);
+        //printer.setTextSize(1, 1);
         printer.println(`Buzzer: ${order.buzzer}`);
         printer.setTextNormal();
         printer.bold(false);
@@ -708,7 +708,7 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
 
     printer.newLine();
     printer.bold(true);
-    printer.setTextSize(1, 1);
+    //printer.setTextSize(1, 1);
     printer.println(`Order: ${order.number}`);
     printer.setTextNormal();
     printer.bold(false);
@@ -874,7 +874,7 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
 
     if (order.displayPaymentRequiredMessage) {
         printer.alignCenter();
-        printer.setTextSize(1, 1);
+        //printer.setTextSize(1, 1);
         printer.invert(true);
         printer.bold(true);
         printer.println("Payment Required");
@@ -910,7 +910,7 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
     if (order.status === EOrderStatus.PARKED && order.notes) {
         printer.newLine();
         printer.bold(true);
-        printer.setTextSize(1, 1);
+        //printer.setTextSize(1, 1);
         printer.println(`Notes: ${order.notes}`);
         printer.setTextNormal();
         printer.bold(false);
@@ -918,7 +918,7 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
 
     printer.newLine();
     printer.bold(true);
-    printer.setTextSize(1, 1);
+    //printer.setTextSize(1, 1);
     printer.println(`${order.type} ${order.table ? `(Table: ${order.table})` : ""}`);
     printer.setTextNormal();
     printer.bold(false);
@@ -926,7 +926,7 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
     if (order.buzzer) {
         printer.newLine();
         printer.bold(true);
-        printer.setTextSize(1, 1);
+        //printer.setTextSize(1, 1);
         printer.println(`Buzzer: ${order.buzzer}`);
         printer.setTextNormal();
         printer.bold(false);
@@ -934,7 +934,7 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
 
     printer.newLine();
     printer.bold(true);
-    printer.setTextSize(1, 1);
+    //printer.setTextSize(1, 1);
     printer.println(`Order: ${order.number}`);
     printer.setTextNormal();
     printer.bold(false);
@@ -945,7 +945,7 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
     order.products.forEach((product: ICartProduct) => {
         printer.drawLine();
         printer.bold(true);
-        printer.setTextSize(1, 1);
+        //printer.setTextSize(1, 1);
         printer.println(`${product.quantity > 1 ? product.quantity + "x " : ""}${product.name}`);
         printer.setTextNormal();
         printer.bold(false);
@@ -971,7 +971,7 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
                 }
 
                 printer.bold(true);
-                printer.setTextSize(1, 1);
+                //printer.setTextSize(1, 1);
                 printer.print(mStr);
                 if (modifier_index === modifierGroup.modifiers.length - 1) {
                     printer.println("");
@@ -1024,7 +1024,7 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
                                         }
 
                                         printer.bold(true);
-                                        printer.setTextSize(1, 1);
+                                        //printer.setTextSize(1, 1);
                                         if (productModifier_modifier_index === 0) {
                                             printer.print(`   `);
                                         }
@@ -1041,7 +1041,7 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
                             });
                         } else {
                             printer.bold(true);
-                            printer.setTextSize(1, 1);
+                            //printer.setTextSize(1, 1);
                             printer.println(`   No extra selections made`);
                             printer.setTextNormal();
                             printer.bold(false);
@@ -1092,7 +1092,7 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
 const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
     printer.alignCenter();
     printer.bold(true);
-    printer.setTextSize(1, 1);
+    //printer.setTextSize(1, 1);
     printer.println("Sales Report");
     printer.setTextNormal();
     printer.bold(false);
@@ -1132,7 +1132,7 @@ const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
 const printSalesByCategoryReceipt = (printer: any, data: IPrintSalesDataInput) => {
     printer.alignCenter();
     printer.bold(true);
-    printer.setTextSize(1, 1);
+    //printer.setTextSize(1, 1);
     printer.println("Category Report");
     printer.setTextNormal();
     printer.bold(false);
@@ -1172,7 +1172,7 @@ const printSalesByCategoryReceipt = (printer: any, data: IPrintSalesDataInput) =
 const printSalesByProductReceipt = (printer: any, data: IPrintSalesDataInput) => {
     printer.alignCenter();
     printer.bold(true);
-    printer.setTextSize(1, 1);
+    //printer.setTextSize(1, 1);
     printer.println("Product Report");
     printer.setTextNormal();
     printer.bold(false);
