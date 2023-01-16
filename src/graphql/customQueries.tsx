@@ -422,6 +422,8 @@ export const GET_RESTAURANT = gql`
                     }
                     availablePlatforms
                     availableOrderTypes
+                    totalNumberUsed
+                    totalAvailableUses
                     minSpend
                     applyToCheapest
                     items {
@@ -1050,6 +1052,8 @@ export interface IGET_RESTAURANT_PROMOTION {
     availability: IGET_RESTAURANT_PROMOTION_AVAILABILITY;
     availablePlatforms: ERegisterType[];
     availableOrderTypes: EOrderType[];
+    totalNumberUsed: number;
+    totalAvailableUses: number;
     minSpend: number;
     applyToCheapest: boolean;
     type: EPromotionType;
@@ -1248,6 +1252,8 @@ export const GET_PROMOTION_BY_CODE = gql`
                 }
                 availablePlatforms
                 availableOrderTypes
+                totalNumberUsed
+                totalAvailableUses
                 minSpend
                 applyToCheapest
                 items {

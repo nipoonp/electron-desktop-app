@@ -267,6 +267,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
             if (!orderType || !promotion.availableOrderTypes) return;
             if (!promotion.availableOrderTypes.includes(EOrderType[orderType])) return;
 
+            if (promotion.totalNumberUsed >= promotion.totalAvailableUses) return;
+
             if (total < promotion.minSpend) return;
 
             let discount: {
