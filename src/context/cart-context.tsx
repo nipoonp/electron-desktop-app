@@ -10,6 +10,7 @@ import {
     ICartPaymentAmounts,
     ICartPayment,
     EPaymentMethod,
+    ICustomerInformation,
 } from "../model/model";
 import { getMatchingPromotionProducts, processPromotionDiscounts, checkIfPromotionValid } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
@@ -20,6 +21,7 @@ const initialOrderType = null;
 const initialPaymentMethod = null;
 const initialTableNumber = null;
 const initialBuzzerNumber = null;
+const initialCustomerInformation = null;
 const initialProducts = null;
 const initialNotes = "";
 const initialCartCategoryQuantitiesById = {};
@@ -50,6 +52,8 @@ type ContextProps = {
     setTableNumber: (tableNumber: string | null) => void;
     buzzerNumber: string | null;
     setBuzzerNumber: (buzzerNumber: string | null) => void;
+    customerInformation: ICustomerInformation | null;
+    setCustomerInformation: (customerInformation: ICustomerInformation | null) => void;
     products: ICartProduct[] | null;
     cartProductQuantitiesById: ICartItemQuantitiesById;
     cartModifierQuantitiesById: ICartItemQuantitiesById;
@@ -94,6 +98,8 @@ const CartContext = createContext<ContextProps>({
     setTableNumber: () => {},
     buzzerNumber: initialBuzzerNumber,
     setBuzzerNumber: () => {},
+    customerInformation: initialCustomerInformation,
+    setCustomerInformation: () => {},
     products: initialProducts,
     cartProductQuantitiesById: {},
     cartModifierQuantitiesById: {},
@@ -132,6 +138,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [paymentMethod, _setPaymentMethod] = useState<EPaymentMethod | null>(initialPaymentMethod);
     const [tableNumber, _setTableNumber] = useState<string | null>(initialTableNumber);
     const [buzzerNumber, _setBuzzerNumber] = useState<string | null>(initialBuzzerNumber);
+    const [customerInformation, _setCustomerInformation] = useState<ICustomerInformation | null>(initialCustomerInformation);
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
     const [notes, _setNotes] = useState<string>(initialNotes);
     const [total, _setTotal] = useState<number>(initialTotal);
@@ -471,6 +478,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setBuzzerNumber(buzzerNumber);
     };
 
+    const setCustomerInformation = (customerInformation: ICustomerInformation | null) => {
+        _setCustomerInformation(customerInformation);
+    };
+
     const setProducts = (products: ICartProduct[]) => {
         _setProducts(products);
         _setTotal(recalculateTotal(products));
@@ -571,6 +582,9 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setOrderType(initialOrderType);
         _setTableNumber(initialTableNumber);
         _setBuzzerNumber(initialBuzzerNumber);
+        _setCustomerInformation(initialCustomerInformation);
+        _setBuzzerNumber(initialBuzzerNumber);
+        _setBuzzerNumber(initialBuzzerNumber);
         _setPaymentMethod(initialPaymentMethod);
         _setProducts(initialProducts);
         _setNotes(initialNotes);
@@ -604,6 +618,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setTableNumber: setTableNumber,
                 buzzerNumber: buzzerNumber,
                 setBuzzerNumber: setBuzzerNumber,
+                customerInformation: customerInformation,
+                setCustomerInformation: setCustomerInformation,
                 products: products,
                 cartProductQuantitiesById: cartProductQuantitiesById,
                 cartModifierQuantitiesById: cartModifierQuantitiesById,

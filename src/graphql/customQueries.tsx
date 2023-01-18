@@ -102,6 +102,11 @@ export const GET_USER = gql`
                             enableMenulogPayments
                             availableOrderTypes
                             type
+                            requestCustomerInformation {
+                                firstName
+                                email
+                                phoneNumber
+                            }
                             eftposProvider
                             eftposIpAddress
                             eftposPortNumber
@@ -329,6 +334,11 @@ export const GET_RESTAURANT = gql`
                     enableMenulogPayments
                     availableOrderTypes
                     type
+                    requestCustomerInformation {
+                        firstName
+                        email
+                        phoneNumber
+                    }
                     eftposProvider
                     eftposIpAddress
                     eftposPortNumber
@@ -917,6 +927,7 @@ export interface IGET_RESTAURANT_REGISTER {
     enableMenulogPayments: boolean;
     availableOrderTypes: EOrderType[];
     type: ERegisterType;
+    requestCustomerInformation?: RequestCustomerInformationType;
     eftposProvider: string;
     eftposIpAddress: string;
     eftposPortNumber: string;
@@ -931,6 +942,12 @@ export interface IGET_RESTAURANT_REGISTER {
     printers: {
         items: IGET_RESTAURANT_REGISTER_PRINTER[];
     };
+}
+
+export interface RequestCustomerInformationType {
+    firstName: boolean;
+    email: boolean;
+    phoneNumber: boolean;
 }
 
 export interface IGET_RESTAURANT_REGISTER_PRINTER {

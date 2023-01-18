@@ -108,6 +108,12 @@ export enum EEftposProvider {
     WINDCAVE = "WINDCAVE",
 }
 
+export interface ICustomerInformation {
+    firstName: string;
+    email: string;
+    phoneNumber: string;
+}
+
 export interface ICartItemQuantitiesById {
     [id: string]: ICartItemQuantitiesByIdValue;
 }
