@@ -9,6 +9,7 @@ import { useRestaurant } from "../../context/restaurant-context";
 import { useRegister } from "../../context/register-context";
 
 import "./customerInformation.scss";
+import { FiX } from "react-icons/fi";
 
 export default () => {
     const navigate = useNavigate();
@@ -26,6 +27,10 @@ export default () => {
 
     if (!register) throw "Register is not valid";
     if (restaurant == null) throw "Restaurant is invalid!";
+
+    const onClose = () => {
+        navigate(`${checkoutPath}`);
+    };
 
     const onNext = () => {
         if (!register.requestCustomerInformation) return;
@@ -70,6 +75,9 @@ export default () => {
         <>
             <PageWrapper>
                 <div className="customer-information">
+                    <div className="close-button-wrapper">
+                        <FiX className="close-button" size={36} onClick={onClose} />
+                    </div>
                     <div className="h2 mb-6">Enter enter customer details</div>
                     <div className="mb-10" style={{ width: "400px" }}>
                         {register.requestCustomerInformation && register.requestCustomerInformation.firstName && (

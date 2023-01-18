@@ -3,4 +3,15 @@
     align-items: center;
     flex-direction: column;
     margin-top: 152px;
+
+    .close-button-wrapper {
+        position: absolute;
+        top: 32px;
+        right: 32px;
+        cursor: pointer;
+
+        .close-button {
+            color: #484848;
+        }
+    }
 }

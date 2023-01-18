@@ -4,6 +4,17 @@
     flex-direction: column;
     margin-top: 128px;
 
+    .close-button-wrapper {
+        position: absolute;
+        top: 32px;
+        right: 32px;
+        cursor: pointer;
+
+        .close-button {
+            color: #484848;
+        }
+    }
+
     .payment-method-payment-button-wrapper {
         display: flex;
         gap: 16px;

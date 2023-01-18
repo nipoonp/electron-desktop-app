@@ -8,6 +8,7 @@ import { Input } from "../../tabin/components/input";
 import { useRestaurant } from "../../context/restaurant-context";
 
 import "./buzzerNumber.scss";
+import { FiX } from "react-icons/fi";
 
 export default () => {
     const navigate = useNavigate();
@@ -18,6 +19,10 @@ export default () => {
     const [buzzerError, setBuzzerError] = useState(false);
 
     if (restaurant == null) throw "Restaurant is invalid!";
+
+    const onClose = () => {
+        navigate(`${checkoutPath}`);
+    };
 
     const onNext = () => {
         if (buzzer) {
@@ -37,6 +42,9 @@ export default () => {
         <>
             <PageWrapper>
                 <div className="buzzer-number">
+                    <div className="close-button-wrapper">
+                        <FiX className="close-button" size={36} onClick={onClose} />
+                    </div>
                     <div className="h2 mb-6">Enter your buzzer number</div>
                     <div className="mb-6 buzzer-image-container">
                         <img
