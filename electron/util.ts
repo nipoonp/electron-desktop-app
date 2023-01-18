@@ -96,11 +96,13 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
             interface: `tcp://${order.printerAddress}`,
+            characterSet: "PC437_USA",
         });
     } else if (order.printerType == ERegisterPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
+            characterSet: "PC437_USA",
         });
     } else {
         //Bluetooth
@@ -407,11 +409,13 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
             interface: `tcp://${order.printerAddress}`,
+            characterSet: "PC437_USA",
         });
     } else if (order.printerType == ERegisterPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
+            characterSet: "PC437_USA",
         });
     } else {
         //Bluetooth
@@ -636,11 +640,13 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
             interface: `tcp://${order.printerAddress}`,
+            characterSet: "PC437_USA",
         });
     } else if (order.printerType == ERegisterPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
+            characterSet: "PC437_USA",
         });
     } else {
         //Bluetooth
@@ -863,11 +869,13 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
             interface: `tcp://${order.printerAddress}`,
+            characterSet: "PC437_USA",
         });
     } else if (order.printerType == ERegisterPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
+            characterSet: "PC437_USA",
         });
     } else {
         //Bluetooth
@@ -1225,11 +1233,13 @@ export const printSalesDataReceipt = async (printSalesDataInput: IPrintSalesData
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
             interface: `tcp://${printSalesDataInput.printer.printerAddress}`,
+            characterSet: "PC437_USA",
         });
     } else if (printSalesDataInput.printer.printerType == ERegisterPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
+            characterSet: "PC437_USA",
         });
     } else {
         //Bluetooth
