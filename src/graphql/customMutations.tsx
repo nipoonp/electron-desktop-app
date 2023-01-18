@@ -49,6 +49,7 @@ export const CREATE_ORDER = gql`
         $number: String!
         $table: String
         $buzzer: String
+        $customerInformation: OrderCustomerInformationInput
         $notes: String
         $eftposReceipt: String
         $payments: [OrderPaymentInput]
@@ -76,6 +77,7 @@ export const CREATE_ORDER = gql`
                 number: $number
                 table: $table
                 buzzer: $buzzer
+                customerInformation: $customerInformation
                 notes: $notes
                 eftposReceipt: $eftposReceipt
                 payments: $payments

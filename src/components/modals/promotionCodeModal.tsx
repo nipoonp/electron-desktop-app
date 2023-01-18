@@ -43,6 +43,11 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
             } else {
                 const appliedPromotion = getPromotionsByCodeData[0];
 
+                if (appliedPromotion.totalNumberUsed >= appliedPromotion.totalAvailableUses) {
+                    setError("This code has no more uses remaining. Please try another code");
+                    return;
+                }
+
                 if (!orderType || !appliedPromotion.availableOrderTypes) {
                     setError("Invalid order type");
                     return;
@@ -80,8 +85,8 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
         }
     }, [getPromotionsByCodeData, getPromotionsByCodeError]);
 
-    const onApply = () => {
-        getPromotionsByCode({
+    const onApply = async () => {
+        await getPromotionsByCode({
             variables: {
                 code: promotionCode,
                 promotionRestaurantId: restaurant ? restaurant.id : "",
