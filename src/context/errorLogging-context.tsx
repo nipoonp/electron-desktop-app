@@ -53,20 +53,20 @@ const ErrorLoggingProvider = (props: { children: React.ReactNode }) => {
     };
 
     const logError = async (error: string, context: string) => {
-        try {
-            await logSlackErrorMutation({
-                variables: {
-                    message: JSON.stringify({
-                        restaurantId: restaurant ? restaurant.id : "invalid",
-                        restaurantName: restaurant ? restaurant.name : "invalid",
-                        error: error,
-                        context: context,
-                    }),
-                },
-            });
-        } catch (e) {
-            console.log("Error in creating slack error log", e);
-        }
+        // try {
+        //     await logSlackErrorMutation({
+        //         variables: {
+        //             message: JSON.stringify({
+        //                 restaurantId: restaurant ? restaurant.id : "invalid",
+        //                 restaurantName: restaurant ? restaurant.name : "invalid",
+        //                 error: error,
+        //                 context: context,
+        //             }),
+        //         },
+        //     });
+        // } catch (e) {
+        //     console.log("Error in creating slack error log", e);
+        // }
     };
 
     return (

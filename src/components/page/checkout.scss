@@ -71,6 +71,12 @@
                 align-items: center;
             }
 
+            .checkout-customer-details {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                align-items: center;
+            }
+
             .checkout-payment-method {
                 display: grid;
                 grid-template-columns: 1fr auto;

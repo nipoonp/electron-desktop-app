@@ -6,7 +6,15 @@ import { convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
 import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, EPromotionType, ERegisterType } from "../../graphql/customQueries";
-import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath, buzzerNumberPath, paymentMethodPath } from "../main";
+import {
+    restaurantPath,
+    beginOrderPath,
+    tableNumberPath,
+    orderTypePath,
+    buzzerNumberPath,
+    paymentMethodPath,
+    customerInformationPath,
+} from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
 import {
@@ -66,6 +74,7 @@ export const Checkout = () => {
         products,
         notes,
         buzzerNumber,
+        customerInformation,
         paymentMethod,
         setPaymentMethod,
         setNotes,
@@ -213,6 +222,10 @@ export const Checkout = () => {
         navigate(buzzerNumberPath);
     };
 
+    const onUpdateCustomerInformation = () => {
+        navigate(customerInformationPath);
+    };
+
     const onUpdateOrderType = () => {
         navigate(orderTypePath);
     };
@@ -289,9 +302,22 @@ export const Checkout = () => {
     };
 
     const onClickOrderButton = async () => {
-        if (!autoClickCompleteOrderOnLoad && register && register.enableBuzzerNumbers && buzzerNumber === null) {
+        if (register && register.enableBuzzerNumbers && buzzerNumber === null) {
             navigate(buzzerNumberPath);
             return;
+        }
+
+        if (register && register.requestCustomerInformation) {
+            let invalid = false;
+
+            if (register.requestCustomerInformation.firstName && (!customerInformation || !customerInformation.firstName)) invalid = true;
+            if (register.requestCustomerInformation.email && (!customerInformation || !customerInformation.email)) invalid = true;
+            if (register.requestCustomerInformation.phoneNumber && (!customerInformation || !customerInformation.phoneNumber)) invalid = true;
+
+            if (invalid) {
+                navigate(customerInformationPath);
+                return;
+            }
         }
 
         if (!isPOS && register.enableEftposPayments && register.enableCashPayments && paymentMethod === null) {
@@ -482,6 +508,13 @@ export const Checkout = () => {
                 number: orderNumber,
                 table: tableNumber,
                 buzzer: buzzerNumber,
+                customerInformation: customerInformation
+                    ? {
+                          firstName: customerInformation.firstName,
+                          email: customerInformation.email,
+                          phoneNumber: customerInformation.phoneNumber,
+                      }
+                    : null,
                 notes: notes,
                 eftposReceipt: transactionEftposReceipts,
                 paymentAmounts: newPaymentAmounts,
@@ -521,6 +554,13 @@ export const Checkout = () => {
                     number: orderNumber,
                     table: tableNumber,
                     buzzer: buzzerNumber,
+                    customerInformation: customerInformation
+                        ? {
+                              firstName: customerInformation.firstName,
+                              email: customerInformation.email,
+                              phoneNumber: customerInformation.phoneNumber,
+                          }
+                        : null,
                     notes: notes,
                     eftposReceipt: transactionEftposReceipts,
                     payments: payments,
@@ -1094,6 +1134,15 @@ export const Checkout = () => {
         </div>
     );
 
+    const restaurantCustomerInformation = (
+        <div className="checkout-customer-details">
+            <div className="h3">
+                Customer Details: {`${customerInformation?.firstName} ${customerInformation?.email} ${customerInformation?.phoneNumber}`}
+            </div>
+            <Link onClick={onUpdateCustomerInformation}>Change</Link>
+        </div>
+    );
+
     const orderSummary = (
         <OrderSummary
             products={products || []}
@@ -1119,6 +1168,7 @@ export const Checkout = () => {
             {promotionInformation}
             {tableNumber && <div className="mb-4">{restaurantTableNumber}</div>}
             {buzzerNumber && <div className="mb-4">{restaurantBuzzerNumber}</div>}
+            {customerInformation && <div className="mb-4">{restaurantCustomerInformation}</div>}
             <div className="separator-6"></div>
             {orderSummary}
             <div className="restaurant-notes-wrapper">{restaurantNotes}</div>

@@ -135,7 +135,9 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
     }
 
     if (order.customerInformation) {
-        printer.println(`Customer: ${order.customerInformation.firstName} (${order.customerInformation.phoneNumber})`);
+        printer.println(
+            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
+        );
     }
 
     printer.newLine();
@@ -451,7 +453,9 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
     }
 
     if (order.customerInformation) {
-        printer.println(`Customer: ${order.customerInformation.firstName} (${order.customerInformation.phoneNumber})`);
+        printer.println(
+            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
+        );
     }
 
     if (order.status === EOrderStatus.PARKED && order.notes) {
@@ -678,7 +682,9 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
     }
 
     if (order.customerInformation) {
-        printer.println(`Customer: ${order.customerInformation.firstName} (${order.customerInformation.phoneNumber})`);
+        printer.println(
+            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
+        );
     }
 
     if (order.status === EOrderStatus.PARKED && order.notes) {
@@ -904,7 +910,9 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
     }
 
     if (order.customerInformation) {
-        printer.println(`Customer: ${order.customerInformation.firstName} (${order.customerInformation.phoneNumber})`);
+        printer.println(
+            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
+        );
     }
 
     if (order.status === EOrderStatus.PARKED && order.notes) {

@@ -11,10 +11,11 @@ import { useUser } from "../context/user-context";
 import { useRestaurant } from "../context/restaurant-context";
 import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { useRegister } from "../context/register-context";
-
-import "react-toastify/dist/ReactToastify.min.css";
 import { ITab } from "../model/model";
 import { FiDollarSign, FiLock, FiMenu } from "react-icons/fi";
+import RequireCustomerInformation from "./page/customerInformation";
+
+import "react-toastify/dist/ReactToastify.min.css";
 
 const Login = lazy(() => import("./page/auth/login"));
 const Logout = lazy(() => import("./page/auth/logout"));
@@ -61,6 +62,7 @@ export const beginOrderPath = "/";
 export const orderTypePath = "/order_type";
 export const tableNumberPath = "/table_number";
 export const buzzerNumberPath = "/buzzer_number";
+export const customerInformationPath = "/customer_information";
 export const paymentMethodPath = "/payment_method";
 export const restaurantPath = "/restaurant";
 export const checkoutPath = "/checkout";
@@ -167,6 +169,7 @@ const AppRoutes = () => {
                 <Route path={orderTypePath} element={<RestaurantRegisterPrivateRoute element={<OrderType />} />} />
                 <Route path={tableNumberPath} element={<RestaurantRegisterPrivateRoute element={<TableNumber />} />} />
                 <Route path={buzzerNumberPath} element={<RestaurantRegisterPrivateRoute element={<BuzzerNumber />} />} />
+                <Route path={customerInformationPath} element={<RestaurantRegisterPrivateRoute element={<RequireCustomerInformation />} />} />
                 <Route path={paymentMethodPath} element={<RestaurantRegisterPrivateRoute element={<PaymentMethod />} />} />
                 <Route path={checkoutPath} element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}>
                     <Route path=":autoClickCompleteOrderOnLoad" element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}></Route>
@@ -191,9 +194,10 @@ export const AdminOnlyRoute = ({ element }) => {
 
 const PrivateRoute = ({ element }) => {
     const { status } = useAuth();
-    const { user, isLoading } = useUser();
+    const { user, isLoading, error } = useUser();
 
     if (status !== AuthenticationStatus.SignedIn) return <Navigate to={loginPath} />; // Handle other authentication statuses
+    if (error) return <div>There was an error loading the user. Please try restart the application.</div>;
     if (isLoading) return <FullScreenSpinner show={true} text="Loading user..." />; // Assumed signed in from this point onwards
     if (!user) throw "Signed in but no user found in database";
 
