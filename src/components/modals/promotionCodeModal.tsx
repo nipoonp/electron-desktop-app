@@ -43,6 +43,11 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
             } else {
                 const appliedPromotion = getPromotionsByCodeData[0];
 
+                if (appliedPromotion.totalNumberUsed >= appliedPromotion.totalAvailableUses) {
+                    setError("This code has no more uses remaining. Please try another code");
+                    return;
+                }
+
                 if (!orderType || !appliedPromotion.availableOrderTypes) {
                     setError("Invalid order type");
                     return;
@@ -80,8 +85,8 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
         }
     }, [getPromotionsByCodeData, getPromotionsByCodeError]);
 
-    const onApply = () => {
-        getPromotionsByCode({
+    const onApply = async () => {
+        await getPromotionsByCode({
             variables: {
                 code: promotionCode,
                 promotionRestaurantId: restaurant ? restaurant.id : "",
@@ -97,7 +102,7 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
     return (
         <>
             <ModalV2 padding="24px" isOpen={props.isOpen} disableClose={false} onRequestClose={props.onClose}>
-                <div>
+                <div className="promo-code-modal">
                     <div className="h3 mb-3">Please enter your promotion code</div>
                     <Input
                         className="mb-3"

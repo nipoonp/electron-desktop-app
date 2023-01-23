@@ -11,6 +11,7 @@ import { useRestaurant } from "../../context/restaurant-context";
 import "./paymentMethod.scss";
 import { Button } from "../../tabin/components/button";
 import { Link } from "../../tabin/components/link";
+import { FiX } from "react-icons/fi";
 
 export default () => {
     const navigate = useNavigate();
@@ -20,6 +21,10 @@ export default () => {
 
     if (!register) throw "Register is not valid";
     if (restaurant == null) throw "Restaurant is invalid!";
+
+    const onClose = () => {
+        navigate(`${checkoutPath}`);
+    };
 
     const onSelectPaymentMethod = (paymentMethod: EPaymentMethod) => {
         setPaymentMethod(paymentMethod);
@@ -31,6 +36,9 @@ export default () => {
         <>
             <PageWrapper>
                 <div className="payment-method">
+                    <div className="close-button-wrapper">
+                        <FiX className="close-button" size={36} onClick={onClose} />
+                    </div>
                     <div className="h1 mb-12 select-your-payment-method">Select your payment method</div>
                     <div className="payment-method-payment-button-wrapper">
                         {register.enableCashPayments && (

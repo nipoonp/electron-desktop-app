@@ -102,6 +102,11 @@ export const GET_USER = gql`
                             enableMenulogPayments
                             availableOrderTypes
                             type
+                            requestCustomerInformation {
+                                firstName
+                                email
+                                phoneNumber
+                            }
                             eftposProvider
                             eftposIpAddress
                             eftposPortNumber
@@ -329,6 +334,11 @@ export const GET_RESTAURANT = gql`
                     enableMenulogPayments
                     availableOrderTypes
                     type
+                    requestCustomerInformation {
+                        firstName
+                        email
+                        phoneNumber
+                    }
                     eftposProvider
                     eftposIpAddress
                     eftposPortNumber
@@ -422,6 +432,8 @@ export const GET_RESTAURANT = gql`
                     }
                     availablePlatforms
                     availableOrderTypes
+                    totalNumberUsed
+                    totalAvailableUses
                     minSpend
                     applyToCheapest
                     items {
@@ -915,6 +927,7 @@ export interface IGET_RESTAURANT_REGISTER {
     enableMenulogPayments: boolean;
     availableOrderTypes: EOrderType[];
     type: ERegisterType;
+    requestCustomerInformation?: RequestCustomerInformationType;
     eftposProvider: string;
     eftposIpAddress: string;
     eftposPortNumber: string;
@@ -929,6 +942,12 @@ export interface IGET_RESTAURANT_REGISTER {
     printers: {
         items: IGET_RESTAURANT_REGISTER_PRINTER[];
     };
+}
+
+export interface RequestCustomerInformationType {
+    firstName: boolean;
+    email: boolean;
+    phoneNumber: boolean;
 }
 
 export interface IGET_RESTAURANT_REGISTER_PRINTER {
@@ -1050,6 +1069,8 @@ export interface IGET_RESTAURANT_PROMOTION {
     availability: IGET_RESTAURANT_PROMOTION_AVAILABILITY;
     availablePlatforms: ERegisterType[];
     availableOrderTypes: EOrderType[];
+    totalNumberUsed: number;
+    totalAvailableUses: number;
     minSpend: number;
     applyToCheapest: boolean;
     type: EPromotionType;
@@ -1248,6 +1269,8 @@ export const GET_PROMOTION_BY_CODE = gql`
                 }
                 availablePlatforms
                 availableOrderTypes
+                totalNumberUsed
+                totalAvailableUses
                 minSpend
                 applyToCheapest
                 items {
