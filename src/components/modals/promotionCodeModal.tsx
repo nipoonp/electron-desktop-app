@@ -102,7 +102,7 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
     return (
         <>
             <ModalV2 padding="24px" isOpen={props.isOpen} disableClose={false} onRequestClose={props.onClose}>
-                <div>
+                <div className="promo-code-modal">
                     <div className="h3 mb-3">Please enter your promotion code</div>
                     <Input
                         className="mb-3"
