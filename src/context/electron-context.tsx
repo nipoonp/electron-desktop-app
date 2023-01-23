@@ -40,8 +40,20 @@ const ElectronProvider = (props: { children: React.ReactNode }) => {
 
     const NoInternetConnection = () => {
         return (
-            <div style={{ padding: "64px 48px", textAlign: "center" }}>
-                <div className="h1">Lost connection with the internet. Please check for any issues...</div>
+            <div
+                style={{
+                    position: "absolute",
+                    top: "0px",
+                    left: "0px",
+                    right: "0px",
+                    padding: "24px",
+                    textAlign: "center",
+                    backgroundColor: "#ED7D00",
+                    color: "#FFFFFF",
+                    zIndex: 110,
+                }}
+            >
+                <div className="h2">Lost connection with the internet. Some features may not work. Please check for any issues...</div>
             </div>
         );
     };
@@ -54,9 +66,18 @@ const ElectronProvider = (props: { children: React.ReactNode }) => {
         );
     };
 
-    const children = <>{!isOnline ? <NoInternetConnection /> : electronUpdaterMessage ? <UpdaterMessage /> : props.children}</>;
-
-    return <ElectronContext.Provider value={{}} children={children} />;
+    return (
+        <ElectronContext.Provider
+            value={{}}
+            children={
+                <>
+                    {!isOnline && <NoInternetConnection />}
+                    {electronUpdaterMessage && <UpdaterMessage />}
+                    <div>{props.children}</div>
+                </>
+            }
+        />
+    );
 };
 
 const useElectron = () => {

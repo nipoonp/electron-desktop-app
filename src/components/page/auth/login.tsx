@@ -61,7 +61,22 @@ export default () => {
             }
         }, 1000 * 60); //1 min
 
-        return () => clearTimeout(timerId);
+        const timerId2 = setTimeout(async () => {
+            const current_e = localStorage.getItem("current_e");
+            const current_p = localStorage.getItem("current_p");
+
+            if (current_e && current_p) {
+                setEmail(current_e);
+                setPassword(current_p);
+
+                await onLogin(current_e, current_p);
+            }
+        }, 1000 * 3); //1 min
+
+        return () => {
+            clearTimeout(timerId);
+            clearTimeout(timerId2);
+        };
     }, []);
 
     const onChangeEmail = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,12 +91,13 @@ export default () => {
         setServerError("");
     };
 
-    const onLogin = async () => {
+    const onLogin = async (loginEmail, loginPassword) => {
         setLoading(true);
+
         let fieldsValid = true;
 
         try {
-            await emailSchema.validate(email);
+            await emailSchema.validate(loginEmail);
             setEmailError("");
         } catch (e) {
             setEmailError(e.errors[0]);
@@ -89,7 +105,7 @@ export default () => {
         }
 
         try {
-            await passwordSchema.validate(password);
+            await passwordSchema.validate(loginPassword);
             setPasswordError("");
         } catch (e) {
             setPasswordError(e.errors[0]);
@@ -98,7 +114,10 @@ export default () => {
 
         if (fieldsValid) {
             try {
-                await login(email, password);
+                localStorage.setItem("current_e", loginEmail);
+                localStorage.setItem("current_p", loginPassword);
+
+                await login(loginEmail, loginPassword);
                 logger.debug("Successfully logged in");
                 setLoading(false);
             } catch (e) {
@@ -113,7 +132,7 @@ export default () => {
 
     const onEnter = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter") {
-            onLogin();
+            onLogin(email, password);
         }
     };
 
@@ -149,7 +168,7 @@ export default () => {
 
     const loginButton = (
         <>
-            <Button disabled={loading} onClick={onLogin} loading={loading}>
+            <Button disabled={loading} onClick={() => onLogin(email, password)} loading={loading}>
                 Log In
             </Button>
         </>

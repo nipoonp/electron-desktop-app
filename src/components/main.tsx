@@ -194,9 +194,10 @@ export const AdminOnlyRoute = ({ element }) => {
 
 const PrivateRoute = ({ element }) => {
     const { status } = useAuth();
-    const { user, isLoading } = useUser();
+    const { user, isLoading, error } = useUser();
 
     if (status !== AuthenticationStatus.SignedIn) return <Navigate to={loginPath} />; // Handle other authentication statuses
+    if (error) return <div>There was an error loading the user. Please try restart the application.</div>;
     if (isLoading) return <FullScreenSpinner show={true} text="Loading user..." />; // Assumed signed in from this point onwards
     if (!user) throw "Signed in but no user found in database";
 
