@@ -419,7 +419,13 @@ export const Checkout = () => {
                                 address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
                                 gstNumber: restaurant.gstNumber,
                             },
-                            customerInformation: null,
+                            customerInformation: customerInformation
+                                ? {
+                                      firstName: customerInformation.firstName,
+                                      email: customerInformation.email,
+                                      phoneNumber: customerInformation.phoneNumber,
+                                  }
+                                : null,
                             notes: order.notes,
                             products: convertProductTypesForPrint(productsToPrint),
                             eftposReceipt: order.eftposReceipt,

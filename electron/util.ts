@@ -143,7 +143,7 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
     }
 
     printer.newLine();
-    printer.println(`${order.type} ${order.table ? `(Table: ${order.table})` : ""}`);
+    printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
 
     if (order.buzzer) {
         printer.newLine();
@@ -456,12 +456,6 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
         printer.invert(false);
     }
 
-    if (order.customerInformation) {
-        printer.println(
-            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
-        );
-    }
-
     if (order.status === EOrderStatus.PARKED && order.notes) {
         printer.newLine();
         printer.bold(true);
@@ -474,7 +468,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
     printer.newLine();
     printer.bold(true);
     printer.setTextSize(1, 1);
-    printer.println(`${order.type} ${order.table ? `(Table: ${order.table})` : ""}`);
+    printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
     printer.setTextNormal();
     printer.bold(false);
 
@@ -493,6 +487,19 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
     printer.println(`Order: ${order.number}`);
     printer.setTextNormal();
     printer.bold(false);
+
+    if (order.customerInformation) {
+        printer.newLine();
+        printer.drawLine();
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        if (order.customerInformation.firstName) printer.println(order.customerInformation.firstName);
+        if (order.customerInformation.email) printer.println(order.customerInformation.email);
+        if (order.customerInformation.phoneNumber) printer.println(order.customerInformation.phoneNumber);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
 
     printer.newLine();
     printer.alignLeft();
@@ -607,9 +614,18 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
         printer.newLine();
     }
 
-    printer.newLine();
-    printer.alignCenter();
+    if (order.displayPaymentRequiredMessage) {
+        printer.newLine();
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.bold(true);
+        printer.println(`Total: $${convertCentsToDollars(order.subTotal)}`);
+        printer.bold(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+    }
 
+    printer.newLine();
     printer.alignCenter();
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
@@ -705,7 +721,7 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
     printer.newLine();
     printer.bold(true);
     printer.setTextSize(1, 1);
-    printer.println(`${order.type} ${order.table ? `(Table: ${order.table})` : ""}`);
+    printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
     printer.setTextNormal();
     printer.bold(false);
 
@@ -724,6 +740,19 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
     printer.println(`Order: ${order.number}`);
     printer.setTextNormal();
     printer.bold(false);
+
+    if (order.customerInformation) {
+        printer.newLine();
+        printer.drawLine();
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        if (order.customerInformation.firstName) printer.println(order.customerInformation.firstName);
+        if (order.customerInformation.email) printer.println(order.customerInformation.email);
+        if (order.customerInformation.phoneNumber) printer.println(order.customerInformation.phoneNumber);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
 
     printer.newLine();
     printer.alignLeft();
@@ -836,9 +865,18 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
         printer.newLine();
     }
 
-    printer.newLine();
-    printer.alignCenter();
+    if (order.displayPaymentRequiredMessage) {
+        printer.newLine();
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.bold(true);
+        printer.println(`Total: $${convertCentsToDollars(order.subTotal)}`);
+        printer.bold(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+    }
 
+    printer.newLine();
     printer.alignCenter();
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
@@ -935,7 +973,7 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
     printer.newLine();
     printer.bold(true);
     printer.setTextSize(1, 1);
-    printer.println(`${order.type} ${order.table ? `(Table: ${order.table})` : ""}`);
+    printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
     printer.setTextNormal();
     printer.bold(false);
 
@@ -954,6 +992,19 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
     printer.println(`Order: ${order.number}`);
     printer.setTextNormal();
     printer.bold(false);
+
+    if (order.customerInformation) {
+        printer.newLine();
+        printer.drawLine();
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        if (order.customerInformation.firstName) printer.println(order.customerInformation.firstName);
+        if (order.customerInformation.email) printer.println(order.customerInformation.email);
+        if (order.customerInformation.phoneNumber) printer.println(order.customerInformation.phoneNumber);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
 
     printer.newLine();
     printer.alignLeft();
@@ -1078,6 +1129,17 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
     if (order.notes) {
         printer.println(`Notes: ${order.notes}`);
         printer.newLine();
+    }
+
+    if (order.displayPaymentRequiredMessage) {
+        printer.newLine();
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.bold(true);
+        printer.println(`Total: $${convertCentsToDollars(order.subTotal)}`);
+        printer.bold(false);
+        printer.setTextNormal();
+        printer.alignLeft();
     }
 
     printer.newLine();
