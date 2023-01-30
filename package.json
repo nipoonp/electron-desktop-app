@@ -47,6 +47,7 @@
         "react-router-dom": "^6.3.0",
         "react-script-hook": "^1.7.0",
         "react-scripts": "^5.0.1",
+        "react-signature-canvas": "^1.0.6",
         "react-toastify": "^9.0.7",
         "recharts": "^2.1.13",
         "reshake": "^1.2.4",

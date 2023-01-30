@@ -104,11 +104,13 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                                 address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
                                 gstNumber: restaurant.gstNumber,
                             },
+                            restaurantLogoBase64: "",
                             customerInformation: order.customerInformation
                                 ? {
                                       firstName: order.customerInformation.firstName,
                                       email: order.customerInformation.email,
                                       phoneNumber: order.customerInformation.phoneNumber,
+                                      signatureBase64: null,
                                   }
                                 : null,
                             notes: order.notes,
@@ -473,6 +475,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     //                               firstName: order.customerInformation.firstName,
     //                               email: order.customerInformation.email,
     //                               phoneNumber: order.customerInformation.phoneNumber,
+    //                               signature: order.customerInformation.signature,
     //                           }
     //                         : null,
     //                     notes: order.notes,

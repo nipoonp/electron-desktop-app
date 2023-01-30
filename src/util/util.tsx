@@ -607,3 +607,35 @@ export const downloadFile = (blob: Blob, fileName: string, extention: string) =>
     fileLink.setAttribute("download", `${fileName}${extention}`);
     fileLink.click();
 };
+
+export const convertBase64ToFile = (base64Image, filename, mimeType) => {
+    return new Promise(async (resolve, reject) => {
+        const res = await fetch(base64Image);
+        const buf = await res.arrayBuffer();
+        const file = new File([buf], filename, { type: mimeType });
+
+        resolve(file);
+    });
+};
+
+export const resizeBase64ImageToWidth = (base64Image, imageWidth, mineType): Promise<string> => {
+    return new Promise(async (resolve, reject) => {
+        var canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const image = new Image();
+        image.src = base64Image;
+
+        image.onload = async () => {
+            if (image.width < imageWidth) imageWidth = image.width;
+
+            canvas.width = imageWidth;
+            canvas.height = image.height * (imageWidth / image.width);
+
+            //@ts-ignore
+            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+            resolve(canvas.toDataURL(mineType));
+        };
+    });
+};

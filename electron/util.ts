@@ -138,6 +138,15 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
         printer.println(
             `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
         );
+
+        if (order.customerInformation.signatureBase64) {
+            const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
+            const signatureImage = Buffer.from(signatureImageRemoveTag, "base64");
+
+            printer.newLine();
+            await printer.printImageBuffer(signatureImage);
+            printer.newLine();
+        }
     }
 
     printer.newLine();
@@ -495,6 +504,14 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
         if (order.customerInformation.phoneNumber) printer.println(order.customerInformation.phoneNumber);
         printer.setTextNormal();
         printer.bold(false);
+
+        if (order.customerInformation.signatureBase64) {
+            const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
+            const signatureImage = Buffer.from(signatureImageRemoveTag, "base64");
+
+            await printer.printImageBuffer(signatureImage);
+            printer.newLine();
+        }
     }
 
     printer.newLine();
@@ -701,6 +718,15 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
         printer.println(
             `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
         );
+
+        if (order.customerInformation.signatureBase64) {
+            const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
+            const signatureImage = Buffer.from(signatureImageRemoveTag, "base64");
+
+            printer.newLine();
+            await printer.printImageBuffer(signatureImage);
+            printer.newLine();
+        }
     }
 
     if (order.status === EOrderStatus.PARKED && order.notes) {
@@ -746,6 +772,14 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
         if (order.customerInformation.phoneNumber) printer.println(order.customerInformation.phoneNumber);
         printer.setTextNormal();
         printer.bold(false);
+
+        if (order.customerInformation.signatureBase64) {
+            const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
+            const signatureImage = Buffer.from(signatureImageRemoveTag, "base64");
+
+            await printer.printImageBuffer(signatureImage);
+            printer.newLine();
+        }
     }
 
     printer.newLine();
@@ -951,6 +985,15 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
         printer.println(
             `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
         );
+
+        if (order.customerInformation.signatureBase64) {
+            const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
+            const signatureImage = Buffer.from(signatureImageRemoveTag, "base64");
+
+            printer.newLine();
+            await printer.printImageBuffer(signatureImage);
+            printer.newLine();
+        }
     }
 
     if (order.status === EOrderStatus.PARKED && order.notes) {
@@ -996,6 +1039,14 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
         if (order.customerInformation.phoneNumber) printer.println(order.customerInformation.phoneNumber);
         printer.setTextNormal();
         printer.bold(false);
+
+        if (order.customerInformation.signatureBase64) {
+            const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
+            const signatureImage = Buffer.from(signatureImageRemoveTag, "base64");
+
+            await printer.printImageBuffer(signatureImage);
+            printer.newLine();
+        }
     }
 
     printer.newLine();
