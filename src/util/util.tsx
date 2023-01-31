@@ -618,13 +618,35 @@ export const convertBase64ToFile = (base64Image, filename, mimeType) => {
     });
 };
 
-export const resizeBase64ImageToWidth = (base64Image, imageWidth, mineType): Promise<string> => {
+export const resizeBase64ImageToWidth = (base64Image: string, imageWidth: number, mineType: string): Promise<string> => {
     return new Promise(async (resolve, reject) => {
         var canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
 
         const image = new Image();
         image.src = base64Image;
+
+        image.onload = async () => {
+            if (image.width < imageWidth) imageWidth = image.width;
+
+            canvas.width = imageWidth;
+            canvas.height = image.height * (imageWidth / image.width);
+
+            //@ts-ignore
+            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+            resolve(canvas.toDataURL(mineType));
+        };
+    });
+};
+
+export const getBase64FromUrlImage = (url: string, imageWidth: number, mineType: string): Promise<string> => {
+    return new Promise(async (resolve, reject) => {
+        var canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const image = new Image();
+        image.src = url;
 
         image.onload = async () => {
             if (image.width < imageWidth) imageWidth = image.width;

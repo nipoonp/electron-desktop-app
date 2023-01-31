@@ -103,7 +103,7 @@ export const Checkout = () => {
         isShownUpSellCrossSellModal,
         setIsShownUpSellCrossSellModal,
     } = useCart();
-    const { restaurant } = useRestaurant();
+    const { restaurant, restaurantBase64Logo } = useRestaurant();
     const { register, isPOS } = useRegister();
     const { printReceipt, printLabel } = useReceiptPrinter();
     const { user } = useUser();
@@ -423,7 +423,7 @@ export const Checkout = () => {
                                 address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
                                 gstNumber: restaurant.gstNumber,
                             },
-                            restaurantLogoBase64: "",
+                            restaurantLogoBase64: restaurantBase64Logo,
                             customerInformation: customerInformation
                                 ? {
                                       firstName: customerInformation.firstName,
