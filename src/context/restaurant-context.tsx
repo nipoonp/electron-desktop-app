@@ -13,7 +13,7 @@ import { useGetRestaurantQuery } from "../hooks/useGetRestaurantQuery";
 import { getCloudFrontDomainName } from "../private/aws-custom";
 import { useListRestaurantsQuery } from "../hooks/useListRestaurantsQuery";
 import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
-import { getBase64FromUrlImage } from "../util/util";
+import { convertHtmlToBase64, getBase64FromUrlImage } from "../util/util";
 
 interface IMENU_CATEGORIES {
     [index: string]: IGET_RESTAURANT_CATEGORY;
@@ -85,12 +85,15 @@ const C = (props: {
 
         if (getRestaurantData && getRestaurantData.logo) {
             //Don't need to do await here. We do not need the base64 logo here instantly.
-            getBase64FromUrlImage(
+            convertHtmlToBase64(
                 `${getCloudFrontDomainName()}/protected/${getRestaurantData.logo.identityPoolId}/${getRestaurantData.logo.key}`,
                 250,
                 "image/png"
             )
-                .then((base64Logo) => setRestaurantBase64Logo(base64Logo))
+                .then((base64Logo) => {
+                    setRestaurantBase64Logo(base64Logo);
+                    console.log("xxx...base64Logo", base64Logo);
+                })
                 .catch((e) => console.error("Error getting logo base64", e));
         } else {
             setRestaurantBase64Logo(null);

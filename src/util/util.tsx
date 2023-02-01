@@ -661,3 +661,78 @@ export const getBase64FromUrlImage = (url: string, imageWidth: number, mineType:
         };
     });
 };
+
+// export const convertHtmlToBase64 = (): string => {
+//     const htmlString = "<h1>Example HTML String</h1>";
+//     const canvas = document.createElement("canvas");
+//     const ctx = canvas.getContext("2d");
+
+//     // Set canvas size
+//     canvas.width = 300;
+//     canvas.height = 150;
+
+//     // Draw HTML string on canvas
+//     //@ts-ignore
+//     ctx.fillStyle = "white";
+//     //@ts-ignore
+//     ctx.fillRect(0, 0, canvas.width, canvas.height);
+//     //@ts-ignore
+//     ctx.fillStyle = "black";
+//     //@ts-ignore
+//     ctx.font = "48px sans-serif";
+//     //@ts-ignore
+//     ctx.fillText(htmlString, 10, 50);
+
+//     // Get base64 representation
+//     const base64Image = canvas.toDataURL("image/png");
+
+//     return base64Image;
+// };
+
+// export const convertHtmlToBase64 = (): Promise<string> => {
+//     return new Promise(async (resolve, reject) => {
+//         const html = "<h1>Example HTML String</h1>";
+
+//         let canvas = document.createElement("canvas");
+
+//         canvas.width = 400;
+//         canvas.height = 400;
+
+//         let ctx = canvas.getContext("2d");
+//         let img = new Image();
+
+//         img.src = "data:image/svg+xml;base64," + btoa(html);
+
+//         img.onload = function () {
+//             //@ts-ignore
+//             ctx.drawImage(img, 0, 0);
+//             let dataURL = canvas.toDataURL("image/png");
+
+//             resolve(dataURL);
+//         };
+//     });
+// };
+
+export const convertHtmlToBase64 = (url: string, imageWidth: number, mineType: string): Promise<string> => {
+    return new Promise(async (resolve, reject) => {
+        var canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const image = new Image();
+        image.src = "data:text/html;charset=utf-8," + btoa(`<div>Hi</div>`);
+        // image.src = url;
+
+        image.onload = async () => {
+            if (image.width < imageWidth) imageWidth = image.width;
+
+            canvas.width = imageWidth;
+            canvas.height = image.height * (imageWidth / image.width);
+
+            //@ts-ignore
+            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+            console.log("xxx...here!!!");
+            resolve(canvas.toDataURL(mineType));
+        };
+    });
+};
