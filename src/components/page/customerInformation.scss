@@ -14,4 +14,24 @@
             color: #484848;
         }
     }
+
+    .customer-signature-canvas {
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        width: 400px;
+        height: 200px;
+
+        &.error {
+            border: 1px solid var(--error-color);
+            background-color: hsl(var(--error-hue), var(--error-saturation), 98%);
+        }
+    }
+
+    .customer-signature-clear-button {
+        background-color: #e0e0e0;
+        border: 1px solid #484848;
+        color: #484848;
+        padding: 8px 12px;
+        font-size: 14px;
+    }
 }

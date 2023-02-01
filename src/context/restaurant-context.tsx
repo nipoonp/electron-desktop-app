@@ -13,6 +13,7 @@ import { useGetRestaurantQuery } from "../hooks/useGetRestaurantQuery";
 import { getCloudFrontDomainName } from "../private/aws-custom";
 import { useListRestaurantsQuery } from "../hooks/useListRestaurantsQuery";
 import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
+import { getBase64FromUrlImage } from "../util/util";
 
 interface IMENU_CATEGORIES {
     [index: string]: IGET_RESTAURANT_CATEGORY;
@@ -36,6 +37,7 @@ type ContextProps = {
     restaurant: IGET_RESTAURANT | null;
     setRestaurant: (restaurant: IGET_RESTAURANT) => void;
     restaurantProductImages: any;
+    restaurantBase64Logo: string | null;
     menuCategories: IMENU_CATEGORIES;
     menuProducts: IMENU_PRODUCTS;
     menuModifierGroups: IMENU_MODIFIER_GROUPS;
@@ -50,6 +52,7 @@ const RestaurantContext = createContext<ContextProps>({
     restaurant: null,
     setRestaurant: () => {},
     restaurantProductImages: {},
+    restaurantBase64Logo: null,
     menuCategories: {},
     menuProducts: {},
     menuModifierGroups: {},
@@ -65,6 +68,7 @@ const C = (props: {
     children: React.ReactNode;
 }) => {
     const [restaurant, setRestaurant] = useState<IGET_RESTAURANT | null>(null);
+    const [restaurantBase64Logo, setRestaurantBase64Logo] = useState<string | null>(null);
     const [menuCategories, setMenuCategories] = useState<IMENU_CATEGORIES>({});
     const [menuProducts, setMenuProducts] = useState<IMENU_PRODUCTS>({});
     const [menuModifierGroups, setMenuModifierGroups] = useState<IMENU_MODIFIER_GROUPS>({});
@@ -78,6 +82,19 @@ const C = (props: {
         setRestaurant(getRestaurantData);
         setRestaurantLoading(getRestaurantLoading);
         setRestaurantError(getRestaurantError ? true : false);
+
+        if (getRestaurantData && getRestaurantData.logo) {
+            //Don't need to do await here. We do not need the base64 logo here instantly.
+            getBase64FromUrlImage(
+                `${getCloudFrontDomainName()}/protected/${getRestaurantData.logo.identityPoolId}/${getRestaurantData.logo.key}`,
+                250,
+                "image/png"
+            )
+                .then((base64Logo) => setRestaurantBase64Logo(base64Logo))
+                .catch((e) => console.error("Error getting logo base64", e));
+        } else {
+            setRestaurantBase64Logo(null);
+        }
 
         const categories: IMENU_CATEGORIES = {};
         const products: IMENU_PRODUCTS = {};
@@ -133,6 +150,7 @@ const C = (props: {
                 restaurant: restaurant,
                 setRestaurant: _setRestaurant,
                 restaurantProductImages: restaurantProductImages,
+                restaurantBase64Logo: restaurantBase64Logo,
                 menuCategories: menuCategories,
                 menuProducts: menuProducts,
                 menuModifierGroups: menuModifierGroups,
@@ -225,6 +243,7 @@ const RestaurantProvider = (props: { children: React.ReactNode }) => {
                     restaurant: null,
                     setRestaurant: () => {},
                     restaurantProductImages: [],
+                    restaurantBase64Logo: null,
                     menuCategories: {},
                     menuProducts: {},
                     menuModifierGroups: {},

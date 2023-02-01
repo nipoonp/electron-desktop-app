@@ -37,7 +37,7 @@ const ReceiptPrinterContext = createContext<ContextProps>({
 });
 
 const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
-    const { restaurant } = useRestaurant();
+    const { restaurant, restaurantBase64Logo } = useRestaurant();
     const { register } = useRegister();
     const { logError } = useErrorLogging();
 
@@ -104,11 +104,13 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                                 address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
                                 gstNumber: restaurant.gstNumber,
                             },
+                            restaurantLogoBase64: restaurantBase64Logo,
                             customerInformation: order.customerInformation
                                 ? {
                                       firstName: order.customerInformation.firstName,
                                       email: order.customerInformation.email,
                                       phoneNumber: order.customerInformation.phoneNumber,
+                                      signatureBase64: null,
                                   }
                                 : null,
                             notes: order.notes,
@@ -473,6 +475,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     //                               firstName: order.customerInformation.firstName,
     //                               email: order.customerInformation.email,
     //                               phoneNumber: order.customerInformation.phoneNumber,
+    //                               signature: order.customerInformation.signature,
     //                           }
     //                         : null,
     //                     notes: order.notes,

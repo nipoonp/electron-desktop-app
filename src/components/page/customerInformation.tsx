@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { checkoutPath } from "../main";
 import { useCart } from "../../context/cart-context";
@@ -7,9 +7,11 @@ import { Button } from "../../tabin/components/button";
 import { Input } from "../../tabin/components/input";
 import { useRestaurant } from "../../context/restaurant-context";
 import { useRegister } from "../../context/register-context";
+import SignatureCanvas from "react-signature-canvas";
 
 import "./customerInformation.scss";
 import { FiX } from "react-icons/fi";
+import { resizeBase64ImageToWidth } from "../../util/util";
 
 export default () => {
     const navigate = useNavigate();
@@ -24,6 +26,16 @@ export default () => {
     const [firstNameError, setFirstNameError] = useState(false);
     const [emailError, setEmailError] = useState(false);
     const [phoneNumberError, setPhoneNumberError] = useState(false);
+    const [signatureError, setSignatureError] = useState(false);
+
+    const signatureCanvasRef = useRef();
+    const signatureMimeType = "image/png";
+
+    useEffect(() => {
+        if (!customerInformation || !customerInformation.signatureBase64) return;
+        //@ts-ignore
+        signatureCanvasRef.current.fromDataURL(customerInformation.signatureBase64, signatureMimeType);
+    }, []);
 
     if (!register) throw "Register is not valid";
     if (restaurant == null) throw "Restaurant is invalid!";
@@ -32,7 +44,7 @@ export default () => {
         navigate(`${checkoutPath}`);
     };
 
-    const onNext = () => {
+    const onNext = async () => {
         if (!register.requestCustomerInformation) return;
 
         let invalid = false;
@@ -49,9 +61,19 @@ export default () => {
             setPhoneNumberError(true);
             invalid = true;
         }
+        //@ts-ignore
+        if (register.requestCustomerInformation.signature && signatureCanvasRef.current.isEmpty()) {
+            setSignatureError(true);
+            invalid = true;
+        }
 
         if (!invalid) {
-            setCustomerInformation({ firstName: firstName, email: email, phoneNumber: phoneNumber });
+            //@ts-ignore
+            const signatureBase64 = signatureCanvasRef.current.getTrimmedCanvas().toDataURL(signatureMimeType);
+            const resizedSignatureBase64: string = await resizeBase64ImageToWidth(signatureBase64, 200, signatureMimeType);
+
+            setCustomerInformation({ firstName: firstName, email: email, phoneNumber: phoneNumber, signatureBase64: resizedSignatureBase64 });
+
             navigate(`${checkoutPath}/true`);
         }
     };
@@ -69,6 +91,11 @@ export default () => {
     const onChangePhoneNumber = (e: React.ChangeEvent<HTMLInputElement>) => {
         setPhoneNumber(e.target.value);
         setPhoneNumberError(false);
+    };
+
+    const onClearSignature = () => {
+        //@ts-ignore
+        signatureCanvasRef.current.clear();
     };
 
     return (
@@ -102,6 +129,19 @@ export default () => {
                             <>
                                 <div className="h2 mt-2 mb-2">Phone Number</div>
                                 <Input type="number" onChange={onChangePhoneNumber} value={phoneNumber} error={phoneNumberError ? "Required" : ""} />
+                            </>
+                        )}
+                        {register.requestCustomerInformation && register.requestCustomerInformation.signature && (
+                            <>
+                                <div className="h2 mt-2 mb-2">Signature</div>
+                                <SignatureCanvas
+                                    ref={signatureCanvasRef}
+                                    canvasProps={{ className: `customer-signature-canvas ${signatureError ? "error" : ""}` }}
+                                />
+                                {signatureError && <div className="text-error mt-2 mb-2">{signatureError ? "Required" : ""}</div>}
+                                <Button className="customer-signature-clear-button" onClick={onClearSignature}>
+                                    Clear
+                                </Button>
                             </>
                         )}
                     </div>
