@@ -495,7 +495,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     break;
                 case "09":
                     // We should not come in here if its on kiosk mode, unattended mode for Verifone
-                    if (isPOS) {
+                    if ((register && register.skipEftposReceiptSignature) || isPOS) {
                         transactionOutcome = {
                             platformTransactionOutcome: EVerifoneTransactionOutcome.Approved,
                             transactionOutcome: EEftposTransactionOutcome.Success,

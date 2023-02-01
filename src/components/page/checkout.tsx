@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useNavigate } from "react-router-dom";
-import { convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
+import { convertBase64ToFile, convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
-import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, EPromotionType, ERegisterType } from "../../graphql/customQueries";
+import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, EPromotionType, ERegisterType, IS3Object } from "../../graphql/customQueries";
 import {
     restaurantPath,
     beginOrderPath,
@@ -55,9 +55,12 @@ import { OrderSummary } from "./checkout/orderSummary";
 import { PaymentModal } from "../modals/paymentModal";
 import { useAlert } from "../../tabin/components/alert";
 import { useParams } from "react-router-dom";
+import { format } from "date-fns";
+import { simpleDateTimeFormatUTC } from "../../util/dateFormat";
+import { Storage } from "aws-amplify";
+import awsconfig from "../../aws-exports";
 
 import "./checkout.scss";
-import { format } from "date-fns";
 
 const logger = new Logger("checkout");
 
@@ -100,7 +103,7 @@ export const Checkout = () => {
         isShownUpSellCrossSellModal,
         setIsShownUpSellCrossSellModal,
     } = useCart();
-    const { restaurant } = useRestaurant();
+    const { restaurant, restaurantBase64Logo } = useRestaurant();
     const { register, isPOS } = useRegister();
     const { printReceipt, printLabel } = useReceiptPrinter();
     const { user } = useUser();
@@ -313,6 +316,7 @@ export const Checkout = () => {
             if (register.requestCustomerInformation.firstName && (!customerInformation || !customerInformation.firstName)) invalid = true;
             if (register.requestCustomerInformation.email && (!customerInformation || !customerInformation.email)) invalid = true;
             if (register.requestCustomerInformation.phoneNumber && (!customerInformation || !customerInformation.phoneNumber)) invalid = true;
+            if (register.requestCustomerInformation.signature && (!customerInformation || !customerInformation.signatureBase64)) invalid = true;
 
             if (invalid) {
                 navigate(customerInformationPath);
@@ -419,11 +423,13 @@ export const Checkout = () => {
                                 address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
                                 gstNumber: restaurant.gstNumber,
                             },
+                            restaurantLogoBase64: restaurantBase64Logo,
                             customerInformation: customerInformation
                                 ? {
                                       firstName: customerInformation.firstName,
                                       email: customerInformation.email,
                                       phoneNumber: customerInformation.phoneNumber,
+                                      signatureBase64: customerInformation.signatureBase64,
                                   }
                                 : null,
                             notes: order.notes,
@@ -465,7 +471,40 @@ export const Checkout = () => {
         setPaymentOutcomeOrderNumber(orderNumber);
 
         try {
-            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(orderNumber, paid, parkOrder, newPaymentAmounts, newPayments);
+            let signatureS3Object: IS3Object | null = null;
+
+            if (customerInformation && customerInformation.signatureBase64) {
+                const date = simpleDateTimeFormatUTC(new Date());
+                const filename = `${date}-signature`;
+                const fileExtension = "png";
+
+                const signatureFile = await convertBase64ToFile(
+                    customerInformation.signatureBase64,
+                    `${filename}.${fileExtension}`,
+                    `image/${fileExtension}`
+                );
+
+                const uploadedObject: any = await Storage.put(`${filename}.${fileExtension}`, signatureFile, {
+                    level: "protected",
+                    contentType: `image/${fileExtension}`, //signature image png, png required to print to receipt printer
+                });
+
+                signatureS3Object = {
+                    key: uploadedObject.key,
+                    bucket: awsconfig.aws_user_files_s3_bucket,
+                    region: awsconfig.aws_project_region,
+                    identityPoolId: user ? user.identityPoolId : "",
+                };
+            }
+
+            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(
+                orderNumber,
+                paid,
+                parkOrder,
+                newPaymentAmounts,
+                newPayments,
+                signatureS3Object
+            );
 
             if (register.printers && register.printers.items.length > 0 && printOrder) {
                 await printReceipts(newOrder);
@@ -480,7 +519,8 @@ export const Checkout = () => {
         paid: boolean,
         parkOrder: boolean,
         newPaymentAmounts: ICartPaymentAmounts,
-        newPayments: ICartPayment[]
+        newPayments: ICartPayment[],
+        signatureS3Object: IS3Object | null
     ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
         const now = new Date();
 
@@ -519,6 +559,7 @@ export const Checkout = () => {
                           firstName: customerInformation.firstName,
                           email: customerInformation.email,
                           phoneNumber: customerInformation.phoneNumber,
+                          signature: signatureS3Object,
                       }
                     : null,
                 notes: notes,
@@ -565,6 +606,7 @@ export const Checkout = () => {
                               firstName: customerInformation.firstName,
                               email: customerInformation.email,
                               phoneNumber: customerInformation.phoneNumber,
+                              signature: signatureS3Object,
                           }
                         : null,
                     notes: notes,

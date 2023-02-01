@@ -113,13 +113,26 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
     if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
     printer.alignCenter();
-    printer.bold(true);
-    printer.setTextSize(1, 1);
-    printer.underlineThick(true);
-    printer.println(order.restaurant.name);
-    printer.underlineThick(false);
-    printer.setTextNormal();
-    printer.bold(false);
+
+    if (order.restaurantLogoBase64) {
+        if (order.restaurantLogoBase64) {
+            const logoImageRemoveTag = order.restaurantLogoBase64.split(",")[1];
+            const logoImage = Buffer.from(logoImageRemoveTag, "base64");
+
+            printer.newLine();
+            await printer.printImageBuffer(logoImage);
+            printer.newLine();
+        }
+    } else {
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.underlineThick(true);
+        printer.println(order.restaurant.name);
+        printer.underlineThick(false);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
+
     printer.newLine();
 
     if (order.restaurant.gstNumber) printer.println(`GST: ${order.restaurant.gstNumber}`);
@@ -140,6 +153,15 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
         printer.println(
             `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
         );
+
+        if (order.customerInformation.signatureBase64) {
+            const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
+            const signatureImage = Buffer.from(signatureImageRemoveTag, "base64");
+
+            printer.newLine();
+            await printer.printImageBuffer(signatureImage);
+            printer.newLine();
+        }
     }
 
     printer.newLine();
@@ -499,6 +521,14 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
         if (order.customerInformation.phoneNumber) printer.println(order.customerInformation.phoneNumber);
         printer.setTextNormal();
         printer.bold(false);
+
+        if (order.customerInformation.signatureBase64) {
+            const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
+            const signatureImage = Buffer.from(signatureImageRemoveTag, "base64");
+
+            await printer.printImageBuffer(signatureImage);
+            printer.newLine();
+        }
     }
 
     printer.newLine();
@@ -707,6 +737,15 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
         printer.println(
             `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
         );
+
+        if (order.customerInformation.signatureBase64) {
+            const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
+            const signatureImage = Buffer.from(signatureImageRemoveTag, "base64");
+
+            printer.newLine();
+            await printer.printImageBuffer(signatureImage);
+            printer.newLine();
+        }
     }
 
     if (order.status === EOrderStatus.PARKED && order.notes) {
@@ -752,6 +791,14 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
         if (order.customerInformation.phoneNumber) printer.println(order.customerInformation.phoneNumber);
         printer.setTextNormal();
         printer.bold(false);
+
+        if (order.customerInformation.signatureBase64) {
+            const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
+            const signatureImage = Buffer.from(signatureImageRemoveTag, "base64");
+
+            await printer.printImageBuffer(signatureImage);
+            printer.newLine();
+        }
     }
 
     printer.newLine();
@@ -959,6 +1006,15 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
         printer.println(
             `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
         );
+
+        if (order.customerInformation.signatureBase64) {
+            const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
+            const signatureImage = Buffer.from(signatureImageRemoveTag, "base64");
+
+            printer.newLine();
+            await printer.printImageBuffer(signatureImage);
+            printer.newLine();
+        }
     }
 
     if (order.status === EOrderStatus.PARKED && order.notes) {
@@ -1004,6 +1060,14 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
         if (order.customerInformation.phoneNumber) printer.println(order.customerInformation.phoneNumber);
         printer.setTextNormal();
         printer.bold(false);
+
+        if (order.customerInformation.signatureBase64) {
+            const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
+            const signatureImage = Buffer.from(signatureImageRemoveTag, "base64");
+
+            await printer.printImageBuffer(signatureImage);
+            printer.newLine();
+        }
     }
 
     printer.newLine();

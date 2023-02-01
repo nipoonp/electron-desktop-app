@@ -17,6 +17,13 @@ export enum ERegisterPrinterType {
     USB = "USB",
 }
 
+export interface IS3Object {
+    key: string;
+    bucket: string;
+    region: string;
+    identityPoolId: string;
+}
+
 export interface ICartProduct {
     id: string;
     name: string;
@@ -63,10 +70,12 @@ export interface IOrderReceipt {
         address: string;
         gstNumber: string | null;
     };
+    restaurantLogoBase64: string | null;
     customerInformation: {
         firstName: string | null;
         email: string | null;
         phoneNumber: string | null;
+        signatureBase64: string | null;
     } | null;
     notes: string | null;
     products: ICartProduct[];

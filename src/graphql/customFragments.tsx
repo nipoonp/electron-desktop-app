@@ -29,6 +29,12 @@ export const ORDER_FIELDS_FRAGMENT = gql`
             firstName
             email
             phoneNumber
+            signature {
+                bucket
+                region
+                key
+                identityPoolId
+            }
         }
         status
         type
@@ -194,6 +200,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
         firstName: string | null;
         email: string | null;
         phoneNumber: string | null;
+        signature: IS3Object | null;
     } | null;
     status: EOrderStatus;
     type: EOrderType;
