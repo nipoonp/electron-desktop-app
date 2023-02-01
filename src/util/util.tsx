@@ -23,6 +23,7 @@ import {
     ICartModifierGroup,
     ICartProduct,
 } from "../model/model";
+import html2canvas from "html2canvas";
 
 export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0);
 
@@ -715,24 +716,23 @@ export const getBase64FromUrlImage = (url: string, imageWidth: number, mineType:
 
 export const convertHtmlToBase64 = (url: string, imageWidth: number, mineType: string): Promise<string> => {
     return new Promise(async (resolve, reject) => {
-        var canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
+        const html = `<!DOCTYPE html><html lang="en"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <meta http-equiv="X-UA-Compatible" content="ie=edge"> <title>Receipt example</title> <style>*{font-size: 12px; font-family: 'Times New Roman';}td, th, tr, table{border-top: 1px solid black; border-collapse: collapse;}td.description, th.description{width: 150px; max-width: 150px;}td.quantity, th.quantity{width: 80px; max-width: 80px; word-break: break-all;}td.price, th.price{width: 80px; max-width: 80px; word-break: break-all;}.centered{text-align: center; align-content: center;}.ticket{width: 280px; max-width: 280px;}img{max-width: inherit; width: inherit;}@media print{.hidden-print, .hidden-print *{display: none !important;}}</style> </head> <body> <div class="ticket"> <img src="https://d2nmoln0sb0cri.cloudfront.net/protected/ap-southeast-2:de90f0a4-8492-410c-8720-7a494ad92f91/2021-05-17_05:35:58.714-logo3-copy.png"/> <p class="centered">RECEIPT EXAMPLE <br>Address line 1 <br>Address line 2 </p><table> <thead> <tr> <th class="quantity">Q.</th> <th class="description">Description</th> <th class="price">$$</th> </tr></thead> <tbody> <tr> <td class="quantity">1.00</td><td class="description">ARDUINO UNO R3</td><td class="price">$25.00</td></tr><tr> <td class="quantity">2.00</td><td class="description">JAVASCRIPT BOOK</td><td class="price">$10.00</td></tr><tr> <td class="quantity">1.00</td><td class="description">STICKER PACK</td><td class="price">$10.00</td></tr><tr> <td class="quantity"></td><td class="description">TOTAL</td><td class="price">$55.00</td></tr></tbody> </table> <p class="centered">Thanks for your purchase! <br>parzibyte.me/blog </p></div><button id="btnPrint" class="hidden-print">Print</button> <script src="script.js"></script> </body></html>`;
+        console.log("I am here", html);
 
-        const image = new Image();
-        image.src = "data:text/html;charset=utf-8," + btoa(`<div>Hi</div>`);
-        // image.src = url;
+        const wrapper = document.createElement("div");
+        wrapper.innerHTML = html;
+        document.body.appendChild(wrapper);
 
-        image.onload = async () => {
-            if (image.width < imageWidth) imageWidth = image.width;
+        html2canvas(wrapper)
+            .then((canvas) => {
+                console.log("xxx...", canvas);
+                const imgData = canvas.toDataURL("image/png");
+                console.log("xxx...", imgData);
 
-            canvas.width = imageWidth;
-            canvas.height = image.height * (imageWidth / image.width);
+                document.body.removeChild(wrapper);
 
-            //@ts-ignore
-            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-            console.log("xxx...here!!!");
-            resolve(canvas.toDataURL(mineType));
-        };
+                resolve(imgData);
+            })
+            .catch((e) => console.error(e));
     });
 };

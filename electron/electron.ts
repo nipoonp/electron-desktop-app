@@ -1,15 +1,6 @@
 import { app, BrowserWindow, dialog, globalShortcut } from "electron";
 import { ipcMain, Menu } from "electron";
-import {
-    encodeCommandBuffer,
-    decodeCommandBuffer,
-    printCustomerReceipt,
-    printKitchenReceipt,
-    printSalesDataReceipt,
-    delay,
-    printKitchenReceiptSmall,
-    printKitchenReceiptLarge,
-} from "./util";
+import { encodeCommandBuffer, decodeCommandBuffer, printCustomerReceipt, delay } from "./util";
 import { IOrderReceipt, IPrintReceiptDataOutput, IPrintReceiptOutput, IPrintSalesDataInput, IPrintSalesDataOutput } from "./model";
 import path from "path";
 import net from "net";
@@ -257,24 +248,6 @@ ipcMain.handle("RECEIPT_PRINTER_DATA", async (event: any, order: IOrderReceipt):
             if (result.error) return { error: result.error, order: order };
         }
 
-        if (order.kitchenPrinter) {
-            const result: IPrintReceiptOutput = await printKitchenReceipt(order);
-
-            if (result.error) return { error: result.error, order: order };
-        }
-
-        if (order.kitchenPrinterSmall) {
-            const result: IPrintReceiptOutput = await printKitchenReceiptSmall(order);
-
-            if (result.error) return { error: result.error, order: order };
-        }
-
-        if (order.kitchenPrinterLarge) {
-            const result: IPrintReceiptOutput = await printKitchenReceiptLarge(order);
-
-            if (result.error) return { error: result.error, order: order };
-        }
-
         return { error: null, order: order };
     } catch (e) {
         return { error: e, order: order };
@@ -283,10 +256,6 @@ ipcMain.handle("RECEIPT_PRINTER_DATA", async (event: any, order: IOrderReceipt):
 
 ipcMain.handle("RECEIPT_SALES_DATA", async (event: any, printSalesDataInput: IPrintSalesDataInput): Promise<IPrintSalesDataOutput> => {
     try {
-        const result: IPrintReceiptOutput = await printSalesDataReceipt(printSalesDataInput);
-
-        if (result.error) return { error: result.error, printSalesDataInput: printSalesDataInput };
-
         return { error: null, printSalesDataInput: printSalesDataInput };
     } catch (e) {
         return { error: e, printSalesDataInput: printSalesDataInput };
