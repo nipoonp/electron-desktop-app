@@ -338,6 +338,7 @@ export const GET_RESTAURANT = gql`
                         firstName
                         email
                         phoneNumber
+                        signature
                     }
                     eftposProvider
                     eftposIpAddress
@@ -948,6 +949,7 @@ export interface RequestCustomerInformationType {
     firstName: boolean;
     email: boolean;
     phoneNumber: boolean;
+    signature: boolean;
 }
 
 export interface IGET_RESTAURANT_REGISTER_PRINTER {

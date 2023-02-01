@@ -207,10 +207,12 @@ export const ReceiptPrinter = () => {
                     address: "Receipt Printer 1 Restaurant Address",
                     gstNumber: "123-456-789",
                 },
+                restaurantLogoBase64: "",
                 customerInformation: {
                     firstName: "Test Tabin",
                     phoneNumber: "123-456-789",
                     email: "test@test.com",
+                    signatureBase64: "",
                 },
                 notes: "Order notes",
                 products: TEST_PRODUCT,
@@ -242,6 +244,7 @@ export const ReceiptPrinter = () => {
                 kitchenPrinterLarge: false,
                 hideModifierGroupsForCustomer: false,
                 eftposReceipt: "",
+                restaurantLogoBase64: "",
                 restaurant: {
                     name: "Test Tabin Restaurant",
                     address: "Receipt Printer 2",
@@ -278,6 +281,7 @@ export const ReceiptPrinter = () => {
                 kitchenPrinterLarge: false,
                 hideModifierGroupsForCustomer: false,
                 eftposReceipt: "",
+                restaurantLogoBase64: "",
                 restaurant: {
                     name: "Test Tabin Restaurant",
                     address: "Receipt Printer 3",

@@ -112,6 +112,7 @@ export interface ICustomerInformation {
     firstName: string;
     email: string;
     phoneNumber: string;
+    signatureBase64: string;
 }
 
 export interface ICartItemQuantitiesById {
@@ -223,10 +224,12 @@ export interface IOrderReceipt {
         address: string;
         gstNumber: string | null;
     };
+    restaurantLogoBase64: string | null;
     customerInformation: {
         firstName: string | null;
         email: string | null;
         phoneNumber: string | null;
+        signatureBase64: string | null;
     } | null;
     notes: string | null;
     products: ICartProduct[];
