@@ -1015,34 +1015,18 @@ export interface IGET_RESTAURANT_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT_CATEGORY {
 }
 
 export interface IGET_RESTAURANT_OPERATING_HOURS {
-    sunday: {
-        openingTime: string;
-        closingTime: string;
-    }[];
-    monday: {
-        openingTime: string;
-        closingTime: string;
-    }[];
-    tuesday: {
-        openingTime: string;
-        closingTime: string;
-    }[];
-    wednesday: {
-        openingTime: string;
-        closingTime: string;
-    }[];
-    thursday: {
-        openingTime: string;
-        closingTime: string;
-    }[];
-    friday: {
-        openingTime: string;
-        closingTime: string;
-    }[];
-    saturday: {
-        openingTime: string;
-        closingTime: string;
-    }[];
+    sunday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+    monday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+    tuesday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+    wednesday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+    thursday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+    friday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+    saturday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+}
+
+export interface IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT {
+    openingTime: string;
+    closingTime: string;
 }
 
 export interface IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS {

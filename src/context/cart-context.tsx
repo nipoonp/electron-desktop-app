@@ -36,6 +36,7 @@ const initialSubTotal = 0;
 const initialPayments = [];
 const initialTransactionEftposReceipts = "";
 const initialIsShownUpSellCrossSellModal = false;
+const initialOrderScheduledAt = null;
 
 type ContextProps = {
     // restaurant: IGET_RESTAURANT | null;
@@ -81,6 +82,8 @@ type ContextProps = {
     setTransactionEftposReceipts: (receipt: string) => void;
     isShownUpSellCrossSellModal: boolean;
     setIsShownUpSellCrossSellModal: (isShownUpSellCrossSellModal: boolean) => void;
+    orderScheduledAt: string | null;
+    updateOrderScheduledAt: (orderScheduledAt: string | null) => void;
 };
 
 const CartContext = createContext<ContextProps>({
@@ -127,6 +130,8 @@ const CartContext = createContext<ContextProps>({
     setTransactionEftposReceipts: () => {},
     isShownUpSellCrossSellModal: initialIsShownUpSellCrossSellModal,
     setIsShownUpSellCrossSellModal: () => {},
+    orderScheduledAt: initialOrderScheduledAt,
+    updateOrderScheduledAt: (orderScheduledAt: string | null) => {},
 });
 
 const CartProvider = (props: { children: React.ReactNode }) => {
@@ -155,6 +160,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [cartProductQuantitiesById, _setCartProductQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartProductQuantitiesById);
     const [cartModifierQuantitiesById, _setCartModifierQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartModifierQuantitiesById);
     const [availablePromotions, _setAvailablePromotions] = useState<IGET_RESTAURANT_PROMOTION[]>([]);
+
+    const [orderScheduledAt, _setOrderScheduledAt] = useState<string | null>(initialOrderScheduledAt);
 
     useEffect(() => {
         let newSubTotal = 0;
@@ -576,6 +583,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setIsShownUpSellCrossSellModal(isShownUpSellCrossSellModal);
     };
 
+    const updateOrderScheduledAt = (orderScheduledAt: string | null) => {
+        _setOrderScheduledAt(orderScheduledAt);
+    };
+
     const clearCart = () => {
         _setParkedOrderId(initialParkedOrderId);
         _setParkedOrderNumber(initialParkedOrderNumber);
@@ -599,6 +610,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setPayments(initialPayments);
         _setTransactionEftposReceipts(initialTransactionEftposReceipts);
         _setIsShownUpSellCrossSellModal(initialIsShownUpSellCrossSellModal);
+        _setOrderScheduledAt(initialOrderScheduledAt);
     };
 
     return (
@@ -647,6 +659,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setTransactionEftposReceipts: setTransactionEftposReceipts,
                 isShownUpSellCrossSellModal: isShownUpSellCrossSellModal,
                 setIsShownUpSellCrossSellModal: setIsShownUpSellCrossSellModal,
+                orderScheduledAt: orderScheduledAt,
+                updateOrderScheduledAt: updateOrderScheduledAt,
             }}
             children={props.children}
         />
