@@ -61,6 +61,7 @@ import { Storage } from "aws-amplify";
 import awsconfig from "../../aws-exports";
 
 import "./checkout.scss";
+import { OrderScheduleDateTime } from "../../tabin/components/orderScheduleDateTime";
 
 const logger = new Logger("checkout");
 
@@ -102,6 +103,8 @@ export const Checkout = () => {
         removeUserAppliedPromotion,
         isShownUpSellCrossSellModal,
         setIsShownUpSellCrossSellModal,
+        orderScheduledAt,
+        updateOrderScheduledAt,
     } = useCart();
     const { restaurant, restaurantBase64Logo } = useRestaurant();
     const { register, isPOS } = useRegister();
@@ -317,6 +320,7 @@ export const Checkout = () => {
             if (register.requestCustomerInformation.email && (!customerInformation || !customerInformation.email)) invalid = true;
             if (register.requestCustomerInformation.phoneNumber && (!customerInformation || !customerInformation.phoneNumber)) invalid = true;
             if (register.requestCustomerInformation.signature && (!customerInformation || !customerInformation.signatureBase64)) invalid = true;
+            //    if(register.) orderScheduledAt
 
             if (invalid) {
                 navigate(customerInformationPath);
@@ -554,6 +558,7 @@ export const Checkout = () => {
                 number: orderNumber,
                 table: tableNumber,
                 buzzer: buzzerNumber,
+                orderScheduledAt: orderScheduledAt,
                 customerInformation: customerInformation
                     ? {
                           firstName: customerInformation.firstName,
@@ -601,6 +606,7 @@ export const Checkout = () => {
                     number: orderNumber,
                     table: tableNumber,
                     buzzer: buzzerNumber,
+                    orderScheduledAt: orderScheduledAt,
                     customerInformation: customerInformation
                         ? {
                               firstName: customerInformation.firstName,
@@ -1201,6 +1207,16 @@ export const Checkout = () => {
         />
     );
 
+    const orderScheduleTitle = (
+        <div className="title mb-1 mb-2">
+            <div className="h2">Order Time</div>
+        </div>
+    );
+
+    const onChangeScheduleDateTime = (dateTimeLocalISO: string | null) => {
+        updateOrderScheduledAt(dateTimeLocalISO);
+    };
+
     const restaurantNotes = (
         <>
             <div className="h2 mb-3">Special Instructions</div>
@@ -1237,6 +1253,15 @@ export const Checkout = () => {
 
     const checkoutFooter = (
         <div>
+            <div className="order-schedule-date-time-wrapper">
+                {orderScheduleTitle}
+                <OrderScheduleDateTime
+                    onChange={onChangeScheduleDateTime}
+                    operatingHours={restaurant.operatingHours}
+                    preparationTimeInMinutes={restaurant.preparationTimeInMinutes || 10}
+                />
+            </div>
+            <div className="mb-2"></div>
             {promotion && (
                 <div className="h3 text-center mb-2">
                     {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
