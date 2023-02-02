@@ -31,8 +31,8 @@ export const Select = (props: {
                         aria-hidden="true"
                         focusable="false"
                         style={{
-                            height: "16px",
-                            width: "16px",
+                            height: "10px",
+                            width: "10px",
                             display: "block",
                             fill: "rgb(72, 72, 72)",
                         }}
