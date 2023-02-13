@@ -12,6 +12,13 @@ import {
 import usbPrinter from "@thiagoelg/node-printer";
 import { format } from "date-fns";
 
+export const taxRate = 0.15;
+
+export const calculateTaxAmount = (total: number) => {
+    const diff = total / (1 + taxRate);
+    return total - diff;
+};
+
 export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 export const calculateLRC = (str: string): string => {
@@ -304,11 +311,9 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
         printer.newLine();
     }
 
-    const GST = order.total * 0.15;
-
     printer.tableCustom([
         { text: "GST (15.00%)", align: "LEFT", width: 0.75 },
-        { text: `\$${convertCentsToDollars(GST)}`, align: "RIGHT", width: 0.25 },
+        { text: `\$${convertCentsToDollars(calculateTaxAmount(order.total))}`, align: "RIGHT", width: 0.25 },
     ]);
     order.discount &&
         printer.tableCustom([
