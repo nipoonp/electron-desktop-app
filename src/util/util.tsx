@@ -1,4 +1,4 @@
-import { format, getDay, isAfter, isWithinInterval, startOfDay } from "date-fns";
+import { eachMinuteOfInterval, format, getDay, isAfter, isWithinInterval, startOfDay } from "date-fns";
 import { addDays, isEqual } from "date-fns/esm";
 import { IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
 import {
@@ -14,6 +14,8 @@ import {
     IGET_RESTAURANT_REGISTER_PRINTER,
     IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_HOURS,
     IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES,
+    IGET_RESTAURANT_OPERATING_HOURS,
+    IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT,
 } from "../graphql/customQueries";
 import {
     CheckIfPromotionValidResponse,
@@ -660,4 +662,109 @@ export const getBase64FromUrlImage = (url: string, imageWidth: number, mineType:
             resolve(canvas.toDataURL(mineType));
         };
     });
+};
+
+export const getIsRestaurantOpen = (operatingHours: IGET_RESTAURANT_OPERATING_HOURS, day: number) => {
+    let isOpen = false;
+
+    switch (day) {
+        case 0:
+            isOpen = operatingHours.sunday.length != 0;
+            break;
+        case 1:
+            isOpen = operatingHours.monday.length != 0;
+            break;
+        case 2:
+            isOpen = operatingHours.tuesday.length != 0;
+            break;
+        case 3:
+            isOpen = operatingHours.wednesday.length != 0;
+            break;
+        case 4:
+            isOpen = operatingHours.thursday.length != 0;
+            break;
+        case 5:
+            isOpen = operatingHours.friday.length != 0;
+            break;
+        case 6:
+            isOpen = operatingHours.saturday.length != 0;
+            break;
+        default:
+            isOpen = false;
+            break;
+    }
+
+    return isOpen;
+};
+
+export const getRestaurantTimings = (operatingHours: IGET_RESTAURANT_OPERATING_HOURS, date: Date, day: number, timeInterval: number): Date[] => {
+    let timings: Date[] = [];
+
+    const getTimings = (timeSlots: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[]): Date[] => {
+        const intervals: Date[] = [];
+
+        timeSlots.forEach((timeSlot) => {
+            const openingTimeSlotHour = timeSlot.openingTime.split(":")[0];
+            const openingTimeSlotMinute = timeSlot.openingTime.split(":")[1];
+            const closingTimeSlotHour = timeSlot.closingTime.split(":")[0];
+            const closingTimeSlotMinute = timeSlot.closingTime.split(":")[1];
+
+            try {
+                const newIntervals = eachMinuteOfInterval(
+                    {
+                        start: new Date(
+                            date.getFullYear(),
+                            date.getMonth(),
+                            date.getDate(),
+                            parseInt(openingTimeSlotHour),
+                            parseInt(openingTimeSlotMinute)
+                        ),
+                        end: new Date(
+                            date.getFullYear(),
+                            date.getMonth(),
+                            date.getDate(),
+                            parseInt(closingTimeSlotHour),
+                            parseInt(closingTimeSlotMinute)
+                        ),
+                    },
+                    { step: timeInterval }
+                );
+
+                intervals.push(...newIntervals);
+            } catch (err) {
+                //Can end up here if start date and end date are the same.
+                console.error("Error: eachMinuteOfInterval", err);
+            }
+        });
+
+        return intervals;
+    };
+
+    switch (day) {
+        case 0:
+            timings = getTimings(operatingHours.sunday);
+            break;
+        case 1:
+            timings = getTimings(operatingHours.monday);
+            break;
+        case 2:
+            timings = getTimings(operatingHours.tuesday);
+            break;
+        case 3:
+            timings = getTimings(operatingHours.wednesday);
+            break;
+        case 4:
+            timings = getTimings(operatingHours.thursday);
+            break;
+        case 5:
+            timings = getTimings(operatingHours.friday);
+            break;
+        case 6:
+            timings = getTimings(operatingHours.saturday);
+            break;
+        default:
+            break;
+    }
+
+    return timings;
 };

@@ -5,7 +5,14 @@ import { useNavigate } from "react-router-dom";
 import { convertBase64ToFile, convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
-import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, EPromotionType, ERegisterType, IS3Object } from "../../graphql/customQueries";
+import {
+    IGET_RESTAURANT_CATEGORY,
+    IGET_RESTAURANT_PRODUCT,
+    EPromotionType,
+    ERegisterType,
+    IS3Object,
+    IGET_SHIFT8_ORDER_RESPONSE,
+} from "../../graphql/customQueries";
 import {
     restaurantPath,
     beginOrderPath,
@@ -61,6 +68,8 @@ import { Storage } from "aws-amplify";
 import awsconfig from "../../aws-exports";
 
 import "./checkout.scss";
+import { OrderScheduleDateTime } from "../../tabin/components/orderScheduleDateTime";
+import { useGetShift8OrderResponseLazyQuery } from "../../hooks/useGetShift8OrderResponseLazyQuery";
 
 const logger = new Logger("checkout");
 
@@ -102,6 +111,8 @@ export const Checkout = () => {
         removeUserAppliedPromotion,
         isShownUpSellCrossSellModal,
         setIsShownUpSellCrossSellModal,
+        orderScheduledAt,
+        updateOrderScheduledAt,
     } = useCart();
     const { restaurant, restaurantBase64Logo } = useRestaurant();
     const { register, isPOS } = useRegister();
@@ -124,6 +135,8 @@ export const Checkout = () => {
             logger.debug("update order mutation result: ", mutationResult);
         },
     });
+
+    const { getShift8OrderResponse } = useGetShift8OrderResponseLazyQuery();
 
     // state
     const [selectedCategoryForProductModal, setSelectedCategoryForProductModal] = useState<IGET_RESTAURANT_CATEGORY | null>(null);
@@ -317,6 +330,7 @@ export const Checkout = () => {
             if (register.requestCustomerInformation.email && (!customerInformation || !customerInformation.email)) invalid = true;
             if (register.requestCustomerInformation.phoneNumber && (!customerInformation || !customerInformation.phoneNumber)) invalid = true;
             if (register.requestCustomerInformation.signature && (!customerInformation || !customerInformation.signatureBase64)) invalid = true;
+            //    if(register.) orderScheduledAt
 
             if (invalid) {
                 navigate(customerInformationPath);
@@ -470,6 +484,9 @@ export const Checkout = () => {
 
         setPaymentOutcomeOrderNumber(orderNumber);
 
+        //Start timer at the top of the function becuase all these API call should finish within countdown time. If theres an error, it will show up.
+        beginTransactionCompleteTimeout();
+
         try {
             let signatureS3Object: IS3Object | null = null;
 
@@ -509,9 +526,57 @@ export const Checkout = () => {
             if (register.printers && register.printers.items.length > 0 && printOrder) {
                 await printReceipts(newOrder);
             }
+
+            try {
+                //If shift8 integration poll for result.
+                if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.shift8EnableIntegration) {
+                    await pollShift8OrderResponse(newOrder.id);
+                }
+            } catch (e) {
+                console.error(e);
+                throw e;
+            }
         } catch (e) {
             throw e.message;
         }
+    };
+
+    const pollShift8OrderResponse = (orderId) => {
+        const interval = 2 * 1000; // 2 seconds
+        const timeout = 10 * 1000; // 10 seconds
+
+        const endTime = Number(new Date()) + timeout;
+
+        var checkCondition = async (resolve: any, reject: any) => {
+            try {
+                const shift8OrderResponseRes = await getShift8OrderResponse({
+                    variables: {
+                        id: orderId,
+                    },
+                });
+
+                const shift8OrderResponse: IGET_SHIFT8_ORDER_RESPONSE = shift8OrderResponseRes.data.getOrder;
+
+                if (shift8OrderResponse.thirdPartyIntegrationResult) {
+                    if (shift8OrderResponse.thirdPartyIntegrationResult.shift8IsSuccess === true) {
+                        resolve();
+                    } else {
+                        reject(shift8OrderResponse.thirdPartyIntegrationResult.shift8ErrorMessage);
+                    }
+                } else if (Number(new Date()) < endTime) {
+                    setTimeout(checkCondition, interval, resolve, reject);
+                    return;
+                } else {
+                    // Didn't match and too much time, reject!
+                    reject("Shift8 Result Polling timed out. Please contact support staff.");
+                    return;
+                }
+            } catch (error) {
+                reject(error);
+            }
+        };
+
+        return new Promise(checkCondition);
     };
 
     const createOrder = async (
@@ -554,6 +619,7 @@ export const Checkout = () => {
                 number: orderNumber,
                 table: tableNumber,
                 buzzer: buzzerNumber,
+                orderScheduledAt: orderScheduledAt,
                 customerInformation: customerInformation
                     ? {
                           firstName: customerInformation.firstName,
@@ -601,6 +667,7 @@ export const Checkout = () => {
                     number: orderNumber,
                     table: tableNumber,
                     buzzer: buzzerNumber,
+                    orderScheduledAt: orderScheduledAt,
                     customerInformation: customerInformation
                         ? {
                               firstName: customerInformation.firstName,
@@ -761,8 +828,6 @@ export const Checkout = () => {
                 setPayments(newPayments);
 
                 if (newTotalPaymentAmounts >= subTotal) {
-                    beginTransactionCompleteTimeout();
-
                     //Passing paymentAmounts, payments via params so we send the most updated values
                     await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
                 }
@@ -801,8 +866,6 @@ export const Checkout = () => {
                 setPaymentModalState(EPaymentModalState.CashResult);
                 setCashTransactionChangeAmount(changeAmount);
 
-                beginTransactionCompleteTimeout();
-
                 //Passing paymentAmounts, payments via params so we send the most updated values
                 await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
             }
@@ -829,8 +892,6 @@ export const Checkout = () => {
             //If paid for everything
             if (newTotalPaymentAmounts >= subTotal) {
                 setPaymentModalState(EPaymentModalState.UberEatsResult);
-
-                beginTransactionCompleteTimeout();
 
                 //Passing paymentAmounts, payments via params so we send the most updated values
                 await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
@@ -859,8 +920,6 @@ export const Checkout = () => {
             if (newTotalPaymentAmounts >= subTotal) {
                 setPaymentModalState(EPaymentModalState.MenulogResult);
 
-                beginTransactionCompleteTimeout();
-
                 //Passing paymentAmounts, payments via params so we send the most updated values
                 await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
             }
@@ -885,8 +944,6 @@ export const Checkout = () => {
 
         setPaymentModalState(EPaymentModalState.PayLater);
 
-        beginTransactionCompleteTimeout();
-
         try {
             await onSubmitOrder(false, false, true, newPaymentAmounts, newPayments);
         } catch (e) {
@@ -901,8 +958,6 @@ export const Checkout = () => {
         const newPayments: ICartPayment[] = [];
 
         setPaymentModalState(EPaymentModalState.Park);
-
-        beginTransactionCompleteTimeout();
 
         try {
             await onSubmitOrder(false, true, printOrder, newPaymentAmounts, newPayments);
@@ -1201,6 +1256,16 @@ export const Checkout = () => {
         />
     );
 
+    const orderScheduleTitle = (
+        <div className="title mb-1 mb-2">
+            <div className="h2">Order Time</div>
+        </div>
+    );
+
+    const onChangeScheduleDateTime = (dateTimeLocalISO: string | null) => {
+        updateOrderScheduledAt(dateTimeLocalISO);
+    };
+
     const restaurantNotes = (
         <>
             <div className="h2 mb-3">Special Instructions</div>
@@ -1237,6 +1302,15 @@ export const Checkout = () => {
 
     const checkoutFooter = (
         <div>
+            {/* <div className="order-schedule-date-time-wrapper">
+                {orderScheduleTitle}
+                <OrderScheduleDateTime
+                    onChange={onChangeScheduleDateTime}
+                    operatingHours={restaurant.operatingHours}
+                    preparationTimeInMinutes={restaurant.preparationTimeInMinutes || 10}
+                />
+            </div>
+            <div className="mb-2"></div> */}
             {promotion && (
                 <div className="h3 text-center mb-2">
                     {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(

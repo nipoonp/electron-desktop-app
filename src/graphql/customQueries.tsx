@@ -300,6 +300,12 @@ export const GET_RESTAURANT = gql`
                     }
                 }
             }
+            thirdPartyIntegrations {
+                shift8EnableIntegration
+                shift8StoreApiUrl
+                shift8StoreUuid
+                shift8StoreLocationNumber
+            }
             upSellCrossSell {
                 id
                 customCategories {
@@ -878,6 +884,7 @@ export interface IGET_RESTAURANT {
     surchargePercentage: number | null;
     salesReportMailingList: string | null;
     advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
+    thirdPartyIntegrations: IThirdPartyIntegrations | null;
     upSellCrossSell?: IGET_RESTAURANT_UP_SELL_CROSS_SELL;
     registers: { items: IGET_RESTAURANT_REGISTER[] };
     promotions: { items: IGET_RESTAURANT_PROMOTION[] };
@@ -890,6 +897,13 @@ export interface IGET_RESTAURANT {
     modifiers: {
         items: IGET_RESTAURANT_MODIFIER[];
     };
+}
+
+export interface IThirdPartyIntegrations {
+    shift8EnableIntegration: boolean;
+    shift8StoreApiUrl: string;
+    shift8StoreUuid: string;
+    shift8StoreLocationNumber: number;
 }
 
 export interface IGET_RESTAURANT_ADVERTISEMENT {
@@ -1015,34 +1029,18 @@ export interface IGET_RESTAURANT_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT_CATEGORY {
 }
 
 export interface IGET_RESTAURANT_OPERATING_HOURS {
-    sunday: {
-        openingTime: string;
-        closingTime: string;
-    }[];
-    monday: {
-        openingTime: string;
-        closingTime: string;
-    }[];
-    tuesday: {
-        openingTime: string;
-        closingTime: string;
-    }[];
-    wednesday: {
-        openingTime: string;
-        closingTime: string;
-    }[];
-    thursday: {
-        openingTime: string;
-        closingTime: string;
-    }[];
-    friday: {
-        openingTime: string;
-        closingTime: string;
-    }[];
-    saturday: {
-        openingTime: string;
-        closingTime: string;
-    }[];
+    sunday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+    monday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+    tuesday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+    wednesday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+    thursday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+    friday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+    saturday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+}
+
+export interface IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT {
+    openingTime: string;
+    closingTime: string;
 }
 
 export interface IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS {
@@ -1611,3 +1609,23 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
         }
     }
 `;
+
+export const GET_SHIFT8_ORDER_RESPONSE = gql`
+    query getOrder($id: ID!) {
+        getOrder(id: $id) {
+            id
+            thirdPartyIntegrationResult {
+                shift8IsSuccess
+                shift8ErrorMessage
+            }
+        }
+    }
+`;
+
+export interface IGET_SHIFT8_ORDER_RESPONSE {
+    id: string;
+    thirdPartyIntegrationResult: {
+        shift8IsSuccess: boolean;
+        shift8ErrorMessage: string;
+    } | null;
+}
