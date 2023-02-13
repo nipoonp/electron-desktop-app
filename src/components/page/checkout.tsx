@@ -75,6 +75,7 @@ const logger = new Logger("checkout");
 
 // Component
 export const Checkout = () => {
+    const transactionCompleteRedirectTime = 20;
     // context
     const navigate = useNavigate();
     const { autoClickCompleteOrderOnLoad } = useParams();
@@ -158,7 +159,7 @@ export const Checkout = () => {
 
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
     const [paymentOutcomeOrderNumber, setPaymentOutcomeOrderNumber] = useState<string | null>(null);
-    const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(10);
+    const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(transactionCompleteRedirectTime);
 
     const [showPromotionCodeModal, setShowPromotionCodeModal] = useState(false);
     const [showUpSellCategoryModal, setShowUpSellCategoryModal] = useState(false);
@@ -372,7 +373,7 @@ export const Checkout = () => {
     };
 
     const beginTransactionCompleteTimeout = () => {
-        let timeLeft = 10;
+        let timeLeft = transactionCompleteRedirectTime;
 
         transactionCompleteTimeoutIntervalId.current = setInterval(() => {
             setPaymentOutcomeApprovedRedirectTimeLeft((prevPaymentOutcomeApprovedRedirectTimeLeft) => prevPaymentOutcomeApprovedRedirectTimeLeft - 1);
