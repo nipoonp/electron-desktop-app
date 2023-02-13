@@ -1302,7 +1302,7 @@ export const Checkout = () => {
 
     const checkoutFooter = (
         <div>
-            <div className="order-schedule-date-time-wrapper">
+            {/* <div className="order-schedule-date-time-wrapper">
                 {orderScheduleTitle}
                 <OrderScheduleDateTime
                     onChange={onChangeScheduleDateTime}
@@ -1310,7 +1310,7 @@ export const Checkout = () => {
                     preparationTimeInMinutes={restaurant.preparationTimeInMinutes || 10}
                 />
             </div>
-            <div className="mb-2"></div>
+            <div className="mb-2"></div> */}
             {promotion && (
                 <div className="h3 text-center mb-2">
                     {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
