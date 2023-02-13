@@ -32,8 +32,6 @@ export const getVerifoneTimeBasedTransactionId = () => {
     //If multi-merchant is not supported or required then id ‘0’ should be used
 };
 
-export const taxRate = 15;
-
 export const getTwelveHourFormat = (hour: number): string => {
     return `${hour > 12 ? `${hour - 12} PM` : hour === 12 ? `${hour} PM` : `${hour} AM`}`;
 };
