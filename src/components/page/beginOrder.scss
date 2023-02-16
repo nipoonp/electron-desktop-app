@@ -15,22 +15,6 @@
         overflow: hidden;
     }
 
-    .order-here-text-wrapper {
-        font-size: 84px;
-        font-weight: 600;
-        text-align: center;
-        padding-top: 40px;
-
-        .order-text {
-            margin-bottom: 16px;
-        }
-
-        .here-text {
-            font-size: 156px;
-            color: var(--primary-color);
-        }
-    }
-
     .touch-to-begin-wrapper {
         position: absolute;
         bottom: -75px;
@@ -60,7 +44,6 @@
             position: absolute;
             width: 100%;
             height: 100vh;
-            padding: 332px 42px 148px 42px;
         }
 
         .slide-animation {
@@ -79,7 +62,6 @@
             max-height: 100%;
             max-width: 100%;
             object-fit: contain;
-            border-radius: 10px;
         }
 
         @keyframes advertisementBlinker {
@@ -173,4 +155,8 @@
             }
         }
     }
+}
+
+.splash-screen-video {
+    width: 100%;
 }
