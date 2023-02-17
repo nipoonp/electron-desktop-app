@@ -10,7 +10,7 @@ jobs:
         steps:
             - name: Post to a Slack channel
               id: slack
-              uses: slackapi/slack-github-action@v1.14.0
+              uses: slackapi/slack-github-action@v1.23.0
               with:
                   channel-id: ${{ secrets.SLACK_BOT_CHANNEL_ID }}
                   slack-message: "Electron build started!"
@@ -91,7 +91,7 @@ jobs:
         steps:
             - name: Post to a Slack channel
               id: slack
-              uses: slackapi/slack-github-action@v1.14.0
+              uses: slackapi/slack-github-action@v1.23.0
               with:
                   channel-id: ${{ secrets.SLACK_BOT_CHANNEL_ID }}
                   slack-message: "Electron build completed! 🚀🚀🔥"
