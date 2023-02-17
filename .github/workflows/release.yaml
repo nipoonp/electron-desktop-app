@@ -19,7 +19,7 @@ jobs:
     create_release:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v3.3.0
             - name: get-npm-version
               id: package-version
               uses: martinbeentjes/npm-get-version-action@master
@@ -39,8 +39,8 @@ jobs:
         env:
             CI: false #Need this otherwise github actions will do this => "Treating warnings as errors because process.env.CI = true"
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v1
+            - uses: actions/checkout@v3.3.0
+            - uses: actions/setup-node@v3.6.0
               with:
                   node-version: 16
             - name: Install windows build tools
@@ -68,8 +68,8 @@ jobs:
     #     env:
     #         CI: false #Need this otherwise github actions will do this => "Treating warnings as errors because process.env.CI = true"
     #     steps:
-    #         - uses: actions/checkout@v2
-    #         - uses: actions/setup-node@v1
+    #         - uses: actions/checkout@v3.3.0
+    #         - uses: actions/setup-node@v3.6.0
     #           with:
     #               node-version: 16
     #         - name: Install dependencies
