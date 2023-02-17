@@ -49,6 +49,8 @@ jobs:
               run: npm config set msvs_version 2019 --global
             - name: Install node-gyp
               run: npm install --global node-gyp@latest
+            - name: Install electron-builder
+              run: npm install --global electron-builder
             - name: Install dependencies
               run: npm install --legacy-peer-deps
             - name: Build native dependencies
