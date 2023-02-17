@@ -58,7 +58,7 @@ jobs:
             - name: Build desktop
               run: npm run build:desktop
             - name: Release Electron app
-              uses: coparse-inc/action-electron-builder@v1.0.0
+              uses: samuelmeuli/action-electron-builder@v1.6.0
               with:
                   github_token: ${{ secrets.github_token }}
                   release: ${{ startsWith(github.ref, 'refs/tags/v') }}
