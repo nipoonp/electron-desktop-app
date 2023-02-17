@@ -60,7 +60,7 @@ jobs:
             - name: Build desktop
               run: npm run build:desktop
             - name: Release Electron app
-              run: electron-builder -w -p 'onTagOrDraft'
+              run: GH_TOKEN=${{ secrets.GH_TOKEN }} electron-builder -w -p 'onTagOrDraft'
             #   uses: samuelmeuli/action-electron-builder@v1.6.0
             #   with:
             #       github_token: ${{ secrets.github_token }}
