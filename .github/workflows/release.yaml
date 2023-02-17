@@ -58,14 +58,15 @@ jobs:
             - name: Build desktop
               run: npm run build:desktop
             - name: Release Electron app
-              uses: samuelmeuli/action-electron-builder@v1.6.0
-              with:
-                  github_token: ${{ secrets.github_token }}
-                  release: ${{ startsWith(github.ref, 'refs/tags/v') }}
-                  args: "-w"
-              env:
-                  CSC_LINK: ${{ secrets.WINDOWS_CERTS }}
-                  CSC_KEY_PASSWORD: ""
+              run: electron-builder -w -p 'onTagOrDraft'
+            #   uses: samuelmeuli/action-electron-builder@v1.6.0
+            #   with:
+            #       github_token: ${{ secrets.github_token }}
+            #       release: ${{ startsWith(github.ref, 'refs/tags/v') }}
+            #       args: "-w"
+            #   env:
+            #       CSC_LINK: ${{ secrets.WINDOWS_CERTS }}
+            #       CSC_KEY_PASSWORD: ""
     # macos:
     #     runs-on: macos-latest
     #     env:
