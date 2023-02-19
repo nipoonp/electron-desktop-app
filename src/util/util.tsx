@@ -36,6 +36,12 @@ export const convertCentsToDollarsReturnFloat = (price: number) => parseFloat((p
 
 export const getDollarString = (price: number) => `$${convertCentsToDollars(price)}`;
 
+export const isVideoFile = (filename) => {
+    var videoExtensions = ["mp4", "m4v", "mov", "avi", "wmv", "flv", "webm"];
+    var ext = filename.split(".").pop().toLowerCase();
+    return videoExtensions.includes(ext);
+};
+
 export const getOrderNumber = (orderNumberSuffix: string, orderNumberStart: number) => {
     let todayDate = format(new Date(), "dd/MM/yyyy");
 

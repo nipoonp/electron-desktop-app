@@ -10,7 +10,7 @@ jobs:
         steps:
             - name: Post to a Slack channel
               id: slack
-              uses: slackapi/slack-github-action@v1.14.0
+              uses: slackapi/slack-github-action@v1.23.0
               with:
                   channel-id: ${{ secrets.SLACK_BOT_CHANNEL_ID }}
                   slack-message: "Electron build started!"
@@ -19,7 +19,7 @@ jobs:
     create_release:
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v2
+            - uses: actions/checkout@v3.3.0
             - name: get-npm-version
               id: package-version
               uses: martinbeentjes/npm-get-version-action@master
@@ -39,18 +39,20 @@ jobs:
         env:
             CI: false #Need this otherwise github actions will do this => "Treating warnings as errors because process.env.CI = true"
         steps:
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v1
+            - uses: actions/checkout@v3.3.0
+            - uses: actions/setup-node@v3.6.0
               with:
-                  node-version: 14
+                  node-version: 16
             - name: Install windows build tools
               run: npm install --global --production windows-build-tools@4.0.0
             - name: Set npm config set msvs_version 2019 --global
               run: npm config set msvs_version 2019 --global
             - name: Install node-gyp
               run: npm install --global node-gyp@latest
+            - name: Install electron-builder
+              run: npm install --global electron-builder
             - name: Install dependencies
-              run: npm install
+              run: npm install --legacy-peer-deps
             - name: Build native dependencies
               run: ./node_modules/.bin/electron-rebuild
             - name: Build web
@@ -58,25 +60,20 @@ jobs:
             - name: Build desktop
               run: npm run build:desktop
             - name: Release Electron app
-              uses: samuelmeuli/action-electron-builder@v1
-              with:
-                  github_token: ${{ secrets.github_token }}
-                  release: ${{ startsWith(github.ref, 'refs/tags/v') }}
-                  args: "-w"
+              run: electron-builder -w -p 'onTagOrDraft'
               env:
-                  CSC_LINK: ${{ secrets.WINDOWS_CERTS }}
-                  CSC_KEY_PASSWORD: ""
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
     # macos:
     #     runs-on: macos-latest
     #     env:
     #         CI: false #Need this otherwise github actions will do this => "Treating warnings as errors because process.env.CI = true"
     #     steps:
-    #         - uses: actions/checkout@v2
-    #         - uses: actions/setup-node@v1
+    #         - uses: actions/checkout@v3.3.0
+    #         - uses: actions/setup-node@v3.6.0
     #           with:
-    #               node-version: 14
+    #               node-version: 16
     #         - name: Install dependencies
-    #           run: npm install
+    #           run: npm install --legacy-peer-deps
     #         - name: Build native dependencies
     #           run: ./node_modules/.bin/electron-rebuild
     #         - name: Build web
@@ -84,21 +81,16 @@ jobs:
     #         - name: Build desktop
     #           run: npm run build:desktop
     #         - name: Release Electron app
-    #           uses: samuelmeuli/action-electron-builder@v1
-    #           with:
-    #               github_token: ${{ secrets.github_token }}
-    #               release: ${{ startsWith(github.ref, 'refs/tags/v') }}
-    #               args: "-m"
+    #           run: electron-builder -m -p 'onTagOrDraft'
     #           env:
-    #               CSC_LINK: ${{ secrets.MAC_CERTIFICATE_AUTO_DOWNLOAD_GITHUB_LINK }}
-    #               CSC_KEY_PASSWORD: ""
+    #               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
     slack_message_complete:
         needs: [slack_message_start, create_release, windows]
         runs-on: ubuntu-latest
         steps:
             - name: Post to a Slack channel
               id: slack
-              uses: slackapi/slack-github-action@v1.14.0
+              uses: slackapi/slack-github-action@v1.23.0
               with:
                   channel-id: ${{ secrets.SLACK_BOT_CHANNEL_ID }}
                   slack-message: "Electron build completed! 🚀🚀🔥"

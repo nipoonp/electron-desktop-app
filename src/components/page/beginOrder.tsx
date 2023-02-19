@@ -8,7 +8,7 @@ import { useRestaurant } from "../../context/restaurant-context";
 import { CachedImage } from "../../tabin/components/cachedImage";
 
 import "./beginOrder.scss";
-import { isItemAvailable } from "../../util/util";
+import { isItemAvailable, isVideoFile } from "../../util/util";
 
 export default (props: {}) => {
     const { restaurant } = useRestaurant();
@@ -76,10 +76,6 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
                         navigate(restaurantPath + "/" + restaurant.id);
                     }}
                 >
-                    <div className="order-here-text-wrapper">
-                        <div className="order-text">ORDER</div>
-                        <div className="here-text">HERE</div>
-                    </div>
                     <div className="touch-to-begin-wrapper">
                         <CachedImage className="icon" url={`${getPublicCloudFrontDomainName()}/images/touch-here-dark.png`} alt="hand-icon" />
                         <div className="h3">TOUCH TO BEGIN</div>
@@ -93,11 +89,23 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
                                 currentAd == index ? "active" : "inactive"
                             }`}
                         >
-                            <CachedImage
-                                className="image"
-                                url={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${advertisement.content.key}`}
-                                alt="advertisement-image"
-                            />
+                            {isVideoFile(advertisement.content.key) ? (
+                                <video className="splash-screen-video" autoPlay loop muted>
+                                    <source
+                                        src={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${
+                                            advertisement.content.key
+                                        }`}
+                                    />
+                                </video>
+                            ) : (
+                                <CachedImage
+                                    className="image"
+                                    url={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${
+                                        advertisement.content.key
+                                    }`}
+                                    alt="advertisement-image"
+                                />
+                            )}
                         </div>
                     ))}
                 </div>
