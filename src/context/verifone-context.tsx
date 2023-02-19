@@ -232,15 +232,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     payload: dataPayload,
                 };
 
-                if (type == VMT.ReadyToPrintRequest) {
-                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
-                    addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
-                } else if (type == VMT.PrintRequest) {
-                    eftposReceipt.current = dataPayload;
-                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
-                    addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
-                }
-
                 lastMessageReceived.current = Number(new Date());
             });
 
@@ -359,6 +350,10 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             const merchantId = 0;
             let iSO8583ResponseCode;
 
+            //Added these because Android terminals need the eadyToPrintRequest and printRequest replys coming in the correct sequence.
+            let readyToPrintRequestReplySent = false;
+            let printRequestReplySent = false;
+
             // Connect To EFTPOS -------------------------------------------------------------------------------------------------------------------------------- //
             const connectTimedOut = await connectToEftpos(ipAddress, portNumber);
             if (connectTimedOut) {
@@ -378,38 +373,39 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 return;
             }
 
-            // Configure Printing -------------------------------------------------------------------------------------------------------------------------------- //
-            ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
-            addToLogs(`BROWSER_DATA: ${VMT.ConfigurePrinting},ON`);
+            //Had this before. However, do now require this anymore.
+            // // Configure Printing -------------------------------------------------------------------------------------------------------------------------------- //
+            // ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
+            // addToLogs(`BROWSER_DATA: ${VMT.ConfigurePrinting},ON`);
 
-            const printingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
-            while (
-                eftposData.current.type != VMT.ConfigurePrintingResponse // What if this is OFF?
-            ) {
-                const errorMessage = checkForErrors();
-                if (errorMessage) {
-                    reject({
-                        transactionId: null,
-                        message: errorMessage,
-                    });
-                    return;
-                }
+            // const printingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
+            // while (
+            //     eftposData.current.type != VMT.ConfigurePrintingResponse // What if this is OFF?
+            // ) {
+            //     const errorMessage = checkForErrors();
+            //     if (errorMessage) {
+            //         reject({
+            //             transactionId: null,
+            //             message: errorMessage,
+            //         });
+            //         return;
+            //     }
 
-                addToLogs("Waiting to receive Configure Printing Response (CP,ON)...");
+            //     addToLogs("Waiting to receive Configure Printing Response (CP,ON)...");
 
-                await delay(interval);
+            //     await delay(interval);
 
-                if (!(Number(new Date()) < printingTimeoutEndTime)) {
-                    const disconnectTimedOut = await disconnectEftpos();
-                    if (disconnectTimedOut) {
-                        reject({ transactionId: null, message: "There was an issue disconnecting to the Eftpos." });
-                        return;
-                    }
+            //     if (!(Number(new Date()) < printingTimeoutEndTime)) {
+            //         const disconnectTimedOut = await disconnectEftpos();
+            //         if (disconnectTimedOut) {
+            //             reject({ transactionId: null, message: "There was an issue disconnecting to the Eftpos." });
+            //             return;
+            //         }
 
-                    reject({ transactionId: null, message: "There was an issue configuring Eftpos Printing." });
-                    return;
-                }
-            }
+            //         reject({ transactionId: null, message: "There was an issue configuring Eftpos Printing." });
+            //         return;
+            //     }
+            // }
 
             // Create A Transaction -------------------------------------------------------------------------------------------------------------------------------- //
             // We only want to create a new transaction if we are not refetching the result of an existing one
@@ -472,6 +468,21 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
                 ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
                 addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
+
+                //Only send these commands once
+                if (eftposData.current.type == VMT.ReadyToPrintRequest && !readyToPrintRequestReplySent) {
+                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
+                    addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
+
+                    readyToPrintRequestReplySent = true;
+                } else if (eftposData.current.type == VMT.PrintRequest && !printRequestReplySent) {
+                    eftposReceipt.current = eftposData.current.payload;
+
+                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
+                    addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
+
+                    printRequestReplySent = true;
+                }
             }
 
             // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
