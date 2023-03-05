@@ -5,7 +5,14 @@ import { useNavigate } from "react-router-dom";
 import { convertBase64ToFile, convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
-import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, EPromotionType, IS3Object } from "../../graphql/customQueries";
+import {
+    IGET_RESTAURANT_CATEGORY,
+    IGET_RESTAURANT_PRODUCT,
+    EPromotionType,
+    ERegisterType,
+    IS3Object,
+    IGET_SHIFT8_ORDER_RESPONSE,
+} from "../../graphql/customQueries";
 import {
     restaurantPath,
     beginOrderPath,
@@ -60,6 +67,7 @@ import { simpleDateTimeFormatUTC } from "../../util/dateFormat";
 import { Storage } from "aws-amplify";
 import awsconfig from "../../aws-exports";
 import { OrderScheduleDateTime } from "../../tabin/components/orderScheduleDateTime";
+import { useGetShift8OrderResponseLazyQuery } from "../../hooks/useGetShift8OrderResponseLazyQuery";
 
 import "./checkout.scss";
 
@@ -128,6 +136,8 @@ export const Checkout = () => {
             logger.debug("update order mutation result: ", mutationResult);
         },
     });
+
+    const { getShift8OrderResponse } = useGetShift8OrderResponseLazyQuery();
 
     // state
     const [selectedCategoryForProductModal, setSelectedCategoryForProductModal] = useState<IGET_RESTAURANT_CATEGORY | null>(null);
@@ -517,9 +527,52 @@ export const Checkout = () => {
             if (register.printers && register.printers.items.length > 0 && printOrder) {
                 await printReceipts(newOrder);
             }
+
+            //If shift8 integration poll for result.
+            if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.shift8EnableIntegration) {
+                await pollShift8OrderResponse(newOrder.id);
+            }
         } catch (e) {
             throw e.message;
         }
+    };
+
+    const pollShift8OrderResponse = (orderId) => {
+        const interval = 2 * 1000; // 2 seconds
+        const timeout = 10 * 1000; // 10 seconds
+
+        const endTime = Number(new Date()) + timeout;
+
+        var checkCondition = async (resolve: any, reject: any) => {
+            try {
+                const shift8OrderResponseRes = await getShift8OrderResponse({
+                    variables: {
+                        id: orderId,
+                    },
+                });
+
+                const shift8OrderResponse: IGET_SHIFT8_ORDER_RESPONSE = shift8OrderResponseRes.data.getOrder;
+
+                if (shift8OrderResponse.thirdPartyIntegrationResult) {
+                    if (shift8OrderResponse.thirdPartyIntegrationResult.shift8IsSuccess === true) {
+                        resolve();
+                    } else {
+                        reject(shift8OrderResponse.thirdPartyIntegrationResult.shift8ErrorMessage);
+                    }
+                } else if (Number(new Date()) < endTime) {
+                    setTimeout(checkCondition, interval, resolve, reject);
+                    return;
+                } else {
+                    // Didn't match and too much time, reject!
+                    reject("Shift8 Result Polling timed out. Please contact support staff.");
+                    return;
+                }
+            } catch (error) {
+                reject(error);
+            }
+        };
+
+        return new Promise(checkCondition);
     };
 
     const createOrder = async (
