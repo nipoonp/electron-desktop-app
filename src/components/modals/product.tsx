@@ -64,22 +64,8 @@ export const ProductModal = (props: {
     const { category, product, currentSelectedProductModifier, isOpen, onAddProduct, onUpdateProduct, onClose, editProduct } = props;
     const { cartProductQuantitiesById } = useCart();
 
-    const [orderedModifiers, setOrderedModifiers] = useState<IPreSelectedModifiers>(editProduct ? editProduct.orderedModifiers : {});
-    const [quantity, setQuantity] = useState(editProduct ? editProduct.quantity : 1);
-    const [totalDisplayPrice, setTotalDisplayPrice] = useState(product.price);
-    const [notes, setNotes] = useState(editProduct ? editProduct.notes : "");
-    const [error, setError] = useState<{ [modifierGroupId: string]: string }>({});
-
-    const [selectedProductModifier, setSelectedProductModifier] = useState<ISelectedProductModifier | null>(null);
-
-    // useEffect(() => {
-    //     console.log("xxx...", orderedModifiers);
-    // }, [orderedModifiers]);
-
-    useEffect(() => {
+    const getPreSelectedModifiers = () => {
         //Set preselected modifiers logic
-        if (editProduct) return;
-
         let newOrderedModifiers: IPreSelectedModifiers = {};
 
         product.modifierGroups &&
@@ -115,10 +101,24 @@ export const ProductModal = (props: {
                             };
                         }
                     });
-
-                setOrderedModifiers(newOrderedModifiers);
             });
-    }, []);
+
+        return newOrderedModifiers;
+    };
+
+    const [orderedModifiers, setOrderedModifiers] = useState<IPreSelectedModifiers>(
+        editProduct ? editProduct.orderedModifiers : getPreSelectedModifiers()
+    );
+    const [quantity, setQuantity] = useState(editProduct ? editProduct.quantity : 1);
+    const [totalDisplayPrice, setTotalDisplayPrice] = useState(product.price);
+    const [notes, setNotes] = useState(editProduct ? editProduct.notes : "");
+    const [error, setError] = useState<{ [modifierGroupId: string]: string }>({});
+
+    const [selectedProductModifier, setSelectedProductModifier] = useState<ISelectedProductModifier | null>(null);
+
+    // useEffect(() => {
+    //     console.log("xxx...orderedModifiers", orderedModifiers);
+    // }, [orderedModifiers]);
 
     useEffect(() => {
         let price = product.price;
