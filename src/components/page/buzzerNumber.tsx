@@ -52,6 +52,7 @@ export default () => {
                             className="buzzer-image"
                             src="https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/buzzer-image.png"
                         />
+                        <div className="buzzer-image-override"></div>
                     </div>
                     <div className="mb-12" style={{ width: "300px" }}>
                         <div className="h3 mb-2">Buzzer Number</div>
