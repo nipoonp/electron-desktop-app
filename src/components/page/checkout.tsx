@@ -75,7 +75,7 @@ const logger = new Logger("checkout");
 
 // Component
 export const Checkout = () => {
-    const transactionCompleteRedirectTime = 10;
+    const transactionCompleteRedirectTime = 20;
     // context
     const navigate = useNavigate();
     const { autoClickCompleteOrderOnLoad } = useParams();
