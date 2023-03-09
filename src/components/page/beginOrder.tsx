@@ -13,9 +13,7 @@ import { isItemAvailable, isVideoFile } from "../../util/util";
 export default (props: {}) => {
     const { restaurant } = useRestaurant();
 
-    if (!restaurant) {
-        return <div>This user has not selected any restaurant</div>;
-    }
+    if (!restaurant) return <div>This user has not selected any restaurant</div>;
 
     const ads = restaurant && restaurant.advertisements.items;
 
@@ -45,9 +43,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
         const availableAds: IGET_RESTAURANT_ADVERTISEMENT[] = [];
 
         props.ads.forEach((ad) => {
-            if (isItemAvailable(ad.availability)) {
-                availableAds.push(ad);
-            }
+            if (isItemAvailable(ad.availability)) availableAds.push(ad);
         });
 
         setAvailableAds(availableAds);
@@ -57,13 +53,11 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
         if (availableAds.length <= 1) return;
 
         const timerId = setInterval(() => {
-            setCurrentAd((prevCurrentAd) => (prevCurrentAd == availableAds.length - 1 ? 0 : prevCurrentAd + 1));
+            setCurrentAd(currentAd === availableAds.length - 1 ? 0 : currentAd + 1);
         }, 6000);
 
-        return () => {
-            clearInterval(timerId);
-        };
-    }, []);
+        return () => clearInterval(timerId);
+    }, [availableAds]);
 
     if (!restaurant) return <div>This user has not selected any restaurant</div>;
 
