@@ -68,9 +68,13 @@ export default () => {
         }
 
         if (!invalid) {
-            //@ts-ignore
-            const signatureBase64 = signatureCanvasRef.current.getTrimmedCanvas().toDataURL(signatureMimeType);
-            const resizedSignatureBase64: string = await resizeBase64ImageToWidth(signatureBase64, 200, signatureMimeType);
+            let resizedSignatureBase64: string = "";
+
+            if (signatureCanvasRef.current) {
+                //@ts-ignore
+                const signatureBase64 = signatureCanvasRef.current.getTrimmedCanvas().toDataURL(signatureMimeType);
+                resizedSignatureBase64 = await resizeBase64ImageToWidth(signatureBase64, 200, signatureMimeType);
+            }
 
             setCustomerInformation({ firstName: firstName, email: email, phoneNumber: phoneNumber, signatureBase64: resizedSignatureBase64 });
 
