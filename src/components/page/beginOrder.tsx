@@ -53,7 +53,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
         if (availableAds.length <= 1) return;
 
         const timerId = setInterval(() => {
-            setCurrentAd(currentAd === availableAds.length - 1 ? 0 : currentAd + 1);
+            setCurrentAd((prevCurrentAd) => (prevCurrentAd === availableAds.length - 1 ? 0 : prevCurrentAd + 1));
         }, 6000);
 
         return () => clearInterval(timerId);
