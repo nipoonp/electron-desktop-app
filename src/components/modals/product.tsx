@@ -546,6 +546,9 @@ export const ProductModal = (props: {
                 const choiceMax = mg.modifierGroup.choiceMax;
                 const choiceDuplicate = mg.modifierGroup.choiceDuplicate;
 
+                //Unlimited choice
+                if (choiceMin === 0 && choiceMax === 0) return;
+
                 let orderedModifiersLength = 0;
 
                 // Check if selected modifier quantity is less than choiceDuplicate
@@ -682,7 +685,7 @@ export const ProductModal = (props: {
             {product.modifierGroups &&
                 product.modifierGroups.items.map((mg) => {
                     if (mg.hideForCustomer) return;
-                    if (register && !mg.modifierGroup.availablePlatforms.includes(register.type)) return;
+                    if (register && mg.modifierGroup.availablePlatforms && !mg.modifierGroup.availablePlatforms.includes(register.type)) return;
 
                     return (
                         <>
@@ -960,13 +963,14 @@ export const ModifierGroup = (props: {
     };
 
     const checkMaxReached = (modifier: IGET_RESTAURANT_MODIFIER) => {
-        return (
-            !(modifierGroup.choiceMin === 1 && modifierGroup.choiceMax === 1) &&
-            isMaxReached(modifierGroup.choiceMax, selectedModifiers) &&
-            selectedModifiers.find((selectedModifier) => {
-                return selectedModifier.id === modifier.id;
-            }) === undefined
-        );
+        const isUnlimitedChoice = modifierGroup.choiceMin === 0 && modifierGroup.choiceMax === 0;
+        const isSingleChoice = modifierGroup.choiceMin === 1 && modifierGroup.choiceMax === 1;
+        const isModifierSelected = selectedModifiers.some((selectedModifier) => selectedModifier.id === modifier.id);
+        const isMaxChoiceReached = !isSingleChoice && isMaxReached(modifierGroup.choiceMax, selectedModifiers);
+
+        if (isUnlimitedChoice) return false;
+
+        return !isSingleChoice && isMaxChoiceReached && !isModifierSelected;
     };
 
     // display
@@ -990,7 +994,8 @@ export const ModifierGroup = (props: {
                 <div className="modifier-group-header">
                     <div className="h2 mb-2">{modifierGroup.name}</div>
                     {error && <div className="text-error mb-2">{error}</div>}
-                    <div className="mb-2">({getSelectInstructions()})</div>
+                    {/* //Dont show select instructoins for unlmited choice */}
+                    {modifierGroup.choiceMin !== 0 && modifierGroup.choiceMax !== 0 && <div className="mb-2">({getSelectInstructions()})</div>}
                 </div>
                 {collapsed ? (
                     <div>
@@ -1028,7 +1033,7 @@ export const ModifierGroup = (props: {
                     <div className="modifiers">
                         {modifierGroup.modifiers &&
                             modifierGroup.modifiers.items.map((m) => {
-                                if (register && !m.modifier.availablePlatforms.includes(register.type)) return;
+                                if (register && m.modifier.availablePlatforms && !m.modifier.availablePlatforms.includes(register.type)) return;
                                 if (
                                     (selectedSubModifierGroup &&
                                         m.modifier.subModifierGroups &&
@@ -1042,10 +1047,11 @@ export const ModifierGroup = (props: {
 
                                 return (
                                     <Modifier
-                                        radio={modifierGroup.choiceMin !== 0 && modifierGroup.choiceMax === 1}
                                         modifier={m.modifier}
                                         selectedModifier={selectedModifier}
                                         currentSelectedProductModifier={currentSelectedProductModifier}
+                                        choiceMin={modifierGroup.choiceMin}
+                                        choiceMax={modifierGroup.choiceMax}
                                         choiceDuplicate={modifierGroup.choiceDuplicate}
                                         onEditSelectionsProductModifier={(
                                             index: number,
@@ -1089,6 +1095,8 @@ const Modifier = (props: {
     modifier: IGET_RESTAURANT_MODIFIER;
     selectedModifier?: ICartModifier;
     currentSelectedProductModifier?: ISelectedProductModifier;
+    choiceMin: number;
+    choiceMax: number;
     choiceDuplicate: number;
     maxReached: boolean;
     modifiersSelectedCount: number;
@@ -1108,14 +1116,13 @@ const Modifier = (props: {
     onChangeModifierQuantity: (selectedModifier: IGET_RESTAURANT_MODIFIER, isIncremented: boolean, quantity: number) => void;
 
     onSelectRadioModifier: (selectedModifier: IGET_RESTAURANT_MODIFIER) => void;
-
-    // settings
-    radio: boolean;
 }) => {
     const {
         modifier,
         selectedModifier,
         currentSelectedProductModifier,
+        choiceMin,
+        choiceMax,
         choiceDuplicate,
         maxReached,
         modifiersSelectedCount,
@@ -1128,7 +1135,6 @@ const Modifier = (props: {
         onUnCheckingModifier,
         onChangeModifierQuantity,
         onSelectRadioModifier,
-        radio,
     } = props;
 
     const { cartModifierQuantitiesById, cartProductQuantitiesById } = useCart();
@@ -1137,7 +1143,7 @@ const Modifier = (props: {
 
     const stepperHeight = 28;
 
-    const showRadio = radio;
+    const showRadio = choiceMin !== 0 && choiceMax === 1;
     const showStepper = choiceDuplicate > 1 && (displayModifierStepper || modifierQuantity > 0);
     const showCollapsedStepper = choiceDuplicate > 1 && !displayModifierStepper && modifierQuantity == 0;
     const showCheckbox = !showRadio && !showStepper && !showCollapsedStepper;
