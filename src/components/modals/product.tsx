@@ -223,7 +223,7 @@ export const ProductModal = (props: {
             selectedModifier.productModifier.modifierGroups &&
             selectedModifier.productModifier.modifierGroups.items.length > 0;
 
-        //We only only to add pms only if we are not going to open another product modal for productModifier with modifier groups
+        //We only want to add pms only if we are not going to open another product modal for productModifier with modifier groups
         const pms =
             !requiresProcessProductModifier && selectedModifier.productModifier
                 ? [
@@ -243,20 +243,21 @@ export const ProductModal = (props: {
                               : null,
                           quantity: 1,
                           notes: null,
-                          category: selectedModifier.productModifier.categories
-                              ? {
-                                    id: selectedModifier.productModifier.categories.items[0].category.id,
-                                    name: selectedModifier.productModifier.categories.items[0].category.name,
-                                    image: selectedModifier.productModifier.categories.items[0].category.image
-                                        ? {
-                                              key: selectedModifier.productModifier.categories.items[0].category.image.key,
-                                              region: selectedModifier.productModifier.categories.items[0].category.image.region,
-                                              bucket: selectedModifier.productModifier.categories.items[0].category.image.bucket,
-                                              identityPoolId: selectedModifier.productModifier.categories.items[0].category.image.identityPoolId,
-                                          }
-                                        : null,
-                                }
-                              : null,
+                          category:
+                              selectedModifier.productModifier.categories && selectedModifier.productModifier.categories.items.length > 0
+                                  ? {
+                                        id: selectedModifier.productModifier.categories.items[0].category.id,
+                                        name: selectedModifier.productModifier.categories.items[0].category.name,
+                                        image: selectedModifier.productModifier.categories.items[0].category.image
+                                            ? {
+                                                  key: selectedModifier.productModifier.categories.items[0].category.image.key,
+                                                  region: selectedModifier.productModifier.categories.items[0].category.image.region,
+                                                  bucket: selectedModifier.productModifier.categories.items[0].category.image.bucket,
+                                                  identityPoolId: selectedModifier.productModifier.categories.items[0].category.image.identityPoolId,
+                                              }
+                                            : null,
+                                    }
+                                  : null,
                           modifierGroups: [],
                       },
                   ]
@@ -359,7 +360,7 @@ export const ProductModal = (props: {
             selectedModifier.productModifier.modifierGroups &&
             selectedModifier.productModifier.modifierGroups.items.length > 0;
 
-        //We only only to add pms only if we are not going to open another product modal for productModifier with modifier groups
+        //We only want to add pms only if we are not going to open another product modal for productModifier with modifier groups
         const pms =
             !requiresProcessProductModifier && selectedModifier.productModifier
                 ? [
@@ -379,20 +380,21 @@ export const ProductModal = (props: {
                               : null,
                           quantity: 1,
                           notes: null,
-                          category: selectedModifier.productModifier.categories
-                              ? {
-                                    id: selectedModifier.productModifier.categories.items[0].category.id,
-                                    name: selectedModifier.productModifier.categories.items[0].category.name,
-                                    image: selectedModifier.productModifier.categories.items[0].category.image
-                                        ? {
-                                              key: selectedModifier.productModifier.categories.items[0].category.image.key,
-                                              region: selectedModifier.productModifier.categories.items[0].category.image.region,
-                                              bucket: selectedModifier.productModifier.categories.items[0].category.image.bucket,
-                                              identityPoolId: selectedModifier.productModifier.categories.items[0].category.image.identityPoolId,
-                                          }
-                                        : null,
-                                }
-                              : null,
+                          category:
+                              selectedModifier.productModifier.categories && selectedModifier.productModifier.categories.items.length > 0
+                                  ? {
+                                        id: selectedModifier.productModifier.categories.items[0].category.id,
+                                        name: selectedModifier.productModifier.categories.items[0].category.name,
+                                        image: selectedModifier.productModifier.categories.items[0].category.image
+                                            ? {
+                                                  key: selectedModifier.productModifier.categories.items[0].category.image.key,
+                                                  region: selectedModifier.productModifier.categories.items[0].category.image.region,
+                                                  bucket: selectedModifier.productModifier.categories.items[0].category.image.bucket,
+                                                  identityPoolId: selectedModifier.productModifier.categories.items[0].category.image.identityPoolId,
+                                              }
+                                            : null,
+                                    }
+                                  : null,
                           modifierGroups: [],
                       },
                   ]
@@ -468,7 +470,7 @@ export const ProductModal = (props: {
             selectedModifier.productModifier.modifierGroups &&
             selectedModifier.productModifier.modifierGroups.items.length > 0;
 
-        //We only only to add pms only if we are not going to open another product modal for productModifier with modifier groups
+        //We only want to add pms only if we are not going to open another product modal for productModifier with modifier groups
         const pms =
             !requiresProcessProductModifier && selectedModifier.productModifier
                 ? [
@@ -488,20 +490,21 @@ export const ProductModal = (props: {
                               : null,
                           quantity: 1,
                           notes: null,
-                          category: selectedModifier.productModifier.categories
-                              ? {
-                                    id: selectedModifier.productModifier.categories.items[0].category.id,
-                                    name: selectedModifier.productModifier.categories.items[0].category.name,
-                                    image: selectedModifier.productModifier.categories.items[0].category.image
-                                        ? {
-                                              key: selectedModifier.productModifier.categories.items[0].category.image.key,
-                                              region: selectedModifier.productModifier.categories.items[0].category.image.region,
-                                              bucket: selectedModifier.productModifier.categories.items[0].category.image.bucket,
-                                              identityPoolId: selectedModifier.productModifier.categories.items[0].category.image.identityPoolId,
-                                          }
-                                        : null,
-                                }
-                              : null,
+                          category:
+                              selectedModifier.productModifier.categories && selectedModifier.productModifier.categories.items.length > 0
+                                  ? {
+                                        id: selectedModifier.productModifier.categories.items[0].category.id,
+                                        name: selectedModifier.productModifier.categories.items[0].category.name,
+                                        image: selectedModifier.productModifier.categories.items[0].category.image
+                                            ? {
+                                                  key: selectedModifier.productModifier.categories.items[0].category.image.key,
+                                                  region: selectedModifier.productModifier.categories.items[0].category.image.region,
+                                                  bucket: selectedModifier.productModifier.categories.items[0].category.image.bucket,
+                                                  identityPoolId: selectedModifier.productModifier.categories.items[0].category.image.identityPoolId,
+                                              }
+                                            : null,
+                                    }
+                                  : null,
                           modifierGroups: [],
                       },
                   ]
