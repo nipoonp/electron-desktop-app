@@ -164,6 +164,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [orderScheduledAt, _setOrderScheduledAt] = useState<string | null>(initialOrderScheduledAt);
 
     useEffect(() => {
+        console.log("xxx...products", products);
+    }, [products]);
+
+    useEffect(() => {
         let newSubTotal = 0;
 
         if (promotion) {
@@ -272,9 +276,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     };
 
     useEffect(() => {
-        if (availablePromotions.length == 0) return;
-        if (!products || products.length == 0) return;
-
         let bestPromotion: ICartPromotion | null = null;
 
         availablePromotions.forEach((promotion) => {
@@ -307,6 +308,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                     break;
             }
 
+            console.log("xxx...discount", discount);
+
             if (!(discount.discountedAmount > 0)) return;
 
             if (!bestPromotion || discount.discountedAmount > bestPromotion.discountedAmount) {
@@ -334,6 +337,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
     const removeUserAppliedPromotion = () => {
         _setUserAppliedPromotionCode(null);
+        _setAvailablePromotions([]);
     };
 
     const updateCartQuantities = (products: ICartProduct[] | null) => {
@@ -442,8 +446,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                             m.productModifiers.forEach((productModifier) => {
                                 productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
                                     orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
-                                        const changedQuantity =
-                                            orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
+                                        const changedQuantity = orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
 
                                         if (changedQuantity > 0) {
                                             price += orderedProductModifierModifier.price * changedQuantity;
