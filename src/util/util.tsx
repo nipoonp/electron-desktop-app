@@ -481,11 +481,6 @@ export const processPromotionDiscounts = (
 
         Object.values(matchingProducts).forEach((p) => {
             totalDiscountableAmount += p.price * p.quantity;
-
-            p.modifiers &&
-                p.modifiers.forEach((m) => {
-                    totalDiscountableAmount += p.quantity * m.price * m.quantity;
-                });
         });
     }
 
