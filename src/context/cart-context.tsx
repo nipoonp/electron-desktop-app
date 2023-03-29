@@ -12,7 +12,7 @@ import {
     EPaymentMethod,
     ICustomerInformation,
 } from "../model/model";
-import { getMatchingPromotionProducts, processPromotionDiscounts, checkIfPromotionValid } from "../util/util";
+import { checkIfPromotionValid, getOrderDiscountAmount } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
 
 const initialParkedOrderId = null;
@@ -202,52 +202,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setAvailablePromotions(availPromotions);
     }, [restaurant, userAppliedPromotionCode]);
 
-    const applyDiscountToCartProducts = (matchingProducts: ICartItemQuantitiesById, cartProducts: ICartProduct[]) => {};
-
-    const getOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, total?: number) => {
-        let bestPromotionDiscount: {
-            matchingProducts: ICartItemQuantitiesById;
-            discountedAmount: number;
-        };
-
-        if (promotion.type === EPromotionType.ENTIREORDER) {
-            bestPromotionDiscount = processPromotionDiscounts(
-                cartCategoryQuantitiesById,
-                cartProductQuantitiesById,
-                promotion.discounts.items,
-                undefined,
-                total
-            );
-        } else {
-            const matchingProducts = getMatchingPromotionProducts(
-                cartCategoryQuantitiesById,
-                cartProductQuantitiesById,
-                promotion.items.items,
-                promotion.applyToCheapest
-            );
-
-            if (!matchingProducts)
-                return {
-                    matchingProducts: {},
-                    discountedAmount: 0,
-                };
-
-            bestPromotionDiscount = processPromotionDiscounts(
-                cartCategoryQuantitiesById,
-                cartProductQuantitiesById,
-                promotion.discounts.items,
-                matchingProducts,
-                undefined,
-                promotion.applyToCheapest
-            );
-        }
-
-        console.log("xxx...bestPromotionDiscount", bestPromotionDiscount);
-        // applyDiscountToCartProducts(bestPromotionDiscount.matchingProducts, products);
-
-        return bestPromotionDiscount;
-    };
-
     useEffect(() => {
         let bestPromotion: ICartPromotion | null = null;
 
@@ -256,16 +210,9 @@ const CartProvider = (props: { children: React.ReactNode }) => {
             if (!promotion.availableOrderTypes.includes(EOrderType[orderType])) return;
             if (promotion.totalNumberUsed >= promotion.totalAvailableUses) return;
             if (total < promotion.minSpend) return;
+            if (!products) return;
 
-            let discount: {
-                matchingProducts: ICartItemQuantitiesById;
-                discountedAmount: number;
-            } = {
-                matchingProducts: {},
-                discountedAmount: 0,
-            };
-
-            discount = getOrderDiscountAmount(promotion, total);
+            const discount = getOrderDiscountAmount(promotion, JSON.parse(JSON.stringify(products)), total);
 
             if (!(discount.discountedAmount > 0)) return;
 

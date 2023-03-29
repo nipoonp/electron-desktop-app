@@ -174,7 +174,7 @@ export interface IPreSelectedModifiers {
 
 export interface ICartPromotion {
     promotion: IGET_RESTAURANT_PROMOTION;
-    matchingProducts: ICartItemQuantitiesById;
+    matchingProducts: ICartProduct[];
     discountedAmount: number;
 }
 

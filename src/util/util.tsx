@@ -16,6 +16,7 @@ import {
     IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES,
     IGET_RESTAURANT_OPERATING_HOURS,
     IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT,
+    EPromotionType,
 } from "../graphql/customQueries";
 import {
     CheckIfPromotionValidResponse,
@@ -370,43 +371,38 @@ export const checkIfPromotionValid = (promotion: IGET_RESTAURANT_PROMOTION): Che
     return CheckIfPromotionValidResponse.VALID;
 };
 
-export const getMatchingPromotionProducts = (
-    cartCategoryQuantitiesById: ICartItemQuantitiesById,
-    cartProductQuantitiesById: ICartItemQuantitiesById,
-    promotionItems: IGET_RESTAURANT_PROMOTION_ITEMS[],
-    applyToCheapest: boolean
-) => {
+const getMatchingPromotionProducts = (cartProducts: ICartProduct[], promotionItems: IGET_RESTAURANT_PROMOTION_ITEMS[], applyToCheapest: boolean) => {
     //For promotions with multiple item groups, it would become a && condition. For example, if first group is category: Vege Pizza (min quantity = 2).
     //And second group is category: Sides (min quantity = 1.
     //Then the user would need to select at least 2 Vege Pizza AND a side to get the discount
 
-    let matchingProducts: ICartItemQuantitiesById = {};
+    let matchingProducts: ICartProduct[] = [];
     let matchingCondition = true;
 
     promotionItems.forEach((item) => {
         if (!matchingCondition) return;
 
-        const matchingProductsTemp: ICartItemQuantitiesByIdValue[] = [];
+        const matchingProductsTemp: ICartProduct[] = [];
         let quantityCounted = 0;
 
         item.categories.items.forEach((c) => {
-            if (cartCategoryQuantitiesById[c.id]) {
-                quantityCounted += cartCategoryQuantitiesById[c.id].quantity;
+            cartProducts.forEach((cartProduct) => {
+                if (c.id === cartProduct.category?.id) {
+                    quantityCounted += cartProduct.quantity;
 
-                Object.values(cartProductQuantitiesById).forEach((p) => {
-                    if (p.categoryId == cartCategoryQuantitiesById[c.id].id) {
-                        matchingProductsTemp.push(p);
-                    }
-                });
-            }
+                    matchingProductsTemp.push(cartProduct);
+                }
+            });
         });
 
         item.products.items.forEach((p) => {
-            if (cartProductQuantitiesById[p.id]) {
-                quantityCounted += cartProductQuantitiesById[p.id].quantity;
+            cartProducts.forEach((cartProduct) => {
+                if (p.id === cartProduct.id) {
+                    quantityCounted += cartProduct.quantity;
 
-                matchingProductsTemp.push(cartProductQuantitiesById[p.id]);
-            }
+                    matchingProductsTemp.push(cartProduct);
+                }
+            });
         });
 
         if (quantityCounted < item.minQuantity) {
@@ -414,7 +410,7 @@ export const getMatchingPromotionProducts = (
             matchingCondition = false;
         } else {
             //Sort by price and get the lowest item.minQuantity
-            const matchingProductsTempCpy: ICartItemQuantitiesByIdValue[] = [...matchingProductsTemp];
+            const matchingProductsTempCpy: ICartProduct[] = matchingProductsTemp;
 
             const matchingProductsTempCpySorted = matchingProductsTempCpy.sort((a, b) => {
                 if (applyToCheapest) {
@@ -425,90 +421,62 @@ export const getMatchingPromotionProducts = (
                 }
             });
 
-            let counter = item.minQuantity;
-
-            matchingProductsTempCpySorted.forEach((p) => {
-                if (counter == 0) return;
-
-                const quantity = p.quantity;
-
-                if (counter > quantity) {
-                    matchingProducts[p.id] = p;
-                    counter -= quantity;
-                } else {
-                    matchingProducts[p.id] = { ...p, quantity: counter };
-                    counter = 0;
-                }
-            });
+            matchingProducts = matchingProductsTempCpySorted.slice(0, item.minQuantity);
         }
     });
 
-    return matchingCondition ? matchingProducts : null;
+    return matchingCondition ? matchingProducts : [];
 };
 
-const discountMatchingProducts = (matchingProducts: ICartItemQuantitiesById, discountedAmount: number) => {
-    if (Object.values(matchingProducts).length === 0) return { ...matchingProducts };
+const discountMatchingProducts = (matchingProducts: ICartProduct[], discountedAmount: number) => {
+    if (matchingProducts.length === 0) return matchingProducts;
 
-    const discountAmountPerProduct = discountedAmount / Object.values(matchingProducts).length;
+    let totalQuantity = 0;
 
-    Object.values(matchingProducts).forEach((p) => {
+    matchingProducts.forEach((p) => {
+        totalQuantity += p.quantity;
+    });
+
+    const discountAmountPerProduct = discountedAmount / totalQuantity;
+    const matchingProductsCpy = JSON.parse(JSON.stringify(matchingProducts));
+
+    matchingProductsCpy.forEach((p) => {
         p.discount = discountAmountPerProduct;
     });
 
-    return { ...matchingProducts };
+    return matchingProductsCpy;
 };
 
-export const processPromotionDiscounts = (
-    cartCategoryQuantitiesById: ICartItemQuantitiesById,
-    cartProductQuantitiesById: ICartItemQuantitiesById,
+const processPromotionDiscounts = (
+    cartProducts: ICartProduct[],
     discounts: IGET_RESTAURANT_PROMOTION_DISCOUNT[],
-    matchingProducts: ICartItemQuantitiesById = {},
+    matchingProducts: ICartProduct[] = [],
     total: number = 0,
     applyToCheapest: boolean = false
 ) => {
-    let currentBestDiscount: { amount: number; matchingProducts: ICartItemQuantitiesById } = { amount: 0, matchingProducts: {} };
+    let currentBestDiscount: { amount: number; matchingProducts: ICartProduct[] } = { amount: 0, matchingProducts: [] };
     let totalDiscountableAmount = 0;
 
     if (total) {
         //Entire Order discount
         totalDiscountableAmount = total;
     } else {
-        if (!matchingProducts)
-            return {
-                matchingProducts: {},
-                discountedAmount: 0,
-            };
-
-        Object.values(matchingProducts).forEach((p) => {
-            totalDiscountableAmount += p.price * p.quantity;
+        matchingProducts.forEach((p) => {
+            totalDiscountableAmount += p.totalPrice * p.quantity;
         });
     }
 
     discounts.forEach((discount) => {
         let discountedAmount = 0;
-
-        let matchingDiscountProducts: ICartItemQuantitiesById | null = null;
+        let matchingDiscountProducts: ICartProduct[] = [];
 
         //For related items promotion
         if (discount.items && discount.items.items.length > 0) {
             //Reset discountable amount because we want to discount the matchingDiscountProducts not the original matchingProducts
             totalDiscountableAmount = 0;
-            matchingDiscountProducts = getMatchingPromotionProducts(
-                cartCategoryQuantitiesById,
-                cartProductQuantitiesById,
-                discount.items.items,
-                applyToCheapest
-            );
+            matchingDiscountProducts = getMatchingPromotionProducts(cartProducts, discount.items.items, applyToCheapest);
 
-            if (!matchingDiscountProducts)
-                return {
-                    matchingProducts: {},
-                    discountedAmount: 0,
-                };
-
-            matchingProducts = { ...matchingDiscountProducts };
-
-            Object.values(matchingProducts).forEach((p) => {
+            matchingDiscountProducts.forEach((p) => {
                 totalDiscountableAmount += p.price * p.quantity;
             });
         }
@@ -528,7 +496,7 @@ export const processPromotionDiscounts = (
         }
 
         if (currentBestDiscount.amount < discountedAmount) {
-            currentBestDiscount = { amount: discountedAmount, matchingProducts: { ...discountMatchingProducts(matchingProducts, discountedAmount) } };
+            currentBestDiscount = { amount: discountedAmount, matchingProducts: discountMatchingProducts(matchingProducts, discountedAmount) };
         }
     });
 
@@ -536,6 +504,28 @@ export const processPromotionDiscounts = (
         matchingProducts: currentBestDiscount.matchingProducts,
         discountedAmount: Math.floor(currentBestDiscount.amount), //Round to nearest number so we are not working with floats
     };
+};
+
+const applyDiscountToCartProducts = (matchingProducts: ICartItemQuantitiesById, cartProducts: ICartProduct[]) => {};
+
+export const getOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, cartProducts: ICartProduct[], total?: number) => {
+    let bestPromotionDiscount: {
+        matchingProducts: ICartProduct[];
+        discountedAmount: number;
+    };
+
+    if (promotion.type === EPromotionType.ENTIREORDER) {
+        bestPromotionDiscount = processPromotionDiscounts(cartProducts, promotion.discounts.items, undefined, total);
+    } else {
+        const matchingProducts = getMatchingPromotionProducts(cartProducts, promotion.items.items, promotion.applyToCheapest);
+
+        bestPromotionDiscount = processPromotionDiscounts(cartProducts, promotion.discounts.items, matchingProducts, undefined, promotion.applyToCheapest);
+    }
+
+    console.log("xxx...bestPromotionDiscount", bestPromotionDiscount);
+    // applyDiscountToCartProducts(bestPromotionDiscount.matchingProducts, products);
+
+    return bestPromotionDiscount;
 };
 
 const processProductsForPrint = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[]) => {
