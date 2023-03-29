@@ -317,7 +317,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                         price: product.price,
                         discount: 0,
                         categoryId: null,
-                        modifiers: null,
                     };
                 }
                 //We do this because there could be the same product in the products array twice.
@@ -342,7 +341,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                         price: product.price,
                         discount: 0,
                         categoryId: product.category.id,
-                        modifiers: modifiers,
                     };
                 }
 
@@ -374,7 +372,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                                 price: product.price,
                                 discount: 0,
                                 categoryId: null,
-                                modifiers: null,
                             };
                         }
                         // }
