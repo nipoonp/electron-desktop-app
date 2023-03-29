@@ -66,10 +66,7 @@ export const getOrderNumber = (orderNumberSuffix: string, orderNumberStart: numb
 };
 
 export const filterPrintProducts = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[], printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
-    if (
-        (!printer.ignoreCategories || printer.ignoreCategories.items.length == 0) &&
-        (!printer.ignoreProducts || printer.ignoreProducts.items.length == 0)
-    )
+    if ((!printer.ignoreCategories || printer.ignoreCategories.items.length == 0) && (!printer.ignoreProducts || printer.ignoreProducts.items.length == 0))
         return products;
 
     products.forEach((product) => {
@@ -449,6 +446,18 @@ export const getMatchingPromotionProducts = (
     return matchingCondition ? matchingProducts : null;
 };
 
+const discountMatchingProducts = (matchingProducts: ICartItemQuantitiesById, discountedAmount: number) => {
+    if (Object.values(matchingProducts).length === 0) return { ...matchingProducts };
+
+    const discountAmountPerProduct = discountedAmount / Object.values(matchingProducts).length;
+
+    Object.values(matchingProducts).forEach((p) => {
+        p.discount = discountAmountPerProduct;
+    });
+
+    return { ...matchingProducts };
+};
+
 export const processPromotionDiscounts = (
     cartCategoryQuantitiesById: ICartItemQuantitiesById,
     cartProductQuantitiesById: ICartItemQuantitiesById,
@@ -457,10 +466,11 @@ export const processPromotionDiscounts = (
     total: number = 0,
     applyToCheapest: boolean = false
 ) => {
-    let maxDiscountedAmount = 0;
+    let currentBestDiscount: { amount: number; matchingProducts: ICartItemQuantitiesById } = { amount: 0, matchingProducts: {} };
     let totalDiscountableAmount = 0;
 
     if (total) {
+        //Entire Order discount
         totalDiscountableAmount = total;
     } else {
         if (!matchingProducts)
@@ -501,9 +511,9 @@ export const processPromotionDiscounts = (
                     discountedAmount: 0,
                 };
 
-            matchingProducts = { ...matchingProducts, ...matchingDiscountProducts };
+            matchingProducts = { ...matchingDiscountProducts };
 
-            Object.values(matchingDiscountProducts).forEach((p) => {
+            Object.values(matchingProducts).forEach((p) => {
                 totalDiscountableAmount += p.price * p.quantity;
             });
         }
@@ -522,14 +532,14 @@ export const processPromotionDiscounts = (
                 break;
         }
 
-        if (maxDiscountedAmount < discountedAmount) {
-            maxDiscountedAmount = discountedAmount;
+        if (currentBestDiscount.amount < discountedAmount) {
+            currentBestDiscount = { amount: discountedAmount, matchingProducts: { ...discountMatchingProducts(matchingProducts, discountedAmount) } };
         }
     });
 
     return {
-        matchingProducts: matchingProducts,
-        discountedAmount: Math.floor(maxDiscountedAmount), //Round to nearest number so we are not working with floats
+        matchingProducts: currentBestDiscount.matchingProducts,
+        discountedAmount: Math.floor(currentBestDiscount.amount), //Round to nearest number so we are not working with floats
     };
 };
 
@@ -718,20 +728,8 @@ export const getRestaurantTimings = (operatingHours: IGET_RESTAURANT_OPERATING_H
             try {
                 const newIntervals = eachMinuteOfInterval(
                     {
-                        start: new Date(
-                            date.getFullYear(),
-                            date.getMonth(),
-                            date.getDate(),
-                            parseInt(openingTimeSlotHour),
-                            parseInt(openingTimeSlotMinute)
-                        ),
-                        end: new Date(
-                            date.getFullYear(),
-                            date.getMonth(),
-                            date.getDate(),
-                            parseInt(closingTimeSlotHour),
-                            parseInt(closingTimeSlotMinute)
-                        ),
+                        start: new Date(date.getFullYear(), date.getMonth(), date.getDate(), parseInt(openingTimeSlotHour), parseInt(openingTimeSlotMinute)),
+                        end: new Date(date.getFullYear(), date.getMonth(), date.getDate(), parseInt(closingTimeSlotHour), parseInt(closingTimeSlotMinute)),
                     },
                     { step: timeInterval }
                 );

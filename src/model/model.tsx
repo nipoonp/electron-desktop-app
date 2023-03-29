@@ -124,6 +124,7 @@ export interface ICartItemQuantitiesByIdValue {
     name: string;
     quantity: number;
     price: number;
+    discount: number; //Discount amount added later on in the calculation
     categoryId: string | null; //Only for products
     modifiers:
         | {

@@ -163,9 +163,9 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
     const [orderScheduledAt, _setOrderScheduledAt] = useState<string | null>(initialOrderScheduledAt);
 
-    useEffect(() => {
-        console.log("xxx...products", products);
-    }, [products]);
+    // useEffect(() => {
+    //     console.log("xxx...products", products);
+    // }, [products]);
 
     useEffect(() => {
         let newSubTotal = 0;
@@ -202,77 +202,50 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setAvailablePromotions(availPromotions);
     }, [restaurant, userAppliedPromotionCode]);
 
-    const getEntireOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, total: number) => {
-        const bestPromotionDiscount = processPromotionDiscounts(
-            cartCategoryQuantitiesById,
-            cartProductQuantitiesById,
-            promotion.discounts.items,
-            undefined,
-            total
-        );
+    const applyDiscountToCartProducts = (matchingProducts: ICartItemQuantitiesById, cartProducts: ICartProduct[]) => {};
 
-        return {
-            matchingProducts: {},
-            discountedAmount: bestPromotionDiscount.discountedAmount,
+    const getOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, total?: number) => {
+        let bestPromotionDiscount: {
+            matchingProducts: ICartItemQuantitiesById;
+            discountedAmount: number;
         };
-    };
 
-    const getComboDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION) => {
-        const matchingProducts = getMatchingPromotionProducts(
-            cartCategoryQuantitiesById,
-            cartProductQuantitiesById,
-            promotion.items.items,
-            promotion.applyToCheapest
-        );
+        if (promotion.type === EPromotionType.ENTIREORDER) {
+            bestPromotionDiscount = processPromotionDiscounts(
+                cartCategoryQuantitiesById,
+                cartProductQuantitiesById,
+                promotion.discounts.items,
+                undefined,
+                total
+            );
+        } else {
+            const matchingProducts = getMatchingPromotionProducts(
+                cartCategoryQuantitiesById,
+                cartProductQuantitiesById,
+                promotion.items.items,
+                promotion.applyToCheapest
+            );
 
-        if (!matchingProducts)
-            return {
-                matchingProducts: {},
-                discountedAmount: 0,
-            };
+            if (!matchingProducts)
+                return {
+                    matchingProducts: {},
+                    discountedAmount: 0,
+                };
 
-        const bestPromotionDiscount = processPromotionDiscounts(
-            cartCategoryQuantitiesById,
-            cartProductQuantitiesById,
-            promotion.discounts.items,
-            matchingProducts,
-            undefined,
-            promotion.applyToCheapest
-        );
+            bestPromotionDiscount = processPromotionDiscounts(
+                cartCategoryQuantitiesById,
+                cartProductQuantitiesById,
+                promotion.discounts.items,
+                matchingProducts,
+                undefined,
+                promotion.applyToCheapest
+            );
+        }
 
-        return {
-            matchingProducts: bestPromotionDiscount.matchingProducts,
-            discountedAmount: bestPromotionDiscount.discountedAmount,
-        };
-    };
+        console.log("xxx...bestPromotionDiscount", bestPromotionDiscount);
+        // applyDiscountToCartProducts(bestPromotionDiscount.matchingProducts, products);
 
-    const getRelatedItemsDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION) => {
-        const matchingProducts = getMatchingPromotionProducts(
-            cartCategoryQuantitiesById,
-            cartProductQuantitiesById,
-            promotion.items.items,
-            promotion.applyToCheapest
-        );
-
-        if (!matchingProducts)
-            return {
-                matchingProducts: {},
-                discountedAmount: 0,
-            };
-
-        const bestPromotionDiscount = processPromotionDiscounts(
-            cartCategoryQuantitiesById,
-            cartProductQuantitiesById,
-            promotion.discounts.items,
-            matchingProducts,
-            undefined,
-            promotion.applyToCheapest
-        );
-
-        return {
-            matchingProducts: bestPromotionDiscount.matchingProducts,
-            discountedAmount: bestPromotionDiscount.discountedAmount,
-        };
+        return bestPromotionDiscount;
     };
 
     useEffect(() => {
@@ -281,9 +254,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         availablePromotions.forEach((promotion) => {
             if (!orderType || !promotion.availableOrderTypes) return;
             if (!promotion.availableOrderTypes.includes(EOrderType[orderType])) return;
-
             if (promotion.totalNumberUsed >= promotion.totalAvailableUses) return;
-
             if (total < promotion.minSpend) return;
 
             let discount: {
@@ -294,21 +265,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 discountedAmount: 0,
             };
 
-            switch (promotion.type) {
-                case EPromotionType.COMBO:
-                    discount = getComboDiscountAmount(promotion);
-                    break;
-                case EPromotionType.ENTIREORDER:
-                    discount = getEntireOrderDiscountAmount(promotion, total);
-                    break;
-                case EPromotionType.RELATEDITEMS:
-                    discount = getRelatedItemsDiscountAmount(promotion);
-                    break;
-                default:
-                    break;
-            }
-
-            console.log("xxx...discount", discount);
+            discount = getOrderDiscountAmount(promotion, total);
 
             if (!(discount.discountedAmount > 0)) return;
 
@@ -358,6 +315,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                         name: product.category.name,
                         quantity: product.quantity,
                         price: product.price,
+                        discount: 0,
                         categoryId: null,
                         modifiers: null,
                     };
@@ -382,6 +340,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                         name: product.name,
                         quantity: product.quantity,
                         price: product.price,
+                        discount: 0,
                         categoryId: product.category.id,
                         modifiers: modifiers,
                     };
@@ -413,6 +372,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                                 name: product.name,
                                 quantity: product.quantity,
                                 price: product.price,
+                                discount: 0,
                                 categoryId: null,
                                 modifiers: null,
                             };
