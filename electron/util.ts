@@ -103,13 +103,11 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
             interface: `tcp://${order.printerAddress}`,
-            characterSet: "PC437_USA",
         });
     } else if (order.printerType == ERegisterPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
-            characterSet: "PC437_USA",
         });
     } else {
         //Bluetooth
@@ -157,9 +155,7 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
     }
 
     if (order.customerInformation) {
-        printer.println(
-            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
-        );
+        printer.println(`Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`);
 
         if (order.customerInformation.signatureBase64) {
             const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
@@ -275,9 +271,7 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
                                     let mStr = "";
 
                                     if (changedQuantity < 0 && Math.abs(changedQuantity) == productModifier_modifier.preSelectedQuantity) {
-                                        mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${
-                                            productModifier_modifier.name
-                                        }`;
+                                        mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${productModifier_modifier.name}`;
                                     } else {
                                         mStr = `${productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""}${
                                             productModifier_modifier.name
@@ -436,13 +430,11 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
             interface: `tcp://${order.printerAddress}`,
-            characterSet: "PC437_USA",
         });
     } else if (order.printerType == ERegisterPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
-            characterSet: "PC437_USA",
         });
     } else {
         //Bluetooth
@@ -607,13 +599,11 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
                                         let mStr = "";
 
                                         if (changedQuantity < 0 && Math.abs(changedQuantity) == productModifier_modifier.preSelectedQuantity) {
-                                            mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${
+                                            mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${productModifier_modifier.name}`;
+                                        } else {
+                                            mStr = `${productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""}${
                                                 productModifier_modifier.name
                                             }`;
-                                        } else {
-                                            mStr = `${
-                                                productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""
-                                            }${productModifier_modifier.name}`;
                                         }
 
                                         if (productModifier_modifier_index === 0) {
@@ -691,13 +681,11 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
             interface: `tcp://${order.printerAddress}`,
-            characterSet: "PC437_USA",
         });
     } else if (order.printerType == ERegisterPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
-            characterSet: "PC437_USA",
         });
     } else {
         //Bluetooth
@@ -739,9 +727,7 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
     }
 
     if (order.customerInformation) {
-        printer.println(
-            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
-        );
+        printer.println(`Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`);
 
         if (order.customerInformation.signatureBase64) {
             const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
@@ -875,13 +861,11 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
                                         let mStr = "";
 
                                         if (changedQuantity < 0 && Math.abs(changedQuantity) == productModifier_modifier.preSelectedQuantity) {
-                                            mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${
+                                            mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${productModifier_modifier.name}`;
+                                        } else {
+                                            mStr = `${productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""}${
                                                 productModifier_modifier.name
                                             }`;
-                                        } else {
-                                            mStr = `${
-                                                productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""
-                                            }${productModifier_modifier.name}`;
                                         }
 
                                         if (productModifier_modifier_index === 0) {
@@ -959,13 +943,11 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
             interface: `tcp://${order.printerAddress}`,
-            characterSet: "PC437_USA",
         });
     } else if (order.printerType == ERegisterPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
-            characterSet: "PC437_USA",
         });
     } else {
         //Bluetooth
@@ -1008,9 +990,7 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
     }
 
     if (order.customerInformation) {
-        printer.println(
-            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
-        );
+        printer.println(`Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`);
 
         if (order.customerInformation.signatureBase64) {
             const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
@@ -1150,13 +1130,11 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
                                         let mStr = "";
 
                                         if (changedQuantity < 0 && Math.abs(changedQuantity) == productModifier_modifier.preSelectedQuantity) {
-                                            mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${
+                                            mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${productModifier_modifier.name}`;
+                                        } else {
+                                            mStr = `${productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""}${
                                                 productModifier_modifier.name
                                             }`;
-                                        } else {
-                                            mStr = `${
-                                                productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""
-                                            }${productModifier_modifier.name}`;
                                         }
 
                                         printer.bold(true);
@@ -1364,13 +1342,11 @@ export const printSalesDataReceipt = async (printSalesDataInput: IPrintSalesData
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
             interface: `tcp://${printSalesDataInput.printer.printerAddress}`,
-            characterSet: "PC437_USA",
         });
     } else if (printSalesDataInput.printer.printerType == ERegisterPrinterType.USB) {
         //@ts-ignore
         printer = new ThermalPrinter({
             type: PrinterTypes.EPSON, // 'star' or 'epson'
-            characterSet: "PC437_USA",
         });
     } else {
         //Bluetooth
