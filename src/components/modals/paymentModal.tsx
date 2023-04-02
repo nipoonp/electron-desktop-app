@@ -26,6 +26,7 @@ interface IPaymentModalProps {
     paymentModalState: EPaymentModalState;
     eftposTransactionDelayed: boolean;
     eftposTransactionOutcome: IEftposTransactionOutcome | null;
+    onPrintCustomerReceipt: () => void;
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
@@ -50,6 +51,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         paymentOutcomeOrderNumber,
         paymentOutcomeApprovedRedirectTimeLeft,
         onContinueToNextOrder,
+        onPrintCustomerReceipt,
         eftposTransactionDelayed,
         eftposTransactionOutcome,
         cashTransactionChangeAmount,
@@ -150,6 +152,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
             if (eftposTransactionOutcome.transactionOutcome == EEftposTransactionOutcome.Success) {
                 return (
                     <PaymentAccepted
+                        onPrintCustomerReceipt={onPrintCustomerReceipt}
                         paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                         onContinueToNextOrder={onContinueToNextOrder}
@@ -165,6 +168,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
             if (isPOS) {
                 return (
                     <PaymentCashPaymentPOS
+                        onPrintCustomerReceipt={onPrintCustomerReceipt}
                         cashTransactionChangeAmount={cashTransactionChangeAmount}
                         paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
@@ -174,6 +178,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
             } else {
                 return (
                     <PaymentCashPayment
+                        onPrintCustomerReceipt={onPrintCustomerReceipt}
                         cashTransactionChangeAmount={cashTransactionChangeAmount}
                         paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
@@ -184,6 +189,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         } else if (paymentModalState == EPaymentModalState.UberEatsResult) {
             return (
                 <PaymentUberEatsPayment
+                    onPrintCustomerReceipt={onPrintCustomerReceipt}
                     paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                     paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                     onContinueToNextOrder={onContinueToNextOrder}
@@ -192,6 +198,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         } else if (paymentModalState == EPaymentModalState.MenulogResult) {
             return (
                 <PaymentMenulogPayment
+                    onPrintCustomerReceipt={onPrintCustomerReceipt}
                     paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                     paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                     onContinueToNextOrder={onContinueToNextOrder}
@@ -200,6 +207,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         } else if (paymentModalState == EPaymentModalState.PayLater) {
             return (
                 <PaymentPayLater
+                    onPrintCustomerReceipt={onPrintCustomerReceipt}
                     paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                     paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                     onContinueToNextOrder={onContinueToNextOrder}
@@ -208,6 +216,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         } else if (paymentModalState == EPaymentModalState.Park) {
             return (
                 <PaymentPark
+                    onPrintCustomerReceipt={onPrintCustomerReceipt}
                     paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                     paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                     onContinueToNextOrder={onContinueToNextOrder}
@@ -250,12 +259,13 @@ const AwaitingCard = () => {
 };
 
 const PaymentAccepted = (props: {
+    onPrintCustomerReceipt: () => void;
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
     onContinueToNextPayment: () => void;
 }) => {
-    const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder, onContinueToNextPayment } = props;
+    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder, onContinueToNextPayment } = props;
     const { paidSoFar, subTotal } = useCart();
 
     const totalRemaining = subTotal - paidSoFar;
@@ -271,6 +281,7 @@ const PaymentAccepted = (props: {
                     <PreparationTime />
                     <div className="separator-6 mb-6"></div>
                     <PaymentModalFooter
+                        onPrintCustomerReceipt={onPrintCustomerReceipt}
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                         onContinueToNextOrder={onContinueToNextOrder}
                     />
@@ -317,21 +328,23 @@ const PaymentFailed = (props: { errorMessage: string; onRetry: () => void; onCan
 };
 
 const PaymentPayLater = (props: {
+    onPrintCustomerReceipt: () => void;
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
 }) => {
-    const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
 
     return (
         <>
-            <div className="all-done h3 mb-4">All Done!</div>
+            <div className="all-done h1 mb-4">All Done!</div>
             <div className="h2 mb-6">Please pay later at the counter.</div>
             <div className="mb-1">Your order number is</div>
             <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
+                onPrintCustomerReceipt={onPrintCustomerReceipt}
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                 onContinueToNextOrder={onContinueToNextOrder}
             />
@@ -340,11 +353,12 @@ const PaymentPayLater = (props: {
 };
 
 const PaymentPark = (props: {
+    onPrintCustomerReceipt: () => void;
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
 }) => {
-    const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
 
     return (
         <>
@@ -353,6 +367,7 @@ const PaymentPark = (props: {
             <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
+                onPrintCustomerReceipt={onPrintCustomerReceipt}
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                 onContinueToNextOrder={onContinueToNextOrder}
             />
@@ -362,21 +377,23 @@ const PaymentPark = (props: {
 
 const PaymentCashPayment = (props: {
     cashTransactionChangeAmount: number | null;
+    onPrintCustomerReceipt: () => void;
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
 }) => {
-    const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
 
     return (
         <>
-            <div className="all-done h3 mb-4">All Done!</div>
+            <div className="all-done h1 mb-4">All Done!</div>
             <div className="h2 mb-6">Please pay cash at the counter.</div>
             <div className="mb-1">Your order number is</div>
             <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
+                onPrintCustomerReceipt={onPrintCustomerReceipt}
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                 onContinueToNextOrder={onContinueToNextOrder}
             />
@@ -386,15 +403,17 @@ const PaymentCashPayment = (props: {
 
 const PaymentCashPaymentPOS = (props: {
     cashTransactionChangeAmount: number | null;
+    onPrintCustomerReceipt: () => void;
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
 }) => {
-    const { cashTransactionChangeAmount, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { onPrintCustomerReceipt, cashTransactionChangeAmount, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } =
+        props;
 
     return (
         <>
-            <div className="all-done h3 mb-4">All Done!</div>
+            <div className="all-done h1 mb-4">All Done!</div>
             <div className="h2 mb-6">Please give correct change.</div>
             <div className="h1 mb-6">Change: ${convertCentsToDollars(cashTransactionChangeAmount || 0)}</div>
             <div className="mb-1">Your order number is</div>
@@ -402,6 +421,7 @@ const PaymentCashPaymentPOS = (props: {
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
+                onPrintCustomerReceipt={onPrintCustomerReceipt}
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                 onContinueToNextOrder={onContinueToNextOrder}
             />
@@ -410,20 +430,22 @@ const PaymentCashPaymentPOS = (props: {
 };
 
 const PaymentUberEatsPayment = (props: {
+    onPrintCustomerReceipt: () => void;
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
 }) => {
-    const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
 
     return (
         <>
-            <div className="all-done h3 mb-4">All Done!</div>
+            <div className="all-done h1 mb-4">All Done!</div>
             <div className="mb-1">Your order number is</div>
             <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
+                onPrintCustomerReceipt={onPrintCustomerReceipt}
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                 onContinueToNextOrder={onContinueToNextOrder}
             />
@@ -432,20 +454,22 @@ const PaymentUberEatsPayment = (props: {
 };
 
 const PaymentMenulogPayment = (props: {
+    onPrintCustomerReceipt: () => void;
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
 }) => {
-    const { paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
 
     return (
         <>
-            <div className="all-done h3 mb-4">All Done!</div>
+            <div className="all-done h1 mb-4">All Done!</div>
             <div className="mb-1">Your order number is</div>
             <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
+                onPrintCustomerReceipt={onPrintCustomerReceipt}
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                 onContinueToNextOrder={onContinueToNextOrder}
             />
@@ -598,18 +622,15 @@ const POSPaymentScreen = (props: {
                         <>
                             {payment.type === "CASH" ? (
                                 <div className="mb-2">
-                                    Cash: ${convertCentsToDollars(payment.amount)}{" "}
-                                    <Link onClick={() => onRemoveCashTransaction(index)}>(Remove)</Link>
+                                    Cash: ${convertCentsToDollars(payment.amount)} <Link onClick={() => onRemoveCashTransaction(index)}>(Remove)</Link>
                                 </div>
                             ) : payment.type === "UBEREATS" ? (
                                 <div className="mb-2">
-                                    Uber Eats: ${convertCentsToDollars(payment.amount)}{" "}
-                                    <Link onClick={() => onRemoveUberEatsTransaction(index)}>(Remove)</Link>
+                                    Uber Eats: ${convertCentsToDollars(payment.amount)} <Link onClick={() => onRemoveUberEatsTransaction(index)}>(Remove)</Link>
                                 </div>
                             ) : payment.type === "MENULOG" ? (
                                 <div className="mb-2">
-                                    Menulog: ${convertCentsToDollars(payment.amount)}{" "}
-                                    <Link onClick={() => onRemoveMenulogTransaction(index)}>(Remove)</Link>
+                                    Menulog: ${convertCentsToDollars(payment.amount)} <Link onClick={() => onRemoveMenulogTransaction(index)}>(Remove)</Link>
                                 </div>
                             ) : (
                                 //For all Eftpos types Verifone, Smartpay, Windcave
@@ -654,8 +675,35 @@ const PreparationTime = () => {
     );
 };
 
-const PaymentModalFooter = (props: { paymentOutcomeApprovedRedirectTimeLeft: number; onContinueToNextOrder: () => void }) => {
-    const { paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+const AskToPrintCustomerReceipt = (props: { onPrintCustomerReceipt: () => void }) => {
+    const { onPrintCustomerReceipt } = props;
+
+    return (
+        <>
+            <div className="ask-to-print-customer-receipt">
+                <div className="h1 mb-6 text-center would-you-like-a-customer-receipt">Would you like a customer receipt?</div>
+                <div className="mb-6 receipt-image-container">
+                    <img
+                        alt="Receipt Image"
+                        className="receipt-image"
+                        src="https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/downlow_receipt_icon.png"
+                    />
+                    <div className="receipt-image-override"></div>
+                </div>
+                <Button className="large print-me-a-copy-button" onClick={onPrintCustomerReceipt}>
+                    Yes, print me a copy!
+                </Button>
+            </div>
+        </>
+    );
+};
+
+const PaymentModalFooter = (props: {
+    onPrintCustomerReceipt: () => void;
+    paymentOutcomeApprovedRedirectTimeLeft: number;
+    onContinueToNextOrder: () => void;
+}) => {
+    const { onPrintCustomerReceipt, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
     const { isPOS, register } = useRegister();
 
     const showTakeYourReceiptSign = useRef(false);
@@ -669,6 +717,7 @@ const PaymentModalFooter = (props: { paymentOutcomeApprovedRedirectTimeLeft: num
 
     return (
         <>
+            {register && register.askToPrintCustomerReceipt && <AskToPrintCustomerReceipt onPrintCustomerReceipt={onPrintCustomerReceipt} />}
             <div className="redirecting-in-text">
                 {isPOS && (
                     <Button className="mb-2" onClick={onContinueToNextOrder}>
@@ -680,7 +729,7 @@ const PaymentModalFooter = (props: { paymentOutcomeApprovedRedirectTimeLeft: num
                     {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
                     ...
                 </div>
-                {!isPOS && showTakeYourReceiptSign.current && (
+                {register && !register.askToPrintCustomerReceipt && !isPOS && showTakeYourReceiptSign.current && (
                     <div className="please-take-your-receipt-wrapper mt-4">
                         <div className="h1 mb-4">Please take your receipt</div>
                         <FiArrowDown size="150px" />
