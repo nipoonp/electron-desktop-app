@@ -16,6 +16,7 @@ import {
     IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES,
     IGET_RESTAURANT_OPERATING_HOURS,
     IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT,
+    EPromotionType,
 } from "../graphql/customQueries";
 import {
     CheckIfPromotionValidResponse,
@@ -24,6 +25,7 @@ import {
     ICartModifier,
     ICartModifierGroup,
     ICartProduct,
+    ICartPromotion,
 } from "../model/model";
 
 export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0);
@@ -66,10 +68,7 @@ export const getOrderNumber = (orderNumberSuffix: string, orderNumberStart: numb
 };
 
 export const filterPrintProducts = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[], printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
-    if (
-        (!printer.ignoreCategories || printer.ignoreCategories.items.length == 0) &&
-        (!printer.ignoreProducts || printer.ignoreProducts.items.length == 0)
-    )
+    if ((!printer.ignoreCategories || printer.ignoreCategories.items.length == 0) && (!printer.ignoreProducts || printer.ignoreProducts.items.length == 0))
         return products;
 
     products.forEach((product) => {
@@ -338,7 +337,6 @@ export const toDataURL = (url, callback) => {
 
     xhr.onload = () => {
         const reader = new FileReader();
-
         reader.onloadend = () => {
             callback(reader.result);
         };
@@ -373,43 +371,38 @@ export const checkIfPromotionValid = (promotion: IGET_RESTAURANT_PROMOTION): Che
     return CheckIfPromotionValidResponse.VALID;
 };
 
-export const getMatchingPromotionProducts = (
-    cartCategoryQuantitiesById: ICartItemQuantitiesById,
-    cartProductQuantitiesById: ICartItemQuantitiesById,
-    promotionItems: IGET_RESTAURANT_PROMOTION_ITEMS[],
-    applyToCheapest: boolean
-) => {
+const getMatchingPromotionProducts = (cartProducts: ICartProduct[], promotionItems: IGET_RESTAURANT_PROMOTION_ITEMS[], applyToCheapest: boolean) => {
     //For promotions with multiple item groups, it would become a && condition. For example, if first group is category: Vege Pizza (min quantity = 2).
     //And second group is category: Sides (min quantity = 1.
     //Then the user would need to select at least 2 Vege Pizza AND a side to get the discount
 
-    let matchingProducts: ICartItemQuantitiesById = {};
+    let matchingProducts: ICartProduct[] = [];
     let matchingCondition = true;
 
     promotionItems.forEach((item) => {
         if (!matchingCondition) return;
 
-        const matchingProductsTemp: ICartItemQuantitiesByIdValue[] = [];
+        const matchingProductsTemp: ICartProduct[] = [];
         let quantityCounted = 0;
 
         item.categories.items.forEach((c) => {
-            if (cartCategoryQuantitiesById[c.id]) {
-                quantityCounted += cartCategoryQuantitiesById[c.id].quantity;
+            cartProducts.forEach((cartProduct) => {
+                if (c.id === cartProduct.category?.id) {
+                    quantityCounted += cartProduct.quantity;
 
-                Object.values(cartProductQuantitiesById).forEach((p) => {
-                    if (p.categoryId == cartCategoryQuantitiesById[c.id].id) {
-                        matchingProductsTemp.push(p);
-                    }
-                });
-            }
+                    matchingProductsTemp.push(cartProduct);
+                }
+            });
         });
 
         item.products.items.forEach((p) => {
-            if (cartProductQuantitiesById[p.id]) {
-                quantityCounted += cartProductQuantitiesById[p.id].quantity;
+            cartProducts.forEach((cartProduct) => {
+                if (p.id === cartProduct.id) {
+                    quantityCounted += cartProduct.quantity;
 
-                matchingProductsTemp.push(cartProductQuantitiesById[p.id]);
-            }
+                    matchingProductsTemp.push(cartProduct);
+                }
+            });
         });
 
         if (quantityCounted < item.minQuantity) {
@@ -417,14 +410,14 @@ export const getMatchingPromotionProducts = (
             matchingCondition = false;
         } else {
             //Sort by price and get the lowest item.minQuantity
-            const matchingProductsTempCpy: ICartItemQuantitiesByIdValue[] = [...matchingProductsTemp];
+            const matchingProductsTempCpy: ICartProduct[] = matchingProductsTemp;
 
             const matchingProductsTempCpySorted = matchingProductsTempCpy.sort((a, b) => {
                 if (applyToCheapest) {
-                    return a.price > b.price ? 1 : -1;
+                    return a.totalPrice > b.totalPrice ? 1 : -1;
                 } else {
                     //reverse sort: largest to smallest
-                    return a.price > b.price ? -1 : 1;
+                    return a.totalPrice > b.totalPrice ? -1 : 1;
                 }
             });
 
@@ -436,10 +429,10 @@ export const getMatchingPromotionProducts = (
                 const quantity = p.quantity;
 
                 if (counter > quantity) {
-                    matchingProducts[p.id] = p;
+                    matchingProducts.push(p);
                     counter -= quantity;
                 } else {
-                    matchingProducts[p.id] = { ...p, quantity: counter };
+                    matchingProducts.push({ ...p, quantity: counter });
                     counter = 0;
                 }
             });
@@ -449,62 +442,84 @@ export const getMatchingPromotionProducts = (
     return matchingCondition ? matchingProducts : null;
 };
 
-export const processPromotionDiscounts = (
-    cartCategoryQuantitiesById: ICartItemQuantitiesById,
-    cartProductQuantitiesById: ICartItemQuantitiesById,
+export const applyDiscountToCartProducts = (promotion: ICartPromotion, cartProducts: ICartProduct[]) => {
+    if (!promotion) return cartProducts;
+
+    const cartProductsCpy: ICartProduct[] = JSON.parse(JSON.stringify(cartProducts));
+
+    //Reset all discount values
+    cartProductsCpy.forEach((cartProduct) => {
+        cartProduct.discount = 0;
+    });
+
+    promotion.matchingProducts.forEach((matchingProduct) => {
+        if (matchingProduct.index === undefined) return;
+
+        cartProductsCpy[matchingProduct.index].discount = matchingProduct.discount;
+    });
+
+    return cartProductsCpy;
+};
+
+const discountMatchingProducts = (matchingProducts: ICartProduct[], discountedAmount: number) => {
+    if (matchingProducts.length === 0) return matchingProducts;
+
+    const matchingProductsCpy: ICartProduct[] = JSON.parse(JSON.stringify(matchingProducts));
+
+    const totalQty = matchingProducts.reduce((total, p) => total + p.quantity, 0);
+
+    let remainingAmount = discountedAmount;
+    let remainingQty = totalQty;
+
+    matchingProductsCpy
+        .sort((a, b) => a.totalPrice - b.totalPrice) //Required to sort from smallest to largest
+        .forEach((p) => {
+            const discountAmountPerProduct = remainingAmount / remainingQty;
+
+            p.discount = discountAmountPerProduct > p.totalPrice ? p.totalPrice * p.quantity : discountAmountPerProduct * p.quantity;
+
+            remainingAmount -= p.discount;
+            remainingQty -= p.quantity;
+        });
+
+    return matchingProductsCpy;
+};
+
+const processPromotionDiscounts = (
+    cartProducts: ICartProduct[],
     discounts: IGET_RESTAURANT_PROMOTION_DISCOUNT[],
-    matchingProducts: ICartItemQuantitiesById = {},
+    matchingProducts: ICartProduct[] = [],
     total: number = 0,
     applyToCheapest: boolean = false
 ) => {
-    let maxDiscountedAmount = 0;
+    let currentBestDiscount: { amount: number; matchingProducts: ICartProduct[] } = { amount: 0, matchingProducts: [] };
     let totalDiscountableAmount = 0;
 
     if (total) {
+        //Entire Order discount
         totalDiscountableAmount = total;
     } else {
-        if (!matchingProducts)
-            return {
-                matchingProducts: {},
-                discountedAmount: 0,
-            };
-
-        Object.values(matchingProducts).forEach((p) => {
-            totalDiscountableAmount += p.price * p.quantity;
-
-            p.modifiers &&
-                p.modifiers.forEach((m) => {
-                    totalDiscountableAmount += p.quantity * m.price * m.quantity;
-                });
+        matchingProducts.forEach((p) => {
+            totalDiscountableAmount += p.totalPrice * p.quantity;
         });
     }
 
     discounts.forEach((discount) => {
         let discountedAmount = 0;
-
-        let matchingDiscountProducts: ICartItemQuantitiesById | null = null;
+        let matchingDiscountProducts: ICartProduct[] | null = null;
 
         //For related items promotion
         if (discount.items && discount.items.items.length > 0) {
             //Reset discountable amount because we want to discount the matchingDiscountProducts not the original matchingProducts
             totalDiscountableAmount = 0;
-            matchingDiscountProducts = getMatchingPromotionProducts(
-                cartCategoryQuantitiesById,
-                cartProductQuantitiesById,
-                discount.items.items,
-                applyToCheapest
-            );
+            matchingDiscountProducts = getMatchingPromotionProducts(cartProducts, discount.items.items, applyToCheapest);
 
-            if (!matchingDiscountProducts)
-                return {
-                    matchingProducts: {},
-                    discountedAmount: 0,
-                };
+            if (!matchingDiscountProducts) return;
 
-            matchingProducts = { ...matchingProducts, ...matchingDiscountProducts };
+            matchingProducts = JSON.parse(JSON.stringify(matchingDiscountProducts));
 
-            Object.values(matchingDiscountProducts).forEach((p) => {
-                totalDiscountableAmount += p.price * p.quantity;
+            matchingProducts.forEach((p) => {
+                totalDiscountableAmount += p.totalPrice * p.quantity;
             });
         }
 
@@ -522,15 +537,36 @@ export const processPromotionDiscounts = (
                 break;
         }
 
-        if (maxDiscountedAmount < discountedAmount) {
-            maxDiscountedAmount = discountedAmount;
+        if (currentBestDiscount.amount < discountedAmount) {
+            currentBestDiscount = { amount: discountedAmount, matchingProducts: matchingProducts };
         }
     });
 
     return {
-        matchingProducts: matchingProducts,
-        discountedAmount: Math.floor(maxDiscountedAmount), //Round to nearest number so we are not working with floats
+        matchingProducts: currentBestDiscount.matchingProducts,
+        discountedAmount: Math.floor(currentBestDiscount.amount), //Round to nearest number so we are not working with floats
     };
+};
+
+export const getOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, cartProducts: ICartProduct[], total?: number) => {
+    let bestPromotionDiscount: {
+        matchingProducts: ICartProduct[];
+        discountedAmount: number;
+    };
+
+    if (promotion.type === EPromotionType.ENTIREORDER) {
+        bestPromotionDiscount = processPromotionDiscounts(cartProducts, promotion.discounts.items, undefined, total);
+    } else {
+        const matchingProducts = getMatchingPromotionProducts(cartProducts, promotion.items.items, promotion.applyToCheapest);
+
+        if (!matchingProducts) return null;
+
+        bestPromotionDiscount = processPromotionDiscounts(cartProducts, promotion.discounts.items, matchingProducts, undefined, promotion.applyToCheapest);
+
+        bestPromotionDiscount.matchingProducts = discountMatchingProducts(bestPromotionDiscount.matchingProducts, bestPromotionDiscount.discountedAmount);
+    }
+
+    return bestPromotionDiscount;
 };
 
 const processProductsForPrint = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[]) => {
@@ -718,20 +754,8 @@ export const getRestaurantTimings = (operatingHours: IGET_RESTAURANT_OPERATING_H
             try {
                 const newIntervals = eachMinuteOfInterval(
                     {
-                        start: new Date(
-                            date.getFullYear(),
-                            date.getMonth(),
-                            date.getDate(),
-                            parseInt(openingTimeSlotHour),
-                            parseInt(openingTimeSlotMinute)
-                        ),
-                        end: new Date(
-                            date.getFullYear(),
-                            date.getMonth(),
-                            date.getDate(),
-                            parseInt(closingTimeSlotHour),
-                            parseInt(closingTimeSlotMinute)
-                        ),
+                        start: new Date(date.getFullYear(), date.getMonth(), date.getDate(), parseInt(openingTimeSlotHour), parseInt(openingTimeSlotMinute)),
+                        end: new Date(date.getFullYear(), date.getMonth(), date.getDate(), parseInt(closingTimeSlotHour), parseInt(closingTimeSlotMinute)),
                     },
                     { step: timeInterval }
                 );
