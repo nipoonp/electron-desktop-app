@@ -88,7 +88,7 @@ export const GET_USER = gql`
                             }
                         }
                     }
-                    registers {
+                    registers(limit: 50) {
                         items {
                             id
                             active
