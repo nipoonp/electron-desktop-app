@@ -1,3 +1,17 @@
+.preparation-time {
+    background-color: var(--primary-color);
+    border-radius: 10px;
+    color: #fff;
+    padding: 12px 24px;
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    z-index: 10;
+    text-align: center;
+    display: none;
+}
+
 .begin-order {
     position: fixed;
     height: 100vh;
