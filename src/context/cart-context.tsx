@@ -29,6 +29,7 @@ const initialCartProductQuantitiesById = {};
 const initialCartModifierQuantitiesById = {};
 const initialUserAppliedPromotionCode = null;
 const initialPromotion = null;
+const initialAvailablePromotions = [];
 const initialTotal = 0;
 const initialPaidSoFar = 0;
 const initialPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0 };
@@ -155,11 +156,11 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
     const [userAppliedPromotionCode, _setUserAppliedPromotionCode] = useState<string | null>(initialUserAppliedPromotionCode);
     const [promotion, _setPromotion] = useState<ICartPromotion | null>(initialPromotion);
+    const [availablePromotions, _setAvailablePromotions] = useState<IGET_RESTAURANT_PROMOTION[]>(initialAvailablePromotions);
 
     const [cartCategoryQuantitiesById, _setCartCategoryQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartCategoryQuantitiesById);
     const [cartProductQuantitiesById, _setCartProductQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartProductQuantitiesById);
     const [cartModifierQuantitiesById, _setCartModifierQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartModifierQuantitiesById);
-    const [availablePromotions, _setAvailablePromotions] = useState<IGET_RESTAURANT_PROMOTION[]>([]);
 
     const [orderScheduledAt, _setOrderScheduledAt] = useState<string | null>(initialOrderScheduledAt);
 
@@ -514,12 +515,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setParkedOrderId(initialParkedOrderId);
         _setParkedOrderNumber(initialParkedOrderNumber);
         _setOrderType(initialOrderType);
+        _setPaymentMethod(initialPaymentMethod);
         _setTableNumber(initialTableNumber);
         _setBuzzerNumber(initialBuzzerNumber);
         _setCustomerInformation(initialCustomerInformation);
-        _setBuzzerNumber(initialBuzzerNumber);
-        _setBuzzerNumber(initialBuzzerNumber);
-        _setPaymentMethod(initialPaymentMethod);
         _setProducts(initialProducts);
         _setNotes(initialNotes);
         _setCartCategoryQuantitiesById(initialCartCategoryQuantitiesById);
@@ -527,6 +526,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setCartModifierQuantitiesById(initialCartModifierQuantitiesById);
         _setUserAppliedPromotionCode(initialUserAppliedPromotionCode);
         _setPromotion(initialPromotion);
+        _setAvailablePromotions(initialAvailablePromotions);
         _setTotal(initialTotal);
         _setPaymentAmounts(initialPaymentAmounts);
         _setSubTotal(initialSubTotal);
