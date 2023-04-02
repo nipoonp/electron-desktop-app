@@ -148,6 +148,8 @@ export const Checkout = () => {
     const [eftposTransactionOutcome, setEftposTransactionOutcome] = useState<IEftposTransactionOutcome | null>(null);
     const [cashTransactionChangeAmount, setCashTransactionChangeAmount] = useState<number | null>(null);
 
+    const createdOrder = useRef<IGET_RESTAURANT_ORDER_FRAGMENT | undefined>();
+
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
     const [paymentOutcomeOrderNumber, setPaymentOutcomeOrderNumber] = useState<string | null>(null);
     const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(restaurant?.delayBetweenOrdersInSeconds || 10);
@@ -399,6 +401,79 @@ export const Checkout = () => {
     const printReceipts = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         register.printers &&
             register.printers.items.forEach(async (printer) => {
+                //Don't print customer copy here if we want to show customer prompt
+                if (register.askToPrintCustomerReceipt === true && printer.customerPrinter === true) return;
+
+                const productsToPrint = filterPrintProducts(order.products, printer);
+
+                if (productsToPrint.length > 0) {
+                    if (printer.printerType === EReceiptPrinterPrinterType.LABEL) {
+                        await printLabel({
+                            orderId: order.id,
+                            printerName: printer.name, //For label printer name is important
+                            printerType: printer.type,
+                            printerAddress: printer.address,
+                            products: convertProductTypesForPrint(productsToPrint),
+                            number: order.number,
+                            placedAt: format(new Date(order.placedAt), "dd/MM HH:mm"),
+                        });
+                    } else {
+                        //Not checking if its printerType receipt
+                        await printReceipt({
+                            orderId: order.id,
+                            status: order.status,
+                            printerType: printer.type,
+                            printerAddress: printer.address,
+                            receiptFooterText: printer.receiptFooterText,
+                            customerPrinter: printer.customerPrinter,
+                            kitchenPrinter: printer.kitchenPrinter,
+                            kitchenPrinterSmall: printer.kitchenPrinterSmall,
+                            kitchenPrinterLarge: printer.kitchenPrinterLarge,
+                            hideModifierGroupsForCustomer: false,
+                            restaurant: {
+                                name: restaurant.name,
+                                address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
+                                gstNumber: restaurant.gstNumber,
+                            },
+                            restaurantLogoBase64: restaurantBase64Logo,
+                            customerInformation: customerInformation
+                                ? {
+                                      firstName: customerInformation.firstName,
+                                      email: customerInformation.email,
+                                      phoneNumber: customerInformation.phoneNumber,
+                                      signatureBase64: customerInformation.signatureBase64,
+                                  }
+                                : null,
+                            notes: order.notes,
+                            products: convertProductTypesForPrint(productsToPrint),
+                            eftposReceipt: order.eftposReceipt,
+                            paymentAmounts: order.paymentAmounts,
+                            total: order.total,
+                            discount: order.promotionId && order.discount ? order.discount : null,
+                            subTotal: order.subTotal,
+                            paid: order.paid,
+                            //display payment required message if kiosk and paid cash
+                            displayPaymentRequiredMessage:
+                                !order.paid || (!isPOS && order.paid && order.paymentAmounts && order.paymentAmounts.cash === order.subTotal) ? true : false,
+                            type: order.type,
+                            number: order.number,
+                            table: order.table,
+                            buzzer: order.buzzer,
+                            placedAt: order.placedAt,
+                            orderScheduledAt: order.orderScheduledAt,
+                        });
+                    }
+                }
+            });
+    };
+
+    const onPrintCustomerReceipt = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+        console.log("xxx...I AM HERE PRINTING!");
+        register.printers &&
+            register.printers.items.forEach(async (printer) => {
+                //Print only requested customer copy here triggered by the customer prompt
+                if (register.askToPrintCustomerReceipt !== true || printer.customerPrinter !== true) return;
+
                 const productsToPrint = filterPrintProducts(order.products, printer);
 
                 if (productsToPrint.length > 0) {
@@ -502,14 +577,16 @@ export const Checkout = () => {
 
             const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(orderNumber, paid, parkOrder, newPaymentAmounts, newPayments, signatureS3Object);
 
+            createdOrder.current = newOrder;
+
             if (register.printers && register.printers.items.length > 0 && printOrder) {
                 await printReceipts(newOrder);
             }
 
             //If shift8 integration poll for result.
-            if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.shift8EnableIntegration) {
-                await pollShift8OrderResponse(newOrder.id);
-            }
+            // if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.shift8EnableIntegration) {
+            //     await pollShift8OrderResponse(newOrder.id);
+            // }
         } catch (e) {
             throw e.message;
         }
@@ -1095,6 +1172,7 @@ export const Checkout = () => {
                         eftposTransactionDelayed={eftposTransactionDelayed}
                         eftposTransactionOutcome={eftposTransactionOutcome}
                         cashTransactionChangeAmount={cashTransactionChangeAmount}
+                        onPrintCustomerReceipt={() => createdOrder.current && onPrintCustomerReceipt(createdOrder.current)}
                         paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                         onContinueToNextOrder={onContinueToNextOrder}

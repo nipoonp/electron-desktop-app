@@ -114,6 +114,7 @@ export const GET_USER = gql`
                             windcaveStationUser
                             windcaveStationKey
                             skipEftposReceiptSignature
+                            askToPrintCustomerReceipt
                             orderNumberSuffix
                             orderNumberStart
                             defaultCategoryView
@@ -354,6 +355,7 @@ export const GET_RESTAURANT = gql`
                     windcaveStationUser
                     windcaveStationKey
                     skipEftposReceiptSignature
+                    askToPrintCustomerReceipt
                     orderNumberSuffix
                     orderNumberStart
                     defaultCategoryView
@@ -952,6 +954,7 @@ export interface IGET_RESTAURANT_REGISTER {
     windcaveStationUser: string;
     windcaveStationKey: string;
     skipEftposReceiptSignature: boolean;
+    askToPrintCustomerReceipt: boolean;
     orderNumberSuffix: string;
     orderNumberStart: number;
     defaultCategoryView: string;
