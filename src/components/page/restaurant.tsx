@@ -126,11 +126,11 @@ export default () => {
         const newMostPopularProductsObj: IMostPopularProductObj[] = [];
 
         restaurant.categories.items.forEach((c) => {
-            if (!c.availablePlatforms.includes(register.type)) return;
+            if (c.availablePlatforms && !c.availablePlatforms.includes(register.type)) return;
 
             c.products &&
                 c.products.items.forEach((p) => {
-                    if (!p.product.availablePlatforms.includes(register.type)) return;
+                    if (p.product.availablePlatforms && !p.product.availablePlatforms.includes(register.type)) return;
 
                     if (p.product.totalQuantitySold) {
                         //Insert item if its not already in there.
@@ -420,7 +420,7 @@ export default () => {
     const menuCategories = (
         <>
             {restaurant.categories.items.map((c, index) => {
-                if (!c.availablePlatforms.includes(register.type)) return;
+                if (c.availablePlatforms && !c.availablePlatforms.includes(register.type)) return;
 
                 return (
                     <Category
@@ -545,7 +545,7 @@ export default () => {
             {selectedCategory &&
                 restaurant.categories.items.map((c) => {
                     if (selectedCategory.id !== c.id) return;
-                    if (!c.availablePlatforms.includes(register.type)) return;
+                    if (c.availablePlatforms && !c.availablePlatforms.includes(register.type)) return;
 
                     return (
                         <>
@@ -581,7 +581,7 @@ export default () => {
                             <div className="products">
                                 {c.products &&
                                     c.products.items.map((p) => {
-                                        if (!p.product.availablePlatforms.includes(register.type)) return;
+                                        if (p.product.availablePlatforms && !p.product.availablePlatforms.includes(register.type)) return;
                                         if (
                                             (selectedSubCategory &&
                                                 p.product.subCategories &&

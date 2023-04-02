@@ -9,8 +9,9 @@ import { CachedImage } from "../../tabin/components/cachedImage";
 
 import "./beginOrder.scss";
 import { isItemAvailable, isVideoFile } from "../../util/util";
+import { useRegister } from "../../context/register-context";
 
-export default (props: {}) => {
+export default () => {
     const { restaurant } = useRestaurant();
 
     if (!restaurant) return <div>This user has not selected any restaurant</div>;
@@ -19,6 +20,7 @@ export default (props: {}) => {
 
     return (
         <>
+            <PreparationTime />
             {ads.length > 0 ? (
                 <>
                     <BeginOrderAdvertisements ads={ads} />
@@ -27,6 +29,21 @@ export default (props: {}) => {
                 <>
                     <BeginOrderDefault />
                 </>
+            )}
+        </>
+    );
+};
+
+const PreparationTime = () => {
+    const { restaurant } = useRestaurant();
+    const { isPOS } = useRegister();
+
+    return (
+        <>
+            {!isPOS && restaurant && restaurant.preparationTimeInMinutes && (
+                <div className="preparation-time h2">
+                    Current wait time is {restaurant.preparationTimeInMinutes} {restaurant.preparationTimeInMinutes > 1 ? "minutes" : "minute"}
+                </div>
             )}
         </>
     );
@@ -53,7 +70,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
         if (availableAds.length <= 1) return;
 
         const timerId = setInterval(() => {
-            setCurrentAd(currentAd === availableAds.length - 1 ? 0 : currentAd + 1);
+            setCurrentAd((prevCurrentAd) => (prevCurrentAd === availableAds.length - 1 ? 0 : prevCurrentAd + 1));
         }, 6000);
 
         return () => clearInterval(timerId);
