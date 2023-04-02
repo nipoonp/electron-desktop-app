@@ -678,6 +678,10 @@ const PreparationTime = () => {
 const AskToPrintCustomerReceipt = (props: { onPrintCustomerReceipt: () => void }) => {
     const { onPrintCustomerReceipt } = props;
 
+    const [hide, setHide] = useState(false);
+
+    if (hide) return <></>;
+
     return (
         <>
             <div className="ask-to-print-customer-receipt">
@@ -692,6 +696,9 @@ const AskToPrintCustomerReceipt = (props: { onPrintCustomerReceipt: () => void }
                 </div>
                 <Button className="large print-me-a-copy-button" onClick={onPrintCustomerReceipt}>
                     Yes, print me a copy!
+                </Button>
+                <Button className="large print-me-a-copy-button-no mt-2" onClick={() => setHide(true)}>
+                    No
                 </Button>
             </div>
         </>
