@@ -138,4 +138,22 @@
         color: #484848;
         border: 1px solid #e0e0e0;
     }
+
+    .ask-to-print-customer-receipt {
+        padding: 32px;
+        border: 2px solid #ebebeb;
+        border-radius: 20px;
+
+        .would-you-like-a-customer-receipt {
+            font-size: 32px;
+        }
+
+        .receipt-image {
+            width: 250px;
+        }
+
+        .print-me-a-copy-button {
+            margin: 0 auto;
+        }
+    }
 }
