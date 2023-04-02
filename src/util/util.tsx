@@ -442,9 +442,7 @@ const getMatchingPromotionProducts = (cartProducts: ICartProduct[], promotionIte
     return matchingCondition ? matchingProducts : null;
 };
 
-export const applyDiscountToCartProducts = (promotion: ICartPromotion, cartProducts: ICartProduct[]) => {
-    if (!promotion) return cartProducts;
-
+export const applyDiscountToCartProducts = (promotion: ICartPromotion | null, cartProducts: ICartProduct[]) => {
     const cartProductsCpy: ICartProduct[] = JSON.parse(JSON.stringify(cartProducts));
 
     //Reset all discount values
@@ -452,7 +450,7 @@ export const applyDiscountToCartProducts = (promotion: ICartPromotion, cartProdu
         cartProduct.discount = 0;
     });
 
-    promotion.matchingProducts.forEach((matchingProduct) => {
+    promotion?.matchingProducts.forEach((matchingProduct) => {
         if (matchingProduct.index === undefined) return;
 
         cartProductsCpy[matchingProduct.index].discount = matchingProduct.discount;
