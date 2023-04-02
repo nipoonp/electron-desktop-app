@@ -12,7 +12,7 @@ import {
     EPaymentMethod,
     ICustomerInformation,
 } from "../model/model";
-import { checkIfPromotionValid, getOrderDiscountAmount } from "../util/util";
+import { applyDiscountToCartProducts, checkIfPromotionValid, getOrderDiscountAmount } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
 
 const initialParkedOrderId = null;
@@ -172,22 +172,20 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         let newSubTotal = total;
 
-        if (promotion) newSubTotal = total - promotion.discountedAmount;
+        if (promotion) {
+            if (promotion.discountedAmount > newSubTotal) {
+                newSubTotal = 0;
+            } else {
+                newSubTotal -= promotion.discountedAmount;
+            }
+        }
 
         if (restaurant && restaurant.surchargePercentage) {
-            newSubTotal = newSubTotal + Math.round((newSubTotal * restaurant.surchargePercentage) / 100);
+            newSubTotal += Math.round((newSubTotal * restaurant.surchargePercentage) / 100);
         }
 
         _setSubTotal(newSubTotal);
     }, [total, promotion]);
-
-    useEffect(() => {
-        if (!products) return;
-
-        const discountedProducts = applyDiscountToCartProducts(promotion, products);
-
-        _setProducts(discountedProducts);
-    }, [promotion]);
 
     useEffect(() => {
         if (userAppliedPromotionCode) return; //Only apply restaurant promos if user has not applied one themselves
@@ -213,13 +211,20 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         let bestPromotion: ICartPromotion | null = null;
         const odrType = newOrderType || orderType;
 
+        let productsCpy: ICartProduct[] = JSON.parse(JSON.stringify(products));
+
+        productsCpy = productsCpy.map((p, index) => ({
+            ...p,
+            index,
+        }));
+
         availablePromotions.forEach((promotion) => {
             if (!odrType || !promotion.availableOrderTypes) return;
             if (!promotion.availableOrderTypes.includes(EOrderType[odrType])) return;
             if (promotion.totalNumberUsed >= promotion.totalAvailableUses) return;
             if (total < promotion.minSpend) return;
 
-            const discount = getOrderDiscountAmount(promotion, JSON.parse(JSON.stringify(products)), total);
+            const discount = getOrderDiscountAmount(promotion, productsCpy, total);
 
             if (!discount || discount.discountedAmount <= 0) return;
 
@@ -233,25 +238,14 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         });
 
         console.log("xxx...bestPromotion", bestPromotion);
+
+        if (bestPromotion) {
+            const discountedProducts = applyDiscountToCartProducts(bestPromotion, products);
+
+            _setProducts(discountedProducts);
+        }
+
         _setPromotion(bestPromotion);
-    };
-
-    const applyDiscountToCartProducts = (promotion: ICartPromotion | null, cartProducts: ICartProduct[]) => {
-        const cartProductsCpy: ICartProduct[] = JSON.parse(JSON.stringify(cartProducts));
-
-        //Reset all discount values
-        cartProductsCpy.forEach((cartProduct) => {
-            cartProduct.discount = 0;
-        });
-
-        promotion &&
-            promotion.matchingProducts.forEach((matchingProduct) => {
-                if (!matchingProduct.index) return;
-
-                cartProductsCpy[matchingProduct.index].discount = matchingProduct.discount;
-            });
-
-        return cartProductsCpy;
     };
 
     const setUserAppliedPromotion = (promotion: IGET_RESTAURANT_PROMOTION): CheckIfPromotionValidResponse => {
@@ -362,7 +356,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         products &&
             products.forEach((p) => {
-                let price = p.price - p.discount;
+                let price = p.price;
 
                 p.modifierGroups.forEach((mg) => {
                     mg.modifiers.forEach((m) => {
@@ -435,9 +429,9 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         let newProducts = products;
 
         if (newProducts != null) {
-            newProducts.push({ index: products?.length, ...product });
+            newProducts.push({ ...product });
         } else {
-            newProducts = [{ index: 0, ...product }];
+            newProducts = [{ ...product }];
         }
 
         _setProducts(newProducts);
@@ -501,6 +495,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setProducts(newProducts);
         _setTotal(recalculateTotal(newProducts));
         updateCartQuantities(newProducts);
+
         processPromotions(newProducts);
     };
 

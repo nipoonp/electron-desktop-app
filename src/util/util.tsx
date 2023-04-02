@@ -25,6 +25,7 @@ import {
     ICartModifier,
     ICartModifierGroup,
     ICartProduct,
+    ICartPromotion,
 } from "../model/model";
 
 export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0);
@@ -336,7 +337,6 @@ export const toDataURL = (url, callback) => {
 
     xhr.onload = () => {
         const reader = new FileReader();
-
         reader.onloadend = () => {
             callback(reader.result);
         };
@@ -414,10 +414,10 @@ const getMatchingPromotionProducts = (cartProducts: ICartProduct[], promotionIte
 
             const matchingProductsTempCpySorted = matchingProductsTempCpy.sort((a, b) => {
                 if (applyToCheapest) {
-                    return a.price > b.price ? 1 : -1;
+                    return a.totalPrice > b.totalPrice ? 1 : -1;
                 } else {
                     //reverse sort: largest to smallest
-                    return a.price > b.price ? -1 : 1;
+                    return a.totalPrice > b.totalPrice ? -1 : 1;
                 }
             });
 
@@ -442,21 +442,45 @@ const getMatchingPromotionProducts = (cartProducts: ICartProduct[], promotionIte
     return matchingCondition ? matchingProducts : null;
 };
 
+export const applyDiscountToCartProducts = (promotion: ICartPromotion, cartProducts: ICartProduct[]) => {
+    if (!promotion) return cartProducts;
+
+    const cartProductsCpy: ICartProduct[] = JSON.parse(JSON.stringify(cartProducts));
+
+    //Reset all discount values
+    cartProductsCpy.forEach((cartProduct) => {
+        cartProduct.discount = 0;
+    });
+
+    promotion.matchingProducts.forEach((matchingProduct) => {
+        if (matchingProduct.index === undefined) return;
+
+        cartProductsCpy[matchingProduct.index].discount = matchingProduct.discount;
+    });
+
+    return cartProductsCpy;
+};
+
 const discountMatchingProducts = (matchingProducts: ICartProduct[], discountedAmount: number) => {
     if (matchingProducts.length === 0) return matchingProducts;
 
-    let totalQuantity = 0;
+    const matchingProductsCpy: ICartProduct[] = JSON.parse(JSON.stringify(matchingProducts));
 
-    matchingProducts.forEach((p) => {
-        totalQuantity += p.quantity;
-    });
+    const totalQty = matchingProducts.reduce((total, p) => total + p.quantity, 0);
 
-    const discountAmountPerProduct = discountedAmount / totalQuantity;
-    const matchingProductsCpy = JSON.parse(JSON.stringify(matchingProducts));
+    let remainingAmount = discountedAmount;
+    let remainingQty = totalQty;
 
-    matchingProductsCpy.forEach((p) => {
-        p.discount = discountAmountPerProduct * p.quantity;
-    });
+    matchingProductsCpy
+        .sort((a, b) => a.totalPrice - b.totalPrice) //Required to sort from smallest to largest
+        .forEach((p) => {
+            const discountAmountPerProduct = remainingAmount / remainingQty;
+
+            p.discount = discountAmountPerProduct > p.totalPrice ? p.totalPrice * p.quantity : discountAmountPerProduct * p.quantity;
+
+            remainingAmount -= p.discount;
+            remainingQty -= p.quantity;
+        });
 
     return matchingProductsCpy;
 };
@@ -495,7 +519,7 @@ const processPromotionDiscounts = (
             matchingProducts = JSON.parse(JSON.stringify(matchingDiscountProducts));
 
             matchingProducts.forEach((p) => {
-                totalDiscountableAmount += p.price * p.quantity;
+                totalDiscountableAmount += p.totalPrice * p.quantity;
             });
         }
 
@@ -514,7 +538,7 @@ const processPromotionDiscounts = (
         }
 
         if (currentBestDiscount.amount < discountedAmount) {
-            currentBestDiscount = { amount: discountedAmount, matchingProducts: discountMatchingProducts(matchingProducts, discountedAmount) };
+            currentBestDiscount = { amount: discountedAmount, matchingProducts: matchingProducts };
         }
     });
 
@@ -538,6 +562,8 @@ export const getOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, car
         if (!matchingProducts) return null;
 
         bestPromotionDiscount = processPromotionDiscounts(cartProducts, promotion.discounts.items, matchingProducts, undefined, promotion.applyToCheapest);
+
+        bestPromotionDiscount.matchingProducts = discountMatchingProducts(bestPromotionDiscount.matchingProducts, bestPromotionDiscount.discountedAmount);
     }
 
     return bestPromotionDiscount;

@@ -59,9 +59,9 @@ const OrderItem = (props: {
     const { product, displayOrder, onEditProduct, onUpdateProductQuantity, onApplyProductDiscount, onRemoveProduct } = props;
     const { isPOS } = useRegister();
 
-    const [displayPrice, setDisplayPrice] = useState(convertCentsToDollars(product.price - product.discount));
+    const [displayPrice, setDisplayPrice] = useState(convertCentsToDollars(product.totalPrice * product.quantity - product.discount));
     const [originalPrice, setOriginalPrice] = useState(convertCentsToDollars(product.totalPrice * product.quantity));
-    const [price, setPrice] = useState(displayPrice);
+    const [price, setPrice] = useState(displayPrice); //For pos price edit input
     const [quantity, setQuantity] = useState(product.quantity.toString());
     const [isOptionsExpanded, setIsOptionsExpanded] = useState(false);
 
@@ -73,7 +73,7 @@ const OrderItem = (props: {
         setDisplayPrice(convertCentsToDollars(productPrice));
         setOriginalPrice(convertCentsToDollars(originalPrice));
         setQuantity(product.quantity.toString());
-    }, [product.quantity, product.price, product.totalPrice, product.discount, product.modifierGroups]);
+    }, [product]);
 
     const onChangeStepperQuantity = (newQuantity: number) => {
         setQuantity(newQuantity.toString());
