@@ -124,18 +124,13 @@ export interface ICartItemQuantitiesByIdValue {
     name: string;
     quantity: number;
     price: number;
+    discount: number; //Discount amount added later on in the calculation
     categoryId: string | null; //Only for products
-    modifiers:
-        | {
-              id: string;
-              quantity: number;
-              price: number;
-          }[]
-        | null;
 }
 
 //ICartProduct is used to pass into the DB. So its good to have it as ? undefined rather than null. Null is a type in dynamoDB so it will create a field with type Null.
 export interface ICartProduct {
+    index?: number; //index is for promos
     id: string;
     name: string;
     price: number;
@@ -180,7 +175,7 @@ export interface IPreSelectedModifiers {
 
 export interface ICartPromotion {
     promotion: IGET_RESTAURANT_PROMOTION;
-    matchingProducts: ICartItemQuantitiesById;
+    matchingProducts: ICartProduct[];
     discountedAmount: number;
 }
 

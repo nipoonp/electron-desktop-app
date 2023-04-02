@@ -72,7 +72,7 @@ export const GET_USER = gql`
             firstName
             lastName
             email
-            restaurants {
+            restaurants(limit: 50) {
                 items {
                     id
                     name
@@ -256,6 +256,7 @@ export const GET_RESTAURANT = gql`
             }
             autoCompleteOrders
             preparationTimeInMinutes
+            delayBetweenOrdersInSeconds
             surchargePercentage
             salesReportMailingList
             advertisements {
@@ -881,6 +882,7 @@ export interface IGET_RESTAURANT {
     customStyleSheet?: IS3Object;
     autoCompleteOrders: boolean | null;
     preparationTimeInMinutes: number | null;
+    delayBetweenOrdersInSeconds: number | null;
     surchargePercentage: number | null;
     salesReportMailingList: string | null;
     advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
