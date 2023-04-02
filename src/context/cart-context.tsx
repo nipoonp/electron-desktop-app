@@ -185,26 +185,13 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         }
 
         _setSubTotal(newSubTotal);
-    }, [total, promotion]);
+    }, [total, promotion, restaurant]);
 
     useEffect(() => {
-        if (userAppliedPromotionCode) return; //Only apply restaurant promos if user has not applied one themselves
+        if (!products) return;
 
-        const availPromotions: IGET_RESTAURANT_PROMOTION[] = [];
-
-        restaurant &&
-            restaurant.promotions.items.forEach((promotion) => {
-                if (!promotion.autoApply) return;
-
-                const status = checkIfPromotionValid(promotion);
-
-                if (status !== CheckIfPromotionValidResponse.VALID) return;
-
-                availPromotions.push(promotion);
-            });
-
-        _setAvailablePromotions(availPromotions);
-    }, [restaurant, userAppliedPromotionCode]);
+        processPromotions(products);
+    }, [userAppliedPromotionCode]);
 
     //This function should be a useEffect hook. But cannot make this because it cause infinite state change loop issue
     const processPromotions = (products: ICartProduct[], newOrderType?: EOrderType) => {
@@ -239,16 +226,16 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         console.log("xxx...bestPromotion", bestPromotion);
 
-        if (bestPromotion) {
-            const discountedProducts = applyDiscountToCartProducts(bestPromotion, products);
+        //If bestPromotion is null, the function will still reset all the product.discount values to 0
+        const discountedProducts = applyDiscountToCartProducts(bestPromotion, products);
 
-            _setProducts(discountedProducts);
-        }
-
+        _setProducts(discountedProducts);
         _setPromotion(bestPromotion);
     };
 
     const setUserAppliedPromotion = (promotion: IGET_RESTAURANT_PROMOTION): CheckIfPromotionValidResponse => {
+        if (!products) return CheckIfPromotionValidResponse.UNAVAILABLE;
+
         const status = checkIfPromotionValid(promotion);
 
         if (status !== CheckIfPromotionValidResponse.VALID) return status;
