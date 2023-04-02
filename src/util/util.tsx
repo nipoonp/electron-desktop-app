@@ -421,11 +421,25 @@ const getMatchingPromotionProducts = (cartProducts: ICartProduct[], promotionIte
                 }
             });
 
-            matchingProducts = matchingProductsTempCpySorted.slice(0, item.minQuantity);
+            let counter = item.minQuantity;
+
+            matchingProductsTempCpySorted.forEach((p) => {
+                if (counter == 0) return;
+
+                const quantity = p.quantity;
+
+                if (counter > quantity) {
+                    matchingProducts.push(p);
+                    counter -= quantity;
+                } else {
+                    matchingProducts.push({ ...p, quantity: counter });
+                    counter = 0;
+                }
+            });
         }
     });
 
-    return matchingCondition ? matchingProducts : [];
+    return matchingCondition ? matchingProducts : null;
 };
 
 const discountMatchingProducts = (matchingProducts: ICartProduct[], discountedAmount: number) => {
@@ -441,7 +455,7 @@ const discountMatchingProducts = (matchingProducts: ICartProduct[], discountedAm
     const matchingProductsCpy = JSON.parse(JSON.stringify(matchingProducts));
 
     matchingProductsCpy.forEach((p) => {
-        p.discount = discountAmountPerProduct;
+        p.discount = discountAmountPerProduct * p.quantity;
     });
 
     return matchingProductsCpy;
@@ -468,7 +482,7 @@ const processPromotionDiscounts = (
 
     discounts.forEach((discount) => {
         let discountedAmount = 0;
-        let matchingDiscountProducts: ICartProduct[] = [];
+        let matchingDiscountProducts: ICartProduct[] | null = null;
 
         //For related items promotion
         if (discount.items && discount.items.items.length > 0) {
@@ -476,7 +490,11 @@ const processPromotionDiscounts = (
             totalDiscountableAmount = 0;
             matchingDiscountProducts = getMatchingPromotionProducts(cartProducts, discount.items.items, applyToCheapest);
 
-            matchingDiscountProducts.forEach((p) => {
+            if (!matchingDiscountProducts) return;
+
+            matchingProducts = JSON.parse(JSON.stringify(matchingDiscountProducts));
+
+            matchingProducts.forEach((p) => {
                 totalDiscountableAmount += p.price * p.quantity;
             });
         }
@@ -506,8 +524,6 @@ const processPromotionDiscounts = (
     };
 };
 
-const applyDiscountToCartProducts = (matchingProducts: ICartItemQuantitiesById, cartProducts: ICartProduct[]) => {};
-
 export const getOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, cartProducts: ICartProduct[], total?: number) => {
     let bestPromotionDiscount: {
         matchingProducts: ICartProduct[];
@@ -519,11 +535,10 @@ export const getOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, car
     } else {
         const matchingProducts = getMatchingPromotionProducts(cartProducts, promotion.items.items, promotion.applyToCheapest);
 
+        if (!matchingProducts) return null;
+
         bestPromotionDiscount = processPromotionDiscounts(cartProducts, promotion.discounts.items, matchingProducts, undefined, promotion.applyToCheapest);
     }
-
-    console.log("xxx...bestPromotionDiscount", bestPromotionDiscount);
-    // applyDiscountToCartProducts(bestPromotionDiscount.matchingProducts, products);
 
     return bestPromotionDiscount;
 };

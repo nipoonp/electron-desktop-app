@@ -60,18 +60,20 @@ const OrderItem = (props: {
     const { isPOS } = useRegister();
 
     const [displayPrice, setDisplayPrice] = useState(convertCentsToDollars(product.price - product.discount));
+    const [originalPrice, setOriginalPrice] = useState(convertCentsToDollars(product.totalPrice * product.quantity));
     const [price, setPrice] = useState(displayPrice);
     const [quantity, setQuantity] = useState(product.quantity.toString());
     const [isOptionsExpanded, setIsOptionsExpanded] = useState(false);
 
     useEffect(() => {
-        let productPrice = product.totalPrice - product.discount;
-        let totalProductPrice = productPrice * product.quantity;
+        let originalPrice = product.totalPrice * product.quantity;
+        let productPrice = originalPrice - product.discount;
 
         setPrice(convertCentsToDollars(productPrice));
-        setDisplayPrice(convertCentsToDollars(totalProductPrice));
+        setDisplayPrice(convertCentsToDollars(productPrice));
+        setOriginalPrice(convertCentsToDollars(originalPrice));
         setQuantity(product.quantity.toString());
-    }, [product.quantity, product.price, product.discount, product.modifierGroups]);
+    }, [product.quantity, product.price, product.totalPrice, product.discount, product.modifierGroups]);
 
     const onChangeStepperQuantity = (newQuantity: number) => {
         setQuantity(newQuantity.toString());
@@ -167,6 +169,7 @@ const OrderItem = (props: {
                 />
                 <div className="text-center">
                     <div className="h2 text-primary mb-2">${displayPrice}</div>
+                    {product.discount ? <div className="h3 text-primary mb-2 original-price">${originalPrice}</div> : <></>}
                     <Button className="remove-button" onClick={() => onRemoveProduct(displayOrder)}>
                         Remove
                     </Button>
@@ -177,13 +180,7 @@ const OrderItem = (props: {
     );
 };
 
-const OrderItemDetails = (props: {
-    name: string;
-    quantity: number;
-    notes: string | null;
-    modifierGroups: ICartModifierGroup[];
-    onEditProduct: () => void;
-}) => {
+const OrderItemDetails = (props: { name: string; quantity: number; notes: string | null; modifierGroups: ICartModifierGroup[]; onEditProduct: () => void }) => {
     const { name, quantity, notes, modifierGroups, onEditProduct } = props;
     const { isPOS } = useRegister();
 

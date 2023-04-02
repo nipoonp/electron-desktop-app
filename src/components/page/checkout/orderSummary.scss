@@ -13,6 +13,11 @@
         margin: 0 auto;
     }
 
+    .original-price {
+        text-decoration: line-through;
+        opacity: 0.5;
+    }
+
     .detail {
         display: grid;
         grid-auto-rows: auto; /* shrink to min size*/
