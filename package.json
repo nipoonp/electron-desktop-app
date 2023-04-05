@@ -79,7 +79,7 @@
     "devDependencies": {
         "@types/node": "^18.15.11",
         "concurrently": "^8.0.1",
-        "electron": "^17.1.0",
+        "electron": "^24",
         "electron-builder": "^23.6.0",
         "electron-rebuild": "^3.2.9",
         "wait-on": "^7.0.1"
