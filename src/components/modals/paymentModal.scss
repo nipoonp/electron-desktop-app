@@ -154,6 +154,17 @@
 
         .print-me-a-copy-button {
             margin: 0 auto;
+            width: 350px;
+        }
+
+        .print-me-a-copy-button-no {
+            margin-left: auto;
+            margin-right: auto;
+            width: 350px;
+
+            background-color: var(--background-color);
+            color: #484848;
+            border: 1px solid #e0e0e0;
         }
     }
 }

@@ -265,7 +265,13 @@ const PaymentAccepted = (props: {
     onContinueToNextOrder: () => void;
     onContinueToNextPayment: () => void;
 }) => {
-    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder, onContinueToNextPayment } = props;
+    const {
+        onPrintCustomerReceipt,
+        paymentOutcomeOrderNumber,
+        paymentOutcomeApprovedRedirectTimeLeft,
+        onContinueToNextOrder,
+        onContinueToNextPayment,
+    } = props;
     const { paidSoFar, subTotal } = useCart();
 
     const totalRemaining = subTotal - paidSoFar;
@@ -408,8 +414,13 @@ const PaymentCashPaymentPOS = (props: {
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
 }) => {
-    const { onPrintCustomerReceipt, cashTransactionChangeAmount, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } =
-        props;
+    const {
+        onPrintCustomerReceipt,
+        cashTransactionChangeAmount,
+        paymentOutcomeOrderNumber,
+        paymentOutcomeApprovedRedirectTimeLeft,
+        onContinueToNextOrder,
+    } = props;
 
     return (
         <>
@@ -622,15 +633,18 @@ const POSPaymentScreen = (props: {
                         <>
                             {payment.type === "CASH" ? (
                                 <div className="mb-2">
-                                    Cash: ${convertCentsToDollars(payment.amount)} <Link onClick={() => onRemoveCashTransaction(index)}>(Remove)</Link>
+                                    Cash: ${convertCentsToDollars(payment.amount)}{" "}
+                                    <Link onClick={() => onRemoveCashTransaction(index)}>(Remove)</Link>
                                 </div>
                             ) : payment.type === "UBEREATS" ? (
                                 <div className="mb-2">
-                                    Uber Eats: ${convertCentsToDollars(payment.amount)} <Link onClick={() => onRemoveUberEatsTransaction(index)}>(Remove)</Link>
+                                    Uber Eats: ${convertCentsToDollars(payment.amount)}{" "}
+                                    <Link onClick={() => onRemoveUberEatsTransaction(index)}>(Remove)</Link>
                                 </div>
                             ) : payment.type === "MENULOG" ? (
                                 <div className="mb-2">
-                                    Menulog: ${convertCentsToDollars(payment.amount)} <Link onClick={() => onRemoveMenulogTransaction(index)}>(Remove)</Link>
+                                    Menulog: ${convertCentsToDollars(payment.amount)}{" "}
+                                    <Link onClick={() => onRemoveMenulogTransaction(index)}>(Remove)</Link>
                                 </div>
                             ) : (
                                 //For all Eftpos types Verifone, Smartpay, Windcave
@@ -678,6 +692,10 @@ const PreparationTime = () => {
 const AskToPrintCustomerReceipt = (props: { onPrintCustomerReceipt: () => void }) => {
     const { onPrintCustomerReceipt } = props;
 
+    const [hide, setHide] = useState(false);
+
+    if (hide) return <></>;
+
     return (
         <>
             <div className="ask-to-print-customer-receipt">
@@ -690,8 +708,17 @@ const AskToPrintCustomerReceipt = (props: { onPrintCustomerReceipt: () => void }
                     />
                     <div className="receipt-image-override"></div>
                 </div>
-                <Button className="large print-me-a-copy-button" onClick={onPrintCustomerReceipt}>
+                <Button
+                    className="large print-me-a-copy-button"
+                    onClick={() => {
+                        onPrintCustomerReceipt();
+                        setHide(true);
+                    }}
+                >
                     Yes, print me a copy!
+                </Button>
+                <Button className="large print-me-a-copy-button-no mt-2" onClick={() => setHide(true)}>
+                    No
                 </Button>
             </div>
         </>
