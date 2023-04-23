@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { FiExternalLink, FiX } from "react-icons/fi";
 import { useRestaurant } from "../../context/restaurant-context";
 import { ISubTab, ITab } from "../../model/model";
-
+import config from "./../../../package.json";
 import "./menu.scss";
 
 let electron: any;
@@ -81,6 +81,7 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
                 </div>
                 <div className="menu-tab-text-exit">Exit</div>
             </div>
+            <div className="mt-2 text-center">{`Version: ${config.version}`}</div>
         </div>
     );
 };
