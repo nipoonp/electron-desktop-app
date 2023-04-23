@@ -13,7 +13,15 @@ import {
     IS3Object,
     IGET_SHIFT8_ORDER_RESPONSE,
 } from "../../graphql/customQueries";
-import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath, buzzerNumberPath, paymentMethodPath, customerInformationPath } from "../main";
+import {
+    restaurantPath,
+    beginOrderPath,
+    tableNumberPath,
+    orderTypePath,
+    buzzerNumberPath,
+    paymentMethodPath,
+    customerInformationPath,
+} from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
 import {
@@ -29,6 +37,7 @@ import {
     ICartPayment,
     EReceiptPrinterPrinterType,
     EPaymentMethod,
+    EVerifoneTransactionOutcome,
 } from "../../model/model";
 import { useUser } from "../../context/user-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -152,7 +161,9 @@ export const Checkout = () => {
 
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
     const [paymentOutcomeOrderNumber, setPaymentOutcomeOrderNumber] = useState<string | null>(null);
-    const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(restaurant?.delayBetweenOrdersInSeconds || 10);
+    const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(
+        restaurant?.delayBetweenOrdersInSeconds || 10
+    );
     const transactionCompleteRedirectTime = restaurant?.delayBetweenOrdersInSeconds || 10;
 
     const [showPromotionCodeModal, setShowPromotionCodeModal] = useState(false);
@@ -487,7 +498,8 @@ export const Checkout = () => {
         newPayments: ICartPayment[]
     ) => {
         //If parked order do not generate order number
-        let orderNumber = parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
+        let orderNumber =
+            parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
 
         setPaymentOutcomeOrderNumber(orderNumber);
 
@@ -502,7 +514,11 @@ export const Checkout = () => {
                 const filename = `${date}-signature`;
                 const fileExtension = "png";
 
-                const signatureFile = await convertBase64ToFile(customerInformation.signatureBase64, `${filename}.${fileExtension}`, `image/${fileExtension}`);
+                const signatureFile = await convertBase64ToFile(
+                    customerInformation.signatureBase64,
+                    `${filename}.${fileExtension}`,
+                    `image/${fileExtension}`
+                );
 
                 const uploadedObject: any = await Storage.put(`${filename}.${fileExtension}`, signatureFile, {
                     level: "protected",
@@ -517,7 +533,14 @@ export const Checkout = () => {
                 };
             }
 
-            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(orderNumber, paid, parkOrder, newPaymentAmounts, newPayments, signatureS3Object);
+            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(
+                orderNumber,
+                paid,
+                parkOrder,
+                newPaymentAmounts,
+                newPayments,
+                signatureS3Object
+            );
 
             createdOrder.current = newOrder;
 
@@ -801,7 +824,19 @@ export const Checkout = () => {
     const onConfirmTotalOrRetryEftposTransaction = async (amount: number) => {
         setPaymentModalState(EPaymentModalState.AwaitingCard);
 
-        const outcome = await performEftposTransaction(amount);
+        let outcome;
+
+        if (amount === 0) {
+            //If amount is 0 then bypass the eftpos transaction
+            outcome = {
+                platformTransactionOutcome: EVerifoneTransactionOutcome.Approved, //Using verifone transactoin approved here, but this field is not really used here so doesnt matter
+                transactionOutcome: EEftposTransactionOutcome.Success,
+                message: "Transaction Approved!",
+                eftposReceipt: null,
+            };
+        } else {
+            outcome = await performEftposTransaction(amount);
+        }
 
         setEftposTransactionOutcome(outcome);
         setPaymentModalState(EPaymentModalState.EftposResult);
@@ -1096,7 +1131,13 @@ export const Checkout = () => {
     };
 
     const itemUpdatedModal = () => {
-        return <>{showItemUpdatedModal && <ItemAddedUpdatedModal isOpen={showItemUpdatedModal} onClose={onCloseItemUpdatedModal} isProductUpdate={true} />}</>;
+        return (
+            <>
+                {showItemUpdatedModal && (
+                    <ItemAddedUpdatedModal isOpen={showItemUpdatedModal} onClose={onCloseItemUpdatedModal} isProductUpdate={true} />
+                )}
+            </>
+        );
     };
 
     const promotionCodeModal = () => {
@@ -1227,7 +1268,9 @@ export const Checkout = () => {
 
     const restaurantCustomerInformation = (
         <div className="checkout-customer-details">
-            <div className="h3">Customer Details: {`${customerInformation?.firstName} ${customerInformation?.email} ${customerInformation?.phoneNumber}`}</div>
+            <div className="h3">
+                Customer Details: {`${customerInformation?.firstName} ${customerInformation?.email} ${customerInformation?.phoneNumber}`}
+            </div>
             <Link onClick={onUpdateCustomerInformation}>Change</Link>
         </div>
     );
@@ -1299,7 +1342,9 @@ export const Checkout = () => {
             <div className="mb-2"></div> */}
             {promotion && (
                 <div className="h3 text-center mb-2">
-                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(promotion.discountedAmount)}`}{" "}
+                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
+                        promotion.discountedAmount
+                    )}`}{" "}
                     {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
                 </div>
             )}
