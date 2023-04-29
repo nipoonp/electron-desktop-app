@@ -9,11 +9,18 @@ import {
     IGET_RESTAURANT_CATEGORY,
     IGET_RESTAURANT_PRODUCT,
     EPromotionType,
-    ERegisterType,
     IS3Object,
-    IGET_SHIFT8_ORDER_RESPONSE,
+    IGET_THIRD_PARTY_ORDER_RESPONSE,
 } from "../../graphql/customQueries";
-import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath, buzzerNumberPath, paymentMethodPath, customerInformationPath } from "../main";
+import {
+    restaurantPath,
+    beginOrderPath,
+    tableNumberPath,
+    orderTypePath,
+    buzzerNumberPath,
+    paymentMethodPath,
+    customerInformationPath,
+} from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
 import {
@@ -59,7 +66,7 @@ import { simpleDateTimeFormatUTC } from "../../util/dateFormat";
 import { Storage } from "aws-amplify";
 import awsconfig from "../../aws-exports";
 import { OrderScheduleDateTime } from "../../tabin/components/orderScheduleDateTime";
-import { useGetShift8OrderResponseLazyQuery } from "../../hooks/useGetShift8OrderResponseLazyQuery";
+import { useGetThirdPartyOrderResponseLazyQuery } from "../../hooks/useGetThirdPartyOrderResponseLazyQuery";
 
 import "./checkout.scss";
 
@@ -128,7 +135,7 @@ export const Checkout = () => {
         },
     });
 
-    const { getShift8OrderResponse } = useGetShift8OrderResponseLazyQuery();
+    const { getThirdPartyOrderResponse } = useGetThirdPartyOrderResponseLazyQuery();
 
     // state
     const [selectedCategoryForProductModal, setSelectedCategoryForProductModal] = useState<IGET_RESTAURANT_CATEGORY | null>(null);
@@ -152,7 +159,9 @@ export const Checkout = () => {
 
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
     const [paymentOutcomeOrderNumber, setPaymentOutcomeOrderNumber] = useState<string | null>(null);
-    const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(restaurant?.delayBetweenOrdersInSeconds || 10);
+    const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(
+        restaurant?.delayBetweenOrdersInSeconds || 10
+    );
     const transactionCompleteRedirectTime = restaurant?.delayBetweenOrdersInSeconds || 10;
 
     const [showPromotionCodeModal, setShowPromotionCodeModal] = useState(false);
@@ -487,7 +496,8 @@ export const Checkout = () => {
         newPayments: ICartPayment[]
     ) => {
         //If parked order do not generate order number
-        let orderNumber = parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
+        let orderNumber =
+            parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
 
         setPaymentOutcomeOrderNumber(orderNumber);
 
@@ -502,7 +512,11 @@ export const Checkout = () => {
                 const filename = `${date}-signature`;
                 const fileExtension = "png";
 
-                const signatureFile = await convertBase64ToFile(customerInformation.signatureBase64, `${filename}.${fileExtension}`, `image/${fileExtension}`);
+                const signatureFile = await convertBase64ToFile(
+                    customerInformation.signatureBase64,
+                    `${filename}.${fileExtension}`,
+                    `image/${fileExtension}`
+                );
 
                 const uploadedObject: any = await Storage.put(`${filename}.${fileExtension}`, signatureFile, {
                     level: "protected",
@@ -517,24 +531,32 @@ export const Checkout = () => {
                 };
             }
 
-            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(orderNumber, paid, parkOrder, newPaymentAmounts, newPayments, signatureS3Object);
+            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(
+                orderNumber,
+                paid,
+                parkOrder,
+                newPaymentAmounts,
+                newPayments,
+                signatureS3Object
+            );
 
             createdOrder.current = newOrder;
+
+            console.log("xxx...i am here", restaurant.thirdPartyIntegrations);
+            //If using third party integratoin. Poll for resposne
+            if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.enable) {
+                await pollForThirdPartyResponse(newOrder.id);
+            }
 
             if (register.printers && register.printers.items.length > 0 && printOrder) {
                 await printReceipts(newOrder);
             }
-
-            //If shift8 integration poll for result.
-            // if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.shift8EnableIntegration) {
-            //     await pollShift8OrderResponse(newOrder.id);
-            // }
         } catch (e) {
-            throw e.message;
+            throw e;
         }
     };
 
-    const pollShift8OrderResponse = (orderId) => {
+    const pollForThirdPartyResponse = (orderId) => {
         const interval = 2 * 1000; // 2 seconds
         const timeout = 10 * 1000; // 10 seconds
 
@@ -542,26 +564,31 @@ export const Checkout = () => {
 
         var checkCondition = async (resolve: any, reject: any) => {
             try {
-                const shift8OrderResponseRes = await getShift8OrderResponse({
+                const thirdPartyOrderResponseRes = await getThirdPartyOrderResponse({
                     variables: {
                         id: orderId,
                     },
                 });
 
-                const shift8OrderResponse: IGET_SHIFT8_ORDER_RESPONSE = shift8OrderResponseRes.data.getOrder;
+                const thirdPartyOrderResponse: IGET_THIRD_PARTY_ORDER_RESPONSE = thirdPartyOrderResponseRes.data.getOrder;
 
-                if (shift8OrderResponse.thirdPartyIntegrationResult) {
-                    if (shift8OrderResponse.thirdPartyIntegrationResult.shift8IsSuccess === true) {
+                console.log("xxx...thirdPartyOrderResponse", thirdPartyOrderResponse);
+
+                if (thirdPartyOrderResponse.thirdPartyIntegrationResult) {
+                    console.log("xxx...111");
+                    if (thirdPartyOrderResponse.thirdPartyIntegrationResult.isSuccess === true) {
                         resolve();
                     } else {
-                        reject(shift8OrderResponse.thirdPartyIntegrationResult.shift8ErrorMessage);
+                        reject(thirdPartyOrderResponse.thirdPartyIntegrationResult.errorMessage);
                     }
                 } else if (Number(new Date()) < endTime) {
+                    console.log("xxx...222");
                     setTimeout(checkCondition, interval, resolve, reject);
                     return;
                 } else {
+                    console.log("xxx...333");
                     // Didn't match and too much time, reject!
-                    reject("Shift8 Result Polling timed out. Please contact support staff.");
+                    reject("Third Party Result Polling timed out. Please contact support staff.");
                     return;
                 }
             } catch (error) {
@@ -1096,7 +1123,13 @@ export const Checkout = () => {
     };
 
     const itemUpdatedModal = () => {
-        return <>{showItemUpdatedModal && <ItemAddedUpdatedModal isOpen={showItemUpdatedModal} onClose={onCloseItemUpdatedModal} isProductUpdate={true} />}</>;
+        return (
+            <>
+                {showItemUpdatedModal && (
+                    <ItemAddedUpdatedModal isOpen={showItemUpdatedModal} onClose={onCloseItemUpdatedModal} isProductUpdate={true} />
+                )}
+            </>
+        );
     };
 
     const promotionCodeModal = () => {
@@ -1227,7 +1260,9 @@ export const Checkout = () => {
 
     const restaurantCustomerInformation = (
         <div className="checkout-customer-details">
-            <div className="h3">Customer Details: {`${customerInformation?.firstName} ${customerInformation?.email} ${customerInformation?.phoneNumber}`}</div>
+            <div className="h3">
+                Customer Details: {`${customerInformation?.firstName} ${customerInformation?.email} ${customerInformation?.phoneNumber}`}
+            </div>
             <Link onClick={onUpdateCustomerInformation}>Change</Link>
         </div>
     );
@@ -1299,7 +1334,9 @@ export const Checkout = () => {
             <div className="mb-2"></div> */}
             {promotion && (
                 <div className="h3 text-center mb-2">
-                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(promotion.discountedAmount)}`}{" "}
+                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
+                        promotion.discountedAmount
+                    )}`}{" "}
                     {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
                 </div>
             )}
