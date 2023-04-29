@@ -502,9 +502,6 @@ export const Checkout = () => {
 
         setPaymentOutcomeOrderNumber(orderNumber);
 
-        //Start timer at the top of the function becuase all these API call should finish within countdown time. If theres an error, it will show up.
-        beginTransactionCompleteTimeout();
-
         try {
             let signatureS3Object: IS3Object | null = null;
 
@@ -543,15 +540,18 @@ export const Checkout = () => {
 
             createdOrder.current = newOrder;
 
-            console.log("xxx...i am here", restaurant.thirdPartyIntegrations);
             //If using third party integratoin. Poll for resposne
             if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.enable) {
+                setPaymentModalState(EPaymentModalState.ThirdPartyIntegrationAwaitingResponse);
+
                 await pollForThirdPartyResponse(newOrder.id);
             }
 
             if (register.printers && register.printers.items.length > 0 && printOrder) {
                 await printReceipts(newOrder);
             }
+
+            beginTransactionCompleteTimeout();
         } catch (e) {
             throw e;
         }
@@ -896,11 +896,12 @@ export const Checkout = () => {
             if (newTotalPaymentAmounts >= subTotal) {
                 const changeAmount = calculateCashChangeAmount(newTotalPaymentAmounts, subTotal);
 
-                setPaymentModalState(EPaymentModalState.CashResult);
                 setCashTransactionChangeAmount(changeAmount);
 
                 //Passing paymentAmounts, payments via params so we send the most updated values
                 await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.CashResult);
             }
         } catch (e) {
             setCreateOrderError(e);

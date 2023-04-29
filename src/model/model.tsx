@@ -87,6 +87,7 @@ export enum EPaymentModalState {
     MenulogResult,
     PayLater,
     Park,
+    ThirdPartyIntegrationAwaitingResponse,
     None,
 }
 

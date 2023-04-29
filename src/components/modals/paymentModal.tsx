@@ -146,10 +146,24 @@ export const PaymentModal = (props: IPaymentModalProps) => {
             return <PaymentDelayed errorMessage={"This transaction is delayed. Please wait..."} />;
         }
 
-        if (paymentModalState == EPaymentModalState.AwaitingCard) {
+        if (paymentModalState == EPaymentModalState.POSScreen) {
+            return (
+                <POSPaymentScreen
+                    amount={amount}
+                    onAmountChange={onAmountChange}
+                    amountError={amountError}
+                    onAmountErrorChange={setAmountError}
+                    onClickCash={onClickCash}
+                    onClickEftpos={onClickEftpos}
+                    onClickUberEats={onClickUberEats}
+                    onClickMenulog={onClickMenulog}
+                    onClose={onClose}
+                />
+            );
+        } else if (paymentModalState == EPaymentModalState.AwaitingCard) {
             return <AwaitingCard />;
         } else if (paymentModalState == EPaymentModalState.EftposResult && eftposTransactionOutcome) {
-            if (eftposTransactionOutcome.transactionOutcome == EEftposTransactionOutcome.Success) {
+            if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.Success) {
                 return (
                     <PaymentAccepted
                         onPrintCustomerReceipt={onPrintCustomerReceipt}
@@ -159,12 +173,12 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                         onContinueToNextPayment={onContinueToNextPayment}
                     />
                 );
-            } else if (eftposTransactionOutcome.transactionOutcome == EEftposTransactionOutcome.Fail) {
+            } else if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.Fail) {
                 return <PaymentFailed errorMessage={eftposTransactionOutcome.message} onRetry={onRetry} onCancelPayment={onCancelPayment} />;
-            } else if (eftposTransactionOutcome.transactionOutcome == EEftposTransactionOutcome.Delay) {
+            } else if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.Delay) {
                 return <PaymentDelayed errorMessage={eftposTransactionOutcome.message} />;
             }
-        } else if (paymentModalState == EPaymentModalState.CashResult) {
+        } else if (paymentModalState === EPaymentModalState.CashResult) {
             if (isPOS) {
                 return (
                     <PaymentCashPaymentPOS
@@ -186,7 +200,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     />
                 );
             }
-        } else if (paymentModalState == EPaymentModalState.UberEatsResult) {
+        } else if (paymentModalState === EPaymentModalState.UberEatsResult) {
             return (
                 <PaymentUberEatsPayment
                     onPrintCustomerReceipt={onPrintCustomerReceipt}
@@ -195,7 +209,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     onContinueToNextOrder={onContinueToNextOrder}
                 />
             );
-        } else if (paymentModalState == EPaymentModalState.MenulogResult) {
+        } else if (paymentModalState === EPaymentModalState.MenulogResult) {
             return (
                 <PaymentMenulogPayment
                     onPrintCustomerReceipt={onPrintCustomerReceipt}
@@ -204,7 +218,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     onContinueToNextOrder={onContinueToNextOrder}
                 />
             );
-        } else if (paymentModalState == EPaymentModalState.PayLater) {
+        } else if (paymentModalState === EPaymentModalState.PayLater) {
             return (
                 <PaymentPayLater
                     onPrintCustomerReceipt={onPrintCustomerReceipt}
@@ -213,7 +227,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     onContinueToNextOrder={onContinueToNextOrder}
                 />
             );
-        } else if (paymentModalState == EPaymentModalState.Park) {
+        } else if (paymentModalState === EPaymentModalState.Park) {
             return (
                 <PaymentPark
                     onPrintCustomerReceipt={onPrintCustomerReceipt}
@@ -222,20 +236,10 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     onContinueToNextOrder={onContinueToNextOrder}
                 />
             );
+        } else if (paymentModalState === EPaymentModalState.ThirdPartyIntegrationAwaitingResponse) {
+            return <div className="h1">Sending your order to the kitchen. Please wait...</div>;
         } else {
-            return (
-                <POSPaymentScreen
-                    amount={amount}
-                    onAmountChange={onAmountChange}
-                    amountError={amountError}
-                    onAmountErrorChange={setAmountError}
-                    onClickCash={onClickCash}
-                    onClickEftpos={onClickEftpos}
-                    onClickUberEats={onClickUberEats}
-                    onClickMenulog={onClickMenulog}
-                    onClose={onClose}
-                />
-            );
+            return <div className="h1">Creating your order. Please wait...</div>;
         }
     };
 
