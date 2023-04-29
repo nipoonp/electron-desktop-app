@@ -540,15 +540,15 @@ export const Checkout = () => {
 
             createdOrder.current = newOrder;
 
+            if (register.printers && register.printers.items.length > 0 && printOrder) {
+                await printReceipts(newOrder);
+            }
+
             //If using third party integratoin. Poll for resposne
             if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.enable) {
                 setPaymentModalState(EPaymentModalState.ThirdPartyIntegrationAwaitingResponse);
 
                 await pollForThirdPartyResponse(newOrder.id);
-            }
-
-            if (register.printers && register.printers.items.length > 0 && printOrder) {
-                await printReceipts(newOrder);
             }
 
             beginTransactionCompleteTimeout();
@@ -559,7 +559,7 @@ export const Checkout = () => {
 
     const pollForThirdPartyResponse = (orderId) => {
         const interval = 2 * 1000; // 2 seconds
-        const timeout = 10 * 1000; // 10 seconds
+        const timeout = 20 * 1000; // 10 seconds
 
         const endTime = Number(new Date()) + timeout;
 
@@ -573,21 +573,16 @@ export const Checkout = () => {
 
                 const thirdPartyOrderResponse: IGET_THIRD_PARTY_ORDER_RESPONSE = thirdPartyOrderResponseRes.data.getOrder;
 
-                console.log("xxx...thirdPartyOrderResponse", thirdPartyOrderResponse);
-
                 if (thirdPartyOrderResponse.thirdPartyIntegrationResult) {
-                    console.log("xxx...111");
                     if (thirdPartyOrderResponse.thirdPartyIntegrationResult.isSuccess === true) {
                         resolve();
                     } else {
                         reject(thirdPartyOrderResponse.thirdPartyIntegrationResult.errorMessage);
                     }
                 } else if (Number(new Date()) < endTime) {
-                    console.log("xxx...222");
                     setTimeout(checkCondition, interval, resolve, reject);
                     return;
                 } else {
-                    console.log("xxx...333");
                     // Didn't match and too much time, reject!
                     reject("Third Party Result Polling timed out. Please contact support staff.");
                     return;
@@ -844,7 +839,6 @@ export const Checkout = () => {
         }
 
         setEftposTransactionOutcome(outcome);
-        setPaymentModalState(EPaymentModalState.EftposResult);
 
         if (outcome.eftposReceipt) setTransactionEftposReceipts(transactionEftposReceipts + "\n" + outcome.eftposReceipt);
 
@@ -863,6 +857,8 @@ export const Checkout = () => {
                 if (newTotalPaymentAmounts >= subTotal) {
                     //Passing paymentAmounts, payments via params so we send the most updated values
                     await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
+
+                    setPaymentModalState(EPaymentModalState.EftposResult);
                 }
             } catch (e) {
                 setCreateOrderError(e);
@@ -925,10 +921,10 @@ export const Checkout = () => {
 
             //If paid for everything
             if (newTotalPaymentAmounts >= subTotal) {
-                setPaymentModalState(EPaymentModalState.UberEatsResult);
-
                 //Passing paymentAmounts, payments via params so we send the most updated values
                 await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.UberEatsResult);
             }
         } catch (e) {
             setCreateOrderError(e);
@@ -952,10 +948,10 @@ export const Checkout = () => {
 
             //If paid for everything
             if (newTotalPaymentAmounts >= subTotal) {
-                setPaymentModalState(EPaymentModalState.MenulogResult);
-
                 //Passing paymentAmounts, payments via params so we send the most updated values
                 await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.MenulogResult);
             }
         } catch (e) {
             setCreateOrderError(e);
@@ -976,10 +972,10 @@ export const Checkout = () => {
         const newPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0 };
         const newPayments: ICartPayment[] = [];
 
-        setPaymentModalState(EPaymentModalState.PayLater);
-
         try {
             await onSubmitOrder(false, false, true, newPaymentAmounts, newPayments);
+
+            setPaymentModalState(EPaymentModalState.PayLater);
         } catch (e) {
             setCreateOrderError(e);
         }
