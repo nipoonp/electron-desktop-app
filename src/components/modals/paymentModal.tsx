@@ -664,8 +664,8 @@ const CreateOrderFailed = (props: { createOrderError: string; onCancelOrder: () 
     return (
         <>
             <div className="h4 mb-4">Oops! Something went wrong.</div>
-            <div className="mb-2">Internal Server Error! Please contact a Tabin representative!</div>
-            <div className="mb-2">{createOrderError}</div>
+            <div className="mb-4">Internal Server Error! Please contact a Tabin representative!</div>
+            <div className="mb-4 h2 text-bold">{createOrderError}</div>
             <Button className="issue-fixed-button" onClick={onCancelOrder}>
                 Issue Fixed? Restart
             </Button>

@@ -9,9 +9,8 @@ import {
     IGET_RESTAURANT_CATEGORY,
     IGET_RESTAURANT_PRODUCT,
     EPromotionType,
-    ERegisterType,
     IS3Object,
-    IGET_SHIFT8_ORDER_RESPONSE,
+    IGET_THIRD_PARTY_ORDER_RESPONSE,
 } from "../../graphql/customQueries";
 import {
     restaurantPath,
@@ -68,7 +67,7 @@ import { simpleDateTimeFormatUTC } from "../../util/dateFormat";
 import { Storage } from "aws-amplify";
 import awsconfig from "../../aws-exports";
 import { OrderScheduleDateTime } from "../../tabin/components/orderScheduleDateTime";
-import { useGetShift8OrderResponseLazyQuery } from "../../hooks/useGetShift8OrderResponseLazyQuery";
+import { useGetThirdPartyOrderResponseLazyQuery } from "../../hooks/useGetThirdPartyOrderResponseLazyQuery";
 
 import "./checkout.scss";
 
@@ -137,7 +136,7 @@ export const Checkout = () => {
         },
     });
 
-    const { getShift8OrderResponse } = useGetShift8OrderResponseLazyQuery();
+    const { getThirdPartyOrderResponse } = useGetThirdPartyOrderResponseLazyQuery();
 
     // state
     const [selectedCategoryForProductModal, setSelectedCategoryForProductModal] = useState<IGET_RESTAURANT_CATEGORY | null>(null);
@@ -544,20 +543,21 @@ export const Checkout = () => {
 
             createdOrder.current = newOrder;
 
+            console.log("xxx...i am here", restaurant.thirdPartyIntegrations);
+            //If using third party integratoin. Poll for resposne
+            if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.enable) {
+                await pollForThirdPartyResponse(newOrder.id);
+            }
+
             if (register.printers && register.printers.items.length > 0 && printOrder) {
                 await printReceipts(newOrder);
             }
-
-            //If shift8 integration poll for result.
-            // if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.shift8EnableIntegration) {
-            //     await pollShift8OrderResponse(newOrder.id);
-            // }
         } catch (e) {
-            throw e.message;
+            throw e;
         }
     };
 
-    const pollShift8OrderResponse = (orderId) => {
+    const pollForThirdPartyResponse = (orderId) => {
         const interval = 2 * 1000; // 2 seconds
         const timeout = 10 * 1000; // 10 seconds
 
@@ -565,26 +565,31 @@ export const Checkout = () => {
 
         var checkCondition = async (resolve: any, reject: any) => {
             try {
-                const shift8OrderResponseRes = await getShift8OrderResponse({
+                const thirdPartyOrderResponseRes = await getThirdPartyOrderResponse({
                     variables: {
                         id: orderId,
                     },
                 });
 
-                const shift8OrderResponse: IGET_SHIFT8_ORDER_RESPONSE = shift8OrderResponseRes.data.getOrder;
+                const thirdPartyOrderResponse: IGET_THIRD_PARTY_ORDER_RESPONSE = thirdPartyOrderResponseRes.data.getOrder;
 
-                if (shift8OrderResponse.thirdPartyIntegrationResult) {
-                    if (shift8OrderResponse.thirdPartyIntegrationResult.shift8IsSuccess === true) {
+                console.log("xxx...thirdPartyOrderResponse", thirdPartyOrderResponse);
+
+                if (thirdPartyOrderResponse.thirdPartyIntegrationResult) {
+                    console.log("xxx...111");
+                    if (thirdPartyOrderResponse.thirdPartyIntegrationResult.isSuccess === true) {
                         resolve();
                     } else {
-                        reject(shift8OrderResponse.thirdPartyIntegrationResult.shift8ErrorMessage);
+                        reject(thirdPartyOrderResponse.thirdPartyIntegrationResult.errorMessage);
                     }
                 } else if (Number(new Date()) < endTime) {
+                    console.log("xxx...222");
                     setTimeout(checkCondition, interval, resolve, reject);
                     return;
                 } else {
+                    console.log("xxx...333");
                     // Didn't match and too much time, reject!
-                    reject("Shift8 Result Polling timed out. Please contact support staff.");
+                    reject("Third Party Result Polling timed out. Please contact support staff.");
                     return;
                 }
             } catch (error) {
