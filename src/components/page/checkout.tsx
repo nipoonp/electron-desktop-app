@@ -9,9 +9,8 @@ import {
     IGET_RESTAURANT_CATEGORY,
     IGET_RESTAURANT_PRODUCT,
     EPromotionType,
-    ERegisterType,
     IS3Object,
-    IGET_SHIFT8_ORDER_RESPONSE,
+    IGET_THIRD_PARTY_ORDER_RESPONSE,
 } from "../../graphql/customQueries";
 import {
     restaurantPath,
@@ -68,7 +67,7 @@ import { simpleDateTimeFormatUTC } from "../../util/dateFormat";
 import { Storage } from "aws-amplify";
 import awsconfig from "../../aws-exports";
 import { OrderScheduleDateTime } from "../../tabin/components/orderScheduleDateTime";
-import { useGetShift8OrderResponseLazyQuery } from "../../hooks/useGetShift8OrderResponseLazyQuery";
+import { useGetThirdPartyOrderResponseLazyQuery } from "../../hooks/useGetThirdPartyOrderResponseLazyQuery";
 
 import "./checkout.scss";
 
@@ -137,7 +136,7 @@ export const Checkout = () => {
         },
     });
 
-    const { getShift8OrderResponse } = useGetShift8OrderResponseLazyQuery();
+    const { getThirdPartyOrderResponse } = useGetThirdPartyOrderResponseLazyQuery();
 
     // state
     const [selectedCategoryForProductModal, setSelectedCategoryForProductModal] = useState<IGET_RESTAURANT_CATEGORY | null>(null);
@@ -503,9 +502,6 @@ export const Checkout = () => {
 
         setPaymentOutcomeOrderNumber(orderNumber);
 
-        //Start timer at the top of the function becuase all these API call should finish within countdown time. If theres an error, it will show up.
-        beginTransactionCompleteTimeout();
-
         try {
             let signatureS3Object: IS3Object | null = null;
 
@@ -548,43 +544,47 @@ export const Checkout = () => {
                 await printReceipts(newOrder);
             }
 
-            //If shift8 integration poll for result.
-            // if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.shift8EnableIntegration) {
-            //     await pollShift8OrderResponse(newOrder.id);
-            // }
+            //If using third party integratoin. Poll for resposne
+            if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.enable) {
+                setPaymentModalState(EPaymentModalState.ThirdPartyIntegrationAwaitingResponse);
+
+                await pollForThirdPartyResponse(newOrder.id);
+            }
+
+            beginTransactionCompleteTimeout();
         } catch (e) {
-            throw e.message;
+            throw e;
         }
     };
 
-    const pollShift8OrderResponse = (orderId) => {
+    const pollForThirdPartyResponse = (orderId) => {
         const interval = 2 * 1000; // 2 seconds
-        const timeout = 10 * 1000; // 10 seconds
+        const timeout = 20 * 1000; // 10 seconds
 
         const endTime = Number(new Date()) + timeout;
 
         var checkCondition = async (resolve: any, reject: any) => {
             try {
-                const shift8OrderResponseRes = await getShift8OrderResponse({
+                const thirdPartyOrderResponseRes = await getThirdPartyOrderResponse({
                     variables: {
                         id: orderId,
                     },
                 });
 
-                const shift8OrderResponse: IGET_SHIFT8_ORDER_RESPONSE = shift8OrderResponseRes.data.getOrder;
+                const thirdPartyOrderResponse: IGET_THIRD_PARTY_ORDER_RESPONSE = thirdPartyOrderResponseRes.data.getOrder;
 
-                if (shift8OrderResponse.thirdPartyIntegrationResult) {
-                    if (shift8OrderResponse.thirdPartyIntegrationResult.shift8IsSuccess === true) {
+                if (thirdPartyOrderResponse.thirdPartyIntegrationResult) {
+                    if (thirdPartyOrderResponse.thirdPartyIntegrationResult.isSuccess === true) {
                         resolve();
                     } else {
-                        reject(shift8OrderResponse.thirdPartyIntegrationResult.shift8ErrorMessage);
+                        reject(thirdPartyOrderResponse.thirdPartyIntegrationResult.errorMessage);
                     }
                 } else if (Number(new Date()) < endTime) {
                     setTimeout(checkCondition, interval, resolve, reject);
                     return;
                 } else {
                     // Didn't match and too much time, reject!
-                    reject("Shift8 Result Polling timed out. Please contact support staff.");
+                    reject("Third Party Result Polling timed out. Please contact support staff.");
                     return;
                 }
             } catch (error) {
@@ -839,7 +839,6 @@ export const Checkout = () => {
         }
 
         setEftposTransactionOutcome(outcome);
-        setPaymentModalState(EPaymentModalState.EftposResult);
 
         if (outcome.eftposReceipt) setTransactionEftposReceipts(transactionEftposReceipts + "\n" + outcome.eftposReceipt);
 
@@ -858,6 +857,8 @@ export const Checkout = () => {
                 if (newTotalPaymentAmounts >= subTotal) {
                     //Passing paymentAmounts, payments via params so we send the most updated values
                     await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
+
+                    setPaymentModalState(EPaymentModalState.EftposResult);
                 }
             } catch (e) {
                 setCreateOrderError(e);
@@ -891,11 +892,12 @@ export const Checkout = () => {
             if (newTotalPaymentAmounts >= subTotal) {
                 const changeAmount = calculateCashChangeAmount(newTotalPaymentAmounts, subTotal);
 
-                setPaymentModalState(EPaymentModalState.CashResult);
                 setCashTransactionChangeAmount(changeAmount);
 
                 //Passing paymentAmounts, payments via params so we send the most updated values
                 await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.CashResult);
             }
         } catch (e) {
             setCreateOrderError(e);
@@ -919,10 +921,10 @@ export const Checkout = () => {
 
             //If paid for everything
             if (newTotalPaymentAmounts >= subTotal) {
-                setPaymentModalState(EPaymentModalState.UberEatsResult);
-
                 //Passing paymentAmounts, payments via params so we send the most updated values
                 await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.UberEatsResult);
             }
         } catch (e) {
             setCreateOrderError(e);
@@ -946,10 +948,10 @@ export const Checkout = () => {
 
             //If paid for everything
             if (newTotalPaymentAmounts >= subTotal) {
-                setPaymentModalState(EPaymentModalState.MenulogResult);
-
                 //Passing paymentAmounts, payments via params so we send the most updated values
                 await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.MenulogResult);
             }
         } catch (e) {
             setCreateOrderError(e);
@@ -970,10 +972,10 @@ export const Checkout = () => {
         const newPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0 };
         const newPayments: ICartPayment[] = [];
 
-        setPaymentModalState(EPaymentModalState.PayLater);
-
         try {
             await onSubmitOrder(false, false, true, newPaymentAmounts, newPayments);
+
+            setPaymentModalState(EPaymentModalState.PayLater);
         } catch (e) {
             setCreateOrderError(e);
         }
