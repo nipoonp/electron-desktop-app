@@ -68,7 +68,10 @@ export const getOrderNumber = (orderNumberSuffix: string, orderNumberStart: numb
 };
 
 export const filterPrintProducts = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[], printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
-    if ((!printer.ignoreCategories || printer.ignoreCategories.items.length == 0) && (!printer.ignoreProducts || printer.ignoreProducts.items.length == 0))
+    if (
+        (!printer.ignoreCategories || printer.ignoreCategories.items.length == 0) &&
+        (!printer.ignoreProducts || printer.ignoreProducts.items.length == 0)
+    )
         return products;
 
     products.forEach((product) => {
@@ -523,7 +526,11 @@ const processPromotionDiscounts = (
 
         switch (discount.type) {
             case EDiscountType.FIXED:
-                discountedAmount = discount.amount;
+                if (totalDiscountableAmount < discount.amount) { //For example if totalDiscountableAmount = 100 and discount.amount = 200. Then discountAmount should be 100 not 200.
+                    discountedAmount = totalDiscountableAmount;
+                } else {
+                    discountedAmount = discount.amount;
+                }
                 break;
             case EDiscountType.PERCENTAGE:
                 discountedAmount = (totalDiscountableAmount * discount.amount) / 100;
@@ -559,9 +566,18 @@ export const getOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, car
 
         if (!matchingProducts) return null;
 
-        bestPromotionDiscount = processPromotionDiscounts(cartProducts, promotion.discounts.items, matchingProducts, undefined, promotion.applyToCheapest);
+        bestPromotionDiscount = processPromotionDiscounts(
+            cartProducts,
+            promotion.discounts.items,
+            matchingProducts,
+            undefined,
+            promotion.applyToCheapest
+        );
 
-        bestPromotionDiscount.matchingProducts = discountMatchingProducts(bestPromotionDiscount.matchingProducts, bestPromotionDiscount.discountedAmount);
+        bestPromotionDiscount.matchingProducts = discountMatchingProducts(
+            bestPromotionDiscount.matchingProducts,
+            bestPromotionDiscount.discountedAmount
+        );
     }
 
     return bestPromotionDiscount;
@@ -752,8 +768,20 @@ export const getRestaurantTimings = (operatingHours: IGET_RESTAURANT_OPERATING_H
             try {
                 const newIntervals = eachMinuteOfInterval(
                     {
-                        start: new Date(date.getFullYear(), date.getMonth(), date.getDate(), parseInt(openingTimeSlotHour), parseInt(openingTimeSlotMinute)),
-                        end: new Date(date.getFullYear(), date.getMonth(), date.getDate(), parseInt(closingTimeSlotHour), parseInt(closingTimeSlotMinute)),
+                        start: new Date(
+                            date.getFullYear(),
+                            date.getMonth(),
+                            date.getDate(),
+                            parseInt(openingTimeSlotHour),
+                            parseInt(openingTimeSlotMinute)
+                        ),
+                        end: new Date(
+                            date.getFullYear(),
+                            date.getMonth(),
+                            date.getDate(),
+                            parseInt(closingTimeSlotHour),
+                            parseInt(closingTimeSlotMinute)
+                        ),
                     },
                     { step: timeInterval }
                 );

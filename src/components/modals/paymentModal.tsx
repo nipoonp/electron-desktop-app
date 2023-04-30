@@ -146,10 +146,24 @@ export const PaymentModal = (props: IPaymentModalProps) => {
             return <PaymentDelayed errorMessage={"This transaction is delayed. Please wait..."} />;
         }
 
-        if (paymentModalState == EPaymentModalState.AwaitingCard) {
+        if (paymentModalState == EPaymentModalState.POSScreen) {
+            return (
+                <POSPaymentScreen
+                    amount={amount}
+                    onAmountChange={onAmountChange}
+                    amountError={amountError}
+                    onAmountErrorChange={setAmountError}
+                    onClickCash={onClickCash}
+                    onClickEftpos={onClickEftpos}
+                    onClickUberEats={onClickUberEats}
+                    onClickMenulog={onClickMenulog}
+                    onClose={onClose}
+                />
+            );
+        } else if (paymentModalState == EPaymentModalState.AwaitingCard) {
             return <AwaitingCard />;
         } else if (paymentModalState == EPaymentModalState.EftposResult && eftposTransactionOutcome) {
-            if (eftposTransactionOutcome.transactionOutcome == EEftposTransactionOutcome.Success) {
+            if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.Success) {
                 return (
                     <PaymentAccepted
                         onPrintCustomerReceipt={onPrintCustomerReceipt}
@@ -159,12 +173,12 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                         onContinueToNextPayment={onContinueToNextPayment}
                     />
                 );
-            } else if (eftposTransactionOutcome.transactionOutcome == EEftposTransactionOutcome.Fail) {
+            } else if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.Fail) {
                 return <PaymentFailed errorMessage={eftposTransactionOutcome.message} onRetry={onRetry} onCancelPayment={onCancelPayment} />;
-            } else if (eftposTransactionOutcome.transactionOutcome == EEftposTransactionOutcome.Delay) {
+            } else if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.Delay) {
                 return <PaymentDelayed errorMessage={eftposTransactionOutcome.message} />;
             }
-        } else if (paymentModalState == EPaymentModalState.CashResult) {
+        } else if (paymentModalState === EPaymentModalState.CashResult) {
             if (isPOS) {
                 return (
                     <PaymentCashPaymentPOS
@@ -186,7 +200,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     />
                 );
             }
-        } else if (paymentModalState == EPaymentModalState.UberEatsResult) {
+        } else if (paymentModalState === EPaymentModalState.UberEatsResult) {
             return (
                 <PaymentUberEatsPayment
                     onPrintCustomerReceipt={onPrintCustomerReceipt}
@@ -195,7 +209,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     onContinueToNextOrder={onContinueToNextOrder}
                 />
             );
-        } else if (paymentModalState == EPaymentModalState.MenulogResult) {
+        } else if (paymentModalState === EPaymentModalState.MenulogResult) {
             return (
                 <PaymentMenulogPayment
                     onPrintCustomerReceipt={onPrintCustomerReceipt}
@@ -204,7 +218,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     onContinueToNextOrder={onContinueToNextOrder}
                 />
             );
-        } else if (paymentModalState == EPaymentModalState.PayLater) {
+        } else if (paymentModalState === EPaymentModalState.PayLater) {
             return (
                 <PaymentPayLater
                     onPrintCustomerReceipt={onPrintCustomerReceipt}
@@ -213,7 +227,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     onContinueToNextOrder={onContinueToNextOrder}
                 />
             );
-        } else if (paymentModalState == EPaymentModalState.Park) {
+        } else if (paymentModalState === EPaymentModalState.Park) {
             return (
                 <PaymentPark
                     onPrintCustomerReceipt={onPrintCustomerReceipt}
@@ -222,20 +236,10 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     onContinueToNextOrder={onContinueToNextOrder}
                 />
             );
+        } else if (paymentModalState === EPaymentModalState.ThirdPartyIntegrationAwaitingResponse) {
+            return <div className="h1">Sending your order to the kitchen. Please wait...</div>;
         } else {
-            return (
-                <POSPaymentScreen
-                    amount={amount}
-                    onAmountChange={onAmountChange}
-                    amountError={amountError}
-                    onAmountErrorChange={setAmountError}
-                    onClickCash={onClickCash}
-                    onClickEftpos={onClickEftpos}
-                    onClickUberEats={onClickUberEats}
-                    onClickMenulog={onClickMenulog}
-                    onClose={onClose}
-                />
-            );
+            return <div className="h1">Creating your order. Please wait...</div>;
         }
     };
 
@@ -265,7 +269,13 @@ const PaymentAccepted = (props: {
     onContinueToNextOrder: () => void;
     onContinueToNextPayment: () => void;
 }) => {
-    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder, onContinueToNextPayment } = props;
+    const {
+        onPrintCustomerReceipt,
+        paymentOutcomeOrderNumber,
+        paymentOutcomeApprovedRedirectTimeLeft,
+        onContinueToNextOrder,
+        onContinueToNextPayment,
+    } = props;
     const { paidSoFar, subTotal } = useCart();
 
     const totalRemaining = subTotal - paidSoFar;
@@ -408,8 +418,13 @@ const PaymentCashPaymentPOS = (props: {
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
 }) => {
-    const { onPrintCustomerReceipt, cashTransactionChangeAmount, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } =
-        props;
+    const {
+        onPrintCustomerReceipt,
+        cashTransactionChangeAmount,
+        paymentOutcomeOrderNumber,
+        paymentOutcomeApprovedRedirectTimeLeft,
+        onContinueToNextOrder,
+    } = props;
 
     return (
         <>
@@ -622,15 +637,18 @@ const POSPaymentScreen = (props: {
                         <>
                             {payment.type === "CASH" ? (
                                 <div className="mb-2">
-                                    Cash: ${convertCentsToDollars(payment.amount)} <Link onClick={() => onRemoveCashTransaction(index)}>(Remove)</Link>
+                                    Cash: ${convertCentsToDollars(payment.amount)}{" "}
+                                    <Link onClick={() => onRemoveCashTransaction(index)}>(Remove)</Link>
                                 </div>
                             ) : payment.type === "UBEREATS" ? (
                                 <div className="mb-2">
-                                    Uber Eats: ${convertCentsToDollars(payment.amount)} <Link onClick={() => onRemoveUberEatsTransaction(index)}>(Remove)</Link>
+                                    Uber Eats: ${convertCentsToDollars(payment.amount)}{" "}
+                                    <Link onClick={() => onRemoveUberEatsTransaction(index)}>(Remove)</Link>
                                 </div>
                             ) : payment.type === "MENULOG" ? (
                                 <div className="mb-2">
-                                    Menulog: ${convertCentsToDollars(payment.amount)} <Link onClick={() => onRemoveMenulogTransaction(index)}>(Remove)</Link>
+                                    Menulog: ${convertCentsToDollars(payment.amount)}{" "}
+                                    <Link onClick={() => onRemoveMenulogTransaction(index)}>(Remove)</Link>
                                 </div>
                             ) : (
                                 //For all Eftpos types Verifone, Smartpay, Windcave
@@ -650,8 +668,8 @@ const CreateOrderFailed = (props: { createOrderError: string; onCancelOrder: () 
     return (
         <>
             <div className="h4 mb-4">Oops! Something went wrong.</div>
-            <div className="mb-2">Internal Server Error! Please contact a Tabin representative!</div>
-            <div className="mb-2">{createOrderError}</div>
+            <div className="mb-4">Internal Server Error! Please contact a Tabin representative!</div>
+            <div className="mb-4 h2 text-bold">{createOrderError}</div>
             <Button className="issue-fixed-button" onClick={onCancelOrder}>
                 Issue Fixed? Restart
             </Button>
@@ -678,6 +696,10 @@ const PreparationTime = () => {
 const AskToPrintCustomerReceipt = (props: { onPrintCustomerReceipt: () => void }) => {
     const { onPrintCustomerReceipt } = props;
 
+    const [hide, setHide] = useState(false);
+
+    if (hide) return <></>;
+
     return (
         <>
             <div className="ask-to-print-customer-receipt">
@@ -690,8 +712,17 @@ const AskToPrintCustomerReceipt = (props: { onPrintCustomerReceipt: () => void }
                     />
                     <div className="receipt-image-override"></div>
                 </div>
-                <Button className="large print-me-a-copy-button" onClick={onPrintCustomerReceipt}>
+                <Button
+                    className="large print-me-a-copy-button"
+                    onClick={() => {
+                        onPrintCustomerReceipt();
+                        setHide(true);
+                    }}
+                >
                     Yes, print me a copy!
+                </Button>
+                <Button className="large print-me-a-copy-button-no mt-2" onClick={() => setHide(true)}>
+                    No
                 </Button>
             </div>
         </>
