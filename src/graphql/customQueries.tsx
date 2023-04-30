@@ -303,10 +303,25 @@ export const GET_RESTAURANT = gql`
                 }
             }
             thirdPartyIntegrations {
-                shift8EnableIntegration
-                shift8StoreApiUrl
-                shift8StoreUuid
-                shift8StoreLocationNumber
+                enable
+                shift8 {
+                    enable
+                    storeApiUrl
+                    storeUuid
+                    storeLocationNumber
+                }
+                wizBang {
+                    enable
+                    storeApiUrl
+                    username
+                    password
+                }
+                doshii {
+                    enable
+                    clientId
+                    clientSecret
+                    locationId
+                }
             }
             upSellCrossSell {
                 id
@@ -904,10 +919,31 @@ export interface IGET_RESTAURANT {
 }
 
 export interface IThirdPartyIntegrations {
-    shift8EnableIntegration: boolean;
-    shift8StoreApiUrl: string;
-    shift8StoreUuid: string;
-    shift8StoreLocationNumber: number;
+    enable: boolean | null;
+    shift8: IThirdPartyIntegrationsShift8 | null;
+    wizBang: IThirdPartyIntegrationsWizBang | null;
+    doshii: IThirdPartyIntegrationsDoshii | null;
+}
+
+export interface IThirdPartyIntegrationsShift8 {
+    enable: boolean;
+    storeApiUrl: string;
+    storeUuid: string;
+    storeLocationNumber: string;
+}
+
+export interface IThirdPartyIntegrationsWizBang {
+    enable: boolean;
+    storeApiUrl: string;
+    username: string;
+    password: string;
+}
+
+export interface IThirdPartyIntegrationsDoshii {
+    enable: boolean;
+    clientId: string;
+    clientSecret: string;
+    locationId: string;
 }
 
 export interface IGET_RESTAURANT_ADVERTISEMENT {
@@ -1329,7 +1365,12 @@ export const GET_PROMOTION_BY_CODE = gql`
 export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
     ${ORDER_FIELDS_FRAGMENT}
     query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAt: String!) {
-        getOrdersByRestaurantByPlacedAt(limit: 1000000, sortDirection: DESC, orderRestaurantId: $orderRestaurantId, placedAt: { beginsWith: $placedAt }) {
+        getOrdersByRestaurantByPlacedAt(
+            limit: 1000000
+            sortDirection: DESC
+            orderRestaurantId: $orderRestaurantId
+            placedAt: { beginsWith: $placedAt }
+        ) {
             items {
                 ...OrderFieldsFragment
             }
@@ -1340,7 +1381,11 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
 export const GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
     ${ORDER_FIELDS_FRAGMENT}
     query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAtStartDate: String!, $placedAtEndDate: String!) {
-        getOrdersByRestaurantByPlacedAt(limit: 1000000, orderRestaurantId: $orderRestaurantId, placedAt: { between: [$placedAtStartDate, $placedAtEndDate] }) {
+        getOrdersByRestaurantByPlacedAt(
+            limit: 1000000
+            orderRestaurantId: $orderRestaurantId
+            placedAt: { between: [$placedAtStartDate, $placedAtEndDate] }
+        ) {
             items {
                 ...OrderFieldsFragment
             }
@@ -1606,22 +1651,22 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
     }
 `;
 
-export const GET_SHIFT8_ORDER_RESPONSE = gql`
+export const GET_THIRD_PARTY_ORDER_RESPONSE = gql`
     query getOrder($id: ID!) {
         getOrder(id: $id) {
             id
             thirdPartyIntegrationResult {
-                shift8IsSuccess
-                shift8ErrorMessage
+                isSuccess
+                errorMessage
             }
         }
     }
 `;
 
-export interface IGET_SHIFT8_ORDER_RESPONSE {
+export interface IGET_THIRD_PARTY_ORDER_RESPONSE {
     id: string;
     thirdPartyIntegrationResult: {
-        shift8IsSuccess: boolean;
-        shift8ErrorMessage: string;
+        isSuccess: boolean;
+        errorMessage: string;
     } | null;
 }
