@@ -127,6 +127,28 @@
 
     .redirecting-in-text {
         margin-top: auto;
+
+        .please-take-your-receipt-wrapper {
+            .please-take-your-receipt-arrow {
+                animation: bounce 2s linear infinite;
+            }
+        }
+
+        @keyframes bounce {
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-70px);
+            }
+            60% {
+                transform: translateY(-35px);
+            }
+        }
     }
 
     .retry-buttons {

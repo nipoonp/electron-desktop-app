@@ -1342,21 +1342,25 @@ export const Checkout = () => {
                 />
             </div>
             <div className="mb-2"></div> */}
-            {promotion && (
+            {promotion ? (
                 <div className="h3 text-center mb-2">
                     {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
                         promotion.discountedAmount
                     )}`}{" "}
                     {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
                 </div>
+            ) : (
+                <></>
             )}
-            {restaurant.surchargePercentage && (
+            {restaurant.surchargePercentage ? (
                 <div className="h3 text-center mb-2">
-                    Public Holiday Surcharge: $
+                    Surcharge: $
                     {convertCentsToDollars((subTotal * restaurant.surchargePercentage) / 100 / ((100 + restaurant.surchargePercentage) / 100))}
                 </div>
+            ) : (
+                <></>
             )}
-            {paidSoFar > 0 && <div className="h3 text-center mb-2">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div>}
+            {paidSoFar > 0 ? <div className="h3 text-center mb-2">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : <></>}
             <div className={`h1 text-center ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
             <div className={`${isPOS ? "mb-0" : "mb-4"}`}>
                 <div className="checkout-buttons-container">

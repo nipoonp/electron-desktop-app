@@ -237,7 +237,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                 />
             );
         } else if (paymentModalState === EPaymentModalState.ThirdPartyIntegrationAwaitingResponse) {
-            return <div className="h1">Sending your order to the kitchen. Please wait...</div>;
+            return <div className="h1">Processing your order. Please wait...</div>;
         } else {
             return <div className="h1">Creating your order. Please wait...</div>;
         }
@@ -739,16 +739,14 @@ const PaymentModalFooter = (props: {
 
     const showTakeYourReceiptSign = useRef(false);
 
-    useEffect(() => {
-        register &&
-            register.printers.items.forEach((printer) => {
-                if (printer.customerPrinter) showTakeYourReceiptSign.current = true;
-            });
-    }, [register]);
+    const printCustomerReceipt = () => {
+        onPrintCustomerReceipt();
+        showTakeYourReceiptSign.current = true;
+    };
 
     return (
         <>
-            {register && register.askToPrintCustomerReceipt && <AskToPrintCustomerReceipt onPrintCustomerReceipt={onPrintCustomerReceipt} />}
+            {register && register.askToPrintCustomerReceipt && <AskToPrintCustomerReceipt onPrintCustomerReceipt={printCustomerReceipt} />}
             <div className="redirecting-in-text">
                 {isPOS && (
                     <Button className="mb-2" onClick={onContinueToNextOrder}>
@@ -760,10 +758,10 @@ const PaymentModalFooter = (props: {
                     {paymentOutcomeApprovedRedirectTimeLeft > 1 ? " seconds" : " second"}
                     ...
                 </div>
-                {register && !register.askToPrintCustomerReceipt && !isPOS && showTakeYourReceiptSign.current && (
+                {((register && !isPOS && !register.askToPrintCustomerReceipt) || showTakeYourReceiptSign.current) && (
                     <div className="please-take-your-receipt-wrapper mt-4">
-                        <div className="h1 mb-4">Please take your receipt</div>
-                        <FiArrowDown size="150px" />
+                        <div className="h1 mb-10">Please take your receipt</div>
+                        <FiArrowDown className="please-take-your-receipt-arrow" size="150px" />
                     </div>
                 )}
             </div>
