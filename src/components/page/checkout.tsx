@@ -545,11 +545,11 @@ export const Checkout = () => {
             }
 
             //If using third party integratoin. Poll for resposne
-            if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.enable) {
-                setPaymentModalState(EPaymentModalState.ThirdPartyIntegrationAwaitingResponse);
+            // if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.enable) {
+            //     setPaymentModalState(EPaymentModalState.ThirdPartyIntegrationAwaitingResponse);
 
-                await pollForThirdPartyResponse(newOrder.id);
-            }
+            //     await pollForThirdPartyResponse(newOrder.id);
+            // }
 
             beginTransactionCompleteTimeout();
         } catch (e) {
@@ -559,7 +559,7 @@ export const Checkout = () => {
 
     const pollForThirdPartyResponse = (orderId) => {
         const interval = 2 * 1000; // 2 seconds
-        const timeout = 20 * 1000; // 10 seconds
+        const timeout = 20 * 1000; // 20 seconds
 
         const endTime = Number(new Date()) + timeout;
 
