@@ -840,10 +840,12 @@ export const Checkout = () => {
 
         setEftposTransactionOutcome(outcome);
 
-        if (outcome.eftposReceipt) setTransactionEftposReceipts(transactionEftposReceipts + "\n" + outcome.eftposReceipt);
+        if (outcome.eftposReceipt) {
+            setTransactionEftposReceipts(`${transactionEftposReceipts}\n${outcome.eftposReceipt}`);
+        }
 
         //If paid for everything
-        if (outcome.transactionOutcome == EEftposTransactionOutcome.Success) {
+        if (outcome.transactionOutcome === EEftposTransactionOutcome.Success) {
             try {
                 const newEftposPaymentAmounts = paymentAmounts.eftpos + amount;
                 const newTotalPaymentAmounts = newEftposPaymentAmounts + paymentAmounts.cash;
@@ -863,6 +865,8 @@ export const Checkout = () => {
             } catch (e) {
                 setCreateOrderError(e);
             }
+        } else if (outcome.transactionOutcome === EEftposTransactionOutcome.Fail || outcome.transactionOutcome === EEftposTransactionOutcome.Delay) {
+            setPaymentModalState(EPaymentModalState.EftposResult);
         }
     };
 
