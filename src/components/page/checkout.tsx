@@ -545,11 +545,11 @@ export const Checkout = () => {
             }
 
             //If using third party integratoin. Poll for resposne
-            if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.enable) {
-                setPaymentModalState(EPaymentModalState.ThirdPartyIntegrationAwaitingResponse);
+            // if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.enable) {
+            //     setPaymentModalState(EPaymentModalState.ThirdPartyIntegrationAwaitingResponse);
 
-                await pollForThirdPartyResponse(newOrder.id);
-            }
+            //     await pollForThirdPartyResponse(newOrder.id);
+            // }
 
             beginTransactionCompleteTimeout();
         } catch (e) {
@@ -559,7 +559,7 @@ export const Checkout = () => {
 
     const pollForThirdPartyResponse = (orderId) => {
         const interval = 2 * 1000; // 2 seconds
-        const timeout = 20 * 1000; // 10 seconds
+        const timeout = 20 * 1000; // 20 seconds
 
         const endTime = Number(new Date()) + timeout;
 
@@ -840,10 +840,12 @@ export const Checkout = () => {
 
         setEftposTransactionOutcome(outcome);
 
-        if (outcome.eftposReceipt) setTransactionEftposReceipts(transactionEftposReceipts + "\n" + outcome.eftposReceipt);
+        if (outcome.eftposReceipt) {
+            setTransactionEftposReceipts(`${transactionEftposReceipts}\n${outcome.eftposReceipt}`);
+        }
 
         //If paid for everything
-        if (outcome.transactionOutcome == EEftposTransactionOutcome.Success) {
+        if (outcome.transactionOutcome === EEftposTransactionOutcome.Success) {
             try {
                 const newEftposPaymentAmounts = paymentAmounts.eftpos + amount;
                 const newTotalPaymentAmounts = newEftposPaymentAmounts + paymentAmounts.cash;
@@ -863,6 +865,8 @@ export const Checkout = () => {
             } catch (e) {
                 setCreateOrderError(e);
             }
+        } else if (outcome.transactionOutcome === EEftposTransactionOutcome.Fail || outcome.transactionOutcome === EEftposTransactionOutcome.Delay) {
+            setPaymentModalState(EPaymentModalState.EftposResult);
         }
     };
 
@@ -1342,21 +1346,25 @@ export const Checkout = () => {
                 />
             </div>
             <div className="mb-2"></div> */}
-            {promotion && (
+            {promotion ? (
                 <div className="h3 text-center mb-2">
                     {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
                         promotion.discountedAmount
                     )}`}{" "}
                     {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
                 </div>
+            ) : (
+                <></>
             )}
-            {restaurant.surchargePercentage && (
+            {restaurant.surchargePercentage ? (
                 <div className="h3 text-center mb-2">
-                    Public Holiday Surcharge: $
+                    Surcharge: $
                     {convertCentsToDollars((subTotal * restaurant.surchargePercentage) / 100 / ((100 + restaurant.surchargePercentage) / 100))}
                 </div>
+            ) : (
+                <></>
             )}
-            {paidSoFar > 0 && <div className="h3 text-center mb-2">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div>}
+            {paidSoFar > 0 ? <div className="h3 text-center mb-2">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : <></>}
             <div className={`h1 text-center ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
             <div className={`${isPOS ? "mb-0" : "mb-4"}`}>
                 <div className="checkout-buttons-container">
