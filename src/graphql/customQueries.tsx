@@ -95,6 +95,7 @@ export const GET_USER = gql`
                             name
                             enableTableFlags
                             enableBuzzerNumbers
+                            enableSkuScanner
                             enablePayLater
                             enableCashPayments
                             enableEftposPayments
@@ -350,6 +351,7 @@ export const GET_RESTAURANT = gql`
                     name
                     enableTableFlags
                     enableBuzzerNumbers
+                    enableSkuScanner
                     enablePayLater
                     enableCashPayments
                     enableEftposPayments
@@ -511,6 +513,8 @@ export const GET_RESTAURANT = gql`
                     id
                     name
                     description
+                    soldOut
+                    soldOutDate
                     image {
                         key
                         bucket
@@ -975,6 +979,7 @@ export interface IGET_RESTAURANT_REGISTER {
     name: string;
     enableTableFlags: boolean;
     enableBuzzerNumbers: boolean;
+    enableSkuScanner: boolean;
     enablePayLater: boolean;
     enableCashPayments: boolean;
     enableEftposPayments: boolean;
@@ -1181,6 +1186,8 @@ export interface IGET_RESTAURANT_CATEGORY {
     displaySequence: number;
     image?: IS3Object;
     availablePlatforms: ERegisterType[];
+    soldOut?: boolean;
+    soldOutDate?: string;
     availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
     products?: {
         items: IGET_RESTAURANT_PRODUCT_LINK[];
