@@ -358,7 +358,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                             m.productModifiers.forEach((productModifier) => {
                                 productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
                                     orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
-                                        const changedQuantity = orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
+                                        const changedQuantity =
+                                            orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
 
                                         if (changedQuantity > 0) {
                                             price += orderedProductModifierModifier.price * changedQuantity;
