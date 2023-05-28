@@ -1,7 +1,7 @@
 import { createContext, useContext } from "react";
 
 import { useMutation } from "@apollo/client";
-import { CREATE_EFTPOS_TRANSACTION_LOG, LOG_SLACK_ERROR } from "../graphql/customMutations";
+import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
 import { useRestaurant } from "./restaurant-context";
 
 export interface IAddVerifoneLog {
