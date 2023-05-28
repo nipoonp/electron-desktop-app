@@ -161,6 +161,31 @@
         border: 1px solid #e0e0e0;
     }
 
+    .ask-to-print-parked-order-receipts {
+        padding: 16px;
+        border: 2px solid #ebebeb;
+        border-radius: 16px;
+
+        .would-you-like-parked-order-receipts {
+            font-size: 20px;
+        }
+
+        .print-parked-receipts-button {
+            margin: 0 auto;
+            width: 250px;
+        }
+
+        .print-parked-receipts-button-no {
+            margin-left: auto;
+            margin-right: auto;
+            width: 250px;
+
+            background-color: var(--background-color);
+            color: #484848;
+            border: 1px solid #e0e0e0;
+        }
+    }
+
     .ask-to-print-customer-receipt {
         padding: 32px;
         border: 2px solid #ebebeb;
