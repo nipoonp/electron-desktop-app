@@ -489,6 +489,13 @@ export const Checkout = () => {
             });
     };
 
+    const onPrintParkedOrderReceipts = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+        register.printers &&
+            register.printers.items.forEach((printer) => {
+                sendReceiptPrint(order, printer);
+            });
+    };
+
     const onSubmitOrder = async (paid: boolean, parkOrder: boolean, newPaymentAmounts: ICartPaymentAmounts, newPayments: ICartPayment[]) => {
         //If parked order do not generate order number
         let orderNumber =
@@ -1156,6 +1163,7 @@ export const Checkout = () => {
                         eftposTransactionOutcome={eftposTransactionOutcome}
                         cashTransactionChangeAmount={cashTransactionChangeAmount}
                         onPrintCustomerReceipt={() => createdOrder.current && onPrintCustomerReceipt(createdOrder.current)}
+                        onPrintParkedOrderReceipts={() => createdOrder.current && onPrintParkedOrderReceipts(createdOrder.current)}
                         paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                         onContinueToNextOrder={onContinueToNextOrder}
