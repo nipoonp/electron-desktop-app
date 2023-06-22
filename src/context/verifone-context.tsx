@@ -210,6 +210,15 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     }, [restaurant, register]);
 
     useEffect(() => {
+        if (restaurant && register) {
+            // Connect To EFTPOS -------------------------------------------------------------------------------------------------------------------------------- //
+            (async () => {
+                await connectToEftpos(register.eftposIpAddress, register.eftposPortNumber);
+            })();
+        }
+    }, [restaurant, register]);
+
+    useEffect(() => {
         ipcRenderer &&
             ipcRenderer.on("EFTPOS_CONNECT", (event: any, arg: any) => {
                 console.log("EFTPOS_CONNECT:", arg);
@@ -354,25 +363,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             let readyToPrintRequestReplySent = false;
             let printRequestReplySent = false;
 
-            // Connect To EFTPOS -------------------------------------------------------------------------------------------------------------------------------- //
-            const connectTimedOut = await connectToEftpos(ipAddress, portNumber);
-            if (connectTimedOut) {
-                reject({
-                    transactionId: null, //Set value only after perform transaction command has actually been sent
-                    message: "There was an issue connecting to the Eftpos.",
-                });
-                return;
-            }
-
-            const errorMessage = checkForErrors();
-            if (errorMessage) {
-                reject({
-                    transactionId: null,
-                    message: errorMessage,
-                });
-                return;
-            }
-
             //Could potentially remove this code becuase it may not be needed..
             // Configure Printing -------------------------------------------------------------------------------------------------------------------------------- //
             // ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
@@ -488,11 +478,11 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             }
 
             // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
-            const disconnectTimedOut = await disconnectEftpos();
-            if (disconnectTimedOut) {
-                reject({ transactionId: transactionId, message: "There was an issue disconnecting to the Eftpos." });
-                return;
-            }
+            // const disconnectTimedOut = await disconnectEftpos();
+            // if (disconnectTimedOut) {
+            //     reject({ transactionId: transactionId, message: "There was an issue disconnecting to the Eftpos." });
+            //     return;
+            // }
 
             // Return Transaction Outcome -------------------------------------------------------------------------------------------------------------------------------- //
             let transactionOutcome: IEftposTransactionOutcome | null = null;
