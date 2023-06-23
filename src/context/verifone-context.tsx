@@ -262,6 +262,17 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
                 isEftposConnected.current = false;
             });
+
+        return () => {
+            // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
+            (async () => {
+                const disconnectTimedOut = await disconnectEftpos();
+            })();
+            // if (disconnectTimedOut) {
+            //     reject({ transactionId: transactionId, message: "There was an issue disconnecting to the Eftpos." });
+            //     return;
+            // }
+        };
     }, []);
 
     const addToLogs = (log: string) => {
@@ -362,14 +373,17 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             const merchantId = 0;
             let iSO8583ResponseCode;
 
-            //Added these because Android terminals need the eadyToPrintRequest and printRequest replys coming in the correct sequence.
-            // let readyToPrintRequestReplySent = false;
-            // let printRequestReplySent = false;
-
-            // Connect To EFTPOS -------------------------------------------------------------------------------------------------------------------------------- //
             const endpoint = `${ipAddress}:${portNumber}`;
 
             if (currentlyConnectedEndpoint.current !== endpoint) {
+                // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
+                const disconnectTimedOut = await disconnectEftpos();
+                if (disconnectTimedOut) {
+                    reject({ transactionId: transactionId, message: "There was an issue disconnecting to the Eftpos." });
+                    return;
+                }
+
+                // Connect To EFTPOS -------------------------------------------------------------------------------------------------------------------------------- //
                 const connectTimedOut = await connectToEftpos(ipAddress, portNumber);
                 if (connectTimedOut) {
                     reject({
@@ -441,23 +455,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     return;
                 }
 
-                //Only send these commands once
-                //@ts-ignore
-                // if (eftposData.current.type === VMT.ReadyToPrintRequest && !readyToPrintRequestReplySent) {
-                //     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
-                //     addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
-
-                //     readyToPrintRequestReplySent = true;
-                //     //@ts-ignore
-                // } else if (eftposData.current.type === VMT.PrintRequest && !printRequestReplySent) {
-                //     eftposReceipt.current = eftposData.current.payload;
-
-                //     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
-                //     addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
-
-                //     printRequestReplySent = true;
-                // }
-
                 // @ts-ignore - suppress typescript warning because typescript does not understand that eftposData changes from within the socket hooks
                 if (eftposData.current.type == VMT.ResultAndExtrasResponse) {
                     const verifonePurchaseResultArray = eftposData.current.payload.split(",");
@@ -473,13 +470,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
                 addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
             }
-
-            // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
-            // const disconnectTimedOut = await disconnectEftpos();
-            // if (disconnectTimedOut) {
-            //     reject({ transactionId: transactionId, message: "There was an issue disconnecting to the Eftpos." });
-            //     return;
-            // }
 
             // Return Transaction Outcome -------------------------------------------------------------------------------------------------------------------------------- //
             let transactionOutcome: IEftposTransactionOutcome | null = null;
