@@ -77,6 +77,7 @@ const initialEftposData = {
 };
 const initialEftposReceipt = "";
 const initialLogs = "";
+const initialCurrentlyConnectedEndpoint = "";
 
 type ContextProps = {
     createTransaction: (
@@ -133,7 +134,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const eftposReceipt = useRef<string>(initialEftposReceipt);
     const logs = useRef<string>(initialLogs);
 
-    let currentlyConnectedEndpoint = "";
+    const currentlyConnectedEndpoint = useRef<string>(initialCurrentlyConnectedEndpoint);
 
     const resetVariables = (existingLogs?: string) => {
         //Add new reset if new variables are added above.
@@ -359,7 +360,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             // Connect To EFTPOS -------------------------------------------------------------------------------------------------------------------------------- //
             const endpoint = `${ipAddress}:${portNumber}`;
 
-            if (currentlyConnectedEndpoint !== endpoint) {
+            if (currentlyConnectedEndpoint.current !== endpoint) {
                 const connectTimedOut = await connectToEftpos(ipAddress, portNumber);
                 if (connectTimedOut) {
                     reject({
@@ -377,41 +378,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     });
                     return;
                 }
+
+                currentlyConnectedEndpoint.current = endpoint;
             }
-
-            //Could potentially remove this code becuase it may not be needed..
-            // Configure Printing -------------------------------------------------------------------------------------------------------------------------------- //
-            // ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
-            // addToLogs(`BROWSER_DATA: ${VMT.ConfigurePrinting},ON`);
-
-            // const printingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
-            // while (
-            //     eftposData.current.type != VMT.ConfigurePrintingResponse // What if this is OFF?
-            // ) {
-            //     const errorMessage = checkForErrors();
-            //     if (errorMessage) {
-            //         reject({
-            //             transactionId: null,
-            //             message: errorMessage,
-            //         });
-            //         return;
-            //     }
-
-            //     addToLogs("Waiting to receive Configure Printing Response (CP,ON)...");
-
-            //     await delay(interval);
-
-            //     if (!(Number(new Date()) < printingTimeoutEndTime)) {
-            //         const disconnectTimedOut = await disconnectEftpos();
-            //         if (disconnectTimedOut) {
-            //             reject({ transactionId: null, message: "There was an issue disconnecting to the Eftpos." });
-            //             return;
-            //         }
-
-            //         reject({ transactionId: null, message: "There was an issue configuring Eftpos Printing." });
-            //         return;
-            //     }
-            // }
 
             // Create A Transaction -------------------------------------------------------------------------------------------------------------------------------- //
             // We only want to create a new transaction if we are not refetching the result of an existing one
