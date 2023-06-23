@@ -133,6 +133,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const eftposReceipt = useRef<string>(initialEftposReceipt);
     const logs = useRef<string>(initialLogs);
 
+    let currentlyConnectedEndpoint = "";
+
     const resetVariables = (existingLogs?: string) => {
         //Add new reset if new variables are added above.
         lastMessageReceived.current = initialLastMessageReceived;
@@ -207,15 +209,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         return () => {
             clearInterval(timerId);
         };
-    }, [restaurant, register]);
-
-    useEffect(() => {
-        if (restaurant && register) {
-            // Connect To EFTPOS -------------------------------------------------------------------------------------------------------------------------------- //
-            (async () => {
-                await connectToEftpos(register.eftposIpAddress, register.eftposPortNumber);
-            })();
-        }
     }, [restaurant, register]);
 
     useEffect(() => {
@@ -363,6 +356,29 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             let readyToPrintRequestReplySent = false;
             let printRequestReplySent = false;
 
+            // Connect To EFTPOS -------------------------------------------------------------------------------------------------------------------------------- //
+            const endpoint = `${ipAddress}:${portNumber}`;
+
+            if (currentlyConnectedEndpoint !== endpoint) {
+                const connectTimedOut = await connectToEftpos(ipAddress, portNumber);
+                if (connectTimedOut) {
+                    reject({
+                        transactionId: null, //Set value only after perform transaction command has actually been sent
+                        message: "There was an issue connecting to the Eftpos.",
+                    });
+                    return;
+                }
+
+                const errorMessage = checkForErrors();
+                if (errorMessage) {
+                    reject({
+                        transactionId: null,
+                        message: errorMessage,
+                    });
+                    return;
+                }
+            }
+
             //Could potentially remove this code becuase it may not be needed..
             // Configure Printing -------------------------------------------------------------------------------------------------------------------------------- //
             // ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
@@ -406,6 +422,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 // localStorage.setItem("verifoneMerchantId", merchantId.toString());
             }
 
+            ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
+            addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
+
             // Poll For Transaction Result -------------------------------------------------------------------------------------------------------------------------------- //
             while (true) {
                 const now = new Date();
@@ -444,21 +463,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     return;
                 }
 
-                // @ts-ignore - suppress typescript warning because typescript does not understand that eftposData changes from within the socket hooks
-                if (eftposData.current.type == VMT.ResultAndExtrasResponse) {
-                    const verifonePurchaseResultArray = eftposData.current.payload.split(",");
-                    iSO8583ResponseCode = verifonePurchaseResultArray[2];
-
-                    if (iSO8583ResponseCode != "??") {
-                        // localStorage.removeItem("verifoneTransactionId");
-                        // localStorage.removeItem("verifoneMerchantId");
-                        break;
-                    }
-                }
-
-                ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
-                addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
-
                 //Only send these commands once
                 //@ts-ignore
                 if (eftposData.current.type === VMT.ReadyToPrintRequest && !readyToPrintRequestReplySent) {
@@ -475,6 +479,21 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
                     printRequestReplySent = true;
                 }
+
+                // @ts-ignore - suppress typescript warning because typescript does not understand that eftposData changes from within the socket hooks
+                if (eftposData.current.type == VMT.ResultAndExtrasResponse) {
+                    const verifonePurchaseResultArray = eftposData.current.payload.split(",");
+                    iSO8583ResponseCode = verifonePurchaseResultArray[2];
+
+                    if (iSO8583ResponseCode != "??") {
+                        // localStorage.removeItem("verifoneTransactionId");
+                        // localStorage.removeItem("verifoneMerchantId");
+                        break;
+                    }
+                }
+
+                ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
+                addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
             }
 
             // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
