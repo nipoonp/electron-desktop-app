@@ -122,7 +122,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const { register, isPOS } = useRegister();
     const { restaurant } = useRestaurant();
 
-    const interval = 1 * 1000; // 1 second
+    const interval = 1 * 1500; // 1.5 seconds
     const timeout = 3 * 60 * 1000; // 3 minutes
     const noResponseTimeout = 20 * 1000; // 20 seconds
     const refetchFailedTransactionsTimeout = 10 * 60 * 1000; //10 minutes
@@ -234,6 +234,15 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     type: type as VMT,
                     payload: dataPayload,
                 };
+
+                if (type == VMT.ReadyToPrintRequest) {
+                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
+                    addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
+                } else if (type == VMT.PrintRequest) {
+                    eftposReceipt.current = dataPayload;
+                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
+                    addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
+                }
 
                 lastMessageReceived.current = Number(new Date());
             });
@@ -354,8 +363,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             let iSO8583ResponseCode;
 
             //Added these because Android terminals need the eadyToPrintRequest and printRequest replys coming in the correct sequence.
-            let readyToPrintRequestReplySent = false;
-            let printRequestReplySent = false;
+            // let readyToPrintRequestReplySent = false;
+            // let printRequestReplySent = false;
 
             // Connect To EFTPOS -------------------------------------------------------------------------------------------------------------------------------- //
             const endpoint = `${ipAddress}:${portNumber}`;
@@ -434,20 +443,20 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
                 //Only send these commands once
                 //@ts-ignore
-                if (eftposData.current.type === VMT.ReadyToPrintRequest && !readyToPrintRequestReplySent) {
-                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
-                    addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
+                // if (eftposData.current.type === VMT.ReadyToPrintRequest && !readyToPrintRequestReplySent) {
+                //     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
+                //     addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
 
-                    readyToPrintRequestReplySent = true;
-                    //@ts-ignore
-                } else if (eftposData.current.type === VMT.PrintRequest && !printRequestReplySent) {
-                    eftposReceipt.current = eftposData.current.payload;
+                //     readyToPrintRequestReplySent = true;
+                //     //@ts-ignore
+                // } else if (eftposData.current.type === VMT.PrintRequest && !printRequestReplySent) {
+                //     eftposReceipt.current = eftposData.current.payload;
 
-                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
-                    addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
+                //     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
+                //     addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
 
-                    printRequestReplySent = true;
-                }
+                //     printRequestReplySent = true;
+                // }
 
                 // @ts-ignore - suppress typescript warning because typescript does not understand that eftposData changes from within the socket hooks
                 if (eftposData.current.type == VMT.ResultAndExtrasResponse) {
