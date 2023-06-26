@@ -546,11 +546,11 @@ export const Checkout = () => {
             }
 
             // If using third party integratoin. Poll for resposne
-            if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.enable) {
-                setPaymentModalState(EPaymentModalState.ThirdPartyIntegrationAwaitingResponse);
+            // if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.enable) {
+            //     setPaymentModalState(EPaymentModalState.ThirdPartyIntegrationAwaitingResponse);
 
-                await pollForThirdPartyResponse(newOrder.id);
-            }
+            //     await pollForThirdPartyResponse(newOrder.id);
+            // }
 
             beginTransactionCompleteTimeout();
         } catch (e) {

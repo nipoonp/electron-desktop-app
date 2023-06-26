@@ -278,7 +278,7 @@ const PaymentAccepted = (props: {
         onContinueToNextOrder,
         onContinueToNextPayment,
     } = props;
-    const { paidSoFar, subTotal } = useCart();
+    const { paidSoFar, subTotal, buzzerNumber } = useCart();
 
     const totalRemaining = subTotal - paidSoFar;
     const paymentComplete = paidSoFar >= subTotal;
@@ -288,8 +288,17 @@ const PaymentAccepted = (props: {
             {paymentComplete ? (
                 <>
                     <div className="h2 mb-6">Transaction Accepted!</div>
-                    <div className="mb-1">Your order number is</div>
-                    <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+                    {buzzerNumber !== null ? (
+                        <>
+                            <div className="mb-1">Your buzzer number is</div>
+                            <div className="order-number h1">{buzzerNumber}</div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="mb-1">Your order number is</div>
+                            <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+                        </>
+                    )}
                     <PreparationTime />
                     <div className="separator-6 mb-6"></div>
                     <PaymentModalFooter
@@ -346,13 +355,23 @@ const PaymentPayLater = (props: {
     onContinueToNextOrder: () => void;
 }) => {
     const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { buzzerNumber } = useCart();
 
     return (
         <>
             <div className="all-done h1 mb-4">All Done!</div>
             <div className="h2 mb-6">Please pay later at the counter.</div>
-            <div className="mb-1">Your order number is</div>
-            <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+            {buzzerNumber !== null ? (
+                <>
+                    <div className="mb-1">Your buzzer number is</div>
+                    <div className="order-number h1">{buzzerNumber}</div>
+                </>
+            ) : (
+                <>
+                    <div className="mb-1">Your order number is</div>
+                    <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+                </>
+            )}
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -396,13 +415,23 @@ const PaymentCashPayment = (props: {
     onContinueToNextOrder: () => void;
 }) => {
     const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { buzzerNumber } = useCart();
 
     return (
         <>
             <div className="all-done h1 mb-4">All Done!</div>
             <div className="h2 mb-6">Please pay cash at the counter.</div>
-            <div className="mb-1">Your order number is</div>
-            <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+            {buzzerNumber !== null ? (
+                <>
+                    <div className="mb-1">Your buzzer number is</div>
+                    <div className="order-number h1">{buzzerNumber}</div>
+                </>
+            ) : (
+                <>
+                    <div className="mb-1">Your order number is</div>
+                    <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+                </>
+            )}
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -428,14 +457,24 @@ const PaymentCashPaymentPOS = (props: {
         paymentOutcomeApprovedRedirectTimeLeft,
         onContinueToNextOrder,
     } = props;
+    const { buzzerNumber } = useCart();
 
     return (
         <>
             <div className="all-done h1 mb-4">All Done!</div>
             <div className="h2 mb-6">Please give correct change.</div>
             <div className="h1 mb-6">Change: ${convertCentsToDollars(cashTransactionChangeAmount || 0)}</div>
-            <div className="mb-1">Your order number is</div>
-            <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+            {buzzerNumber !== null ? (
+                <>
+                    <div className="mb-1">Your buzzer number is</div>
+                    <div className="order-number h1">{buzzerNumber}</div>
+                </>
+            ) : (
+                <>
+                    <div className="mb-1">Your order number is</div>
+                    <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+                </>
+            )}
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -454,12 +493,22 @@ const PaymentUberEatsPayment = (props: {
     onContinueToNextOrder: () => void;
 }) => {
     const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { buzzerNumber } = useCart();
 
     return (
         <>
             <div className="all-done h1 mb-4">All Done!</div>
-            <div className="mb-1">Your order number is</div>
-            <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+            {buzzerNumber !== null ? (
+                <>
+                    <div className="mb-1">Your buzzer number is</div>
+                    <div className="order-number h1">{buzzerNumber}</div>
+                </>
+            ) : (
+                <>
+                    <div className="mb-1">Your order number is</div>
+                    <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+                </>
+            )}
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -478,12 +527,22 @@ const PaymentMenulogPayment = (props: {
     onContinueToNextOrder: () => void;
 }) => {
     const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { buzzerNumber } = useCart();
 
     return (
         <>
             <div className="all-done h1 mb-4">All Done!</div>
-            <div className="mb-1">Your order number is</div>
-            <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+            {buzzerNumber !== null ? (
+                <>
+                    <div className="mb-1">Your buzzer number is</div>
+                    <div className="order-number h1">{buzzerNumber}</div>
+                </>
+            ) : (
+                <>
+                    <div className="mb-1">Your order number is</div>
+                    <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+                </>
+            )}
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
