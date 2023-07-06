@@ -559,7 +559,7 @@ export const Checkout = () => {
 
     const pollForThirdPartyResponse = (orderId) => {
         const interval = 2 * 1000; // 2 seconds
-        const timeout = 20 * 1000; // 20 seconds
+        const timeout = 30 * 1000; // 20 seconds
 
         const endTime = Number(new Date()) + timeout;
 
