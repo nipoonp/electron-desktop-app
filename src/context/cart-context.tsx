@@ -189,6 +189,25 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     }, [total, promotion, restaurant]);
 
     useEffect(() => {
+        if (userAppliedPromotionCode) return; //Only apply restaurant promos if user has not applied one themselves
+
+        const availPromotions: IGET_RESTAURANT_PROMOTION[] = [];
+
+        restaurant &&
+            restaurant.promotions.items.forEach((promotion) => {
+                if (!promotion.autoApply) return;
+
+                const status = checkIfPromotionValid(promotion);
+
+                if (status !== CheckIfPromotionValidResponse.VALID) return;
+
+                availPromotions.push(promotion);
+            });
+
+        _setAvailablePromotions(availPromotions);
+    }, [restaurant, userAppliedPromotionCode]);
+
+    useEffect(() => {
         if (!products) return;
 
         processPromotions(products);
