@@ -299,7 +299,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                     resolve(txnRef);
                     return;
                 } else {
-                    reject("Invalid status code received");
+                    reject("Invalid status code received. Please retry or contact Windcave support.");
                     return;
                 }
             } catch (err) {
@@ -535,7 +535,9 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                         }
                     }
                 } else {
+                    reject("Invalid status code received. Please retry or contact Windcave support.");
                     console.log("Ignoring failed request...");
+                    return;
                 }
 
                 console.log(transactionComplete, transactionOutcome);
