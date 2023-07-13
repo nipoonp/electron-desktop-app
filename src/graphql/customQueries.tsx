@@ -319,8 +319,6 @@ export const GET_RESTAURANT = gql`
                 }
                 doshii {
                     enable
-                    clientId
-                    clientSecret
                     locationId
                 }
             }
@@ -946,8 +944,6 @@ export interface IThirdPartyIntegrationsWizBang {
 
 export interface IThirdPartyIntegrationsDoshii {
     enable: boolean;
-    clientId: string;
-    clientSecret: string;
     locationId: string;
 }
 
