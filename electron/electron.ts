@@ -180,7 +180,7 @@ const createWindow = () => {
         isDevToolsOpen = !isDevToolsOpen;
     });
 
-    // autoUpdater.autoDownload = false;
+    autoUpdater.autoDownload = false;
     autoUpdater.checkForUpdates();
 
     // Hide the menu bar
