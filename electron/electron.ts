@@ -180,19 +180,8 @@ const createWindow = () => {
         isDevToolsOpen = !isDevToolsOpen;
     });
 
-    setTimeout(() => {
-        mainWindow.webContents.openDevTools();
-
-        // Check for app updates every 3 seconds after launch
-
-        // autoUpdater.setFeedURL({
-        //     repo: "electron-desktop-app",
-        //     owner: "Microsoft",
-        //     provider: "github",
-        // });
-
-        autoUpdater.checkForUpdates();
-    }, 3000);
+    autoUpdater.autoDownload = false;
+    autoUpdater.checkForUpdates();
 
     // Hide the menu bar
     mainWindow.setMenu(null);
@@ -209,36 +198,16 @@ autoUpdater.on("update-downloaded", (info) => {
 });
 
 autoUpdater.on("download-progress", (info) => {
-    mainWindow.webContents.send("ELECTRON_UPDATER", `Downloading new update... Progress: ${info.percent}%.`);
+    const percentDownloaded = info.percent.toFixed(2);
+    const downloadSpeed = info.bytesPerSecond.toFixed(2);
+
+    mainWindow.webContents.send("ELECTRON_UPDATER", `Downloading new update... Progress: ${percentDownloaded}%. Download Speed: ${downloadSpeed} B/s`);
+    mainWindow.setProgressBar(percentDownloaded / 100);
 });
 
 autoUpdater.on("error", (error) => {
     mainWindow.webContents.send("ELECTRON_UPDATER", `There was an error updating. ${error}`);
 });
-
-// autoUpdater.on("update-available", (_event, releaseNotes, releaseName) => {
-//     const dialogOpts: any = {
-//         type: "info",
-//         buttons: ["Ok"],
-//         title: "Application Update",
-//         message: process.platform === "win32" ? releaseNotes : releaseName,
-//         detail: "A new version is being downloaded.",
-//     };
-//     dialog.showMessageBox(dialogOpts);
-// });
-
-// autoUpdater.on("update-downloaded", (_event, releaseNotes, releaseName) => {
-//     const dialogOpts = {
-//         type: "info",
-//         buttons: ["Restart", "Later"],
-//         title: "Application Update",
-//         message: process.platform === "win32" ? releaseNotes : releaseName,
-//         detail: "A new version has been downloaded. Restart the application to apply the updates.",
-//     };
-//     dialog.showMessageBox(dialogOpts).then((returnValue) => {
-//         if (returnValue.response === 0) autoUpdater.quitAndInstall();
-//     });
-// });
 
 const gotTheLock = app.requestSingleInstanceLock();
 
