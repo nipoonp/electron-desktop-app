@@ -180,46 +180,65 @@ const createWindow = () => {
         isDevToolsOpen = !isDevToolsOpen;
     });
 
-    mainWindow.webContents.openDevTools();
+    setTimeout(() => {
+        mainWindow.webContents.openDevTools();
 
-    // Check for app updates every 3 seconds after launch
-    initUpdater();
-    checkForUpdates();
-    setInterval(checkForUpdates, 10 * 1000);
+        // Check for app updates every 3 seconds after launch
+
+        // autoUpdater.setFeedURL({
+        //     repo: "electron-desktop-app",
+        //     owner: "Microsoft",
+        //     provider: "github",
+        // });
+
+        autoUpdater.checkForUpdates();
+    }, 3000);
 
     // Hide the menu bar
     mainWindow.setMenu(null);
 };
 
-const checkForUpdates = () => {
-    autoUpdater.checkForUpdates();
-};
+autoUpdater.on("update-available", () => {
+    mainWindow.webContents.send("ELECTRON_UPDATER", "Found new update. Downloading now...");
+    autoUpdater.downloadUpdate();
+});
 
-const initUpdater = () => {
-    autoUpdater.on("update-available", (_event, releaseNotes, releaseName) => {
-        const dialogOpts: any = {
-            type: "info",
-            buttons: ["Ok"],
-            title: "Application Update",
-            message: process.platform === "win32" ? releaseNotes : releaseName,
-            detail: "A new version is being downloaded.",
-        };
-        dialog.showMessageBox(dialogOpts);
-    });
+autoUpdater.on("update-downloaded", (info) => {
+    mainWindow.webContents.send("ELECTRON_UPDATER", `Update downloaded. Version: ${info.releaseName}. App is restarting.`);
+    autoUpdater.quitAndInstall(false, true);
+});
 
-    autoUpdater.on("update-downloaded", (_event, releaseNotes, releaseName) => {
-        const dialogOpts = {
-            type: "info",
-            buttons: ["Restart", "Later"],
-            title: "Application Update",
-            message: process.platform === "win32" ? releaseNotes : releaseName,
-            detail: "A new version has been downloaded. Restart the application to apply the updates.",
-        };
-        dialog.showMessageBox(dialogOpts).then((returnValue) => {
-            if (returnValue.response === 0) autoUpdater.quitAndInstall();
-        });
-    });
-};
+autoUpdater.on("download-progress", (info) => {
+    mainWindow.webContents.send("ELECTRON_UPDATER", `Downloading new update... Progress: ${info.percent}%.`);
+});
+
+autoUpdater.on("error", (error) => {
+    mainWindow.webContents.send("ELECTRON_UPDATER", `There was an error updating. ${error}`);
+});
+
+// autoUpdater.on("update-available", (_event, releaseNotes, releaseName) => {
+//     const dialogOpts: any = {
+//         type: "info",
+//         buttons: ["Ok"],
+//         title: "Application Update",
+//         message: process.platform === "win32" ? releaseNotes : releaseName,
+//         detail: "A new version is being downloaded.",
+//     };
+//     dialog.showMessageBox(dialogOpts);
+// });
+
+// autoUpdater.on("update-downloaded", (_event, releaseNotes, releaseName) => {
+//     const dialogOpts = {
+//         type: "info",
+//         buttons: ["Restart", "Later"],
+//         title: "Application Update",
+//         message: process.platform === "win32" ? releaseNotes : releaseName,
+//         detail: "A new version has been downloaded. Restart the application to apply the updates.",
+//     };
+//     dialog.showMessageBox(dialogOpts).then((returnValue) => {
+//         if (returnValue.response === 0) autoUpdater.quitAndInstall();
+//     });
+// });
 
 const gotTheLock = app.requestSingleInstanceLock();
 
