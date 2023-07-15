@@ -102,14 +102,7 @@ const VerifoneContext = createContext<ContextProps>({
             console.log("");
         });
     },
-    refetchTransaction: (
-        amount: number,
-        ipAddress: string,
-        portNumber: string,
-        restaurantId: string,
-        transactionId: string,
-        existingLogs: string
-    ) => {
+    refetchTransaction: (amount: number, ipAddress: string, portNumber: string, restaurantId: string, transactionId: string, existingLogs: string) => {
         return new Promise(() => {
             console.log("");
         });
@@ -121,7 +114,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const { register, isPOS } = useRegister();
     const { restaurant } = useRestaurant();
 
-    const interval = 1 * 1000; // 1 second
+    const interval = 1 * 1500; // 1.5 seconds
     const timeout = 3 * 60 * 1000; // 3 minutes
     const noResponseTimeout = 20 * 1000; // 20 seconds
     const refetchFailedTransactionsTimeout = 10 * 60 * 1000; //10 minutes
@@ -231,6 +224,15 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     type: type as VMT,
                     payload: dataPayload,
                 };
+
+                if (type == VMT.ReadyToPrintRequest) {
+                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
+                    addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
+                } else if (type == VMT.PrintRequest) {
+                    eftposReceipt.current = dataPayload;
+                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
+                    addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
+                }
 
                 lastMessageReceived.current = Number(new Date());
             });
@@ -350,10 +352,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             const merchantId = 0;
             let iSO8583ResponseCode;
 
-            //Added these because Android terminals need the eadyToPrintRequest and printRequest replys coming in the correct sequence.
-            let readyToPrintRequestReplySent = false;
-            let printRequestReplySent = false;
-
             // Connect To EFTPOS -------------------------------------------------------------------------------------------------------------------------------- //
             const connectTimedOut = await connectToEftpos(ipAddress, portNumber);
             if (connectTimedOut) {
@@ -373,40 +371,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 return;
             }
 
-            //Could potentially remove this code becuase it may not be needed..
-            // Configure Printing -------------------------------------------------------------------------------------------------------------------------------- //
-            ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
-            addToLogs(`BROWSER_DATA: ${VMT.ConfigurePrinting},ON`);
-
-            const printingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
-            while (
-                eftposData.current.type != VMT.ConfigurePrintingResponse // What if this is OFF?
-            ) {
-                const errorMessage = checkForErrors();
-                if (errorMessage) {
-                    reject({
-                        transactionId: null,
-                        message: errorMessage,
-                    });
-                    return;
-                }
-
-                addToLogs("Waiting to receive Configure Printing Response (CP,ON)...");
-
-                await delay(interval);
-
-                if (!(Number(new Date()) < printingTimeoutEndTime)) {
-                    const disconnectTimedOut = await disconnectEftpos();
-                    if (disconnectTimedOut) {
-                        reject({ transactionId: null, message: "There was an issue disconnecting to the Eftpos." });
-                        return;
-                    }
-
-                    reject({ transactionId: null, message: "There was an issue configuring Eftpos Printing." });
-                    return;
-                }
-            }
-
             // Create A Transaction -------------------------------------------------------------------------------------------------------------------------------- //
             // We only want to create a new transaction if we are not refetching the result of an existing one
             if (!refetchOutcomeTransactionId) {
@@ -415,6 +379,10 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 // localStorage.setItem("verifoneTransactionId", transactionId.toString());
                 // localStorage.setItem("verifoneMerchantId", merchantId.toString());
             }
+
+            // Poll For Result -------------------------------------------------------------------------------------------------------------------------------- //
+            ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
+            addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
 
             // Poll For Transaction Result -------------------------------------------------------------------------------------------------------------------------------- //
             while (true) {
@@ -466,25 +434,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     }
                 }
 
+                // Poll For Result -------------------------------------------------------------------------------------------------------------------------------- //
                 ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
                 addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
-
-                //Only send these commands once
-                //@ts-ignore
-                if (eftposData.current.type === VMT.ReadyToPrintRequest && !readyToPrintRequestReplySent) {
-                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
-                    addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
-
-                    readyToPrintRequestReplySent = true;
-                    //@ts-ignore
-                } else if (eftposData.current.type === VMT.PrintRequest && !printRequestReplySent) {
-                    eftposReceipt.current = eftposData.current.payload;
-
-                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
-                    addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
-
-                    printRequestReplySent = true;
-                }
             }
 
             // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
@@ -752,15 +704,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             sessionStorage.setItem("verifoneEftposTransactionInProgress", "true");
 
             try {
-                const res = await createOrRefetchTransactionWrapper(
-                    amount,
-                    ipAddress,
-                    portNumber,
-                    restaurantId,
-                    delayed,
-                    transactionId,
-                    existingLogs
-                );
+                const res = await createOrRefetchTransactionWrapper(amount, ipAddress, portNumber, restaurantId, delayed, transactionId, existingLogs);
 
                 resolve(res);
             } catch (e) {
