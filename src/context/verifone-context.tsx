@@ -69,7 +69,6 @@ interface IEftposData {
 }
 
 const initialLastMessageReceived = 0;
-const initialIsEftposConnected = false;
 const initialEftposError = "";
 const initialEftposData = {
     type: VMT.INITIAL,
@@ -77,6 +76,8 @@ const initialEftposData = {
 };
 const initialEftposReceipt = "";
 const initialLogs = "";
+const initialAttemptingEndpoint = null;
+const initialConnectedEndpoint = null;
 
 type ContextProps = {
     createTransaction: (
@@ -116,20 +117,21 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
     const interval = 1 * 1500; // 1.5 seconds
     const timeout = 3 * 60 * 1000; // 3 minutes
-    const noResponseTimeout = 20 * 1000; // 20 seconds
+    const noResponseTimeout = 30 * 1000; // 30 seconds
     const refetchFailedTransactionsTimeout = 10 * 60 * 1000; //10 minutes
 
     const lastMessageReceived = useRef<number>(initialLastMessageReceived);
-    const isEftposConnected = useRef<boolean>(initialIsEftposConnected);
     const eftposError = useRef<string>(initialEftposError);
     const eftposData = useRef<IEftposData>(initialEftposData);
     const eftposReceipt = useRef<string>(initialEftposReceipt);
     const logs = useRef<string>(initialLogs);
 
+    const attemptingEndpoint = useRef<string | null>(initialAttemptingEndpoint);
+    const connectedEndpoint = useRef<string | null>(initialConnectedEndpoint);
+
     const resetVariables = (existingLogs?: string) => {
         //Add new reset if new variables are added above.
         lastMessageReceived.current = initialLastMessageReceived;
-        isEftposConnected.current = initialIsEftposConnected;
         eftposError.current = initialEftposError;
         eftposData.current = initialEftposData;
         eftposReceipt.current = initialEftposReceipt;
@@ -208,7 +210,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 console.log("EFTPOS_CONNECT:", arg);
                 addToLogs(`EFTPOS_CONNECT: ${arg}`);
 
-                isEftposConnected.current = true;
+                connectedEndpoint.current = attemptingEndpoint.current;
             });
 
         ipcRenderer &&
@@ -250,8 +252,19 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 console.log("EFTPOS_CLOSE:", arg);
                 addToLogs(`EFTPOS_CLOSE: ${arg}`);
 
-                isEftposConnected.current = false;
+                connectedEndpoint.current = null;
             });
+
+        return () => {
+            // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
+            (async () => {
+                const disconnectTimedOut = await disconnectEftpos();
+            })();
+            // if (disconnectTimedOut) {
+            //     reject({ transactionId: transactionId, message: "There was an issue disconnecting to the Eftpos." });
+            //     return;
+            // }
+        };
     }, []);
 
     const addToLogs = (log: string) => {
@@ -284,7 +297,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             });
         addToLogs(`BROWSER_EFTPOS_CONNECT: ${ipAddress}:${portNumber}`);
 
-        while (!isEftposConnected.current) {
+        while (!connectedEndpoint.current) {
             await delay(interval);
 
             console.log("Waiting to connect to the Eftpos...");
@@ -309,7 +322,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         ipcRenderer && ipcRenderer.send("BROWSER_EFTPOS_DISCONNECT");
         addToLogs("BROWSER_EFTPOS_DISCONNECT");
 
-        while (isEftposConnected.current) {
+        while (connectedEndpoint.current) {
             await delay(interval);
 
             console.log("Waiting for Eftpos to disconnect...");
@@ -352,23 +365,34 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             const merchantId = 0;
             let iSO8583ResponseCode;
 
-            // Connect To EFTPOS -------------------------------------------------------------------------------------------------------------------------------- //
-            const connectTimedOut = await connectToEftpos(ipAddress, portNumber);
-            if (connectTimedOut) {
-                reject({
-                    transactionId: null, //Set value only after perform transaction command has actually been sent
-                    message: "There was an issue connecting to the Eftpos.",
-                });
-                return;
-            }
+            attemptingEndpoint.current = `${ipAddress}:${portNumber}`;
 
-            const errorMessage = checkForErrors();
-            if (errorMessage) {
-                reject({
-                    transactionId: null,
-                    message: errorMessage,
-                });
-                return;
+            if (connectedEndpoint.current !== attemptingEndpoint.current) {
+                // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
+                const disconnectTimedOut = await disconnectEftpos();
+                if (disconnectTimedOut) {
+                    reject({ transactionId: transactionId, message: "There was an issue disconnecting to the Eftpos." });
+                    return;
+                }
+
+                // Connect To EFTPOS -------------------------------------------------------------------------------------------------------------------------------- //
+                const connectTimedOut = await connectToEftpos(ipAddress, portNumber);
+                if (connectTimedOut) {
+                    reject({
+                        transactionId: null, //Set value only after perform transaction command has actually been sent
+                        message: "There was an issue connecting to the Eftpos.",
+                    });
+                    return;
+                }
+
+                const errorMessage = checkForErrors();
+                if (errorMessage) {
+                    reject({
+                        transactionId: null,
+                        message: errorMessage,
+                    });
+                    return;
+                }
             }
 
             // Create A Transaction -------------------------------------------------------------------------------------------------------------------------------- //
@@ -437,13 +461,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 // Poll For Result -------------------------------------------------------------------------------------------------------------------------------- //
                 ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
                 addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
-            }
-
-            // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
-            const disconnectTimedOut = await disconnectEftpos();
-            if (disconnectTimedOut) {
-                reject({ transactionId: transactionId, message: "There was an issue disconnecting to the Eftpos." });
-                return;
             }
 
             // Return Transaction Outcome -------------------------------------------------------------------------------------------------------------------------------- //
