@@ -5,22 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { convertBase64ToFile, convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
-import {
-    IGET_RESTAURANT_CATEGORY,
-    IGET_RESTAURANT_PRODUCT,
-    EPromotionType,
-    IS3Object,
-    IGET_THIRD_PARTY_ORDER_RESPONSE,
-} from "../../graphql/customQueries";
-import {
-    restaurantPath,
-    beginOrderPath,
-    tableNumberPath,
-    orderTypePath,
-    buzzerNumberPath,
-    paymentMethodPath,
-    customerInformationPath,
-} from "../main";
+import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, EPromotionType, IS3Object, IGET_THIRD_PARTY_ORDER_RESPONSE } from "../../graphql/customQueries";
+import { restaurantPath, beginOrderPath, tableNumberPath, orderTypePath, buzzerNumberPath, paymentMethodPath, customerInformationPath } from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
 import {
@@ -160,9 +146,7 @@ export const Checkout = () => {
 
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
     const [paymentOutcomeOrderNumber, setPaymentOutcomeOrderNumber] = useState<string | null>(null);
-    const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(
-        restaurant?.delayBetweenOrdersInSeconds || 10
-    );
+    const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(restaurant?.delayBetweenOrdersInSeconds || 10);
     const transactionCompleteRedirectTime = restaurant?.delayBetweenOrdersInSeconds || 10;
 
     const [showPromotionCodeModal, setShowPromotionCodeModal] = useState(false);
@@ -498,8 +482,7 @@ export const Checkout = () => {
 
     const onSubmitOrder = async (paid: boolean, parkOrder: boolean, newPaymentAmounts: ICartPaymentAmounts, newPayments: ICartPayment[]) => {
         //If parked order do not generate order number
-        let orderNumber =
-            parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
+        let orderNumber = parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
 
         setPaymentOutcomeOrderNumber(orderNumber);
 
@@ -511,11 +494,7 @@ export const Checkout = () => {
                 const filename = `${date}-signature`;
                 const fileExtension = "png";
 
-                const signatureFile = await convertBase64ToFile(
-                    customerInformation.signatureBase64,
-                    `${filename}.${fileExtension}`,
-                    `image/${fileExtension}`
-                );
+                const signatureFile = await convertBase64ToFile(customerInformation.signatureBase64, `${filename}.${fileExtension}`, `image/${fileExtension}`);
 
                 const uploadedObject: any = await Storage.put(`${filename}.${fileExtension}`, signatureFile, {
                     level: "protected",
@@ -530,14 +509,7 @@ export const Checkout = () => {
                 };
             }
 
-            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(
-                orderNumber,
-                paid,
-                parkOrder,
-                newPaymentAmounts,
-                newPayments,
-                signatureS3Object
-            );
+            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(orderNumber, paid, parkOrder, newPaymentAmounts, newPayments, signatureS3Object);
 
             createdOrder.current = newOrder;
 
@@ -862,6 +834,9 @@ export const Checkout = () => {
                     await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
 
                     setPaymentModalState(EPaymentModalState.EftposResult);
+                } else {
+                    //Payment pending
+                    if (isPOS) setPaymentModalState(EPaymentModalState.POSScreen);
                 }
             } catch (e) {
                 setCreateOrderError(e);
@@ -1138,13 +1113,7 @@ export const Checkout = () => {
     };
 
     const itemUpdatedModal = () => {
-        return (
-            <>
-                {showItemUpdatedModal && (
-                    <ItemAddedUpdatedModal isOpen={showItemUpdatedModal} onClose={onCloseItemUpdatedModal} isProductUpdate={true} />
-                )}
-            </>
-        );
+        return <>{showItemUpdatedModal && <ItemAddedUpdatedModal isOpen={showItemUpdatedModal} onClose={onCloseItemUpdatedModal} isProductUpdate={true} />}</>;
     };
 
     const promotionCodeModal = () => {
@@ -1276,9 +1245,7 @@ export const Checkout = () => {
 
     const restaurantCustomerInformation = (
         <div className="checkout-customer-details">
-            <div className="h3">
-                Customer Details: {`${customerInformation?.firstName} ${customerInformation?.email} ${customerInformation?.phoneNumber}`}
-            </div>
+            <div className="h3">Customer Details: {`${customerInformation?.firstName} ${customerInformation?.email} ${customerInformation?.phoneNumber}`}</div>
             <Link onClick={onUpdateCustomerInformation}>Change</Link>
         </div>
     );
@@ -1347,9 +1314,7 @@ export const Checkout = () => {
             <div className="mb-2"></div> */}
             {promotion ? (
                 <div className="h3 text-center mb-2">
-                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
-                        promotion.discountedAmount
-                    )}`}{" "}
+                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(promotion.discountedAmount)}`}{" "}
                     {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
                 </div>
             ) : (
@@ -1357,8 +1322,7 @@ export const Checkout = () => {
             )}
             {restaurant.surchargePercentage ? (
                 <div className="h3 text-center mb-2">
-                    Surcharge: $
-                    {convertCentsToDollars((subTotal * restaurant.surchargePercentage) / 100 / ((100 + restaurant.surchargePercentage) / 100))}
+                    Surcharge: ${convertCentsToDollars((subTotal * restaurant.surchargePercentage) / 100 / ((100 + restaurant.surchargePercentage) / 100))}
                 </div>
             ) : (
                 <></>
