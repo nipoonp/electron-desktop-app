@@ -49,6 +49,7 @@
         "react-script-hook": "^1.7.2",
         "react-scripts": "^5.0.1",
         "react-signature-canvas": "^1.0.6",
+        "react-simple-keyboard": "^3.6.38",
         "react-toastify": "^9.1.2",
         "recharts": "^2.5.0",
         "reshake": "^1.2.4",

@@ -34,3 +34,38 @@
 .textArea:-moz-placeholder {
     color: hsl(0, 0%, 30%);
 }
+
+//Keyboard
+.simple-keyboard {
+    max-width: 650px;
+    position: absolute;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+.simple-keyboard.hg-theme-default.myTheme {
+    border-radius: 10px;
+    width: calc(100% - 20px);
+    background-color: #e8e8e8;
+    border: 2px solid #dad9d9;
+    padding: 20px;
+    border-radius: 30px;
+}
+
+.hg-theme-default .hg-button {
+    background-color: #dad9d9;
+    border-radius: 50%;
+    height: 50px;
+    width: 50px;
+    max-height: 50px;
+    max-width: 50px;
+    font-size: 18px;
+    box-shadow: none;
+    border: none;
+}
+
+.hg-theme-default .hg-button.hg-activeButton {
+    background-color: rgba(var(--primary-color), 1);
+}
