@@ -190,11 +190,11 @@ export const EMAIL_SALES_REPORTS = gql`
     }
 `;
 
-export const LOG_SLACK_ERROR = gql`
-    mutation LogSlackError($message: String!) {
-        logSlackError(input: { message: $message })
-    }
-`;
+// export const LOG_SLACK_ERROR = gql`
+//     mutation LogSlackError($message: String!) {
+//         logSlackError(input: { message: $message })
+//     }
+// `;
 
 export const UPDATE_ORDER_STATUS = gql`
     mutation updateOrder(

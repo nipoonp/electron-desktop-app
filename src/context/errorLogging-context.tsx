@@ -1,7 +1,7 @@
 import { createContext, useContext } from "react";
 
 import { useMutation } from "@apollo/client";
-import { CREATE_EFTPOS_TRANSACTION_LOG, LOG_SLACK_ERROR } from "../graphql/customMutations";
+import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
 import { useRestaurant } from "./restaurant-context";
 
 export interface IAddVerifoneLog {
@@ -35,9 +35,9 @@ const ErrorLoggingContext = createContext<ContextProps>({
 const ErrorLoggingProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
 
-    const [logSlackErrorMutation, { data, loading, error }] = useMutation(LOG_SLACK_ERROR, {
-        update: (proxy, mutationResult) => {},
-    });
+    // const [logSlackErrorMutation, { data, loading, error }] = useMutation(LOG_SLACK_ERROR, {
+    //     update: (proxy, mutationResult) => {},
+    // });
     const [createEftposTransactionLogMutation] = useMutation(CREATE_EFTPOS_TRANSACTION_LOG, {
         update: (proxy, mutationResult) => {},
     });
