@@ -305,6 +305,7 @@ export const GET_RESTAURANT = gql`
             }
             thirdPartyIntegrations {
                 enable
+                awaitThirdPartyResponse
                 shift8 {
                     enable
                     storeApiUrl
@@ -923,6 +924,7 @@ export interface IGET_RESTAURANT {
 
 export interface IThirdPartyIntegrations {
     enable: boolean | null;
+    awaitThirdPartyResponse: boolean | null;
     shift8: IThirdPartyIntegrationsShift8 | null;
     wizBang: IThirdPartyIntegrationsWizBang | null;
     doshii: IThirdPartyIntegrationsDoshii | null;
