@@ -305,6 +305,7 @@ export const GET_RESTAURANT = gql`
             }
             thirdPartyIntegrations {
                 enable
+                awaitThirdPartyResponse
                 shift8 {
                     enable
                     storeApiUrl
@@ -319,8 +320,6 @@ export const GET_RESTAURANT = gql`
                 }
                 doshii {
                     enable
-                    clientId
-                    clientSecret
                     locationId
                 }
             }
@@ -925,6 +924,7 @@ export interface IGET_RESTAURANT {
 
 export interface IThirdPartyIntegrations {
     enable: boolean | null;
+    awaitThirdPartyResponse: boolean | null;
     shift8: IThirdPartyIntegrationsShift8 | null;
     wizBang: IThirdPartyIntegrationsWizBang | null;
     doshii: IThirdPartyIntegrationsDoshii | null;
@@ -946,8 +946,6 @@ export interface IThirdPartyIntegrationsWizBang {
 
 export interface IThirdPartyIntegrationsDoshii {
     enable: boolean;
-    clientId: string;
-    clientSecret: string;
     locationId: string;
 }
 
