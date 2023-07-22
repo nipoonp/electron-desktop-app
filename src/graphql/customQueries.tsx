@@ -95,6 +95,7 @@ export const GET_USER = gql`
                             name
                             enableTableFlags
                             enableBuzzerNumbers
+                            enableSkuScanner
                             enablePayLater
                             enableCashPayments
                             enableEftposPayments
@@ -304,6 +305,7 @@ export const GET_RESTAURANT = gql`
             }
             thirdPartyIntegrations {
                 enable
+                awaitThirdPartyResponse
                 shift8 {
                     enable
                     storeApiUrl
@@ -318,8 +320,6 @@ export const GET_RESTAURANT = gql`
                 }
                 doshii {
                     enable
-                    clientId
-                    clientSecret
                     locationId
                 }
             }
@@ -350,6 +350,7 @@ export const GET_RESTAURANT = gql`
                     name
                     enableTableFlags
                     enableBuzzerNumbers
+                    enableSkuScanner
                     enablePayLater
                     enableCashPayments
                     enableEftposPayments
@@ -461,6 +462,7 @@ export const GET_RESTAURANT = gql`
                     totalAvailableUses
                     minSpend
                     applyToCheapest
+                    applyToModifiers
                     items {
                         items {
                             id
@@ -511,6 +513,8 @@ export const GET_RESTAURANT = gql`
                     id
                     name
                     description
+                    soldOut
+                    soldOutDate
                     image {
                         key
                         bucket
@@ -920,6 +924,7 @@ export interface IGET_RESTAURANT {
 
 export interface IThirdPartyIntegrations {
     enable: boolean | null;
+    awaitThirdPartyResponse: boolean | null;
     shift8: IThirdPartyIntegrationsShift8 | null;
     wizBang: IThirdPartyIntegrationsWizBang | null;
     doshii: IThirdPartyIntegrationsDoshii | null;
@@ -941,8 +946,6 @@ export interface IThirdPartyIntegrationsWizBang {
 
 export interface IThirdPartyIntegrationsDoshii {
     enable: boolean;
-    clientId: string;
-    clientSecret: string;
     locationId: string;
 }
 
@@ -975,6 +978,7 @@ export interface IGET_RESTAURANT_REGISTER {
     name: string;
     enableTableFlags: boolean;
     enableBuzzerNumbers: boolean;
+    enableSkuScanner: boolean;
     enablePayLater: boolean;
     enableCashPayments: boolean;
     enableEftposPayments: boolean;
@@ -1114,6 +1118,7 @@ export interface IGET_RESTAURANT_PROMOTION {
     totalAvailableUses: number;
     minSpend: number;
     applyToCheapest: boolean;
+    applyToModifiers: boolean;
     type: EPromotionType;
     items: { items: IGET_RESTAURANT_PROMOTION_ITEMS[] };
     discounts: { items: IGET_RESTAURANT_PROMOTION_DISCOUNT[] };
@@ -1181,6 +1186,8 @@ export interface IGET_RESTAURANT_CATEGORY {
     displaySequence: number;
     image?: IS3Object;
     availablePlatforms: ERegisterType[];
+    soldOut?: boolean;
+    soldOutDate?: string;
     availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
     products?: {
         items: IGET_RESTAURANT_PRODUCT_LINK[];
@@ -1314,6 +1321,7 @@ export const GET_PROMOTION_BY_CODE = gql`
                 totalAvailableUses
                 minSpend
                 applyToCheapest
+                applyToModifiers
                 items {
                     items {
                         id

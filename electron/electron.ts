@@ -14,6 +14,7 @@ import { IOrderReceipt, IPrintReceiptDataOutput, IPrintReceiptOutput, IPrintSale
 import path from "path";
 import net from "net";
 import * as Sentry from "@sentry/electron";
+const { autoUpdater } = require("electron-updater");
 
 Sentry.init({ dsn: "https://43d342efd1534e1b80c9ab4251b385a6@o1087887.ingest.sentry.io/6102047" });
 
@@ -179,40 +180,34 @@ const createWindow = () => {
         isDevToolsOpen = !isDevToolsOpen;
     });
 
-    // Check for app updates every 3 seconds after launch
-    // initUpdater();
-    // checkForUpdates();
-    // setInterval(checkForUpdates, 10 * 1000);
+    autoUpdater.autoDownload = false;
+    autoUpdater.checkForUpdates();
 
     // Hide the menu bar
     mainWindow.setMenu(null);
 };
 
-// const checkForUpdates = () => {
-//     autoUpdater.checkForUpdates();
-// };
+autoUpdater.on("update-available", () => {
+    mainWindow.webContents.send("ELECTRON_UPDATER", "Found new update. Downloading now...");
+    autoUpdater.downloadUpdate();
+});
 
-// const initUpdater = () => {
-//     // autoUpdater.autoDownload = true;
+autoUpdater.on("update-downloaded", (info) => {
+    mainWindow.webContents.send("ELECTRON_UPDATER", `Update downloaded. Version: ${info.releaseName}. App is restarting.`);
+    autoUpdater.quitAndInstall(false, true);
+});
 
-//     autoUpdater.on("update-available", () => {
-//         mainWindow.webContents.send("ELECTRON_UPDATER", "Found new update. Downloading now...");
-//         autoUpdater.downloadUpdate();
-//     });
+autoUpdater.on("download-progress", (info) => {
+    const percentDownloaded = info.percent.toFixed(2);
+    const downloadSpeed = info.bytesPerSecond.toFixed(2);
 
-//     autoUpdater.on("update-downloaded", (info) => {
-//         mainWindow.webContents.send("ELECTRON_UPDATER", `Update downloaded. Version: ${info.releaseName}. App is restarting.`);
-//         autoUpdater.quitAndInstall(false, true);
-//     });
+    mainWindow.webContents.send("ELECTRON_UPDATER", `Downloading new update... Progress: ${percentDownloaded}%. Download Speed: ${downloadSpeed} B/s`);
+    mainWindow.setProgressBar(percentDownloaded / 100);
+});
 
-//     autoUpdater.on("download-progress", (info) => {
-//         mainWindow.webContents.send("ELECTRON_UPDATER", `Downloading new update... Progress: ${info.percent}%.`);
-//     });
-
-//     autoUpdater.on("error", (error) => {
-//         mainWindow.webContents.send("ELECTRON_UPDATER", `There was an error updating. ${error}`);
-//     });
-// };
+autoUpdater.on("error", (error) => {
+    mainWindow.webContents.send("ELECTRON_UPDATER", `There was an error updating. ${error}`);
+});
 
 const gotTheLock = app.requestSingleInstanceLock();
 

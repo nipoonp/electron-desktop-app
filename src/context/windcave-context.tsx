@@ -299,11 +299,12 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                     resolve(txnRef);
                     return;
                 } else {
-                    reject("Invalid status code received");
+                    reject("Invalid status code received. Please retry or contact Windcave support.");
                     return;
                 }
             } catch (err) {
-                reject(err);
+                console.log("Error", error);
+                reject("There was an unknown error. Please retry or contact Windcave support.");
                 return;
             }
         });
@@ -388,19 +389,14 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                     return;
                 }
             } catch (err) {
-                reject(err);
+                console.log("Error", error);
+                reject("There was an unknown error. Please retry or contact Windcave support.");
                 return;
             }
         });
     };
 
-    const pollForOutcome = (
-        stationId: string,
-        user: string,
-        key: string,
-        txnRef: string,
-        action: string = ACTION
-    ): Promise<IEftposTransactionOutcome> => {
+    const pollForOutcome = (stationId: string, user: string, key: string, txnRef: string, action: string = ACTION): Promise<IEftposTransactionOutcome> => {
         const interval = 2 * 1000; // 2 seconds
         const timeout = 30 * 60 * 1000; // 10 minutes
 
@@ -435,7 +431,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                     },
                 });
 
-                // console.log(`Transaction GET response received (${response.status}) ${response.data}`);
+                console.log(`Transaction GET response received (${response.status}) ${response.data}`);
 
                 let transactionComplete = false;
                 let transactionOutcome: IEftposTransactionOutcome | null = null;
@@ -535,7 +531,9 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                         }
                     }
                 } else {
+                    reject("Invalid status code received. Please retry or contact Windcave support.");
                     console.log("Ignoring failed request...");
+                    return;
                 }
 
                 console.log(transactionComplete, transactionOutcome);
@@ -551,7 +549,8 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                     return;
                 }
             } catch (error) {
-                reject(error);
+                console.log("Error", error);
+                reject("There was an unknown error. Please retry or contact Windcave support.");
             }
         };
 

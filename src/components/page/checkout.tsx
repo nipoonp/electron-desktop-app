@@ -489,13 +489,14 @@ export const Checkout = () => {
             });
     };
 
-    const onSubmitOrder = async (
-        paid: boolean,
-        parkOrder: boolean,
-        printOrder: boolean,
-        newPaymentAmounts: ICartPaymentAmounts,
-        newPayments: ICartPayment[]
-    ) => {
+    const onPrintParkedOrderReceipts = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+        register.printers &&
+            register.printers.items.forEach((printer) => {
+                sendReceiptPrint(order, printer);
+            });
+    };
+
+    const onSubmitOrder = async (paid: boolean, parkOrder: boolean, newPaymentAmounts: ICartPaymentAmounts, newPayments: ICartPayment[]) => {
         //If parked order do not generate order number
         let orderNumber =
             parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
@@ -540,16 +541,20 @@ export const Checkout = () => {
 
             createdOrder.current = newOrder;
 
-            if (register.printers && register.printers.items.length > 0 && printOrder) {
+            if (register.printers && register.printers.items.length > 0 && !parkedOrderId) {
                 await printReceipts(newOrder);
             }
 
-            //If using third party integratoin. Poll for resposne
-            // if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.enable) {
-            //     setPaymentModalState(EPaymentModalState.ThirdPartyIntegrationAwaitingResponse);
+            // If using third party integration. Poll for resposne
+            if (
+                restaurant.thirdPartyIntegrations &&
+                restaurant.thirdPartyIntegrations.enable &&
+                restaurant.thirdPartyIntegrations.awaitThirdPartyResponse
+            ) {
+                setPaymentModalState(EPaymentModalState.ThirdPartyIntegrationAwaitingResponse);
 
-            //     await pollForThirdPartyResponse(newOrder.id);
-            // }
+                await pollForThirdPartyResponse(newOrder.id);
+            }
 
             beginTransactionCompleteTimeout();
         } catch (e) {
@@ -559,7 +564,7 @@ export const Checkout = () => {
 
     const pollForThirdPartyResponse = (orderId) => {
         const interval = 2 * 1000; // 2 seconds
-        const timeout = 20 * 1000; // 20 seconds
+        const timeout = 30 * 1000; // 20 seconds
 
         const endTime = Number(new Date()) + timeout;
 
@@ -858,9 +863,12 @@ export const Checkout = () => {
 
                 if (newTotalPaymentAmounts >= subTotal) {
                     //Passing paymentAmounts, payments via params so we send the most updated values
-                    await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
+                    await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
 
                     setPaymentModalState(EPaymentModalState.EftposResult);
+                } else {
+                    //Payment pending
+                    if (isPOS) setPaymentModalState(EPaymentModalState.POSScreen);
                 }
             } catch (e) {
                 setCreateOrderError(e);
@@ -899,7 +907,7 @@ export const Checkout = () => {
                 setCashTransactionChangeAmount(changeAmount);
 
                 //Passing paymentAmounts, payments via params so we send the most updated values
-                await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
+                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
 
                 setPaymentModalState(EPaymentModalState.CashResult);
             }
@@ -926,7 +934,7 @@ export const Checkout = () => {
             //If paid for everything
             if (newTotalPaymentAmounts >= subTotal) {
                 //Passing paymentAmounts, payments via params so we send the most updated values
-                await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
+                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
 
                 setPaymentModalState(EPaymentModalState.UberEatsResult);
             }
@@ -953,7 +961,7 @@ export const Checkout = () => {
             //If paid for everything
             if (newTotalPaymentAmounts >= subTotal) {
                 //Passing paymentAmounts, payments via params so we send the most updated values
-                await onSubmitOrder(true, false, true, newPaymentAmounts, newPayments);
+                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
 
                 setPaymentModalState(EPaymentModalState.MenulogResult);
             }
@@ -977,7 +985,7 @@ export const Checkout = () => {
         const newPayments: ICartPayment[] = [];
 
         try {
-            await onSubmitOrder(false, false, true, newPaymentAmounts, newPayments);
+            await onSubmitOrder(false, false, newPaymentAmounts, newPayments);
 
             setPaymentModalState(EPaymentModalState.PayLater);
         } catch (e) {
@@ -985,7 +993,7 @@ export const Checkout = () => {
         }
     };
 
-    const onParkOrder = async (printOrder: boolean) => {
+    const onParkOrder = async () => {
         setShowPaymentModal(true);
 
         const newPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0 };
@@ -994,7 +1002,7 @@ export const Checkout = () => {
         setPaymentModalState(EPaymentModalState.Park);
 
         try {
-            await onSubmitOrder(false, true, printOrder, newPaymentAmounts, newPayments);
+            await onSubmitOrder(false, true, newPaymentAmounts, newPayments);
         } catch (e) {
             setCreateOrderError(e);
         }
@@ -1162,6 +1170,7 @@ export const Checkout = () => {
                         eftposTransactionOutcome={eftposTransactionOutcome}
                         cashTransactionChangeAmount={cashTransactionChangeAmount}
                         onPrintCustomerReceipt={() => createdOrder.current && onPrintCustomerReceipt(createdOrder.current)}
+                        onPrintParkedOrderReceipts={() => createdOrder.current && onPrintParkedOrderReceipts(createdOrder.current)}
                         paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                         onContinueToNextOrder={onContinueToNextOrder}
@@ -1327,10 +1336,7 @@ export const Checkout = () => {
     const parkOrderFooter = (
         <div className="park-order-footer">
             <div className="park-order-link p-2">
-                <Link onClick={() => onParkOrder(false)}>Park Order</Link>
-            </div>
-            <div className="park-and-print-order-link p-2">
-                <Link onClick={() => onParkOrder(true)}>Park and Print Order</Link>
+                <Link onClick={onParkOrder}>Park Order</Link>
             </div>
         </div>
     );

@@ -27,6 +27,7 @@ interface IPaymentModalProps {
     eftposTransactionDelayed: boolean;
     eftposTransactionOutcome: IEftposTransactionOutcome | null;
     onPrintCustomerReceipt: () => void;
+    onPrintParkedOrderReceipts: () => void;
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
@@ -52,6 +53,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         paymentOutcomeApprovedRedirectTimeLeft,
         onContinueToNextOrder,
         onPrintCustomerReceipt,
+        onPrintParkedOrderReceipts,
         eftposTransactionDelayed,
         eftposTransactionOutcome,
         cashTransactionChangeAmount,
@@ -230,7 +232,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         } else if (paymentModalState === EPaymentModalState.Park) {
             return (
                 <PaymentPark
-                    onPrintCustomerReceipt={onPrintCustomerReceipt}
+                    onPrintParkedOrderReceipts={onPrintParkedOrderReceipts}
                     paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                     paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                     onContinueToNextOrder={onContinueToNextOrder}
@@ -276,7 +278,7 @@ const PaymentAccepted = (props: {
         onContinueToNextOrder,
         onContinueToNextPayment,
     } = props;
-    const { paidSoFar, subTotal } = useCart();
+    const { paidSoFar, subTotal, buzzerNumber } = useCart();
 
     const totalRemaining = subTotal - paidSoFar;
     const paymentComplete = paidSoFar >= subTotal;
@@ -286,8 +288,17 @@ const PaymentAccepted = (props: {
             {paymentComplete ? (
                 <>
                     <div className="h2 mb-6">Transaction Accepted!</div>
-                    <div className="mb-1">Your order number is</div>
-                    <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+                    {buzzerNumber !== null ? (
+                        <>
+                            <div className="mb-1">Your buzzer number is</div>
+                            <div className="order-number h1">{buzzerNumber}</div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="mb-1">Your order number is</div>
+                            <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+                        </>
+                    )}
                     <PreparationTime />
                     <div className="separator-6 mb-6"></div>
                     <PaymentModalFooter
@@ -344,13 +355,23 @@ const PaymentPayLater = (props: {
     onContinueToNextOrder: () => void;
 }) => {
     const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { buzzerNumber } = useCart();
 
     return (
         <>
             <div className="all-done h1 mb-4">All Done!</div>
             <div className="h2 mb-6">Please pay later at the counter.</div>
-            <div className="mb-1">Your order number is</div>
-            <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+            {buzzerNumber !== null ? (
+                <>
+                    <div className="mb-1">Your buzzer number is</div>
+                    <div className="order-number h1">{buzzerNumber}</div>
+                </>
+            ) : (
+                <>
+                    <div className="mb-1">Your order number is</div>
+                    <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+                </>
+            )}
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -363,21 +384,22 @@ const PaymentPayLater = (props: {
 };
 
 const PaymentPark = (props: {
-    onPrintCustomerReceipt: () => void;
+    onPrintParkedOrderReceipts: () => void;
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
 }) => {
-    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { onPrintParkedOrderReceipts, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
 
     return (
         <>
             <div className="h2 mb-6">This order has been parked for now.</div>
             <div className="mb-1">Reference order number is</div>
             <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
-            <div className="separator-6 mb-6"></div>
+            <div className="separator-2 mb-2"></div>
+            <AskToPrintParkedOrderReceipts onPrinterParkedOrderReceipts={onPrintParkedOrderReceipts} />
+            <div className="separator-2 mb-2"></div>
             <PaymentModalFooter
-                onPrintCustomerReceipt={onPrintCustomerReceipt}
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                 onContinueToNextOrder={onContinueToNextOrder}
             />
@@ -393,13 +415,23 @@ const PaymentCashPayment = (props: {
     onContinueToNextOrder: () => void;
 }) => {
     const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { buzzerNumber } = useCart();
 
     return (
         <>
             <div className="all-done h1 mb-4">All Done!</div>
             <div className="h2 mb-6">Please pay cash at the counter.</div>
-            <div className="mb-1">Your order number is</div>
-            <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+            {buzzerNumber !== null ? (
+                <>
+                    <div className="mb-1">Your buzzer number is</div>
+                    <div className="order-number h1">{buzzerNumber}</div>
+                </>
+            ) : (
+                <>
+                    <div className="mb-1">Your order number is</div>
+                    <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+                </>
+            )}
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -425,14 +457,24 @@ const PaymentCashPaymentPOS = (props: {
         paymentOutcomeApprovedRedirectTimeLeft,
         onContinueToNextOrder,
     } = props;
+    const { buzzerNumber } = useCart();
 
     return (
         <>
             <div className="all-done h1 mb-4">All Done!</div>
             <div className="h2 mb-6">Please give correct change.</div>
             <div className="h1 mb-6">Change: ${convertCentsToDollars(cashTransactionChangeAmount || 0)}</div>
-            <div className="mb-1">Your order number is</div>
-            <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+            {buzzerNumber !== null ? (
+                <>
+                    <div className="mb-1">Your buzzer number is</div>
+                    <div className="order-number h1">{buzzerNumber}</div>
+                </>
+            ) : (
+                <>
+                    <div className="mb-1">Your order number is</div>
+                    <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+                </>
+            )}
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -451,12 +493,22 @@ const PaymentUberEatsPayment = (props: {
     onContinueToNextOrder: () => void;
 }) => {
     const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { buzzerNumber } = useCart();
 
     return (
         <>
             <div className="all-done h1 mb-4">All Done!</div>
-            <div className="mb-1">Your order number is</div>
-            <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+            {buzzerNumber !== null ? (
+                <>
+                    <div className="mb-1">Your buzzer number is</div>
+                    <div className="order-number h1">{buzzerNumber}</div>
+                </>
+            ) : (
+                <>
+                    <div className="mb-1">Your order number is</div>
+                    <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+                </>
+            )}
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -475,12 +527,22 @@ const PaymentMenulogPayment = (props: {
     onContinueToNextOrder: () => void;
 }) => {
     const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { buzzerNumber } = useCart();
 
     return (
         <>
             <div className="all-done h1 mb-4">All Done!</div>
-            <div className="mb-1">Your order number is</div>
-            <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+            {buzzerNumber !== null ? (
+                <>
+                    <div className="mb-1">Your buzzer number is</div>
+                    <div className="order-number h1">{buzzerNumber}</div>
+                </>
+            ) : (
+                <>
+                    <div className="mb-1">Your order number is</div>
+                    <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+                </>
+            )}
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -693,6 +755,34 @@ const PreparationTime = () => {
     );
 };
 
+const AskToPrintParkedOrderReceipts = (props: { onPrinterParkedOrderReceipts: () => void }) => {
+    const { onPrinterParkedOrderReceipts } = props;
+
+    const [hide, setHide] = useState(false);
+
+    if (hide) return <></>;
+
+    return (
+        <>
+            <div className="ask-to-print-parked-order-receipts">
+                <div className="h1 mb-6 text-center would-you-like-parked-order-receipts">Would you like to print order receipts?</div>
+                <Button
+                    className="print-parked-receipts-button"
+                    onClick={() => {
+                        onPrinterParkedOrderReceipts();
+                        setHide(true);
+                    }}
+                >
+                    Yes, print!
+                </Button>
+                <Button className="print-parked-receipts-button-no mt-2" onClick={() => setHide(true)}>
+                    No
+                </Button>
+            </div>
+        </>
+    );
+};
+
 const AskToPrintCustomerReceipt = (props: { onPrintCustomerReceipt: () => void }) => {
     const { onPrintCustomerReceipt } = props;
 
@@ -730,7 +820,7 @@ const AskToPrintCustomerReceipt = (props: { onPrintCustomerReceipt: () => void }
 };
 
 const PaymentModalFooter = (props: {
-    onPrintCustomerReceipt: () => void;
+    onPrintCustomerReceipt?: () => void;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
 }) => {
@@ -740,13 +830,15 @@ const PaymentModalFooter = (props: {
     const showTakeYourReceiptSign = useRef(false);
 
     const printCustomerReceipt = () => {
-        onPrintCustomerReceipt();
+        onPrintCustomerReceipt && onPrintCustomerReceipt();
         showTakeYourReceiptSign.current = true;
     };
 
     return (
         <>
-            {register && register.askToPrintCustomerReceipt && <AskToPrintCustomerReceipt onPrintCustomerReceipt={printCustomerReceipt} />}
+            {onPrintCustomerReceipt && register && register.askToPrintCustomerReceipt && (
+                <AskToPrintCustomerReceipt onPrintCustomerReceipt={printCustomerReceipt} />
+            )}
             <div className="redirecting-in-text">
                 {isPOS && (
                     <Button className="mb-2" onClick={onContinueToNextOrder}>

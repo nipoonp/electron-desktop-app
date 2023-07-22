@@ -189,6 +189,25 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     }, [total, promotion, restaurant]);
 
     useEffect(() => {
+        if (userAppliedPromotionCode) return; //Only apply restaurant promos if user has not applied one themselves
+
+        const availPromotions: IGET_RESTAURANT_PROMOTION[] = [];
+
+        restaurant &&
+            restaurant.promotions.items.forEach((promotion) => {
+                if (!promotion.autoApply) return;
+
+                const status = checkIfPromotionValid(promotion);
+
+                if (status !== CheckIfPromotionValidResponse.VALID) return;
+
+                availPromotions.push(promotion);
+            });
+
+        _setAvailablePromotions(availPromotions);
+    }, [restaurant, userAppliedPromotionCode]);
+
+    useEffect(() => {
         if (!products) return;
 
         processPromotions(products);
@@ -358,7 +377,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                             m.productModifiers.forEach((productModifier) => {
                                 productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
                                     orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
-                                        const changedQuantity = orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
+                                        const changedQuantity =
+                                            orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
 
                                         if (changedQuantity > 0) {
                                             price += orderedProductModifierModifier.price * changedQuantity;

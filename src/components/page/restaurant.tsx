@@ -72,6 +72,20 @@ export default () => {
     const shakeButtonDurationSeconds = 5;
     const userOnPageDuration: React.MutableRefObject<number> = useRef(1);
 
+    const inputRef = useRef<HTMLInputElement | null>(null);
+
+    useEffect(() => {
+        const focusTimer = setInterval(() => {
+            if (inputRef.current && document.activeElement !== inputRef.current) {
+                inputRef.current.focus();
+            }
+        }, 1000);
+
+        return () => {
+            clearInterval(focusTimer);
+        };
+    }, []);
+
     useEffect(() => {
         const ticker = setInterval(() => {
             if (userOnPageDuration.current % startShakeAfterSeconds == 0) {
@@ -396,7 +410,12 @@ export default () => {
     }) => {
         const { isSelected, category, onCategorySelected } = props;
 
+        const isSoldOut = isItemSoldOut(category.soldOut, category.soldOutDate);
         const isAvailable = isItemAvailable(category.availability);
+
+        const isCategoryValid = !isSoldOut && isAvailable;
+
+        if (!isCategoryValid) return <></>;
 
         return (
             <div
@@ -500,13 +519,15 @@ export default () => {
         }
     };
 
-    const menuBarcodeSearchProduct = (
+    const menuSkuSearchProduct = (
         <>
-            <div className="category background-grey">
-                <Input
+            <div className="search-product-sku-code-wrapper">
+                {/* Could not use the Tabin Input component here. When we try pass the ref field it does not seem to work */}
+                <input
+                    ref={inputRef}
+                    type="text"
                     name="searchProductSKUCode"
                     value={searchProductSKUCode}
-                    autoFocus={true}
                     placeholder="123456789"
                     onChange={onChangeSearchProductSKUCode}
                     onKeyDown={onKeyDownSearchProductSKUCode}
@@ -629,7 +650,7 @@ export default () => {
                             <div className="categories-wrapper">
                                 {restaurant.logo && <RestaurantLogo image={restaurant.logo} />}
                                 {menuSearchProduct}
-                                {isPOS && menuBarcodeSearchProduct}
+                                {register.enableSkuScanner && menuSkuSearchProduct}
                                 {menuMostPopularCategory}
                                 {menuCategories}
                             </div>
