@@ -729,6 +729,8 @@ export const resizeBase64ImageToWidth = (base64Image: string, imageWidth: number
         const ctx = canvas.getContext("2d");
 
         const image = new Image();
+        image.crossOrigin = "*";
+
         image.src = base64Image;
 
         image.onload = async () => {
@@ -751,6 +753,8 @@ export const getBase64FromUrlImage = (url: string, imageWidth: number, mineType:
         const ctx = canvas.getContext("2d");
 
         const image = new Image();
+        image.crossOrigin = "*";
+
         image.src = url;
 
         image.onload = async () => {

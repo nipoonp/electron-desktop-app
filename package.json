@@ -78,7 +78,7 @@
         "extends": "react-app"
     },
     "devDependencies": {
-        "@types/node": "^20.4.3",
+        "@types/node": "^20.4.4",
         "concurrently": "^8.2.0",
         "electron": "^17.1.0",
         "electron-builder": "^24.4.0",
