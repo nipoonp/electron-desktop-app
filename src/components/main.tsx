@@ -1,5 +1,5 @@
 import { useEffect, lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router";
+import { Navigate, Route, Routes, useNavigate } from "react-router";
 import { HashRouter } from "react-router-dom";
 import Modal from "react-modal";
 import { Logger } from "aws-amplify";
@@ -144,6 +144,13 @@ export default () => {
 };
 
 const AppRoutes = () => {
+    const navigate = useNavigate();
+
+    // This is for electron, as it doesn't start at '/' route for some reason.
+    useEffect(() => {
+        navigate(beginOrderPath);
+    }, []);
+
     return (
         <>
             <Routes>
