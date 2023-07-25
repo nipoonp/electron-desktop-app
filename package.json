@@ -4,7 +4,6 @@
     "author": "Tabin",
     "version": "1.4.251",
     "repository": "https://github.com/zeal-ltd/electron-desktop-app",
-    "homepage": "https://github.com/zeal-ltd/electron-desktop-app",
     "main": "public/electron.ts",
     "dependencies": {
         "@apollo/client": "^3.7.17",
