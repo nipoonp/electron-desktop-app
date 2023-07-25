@@ -1,6 +1,5 @@
 import { useEffect, lazy, Suspense } from "react";
-import { Navigate, Route, Routes, useNavigate } from "react-router";
-import { HashRouter } from "react-router-dom";
+import { Navigate, useRoutes, BrowserRouter as HashRouter, useNavigate } from "react-router-dom";
 import Modal from "react-modal";
 import { Logger } from "aws-amplify";
 import { AlertProvider } from "../tabin/components/alert";
@@ -9,13 +8,13 @@ import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
 import { useAuth, AuthenticationStatus } from "../context/auth-context";
 import { useUser } from "../context/user-context";
 import { useRestaurant } from "../context/restaurant-context";
-import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { useRegister } from "../context/register-context";
 import { ITab } from "../model/model";
 import { FiDollarSign, FiLock, FiMenu } from "react-icons/fi";
 import RequireCustomerInformation from "./page/customerInformation";
 
 import "react-toastify/dist/ReactToastify.min.css";
+import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 
 const Login = lazy(() => import("./page/auth/login"));
 const Logout = lazy(() => import("./page/auth/logout"));
@@ -39,13 +38,6 @@ try {
     electron = window.require("electron");
     ipcRenderer = electron.ipcRenderer;
 } catch (e) {}
-
-// reset scroll position on change of route
-// https://stackoverflow.com/a/46868707/11460922
-
-// history.listen((location, action) => {
-//     window.scrollTo(0, 0);
-// });
 
 const logger = new Logger("Main");
 
@@ -131,7 +123,6 @@ export default () => {
     return (
         <>
             <AlertProvider>
-                {/* Cannot use BrowserRouter in electron. Should use HashRouter: https://github.com/remix-run/react-router/issues/6726 */}
                 <HashRouter>
                     <Suspense fallback={<FullScreenSpinner show={true} text="Loading page..." />}>
                         <AppRoutes />
@@ -146,48 +137,50 @@ export default () => {
 const AppRoutes = () => {
     const navigate = useNavigate();
 
-    // This is for electron, as it doesn't start at '/' route for some reason.
     useEffect(() => {
         navigate(beginOrderPath);
     }, []);
 
-    return (
-        <>
-            <Routes>
-                <Route path={loginPath} element={<Login />} />
-                <Route path={logoutPath} element={<Logout />} />
-                <Route path={restaurantListPath} element={<PrivateRoute element={<RestaurantList />} />} />
-                <Route path={registerListPath} element={<PrivateRoute element={<RegisterList />} />} />
-                <Route path={dashboardPath} element={<RestaurantRegisterPrivateRoute element={<Dashboard />} />} />
-                <Route path={configureNewEftposPath} element={<RestaurantRegisterPrivateRoute element={<ConfigureNewEftpos />} />} />
-                <Route path={beginOrderPath} element={<RestaurantRegisterPrivateRoute element={<BeginOrder />} />} />
-                <Route path={`${restaurantPath}/:restaurantId`} element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />}>
-                    <Route path=":selectedCategoryId" element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />}>
-                        <Route path=":selectedProductId" element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />} />
-                    </Route>
-                </Route>
-                <Route path={orderTypePath} element={<RestaurantRegisterPrivateRoute element={<OrderType />} />} />
-                <Route path={tableNumberPath} element={<RestaurantRegisterPrivateRoute element={<TableNumber />} />} />
-                <Route path={buzzerNumberPath} element={<RestaurantRegisterPrivateRoute element={<BuzzerNumber />} />} />
-                <Route path={customerInformationPath} element={<RestaurantRegisterPrivateRoute element={<RequireCustomerInformation />} />} />
-                <Route path={paymentMethodPath} element={<RestaurantRegisterPrivateRoute element={<PaymentMethod />} />} />
-                <Route path={checkoutPath} element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}>
-                    <Route path=":autoClickCompleteOrderOnLoad" element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}></Route>
-                </Route>
-                <Route path={unauthorizedPath} element={<Unauthorised />} />
-                <Route path="*" element={<NoMatch />} />
-            </Routes>
-        </>
-    );
+    const routes = useRoutes([
+        { path: loginPath, element: <Login /> },
+        { path: logoutPath, element: <Logout /> },
+        { path: restaurantListPath, element: <PrivateRoute element={<RestaurantList />} /> },
+        { path: registerListPath, element: <PrivateRoute element={<RegisterList />} /> },
+        { path: dashboardPath, element: <RestaurantRegisterPrivateRoute element={<Dashboard />} /> },
+        { path: configureNewEftposPath, element: <RestaurantRegisterPrivateRoute element={<ConfigureNewEftpos />} /> },
+        { path: beginOrderPath, element: <RestaurantRegisterPrivateRoute element={<BeginOrder />} /> },
+        {
+            path: `${restaurantPath}/:restaurantId`,
+            element: <RestaurantRegisterPrivateRoute element={<Restaurant />} />,
+            children: [
+                {
+                    path: ":selectedCategoryId",
+                    element: <RestaurantRegisterPrivateRoute element={<Restaurant />} />,
+                    children: [{ path: ":selectedProductId", element: <RestaurantRegisterPrivateRoute element={<Restaurant />} /> }],
+                },
+            ],
+        },
+        { path: orderTypePath, element: <RestaurantRegisterPrivateRoute element={<OrderType />} /> },
+        { path: tableNumberPath, element: <RestaurantRegisterPrivateRoute element={<TableNumber />} /> },
+        { path: buzzerNumberPath, element: <RestaurantRegisterPrivateRoute element={<BuzzerNumber />} /> },
+        { path: customerInformationPath, element: <RestaurantRegisterPrivateRoute element={<RequireCustomerInformation />} /> },
+        { path: paymentMethodPath, element: <RestaurantRegisterPrivateRoute element={<PaymentMethod />} /> },
+        { path: checkoutPath, element: <RestaurantRegisterPrivateRoute element={<Checkout />} /> },
+        { path: "*", element: <NoMatch /> },
+        { path: unauthorizedPath, element: <Unauthorised /> },
+    ]);
+
+    return routes;
 };
 
-export const AdminOnlyRoute = ({ element }) => {
+const AdminOnlyRoute = ({ element }) => {
     const { isAdmin, status } = useAuth();
     const { isLoading } = useUser();
 
     if (status !== AuthenticationStatus.SignedIn) return <Navigate to={loginPath} />; // Handle other authentication statuses
-    if (isLoading) return <FullScreenSpinner show={true} text="Loading user" />; // Assumed signed in from this point onwards
     if (!isAdmin) return <Navigate to={unauthorizedPath} replace />; // not authorized
+
+    if (isLoading) return <FullScreenSpinner show={true} text="Loading user" />; // Assumed signed in from this point onwards
 
     return element; // Route to original path
 };
@@ -196,9 +189,10 @@ const PrivateRoute = ({ element }) => {
     const { status } = useAuth();
     const { user, isLoading, error } = useUser();
 
-    if (status !== AuthenticationStatus.SignedIn) return <Navigate to={loginPath} />; // Handle other authentication statuses
+    if (status !== AuthenticationStatus.SignedIn) return <Navigate to={loginPath} />;
+
     if (error) return <div>There was an error loading the user. Please try restart the application.</div>;
-    if (isLoading) return <FullScreenSpinner show={true} text="Loading user..." />; // Assumed signed in from this point onwards
+    if (isLoading) return <FullScreenSpinner show={true} text="Loading user..." />;
     if (!user) throw "Signed in but no user found in database";
 
     return element; // Route to original path
@@ -208,25 +202,13 @@ const RestaurantRegisterPrivateRoute = ({ element }) => {
     const { user } = useUser();
     const { restaurant, isLoading, isError } = useRestaurant();
 
+    const storedRegisterKey = localStorage.getItem("registerKey");
+    const matchingRegister = restaurant?.registers.items.find((r) => storedRegisterKey === r.id);
+
     if (user && isLoading) return <FullScreenSpinner show={true} text="Loading restaurant..." />;
     if (isError) return <div>There was an error loading your restaurant.</div>;
     if (!restaurant) return <Navigate to={restaurantListPath} />;
-
-    //----------------------------------------------------------------------------
-    //TODO: Fix this later, should be coming in from the kiosk
-    const storedRegisterKey = localStorage.getItem("registerKey");
-    let matchingRegister: IGET_RESTAURANT_REGISTER | null = null;
-
-    restaurant &&
-        restaurant.registers.items.forEach((r) => {
-            if (storedRegisterKey == r.id) {
-                matchingRegister = r;
-            }
-        });
-    //----------------------------------------------------------------------------
-
     if (!matchingRegister) return <Navigate to={registerListPath} />;
 
-    // Route to original path
     return element;
 };
