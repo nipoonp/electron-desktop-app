@@ -103,7 +103,14 @@ const VerifoneContext = createContext<ContextProps>({
             console.log("");
         });
     },
-    refetchTransaction: (amount: number, ipAddress: string, portNumber: string, restaurantId: string, transactionId: string, existingLogs: string) => {
+    refetchTransaction: (
+        amount: number,
+        ipAddress: string,
+        portNumber: string,
+        restaurantId: string,
+        transactionId: string,
+        existingLogs: string
+    ) => {
         return new Promise(() => {
             console.log("");
         });
@@ -392,6 +399,39 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                         message: errorMessage,
                     });
                     return;
+                }
+
+                // Configure Printing -------------------------------------------------------------------------------------------------------------------------------- //
+                ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
+                addToLogs(`BROWSER_DATA: ${VMT.ConfigurePrinting},ON`);
+
+                const printingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
+                while (
+                    eftposData.current.type != VMT.ConfigurePrintingResponse // What if this is OFF?
+                ) {
+                    const errorMessage = checkForErrors();
+                    if (errorMessage) {
+                        reject({
+                            transactionId: null,
+                            message: errorMessage,
+                        });
+                        return;
+                    }
+
+                    addToLogs("Waiting to receive Configure Printing Response (CP,ON)...");
+
+                    await delay(interval);
+
+                    if (!(Number(new Date()) < printingTimeoutEndTime)) {
+                        const disconnectTimedOut = await disconnectEftpos();
+                        if (disconnectTimedOut) {
+                            reject({ transactionId: null, message: "There was an issue disconnecting to the Eftpos." });
+                            return;
+                        }
+
+                        reject({ transactionId: null, message: "There was an issue configuring Eftpos Printing." });
+                        return;
+                    }
                 }
             }
 
@@ -721,7 +761,15 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             sessionStorage.setItem("verifoneEftposTransactionInProgress", "true");
 
             try {
-                const res = await createOrRefetchTransactionWrapper(amount, ipAddress, portNumber, restaurantId, delayed, transactionId, existingLogs);
+                const res = await createOrRefetchTransactionWrapper(
+                    amount,
+                    ipAddress,
+                    portNumber,
+                    restaurantId,
+                    delayed,
+                    transactionId,
+                    existingLogs
+                );
 
                 resolve(res);
             } catch (e) {
