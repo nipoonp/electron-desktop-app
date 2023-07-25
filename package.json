@@ -30,7 +30,7 @@
         "electron-updater": "^6.1.1",
         "graphql": "^16.7.1",
         "kioskboard": "^2.3.0",
-        "node-sass": "^8.0.0",
+        "node-sass": "^7.0.0",
         "node-thermal-printer": "^4.2.1",
         "npm": "^9.8.1",
         "papaparse": "^5.4.1",
