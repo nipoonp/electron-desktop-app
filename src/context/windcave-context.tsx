@@ -135,7 +135,7 @@ const windcaveResponseCodeMessages = {
 
 // --- FOR PROD ---
 const ACTION: string = "doScrHIT";
-const BASE_URL: string = "https://sec.windcave.com/pxmi3/pos.aspx";
+const BASE_URL: string = "https://sec.windcave.com/hit/pos.aspx";
 const CURRENCY: string = "NZD";
 
 // --- FOR DEV ---
@@ -396,7 +396,13 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         });
     };
 
-    const pollForOutcome = (stationId: string, user: string, key: string, txnRef: string, action: string = ACTION): Promise<IEftposTransactionOutcome> => {
+    const pollForOutcome = (
+        stationId: string,
+        user: string,
+        key: string,
+        txnRef: string,
+        action: string = ACTION
+    ): Promise<IEftposTransactionOutcome> => {
         const interval = 2 * 1000; // 2 seconds
         const timeout = 30 * 60 * 1000; // 10 minutes
 
