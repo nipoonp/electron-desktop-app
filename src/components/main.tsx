@@ -1,5 +1,5 @@
 import { useEffect, lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router";
+import { Navigate, Route, Routes, useNavigate } from "react-router";
 import { HashRouter } from "react-router-dom";
 import Modal from "react-modal";
 import { Logger } from "aws-amplify";
@@ -58,7 +58,7 @@ export const restaurantListPath = "/restaurant_list";
 export const registerListPath = "/register_list";
 export const dashboardPath = "/dashboard";
 export const configureNewEftposPath = "/configure_new_eftpos";
-export const beginOrderPath = "/";
+export const beginOrderPath = "/begin_order";
 export const orderTypePath = "/order_type";
 export const tableNumberPath = "/table_number";
 export const buzzerNumberPath = "/buzzer_number";
@@ -144,6 +144,12 @@ export default () => {
 };
 
 const AppRoutes = () => {
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        navigate(beginOrderPath);
+    }, []);
+
     return (
         <>
             <Routes>
