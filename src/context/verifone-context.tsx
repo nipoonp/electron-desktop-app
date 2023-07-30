@@ -3,11 +3,12 @@ import { useEffect, createContext, useContext, useRef } from "react";
 import { Logger } from "aws-amplify";
 import { delay, getVerifoneSocketErrorMessage, getVerifoneTimeBasedTransactionId } from "../model/util";
 import { toLocalISOString } from "../util/util";
-import { EEftposTransactionOutcome, IEftposTransactionOutcome, EVerifoneTransactionOutcome } from "../model/model";
+import { EEftposTransactionOutcome, IEftposTransactionOutcome, EVerifoneTransactionOutcome, EEftposProvider } from "../model/model";
 import { useErrorLogging } from "./errorLogging-context";
 import { useRegister } from "./register-context";
 import { format } from "date-fns";
 import { useRestaurant } from "./restaurant-context";
+import { toast } from "../tabin/components/toast";
 
 let electron: any;
 let ipcRenderer: any;
@@ -122,7 +123,24 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         logs.current = initialLogs;
     };
 
-    useEffect(() => {}, [restaurant, register]);
+    useEffect(() => {
+        if (!restaurant || !register) return;
+        if (register.eftposProvider !== EEftposProvider.VERIFONE) return;
+
+        const newAttemptingEndpoint = `${register.eftposIpAddress}:${register.eftposPortNumber}`;
+
+        if (connectedEndpoint.current !== newAttemptingEndpoint) {
+            (async () => {
+                try {
+                    await performConnectToEftpos(register.eftposIpAddress, register.eftposPortNumber);
+
+                    toast.success(`Connected to ${register.eftposIpAddress}:${register.eftposPortNumber}`);
+                } catch {
+                    toast.error(`Failed to connect to ${register.eftposIpAddress}:${register.eftposPortNumber}`);
+                }
+            })();
+        }
+    }, [restaurant, register]);
 
     useEffect(() => {
         ipcRenderer &&
@@ -272,6 +290,66 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         }
     };
 
+    const performConnectToEftpos = async (ipAddress: string, portNumber: string) => {
+        return new Promise(async (resolve, reject) => {
+            attemptingEndpoint.current = `${ipAddress}:${portNumber}`;
+
+            if (connectedEndpoint.current !== attemptingEndpoint.current) {
+                // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
+                const disconnectTimedOut = await disconnectEftpos();
+                if (disconnectTimedOut) {
+                    reject("There was an issue disconnecting to the Eftpos.");
+                    return;
+                }
+
+                // Connect To EFTPOS -------------------------------------------------------------------------------------------------------------------------------- //
+                const connectTimedOut = await connectToEftpos(ipAddress, portNumber);
+                if (connectTimedOut) {
+                    reject("There was an issue connecting to the Eftpos.");
+                    return;
+                }
+
+                const errorMessage = checkForErrors();
+                if (errorMessage) {
+                    reject(errorMessage);
+                    return;
+                }
+
+                // Configure Printing -------------------------------------------------------------------------------------------------------------------------------- //
+                ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
+                addToLogs(`BROWSER_DATA: ${VMT.ConfigurePrinting},ON`);
+
+                const printingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
+                while (
+                    eftposData.current.type != VMT.ConfigurePrintingResponse // What if this is OFF?
+                ) {
+                    const errorMessage = checkForErrors();
+                    if (errorMessage) {
+                        reject(errorMessage);
+                        return;
+                    }
+
+                    addToLogs("Waiting to receive Configure Printing Response (CP,ON)...");
+
+                    await delay(interval);
+
+                    if (!(Number(new Date()) < printingTimeoutEndTime)) {
+                        const disconnectTimedOut = await disconnectEftpos();
+                        if (disconnectTimedOut) {
+                            reject("There was an issue disconnecting to the Eftpos.");
+                            return;
+                        }
+
+                        reject("There was an issue configuring Eftpos Printing.");
+                        return;
+                    }
+                }
+            }
+
+            resolve(attemptingEndpoint.current);
+        });
+    };
+
     const createOrRefetchTransaction = (amount: number, ipAddress: string, portNumber: string): Promise<IEftposTransactionOutcome> => {
         return new Promise(async (resolve, reject) => {
             const storedUnresolvedVerifoneTransactionId = localStorage.getItem("unresolvedVerifoneTransactionId");
@@ -286,69 +364,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             const transactionId = getVerifoneTimeBasedTransactionId();
             const merchantId = 0;
             let iSO8583ResponseCode;
-
-            attemptingEndpoint.current = `${ipAddress}:${portNumber}`;
-
-            if (connectedEndpoint.current !== attemptingEndpoint.current) {
-                // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
-                const disconnectTimedOut = await disconnectEftpos();
-                if (disconnectTimedOut) {
-                    reject({ transactionId: transactionId, message: "There was an issue disconnecting to the Eftpos." });
-                    return;
-                }
-
-                // Connect To EFTPOS -------------------------------------------------------------------------------------------------------------------------------- //
-                const connectTimedOut = await connectToEftpos(ipAddress, portNumber);
-                if (connectTimedOut) {
-                    reject({
-                        transactionId: null, //Set value only after perform transaction command has actually been sent
-                        message: "There was an issue connecting to the Eftpos.",
-                    });
-                    return;
-                }
-
-                const errorMessage = checkForErrors();
-                if (errorMessage) {
-                    reject({
-                        transactionId: null,
-                        message: errorMessage,
-                    });
-                    return;
-                }
-
-                // Configure Printing -------------------------------------------------------------------------------------------------------------------------------- //
-                ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
-                addToLogs(`BROWSER_DATA: ${VMT.ConfigurePrinting},ON`);
-
-                const printingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
-                while (
-                    eftposData.current.type != VMT.ConfigurePrintingResponse // What if this is OFF?
-                ) {
-                    const errorMessage = checkForErrors();
-                    if (errorMessage) {
-                        reject({
-                            transactionId: null,
-                            message: errorMessage,
-                        });
-                        return;
-                    }
-
-                    addToLogs("Waiting to receive Configure Printing Response (CP,ON)...");
-
-                    await delay(interval);
-
-                    if (!(Number(new Date()) < printingTimeoutEndTime)) {
-                        const disconnectTimedOut = await disconnectEftpos();
-                        if (disconnectTimedOut) {
-                            reject({ transactionId: null, message: "There was an issue disconnecting to the Eftpos." });
-                            return;
-                        }
-
-                        reject({ transactionId: null, message: "There was an issue configuring Eftpos Printing." });
-                        return;
-                    }
-                }
-            }
 
             // Create A Transaction -------------------------------------------------------------------------------------------------------------------------------- //
             ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.Purchase},${transactionId},${merchantId},${amount}`);
