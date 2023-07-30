@@ -274,6 +274,10 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
     const createOrRefetchTransaction = (amount: number, ipAddress: string, portNumber: string): Promise<IEftposTransactionOutcome> => {
         return new Promise(async (resolve, reject) => {
+            const storedUnresolvedVerifoneTransactionId = localStorage.getItem("unresolvedVerifoneTransactionId");
+
+            if (storedUnresolvedVerifoneTransactionId) return;
+
             // Create Variables -------------------------------------------------------------------------------------------------------------------------------- //
             const endTime = Number(new Date()) + timeout;
             const transactionId = getVerifoneTimeBasedTransactionId();
@@ -346,7 +350,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             // Create A Transaction -------------------------------------------------------------------------------------------------------------------------------- //
             ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.Purchase},${transactionId},${merchantId},${amount}`);
             addToLogs(`BROWSER_DATA: ${VMT.Purchase},${transactionId},${merchantId},${amount}`);
-            // localStorage.setItem("verifoneTransactionId", transactionId.toString());
+            localStorage.setItem("unresolvedVerifoneTransactionId", transactionId.toString());
             // localStorage.setItem("verifoneMerchantId", merchantId.toString());
 
             // Poll For Result -------------------------------------------------------------------------------------------------------------------------------- //
@@ -397,7 +401,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     iSO8583ResponseCode = verifonePurchaseResultArray[2];
 
                     if (iSO8583ResponseCode != "??") {
-                        // localStorage.removeItem("verifoneTransactionId");
+                        localStorage.removeItem("unresolvedVerifoneTransactionId");
                         // localStorage.removeItem("verifoneMerchantId");
                         break;
                     }
