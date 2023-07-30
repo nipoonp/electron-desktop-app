@@ -104,6 +104,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const interval = 1 * 1500; // 1.5 seconds
     const timeout = 3 * 60 * 1000; // 3 minutes
     const noResponseTimeout = 30 * 1000; // 30 seconds
+    const reconnectEftposTimeout = 20 * 1000; //20 seconds
 
     const lastMessageReceived = useRef<number>(initialLastMessageReceived);
     const eftposError = useRef<string>(initialEftposError);
@@ -127,19 +128,25 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         if (!restaurant || !register) return;
         if (register.eftposProvider !== EEftposProvider.VERIFONE) return;
 
-        const newAttemptingEndpoint = `${register.eftposIpAddress}:${register.eftposPortNumber}`;
+        const timerId = setInterval(async () => {
+            const newAttemptingEndpoint = `${register.eftposIpAddress}:${register.eftposPortNumber}`;
 
-        if (connectedEndpoint.current !== newAttemptingEndpoint) {
-            (async () => {
-                try {
-                    await performConnectToEftpos(register.eftposIpAddress, register.eftposPortNumber);
+            if (connectedEndpoint.current !== newAttemptingEndpoint) {
+                (async () => {
+                    try {
+                        await performConnectToEftpos(register.eftposIpAddress, register.eftposPortNumber);
 
-                    toast.success(`Connected to ${newAttemptingEndpoint}`);
-                } catch {
-                    toast.error(`Failed to connect to ${newAttemptingEndpoint}`);
-                }
-            })();
-        }
+                        toast.success(`Connected to ${newAttemptingEndpoint}`);
+                    } catch {
+                        toast.error(`Failed to connect to ${newAttemptingEndpoint}`);
+                    }
+                })();
+            }
+        }, reconnectEftposTimeout);
+
+        return () => {
+            clearInterval(timerId);
+        };
     }, [register]);
 
     useEffect(() => {
@@ -189,18 +196,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             ipcRenderer.on("EFTPOS_CLOSE", (event: any, arg: any) => {
                 console.log("EFTPOS_CLOSE:", arg);
                 addToLogs(`EFTPOS_CLOSE: ${arg}`);
-
-                (async () => {
-                    if (!connectedEndpoint.current) return;
-
-                    try {
-                        await performConnectToEftpos(connectedEndpoint.current.split(":")[0], connectedEndpoint.current.split(":")[1]);
-
-                        toast.success(`Connected to ${connectedEndpoint.current}`);
-                    } catch {
-                        toast.error(`Failed to connect to ${connectedEndpoint.current}`);
-                    }
-                })();
 
                 connectedEndpoint.current = null;
             });
