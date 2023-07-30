@@ -276,7 +276,10 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         return new Promise(async (resolve, reject) => {
             const storedUnresolvedVerifoneTransactionId = localStorage.getItem("unresolvedVerifoneTransactionId");
 
-            if (storedUnresolvedVerifoneTransactionId) return;
+            if (storedUnresolvedVerifoneTransactionId) {
+                reject({ transactionId: storedUnresolvedVerifoneTransactionId, message: "There is an unresolved verifone transaction." });
+                return;
+            }
 
             // Create Variables -------------------------------------------------------------------------------------------------------------------------------- //
             const endTime = Number(new Date()) + timeout;
