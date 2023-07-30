@@ -134,9 +134,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 try {
                     await performConnectToEftpos(register.eftposIpAddress, register.eftposPortNumber);
 
-                    toast.success(`Connected to ${register.eftposIpAddress}:${register.eftposPortNumber}`);
+                    toast.success(`Connected to ${newAttemptingEndpoint}`);
                 } catch {
-                    toast.error(`Failed to connect to ${register.eftposIpAddress}:${register.eftposPortNumber}`);
+                    toast.error(`Failed to connect to ${newAttemptingEndpoint}`);
                 }
             })();
         }
@@ -179,7 +179,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
         ipcRenderer &&
             ipcRenderer.on("EFTPOS_ERROR", (event: any, arg: any) => {
-                console.log("EFTPOS_ERROR:", arg);
+                console.error("EFTPOS_ERROR:", arg);
                 addToLogs(`EFTPOS_ERROR: ${arg}`);
 
                 eftposError.current = arg;
@@ -189,6 +189,18 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             ipcRenderer.on("EFTPOS_CLOSE", (event: any, arg: any) => {
                 console.log("EFTPOS_CLOSE:", arg);
                 addToLogs(`EFTPOS_CLOSE: ${arg}`);
+
+                (async () => {
+                    if (!connectedEndpoint.current) return;
+
+                    try {
+                        await performConnectToEftpos(connectedEndpoint.current.split(":")[0], connectedEndpoint.current.split(":")[1]);
+
+                        toast.success(`Connected to ${connectedEndpoint.current}`);
+                    } catch {
+                        toast.error(`Failed to connect to ${connectedEndpoint.current}`);
+                    }
+                })();
 
                 connectedEndpoint.current = null;
             });
