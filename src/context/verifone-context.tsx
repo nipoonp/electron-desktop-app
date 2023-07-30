@@ -149,7 +149,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         return () => {
             clearInterval(timerId);
         };
-    }, [register, connectedEndpoint]);
+    }, [register]);
 
     useEffect(() => {
         ipcRenderer &&
