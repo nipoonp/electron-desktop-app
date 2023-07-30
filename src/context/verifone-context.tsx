@@ -131,6 +131,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         const timerId = setInterval(async () => {
             const newAttemptingEndpoint = `${register.eftposIpAddress}:${register.eftposPortNumber}`;
 
+            console.log(`Reattmpting to connect to Verifone Eftpos, Current:${connectedEndpoint.current} New:${newAttemptingEndpoint}`);
+
             if (connectedEndpoint.current !== newAttemptingEndpoint) {
                 (async () => {
                     try {
