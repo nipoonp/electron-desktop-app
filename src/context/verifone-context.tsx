@@ -140,7 +140,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 }
             })();
         }
-    }, [restaurant, register]);
+    }, [register]);
 
     useEffect(() => {
         ipcRenderer &&
