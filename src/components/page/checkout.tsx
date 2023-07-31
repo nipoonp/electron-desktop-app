@@ -152,7 +152,7 @@ export const Checkout = () => {
 
     const [paymentModalState, setPaymentModalState] = useState<EPaymentModalState>(EPaymentModalState.None);
 
-    const [eftposTransactionDelayed, setEftposTransactionDelayed] = useState<boolean>(false);
+    const [eftposTransactionProcessMessage, setEftposTransactionProcessMessage] = useState<string | null>(null);
     const [eftposTransactionOutcome, setEftposTransactionOutcome] = useState<IEftposTransactionOutcome | null>(null);
     const [cashTransactionChangeAmount, setCashTransactionChangeAmount] = useState<number | null>(null);
 
@@ -780,7 +780,7 @@ export const Checkout = () => {
                 const delayed = (outcome: IEftposTransactionOutcome) => {
                     if (!delayedShown) {
                         delayedShown = true;
-                        setEftposTransactionDelayed(true);
+                        setEftposTransactionProcessMessage("This transaction is delayed. Please wait...");
                     }
                 };
 
@@ -796,9 +796,15 @@ export const Checkout = () => {
                 );
                 outcome = await windcavePollForOutcome(register.windcaveStationId, register.windcaveStationUser, register.windcaveStationKey, txnRef);
             } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
-                const delayed = () => setEftposTransactionDelayed(true);
+                const setEftposMessage = (message: string) => setEftposTransactionProcessMessage(message);
 
-                outcome = await verifoneCreateTransaction(amount, register.eftposIpAddress, register.eftposPortNumber, restaurant.id, delayed);
+                outcome = await verifoneCreateTransaction(
+                    amount,
+                    register.eftposIpAddress,
+                    register.eftposPortNumber,
+                    restaurant.id,
+                    setEftposMessage
+                );
             }
 
             if (!outcome) throw "Invalid Eftpos Transaction outcome.";
@@ -812,7 +818,7 @@ export const Checkout = () => {
                 eftposReceipt: null,
             };
         } finally {
-            setEftposTransactionDelayed(false);
+            setEftposTransactionProcessMessage(null);
         }
     };
 
@@ -873,7 +879,10 @@ export const Checkout = () => {
             } catch (e) {
                 setCreateOrderError(e);
             }
-        } else if (outcome.transactionOutcome === EEftposTransactionOutcome.Fail || outcome.transactionOutcome === EEftposTransactionOutcome.Delay) {
+        } else if (
+            outcome.transactionOutcome === EEftposTransactionOutcome.Fail ||
+            outcome.transactionOutcome === EEftposTransactionOutcome.ProcessMessage
+        ) {
             setPaymentModalState(EPaymentModalState.EftposResult);
         }
     };
@@ -1166,7 +1175,7 @@ export const Checkout = () => {
                         isOpen={showPaymentModal}
                         onClose={onClosePaymentModal}
                         paymentModalState={paymentModalState}
-                        eftposTransactionDelayed={eftposTransactionDelayed}
+                        eftposTransactionProcessMessage={eftposTransactionProcessMessage}
                         eftposTransactionOutcome={eftposTransactionOutcome}
                         cashTransactionChangeAmount={cashTransactionChangeAmount}
                         onPrintCustomerReceipt={() => createdOrder.current && onPrintCustomerReceipt(createdOrder.current)}
