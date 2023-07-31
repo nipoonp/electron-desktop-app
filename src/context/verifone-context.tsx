@@ -105,7 +105,6 @@ const VerifoneContext = createContext<ContextProps>({
 const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const { addVerifoneLog } = useErrorLogging();
     const { register, isPOS } = useRegister();
-    const { restaurant } = useRestaurant();
 
     const interval = 1 * 1500; // 1.5 seconds
     const timeout = 3 * 60 * 1000; // 3 minutes
@@ -371,17 +370,25 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         portNumber: string,
         setEftposTransactionProgressMessage: (message: string) => void
     ): Promise<IEftposTransactionOutcome> => {
-        return new Promise(async (resolve, reject) => {
-            if (!connectedEndpoint) {
-                setEftposTransactionProgressMessage("Waiting for eftpos to connect. Please wait...");
-                return;
-            }
+        // Create Variables -------------------------------------------------------------------------------------------------------------------------------- //
+        const endTime = Number(new Date()) + timeout;
+        const transactionId = getVerifoneTimeBasedTransactionId();
+        const merchantId = 0;
+        let iSO8583ResponseCode;
 
-            // Create Variables -------------------------------------------------------------------------------------------------------------------------------- //
-            const endTime = Number(new Date()) + timeout;
-            const transactionId = getVerifoneTimeBasedTransactionId();
-            const merchantId = 0;
-            let iSO8583ResponseCode;
+        return new Promise(async (resolve, reject) => {
+            const connectTimeoutEndTime = Number(new Date()) + noResponseTimeout;
+
+            while (!connectedEndpoint.current) {
+                await delay(interval);
+
+                console.log("Waiting for eftpos to connect. Please wait...");
+                setEftposTransactionProgressMessage("Waiting for eftpos to connect. Please wait...");
+
+                if (!(Number(new Date()) < connectTimeoutEndTime)) {
+                    reject({ transactionId: transactionId, message: "Failed to connect to the eftpos. Please try again..." });
+                }
+            }
 
             // Create A Transaction -------------------------------------------------------------------------------------------------------------------------------- //
             ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.Purchase},${transactionId},${merchantId},${amount}`);
