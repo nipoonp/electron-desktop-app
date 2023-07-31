@@ -796,7 +796,7 @@ export const Checkout = () => {
                 );
                 outcome = await windcavePollForOutcome(register.windcaveStationId, register.windcaveStationUser, register.windcaveStationKey, txnRef);
             } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
-                const setEftposMessage = (message: string) => setEftposTransactionProcessMessage(message);
+                const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
 
                 outcome = await verifoneCreateTransaction(
                     amount,
