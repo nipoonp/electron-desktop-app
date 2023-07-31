@@ -142,7 +142,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                         try {
                             await performConnectToEftpos(register.eftposIpAddress, register.eftposPortNumber);
 
-                            reconnectingEftposIntervalIsActive = false;
+                            setReconnectingEftposIntervalIsActive(false);
                             toast.success(`Connected to ${newAttemptingEndpoint}`);
                         } catch {
                             toast.error(`Failed to connect to ${newAttemptingEndpoint}`);
@@ -208,7 +208,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 addToLogs(`EFTPOS_CLOSE: ${arg}`);
 
                 connectedEndpoint.current = null;
-                reconnectingEftposIntervalIsActive.current = true;
+                setReconnectingEftposIntervalIsActive(true);
             });
 
         return () => {
