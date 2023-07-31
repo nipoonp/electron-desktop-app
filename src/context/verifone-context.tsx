@@ -157,7 +157,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         return () => {
             if (reconnectingEftposInterval.current) clearInterval(reconnectingEftposInterval.current);
         };
-    }, [register]);
+    }, [reconnectingEftposIntervalIsActive.current]);
 
     useEffect(() => {
         ipcRenderer &&
