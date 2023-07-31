@@ -1,4 +1,4 @@
-import { useEffect, createContext, useContext, useRef, useState } from "react";
+import { useEffect, createContext, useContext, useRef } from "react";
 
 import { Logger } from "aws-amplify";
 import { delay, getVerifoneSocketErrorMessage, getVerifoneTimeBasedTransactionId } from "../model/util";
@@ -115,9 +115,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const attemptingEndpoint = useRef<string | null>(initialAttemptingEndpoint);
     const connectedEndpoint = useRef<string | null>(initialConnectedEndpoint);
 
-    const [reconnectingEftposIntervalIsActive, setReconnectingEftposIntervalIsActive] = useState<boolean>(true);
-    const reconnectingEftposInterval = useRef<NodeJS.Timeout | null>(null);
-
     const resetVariables = () => {
         //Add new reset if new variables are added above.
         lastMessageReceived.current = initialLastMessageReceived;
@@ -128,36 +125,31 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     };
 
     useEffect(() => {
-        if (reconnectingEftposIntervalIsActive) {
-            reconnectingEftposInterval.current = setInterval(async () => {
-                if (!restaurant || !register) return;
-                if (register.eftposProvider !== EEftposProvider.VERIFONE) return;
+        const timerId = setInterval(async () => {
+            if (!register) return;
+            if (register.eftposProvider !== EEftposProvider.VERIFONE) return;
 
-                const newAttemptingEndpoint = `${register.eftposIpAddress}:${register.eftposPortNumber}`;
+            const newAttemptingEndpoint = `${register.eftposIpAddress}:${register.eftposPortNumber}`;
 
-                console.log(`Reattmpting to connect to Verifone Eftpos, Current:${connectedEndpoint.current} New:${newAttemptingEndpoint}`);
+            console.log(`Reattmpting to connect to Verifone Eftpos, Current:${connectedEndpoint.current} New:${newAttemptingEndpoint}`);
 
-                if (connectedEndpoint.current !== newAttemptingEndpoint) {
-                    (async () => {
-                        try {
-                            await performConnectToEftpos(register.eftposIpAddress, register.eftposPortNumber);
+            if (connectedEndpoint.current !== newAttemptingEndpoint) {
+                (async () => {
+                    try {
+                        await performConnectToEftpos(register.eftposIpAddress, register.eftposPortNumber);
 
-                            setReconnectingEftposIntervalIsActive(false);
-                            toast.success(`Connected to ${newAttemptingEndpoint}`);
-                        } catch {
-                            toast.error(`Failed to connect to ${newAttemptingEndpoint}`);
-                        }
-                    })();
-                }
-            }, reconnectEftposTimeout);
-        } else if (reconnectingEftposInterval.current) {
-            clearInterval(reconnectingEftposInterval.current);
-        }
+                        console.log(`Connected to ${newAttemptingEndpoint}`);
+                    } catch {
+                        console.error(`Failed to connect to ${newAttemptingEndpoint}`);
+                    }
+                })();
+            }
+        }, reconnectEftposTimeout);
 
         return () => {
-            if (reconnectingEftposInterval.current) clearInterval(reconnectingEftposInterval.current);
+            clearInterval(timerId);
         };
-    }, [reconnectingEftposIntervalIsActive]);
+    }, [register]);
 
     useEffect(() => {
         ipcRenderer &&
@@ -208,7 +200,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 addToLogs(`EFTPOS_CLOSE: ${arg}`);
 
                 connectedEndpoint.current = null;
-                setReconnectingEftposIntervalIsActive(true);
             });
 
         return () => {
