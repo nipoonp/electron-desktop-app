@@ -18,7 +18,7 @@ export const Verifone = () => {
         setShowSpinner(true);
 
         try {
-            const res: IEftposTransactionOutcome = await createTransaction(amount, ipAddress, portNumber, "TEST-CONFIGURE");
+            const res: IEftposTransactionOutcome = await createTransaction(amount, ipAddress, portNumber, "TEST-CONFIGURE", (message: string) => {});
 
             alert(res.message);
         } catch (errorMessage) {
