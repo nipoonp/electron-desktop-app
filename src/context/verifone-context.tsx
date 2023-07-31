@@ -384,6 +384,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         let iSO8583ResponseCode;
 
         return new Promise(async (resolve, reject) => {
+            // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
             const connectTimeoutEndTime = Number(new Date()) + noResponseTimeout;
 
             while (!connectedEndpoint.current) {
@@ -394,6 +395,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
                 if (!(Number(new Date()) < connectTimeoutEndTime)) {
                     reject({ transactionId: transactionId, message: "Failed to connect to the eftpos. Please try again..." });
+                    return;
                 }
             }
 
@@ -411,6 +413,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
             // Poll For Transaction Result -------------------------------------------------------------------------------------------------------------------------------- //
             while (true) {
+                // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
                 const connectTimeoutEndTime2 = Number(new Date()) + noResponseTimeout;
 
                 while (!connectedEndpoint.current) {
@@ -421,6 +424,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
                     if (!(Number(new Date()) < connectTimeoutEndTime2)) {
                         reject({ transactionId: transactionId, message: "Failed to connect to the eftpos. Please try again..." });
+                        return;
                     }
                 }
 
@@ -621,12 +625,12 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             }
 
             try {
-                const storedUnresolvedVerifoneTransactionId = localStorage.getItem("unresolvedVerifoneTransactionId");
+                // const storedUnresolvedVerifoneTransactionId = localStorage.getItem("unresolvedVerifoneTransactionId");
 
-                if (storedUnresolvedVerifoneTransactionId) {
-                    reject({ transactionId: storedUnresolvedVerifoneTransactionId, message: "There is an unresolved verifone transaction." });
-                    return;
-                }
+                // if (storedUnresolvedVerifoneTransactionId) {
+                //     reject({ transactionId: storedUnresolvedVerifoneTransactionId, message: "There is an unresolved verifone transaction." });
+                //     return;
+                // }
 
                 const outcome = await createOrRefetchTransaction(amount, ipAddress, portNumber, setEftposTransactionProgressMessage);
 
