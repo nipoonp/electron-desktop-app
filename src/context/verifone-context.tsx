@@ -1,4 +1,4 @@
-import { useEffect, createContext, useContext, useRef } from "react";
+import { useEffect, createContext, useContext, useRef, useState } from "react";
 
 import { Logger } from "aws-amplify";
 import { delay, getVerifoneSocketErrorMessage, getVerifoneTimeBasedTransactionId } from "../model/util";
@@ -115,7 +115,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const attemptingEndpoint = useRef<string | null>(initialAttemptingEndpoint);
     const connectedEndpoint = useRef<string | null>(initialConnectedEndpoint);
 
-    const reconnectingEftposIntervalIsActive = useRef<boolean>(true);
+    const [reconnectingEftposIntervalIsActive, setReconnectingEftposIntervalIsActive] = useState<boolean>(true);
     const reconnectingEftposInterval = useRef<NodeJS.Timeout | null>(null);
 
     const resetVariables = () => {
@@ -128,7 +128,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     };
 
     useEffect(() => {
-        if (reconnectingEftposIntervalIsActive.current) {
+        if (reconnectingEftposIntervalIsActive) {
             reconnectingEftposInterval.current = setInterval(async () => {
                 if (!restaurant || !register) return;
                 if (register.eftposProvider !== EEftposProvider.VERIFONE) return;
@@ -142,7 +142,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                         try {
                             await performConnectToEftpos(register.eftposIpAddress, register.eftposPortNumber);
 
-                            reconnectingEftposIntervalIsActive.current = false;
+                            reconnectingEftposIntervalIsActive = false;
                             toast.success(`Connected to ${newAttemptingEndpoint}`);
                         } catch {
                             toast.error(`Failed to connect to ${newAttemptingEndpoint}`);
@@ -157,7 +157,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         return () => {
             if (reconnectingEftposInterval.current) clearInterval(reconnectingEftposInterval.current);
         };
-    }, [reconnectingEftposIntervalIsActive.current]);
+    }, [reconnectingEftposIntervalIsActive]);
 
     useEffect(() => {
         ipcRenderer &&
