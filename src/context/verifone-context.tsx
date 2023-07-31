@@ -377,18 +377,18 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         let iSO8583ResponseCode;
 
         return new Promise(async (resolve, reject) => {
-            const connectTimeoutEndTime = Number(new Date()) + noResponseTimeout;
+            // const connectTimeoutEndTime = Number(new Date()) + noResponseTimeout;
 
-            while (!connectedEndpoint.current) {
-                await delay(interval);
+            // while (!connectedEndpoint.current) {
+            //     await delay(interval);
 
-                console.log("Waiting for eftpos to connect. Please wait...");
-                setEftposTransactionProgressMessage("Waiting for eftpos to connect. Please wait...");
+            //     console.log("Waiting for eftpos to connect. Please wait...");
+            //     setEftposTransactionProgressMessage("Waiting for eftpos to connect. Please wait...");
 
-                if (!(Number(new Date()) < connectTimeoutEndTime)) {
-                    reject({ transactionId: transactionId, message: "Failed to connect to the eftpos. Please try again..." });
-                }
-            }
+            //     if (!(Number(new Date()) < connectTimeoutEndTime)) {
+            //         reject({ transactionId: transactionId, message: "Failed to connect to the eftpos. Please try again..." });
+            //     }
+            // }
 
             // Create A Transaction -------------------------------------------------------------------------------------------------------------------------------- //
             ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.Purchase},${transactionId},${merchantId},${amount}`);
