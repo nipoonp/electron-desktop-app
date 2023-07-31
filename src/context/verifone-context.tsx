@@ -131,18 +131,18 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
             const newAttemptingEndpoint = `${register.eftposIpAddress}:${register.eftposPortNumber}`;
 
-            console.log(`Reattmpting to connect to Verifone Eftpos, Current:${connectedEndpoint.current} New:${newAttemptingEndpoint}`);
-
             if (connectedEndpoint.current !== newAttemptingEndpoint) {
-                (async () => {
-                    try {
-                        await performConnectToEftpos(register.eftposIpAddress, register.eftposPortNumber);
+                console.log("Connecting to new endpoint: ", newAttemptingEndpoint);
 
-                        console.log(`Connected to ${newAttemptingEndpoint}`);
-                    } catch {
-                        console.error(`Failed to connect to ${newAttemptingEndpoint}`);
-                    }
-                })();
+                try {
+                    await performConnectToEftpos(register.eftposIpAddress, register.eftposPortNumber);
+
+                    console.log(`Connected to ${newAttemptingEndpoint}`);
+                } catch {
+                    console.error(`Failed to connect to ${newAttemptingEndpoint}`);
+                }
+            } else {
+                console.log("Already connected to endpoint: ", newAttemptingEndpoint);
             }
         }, reconnectEftposTimeout);
 
