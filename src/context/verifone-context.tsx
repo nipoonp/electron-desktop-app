@@ -374,6 +374,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         return new Promise(async (resolve, reject) => {
             if (!connectedEndpoint) {
                 setEftposTransactionProgressMessage("Waiting for eftpos to connect. Please wait...");
+                return;
             }
 
             // Create Variables -------------------------------------------------------------------------------------------------------------------------------- //
