@@ -148,21 +148,21 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
                     console.log(`Connected to ${newAttemptingEndpoint}`);
 
-                    const storedVerifoneEftposTransactionInProgress = sessionStorage.getItem("verifoneEftposTransactionInProgress");
-                    const storedUnresolvedVerifoneTransactionId = localStorage.getItem("unresolvedVerifoneTransactionId");
+                    // const storedVerifoneEftposTransactionInProgress = sessionStorage.getItem("verifoneEftposTransactionInProgress");
+                    // const storedUnresolvedVerifoneTransactionId = localStorage.getItem("unresolvedVerifoneTransactionId");
 
-                    if (storedUnresolvedVerifoneTransactionId && !storedVerifoneEftposTransactionInProgress) {
-                        console.log("Refetching unresolved transaction", storedUnresolvedVerifoneTransactionId);
+                    // if (storedUnresolvedVerifoneTransactionId && !storedVerifoneEftposTransactionInProgress) {
+                    //     console.log("Refetching unresolved transaction", storedUnresolvedVerifoneTransactionId);
 
-                        await createTransaction(
-                            9999, //Don't need
-                            register.eftposIpAddress,
-                            register.eftposPortNumber,
-                            "restaurant.id", //Change later
-                            () => {}, //Change later
-                            storedUnresolvedVerifoneTransactionId
-                        );
-                    }
+                    //     await createTransaction(
+                    //         9999, //Don't need
+                    //         register.eftposIpAddress,
+                    //         register.eftposPortNumber,
+                    //         "restaurant.id", //Change later
+                    //         () => {}, //Change later
+                    //         storedUnresolvedVerifoneTransactionId
+                    //     );
+                    // }
                 } catch {
                     console.error(`Failed to connect to ${newAttemptingEndpoint}`);
                 }
@@ -420,21 +420,21 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             setEftposTransactionProgressMessage(null);
 
             // Check If There Are Any Unresolved Orders Being Processed -------------------------------------------------------------------------------------------------------------------------------- //
-            const refetchingExitingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
+            // const refetchingExitingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
 
-            while (localStorage.getItem("unresolvedVerifoneTransactionId")) {
-                await delay(interval);
+            // while (localStorage.getItem("unresolvedVerifoneTransactionId")) {
+            //     await delay(interval);
 
-                console.log("Refetching previous unresolved transaction. Please wait...");
-                setEftposTransactionProgressMessage("Refetching previous unresolved transaction. Please wait...");
+            //     console.log("Refetching previous unresolved transaction. Please wait...");
+            //     setEftposTransactionProgressMessage("Refetching previous unresolved transaction. Please wait...");
 
-                if (!(Number(new Date()) < refetchingExitingTimeoutEndTime)) {
-                    reject({ transactionId: transactionId, message: "Failed to connect to the eftpos. Please try again..." });
-                    return;
-                }
-            }
+            //     if (!(Number(new Date()) < refetchingExitingTimeoutEndTime)) {
+            //         reject({ transactionId: transactionId, message: "Failed to connect to the eftpos. Please try again..." });
+            //         return;
+            //     }
+            // }
 
-            setEftposTransactionProgressMessage(null);
+            // setEftposTransactionProgressMessage(null);
 
             // Create A Transaction -------------------------------------------------------------------------------------------------------------------------------- //
             if (!unresolvedVerifoneTransactionId) {
