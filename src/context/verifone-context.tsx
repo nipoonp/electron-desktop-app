@@ -105,6 +105,7 @@ const VerifoneContext = createContext<ContextProps>({
 
 const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const { addVerifoneLog } = useErrorLogging();
+    const { restaurant } = useRestaurant();
     const { register, isPOS } = useRegister();
 
     const interval = 1 * 1500; // 1.5 seconds
@@ -146,6 +147,22 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     await performConnectToEftpos(register.eftposIpAddress, register.eftposPortNumber);
 
                     console.log(`Connected to ${newAttemptingEndpoint}`);
+
+                    const storedVerifoneEftposTransactionInProgress = sessionStorage.getItem("verifoneEftposTransactionInProgress");
+                    const storedUnresolvedVerifoneTransactionId = localStorage.getItem("unresolvedVerifoneTransactionId");
+
+                    if (storedUnresolvedVerifoneTransactionId && !storedVerifoneEftposTransactionInProgress) {
+                        console.log("Refetching unresolved transaction", storedUnresolvedVerifoneTransactionId);
+
+                        await createTransaction(
+                            9999, //Don't need
+                            register.eftposIpAddress,
+                            register.eftposPortNumber,
+                            "restaurant.id", //Change later
+                            () => {}, //Change later
+                            storedUnresolvedVerifoneTransactionId
+                        );
+                    }
                 } catch {
                     console.error(`Failed to connect to ${newAttemptingEndpoint}`);
                 }
@@ -375,11 +392,12 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         amount: number,
         ipAddress: string,
         portNumber: string,
-        setEftposTransactionProgressMessage: (message: string | null) => void
+        setEftposTransactionProgressMessage: (message: string | null) => void,
+        unresolvedVerifoneTransactionId?: string
     ): Promise<IEftposTransactionOutcome> => {
         // Create Variables -------------------------------------------------------------------------------------------------------------------------------- //
         const endTime = Number(new Date()) + timeout;
-        const transactionId = getVerifoneTimeBasedTransactionId();
+        const transactionId = unresolvedVerifoneTransactionId ? unresolvedVerifoneTransactionId : getVerifoneTimeBasedTransactionId();
         const merchantId = 0;
         let iSO8583ResponseCode;
 
@@ -401,11 +419,30 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
             setEftposTransactionProgressMessage(null);
 
+            // Check If There Are Any Unresolved Orders Being Processed -------------------------------------------------------------------------------------------------------------------------------- //
+            const refetchingExitingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
+
+            while (localStorage.getItem("unresolvedVerifoneTransactionId")) {
+                await delay(interval);
+
+                console.log("Refetching previous unresolved transaction. Please wait...");
+                setEftposTransactionProgressMessage("Refetching previous unresolved transaction. Please wait...");
+
+                if (!(Number(new Date()) < refetchingExitingTimeoutEndTime)) {
+                    reject({ transactionId: transactionId, message: "Failed to connect to the eftpos. Please try again..." });
+                    return;
+                }
+            }
+
+            setEftposTransactionProgressMessage(null);
+
             // Create A Transaction -------------------------------------------------------------------------------------------------------------------------------- //
-            ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.Purchase},${transactionId},${merchantId},${amount}`);
-            addToLogs(`BROWSER_DATA: ${VMT.Purchase},${transactionId},${merchantId},${amount}`);
-            localStorage.setItem("unresolvedVerifoneTransactionId", transactionId.toString());
-            // localStorage.setItem("verifoneMerchantId", merchantId.toString());
+            if (!unresolvedVerifoneTransactionId) {
+                ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.Purchase},${transactionId},${merchantId},${amount}`);
+                addToLogs(`BROWSER_DATA: ${VMT.Purchase},${transactionId},${merchantId},${amount}`);
+                localStorage.setItem("unresolvedVerifoneTransactionId", transactionId.toString());
+                // localStorage.setItem("verifoneMerchantId", merchantId.toString());
+            }
 
             // Poll For Result -------------------------------------------------------------------------------------------------------------------------------- //
             ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
@@ -586,13 +623,15 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         });
     };
 
-    const createOrRefetchTransactionWrapper = (
+    const createTransaction = (
         amount: number,
         ipAddress: string,
         portNumber: string,
         restaurantId: string,
-        setEftposTransactionProgressMessage: (message: string | null) => void
+        setEftposTransactionProgressMessage: (message: string | null) => void,
+        unresolvedVerifoneTransactionId?: string
     ): Promise<IEftposTransactionOutcome> => {
+        sessionStorage.setItem("verifoneEftposTransactionInProgress", "true");
         resetVariables();
 
         return new Promise(async (resolve, reject) => {
@@ -625,14 +664,13 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             }
 
             try {
-                // const storedUnresolvedVerifoneTransactionId = localStorage.getItem("unresolvedVerifoneTransactionId");
-
-                // if (storedUnresolvedVerifoneTransactionId) {
-                //     reject({ transactionId: storedUnresolvedVerifoneTransactionId, message: "There is an unresolved verifone transaction." });
-                //     return;
-                // }
-
-                const outcome = await createOrRefetchTransaction(amount, ipAddress, portNumber, setEftposTransactionProgressMessage);
+                const outcome = await createOrRefetchTransaction(
+                    amount,
+                    ipAddress,
+                    portNumber,
+                    setEftposTransactionProgressMessage,
+                    unresolvedVerifoneTransactionId
+                );
 
                 resolve(outcome);
             } catch (error) {
@@ -643,27 +681,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 return;
             } finally {
                 await createEftposTransactionLog(restaurantId, amount);
-            }
-        });
-    };
-
-    const createTransaction = (
-        amount: number,
-        ipAddress: string,
-        portNumber: string,
-        restaurantId: string,
-        setEftposTransactionProgressMessage: (message: string | null) => void
-    ): Promise<IEftposTransactionOutcome> => {
-        return new Promise(async (resolve, reject) => {
-            sessionStorage.setItem("verifoneEftposTransactionInProgress", "true");
-
-            try {
-                const res = await createOrRefetchTransactionWrapper(amount, ipAddress, portNumber, restaurantId, setEftposTransactionProgressMessage);
-
-                resolve(res);
-            } catch (e) {
-                reject(e);
-            } finally {
                 sessionStorage.removeItem("verifoneEftposTransactionInProgress");
             }
         });
