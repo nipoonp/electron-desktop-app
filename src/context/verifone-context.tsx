@@ -408,8 +408,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             while (!connectedEndpoint.current) {
                 await delay(interval);
 
-                console.log("Lost connection with the eftpos. Reconnecting. Please wait...");
-                setEftposTransactionProgressMessage("Lost connection with the eftpos. Reconnecting. Please wait...");
+                console.log("Reconnecting to the eftpos. Please wait...");
+                setEftposTransactionProgressMessage("Reconnecting to the eftpos. Please wait...");
 
                 if (!(Number(new Date()) < connectTimeoutEndTime)) {
                     reject({ transactionId: transactionId, message: "Failed to connect to the eftpos. Please try again..." });
