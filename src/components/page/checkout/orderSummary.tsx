@@ -140,7 +140,7 @@ const OrderItem = (props: {
                     onBlur={(event) => onBlurQuantity(event.target.value)}
                 />
             </div>
-            <div>
+            {/* <div>
                 <Input
                     key={`price-${product.id}`}
                     type="number"
@@ -150,7 +150,7 @@ const OrderItem = (props: {
                     onChange={(event) => onChangePrice(event.target.value)}
                     onBlur={(event) => onBlurPrice(event.target.value)}
                 />
-            </div>
+            </div> */}
         </div>
     );
 
@@ -180,7 +180,13 @@ const OrderItem = (props: {
     );
 };
 
-const OrderItemDetails = (props: { name: string; quantity: number; notes: string | null; modifierGroups: ICartModifierGroup[]; onEditProduct: () => void }) => {
+const OrderItemDetails = (props: {
+    name: string;
+    quantity: number;
+    notes: string | null;
+    modifierGroups: ICartModifierGroup[];
+    onEditProduct: () => void;
+}) => {
     const { name, quantity, notes, modifierGroups, onEditProduct } = props;
     const { isPOS } = useRegister();
 
