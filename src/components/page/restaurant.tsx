@@ -72,19 +72,19 @@ export default () => {
     const shakeButtonDurationSeconds = 5;
     const userOnPageDuration: React.MutableRefObject<number> = useRef(1);
 
-    const inputRef = useRef<HTMLInputElement | null>(null);
+    // const inputRef = useRef<HTMLInputElement | null>(null);
 
-    useEffect(() => {
-        const focusTimer = setInterval(() => {
-            if (inputRef.current && document.activeElement !== inputRef.current) {
-                inputRef.current.focus();
-            }
-        }, 1000);
+    // useEffect(() => {
+    //     const focusTimer = setInterval(() => {
+    //         if (inputRef.current && document.activeElement !== inputRef.current) {
+    //             inputRef.current.focus();
+    //         }
+    //     }, 1000);
 
-        return () => {
-            clearInterval(focusTimer);
-        };
-    }, []);
+    //     return () => {
+    //         clearInterval(focusTimer);
+    //     };
+    // }, []);
 
     useEffect(() => {
         const ticker = setInterval(() => {
@@ -521,13 +521,23 @@ export default () => {
 
     const menuSkuSearchProduct = (
         <>
-            <div className="search-product-sku-code-wrapper">
-                {/* Could not use the Tabin Input component here. When we try pass the ref field it does not seem to work */}
+            {/* Could not use the Tabin Input component here. When we try pass the ref field it does not seem to work */}
+            {/* <div className="search-product-sku-code-wrapper">
                 <input
                     ref={inputRef}
                     type="text"
                     name="searchProductSKUCode"
                     value={searchProductSKUCode}
+                    placeholder="123456789"
+                    onChange={onChangeSearchProductSKUCode}
+                    onKeyDown={onKeyDownSearchProductSKUCode}
+                />
+            </div> */}
+            <div className="category background-grey">
+                <Input
+                    name="searchProductSKUCode"
+                    value={searchProductSKUCode}
+                    autoFocus={true}
                     placeholder="123456789"
                     onChange={onChangeSearchProductSKUCode}
                     onKeyDown={onKeyDownSearchProductSKUCode}
