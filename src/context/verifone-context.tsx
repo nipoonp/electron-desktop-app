@@ -639,7 +639,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             let lastError;
 
             while (retryCount < 3) {
-                addToLogs("Transaction Started.");
+                addToLogs(`Transaction Started.${retryCount > 0 ? ` Retry: ${retryCount}` : ""}`);
+                console.log(`Transaction Started.${retryCount > 0 ? ` Retry: ${retryCount}..........` : ""}`);
 
                 try {
                     const outcome = await createOrRefetchTransaction(
@@ -653,9 +654,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     resolve(outcome);
                     return; // Successful execution, break the loop
                 } catch (error) {
-                    addToLogs(`Transaction Started.${retryCount > 0 ? ` Retry: ${retryCount}` : ""}`);
+                    addToLogs("Reject Error:" + error.message);
 
-                    console.error("error.message", error.message);
+                    console.log("error.message", error.message);
 
                     unresolvedVerifoneTransactionId = error.transactionId;
                     lastError = error;
