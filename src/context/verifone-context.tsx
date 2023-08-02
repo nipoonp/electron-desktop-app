@@ -1,5 +1,4 @@
 import { useEffect, createContext, useContext, useRef } from "react";
-
 import { Logger } from "aws-amplify";
 import { delay, getVerifoneSocketErrorMessage, getVerifoneTimeBasedTransactionId } from "../model/util";
 import { toLocalISOString } from "../util/util";
@@ -112,6 +111,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const timeout = 3 * 60 * 1000; // 3 minutes
     const noResponseTimeout = 30 * 1000; // 30 seconds
     const reconnectEftposTimeout = 20 * 1000; //20 seconds
+    const retryEftposConnectTimeout = 5 * 1000; // 5 seconds
 
     const lastMessageReceived = useRef<number>(initialLastMessageReceived);
     const eftposError = useRef<string>(initialEftposError);
@@ -361,11 +361,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
         return new Promise(async (resolve, reject) => {
             // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
-            const connectTimeoutEndTime = Number(new Date()) + noResponseTimeout;
+            const connectTimeoutEndTime = Number(new Date()) + reconnectEftposTimeout;
 
             while (!connectedEndpoint.current) {
-                await delay(5000);
-
                 console.log("Reconnecting to the eftpos. Please wait...");
                 setEftposTransactionProgressMessage("Reconnecting to the eftpos. Please wait...");
 
@@ -375,7 +373,11 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     reject({ transactionId: transactionId, message: "Failed to connect to the eftpos. Please try again..." });
                     return;
                 }
+
+                await delay(retryEftposConnectTimeout);
             }
+
+            setEftposTransactionProgressMessage(null);
 
             // Create A Transaction -------------------------------------------------------------------------------------------------------------------------------- //
             if (!unresolvedVerifoneTransactionId) {
@@ -391,10 +393,18 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
             // Poll For Transaction Result -------------------------------------------------------------------------------------------------------------------------------- //
             while (true) {
-                // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
-                while (!connectedEndpoint.current) {
-                    await delay(5000);
+                const now = new Date();
+                const loopDate = Number(now);
 
+                console.log("Polling for result...");
+                addToLogs("Polling for result...");
+
+                await delay(interval);
+
+                // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
+                const connectTimeoutEndTime = Number(new Date()) + reconnectEftposTimeout;
+
+                while (!connectedEndpoint.current) {
                     console.log("Reconnecting to the eftpos. Please wait...");
                     setEftposTransactionProgressMessage("Reconnecting to the eftpos. Please wait...");
 
@@ -404,24 +414,13 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                         reject({ transactionId: transactionId, message: "Failed to connect to the eftpos. Please try again..." });
                         return;
                     }
+
+                    await delay(retryEftposConnectTimeout);
                 }
 
                 setEftposTransactionProgressMessage(null);
 
-                const now = new Date();
-                const loopDate = Number(now);
-
-                const errorMessage = checkForErrors();
-                if (errorMessage) {
-                    reject({ transactionId: transactionId, message: errorMessage });
-                    return;
-                }
-
-                console.log("Polling for result...");
-                addToLogs("Polling for result...");
-
-                await delay(interval);
-
+                // Check If Eftpos Has Timed Out -------------------------------------------------------------------------------------------------------------------------------- //
                 if (!(loopDate < endTime)) {
                     const disconnectTimedOut = await disconnectEftpos();
                     if (disconnectTimedOut) {
@@ -433,6 +432,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     return;
                 }
 
+                // Check If Eftpos Has Stopped Responding -------------------------------------------------------------------------------------------------------------------------------- //
                 if (!(loopDate < lastMessageReceived.current + noResponseTimeout)) {
                     const disconnectTimedOut = await disconnectEftpos();
                     if (disconnectTimedOut) {
