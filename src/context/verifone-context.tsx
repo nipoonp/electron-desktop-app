@@ -134,49 +134,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     };
 
     useEffect(() => {
-        const timerId = setInterval(async () => {
-            if (!register) return;
-            if (register.eftposProvider !== EEftposProvider.VERIFONE) return;
-
-            const newAttemptingEndpoint = `${register.eftposIpAddress}:${register.eftposPortNumber}`;
-
-            if (connectedEndpoint.current !== newAttemptingEndpoint) {
-                console.log("Connecting to new endpoint: ", newAttemptingEndpoint);
-
-                try {
-                    await performConnectToEftpos(register.eftposIpAddress, register.eftposPortNumber);
-
-                    console.log(`Connected to ${newAttemptingEndpoint}`);
-
-                    // const storedVerifoneEftposTransactionInProgress = sessionStorage.getItem("verifoneEftposTransactionInProgress");
-                    // const storedUnresolvedVerifoneTransactionId = localStorage.getItem("unresolvedVerifoneTransactionId");
-
-                    // if (storedUnresolvedVerifoneTransactionId && !storedVerifoneEftposTransactionInProgress) {
-                    //     console.log("Refetching unresolved transaction", storedUnresolvedVerifoneTransactionId);
-
-                    //     await createTransaction(
-                    //         9999, //Don't need
-                    //         register.eftposIpAddress,
-                    //         register.eftposPortNumber,
-                    //         "restaurant.id", //Change later
-                    //         () => {}, //Change later
-                    //         storedUnresolvedVerifoneTransactionId
-                    //     );
-                    // }
-                } catch {
-                    console.error(`Failed to connect to ${newAttemptingEndpoint}`);
-                }
-            } else {
-                console.log("Already connected to endpoint: ", newAttemptingEndpoint);
-            }
-        }, reconnectEftposTimeout);
-
-        return () => {
-            clearInterval(timerId);
-        };
-    }, [register]);
-
-    useEffect(() => {
         ipcRenderer &&
             ipcRenderer.on("EFTPOS_CONNECT", (event: any, arg: any) => {
                 console.log("EFTPOS_CONNECT:", arg);
@@ -406,35 +363,18 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             const connectTimeoutEndTime = Number(new Date()) + noResponseTimeout;
 
             while (!connectedEndpoint.current) {
-                await delay(interval);
+                await delay(5000);
 
                 console.log("Reconnecting to the eftpos. Please wait...");
                 setEftposTransactionProgressMessage("Reconnecting to the eftpos. Please wait...");
+
+                await performConnectToEftpos(ipAddress, portNumber);
 
                 if (!(Number(new Date()) < connectTimeoutEndTime)) {
                     reject({ transactionId: transactionId, message: "Failed to connect to the eftpos. Please try again..." });
                     return;
                 }
             }
-
-            setEftposTransactionProgressMessage(null);
-
-            // Check If There Are Any Unresolved Orders Being Processed -------------------------------------------------------------------------------------------------------------------------------- //
-            // const refetchingExitingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
-
-            // while (localStorage.getItem("unresolvedVerifoneTransactionId")) {
-            //     await delay(interval);
-
-            //     console.log("Refetching previous unresolved transaction. Please wait...");
-            //     setEftposTransactionProgressMessage("Refetching previous unresolved transaction. Please wait...");
-
-            //     if (!(Number(new Date()) < refetchingExitingTimeoutEndTime)) {
-            //         reject({ transactionId: transactionId, message: "Failed to connect to the eftpos. Please try again..." });
-            //         return;
-            //     }
-            // }
-
-            // setEftposTransactionProgressMessage(null);
 
             // Create A Transaction -------------------------------------------------------------------------------------------------------------------------------- //
             if (!unresolvedVerifoneTransactionId) {
@@ -451,15 +391,15 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             // Poll For Transaction Result -------------------------------------------------------------------------------------------------------------------------------- //
             while (true) {
                 // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
-                const connectTimeoutEndTime2 = Number(new Date()) + noResponseTimeout;
-
                 while (!connectedEndpoint.current) {
-                    await delay(interval);
+                    await delay(5000);
 
-                    console.log("Lost connection with the eftpos. Reconnecting. Please wait...");
-                    setEftposTransactionProgressMessage("Lost connection with the eftpos. Reconnecting. Please wait...");
+                    console.log("Reconnecting to the eftpos. Please wait...");
+                    setEftposTransactionProgressMessage("Reconnecting to the eftpos. Please wait...");
 
-                    if (!(Number(new Date()) < connectTimeoutEndTime2)) {
+                    await performConnectToEftpos(ipAddress, portNumber);
+
+                    if (!(Number(new Date()) < connectTimeoutEndTime)) {
                         reject({ transactionId: transactionId, message: "Failed to connect to the eftpos. Please try again..." });
                         return;
                     }
