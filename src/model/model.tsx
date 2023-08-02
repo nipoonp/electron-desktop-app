@@ -39,7 +39,7 @@ export interface ICognitoUser {
 
 export enum EEftposTransactionOutcome {
     Success,
-    Delay,
+    ProcessMessage,
     Fail,
 }
 

@@ -24,7 +24,7 @@ interface IPaymentModalProps {
     isOpen: boolean;
     onClose: () => void;
     paymentModalState: EPaymentModalState;
-    eftposTransactionDelayed: boolean;
+    eftposTransactionProcessMessage: string | null;
     eftposTransactionOutcome: IEftposTransactionOutcome | null;
     onPrintCustomerReceipt: () => void;
     onPrintParkedOrderReceipts: () => void;
@@ -54,7 +54,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         onContinueToNextOrder,
         onPrintCustomerReceipt,
         onPrintParkedOrderReceipts,
-        eftposTransactionDelayed,
+        eftposTransactionProcessMessage,
         eftposTransactionOutcome,
         cashTransactionChangeAmount,
         createOrderError,
@@ -144,8 +144,8 @@ export const PaymentModal = (props: IPaymentModalProps) => {
             return <CreateOrderFailed createOrderError={createOrderError} onCancelOrder={onCancelOrder} />;
         }
 
-        if (eftposTransactionDelayed) {
-            return <PaymentDelayed errorMessage={"This transaction is delayed. Please wait..."} />;
+        if (eftposTransactionProcessMessage) {
+            return <PaymentProgressMessage message={eftposTransactionProcessMessage} />;
         }
 
         if (paymentModalState == EPaymentModalState.POSScreen) {
@@ -177,8 +177,8 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                 );
             } else if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.Fail) {
                 return <PaymentFailed errorMessage={eftposTransactionOutcome.message} onRetry={onRetry} onCancelPayment={onCancelPayment} />;
-            } else if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.Delay) {
-                return <PaymentDelayed errorMessage={eftposTransactionOutcome.message} />;
+            } else if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.ProcessMessage) {
+                return <PaymentProgressMessage message={eftposTransactionOutcome.message} />;
             }
         } else if (paymentModalState === EPaymentModalState.CashResult) {
             if (isPOS) {
@@ -323,10 +323,10 @@ const PaymentAccepted = (props: {
     );
 };
 
-const PaymentDelayed = (props: { errorMessage: string }) => {
-    const { errorMessage } = props;
+const PaymentProgressMessage = (props: { message: string }) => {
+    const { message } = props;
 
-    return <div className="h4">{errorMessage && <div className="h2 mt-4 mb-6">{errorMessage}</div>}</div>;
+    return <div className="h4">{message && <div className="h2 mt-4 mb-6">{message}</div>}</div>;
 };
 
 const PaymentFailed = (props: { errorMessage: string; onRetry: () => void; onCancelPayment: () => void }) => {
