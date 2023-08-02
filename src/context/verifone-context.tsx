@@ -110,7 +110,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const interval = 1 * 1500; // 1.5 seconds
     const timeout = 3 * 60 * 1000; // 3 minutes
     const noResponseTimeout = 30 * 1000; // 30 seconds
-    const retryEftposConnectTimeout = 3 * 1000; // 5 seconds
+    const retryEftposConnectTimeout = 3 * 1000; // 3 seconds
 
     const lastMessageReceived = useRef<number>(initialLastMessageReceived);
     const eftposError = useRef<string>(initialEftposError);
@@ -281,67 +281,52 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     };
 
     const performConnectToEftpos = async (ipAddress: string, portNumber: string) => {
-        return new Promise(async (resolve, reject) => {
-            attemptingEndpoint.current = `${ipAddress}:${portNumber}`;
+        attemptingEndpoint.current = `${ipAddress}:${portNumber}`;
 
-            while (connectedEndpoint.current !== attemptingEndpoint.current) {
-                // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
-                // const disconnectTimedOut = await disconnectEftpos();
-                // if (disconnectTimedOut) {
-                //     reject("There was an issue disconnecting to the Eftpos.");
-                //     return;
-                // }
+        while (connectedEndpoint.current !== attemptingEndpoint.current) {
+            // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
+            // const disconnectTimedOut = await disconnectEftpos();
+            // if (disconnectTimedOut) {
+            //     reject("There was an issue disconnecting to the Eftpos.");
+            //     return;
+            // }
 
-                // Connect To EFTPOS -------------------------------------------------------------------------------------------------------------------------------- //
-                const connectTimedOut = await connectToEftpos(ipAddress, portNumber);
-                if (connectTimedOut) {
-                    reject("There was an issue connecting to the Eftpos.");
-                    return;
-                }
+            // Connect To EFTPOS -------------------------------------------------------------------------------------------------------------------------------- //
+            const connectTimedOut = await connectToEftpos(ipAddress, portNumber);
+            if (connectTimedOut) return "There was an issue connecting to the Eftpos.";
 
-                const errorMessage = checkForErrors();
-                if (errorMessage) {
-                    reject(errorMessage);
-                    return;
-                }
+            const errorMessage = checkForErrors();
+            if (errorMessage) return errorMessage;
 
-                // Configure Printing -------------------------------------------------------------------------------------------------------------------------------- //
-                if (!configurePrintingCommandSent.current) {
-                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
-                    addToLogs(`BROWSER_DATA: ${VMT.ConfigurePrinting},ON`);
+            // Configure Printing -------------------------------------------------------------------------------------------------------------------------------- //
+            if (!configurePrintingCommandSent.current) {
+                ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
+                addToLogs(`BROWSER_DATA: ${VMT.ConfigurePrinting},ON`);
 
-                    const printingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
-                    while (
-                        eftposData.current.type != VMT.ConfigurePrintingResponse // What if this is OFF?
-                    ) {
-                        const errorMessage = checkForErrors();
-                        if (errorMessage) {
-                            reject(errorMessage);
-                            return;
-                        }
+                const printingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
+                while (
+                    eftposData.current.type != VMT.ConfigurePrintingResponse // What if this is OFF?
+                ) {
+                    const errorMessage = checkForErrors();
+                    if (errorMessage) return errorMessage;
 
-                        addToLogs("Waiting to receive Configure Printing Response (CP,ON)...");
+                    addToLogs("Waiting to receive Configure Printing Response (CP,ON)...");
 
-                        await delay(interval);
+                    await delay(interval);
 
-                        if (!(Number(new Date()) < printingTimeoutEndTime)) {
-                            const disconnectTimedOut = await disconnectEftpos();
-                            if (disconnectTimedOut) {
-                                reject("There was an issue disconnecting to the Eftpos.");
-                                return;
-                            }
+                    if (!(Number(new Date()) < printingTimeoutEndTime)) {
+                        const disconnectTimedOut = await disconnectEftpos();
+                        if (disconnectTimedOut) return "There was an issue disconnecting to the Eftpos.";
 
-                            reject("There was an issue configuring Eftpos Printing.");
-                            return;
-                        }
+                        return "There was an issue configuring Eftpos Printing.";
                     }
-
-                    configurePrintingCommandSent.current = true;
                 }
-            }
 
-            resolve("");
-        });
+                configurePrintingCommandSent.current = true;
+            }
+        }
+
+        return "";
     };
 
     const createOrRefetchTransaction = (
