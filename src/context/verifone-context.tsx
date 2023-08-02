@@ -110,7 +110,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const interval = 1 * 1500; // 1.5 seconds
     const timeout = 3 * 60 * 1000; // 3 minutes
     const noResponseTimeout = 30 * 1000; // 30 seconds
-    const retryEftposConnectTimeout = 3 * 1000; // 5 seconds
+    const retryEftposConnectTimeout = 5 * 1000; // 5 seconds
 
     const lastMessageReceived = useRef<number>(initialLastMessageReceived);
     const eftposError = useRef<string>(initialEftposError);
@@ -307,7 +307,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
                 // Configure Printing -------------------------------------------------------------------------------------------------------------------------------- //
                 if (!configurePrintingCommandSent.current) {
-                    console.log("xxx...I AM HERE again! configurePrintingCommandSent");
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
                     addToLogs(`BROWSER_DATA: ${VMT.ConfigurePrinting},ON`);
 
@@ -341,7 +340,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 }
             }
 
-            resolve(attemptingEndpoint.current);
+            resolve("");
         });
     };
 
@@ -359,7 +358,13 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
         return new Promise(async (resolve, reject) => {
             // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
-            if (!connectedEndpoint.current) await performConnectToEftpos(ipAddress, portNumber);
+            if (!connectedEndpoint.current) {
+                const connectErrorMessage = await performConnectToEftpos(ipAddress, portNumber);
+                if (connectErrorMessage) {
+                    reject({ transactionId: transactionId, message: connectErrorMessage });
+                    return;
+                }
+            }
 
             // Create A Transaction -------------------------------------------------------------------------------------------------------------------------------- //
             if (!unresolvedVerifoneTransactionId) {
@@ -384,7 +389,13 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 await delay(interval);
 
                 // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
-                if (!connectedEndpoint.current) await performConnectToEftpos(ipAddress, portNumber);
+                if (!connectedEndpoint.current) {
+                    const connectErrorMessage = await performConnectToEftpos(ipAddress, portNumber);
+                    if (connectErrorMessage) {
+                        reject({ transactionId: transactionId, message: connectErrorMessage });
+                        return;
+                    }
+                }
 
                 // Check If Eftpos Has Timed Out -------------------------------------------------------------------------------------------------------------------------------- //
                 if (!(loopDate < endTime)) {
