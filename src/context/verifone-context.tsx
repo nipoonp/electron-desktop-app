@@ -549,7 +549,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             while (retryCount < 3) {
                 addToLogs(`Getting transaction result.${retryCount > 0 ? ` Retry: ${retryCount}` : ""}`);
                 console.log(`Getting transaction result.${retryCount > 0 ? ` Retry: ${retryCount}..........` : ""}`);
-                setEftposTransactionProgressMessage(`Getting transaction result.${retryCount > 0 ? ` Retry: ${retryCount}..........` : ""}`);
+                setEftposTransactionProgressMessage(`${retryCount > 0 ? `Getting transaction result. Retry: ${retryCount}..........` : null}`);
 
                 try {
                     const outcome = await createOrRefetchTransaction(amount, ipAddress, portNumber, unresolvedVerifoneTransactionId);
