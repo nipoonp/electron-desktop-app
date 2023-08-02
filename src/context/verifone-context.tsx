@@ -308,6 +308,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
                 // Configure Printing -------------------------------------------------------------------------------------------------------------------------------- //
                 if (!configurePrintingCommandSent.current) {
+                    console.log("xxx...I AM HERE again! configurePrintingCommandSent");
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
                     addToLogs(`BROWSER_DATA: ${VMT.ConfigurePrinting},ON`);
 
