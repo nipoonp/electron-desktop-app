@@ -635,54 +635,40 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         resetVariables();
 
         return new Promise(async (resolve, reject) => {
-            addToLogs("Transaction Started.");
+            let retryCount = 0;
+            let lastError;
 
-            if (!amount) {
-                addToLogs("Reject: The amount has to be supplied");
-                await createEftposTransactionLog(restaurantId, amount);
+            while (retryCount < 3) {
+                addToLogs("Transaction Started.");
 
-                reject("The amount has to be supplied");
-                return;
-            } else if (amount <= 0) {
-                addToLogs("Reject: The amount must be greater than 0");
-                await createEftposTransactionLog(restaurantId, amount);
+                try {
+                    const outcome = await createOrRefetchTransaction(
+                        amount,
+                        ipAddress,
+                        portNumber,
+                        setEftposTransactionProgressMessage,
+                        unresolvedVerifoneTransactionId
+                    );
 
-                reject("The amount must be greater than 0");
-                return;
-            } else if (!ipAddress) {
-                addToLogs("Reject: The IP address has to be supplied");
-                await createEftposTransactionLog(restaurantId, amount);
+                    resolve(outcome);
+                    return; // Successful execution, break the loop
+                } catch (error) {
+                    addToLogs(`Transaction Started.${retryCount > 0 ? ` Retry: ${retryCount}` : ""}`);
 
-                reject("The IP address has to be supplied");
-                return;
-            } else if (!portNumber) {
-                addToLogs("Reject: The port number has to be supplied");
-                await createEftposTransactionLog(restaurantId, amount);
+                    console.error("error.message", error.message);
 
-                reject("The port number has to be supplied");
-                return;
+                    unresolvedVerifoneTransactionId = error.transactionId;
+                    lastError = error;
+                    retryCount++;
+                } finally {
+                    await createEftposTransactionLog(restaurantId, amount);
+                }
             }
 
-            try {
-                const outcome = await createOrRefetchTransaction(
-                    amount,
-                    ipAddress,
-                    portNumber,
-                    setEftposTransactionProgressMessage,
-                    unresolvedVerifoneTransactionId
-                );
+            // Reject with the last error message after retries
+            reject(lastError.message);
 
-                resolve(outcome);
-            } catch (error) {
-                addToLogs("Reject Error:" + error.message);
-
-                console.log("error.message", error.message);
-                reject(error.message);
-                return;
-            } finally {
-                await createEftposTransactionLog(restaurantId, amount);
-                sessionStorage.removeItem("verifoneEftposTransactionInProgress");
-            }
+            sessionStorage.removeItem("verifoneEftposTransactionInProgress");
         });
     };
 
