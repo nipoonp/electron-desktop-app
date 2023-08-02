@@ -110,8 +110,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const interval = 1 * 1500; // 1.5 seconds
     const timeout = 3 * 60 * 1000; // 3 minutes
     const noResponseTimeout = 30 * 1000; // 30 seconds
-    const reconnectEftposTimeout = 20 * 1000; //20 seconds
-    const retryEftposConnectTimeout = 5 * 1000; // 5 seconds
+    const retryEftposConnectTimeout = 3 * 1000; // 5 seconds
 
     const lastMessageReceived = useRef<number>(initialLastMessageReceived);
     const eftposError = useRef<string>(initialEftposError);
@@ -227,7 +226,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         addToLogs(`BROWSER_EFTPOS_CONNECT: ${ipAddress}:${portNumber}`);
 
         while (!connectedEndpoint.current) {
-            await delay(interval);
+            await delay(retryEftposConnectTimeout);
 
             console.log("Waiting to connect to the Eftpos...");
             addToLogs("Waiting to connect to the Eftpos...");
@@ -252,7 +251,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         addToLogs("BROWSER_EFTPOS_DISCONNECT");
 
         while (connectedEndpoint.current) {
-            await delay(interval);
+            await delay(retryEftposConnectTimeout);
 
             console.log("Waiting for Eftpos to disconnect...");
             addToLogs("Waiting for Eftpos to disconnect...");
@@ -287,11 +286,11 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
             while (connectedEndpoint.current !== attemptingEndpoint.current) {
                 // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
-                const disconnectTimedOut = await disconnectEftpos();
-                if (disconnectTimedOut) {
-                    reject("There was an issue disconnecting to the Eftpos.");
-                    return;
-                }
+                // const disconnectTimedOut = await disconnectEftpos();
+                // if (disconnectTimedOut) {
+                //     reject("There was an issue disconnecting to the Eftpos.");
+                //     return;
+                // }
 
                 // Connect To EFTPOS -------------------------------------------------------------------------------------------------------------------------------- //
                 const connectTimedOut = await connectToEftpos(ipAddress, portNumber);
@@ -544,12 +543,15 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
         return new Promise(async (resolve, reject) => {
             let retryCount = 0;
+            const retryTotal = 5;
             let lastError;
 
-            while (retryCount < 3) {
-                addToLogs(`Getting transaction result.${retryCount > 0 ? ` Retry: ${retryCount}..........` : ""}`);
-                console.log(`Getting transaction result.${retryCount > 0 ? ` Retry: ${retryCount}..........` : ""}`);
-                setEftposTransactionProgressMessage(retryCount > 0 ? `Getting transaction result. Retry: ${retryCount}..........` : null);
+            while (retryCount < retryTotal) {
+                addToLogs(`Getting transaction result. Please wait.......... ${retryCount > 0 ? ` Retry: ${retryCount}/${retryTotal}` : ""}`);
+                console.log(`Getting transaction result. Please wait.......... ${retryCount > 0 ? ` Retry: ${retryCount}/${retryTotal}` : ""}`);
+                setEftposTransactionProgressMessage(
+                    retryCount > 0 ? `Getting transaction result. Please wait........... (Retry: ${retryCount}/${retryTotal})` : null
+                );
 
                 try {
                     const outcome = await createOrRefetchTransaction(amount, ipAddress, portNumber, unresolvedVerifoneTransactionId);
@@ -559,7 +561,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 } catch (error) {
                     addToLogs("Reject Error:" + error.message);
 
-                    console.log("error.message", error.message);
+                    console.error("error.message", error.message);
 
                     unresolvedVerifoneTransactionId = error.transactionId;
                     lastError = error;
