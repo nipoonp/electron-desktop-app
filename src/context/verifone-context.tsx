@@ -110,7 +110,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const interval = 1 * 1500; // 1.5 seconds
     const timeout = 3 * 60 * 1000; // 3 minutes
     const noResponseTimeout = 30 * 1000; // 30 seconds
-    const retryEftposConnectTimeout = 5 * 1000; // 5 seconds
+    const retryEftposConnectTimeout = 3 * 1000; // 5 seconds
 
     const lastMessageReceived = useRef<number>(initialLastMessageReceived);
     const eftposError = useRef<string>(initialEftposError);
@@ -360,6 +360,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
             if (!connectedEndpoint.current) {
                 const connectErrorMessage = await performConnectToEftpos(ipAddress, portNumber);
+                console.log("xxx...connectErrorMessage", connectErrorMessage);
                 if (connectErrorMessage) {
                     reject({ transactionId: transactionId, message: connectErrorMessage });
                     return;
