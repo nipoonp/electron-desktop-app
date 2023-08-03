@@ -345,7 +345,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
             if (!connectedEndpoint.current) {
                 const connectErrorMessage = await performConnectToEftpos(ipAddress, portNumber);
-                console.log("xxx...connectErrorMessage", connectErrorMessage);
                 if (connectErrorMessage) {
                     reject({ transactionId: transactionId, message: connectErrorMessage });
                     return;
