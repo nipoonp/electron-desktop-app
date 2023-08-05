@@ -66,6 +66,15 @@ interface IEftposData {
     payload: string;
 }
 
+const initialLastMessageReceived = 0;
+const initialEftposError = "";
+const initialEftposData = {
+    type: VMT.INITIAL,
+    payload: "",
+};
+const initialEftposReceipt = "";
+const initialLogs = "";
+
 type ContextProps = {
     createTransaction: (
         amount: number,
@@ -100,11 +109,11 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const noResponseTimeout = 30 * 1000; // 30 seconds
     const retryEftposConnectTimeout = 3 * 1000; // 3 seconds
 
-    const lastMessageReceived = useRef<number>(0);
-    const eftposError = useRef<string>("");
-    const eftposData = useRef<IEftposData>({ type: VMT.INITIAL, payload: "" });
-    const eftposReceipt = useRef<string>("");
-    const logs = useRef<string>("");
+    const lastMessageReceived = useRef<number>(initialLastMessageReceived);
+    const eftposError = useRef<string>(initialEftposError);
+    const eftposData = useRef<IEftposData>(initialEftposData);
+    const eftposReceipt = useRef<string>(initialEftposReceipt);
+    const logs = useRef<string>(initialLogs);
 
     const configurePrintingCommandSent = useRef<boolean>(false);
     //Added these because Android terminals need the eadyToPrintRequest and printRequest replys coming in the correct sequence.
