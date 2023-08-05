@@ -354,6 +354,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         readyToPrintRequestReplySent.current = false;
         printRequestReplySent.current = false;
 
+        let cntr = 0;
+
         return new Promise(async (resolve, reject) => {
             // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
             if (!connectedEndpoint.current) {
@@ -385,7 +387,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 console.log("Polling for result...");
                 addToLogs("Polling for result...");
 
-                await delay(interval);
+                await delay(interval2);
 
                 // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
                 if (!connectedEndpoint.current) {
@@ -431,9 +433,15 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     }
                 }
 
-                // Poll For Result -------------------------------------------------------------------------------------------------------------------------------- //
-                ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
-                addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
+                if (cntr === 14) {
+                    // Poll For Result -------------------------------------------------------------------------------------------------------------------------------- //
+                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
+                    addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
+
+                    cntr = 0;
+                } else {
+                    cntr++;
+                }
             }
 
             // Return Transaction Outcome -------------------------------------------------------------------------------------------------------------------------------- //
