@@ -66,18 +66,6 @@ interface IEftposData {
     payload: string;
 }
 
-const initialLastMessageReceived = 0;
-const initialEftposError = "";
-const initialEftposData = {
-    type: VMT.INITIAL,
-    payload: "",
-};
-const initialEftposReceipt = "";
-const initialLogs = "";
-const initialConfigurePrintingCommandSent = false;
-const initialAttemptingEndpoint = null;
-const initialConnectedEndpoint = null;
-
 type ContextProps = {
     createTransaction: (
         amount: number,
@@ -112,16 +100,19 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const noResponseTimeout = 30 * 1000; // 30 seconds
     const retryEftposConnectTimeout = 3 * 1000; // 3 seconds
 
-    const lastMessageReceived = useRef<number>(initialLastMessageReceived);
-    const eftposError = useRef<string>(initialEftposError);
-    const eftposData = useRef<IEftposData>(initialEftposData);
-    const eftposReceipt = useRef<string>(initialEftposReceipt);
-    const logs = useRef<string>(initialLogs);
+    const lastMessageReceived = useRef<number>(0);
+    const eftposError = useRef<string>("");
+    const eftposData = useRef<IEftposData>({ type: VMT.INITIAL, payload: "" });
+    const eftposReceipt = useRef<string>("");
+    const logs = useRef<string>("");
 
-    const configurePrintingCommandSent = useRef<boolean>(initialConfigurePrintingCommandSent);
+    const configurePrintingCommandSent = useRef<boolean>(false);
+    //Added these because Android terminals need the eadyToPrintRequest and printRequest replys coming in the correct sequence.
+    const readyToPrintRequestReplySent = useRef<boolean>(false);
+    const printRequestReplySent = useRef<boolean>(false);
 
-    const attemptingEndpoint = useRef<string | null>(initialAttemptingEndpoint);
-    const connectedEndpoint = useRef<string | null>(initialConnectedEndpoint);
+    const attemptingEndpoint = useRef<string | null>(null);
+    const connectedEndpoint = useRef<string | null>(null);
 
     useEffect(() => {
         ipcRenderer &&
@@ -145,6 +136,19 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     type: type as VMT,
                     payload: dataPayload,
                 };
+
+                if (type === VMT.ReadyToPrintRequest && !readyToPrintRequestReplySent.current) {
+                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
+                    addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
+
+                    readyToPrintRequestReplySent.current = true;
+                } else if (type === VMT.PrintRequest && !printRequestReplySent.current) {
+                    eftposReceipt.current = dataPayload;
+                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
+                    addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
+
+                    printRequestReplySent.current = true;
+                }
 
                 lastMessageReceived.current = Number(new Date());
             });
@@ -332,9 +336,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         const merchantId = 0;
         let iSO8583ResponseCode;
 
-        //Added these because Android terminals need the eadyToPrintRequest and printRequest replys coming in the correct sequence.
-        let readyToPrintRequestReplySent = false;
-        let printRequestReplySent = false;
+        readyToPrintRequestReplySent.current = false;
+        printRequestReplySent.current = false;
 
         let lastGetResultLoopTime = Number(new Date());
 
@@ -404,7 +407,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     return;
                 }
 
-                if (eftposData.current.type == VMT.ResultAndExtrasResponse) {
+                if (eftposData.current.type === VMT.ResultAndExtrasResponse) {
                     const verifonePurchaseResultArray = eftposData.current.payload.split(",");
                     iSO8583ResponseCode = verifonePurchaseResultArray[2];
 
@@ -416,20 +419,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 }
 
                 // Poll For Result -------------------------------------------------------------------------------------------------------------------------------- //
-                //Only send these print commands once
-                if (eftposData.current.type === VMT.ReadyToPrintRequest && !readyToPrintRequestReplySent) {
-                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
-                    addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
-
-                    readyToPrintRequestReplySent = true;
-                } else if (eftposData.current.type === VMT.PrintRequest && !printRequestReplySent) {
-                    eftposReceipt.current = eftposData.current.payload;
-
-                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
-                    addToLogs(`BROWSER_DATA: ${VMT.PrintResponse},OK`);
-
-                    printRequestReplySent = true;
-                } else if (!(loopDate < lastGetResultLoopTime + interval)) {
+                if (!(loopDate < lastGetResultLoopTime + interval)) {
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
                     addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
 
