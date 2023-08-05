@@ -402,7 +402,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     return;
                 }
 
-                // @ts-ignore - suppress typescript warning because typescript does not understand that eftposData changes from within the socket hooks
                 if (eftposData.current.type == VMT.ResultAndExtrasResponse) {
                     const verifonePurchaseResultArray = eftposData.current.payload.split(",");
                     iSO8583ResponseCode = verifonePurchaseResultArray[2];
@@ -415,11 +414,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 }
 
                 // Poll For Result -------------------------------------------------------------------------------------------------------------------------------- //
-                ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
-                addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
-
-                //Only send these commands once
-                //@ts-ignore
+                //Only send these print commands once
                 if (eftposData.current.type === VMT.ReadyToPrintRequest && !readyToPrintRequestReplySent) {
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
                     addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
@@ -433,6 +428,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
 
                     printRequestReplySent = true;
+                } else {
+                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
+                    addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
                 }
             }
 
