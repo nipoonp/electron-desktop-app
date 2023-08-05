@@ -108,6 +108,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const { register, isPOS } = useRegister();
 
     const interval = 1 * 1500; // 1.5 seconds
+    const interval2 = 1 * 100; // 1.5 seconds
     const timeout = 3 * 60 * 1000; // 3 minutes
     const noResponseTimeout = 30 * 1000; // 30 seconds
     const retryEftposConnectTimeout = 3 * 1000; // 3 seconds
@@ -367,7 +368,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 console.log("Polling for result...");
                 addToLogs("Polling for result...");
 
-                await delay(interval);
+                await delay(interval2);
 
                 // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
                 if (!connectedEndpoint.current) {
@@ -420,7 +421,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
 
                     readyToPrintRequestReplySent = true;
-                    //@ts-ignore
                 } else if (eftposData.current.type === VMT.PrintRequest && !printRequestReplySent) {
                     eftposReceipt.current = eftposData.current.payload;
 
@@ -429,6 +429,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
                     printRequestReplySent = true;
                 } else {
+                    await delay(interval);
+
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
                     addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
                 }
