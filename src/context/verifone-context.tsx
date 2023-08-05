@@ -187,7 +187,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     };
 
     const addToLogs = (log: string) => {
-        logs.current += format(new Date(), "dd/MM/yy HH:mm:ss ") + log + "\n";
+        logs.current += format(new Date(), "dd/MM/yy HH:mm:ss.SSS ") + log + "\n";
     };
 
     const createEftposTransactionLog = async (restaurantId: string, amount: number) => {
@@ -425,7 +425,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     eftposReceipt.current = eftposData.current.payload;
 
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
-                    addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
+                    addToLogs(`BROWSER_DATA: ${VMT.PrintResponse},OK`);
 
                     printRequestReplySent = true;
                 } else {
