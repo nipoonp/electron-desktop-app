@@ -177,21 +177,11 @@ const createWindow = () => {
     });
 
     globalShortcut.register("Shift+CommandOrControl+I", () => {
-        console.log("Updating...");
-
         isDevToolsOpen ? mainWindow.webContents.closeDevTools() : mainWindow.webContents.openDevTools();
         isDevToolsOpen = !isDevToolsOpen;
     });
 
     globalShortcut.register("Shift+CommandOrControl+Q", () => {
-        console.log("Updating...");
-        autoUpdater.autoDownload = false;
-        autoUpdater.checkForUpdates();
-
-        updatedStarted = true;
-    });
-
-    globalShortcut.register("Shift+CommandOrControl+U", () => {
         console.log("Updating...");
         autoUpdater.autoDownload = false;
         autoUpdater.checkForUpdates();
