@@ -379,7 +379,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 const now = new Date();
                 const loopDate = Number(now);
 
-                delay(1000);
+                await delay(interval2);
 
                 console.log("Polling for result...");
                 addToLogs("Polling for result...");
