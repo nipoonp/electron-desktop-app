@@ -104,7 +104,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
     const { register, isPOS } = useRegister();
 
-    const interval = 1 * 1500; // 1.5 seconds
+    const interval = 1 * 1000; // 1.5 seconds
     const interval2 = 1 * 100; // 100 miliseconds
     const timeout = 3 * 60 * 1000; // 3 minutes
     const noResponseTimeout = 30 * 1000; // 30 seconds
@@ -309,6 +309,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     const errorMessage = checkForErrors();
                     if (errorMessage) return errorMessage;
 
+                    console.log("Waiting to receive Configure Printing Response (CP,ON)...");
                     addToLogs("Waiting to receive Configure Printing Response (CP,ON)...");
 
                     await delay(interval);
@@ -411,6 +412,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     return;
                 }
 
+                // Check If Eftpos Has The Response -------------------------------------------------------------------------------------------------------------------------------- //
                 if (eftposData.current.type === VMT.ResultAndExtrasResponse) {
                     const verifonePurchaseResultArray = eftposData.current.payload.split(",");
                     iSO8583ResponseCode = verifonePurchaseResultArray[2];
@@ -431,6 +433,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
                     printRequestReplySent.current = true;
 
+                    // No need to wait another interval delay just to get the result. The result is usually ready within around 10 milliseconds.
                     await delay(interval2);
 
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
