@@ -413,7 +413,7 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
                                 // (in case e.g. the device lost connectivity and is not able to upload the outcome)
                                 transactionOutcome = {
                                     platformTransactionOutcome: ESmartpayTransactionOutcome.Delayed,
-                                    transactionOutcome: EEftposTransactionOutcome.Delay,
+                                    transactionOutcome: EEftposTransactionOutcome.ProcessMessage,
                                     message: "Transaction delayed! Check if the device is powered on and online.",
                                     eftposReceipt: null,
                                 };
