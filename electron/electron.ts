@@ -182,8 +182,14 @@ const createWindow = () => {
     });
 
     globalShortcut.register("Shift+CommandOrControl+Q", () => {
-        if (updatedStarted) return;
+        console.log("Updating...");
+        autoUpdater.autoDownload = false;
+        autoUpdater.checkForUpdates();
 
+        updatedStarted = true;
+    });
+
+    globalShortcut.register("Shift+CommandOrControl+U", () => {
         console.log("Updating...");
         autoUpdater.autoDownload = false;
         autoUpdater.checkForUpdates();
