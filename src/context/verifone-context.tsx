@@ -374,15 +374,15 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
             let lastGetResultLoopTime = Number(new Date());
 
+            console.log("Starting polling for result...");
+            addToLogs("Starting polling for result...");
+
             // Poll For Transaction Result -------------------------------------------------------------------------------------------------------------------------------- //
             while (true) {
                 const now = new Date();
                 const loopDate = Number(now);
 
                 await delay(interval2);
-
-                console.log("Polling for result...");
-                addToLogs("Polling for result...");
 
                 // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
                 if (!connectedEndpoint.current) {
