@@ -184,6 +184,7 @@ const createWindow = () => {
     globalShortcut.register("Shift+CommandOrControl+Q", () => {
         if (updatedStarted) return;
 
+        console.log("Updating...");
         autoUpdater.autoDownload = false;
         autoUpdater.checkForUpdates();
 
