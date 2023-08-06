@@ -326,7 +326,13 @@ const PaymentAccepted = (props: {
 const PaymentProgressMessage = (props: { message: string }) => {
     const { message } = props;
 
-    return <div className="h4">{message && <div className="h2 mt-4 mb-6">{message}</div>}</div>;
+    return (
+        <>
+            <div className="h2 mb-6 awaiting-card-text">Swipe or insert your card on the terminal to complete your payment.</div>
+            <CachedImage className="awaiting-card-image" url={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} alt="awaiting-card-gif" />
+            {message && <div className="h2 mt-4 mb-6">{message}</div>}
+        </>
+    );
 };
 
 const PaymentFailed = (props: { errorMessage: string; onRetry: () => void; onCancelPayment: () => void }) => {
