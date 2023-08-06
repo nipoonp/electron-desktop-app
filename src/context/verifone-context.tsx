@@ -431,6 +431,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
                     printRequestReplySent.current = true;
 
+                    await delay(interval2);
+
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
                     addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
 
