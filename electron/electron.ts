@@ -177,6 +177,8 @@ const createWindow = () => {
     });
 
     globalShortcut.register("Shift+CommandOrControl+I", () => {
+        console.log("Updating...");
+
         isDevToolsOpen ? mainWindow.webContents.closeDevTools() : mainWindow.webContents.openDevTools();
         isDevToolsOpen = !isDevToolsOpen;
     });
