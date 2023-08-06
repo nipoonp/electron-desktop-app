@@ -152,12 +152,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
 
                     readyToPrintRequestReplySent.current = true;
-                } else if (type === VMT.PrintRequest && !printRequestReplySent.current) {
-                    eftposReceipt.current = dataPayload;
-                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
-                    addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
-
-                    printRequestReplySent.current = true;
                 }
 
                 lastMessageReceived.current = Number(new Date());
@@ -429,7 +423,19 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 }
 
                 // Poll For Result -------------------------------------------------------------------------------------------------------------------------------- //
-                if (!(loopDate < lastGetResultLoopTime + interval)) {
+                if (eftposData.current.type === VMT.PrintRequest && !printRequestReplySent.current) {
+                    eftposReceipt.current = eftposData.current.payload;
+
+                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
+                    addToLogs(`BROWSER_DATA: ${VMT.PrintResponse},OK`);
+
+                    printRequestReplySent.current = true;
+
+                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
+                    addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
+
+                    lastGetResultLoopTime = Number(new Date());
+                } else if (!(loopDate < lastGetResultLoopTime + interval)) {
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
                     addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
 
