@@ -105,6 +105,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const { register, isPOS } = useRegister();
 
     const interval = 1 * 1500; // 1.5 seconds
+    const interval2 = 1 * 100; // 100 miliseconds
     const timeout = 3 * 60 * 1000; // 3 minutes
     const noResponseTimeout = 30 * 1000; // 30 seconds
     const retryEftposConnectTimeout = 3 * 1000; // 3 seconds
@@ -348,8 +349,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         readyToPrintRequestReplySent.current = false;
         printRequestReplySent.current = false;
 
-        let lastGetResultLoopTime = Number(new Date());
-
         return new Promise(async (resolve, reject) => {
             // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
             if (!connectedEndpoint.current) {
@@ -373,15 +372,17 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
             addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
 
+            let lastGetResultLoopTime = Number(new Date());
+
             // Poll For Transaction Result -------------------------------------------------------------------------------------------------------------------------------- //
             while (true) {
                 const now = new Date();
                 const loopDate = Number(now);
 
-                delay(100);
+                delay(interval2);
 
-                // console.log("Polling for result...");
-                // addToLogs("Polling for result...");
+                console.log("Polling for result...");
+                addToLogs("Polling for result...");
 
                 // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
                 if (!connectedEndpoint.current) {
