@@ -58,7 +58,7 @@ export const restaurantListPath = "/restaurant_list";
 export const registerListPath = "/register_list";
 export const dashboardPath = "/dashboard";
 export const configureNewEftposPath = "/configure_new_eftpos";
-export const beginOrderPath = "/";
+export const beginOrderPath = "/begin_order";
 export const orderTypePath = "/order_type";
 export const tableNumberPath = "/table_number";
 export const buzzerNumberPath = "/buzzer_number";
@@ -147,9 +147,9 @@ const AppRoutes = () => {
     const navigate = useNavigate();
 
     // This is for electron, as it doesn't start at '/' route for some reason.
-    // useEffect(() => {
-    //     // navigate(beginOrderPath);
-    // }, []);
+    useEffect(() => {
+        navigate(beginOrderPath);
+    }, []);
 
     return (
         <>
