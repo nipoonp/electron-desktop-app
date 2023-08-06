@@ -21,6 +21,7 @@ Sentry.init({ dsn: "https://43d342efd1534e1b80c9ab4251b385a6@o1087887.ingest.sen
 let mainWindow: any;
 let verifoneClient = new net.Socket();
 let isDevToolsOpen = false;
+let updatedStarted = false;
 
 app.disableHardwareAcceleration();
 
@@ -180,8 +181,14 @@ const createWindow = () => {
         isDevToolsOpen = !isDevToolsOpen;
     });
 
-    autoUpdater.autoDownload = false;
-    autoUpdater.checkForUpdates();
+    globalShortcut.register("Shift+CommandOrControl+Q", () => {
+        if (updatedStarted) return;
+
+        autoUpdater.autoDownload = false;
+        autoUpdater.checkForUpdates();
+
+        updatedStarted = true;
+    });
 
     // Hide the menu bar
     mainWindow.setMenu(null);
@@ -201,7 +208,10 @@ autoUpdater.on("download-progress", (info) => {
     const percentDownloaded = info.percent.toFixed(2);
     const downloadSpeed = info.bytesPerSecond.toFixed(2);
 
-    mainWindow.webContents.send("ELECTRON_UPDATER", `Downloading new update... Progress: ${percentDownloaded}%. Download Speed: ${downloadSpeed} B/s`);
+    mainWindow.webContents.send(
+        "ELECTRON_UPDATER",
+        `Downloading new update... Progress: ${percentDownloaded}%. Download Speed: ${downloadSpeed} B/s`
+    );
     mainWindow.setProgressBar(percentDownloaded / 100);
 });
 
