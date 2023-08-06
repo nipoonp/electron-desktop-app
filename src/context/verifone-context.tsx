@@ -104,7 +104,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
     const { register, isPOS } = useRegister();
 
-    const interval = 1 * 1000; // 1.5 seconds
+    const interval = 1 * 1500; // 1.5 seconds
     const interval2 = 1 * 100; // 100 miliseconds
     const timeout = 3 * 60 * 1000; // 3 minutes
     const noResponseTimeout = 30 * 1000; // 30 seconds
