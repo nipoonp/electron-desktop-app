@@ -105,7 +105,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const { register, isPOS } = useRegister();
 
     const interval = 1 * 1500; // 1.5 seconds
-    const interval2 = 1 * 100; // 100 miliseconds
+    const interval2 = 1 * 150; // 150 miliseconds
     const timeout = 3 * 60 * 1000; // 3 minutes
     const noResponseTimeout = 30 * 1000; // 30 seconds
     const retryEftposConnectTimeout = 3 * 1000; // 3 seconds
