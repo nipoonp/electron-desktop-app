@@ -105,7 +105,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const { register, isPOS } = useRegister();
 
     const interval = 1 * 1500; // 1.5 seconds
-    const interval2 = 1 * 100; // 100 miliseconds
+    const interval2 = 1 * 150; // 150 miliseconds
     const timeout = 3 * 60 * 1000; // 3 minutes
     const noResponseTimeout = 30 * 1000; // 30 seconds
     const retryEftposConnectTimeout = 3 * 1000; // 3 seconds
@@ -378,15 +378,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
                 await delay(interval2);
 
-                // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
-                if (!connectedEndpoint.current) {
-                    const connectErrorMessage = await performConnectToEftpos(ipAddress, portNumber);
-                    if (connectErrorMessage) {
-                        reject({ transactionId: transactionId, message: connectErrorMessage });
-                        return;
-                    }
-                }
-
                 // Check If Eftpos Has Timed Out -------------------------------------------------------------------------------------------------------------------------------- //
                 if (!(loopDate < endTime)) {
                     const disconnectTimedOut = await disconnectEftpos();
@@ -440,6 +431,16 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
                     lastGetResultLoopTime = Number(new Date());
                 } else if (!(loopDate < lastGetResultLoopTime + interval)) {
+                    // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
+                    if (!connectedEndpoint.current) {
+                        const connectErrorMessage = await performConnectToEftpos(ipAddress, portNumber);
+                        if (connectErrorMessage) {
+                            reject({ transactionId: transactionId, message: connectErrorMessage });
+                            return;
+                        }
+                    }
+
+                    // Poll For Result -------------------------------------------------------------------------------------------------------------------------------- //
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
                     addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
 
