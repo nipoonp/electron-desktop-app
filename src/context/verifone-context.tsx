@@ -105,7 +105,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const { register, isPOS } = useRegister();
 
     const interval = 1 * 1500; // 1.5 seconds
-    const interval2 = 1 * 100; // 100 miliseconds
     const timeout = 3 * 60 * 1000; // 3 minutes
     const noResponseTimeout = 30 * 1000; // 30 seconds
     const retryEftposConnectTimeout = 3 * 1000; // 3 seconds
@@ -117,9 +116,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const logs = useRef<string>(initialLogs);
 
     const configurePrintingCommandSent = useRef<boolean>(false);
-    //Added these because Android terminals need the eadyToPrintRequest and printRequest replys coming in the correct sequence.
-    const readyToPrintRequestReplySent = useRef<boolean>(false);
-    const printRequestReplySent = useRef<boolean>(false);
 
     const attemptingEndpoint = useRef<string | null>(null);
     const connectedEndpoint = useRef<string | null>(null);
@@ -147,11 +143,13 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     payload: dataPayload,
                 };
 
-                if (type === VMT.ReadyToPrintRequest && !readyToPrintRequestReplySent.current) {
+                if (type == VMT.ReadyToPrintRequest) {
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
                     addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
-
-                    readyToPrintRequestReplySent.current = true;
+                } else if (type == VMT.PrintRequest) {
+                    eftposReceipt.current = dataPayload;
+                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
+                    addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
                 }
 
                 lastMessageReceived.current = Number(new Date());
@@ -341,14 +339,10 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         const merchantId = 0;
         let iSO8583ResponseCode;
 
-        readyToPrintRequestReplySent.current = false;
-        printRequestReplySent.current = false;
-
         return new Promise(async (resolve, reject) => {
             // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
             if (!connectedEndpoint.current) {
                 const connectErrorMessage = await performConnectToEftpos(ipAddress, portNumber);
-
                 if (connectErrorMessage) {
                     reject({ transactionId: transactionId, message: connectErrorMessage });
                     return;
@@ -367,8 +361,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
             addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
 
-            let lastGetResultLoopTime = Number(new Date());
-
             console.log("Starting polling for result...");
             addToLogs("Starting polling for result...");
 
@@ -377,7 +369,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 const now = new Date();
                 const loopDate = Number(now);
 
-                await delay(interval2);
+                await delay(interval);
 
                 // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
                 if (!connectedEndpoint.current) {
@@ -425,27 +417,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 }
 
                 // Poll For Result -------------------------------------------------------------------------------------------------------------------------------- //
-                if (eftposData.current.type === VMT.PrintRequest && !printRequestReplySent.current) {
-                    eftposReceipt.current = eftposData.current.payload;
-
-                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
-                    addToLogs(`BROWSER_DATA: ${VMT.PrintResponse},OK`);
-
-                    printRequestReplySent.current = true;
-
-                    // No need to wait another interval delay just to get the result. The result is usually ready within around 10 milliseconds.
-                    await delay(interval2);
-
-                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
-                    addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
-
-                    lastGetResultLoopTime = Number(new Date());
-                } else if (!(loopDate < lastGetResultLoopTime + interval)) {
-                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
-                    addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
-
-                    lastGetResultLoopTime = Number(new Date());
-                }
+                ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
+                addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
             }
 
             // Return Transaction Outcome -------------------------------------------------------------------------------------------------------------------------------- //
