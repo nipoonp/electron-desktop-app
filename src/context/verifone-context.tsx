@@ -118,8 +118,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
     const configurePrintingCommandSent = useRef<boolean>(false);
     //Added these because Android terminals need the eadyToPrintRequest and printRequest replys coming in the correct sequence.
-    let readyToPrintRequestReplySent = false;
-    let printRequestReplySent = false;
+    const readyToPrintRequestReplySent = useRef<boolean>(false);
+    const printRequestReplySent = useRef<boolean>(false);
 
     const attemptingEndpoint = useRef<string | null>(null);
     const connectedEndpoint = useRef<string | null>(null);
@@ -127,7 +127,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     useEffect(() => {
         ipcRenderer &&
             ipcRenderer.on("EFTPOS_CONNECT", (event: any, arg: any) => {
-                console.log("EFTPOS_CONNECT:", arg);
+                console.log(`EFTPOS_CONNECT ${format(new Date(), "dd/MM/yy HH:mm:ss.SSS ")}: ${arg}`);
                 addToLogs(`EFTPOS_CONNECT: ${arg}`);
 
                 connectedEndpoint.current = attemptingEndpoint.current;
@@ -135,7 +135,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
         ipcRenderer &&
             ipcRenderer.on("EFTPOS_DATA", (event: any, arg: any) => {
-                console.log("EFTPOS_DATA:", arg);
+                console.log(`EFTPOS_DATA ${format(new Date(), "dd/MM/yy HH:mm:ss.SSS ")}: ${arg}`);
                 addToLogs(`EFTPOS_DATA: ${arg}`);
 
                 const payloadArray = arg.split(",");
@@ -147,17 +147,17 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     payload: dataPayload,
                 };
 
-                if (type == VMT.ReadyToPrintRequest && !readyToPrintRequestReplySent) {
+                if (type == VMT.ReadyToPrintRequest && !readyToPrintRequestReplySent.current) {
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
                     addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
 
-                    readyToPrintRequestReplySent = true;
-                } else if (type == VMT.PrintRequest && !printRequestReplySent) {
+                    readyToPrintRequestReplySent.current = true;
+                } else if (type == VMT.PrintRequest && !printRequestReplySent.current) {
                     eftposReceipt.current = dataPayload;
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
                     addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
 
-                    printRequestReplySent = true;
+                    printRequestReplySent.current = true;
                 }
 
                 lastMessageReceived.current = Number(new Date());
@@ -165,7 +165,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
         ipcRenderer &&
             ipcRenderer.on("EFTPOS_ERROR", (event: any, arg: any) => {
-                console.error("EFTPOS_ERROR:", arg);
+                console.error(`EFTPOS_ERROR ${format(new Date(), "dd/MM/yy HH:mm:ss.SSS ")}: ${arg}`);
                 addToLogs(`EFTPOS_ERROR: ${arg}`);
 
                 eftposError.current = arg;
@@ -173,7 +173,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
         ipcRenderer &&
             ipcRenderer.on("EFTPOS_CLOSE", (event: any, arg: any) => {
-                console.log("EFTPOS_CLOSE:", arg);
+                console.log(`EFTPOS_CLOSE ${format(new Date(), "dd/MM/yy HH:mm:ss.SSS ")}: ${arg}`);
                 addToLogs(`EFTPOS_CLOSE: ${arg}`);
 
                 connectedEndpoint.current = null;
@@ -347,8 +347,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         const merchantId = 0;
         let iSO8583ResponseCode;
 
-        readyToPrintRequestReplySent = false;
-        printRequestReplySent = false;
+        readyToPrintRequestReplySent.current = false;
+        printRequestReplySent.current = false;
 
         return new Promise(async (resolve, reject) => {
             // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
