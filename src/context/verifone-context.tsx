@@ -118,8 +118,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
     const configurePrintingCommandSent = useRef<boolean>(false);
     //Added these because Android terminals need the eadyToPrintRequest and printRequest replys coming in the correct sequence.
-    const readyToPrintRequestReplySent = useRef<boolean>(false);
-    const printRequestReplySent = useRef<boolean>(false);
+    let readyToPrintRequestReplySent = false;
+    let printRequestReplySent = false;
 
     const attemptingEndpoint = useRef<string | null>(null);
     const connectedEndpoint = useRef<string | null>(null);
@@ -147,17 +147,17 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     payload: dataPayload,
                 };
 
-                if (type == VMT.ReadyToPrintRequest && !readyToPrintRequestReplySent.current) {
+                if (type == VMT.ReadyToPrintRequest && !readyToPrintRequestReplySent) {
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
                     addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
 
-                    readyToPrintRequestReplySent.current = true;
-                } else if (type == VMT.PrintRequest && !printRequestReplySent.current) {
+                    readyToPrintRequestReplySent = true;
+                } else if (type == VMT.PrintRequest && !printRequestReplySent) {
                     eftposReceipt.current = dataPayload;
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
                     addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
 
-                    printRequestReplySent.current = true;
+                    printRequestReplySent = true;
                 }
 
                 lastMessageReceived.current = Number(new Date());
@@ -347,8 +347,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         const merchantId = 0;
         let iSO8583ResponseCode;
 
-        readyToPrintRequestReplySent.current = false;
-        printRequestReplySent.current = false;
+        readyToPrintRequestReplySent = false;
+        printRequestReplySent = false;
 
         return new Promise(async (resolve, reject) => {
             // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
