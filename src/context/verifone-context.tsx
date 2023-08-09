@@ -125,6 +125,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const connectedEndpoint = useRef<string | null>(null);
 
     useEffect(() => {
+        console.log("xxx...I AM HERE!!!!");
         ipcRenderer &&
             ipcRenderer.on("EFTPOS_CONNECT", (event: any, arg: any) => {
                 console.log(`EFTPOS_CONNECT ${format(new Date(), "dd/MM/yy HH:mm:ss.SSS ")}: ${arg}`);
