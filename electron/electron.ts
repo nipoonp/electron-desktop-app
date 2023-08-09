@@ -311,7 +311,7 @@ ipcMain.on("BROWSER_EFTPOS_CONNECT", (event: any, data: any) => {
 });
 
 ipcMain.on("BROWSER_DATA", (event: any, data: any) => {
-    console.log(`Eftpos Data ${format(new Date(), "dd/MM/yy HH:mm:ss.SSS ")}`);
+    console.log(`Eftpos Data ${format(new Date(), "dd/MM/yy HH:mm:ss.SSS ")} ${encodeCommandBuffer(data.toString())}`);
     verifoneClient.write(encodeCommandBuffer(data.toString()));
 });
 
