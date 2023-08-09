@@ -14,7 +14,6 @@ import { IOrderReceipt, IPrintReceiptDataOutput, IPrintReceiptOutput, IPrintSale
 import path from "path";
 import net from "net";
 import * as Sentry from "@sentry/electron";
-import { format } from "date-fns";
 const { autoUpdater } = require("electron-updater");
 
 Sentry.init({ dsn: "https://43d342efd1534e1b80c9ab4251b385a6@o1087887.ingest.sentry.io/6102047" });
@@ -305,38 +304,33 @@ ipcMain.on("SENTRY_CURRENT_USER", (event: any, data: any) => {
 
 // Webapp Side
 ipcMain.on("BROWSER_EFTPOS_CONNECT", (event: any, data: any) => {
-    console.log(`POS Sent: ${format(new Date(), "dd/MM/yy HH:mm:ss.SSS ")}: Connecting to Verifone Eftpos on ${data.portNumber}:${data.ipAddress}`);
+    console.log(`Connecting to Verifone Eftpos on ${data.portNumber}:${data.ipAddress}`);
     verifoneClient.connect(data.portNumber, data.ipAddress);
 });
 
 ipcMain.on("BROWSER_DATA", (event: any, data: any) => {
-    console.log(`POS Sent: Eftpos Data ${format(new Date(), "dd/MM/yy HH:mm:ss.SSS ")} ${encodeCommandBuffer(data.toString())}`);
     verifoneClient.write(encodeCommandBuffer(data.toString()));
 });
 
 ipcMain.on("BROWSER_EFTPOS_DISCONNECT", () => {
-    console.log(`POS Sent: Disconnecting from Verifone Eftpos ${format(new Date(), "dd/MM/yy HH:mm:ss.SSS ")}`);
+    console.log(`Disconnecting from Verifone Eftpos`);
     verifoneClient.destroy();
 });
 
 // Verifone Eftpos Side
 verifoneClient.on("connect", () => {
-    console.log(`Eftpos Sent: EFTPOS_CONNECT ${format(new Date(), "dd/MM/yy HH:mm:ss.SSS ")}: Connected to Verifone Eftpos!`);
     mainWindow.webContents.send("EFTPOS_CONNECT", "Connected to Verifone Eftpos!");
 });
 
 verifoneClient.on("data", (data: Buffer) => {
-    // console.log("EFTPOS_DATA", data.toString());
-    console.log(`Eftpos Sent: EFTPOS_DATA ${format(new Date(), "dd/MM/yy HH:mm:ss.SSS ")}: ${decodeCommandBuffer(data)}`);
+    console.log("EFTPOS_DATA", data.toString());
     mainWindow.webContents.send("EFTPOS_DATA", decodeCommandBuffer(data));
 });
 
 verifoneClient.on("error", (error: Error) => {
-    console.log(`Eftpos Sent: EFTPOS_ERROR ${format(new Date(), "dd/MM/yy HH:mm:ss.SSS ")}: ${error.message}`);
     mainWindow.webContents.send("EFTPOS_ERROR", error.message);
 });
 
 verifoneClient.on("close", (had_error: boolean) => {
-    console.log(`Eftpos Sent: EFTPOS_CONNECT ${format(new Date(), "dd/MM/yy HH:mm:ss.SSS ")}: Connection with Verifone Eftpos ended!`);
     mainWindow.webContents.send("EFTPOS_CLOSE", "Connection with Verifone Eftpos ended!");
 });
