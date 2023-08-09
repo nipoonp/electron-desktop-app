@@ -306,9 +306,7 @@ ipcMain.on("SENTRY_CURRENT_USER", (event: any, data: any) => {
 // Webapp Side
 ipcMain.on("BROWSER_EFTPOS_CONNECT", (event: any, data: any) => {
     console.log(`Connecting to Verifone Eftpos on ${data.portNumber}:${data.ipAddress}`);
-    console.log(
-        `EFTPOS_CONNECT ${format(new Date(), "dd/MM/yy HH:mm:ss.SSS ")}: Connecting to Verifone Eftpos on ${data.portNumber}:${data.ipAddress}`
-    );
+    console.log(`${format(new Date(), "dd/MM/yy HH:mm:ss.SSS ")}: Connecting to Verifone Eftpos on ${data.portNumber}:${data.ipAddress}`);
     verifoneClient.connect(data.portNumber, data.ipAddress);
 });
 
@@ -331,7 +329,7 @@ verifoneClient.on("connect", () => {
 
 verifoneClient.on("data", (data: Buffer) => {
     // console.log("EFTPOS_DATA", data.toString());
-    console.log(`EFTPOS_DATA ${format(new Date(), "dd/MM/yy HH:mm:ss.SSS ")}: decodeCommandBuffer(data)`);
+    console.log(`EFTPOS_DATA ${format(new Date(), "dd/MM/yy HH:mm:ss.SSS ")}: ${decodeCommandBuffer(data)}`);
     mainWindow.webContents.send("EFTPOS_DATA", decodeCommandBuffer(data));
 });
 
