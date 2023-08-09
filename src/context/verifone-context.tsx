@@ -152,7 +152,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
 
                     readyToPrintRequestReplySent.current = true;
-                } else if (type == VMT.PrintRequest && printRequestReplySent.current) {
+                } else if (type == VMT.PrintRequest && !printRequestReplySent.current) {
                     eftposReceipt.current = dataPayload;
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
                     addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
