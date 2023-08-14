@@ -259,8 +259,12 @@ export const GET_RESTAURANT = gql`
             autoCompleteOrders
             preparationTimeInMinutes
             delayBetweenOrdersInSeconds
+            orderThresholdMessage
             surchargePercentage
             salesReportMailingList
+            orderThresholds {
+                enable
+            }
             advertisements {
                 items {
                     id
@@ -904,8 +908,12 @@ export interface IGET_RESTAURANT {
     autoCompleteOrders: boolean | null;
     preparationTimeInMinutes: number | null;
     delayBetweenOrdersInSeconds: number | null;
+    orderThresholdMessage: string | null;
     surchargePercentage: number | null;
     salesReportMailingList: string | null;
+    orderThresholds: {
+        enable: boolean;
+    } | null;
     advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
     thirdPartyIntegrations: IThirdPartyIntegrations | null;
     upSellCrossSell?: IGET_RESTAURANT_UP_SELL_CROSS_SELL;
