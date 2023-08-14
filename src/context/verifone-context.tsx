@@ -318,7 +318,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     console.log("Waiting to receive Configure Printing Response (CP,ON)...");
                     addToLogs("Waiting to receive Configure Printing Response (CP,ON)...");
 
-                    await delay(interval);
+                    await delay(interval2);
 
                     if (!(Number(new Date()) < printingTimeoutEndTime)) {
                         const disconnectTimedOut = await disconnectEftpos();
