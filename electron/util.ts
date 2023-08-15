@@ -549,7 +549,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
         printer.drawLine();
         printer.bold(true);
         printer.setTextSize(1, 1);
-        printer.println(`${product.quantity > 1 ? product.quantity + "x " : ""}${product.name}`);
+        printer.println(`${product.quantity > 1 ? product.quantity + "x " : ""}${product.kitchenName || product.name}`);
         printer.setTextNormal();
         printer.bold(false);
 
@@ -559,7 +559,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
             printer.newLine();
             printer.bold(true);
             printer.underlineThick(true);
-            printer.println(`${modifierGroup.name}`);
+            printer.println(`${modifierGroup.kitchenName || modifierGroup.name}`);
             printer.underlineThick(false);
             printer.bold(false);
 
@@ -568,9 +568,9 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
                 let mStr = "";
 
                 if (changedQuantity < 0 && Math.abs(changedQuantity) == modifier.preSelectedQuantity) {
-                    mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${modifier.name}`;
+                    mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${modifier.kitchenName || modifier.name}`;
                 } else {
-                    mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)}x ` : ""}${modifier.name}`;
+                    mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)}x ` : ""}${modifier.kitchenName || modifier.name}`;
                 }
 
                 printer.print(mStr);
@@ -603,7 +603,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
                                 printer.print(`      `);
                                 printer.bold(true);
                                 printer.underlineThick(true);
-                                printer.println(`${productModifier_modifierGroup.name}`);
+                                printer.println(`${productModifier_modifierGroup.kitchenName || productModifier_modifierGroup.name}`);
                                 printer.underlineThick(false);
                                 printer.bold(false);
 
@@ -614,12 +614,12 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
 
                                         if (changedQuantity < 0 && Math.abs(changedQuantity) == productModifier_modifier.preSelectedQuantity) {
                                             mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${
-                                                productModifier_modifier.name
+                                                productModifier_modifier.kitchenName || productModifier_modifier.name
                                             }`;
                                         } else {
                                             mStr = `${
                                                 productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""
-                                            }${productModifier_modifier.name}`;
+                                            }${productModifier_modifier.kitchenName || productModifier_modifier.name}`;
                                         }
 
                                         if (productModifier_modifier_index === 0) {
@@ -819,7 +819,7 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
     order.products.forEach((product: ICartProduct) => {
         printer.drawLine();
         printer.bold(true);
-        printer.println(`${product.quantity > 1 ? product.quantity + "x " : ""}${product.name}`);
+        printer.println(`${product.quantity > 1 ? product.quantity + "x " : ""}${product.kitchenName || product.name}`);
         printer.bold(false);
 
         product.modifierGroups.forEach((modifierGroup: ICartModifierGroup) => {
@@ -828,7 +828,7 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
             printer.newLine();
             printer.bold(true);
             printer.underlineThick(true);
-            printer.println(`${modifierGroup.name}`);
+            printer.println(`${modifierGroup.kitchenName || modifierGroup.name}`);
             printer.underlineThick(false);
             printer.bold(false);
 
@@ -837,9 +837,9 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
                 let mStr = "";
 
                 if (changedQuantity < 0 && Math.abs(changedQuantity) == modifier.preSelectedQuantity) {
-                    mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${modifier.name}`;
+                    mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${modifier.kitchenName || modifier.name}`;
                 } else {
-                    mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)}x ` : ""}${modifier.name}`;
+                    mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)}x ` : ""}${modifier.kitchenName || modifier.name}`;
                 }
 
                 printer.print(mStr);
@@ -872,7 +872,7 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
                                 printer.print(`      `);
                                 printer.bold(true);
                                 printer.underlineThick(true);
-                                printer.println(`${productModifier_modifierGroup.name}`);
+                                printer.println(`${productModifier_modifierGroup.kitchenName || productModifier_modifierGroup.name}`);
                                 printer.underlineThick(false);
                                 printer.bold(false);
 
@@ -883,12 +883,12 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
 
                                         if (changedQuantity < 0 && Math.abs(changedQuantity) == productModifier_modifier.preSelectedQuantity) {
                                             mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${
-                                                productModifier_modifier.name
+                                                productModifier_modifier.kitchenName || productModifier_modifier.name
                                             }`;
                                         } else {
                                             mStr = `${
                                                 productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""
-                                            }${productModifier_modifier.name}`;
+                                            }${productModifier_modifier.kitchenName || productModifier_modifier.name}`;
                                         }
 
                                         if (productModifier_modifier_index === 0) {
@@ -1090,7 +1090,7 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
         printer.drawLine();
         printer.bold(true);
         printer.setTextSize(1, 1);
-        printer.println(`${product.quantity > 1 ? product.quantity + "x " : ""}${product.name}`);
+        printer.println(`${product.quantity > 1 ? product.quantity + "x " : ""}${product.kitchenName || product.name}`);
         printer.setTextNormal();
         printer.bold(false);
 
@@ -1100,7 +1100,7 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
             printer.newLine();
             printer.bold(true);
             printer.underlineThick(true);
-            printer.println(`${modifierGroup.name}`);
+            printer.println(`${modifierGroup.kitchenName || modifierGroup.name}`);
             printer.underlineThick(false);
             printer.bold(false);
 
@@ -1109,9 +1109,9 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
                 let mStr = "";
 
                 if (changedQuantity < 0 && Math.abs(changedQuantity) == modifier.preSelectedQuantity) {
-                    mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${modifier.name}`;
+                    mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${modifier.kitchenName || modifier.name}`;
                 } else {
-                    mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)}x ` : ""}${modifier.name}`;
+                    mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)}x ` : ""}${modifier.kitchenName || modifier.name}`;
                 }
 
                 printer.bold(true);
@@ -1148,7 +1148,7 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
                                 printer.print(`      `);
                                 printer.bold(true);
                                 printer.underlineThick(true);
-                                printer.println(`${productModifier_modifierGroup.name}`);
+                                printer.println(`${productModifier_modifierGroup.kitchenName || productModifier_modifierGroup.name}`);
                                 printer.underlineThick(false);
                                 printer.bold(false);
 
@@ -1159,12 +1159,12 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
 
                                         if (changedQuantity < 0 && Math.abs(changedQuantity) == productModifier_modifier.preSelectedQuantity) {
                                             mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${
-                                                productModifier_modifier.name
+                                                productModifier_modifier.kitchenName || productModifier_modifier.name
                                             }`;
                                         } else {
                                             mStr = `${
                                                 productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""
-                                            }${productModifier_modifier.name}`;
+                                            }${productModifier_modifier.kitchenName || productModifier_modifier.name}`;
                                         }
 
                                         printer.bold(true);
