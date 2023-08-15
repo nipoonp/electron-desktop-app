@@ -194,11 +194,9 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
     if (!order.orderScheduledAt && order.preparationTimeInMinutes) {
         printer.newLine();
         printer.bold(true);
-        printer.underlineThick(true);
         printer.setTextSize(1, 1);
         printer.println(`Ready in ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "mins" : "min"}`);
         printer.setTextNormal();
-        printer.underlineThick(false);
         printer.bold(false);
     }
 
@@ -535,11 +533,9 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
     if (!order.orderScheduledAt && order.preparationTimeInMinutes) {
         printer.newLine();
         printer.bold(true);
-        printer.underlineThick(true);
         printer.setTextSize(1, 1);
         printer.println(`Ready in ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "mins" : "min"}`);
         printer.setTextNormal();
-        printer.underlineThick(false);
         printer.bold(false);
     }
 
@@ -817,9 +813,7 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
     if (!order.orderScheduledAt && order.preparationTimeInMinutes) {
         printer.newLine();
         printer.bold(true);
-        printer.underlineThick(true);
         printer.println(`Ready in ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "mins" : "min"}`);
-        printer.underlineThick(false);
         printer.bold(false);
     }
 
@@ -1096,11 +1090,9 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
     if (!order.orderScheduledAt && order.preparationTimeInMinutes) {
         printer.newLine();
         printer.bold(true);
-        printer.underlineThick(true);
         printer.setTextSize(1, 1);
         printer.println(`Ready in ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "mins" : "min"}`);
         printer.setTextNormal();
-        printer.underlineThick(false);
         printer.bold(false);
     }
 
