@@ -281,6 +281,7 @@ export const Checkout = () => {
             addProduct({
                 id: product.id,
                 name: product.name,
+                kitchenName: product.kitchenName,
                 price: product.price,
                 totalPrice: product.price,
                 discount: 0,
@@ -297,6 +298,7 @@ export const Checkout = () => {
                 category: {
                     id: category.id,
                     name: category.name,
+                    kitchenName: category.kitchenName,
                     image: category.image
                         ? {
                               key: category.image.key,
@@ -397,6 +399,7 @@ export const Checkout = () => {
             timeLeft = timeLeft - 1;
 
             if (timeLeft == 0) {
+                //@ts-ignore
                 transactionCompleteTimeoutIntervalId.current && clearInterval(transactionCompleteTimeoutIntervalId.current);
 
                 navigate(beginOrderPath);
@@ -411,6 +414,7 @@ export const Checkout = () => {
     };
 
     const clearTransactionCompleteTimeout = () => {
+        //@ts-ignore
         transactionCompleteTimeoutIntervalId.current && clearInterval(transactionCompleteTimeoutIntervalId.current);
         navigate(beginOrderPath);
         //     if (isPOS) {
@@ -480,6 +484,7 @@ export const Checkout = () => {
                 buzzer: order.buzzer,
                 placedAt: order.placedAt,
                 orderScheduledAt: order.orderScheduledAt,
+                preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
             });
         }
     };

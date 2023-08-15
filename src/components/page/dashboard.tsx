@@ -117,6 +117,7 @@ export default () => {
             const newCartProduct: ICartProduct = {
                 id: product.id,
                 name: product.name,
+                kitchenName: product.kitchenName,
                 price: product.price,
                 totalPrice: product.totalPrice,
                 discount: 0, //Set discount to total because we do not want to add any discount or promotions to parked orders
@@ -134,6 +135,7 @@ export default () => {
                     ? {
                           id: product.category.id,
                           name: product.category.name,
+                          kitchenName: product.category.kitchenName,
                           image: product.category.image
                               ? {
                                     key: product.category.image.key,
@@ -161,6 +163,7 @@ export default () => {
                     const newCartModifierGroup: ICartModifierGroup = {
                         id: modifierGroup.id,
                         name: modifierGroup.name,
+                        kitchenName: modifierGroup.kitchenName,
                         choiceDuplicate: modifierGroup.choiceDuplicate,
                         choiceMin: modifierGroup.choiceMin,
                         choiceMax: modifierGroup.choiceMax,
@@ -201,6 +204,7 @@ export default () => {
                             const newCartModifier: ICartModifier = {
                                 id: modifier.id,
                                 name: modifier.name,
+                                kitchenName: modifier.kitchenName,
                                 price: modifier.price,
                                 preSelectedQuantity: modifier.preSelectedQuantity,
                                 quantity: modifier.quantity,
