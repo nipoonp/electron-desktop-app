@@ -154,17 +154,6 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
         printer.bold(false);
     }
 
-    if (!order.orderScheduledAt && order.preparationTimeInMinutes) {
-        printer.newLine();
-        printer.bold(true);
-        printer.underlineThick(true);
-        printer.setTextSize(1, 1);
-        printer.println(`Prep Time: ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "minutes" : "mintue"}`);
-        printer.setTextNormal();
-        printer.underlineThick(false);
-        printer.bold(false);
-    }
-
     if (order.customerInformation) {
         printer.println(
             `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
@@ -199,6 +188,17 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
         printer.setTextSize(1, 1);
         printer.println(`Order: ${order.number}`);
         printer.setTextNormal();
+        printer.bold(false);
+    }
+
+    if (!order.orderScheduledAt && order.preparationTimeInMinutes) {
+        printer.newLine();
+        printer.bold(true);
+        printer.underlineThick(true);
+        printer.setTextSize(1, 1);
+        printer.println(`Ready in ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "mins" : "min"}`);
+        printer.setTextNormal();
+        printer.underlineThick(false);
         printer.bold(false);
     }
 
@@ -532,6 +532,17 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
         printer.bold(false);
     }
 
+    if (!order.orderScheduledAt && order.preparationTimeInMinutes) {
+        printer.newLine();
+        printer.bold(true);
+        printer.underlineThick(true);
+        printer.setTextSize(1, 1);
+        printer.println(`Ready in ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "mins" : "min"}`);
+        printer.setTextNormal();
+        printer.underlineThick(false);
+        printer.bold(false);
+    }
+
     if (order.customerInformation) {
         printer.newLine();
         printer.drawLine();
@@ -803,6 +814,15 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
         printer.bold(false);
     }
 
+    if (!order.orderScheduledAt && order.preparationTimeInMinutes) {
+        printer.newLine();
+        printer.bold(true);
+        printer.underlineThick(true);
+        printer.println(`Ready in ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "mins" : "min"}`);
+        printer.underlineThick(false);
+        printer.bold(false);
+    }
+
     if (order.customerInformation) {
         printer.newLine();
         printer.drawLine();
@@ -1070,6 +1090,17 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
         printer.setTextSize(1, 1);
         printer.println(`Order: ${order.number}`);
         printer.setTextNormal();
+        printer.bold(false);
+    }
+
+    if (!order.orderScheduledAt && order.preparationTimeInMinutes) {
+        printer.newLine();
+        printer.bold(true);
+        printer.underlineThick(true);
+        printer.setTextSize(1, 1);
+        printer.println(`Ready in ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "mins" : "min"}`);
+        printer.setTextNormal();
+        printer.underlineThick(false);
         printer.bold(false);
     }
 
