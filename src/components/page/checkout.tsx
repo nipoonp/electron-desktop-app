@@ -484,6 +484,7 @@ export const Checkout = () => {
                 buzzer: order.buzzer,
                 placedAt: order.placedAt,
                 orderScheduledAt: order.orderScheduledAt,
+                preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
             });
         }
     };

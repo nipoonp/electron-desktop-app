@@ -110,6 +110,7 @@ export interface IOrderReceipt {
     buzzer: string | null;
     placedAt: string;
     orderScheduledAt: string | null;
+    preparationTimeInMinutes: null | null;
 }
 
 export interface IPrintSalesDataInputDailySales {

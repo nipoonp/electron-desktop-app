@@ -154,6 +154,17 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
         printer.bold(false);
     }
 
+    if (!order.orderScheduledAt && order.preparationTimeInMinutes) {
+        printer.newLine();
+        printer.bold(true);
+        printer.underlineThick(true);
+        printer.setTextSize(1, 1);
+        printer.println(`Prep Time: ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "minutes" : "mintue"}`);
+        printer.setTextNormal();
+        printer.underlineThick(false);
+        printer.bold(false);
+    }
+
     if (order.customerInformation) {
         printer.println(
             `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`

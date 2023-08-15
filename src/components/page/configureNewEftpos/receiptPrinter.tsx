@@ -232,6 +232,7 @@ export const ReceiptPrinter = () => {
                 buzzer: "10",
                 placedAt: new Date().toISOString(),
                 orderScheduledAt: new Date().toISOString(),
+                preparationTimeInMinutes: 20,
             });
         }
 
@@ -269,6 +270,7 @@ export const ReceiptPrinter = () => {
                 buzzer: "10",
                 placedAt: new Date().toISOString(),
                 orderScheduledAt: new Date().toISOString(),
+                preparationTimeInMinutes: null,
             });
         }
 
@@ -306,6 +308,7 @@ export const ReceiptPrinter = () => {
                 buzzer: "10",
                 placedAt: new Date().toISOString(),
                 orderScheduledAt: null,
+                preparationTimeInMinutes: null,
             });
         }
     };

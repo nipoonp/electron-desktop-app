@@ -246,6 +246,7 @@ export interface IOrderReceipt {
     buzzer: string | null;
     placedAt: string;
     orderScheduledAt: string | null;
+    preparationTimeInMinutes: number | null;
 }
 
 export interface IOrderLabel {
