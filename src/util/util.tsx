@@ -650,6 +650,7 @@ const processProductsForPrint = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMEN
                     convertedM.push({
                         id: m.id,
                         name: m.name,
+                        kitchenName: m.kitchenName,
                         price: m.price,
                         preSelectedQuantity: m.preSelectedQuantity,
                         quantity: m.quantity,
@@ -661,6 +662,7 @@ const processProductsForPrint = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMEN
                 convertedMG.push({
                     id: mg.id,
                     name: mg.name,
+                    kitchenName: mg.kitchenName,
                     choiceDuplicate: mg.choiceDuplicate,
                     choiceMin: mg.choiceMin,
                     choiceMax: mg.choiceMax,
@@ -672,6 +674,7 @@ const processProductsForPrint = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMEN
         convertedP.push({
             id: p.id,
             name: p.name,
+            kitchenName: p.kitchenName,
             price: p.price,
             totalPrice: p.totalPrice,
             discount: p.discount,
@@ -682,11 +685,13 @@ const processProductsForPrint = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMEN
                 ? {
                       id: p.category.id,
                       name: p.category.name,
+                      kitchenName: p.category.kitchenName,
                       image: p.category.image,
                   }
                 : {
                       id: "invalid",
                       name: "invalid",
+                      kitchenName: "invalid",
                       image: null,
                   },
             modifierGroups: convertedMG,

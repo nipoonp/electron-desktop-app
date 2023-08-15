@@ -45,6 +45,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         products {
             id
             name
+            kitchenName
             price
             totalPrice
             discount
@@ -59,6 +60,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
             category {
                 id
                 name
+                kitchenName
                 image {
                     bucket
                     region
@@ -69,6 +71,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
             modifierGroups {
                 id
                 name
+                kitchenName
                 choiceDuplicate
                 choiceMin
                 choiceMax
@@ -76,12 +79,14 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                 modifiers {
                     id
                     name
+                    kitchenName
                     price
                     preSelectedQuantity
                     quantity
                     productModifiers {
                         id
                         name
+                        kitchenName
                         price
                         quantity
                         notes
@@ -94,6 +99,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                         category {
                             id
                             name
+                            kitchenName
                             image {
                                 bucket
                                 region
@@ -104,6 +110,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                         modifierGroups {
                             id
                             name
+                            kitchenName
                             choiceDuplicate
                             choiceMin
                             choiceMax
@@ -111,6 +118,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                             modifiers {
                                 id
                                 name
+                                kitchenName
                                 price
                                 preSelectedQuantity
                                 quantity
@@ -123,6 +131,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                                 productModifiers {
                                     id
                                     name
+                                    kitchenName
                                     price
                                     quantity
                                     notes
@@ -135,6 +144,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                                     category {
                                         id
                                         name
+                                        kitchenName
                                         image {
                                             bucket
                                             region
@@ -145,6 +155,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                                     modifierGroups {
                                         id
                                         name
+                                        kitchenName
                                         choiceDuplicate
                                         choiceMin
                                         choiceMax
@@ -152,6 +163,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                                         modifiers {
                                             id
                                             name
+                                            kitchenName
                                             price
                                             preSelectedQuantity
                                             quantity
@@ -214,6 +226,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
 export interface IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT {
     id: string;
     name: string;
+    kitchenName: string | null;
     price: number;
     totalPrice: number;
     discount: number;
@@ -227,12 +240,14 @@ export interface IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT {
 export interface IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT {
     id: string;
     name: string;
+    kitchenName: string | null;
     image: IS3Object | null;
 }
 
 export interface IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT {
     id: string;
     name: string;
+    kitchenName: string | null;
     choiceDuplicate: number;
     choiceMin: number;
     choiceMax: number;
@@ -243,6 +258,7 @@ export interface IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT {
 export interface IGET_RESTAURANT_ORDER_MODIFIER_FRAGMENT {
     id: string;
     name: string;
+    kitchenName: string | null;
     price: number;
     preSelectedQuantity: number;
     quantity: number;
