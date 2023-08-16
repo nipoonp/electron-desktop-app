@@ -207,11 +207,11 @@ autoUpdater.on("update-downloaded", (info) => {
 
 autoUpdater.on("download-progress", (info) => {
     const percentDownloaded = info.percent.toFixed(2);
-    const downloadSpeed = info.bytesPerSecond.toFixed(2);
+    const downloadSpeed = (info.bytesPerSecond / (1024 * 1024)).toFixed(2);
 
     mainWindow.webContents.send(
         "ELECTRON_UPDATER",
-        `Downloading new update... Progress: ${percentDownloaded}%. Download Speed: ${downloadSpeed} B/s`
+        `Downloading new update... Progress: ${percentDownloaded}%. Download Speed: ${downloadSpeed} MB/s`
     );
     mainWindow.setProgressBar(percentDownloaded / 100);
 });

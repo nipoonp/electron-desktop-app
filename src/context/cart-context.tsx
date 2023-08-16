@@ -37,6 +37,7 @@ const initialSubTotal = 0;
 const initialPayments = [];
 const initialTransactionEftposReceipts = "";
 const initialIsShownUpSellCrossSellModal = false;
+const initialIsShownOrderThresholdMessageModal = false;
 const initialOrderScheduledAt = null;
 
 type ContextProps = {
@@ -83,6 +84,8 @@ type ContextProps = {
     setTransactionEftposReceipts: (receipt: string) => void;
     isShownUpSellCrossSellModal: boolean;
     setIsShownUpSellCrossSellModal: (isShownUpSellCrossSellModal: boolean) => void;
+    isShownOrderThresholdMessageModal: boolean;
+    setIsShownOrderThresholdMessageModal: (isShownOrderThresholdMessageModal: boolean) => void;
     orderScheduledAt: string | null;
     updateOrderScheduledAt: (orderScheduledAt: string | null) => void;
 };
@@ -130,7 +133,9 @@ const CartContext = createContext<ContextProps>({
     transactionEftposReceipts: initialTransactionEftposReceipts,
     setTransactionEftposReceipts: () => {},
     isShownUpSellCrossSellModal: initialIsShownUpSellCrossSellModal,
+    isShownOrderThresholdMessageModal: initialIsShownOrderThresholdMessageModal,
     setIsShownUpSellCrossSellModal: () => {},
+    setIsShownOrderThresholdMessageModal: () => {},
     orderScheduledAt: initialOrderScheduledAt,
     updateOrderScheduledAt: (orderScheduledAt: string | null) => {},
 });
@@ -153,6 +158,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [payments, _setPayments] = useState<ICartPayment[]>(initialPayments);
     const [transactionEftposReceipts, _setTransactionEftposReceipts] = useState<string>(initialTransactionEftposReceipts);
     const [isShownUpSellCrossSellModal, _setIsShownUpSellCrossSellModal] = useState<boolean>(initialIsShownUpSellCrossSellModal);
+    const [isShownOrderThresholdMessageModal, _setIsShownOrderThresholdMessageModal] = useState(initialIsShownOrderThresholdMessageModal);
 
     const [userAppliedPromotionCode, _setUserAppliedPromotionCode] = useState<string | null>(initialUserAppliedPromotionCode);
     const [promotion, _setPromotion] = useState<ICartPromotion | null>(initialPromotion);
@@ -527,6 +533,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setIsShownUpSellCrossSellModal(isShownUpSellCrossSellModal);
     };
 
+    const setIsShownOrderThresholdMessageModal = (isShownOrderThresholdMessageModal: boolean) => {
+        _setIsShownOrderThresholdMessageModal(isShownOrderThresholdMessageModal);
+    };
+
     const updateOrderScheduledAt = (orderScheduledAt: string | null) => {
         _setOrderScheduledAt(orderScheduledAt);
     };
@@ -553,6 +563,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setPayments(initialPayments);
         _setTransactionEftposReceipts(initialTransactionEftposReceipts);
         _setIsShownUpSellCrossSellModal(initialIsShownUpSellCrossSellModal);
+        _setIsShownOrderThresholdMessageModal(initialIsShownOrderThresholdMessageModal);
         _setOrderScheduledAt(initialOrderScheduledAt);
     };
 
@@ -601,7 +612,9 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 transactionEftposReceipts: transactionEftposReceipts,
                 setTransactionEftposReceipts: setTransactionEftposReceipts,
                 isShownUpSellCrossSellModal: isShownUpSellCrossSellModal,
+                isShownOrderThresholdMessageModal: isShownOrderThresholdMessageModal,
                 setIsShownUpSellCrossSellModal: setIsShownUpSellCrossSellModal,
+                setIsShownOrderThresholdMessageModal: setIsShownOrderThresholdMessageModal,
                 orderScheduledAt: orderScheduledAt,
                 updateOrderScheduledAt: updateOrderScheduledAt,
             }}

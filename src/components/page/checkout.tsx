@@ -57,6 +57,7 @@ import { CachedImage } from "../../tabin/components/cachedImage";
 import { UpSellCategoryModal } from "../modals/upSellCategory";
 import { useErrorLogging } from "../../context/errorLogging-context";
 import { PromotionCodeModal } from "../modals/promotionCodeModal";
+import { OrderThresholdMessageModal } from "../modals/orderThresholdMessageModal";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
 import { OrderSummary } from "./checkout/orderSummary";
 import { PaymentModal } from "../modals/paymentModal";
@@ -111,6 +112,8 @@ export const Checkout = () => {
         removeUserAppliedPromotion,
         isShownUpSellCrossSellModal,
         setIsShownUpSellCrossSellModal,
+        isShownOrderThresholdMessageModal,
+        setIsShownOrderThresholdMessageModal,
         orderScheduledAt,
         updateOrderScheduledAt,
     } = useCart();
@@ -168,6 +171,7 @@ export const Checkout = () => {
     const [showPromotionCodeModal, setShowPromotionCodeModal] = useState(false);
     const [showUpSellCategoryModal, setShowUpSellCategoryModal] = useState(false);
     const [showUpSellProductModal, setShowUpSellProductModal] = useState(false);
+    const [showOrderThresholdMessageModal, setShowOrderThresholdMessageModal] = useState(false);
 
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
 
@@ -215,6 +219,10 @@ export const Checkout = () => {
 
     const onClosePromotionCodeModal = () => {
         setShowPromotionCodeModal(false);
+    };
+
+    const onCloseOrderThresholdMessageModal = () => {
+        setShowOrderThresholdMessageModal(false);
     };
 
     const onCloseEditProductModal = () => {
@@ -273,6 +281,7 @@ export const Checkout = () => {
             addProduct({
                 id: product.id,
                 name: product.name,
+                kitchenName: product.kitchenName,
                 price: product.price,
                 totalPrice: product.price,
                 discount: 0,
@@ -289,6 +298,7 @@ export const Checkout = () => {
                 category: {
                     id: category.id,
                     name: category.name,
+                    kitchenName: category.kitchenName,
                     image: category.image
                         ? {
                               key: category.image.key,
@@ -323,6 +333,11 @@ export const Checkout = () => {
     };
 
     const onClickOrderButton = async () => {
+        if (restaurant.orderThresholds?.enable && restaurant.orderThresholdMessage && !isShownOrderThresholdMessageModal) {
+            setShowOrderThresholdMessageModal(true);
+            return;
+        }
+
         if (register && register.enableBuzzerNumbers && buzzerNumber === null) {
             navigate(buzzerNumberPath);
             return;
@@ -384,6 +399,7 @@ export const Checkout = () => {
             timeLeft = timeLeft - 1;
 
             if (timeLeft == 0) {
+                //@ts-ignore
                 transactionCompleteTimeoutIntervalId.current && clearInterval(transactionCompleteTimeoutIntervalId.current);
 
                 navigate(beginOrderPath);
@@ -398,6 +414,7 @@ export const Checkout = () => {
     };
 
     const clearTransactionCompleteTimeout = () => {
+        //@ts-ignore
         transactionCompleteTimeoutIntervalId.current && clearInterval(transactionCompleteTimeoutIntervalId.current);
         navigate(beginOrderPath);
         //     if (isPOS) {
@@ -467,6 +484,7 @@ export const Checkout = () => {
                 buzzer: order.buzzer,
                 placedAt: order.placedAt,
                 orderScheduledAt: order.orderScheduledAt,
+                preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
             });
         }
     };
@@ -1167,6 +1185,20 @@ export const Checkout = () => {
         return <>{showPromotionCodeModal && <PromotionCodeModal isOpen={showPromotionCodeModal} onClose={onClosePromotionCodeModal} />}</>;
     };
 
+    const thresholdMessageModal = () => {
+        return (
+            <>
+                {showOrderThresholdMessageModal && (
+                    <OrderThresholdMessageModal
+                        isOpen={showOrderThresholdMessageModal}
+                        onClose={onCloseOrderThresholdMessageModal}
+                        onContinue={() => setIsShownOrderThresholdMessageModal(true)}
+                    />
+                )}
+            </>
+        );
+    };
+
     const paymentModal = () => {
         return (
             <>
@@ -1207,6 +1239,7 @@ export const Checkout = () => {
             {editProductModal()}
             {itemUpdatedModal()}
             {promotionCodeModal()}
+            {thresholdMessageModal()}
             {paymentModal()}
         </>
     );

@@ -84,6 +84,7 @@ export const ProductModal = (props: {
                                     {
                                         id: modifierLink.modifier.id,
                                         name: modifierLink.modifier.name,
+                                        kitchenName: modifierLink.modifier.kitchenName,
                                         price: modifierLink.modifier.price,
                                         preSelectedQuantity: modifierLink.preSelectedQuantity,
                                         quantity: modifierLink.preSelectedQuantity,
@@ -179,6 +180,7 @@ export const ProductModal = (props: {
                         const newOrderedProductModifierItem: ICartModifier = {
                             id: modifier.id,
                             name: modifier.name,
+                            kitchenName: modifier.kitchenName,
                             price: modifier.price,
                             preSelectedQuantity: modifier.preSelectedQuantity,
                             quantity: modifier.quantity,
@@ -230,6 +232,7 @@ export const ProductModal = (props: {
                       {
                           id: selectedModifier.productModifier.id,
                           name: selectedModifier.productModifier.name,
+                          kitchenName: selectedModifier.productModifier.kitchenName,
                           price: selectedModifier.productModifier.price,
                           totalPrice: selectedModifier.productModifier.price,
                           discount: 0,
@@ -248,6 +251,7 @@ export const ProductModal = (props: {
                                   ? {
                                         id: selectedModifier.productModifier.categories.items[0].category.id,
                                         name: selectedModifier.productModifier.categories.items[0].category.name,
+                                        kitchenName: selectedModifier.productModifier.categories.items[0].category.kitchenName,
                                         image: selectedModifier.productModifier.categories.items[0].category.image
                                             ? {
                                                   key: selectedModifier.productModifier.categories.items[0].category.image.key,
@@ -266,6 +270,7 @@ export const ProductModal = (props: {
         const newOrderedModifierItem: ICartModifier = {
             id: selectedModifier.id,
             name: selectedModifier.name,
+            kitchenName: selectedModifier.kitchenName,
             price: selectedModifier.price,
             preSelectedQuantity: preSelectedModifierQuantity,
             quantity: 1,
@@ -308,6 +313,7 @@ export const ProductModal = (props: {
         const newOrderedModifierItem: ICartModifier = {
             id: selectedModifier.id,
             name: selectedModifier.name,
+            kitchenName: selectedModifier.kitchenName,
             price: selectedModifier.price,
             preSelectedQuantity: preSelectedModifierQuantity,
             quantity: 0,
@@ -367,6 +373,7 @@ export const ProductModal = (props: {
                       {
                           id: selectedModifier.productModifier.id,
                           name: selectedModifier.productModifier.name,
+                          kitchenName: selectedModifier.productModifier.kitchenName,
                           price: selectedModifier.productModifier.price,
                           totalPrice: selectedModifier.productModifier.price,
                           discount: 0,
@@ -385,6 +392,7 @@ export const ProductModal = (props: {
                                   ? {
                                         id: selectedModifier.productModifier.categories.items[0].category.id,
                                         name: selectedModifier.productModifier.categories.items[0].category.name,
+                                        kitchenName: selectedModifier.productModifier.categories.items[0].category.kitchenName,
                                         image: selectedModifier.productModifier.categories.items[0].category.image
                                             ? {
                                                   key: selectedModifier.productModifier.categories.items[0].category.image.key,
@@ -403,6 +411,7 @@ export const ProductModal = (props: {
         const newOrderedModifierItem: ICartModifier = {
             id: selectedModifier.id,
             name: selectedModifier.name,
+            kitchenName: selectedModifier.kitchenName,
             price: selectedModifier.price,
             preSelectedQuantity: preSelectedModifierQuantity,
             quantity: quantity,
@@ -477,6 +486,7 @@ export const ProductModal = (props: {
                       {
                           id: selectedModifier.productModifier.id,
                           name: selectedModifier.productModifier.name,
+                          kitchenName: selectedModifier.productModifier.kitchenName,
                           price: selectedModifier.productModifier.price,
                           totalPrice: selectedModifier.productModifier.price,
                           discount: 0,
@@ -495,6 +505,7 @@ export const ProductModal = (props: {
                                   ? {
                                         id: selectedModifier.productModifier.categories.items[0].category.id,
                                         name: selectedModifier.productModifier.categories.items[0].category.name,
+                                        kitchenName: selectedModifier.productModifier.categories.items[0].category.kitchenName,
                                         image: selectedModifier.productModifier.categories.items[0].category.image
                                             ? {
                                                   key: selectedModifier.productModifier.categories.items[0].category.image.key,
@@ -513,6 +524,7 @@ export const ProductModal = (props: {
         const newOrderedModifierItem: ICartModifier = {
             id: selectedModifier.id,
             name: selectedModifier.name,
+            kitchenName: selectedModifier.kitchenName,
             price: selectedModifier.price,
             preSelectedQuantity: preSelectedModifierQuantity,
             quantity: 1,
@@ -626,6 +638,7 @@ export const ProductModal = (props: {
                     selectedModifierGroups.push({
                         id: mg.modifierGroup.id,
                         name: mg.modifierGroup.name,
+                        kitchenName: mg.modifierGroup.kitchenName,
                         choiceDuplicate: mg.modifierGroup.choiceDuplicate,
                         choiceMin: mg.modifierGroup.choiceMin,
                         choiceMax: mg.modifierGroup.choiceMax,
@@ -638,6 +651,7 @@ export const ProductModal = (props: {
         const productToOrder: ICartProduct = {
             id: product.id,
             name: product.name,
+            kitchenName: product.kitchenName,
             price: product.price,
             totalPrice: totalDisplayPrice / quantity,
             discount: 0,
@@ -654,6 +668,7 @@ export const ProductModal = (props: {
             category: {
                 id: category.id,
                 name: category.name,
+                kitchenName: category.kitchenName,
                 image: category.image
                     ? {
                           key: category.image.key,
