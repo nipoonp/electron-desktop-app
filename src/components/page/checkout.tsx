@@ -126,7 +126,7 @@ export const Checkout = () => {
 
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
-    const { createTransaction: windcaveCreateTransaction, pollForOutcome: windcavePollForOutcome } = useWindcave();
+    const { createTransaction: windcaveCreateTransaction } = useWindcave();
 
     const [createOrderMutation] = useMutation(CREATE_ORDER, {
         update: (proxy, mutationResult) => {
@@ -809,14 +809,13 @@ export const Checkout = () => {
                 const pollingUrl = await smartpayCreateTransaction(amount, "Card.Purchase");
                 outcome = await smartpayPollForOutcome(pollingUrl, delayed);
             } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
-                const txnRef = await windcaveCreateTransaction(
+                outcome = await windcaveCreateTransaction(
                     register.windcaveStationId,
                     register.windcaveStationUser,
                     register.windcaveStationKey,
                     amount,
                     "Purchase"
                 );
-                outcome = await windcavePollForOutcome(register.windcaveStationId, register.windcaveStationUser, register.windcaveStationKey, txnRef);
             } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
 

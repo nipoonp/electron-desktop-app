@@ -1,12 +1,11 @@
 import { createContext, useContext, useRef } from "react";
 import axios from "axios";
 import { convertCentsToDollars, toLocalISOString } from "../util/util";
-import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
-import { useMutation } from "@apollo/client";
 import { useRestaurant } from "./restaurant-context";
 import { EEftposTransactionOutcome, EWindcaveTransactionOutcome, IEftposTransactionOutcome } from "../model/model";
 import { useRegister } from "./register-context";
 import { format } from "date-fns";
+import { useErrorLogging } from "./errorLogging-context";
 
 var convert = require("xml-js");
 
@@ -150,8 +149,14 @@ const CURRENCY: string = "NZD";
 const initialLogs = "";
 
 type ContextProps = {
-    createTransaction: (stationId: string, user: string, key: string, amount: number, transactionType: string, action?: string) => Promise<string>;
-    pollForOutcome: (stationId: string, user: string, key: string, txnRef: string, action?: string) => Promise<IEftposTransactionOutcome>;
+    createTransaction: (
+        stationId: string,
+        user: string,
+        key: string,
+        amount: number,
+        transactionType: string,
+        action?: string
+    ) => Promise<IEftposTransactionOutcome>;
 };
 
 const WindcaveContext = createContext<ContextProps>({
@@ -160,14 +165,10 @@ const WindcaveContext = createContext<ContextProps>({
             console.log("");
         });
     },
-    pollForOutcome: (stationId: string, user: string, key: string, txnRef: string, action?: string) => {
-        return new Promise(() => {
-            console.log("");
-        });
-    },
 });
 
 const WindcaveProvider = (props: { children: React.ReactNode }) => {
+    const { addEftposLog } = useErrorLogging();
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
 
@@ -188,9 +189,19 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         return result;
     };
 
-    const [createEftposTransactionLogMutation, { data, loading, error }] = useMutation(CREATE_EFTPOS_TRANSACTION_LOG, {
-        update: (proxy, mutationResult) => {},
-    });
+    const createEftposTransactionLog = async (restaurantId: string, transactionType: string, amount: number) => {
+        const now = new Date();
+
+        await addEftposLog({
+            eftposProvider: "WINDCAVE",
+            amount: amount,
+            type: transactionType,
+            payload: logs.current,
+            restaurantId: restaurantId,
+            timestamp: toLocalISOString(now),
+            expiry: Number(Math.floor(Number(now) / 1000) + 2592000), // Add 30 days to timeStamp for DynamoDB TTL
+        });
+    };
 
     const resetVariables = () => {
         //Add new reset if new variables are added above.
@@ -201,7 +212,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         logs.current += format(new Date(), "dd/MM/yy HH:mm:ss.SSS ") + log + "\n";
     };
 
-    const createTransaction = (
+    const sendTransaction = async (
         stationId: string,
         user: string,
         key: string,
@@ -209,110 +220,100 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         transactionType: string,
         action: string = ACTION
     ): Promise<string> => {
-        return new Promise(async (resolve, reject) => {
-            if (!amount) {
-                reject("The amount has to be supplied");
-                return;
-            } else if (amount <= 0) {
-                reject("The amount must be greater than 0");
-                return;
-            } else if (!transactionType) {
-                reject("The transactionType has to be supplied");
-                return;
-            }
+        if (!amount) {
+            throw "The amount has to be supplied";
+        } else if (amount <= 0) {
+            throw "The amount must be greater than 0";
+        } else if (!transactionType) {
+            throw "The transactionType has to be supplied";
+        }
 
-            const d = new Date();
-            const txnRef = Math.round(d.getTime() / 1000).toString(); //secondsSinceEpoch
+        const d = new Date();
+        const txnRef = Math.round(d.getTime() / 1000).toString(); //secondsSinceEpoch
 
-            const params = {
-                Scr: {
-                    _attributes: {
-                        action: action,
-                        user: user,
-                        key: key,
-                    },
-                    Amount: {
-                        _text: convertCentsToDollars(amount),
-                    },
-                    Cur: {
-                        _text: CURRENCY,
-                    },
-                    TxnType: {
-                        _text: transactionType,
-                    },
-                    Station: {
-                        _text: stationId,
-                    },
-                    TxnRef: {
-                        _text: txnRef,
-                    },
-                    DeviceId: {
-                        _text: stationId,
-                    },
-                    PosName: {
-                        _text: stationId,
-                    },
-                    PosVersion: {
-                        _text: stationId,
-                    },
-                    VendorId: {
-                        _text: stationId,
-                    },
-                    MRef: {
-                        _text: `Tabin-${txnRef}`,
-                    },
+        const params = {
+            Scr: {
+                _attributes: {
+                    action: action,
+                    user: user,
+                    key: key,
                 },
-            };
+                Amount: {
+                    _text: convertCentsToDollars(amount),
+                },
+                Cur: {
+                    _text: CURRENCY,
+                },
+                TxnType: {
+                    _text: transactionType,
+                },
+                Station: {
+                    _text: stationId,
+                },
+                TxnRef: {
+                    _text: txnRef,
+                },
+                DeviceId: {
+                    _text: stationId,
+                },
+                PosName: {
+                    _text: stationId,
+                },
+                PosVersion: {
+                    _text: stationId,
+                },
+                VendorId: {
+                    _text: stationId,
+                },
+                MRef: {
+                    _text: `Tabin-${txnRef}`,
+                },
+            },
+        };
 
-            addToLogs(JSON.stringify({ url: BASE_URL, data: params }));
+        addToLogs(JSON.stringify({ url: BASE_URL, data: params }));
 
-            const paramsXML = convert.json2xml(params, { compact: true, spaces: 4 });
+        const paramsXML = convert.json2xml(params, { compact: true, spaces: 4 });
 
-            try {
-                const response = await axios.post(BASE_URL, paramsXML, {
-                    headers: {
-                        "Content-Type": "application/xml",
-                    },
-                });
+        try {
+            const response = await axios.post(BASE_URL, paramsXML, {
+                headers: {
+                    "Content-Type": "application/xml",
+                },
+            });
 
-                console.log(`Transaction POST response received (${response.status}) ${response.data}`);
-                addToLogs(JSON.stringify({ url: BASE_URL, data: JSON.stringify(response) }));
+            console.log(`Transaction POST response received (${response.status}) ${response.data}`);
+            addToLogs(JSON.stringify({ url: BASE_URL, data: JSON.stringify(response) }));
 
-                if (response.status === 200) {
-                    const resJSON = convert.xml2json(response.data, { compact: true, spaces: 4 });
-                    const res = JSON.parse(resJSON) as IWindcaveInitTransactionResponse;
+            if (response.status === 200) {
+                const resJSON = convert.xml2json(response.data, { compact: true, spaces: 4 });
+                const res = JSON.parse(resJSON) as IWindcaveInitTransactionResponse;
 
-                    if (res.Scr.Complete) {
-                        const transactionComplete = res.Scr.Complete._text === "1"; //If transaction is completed this field will be set to 1.
+                if (res.Scr.Complete) {
+                    const transactionComplete = res.Scr.Complete._text === "1"; //If transaction is completed this field will be set to 1.
 
-                        //Some other misc error
-                        if (transactionComplete && res.Scr.ReCo && res.Scr.ReCo._text) {
-                            reject(windcaveResponseCodeMessages[res.Scr.ReCo._text] || "Unknown error");
-                            return;
-                        }
-
-                        //Not in spec but result is returned at times
-                        if (transactionComplete && res.Scr.Result && res.Scr.Result.RC && res.Scr.Result.RC._text) {
-                            reject(windcaveResponseCodeMessages[res.Scr.Result.RC._text] || "Unknown error");
-                            return;
-                        }
+                    //Some other misc error
+                    if (transactionComplete && res.Scr.ReCo && res.Scr.ReCo._text) {
+                        throw windcaveResponseCodeMessages[res.Scr.ReCo._text] || "Unknown error";
                     }
 
-                    resolve(txnRef);
-                    return;
-                } else {
-                    reject("Invalid status code received. Please retry or contact Windcave support.");
-                    return;
+                    //Not in spec but result is returned at times
+                    if (transactionComplete && res.Scr.Result && res.Scr.Result.RC && res.Scr.Result.RC._text) {
+                        throw windcaveResponseCodeMessages[res.Scr.Result.RC._text] || "Unknown error";
+                    }
                 }
-            } catch (e) {
-                console.log("Error", e);
-                reject("There was an unknown error. Please retry or contact Windcave support.");
-                return;
+
+                return txnRef;
+            } else {
+                throw "Invalid status code received. Please retry or contact Windcave support.";
             }
-        });
+        } catch (e) {
+            console.log("Error", e);
+            throw "There was an unknown error. Please retry or contact Windcave support.";
+        }
     };
 
-    const sendButtonRequest = (
+    const sendButtonRequest = async (
         stationId: string,
         user: string,
         key: string,
@@ -321,70 +322,64 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         val: string,
         txnRef: string
     ): Promise<string> => {
-        return new Promise(async (resolve, reject) => {
-            const params = {
-                Scr: {
-                    _attributes: {
-                        action: action,
-                        user: user,
-                        key: key,
-                    },
-                    Station: {
-                        _text: stationId,
-                    },
-                    TxnType: {
-                        _text: "UI",
-                    },
-                    UiType: {
-                        _text: "Bn",
-                    },
-                    Name: {
-                        _text: name,
-                    },
-                    Val: {
-                        _text: val,
-                    },
-                    TxnRef: {
-                        _text: txnRef,
-                    },
+        const params = {
+            Scr: {
+                _attributes: {
+                    action: action,
+                    user: user,
+                    key: key,
                 },
-            };
+                Station: {
+                    _text: stationId,
+                },
+                TxnType: {
+                    _text: "UI",
+                },
+                UiType: {
+                    _text: "Bn",
+                },
+                Name: {
+                    _text: name,
+                },
+                Val: {
+                    _text: val,
+                },
+                TxnRef: {
+                    _text: txnRef,
+                },
+            },
+        };
 
-            addToLogs(JSON.stringify({ url: BASE_URL, data: params }));
+        addToLogs(JSON.stringify({ url: BASE_URL, data: params }));
 
-            const paramsXML = convert.json2xml(params, { compact: true, spaces: 4 });
+        const paramsXML = convert.json2xml(params, { compact: true, spaces: 4 });
 
-            try {
-                const response = await axios.post(BASE_URL, paramsXML, {
-                    headers: {
-                        "Content-Type": "application/xml",
-                    },
-                });
+        try {
+            const response = await axios.post(BASE_URL, paramsXML, {
+                headers: {
+                    "Content-Type": "application/xml",
+                },
+            });
 
-                console.log(`Transaction POST response received (${response.status}) ${response.data}`);
-                addToLogs(JSON.stringify({ url: BASE_URL, data: JSON.stringify(response) }));
+            console.log(`Transaction POST response received (${response.status}) ${response.data}`);
+            addToLogs(JSON.stringify({ url: BASE_URL, data: JSON.stringify(response) }));
 
-                if (response.status === 200) {
-                    const resJSON = convert.xml2json(response.data, { compact: true, spaces: 4 });
-                    const res = JSON.parse(resJSON) as IWindcaveInitTransactionResponse;
+            if (response.status === 200) {
+                const resJSON = convert.xml2json(response.data, { compact: true, spaces: 4 });
+                const res = JSON.parse(resJSON) as IWindcaveInitTransactionResponse;
 
-                    if (res.Scr && res.Scr.Success) {
-                        resolve(txnRef);
-                        return;
-                    } else {
-                        reject("SendButtonRequest: Button request unsuccessful");
-                        return;
-                    }
+                if (res.Scr && res.Scr.Success) {
+                    return txnRef;
                 } else {
-                    reject("SendButtonRequest: Invalid status code received");
-                    return;
+                    throw "SendButtonRequest: Button request unsuccessful";
                 }
-            } catch (e) {
-                console.log("Error", e);
-                reject("There was an unknown error. Please retry or contact Windcave support.");
-                return;
+            } else {
+                throw "SendButtonRequest: Invalid status code received";
             }
-        });
+        } catch (e) {
+            console.log("Error", e);
+            throw "There was an unknown error. Please retry or contact Windcave support.";
+        }
     };
 
     const pollForOutcome = (
@@ -508,7 +503,8 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                         ) {
                             if (register && register.skipEftposReceiptSignature) {
                                 //Auto send "YES" button press on signature stage
-                                await sendButtonRequest(stationId, user, key, action, "B1", "YES", txnRef);
+                                const sendButtonRequestTxnRef = await sendButtonRequest(stationId, user, key, action, "B1", "YES", txnRef);
+                                addToLogs(`SendButtonRequestTxnRef: ${sendButtonRequestTxnRef}`);
                             } else {
                                 //Fail any transaction approved with signature
                                 transactionOutcome = transactionOutcome = {
@@ -526,9 +522,10 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                     return;
                 }
 
-                console.log(transactionComplete, transactionOutcome);
+                console.log(`transactionComplete: ${transactionComplete}, transactionOutcome: ${transactionOutcome}`);
 
                 if (transactionComplete && transactionOutcome != null) {
+                    addToLogs(`TransactionOutcome: ${JSON.stringify(transactionOutcome)}`);
                     resolve(transactionOutcome);
                     return;
                 } else if (Number(new Date()) < endTime) {
@@ -547,11 +544,37 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         return new Promise(checkCondition);
     };
 
+    const createTransaction = (
+        stationId: string,
+        user: string,
+        key: string,
+        amount: number,
+        transactionType: string,
+        action: string = ACTION
+    ): Promise<IEftposTransactionOutcome> => {
+        return new Promise(async (resolve, reject) => {
+            try {
+                resetVariables();
+
+                const txnRef = await sendTransaction(stationId, user, key, amount, transactionType, action);
+                const outcome: IEftposTransactionOutcome = await pollForOutcome(stationId, user, key, txnRef);
+
+                resolve(outcome);
+            } catch (e) {
+                console.log("Error", e);
+                addToLogs(`Error ${e}`);
+
+                reject(e);
+            } finally {
+                await createEftposTransactionLog(restaurant ? restaurant.id : "", transactionType, amount);
+            }
+        });
+    };
+
     return (
         <WindcaveContext.Provider
             value={{
                 createTransaction: createTransaction,
-                pollForOutcome: pollForOutcome,
             }}
             children={props.children}
         />
