@@ -452,6 +452,8 @@ export const Checkout = () => {
                 kitchenPrinter: printer.kitchenPrinter,
                 kitchenPrinterSmall: printer.kitchenPrinterSmall,
                 kitchenPrinterLarge: printer.kitchenPrinterLarge,
+                hidePreparationTime: printer.hidePreparationTime,
+                hideModifierGroupName: printer.hideModifierGroupName,
                 hideModifierGroupsForCustomer: false,
                 restaurant: {
                     name: restaurant.name,

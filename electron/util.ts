@@ -191,7 +191,7 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
         printer.bold(false);
     }
 
-    if (!order.orderScheduledAt && order.preparationTimeInMinutes) {
+    if (!printer.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
         printer.newLine();
         printer.bold(true);
         printer.setTextSize(1, 1);
@@ -234,12 +234,14 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
         product.modifierGroups.forEach((modifierGroup: ICartModifierGroup) => {
             if (order.hideModifierGroupsForCustomer == true && modifierGroup.hideForCustomer == true) return;
 
-            printer.newLine();
-            printer.bold(true);
-            printer.underlineThick(true);
-            printer.println(`${modifierGroup.name}`);
-            printer.underlineThick(false);
-            printer.bold(false);
+            if (!order.hideModifierGroupName) {
+                printer.newLine();
+                printer.bold(true);
+                printer.underlineThick(true);
+                printer.println(`${modifierGroup.name}`);
+                printer.underlineThick(false);
+                printer.bold(false);
+            }
 
             modifierGroup.modifiers.forEach((modifier: ICartModifier) => {
                 const changedQuantity = modifier.quantity - modifier.preSelectedQuantity;
@@ -275,14 +277,16 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
                             productModifier_product.modifierGroups.forEach((productModifier_modifierGroup, index2) => {
                                 if (order.hideModifierGroupsForCustomer == true && productModifier_modifierGroup.hideForCustomer == true) return;
 
-                                if (index2 !== 0) printer.newLine();
+                                if (!order.hideModifierGroupName) {
+                                    if (index2 !== 0) printer.newLine();
 
-                                printer.print(`      `);
-                                printer.bold(true);
-                                printer.underlineThick(true);
-                                printer.println(`${productModifier_modifierGroup.name}`);
-                                printer.underlineThick(false);
-                                printer.bold(false);
+                                    printer.print(`      `);
+                                    printer.bold(true);
+                                    printer.underlineThick(true);
+                                    printer.println(`${productModifier_modifierGroup.name}`);
+                                    printer.underlineThick(false);
+                                    printer.bold(false);
+                                }
 
                                 productModifier_modifierGroup.modifiers.forEach((productModifier_modifier: ICartModifier) => {
                                     const changedQuantity = productModifier_modifier.quantity - productModifier_modifier.preSelectedQuantity;
@@ -530,7 +534,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
         printer.bold(false);
     }
 
-    if (!order.orderScheduledAt && order.preparationTimeInMinutes) {
+    if (!printer.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
         printer.newLine();
         printer.bold(true);
         printer.setTextSize(1, 1);
@@ -574,12 +578,14 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
         product.modifierGroups.forEach((modifierGroup: ICartModifierGroup) => {
             if (order.hideModifierGroupsForCustomer == true && modifierGroup.hideForCustomer == true) return;
 
-            printer.newLine();
-            printer.bold(true);
-            printer.underlineThick(true);
-            printer.println(`${modifierGroup.kitchenName || modifierGroup.name}`);
-            printer.underlineThick(false);
-            printer.bold(false);
+            if (!order.hideModifierGroupName) {
+                printer.newLine();
+                printer.bold(true);
+                printer.underlineThick(true);
+                printer.println(`${modifierGroup.kitchenName || modifierGroup.name}`);
+                printer.underlineThick(false);
+                printer.bold(false);
+            }
 
             modifierGroup.modifiers.forEach((modifier: ICartModifier, modifier_index: number) => {
                 const changedQuantity = modifier.quantity - modifier.preSelectedQuantity;
@@ -616,14 +622,16 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
                             productModifier_product.modifierGroups.forEach((productModifier_modifierGroup, index2) => {
                                 if (order.hideModifierGroupsForCustomer == true && productModifier_modifierGroup.hideForCustomer == true) return;
 
-                                if (index2 !== 0) printer.newLine();
+                                if (!order.hideModifierGroupName) {
+                                    if (index2 !== 0) printer.newLine();
 
-                                printer.print(`      `);
-                                printer.bold(true);
-                                printer.underlineThick(true);
-                                printer.println(`${productModifier_modifierGroup.kitchenName || productModifier_modifierGroup.name}`);
-                                printer.underlineThick(false);
-                                printer.bold(false);
+                                    printer.print(`      `);
+                                    printer.bold(true);
+                                    printer.underlineThick(true);
+                                    printer.println(`${productModifier_modifierGroup.kitchenName || productModifier_modifierGroup.name}`);
+                                    printer.underlineThick(false);
+                                    printer.bold(false);
+                                }
 
                                 productModifier_modifierGroup.modifiers.forEach(
                                     (productModifier_modifier: ICartModifier, productModifier_modifier_index: number) => {
@@ -810,7 +818,7 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
         printer.bold(false);
     }
 
-    if (!order.orderScheduledAt && order.preparationTimeInMinutes) {
+    if (!printer.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
         printer.newLine();
         printer.bold(true);
         printer.println(`Ready in ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "mins" : "min"}`);
@@ -850,12 +858,14 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
         product.modifierGroups.forEach((modifierGroup: ICartModifierGroup) => {
             if (order.hideModifierGroupsForCustomer == true && modifierGroup.hideForCustomer == true) return;
 
-            printer.newLine();
-            printer.bold(true);
-            printer.underlineThick(true);
-            printer.println(`${modifierGroup.kitchenName || modifierGroup.name}`);
-            printer.underlineThick(false);
-            printer.bold(false);
+            if (!order.hideModifierGroupName) {
+                printer.newLine();
+                printer.bold(true);
+                printer.underlineThick(true);
+                printer.println(`${modifierGroup.kitchenName || modifierGroup.name}`);
+                printer.underlineThick(false);
+                printer.bold(false);
+            }
 
             modifierGroup.modifiers.forEach((modifier: ICartModifier, modifier_index: number) => {
                 const changedQuantity = modifier.quantity - modifier.preSelectedQuantity;
@@ -892,14 +902,16 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
                             productModifier_product.modifierGroups.forEach((productModifier_modifierGroup, index2) => {
                                 if (order.hideModifierGroupsForCustomer == true && productModifier_modifierGroup.hideForCustomer == true) return;
 
-                                if (index2 !== 0) printer.newLine();
+                                if (!order.hideModifierGroupName) {
+                                    if (index2 !== 0) printer.newLine();
 
-                                printer.print(`      `);
-                                printer.bold(true);
-                                printer.underlineThick(true);
-                                printer.println(`${productModifier_modifierGroup.kitchenName || productModifier_modifierGroup.name}`);
-                                printer.underlineThick(false);
-                                printer.bold(false);
+                                    printer.print(`      `);
+                                    printer.bold(true);
+                                    printer.underlineThick(true);
+                                    printer.println(`${productModifier_modifierGroup.kitchenName || productModifier_modifierGroup.name}`);
+                                    printer.underlineThick(false);
+                                    printer.bold(false);
+                                }
 
                                 productModifier_modifierGroup.modifiers.forEach(
                                     (productModifier_modifier: ICartModifier, productModifier_modifier_index: number) => {
@@ -1087,7 +1099,7 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
         printer.bold(false);
     }
 
-    if (!order.orderScheduledAt && order.preparationTimeInMinutes) {
+    if (!printer.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
         printer.newLine();
         printer.bold(true);
         printer.setTextSize(1, 1);
@@ -1131,12 +1143,14 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
         product.modifierGroups.forEach((modifierGroup: ICartModifierGroup) => {
             if (order.hideModifierGroupsForCustomer == true && modifierGroup.hideForCustomer == true) return;
 
-            printer.newLine();
-            printer.bold(true);
-            printer.underlineThick(true);
-            printer.println(`${modifierGroup.kitchenName || modifierGroup.name}`);
-            printer.underlineThick(false);
-            printer.bold(false);
+            if (!order.hideModifierGroupName) {
+                printer.newLine();
+                printer.bold(true);
+                printer.underlineThick(true);
+                printer.println(`${modifierGroup.kitchenName || modifierGroup.name}`);
+                printer.underlineThick(false);
+                printer.bold(false);
+            }
 
             modifierGroup.modifiers.forEach((modifier: ICartModifier, modifier_index: number) => {
                 const changedQuantity = modifier.quantity - modifier.preSelectedQuantity;
@@ -1177,14 +1191,16 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
                             productModifier_product.modifierGroups.forEach((productModifier_modifierGroup, index2) => {
                                 if (order.hideModifierGroupsForCustomer == true && productModifier_modifierGroup.hideForCustomer == true) return;
 
-                                if (index2 !== 0) printer.newLine();
+                                if (!order.hideModifierGroupName) {
+                                    if (index2 !== 0) printer.newLine();
 
-                                printer.print(`      `);
-                                printer.bold(true);
-                                printer.underlineThick(true);
-                                printer.println(`${productModifier_modifierGroup.kitchenName || productModifier_modifierGroup.name}`);
-                                printer.underlineThick(false);
-                                printer.bold(false);
+                                    printer.print(`      `);
+                                    printer.bold(true);
+                                    printer.underlineThick(true);
+                                    printer.println(`${productModifier_modifierGroup.kitchenName || productModifier_modifierGroup.name}`);
+                                    printer.underlineThick(false);
+                                    printer.bold(false);
+                                }
 
                                 productModifier_modifierGroup.modifiers.forEach(
                                     (productModifier_modifier: ICartModifier, productModifier_modifier_index: number) => {
