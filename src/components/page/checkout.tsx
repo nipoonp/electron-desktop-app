@@ -443,7 +443,6 @@ export const Checkout = () => {
             });
         } else {
             //Not checking if its printerType receipt
-            console.log("xxx...printer", printer);
             await printReceipt({
                 orderId: order.id,
                 status: order.status,

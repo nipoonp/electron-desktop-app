@@ -191,7 +191,7 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
         printer.bold(false);
     }
 
-    if (!printer.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
+    if (!order.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
         printer.newLine();
         printer.bold(true);
         printer.setTextSize(1, 1);
@@ -534,9 +534,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
         printer.bold(false);
     }
 
-    console.log("xxx...printer.hidePreparationTime", printer.hidePreparationTime);
-
-    if (!printer.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
+    if (!order.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
         printer.newLine();
         printer.bold(true);
         printer.setTextSize(1, 1);
@@ -820,7 +818,7 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
         printer.bold(false);
     }
 
-    if (!printer.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
+    if (!order.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
         printer.newLine();
         printer.bold(true);
         printer.println(`Ready in ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "mins" : "min"}`);
@@ -1101,7 +1099,7 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
         printer.bold(false);
     }
 
-    if (!printer.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
+    if (!order.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
         printer.newLine();
         printer.bold(true);
         printer.setTextSize(1, 1);
