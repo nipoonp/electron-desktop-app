@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext, useContext, useRef } from "react";
 import axios from "axios";
 import { convertCentsToDollars, toLocalISOString } from "../util/util";
 import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
@@ -6,6 +6,7 @@ import { useMutation } from "@apollo/client";
 import { useRestaurant } from "./restaurant-context";
 import { EEftposTransactionOutcome, EWindcaveTransactionOutcome, IEftposTransactionOutcome } from "../model/model";
 import { useRegister } from "./register-context";
+import { format } from "date-fns";
 
 var convert = require("xml-js");
 
@@ -146,6 +147,8 @@ const CURRENCY: string = "NZD";
 //// ScrHITKey: 6b06b931c1942fa4222903055c9ac749c77fa4b86471d91b2909da74a69d928c
 //// StationId: 3801585856
 
+const initialLogs = "";
+
 type ContextProps = {
     createTransaction: (stationId: string, user: string, key: string, amount: number, transactionType: string, action?: string) => Promise<string>;
     pollForOutcome: (stationId: string, user: string, key: string, txnRef: string, action?: string) => Promise<IEftposTransactionOutcome>;
@@ -168,6 +171,8 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
 
+    const logs = useRef<string>(initialLogs);
+
     const formatReceipt = (receipt: string, width: number) => {
         let result = "";
 
@@ -186,6 +191,15 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
     const [createEftposTransactionLogMutation, { data, loading, error }] = useMutation(CREATE_EFTPOS_TRANSACTION_LOG, {
         update: (proxy, mutationResult) => {},
     });
+
+    const resetVariables = () => {
+        //Add new reset if new variables are added above.
+        logs.current = initialLogs;
+    };
+
+    const addToLogs = (log: string) => {
+        logs.current += format(new Date(), "dd/MM/yy HH:mm:ss.SSS ") + log + "\n";
+    };
 
     const createTransaction = (
         stationId: string,
@@ -250,6 +264,8 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                 },
             };
 
+            addToLogs(JSON.stringify({ url: BASE_URL, data: params }));
+
             const paramsXML = convert.json2xml(params, { compact: true, spaces: 4 });
 
             try {
@@ -259,26 +275,12 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                     },
                 });
 
-                // console.log(`Transaction POST response received (${response.status}) ${response.data}`);
+                console.log(`Transaction POST response received (${response.status}) ${response.data}`);
+                addToLogs(JSON.stringify({ url: BASE_URL, data: JSON.stringify(response) }));
 
-                if (response.status == 200) {
+                if (response.status === 200) {
                     const resJSON = convert.xml2json(response.data, { compact: true, spaces: 4 });
                     const res = JSON.parse(resJSON) as IWindcaveInitTransactionResponse;
-
-                    const now = new Date();
-
-                    await createEftposTransactionLogMutation({
-                        variables: {
-                            eftposProvider: "WINDCAVE",
-                            transactionId: txnRef,
-                            amount: amount,
-                            type: transactionType,
-                            payload: response.data,
-                            restaurantId: restaurant ? restaurant.id : "Invalid",
-                            timestamp: toLocalISOString(now),
-                            expiry: Number(Math.floor(Number(now) / 1000) + 2592000), // Add 30 days to timeStamp for DynamoDB TTL
-                        },
-                    });
 
                     if (res.Scr.Complete) {
                         const transactionComplete = res.Scr.Complete._text === "1"; //If transaction is completed this field will be set to 1.
@@ -302,8 +304,8 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                     reject("Invalid status code received. Please retry or contact Windcave support.");
                     return;
                 }
-            } catch (err) {
-                console.log("Error", error);
+            } catch (e) {
+                console.log("Error", e);
                 reject("There was an unknown error. Please retry or contact Windcave support.");
                 return;
             }
@@ -348,6 +350,8 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                 },
             };
 
+            addToLogs(JSON.stringify({ url: BASE_URL, data: params }));
+
             const paramsXML = convert.json2xml(params, { compact: true, spaces: 4 });
 
             try {
@@ -357,25 +361,12 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                     },
                 });
 
-                // console.log(`Transaction POST response received (${response.status}) ${response.data}`);
+                console.log(`Transaction POST response received (${response.status}) ${response.data}`);
+                addToLogs(JSON.stringify({ url: BASE_URL, data: JSON.stringify(response) }));
 
-                if (response.status == 200) {
+                if (response.status === 200) {
                     const resJSON = convert.xml2json(response.data, { compact: true, spaces: 4 });
                     const res = JSON.parse(resJSON) as IWindcaveInitTransactionResponse;
-
-                    const now = new Date();
-
-                    await createEftposTransactionLogMutation({
-                        variables: {
-                            eftposProvider: "WINDCAVE",
-                            transactionId: txnRef,
-                            type: "UI",
-                            payload: response.data,
-                            restaurantId: restaurant ? restaurant.id : "Invalid",
-                            timestamp: toLocalISOString(now),
-                            expiry: Number(Math.floor(Number(now) / 1000) + 2592000), // Add 30 days to timeStamp for DynamoDB TTL
-                        },
-                    });
 
                     if (res.Scr && res.Scr.Success) {
                         resolve(txnRef);
@@ -388,8 +379,8 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                     reject("SendButtonRequest: Invalid status code received");
                     return;
                 }
-            } catch (err) {
-                console.log("Error", error);
+            } catch (e) {
+                console.log("Error", e);
                 reject("There was an unknown error. Please retry or contact Windcave support.");
                 return;
             }
@@ -429,6 +420,8 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                     },
                 };
 
+                addToLogs(JSON.stringify({ url: BASE_URL, data: params }));
+
                 const paramsXML = convert.json2xml(params, { compact: true, spaces: 4 });
 
                 const response = await axios.post(BASE_URL, paramsXML, {
@@ -438,24 +431,15 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                 });
 
                 console.log(`Transaction GET response received (${response.status}) ${response.data}`);
+                addToLogs(JSON.stringify({ url: BASE_URL, data: JSON.stringify(response) }));
 
                 let transactionComplete = false;
                 let transactionOutcome: IEftposTransactionOutcome | null = null;
                 let eftposReceipt;
 
-                if (response.status == 200) {
+                if (response.status === 200) {
                     const resJSON = convert.xml2json(response.data, { compact: true, spaces: 4 });
                     const res = JSON.parse(resJSON) as IWindcaveStatusResponse;
-
-                    await createEftposTransactionLogMutation({
-                        variables: {
-                            eftposProvider: "WINDCAVE",
-                            transactionId: txnRef,
-                            payload: response.data,
-                            restaurantId: restaurant ? restaurant.id : "Invalid",
-                            expiry: Number(Math.floor(Number(new Date()) / 1000) + 2592000), // Add 30 days to timeStamp for DynamoDB TTL
-                        },
-                    });
 
                     if (res.Scr.Complete && res.Scr.Complete._text === "1") {
                         transactionComplete = res.Scr.Complete._text === "1"; //If transaction is completed this field will be set to 1.
@@ -554,8 +538,8 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                     reject("Polling timed out");
                     return;
                 }
-            } catch (error) {
-                console.log("Error", error);
+            } catch (e) {
+                console.log("Error", e);
                 reject("There was an unknown error. Please retry or contact Windcave support.");
             }
         };
