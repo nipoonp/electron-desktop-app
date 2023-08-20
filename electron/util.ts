@@ -534,6 +534,8 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
         printer.bold(false);
     }
 
+    console.log("xxx...printer.hidePreparationTime", printer.hidePreparationTime);
+
     if (!printer.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
         printer.newLine();
         printer.bold(true);
