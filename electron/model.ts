@@ -84,6 +84,7 @@ export interface IOrderReceipt {
     kitchenPrinterLarge: boolean | null;
     hidePreparationTime: boolean | null;
     hideModifierGroupName: boolean | null;
+    hideOrderType: boolean;
     hideModifierGroupsForCustomer: boolean | null;
     restaurant: {
         name: string;

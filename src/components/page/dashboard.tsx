@@ -77,6 +77,7 @@ export default () => {
                     kitchenPrinterLarge: register.printers.items[0].kitchenPrinterLarge,
                     hidePreparationTime: register.printers.items[0].hidePreparationTime,
                     hideModifierGroupName: register.printers.items[0].hideModifierGroupName,
+                    hideOrderType: register.availableOrderTypes.length === 0,
                     products: convertProductTypesForPrint(productsToPrint),
                     displayPaymentRequiredMessage: !order.paid,
                 });
@@ -333,6 +334,7 @@ export default () => {
                 kitchenPrinterLarge: printer.kitchenPrinterLarge,
                 hidePreparationTime: printer.hidePreparationTime,
                 hideModifierGroupName: printer.hideModifierGroupName,
+                hideOrderType: register.availableOrderTypes.length === 0,
                 products: convertProductTypesForPrint(productsToPrint),
             });
 

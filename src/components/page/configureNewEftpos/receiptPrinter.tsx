@@ -206,6 +206,7 @@ export const ReceiptPrinter = () => {
                 kitchenPrinterLarge: false,
                 hidePreparationTime: false,
                 hideModifierGroupName: false,
+                hideOrderType: false,
                 hideModifierGroupsForCustomer: false,
                 eftposReceipt: "",
                 restaurant: {
@@ -251,6 +252,7 @@ export const ReceiptPrinter = () => {
                 kitchenPrinterLarge: false,
                 hidePreparationTime: false,
                 hideModifierGroupName: false,
+                hideOrderType: false,
                 hideModifierGroupsForCustomer: false,
                 eftposReceipt: "",
                 restaurantLogoBase64: "",
@@ -291,6 +293,7 @@ export const ReceiptPrinter = () => {
                 kitchenPrinterLarge: false,
                 hidePreparationTime: false,
                 hideModifierGroupName: false,
+                hideOrderType: false,
                 hideModifierGroupsForCustomer: false,
                 eftposReceipt: "",
                 restaurantLogoBase64: "",

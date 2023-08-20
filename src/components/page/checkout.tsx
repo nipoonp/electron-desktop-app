@@ -455,6 +455,7 @@ export const Checkout = () => {
                 kitchenPrinterLarge: printer.kitchenPrinterLarge,
                 hidePreparationTime: printer.hidePreparationTime,
                 hideModifierGroupName: printer.hideModifierGroupName,
+                hideOrderType: register.availableOrderTypes.length === 1, //Don't show order type if only 1 is available
                 hideModifierGroupsForCustomer: false,
                 restaurant: {
                     name: restaurant.name,

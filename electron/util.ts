@@ -169,8 +169,10 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
         }
     }
 
-    printer.newLine();
-    printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
+    if (!order.hideOrderType) {
+        printer.newLine();
+        printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
+    }
 
     if (order.buzzer !== null) {
         printer.newLine();
@@ -508,12 +510,14 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
         printer.bold(false);
     }
 
-    printer.newLine();
-    printer.bold(true);
-    printer.setTextSize(1, 1);
-    printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
-    printer.setTextNormal();
-    printer.bold(false);
+    if (!order.hideOrderType) {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
 
     if (order.buzzer !== null) {
         printer.newLine();
@@ -792,12 +796,14 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
         printer.bold(false);
     }
 
-    printer.newLine();
-    printer.bold(true);
-    printer.setTextSize(1, 1);
-    printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
-    printer.setTextNormal();
-    printer.bold(false);
+    if (!order.hideOrderType) {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
 
     if (order.buzzer !== null) {
         printer.newLine();
@@ -1073,12 +1079,14 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
         printer.bold(false);
     }
 
-    printer.newLine();
-    printer.bold(true);
-    printer.setTextSize(1, 1);
-    printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
-    printer.setTextNormal();
-    printer.bold(false);
+    if (!order.hideOrderType) {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
 
     if (order.buzzer !== null) {
         printer.newLine();
