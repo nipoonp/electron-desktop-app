@@ -283,7 +283,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
             });
 
             console.log(`Transaction POST response received (${response.status}) ${response.data}`);
-            addToLogs(JSON.stringify({ url: BASE_URL, data: JSON.stringify(response) }));
+            addToLogs(JSON.stringify({ url: BASE_URL, data: response }));
 
             if (response.status === 200) {
                 const resJSON = convert.xml2json(response.data, { compact: true, spaces: 4 });
@@ -362,7 +362,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
             });
 
             console.log(`Transaction POST response received (${response.status}) ${response.data}`);
-            addToLogs(JSON.stringify({ url: BASE_URL, data: JSON.stringify(response) }));
+            addToLogs(JSON.stringify({ url: BASE_URL, data: response }));
 
             if (response.status === 200) {
                 const resJSON = convert.xml2json(response.data, { compact: true, spaces: 4 });
@@ -426,7 +426,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                 });
 
                 console.log(`Transaction GET response received (${response.status}) ${response.data}`);
-                addToLogs(JSON.stringify({ url: BASE_URL, data: JSON.stringify(response) }));
+                addToLogs(JSON.stringify({ url: BASE_URL, data: response }));
 
                 let transactionComplete = false;
                 let transactionOutcome: IEftposTransactionOutcome | null = null;
