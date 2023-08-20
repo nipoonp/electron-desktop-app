@@ -11,6 +11,7 @@ import {
     EPromotionType,
     IS3Object,
     IGET_THIRD_PARTY_ORDER_RESPONSE,
+    IGET_RESTAURANT_REGISTER_PRINTER,
 } from "../../graphql/customQueries";
 import {
     restaurantPath,
@@ -425,7 +426,7 @@ export const Checkout = () => {
         clearCart();
     };
 
-    const sendReceiptPrint = async (order: IGET_RESTAURANT_ORDER_FRAGMENT, printer: any) => {
+    const sendReceiptPrint = async (order: IGET_RESTAURANT_ORDER_FRAGMENT, printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
         const productsToPrint = filterPrintProducts(order.products, printer);
 
         if (productsToPrint.length === 0) return;
@@ -442,6 +443,7 @@ export const Checkout = () => {
             });
         } else {
             //Not checking if its printerType receipt
+            console.log("xxx...printer", printer);
             await printReceipt({
                 orderId: order.id,
                 status: order.status,
