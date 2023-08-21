@@ -100,7 +100,7 @@ const VerifoneContext = createContext<ContextProps>({
 });
 
 const VerifoneProvider = (props: { children: React.ReactNode }) => {
-    const { addVerifoneLog } = useErrorLogging();
+    const { addEftposLog } = useErrorLogging();
     const { restaurant } = useRestaurant();
     const { register, isPOS } = useRegister();
 
@@ -207,7 +207,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const createEftposTransactionLog = async (restaurantId: string, amount: number) => {
         const now = new Date();
 
-        await addVerifoneLog({
+        await addEftposLog({
             eftposProvider: "VERIFONE",
             amount: amount,
             type: eftposData.current.type,

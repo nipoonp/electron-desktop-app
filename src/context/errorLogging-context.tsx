@@ -4,7 +4,7 @@ import { useMutation } from "@apollo/client";
 import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
 import { useRestaurant } from "./restaurant-context";
 
-export interface IAddVerifoneLog {
+export interface IAddEftposLog {
     eftposProvider: string;
     amount: number;
     type: string;
@@ -16,7 +16,7 @@ export interface IAddVerifoneLog {
 
 type ContextProps = {
     logError: (error: string, context: string) => Promise<void>;
-    addVerifoneLog: (log: IAddVerifoneLog) => Promise<void>;
+    addEftposLog: (log: IAddEftposLog) => Promise<void>;
 };
 
 const ErrorLoggingContext = createContext<ContextProps>({
@@ -25,7 +25,7 @@ const ErrorLoggingContext = createContext<ContextProps>({
             console.log("");
         });
     },
-    addVerifoneLog: (log: IAddVerifoneLog) => {
+    addEftposLog: (log: IAddEftposLog) => {
         return new Promise(() => {
             console.log("");
         });
@@ -42,13 +42,13 @@ const ErrorLoggingProvider = (props: { children: React.ReactNode }) => {
         update: (proxy, mutationResult) => {},
     });
 
-    const addVerifoneLog = async (log: IAddVerifoneLog) => {
+    const addEftposLog = async (log: IAddEftposLog) => {
         try {
             await createEftposTransactionLogMutation({
                 variables: log,
             });
         } catch (e) {
-            console.log("Error in creating verifone transaction log", e);
+            console.log("Error in creating eftpos transaction log", e);
         }
     };
 
@@ -73,7 +73,7 @@ const ErrorLoggingProvider = (props: { children: React.ReactNode }) => {
         <ErrorLoggingContext.Provider
             value={{
                 logError: logError,
-                addVerifoneLog: addVerifoneLog,
+                addEftposLog: addEftposLog,
             }}
             children={props.children}
         />

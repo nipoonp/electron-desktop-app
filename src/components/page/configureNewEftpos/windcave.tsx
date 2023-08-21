@@ -14,15 +14,13 @@ export const Windcave = () => {
     const [amount, setAmount] = useState(199);
 
     const [showSpinner, setShowSpinner] = useState(false);
-    const { createTransaction, pollForOutcome } = useWindcave();
+    const { createTransaction } = useWindcave();
 
     const performEftposTransaction = async () => {
         setShowSpinner(true);
 
         try {
-            const txnRef = await createTransaction(stationId, user, key, amount, "Purchase", action);
-
-            let res: IEftposTransactionOutcome = await pollForOutcome(stationId, user, key, txnRef, action);
+            const res: IEftposTransactionOutcome = await createTransaction(stationId, user, key, amount, "Purchase", action);
 
             alert(res.message);
         } catch (errorMessage) {
