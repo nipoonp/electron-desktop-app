@@ -12,6 +12,7 @@ const TEST_PRODUCT: ICartProduct[] = [
     {
         id: "",
         name: "Samosa",
+        kitchenName: "Samosa",
         price: 1,
         totalPrice: 0,
         discount: 0,
@@ -20,6 +21,7 @@ const TEST_PRODUCT: ICartProduct[] = [
         category: {
             id: "",
             name: "Test Category",
+            kitchenName: "aaa",
             image: null,
         },
         modifierGroups: [
@@ -101,6 +103,7 @@ const TEST_PRODUCT: ICartProduct[] = [
             {
                 id: "",
                 name: "Choice of Sauce 2",
+                kitchenName: "Choice of Sauce 2",
                 choiceDuplicate: 1,
                 choiceMin: 0,
                 choiceMax: 1,
@@ -109,6 +112,7 @@ const TEST_PRODUCT: ICartProduct[] = [
                     {
                         id: "",
                         name: "Sauce",
+                        kitchenName: "bbb",
                         price: 50,
                         preSelectedQuantity: 0,
                         quantity: 2,
@@ -200,6 +204,9 @@ export const ReceiptPrinter = () => {
                 kitchenPrinter: true,
                 kitchenPrinterSmall: false,
                 kitchenPrinterLarge: false,
+                hidePreparationTime: false,
+                hideModifierGroupName: false,
+                hideOrderType: false,
                 hideModifierGroupsForCustomer: false,
                 eftposReceipt: "",
                 restaurant: {
@@ -228,6 +235,7 @@ export const ReceiptPrinter = () => {
                 buzzer: "10",
                 placedAt: new Date().toISOString(),
                 orderScheduledAt: new Date().toISOString(),
+                preparationTimeInMinutes: 20,
             });
         }
 
@@ -242,6 +250,9 @@ export const ReceiptPrinter = () => {
                 kitchenPrinter: false,
                 kitchenPrinterSmall: false,
                 kitchenPrinterLarge: false,
+                hidePreparationTime: false,
+                hideModifierGroupName: false,
+                hideOrderType: false,
                 hideModifierGroupsForCustomer: false,
                 eftposReceipt: "",
                 restaurantLogoBase64: "",
@@ -265,6 +276,7 @@ export const ReceiptPrinter = () => {
                 buzzer: "10",
                 placedAt: new Date().toISOString(),
                 orderScheduledAt: new Date().toISOString(),
+                preparationTimeInMinutes: null,
             });
         }
 
@@ -279,6 +291,9 @@ export const ReceiptPrinter = () => {
                 kitchenPrinter: true,
                 kitchenPrinterSmall: false,
                 kitchenPrinterLarge: false,
+                hidePreparationTime: false,
+                hideModifierGroupName: false,
+                hideOrderType: false,
                 hideModifierGroupsForCustomer: false,
                 eftposReceipt: "",
                 restaurantLogoBase64: "",
@@ -302,6 +317,7 @@ export const ReceiptPrinter = () => {
                 buzzer: "10",
                 placedAt: new Date().toISOString(),
                 orderScheduledAt: null,
+                preparationTimeInMinutes: null,
             });
         }
     };

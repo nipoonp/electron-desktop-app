@@ -75,6 +75,9 @@ export default () => {
                     kitchenPrinter: register.printers.items[0].kitchenPrinter,
                     kitchenPrinterSmall: register.printers.items[0].kitchenPrinterSmall,
                     kitchenPrinterLarge: register.printers.items[0].kitchenPrinterLarge,
+                    hidePreparationTime: register.printers.items[0].hidePreparationTime,
+                    hideModifierGroupName: register.printers.items[0].hideModifierGroupName,
+                    hideOrderType: register.availableOrderTypes.length === 0,
                     products: convertProductTypesForPrint(productsToPrint),
                     displayPaymentRequiredMessage: !order.paid,
                 });
@@ -117,6 +120,7 @@ export default () => {
             const newCartProduct: ICartProduct = {
                 id: product.id,
                 name: product.name,
+                kitchenName: product.kitchenName,
                 price: product.price,
                 totalPrice: product.totalPrice,
                 discount: 0, //Set discount to total because we do not want to add any discount or promotions to parked orders
@@ -134,6 +138,7 @@ export default () => {
                     ? {
                           id: product.category.id,
                           name: product.category.name,
+                          kitchenName: product.category.kitchenName,
                           image: product.category.image
                               ? {
                                     key: product.category.image.key,
@@ -161,6 +166,7 @@ export default () => {
                     const newCartModifierGroup: ICartModifierGroup = {
                         id: modifierGroup.id,
                         name: modifierGroup.name,
+                        kitchenName: modifierGroup.kitchenName,
                         choiceDuplicate: modifierGroup.choiceDuplicate,
                         choiceMin: modifierGroup.choiceMin,
                         choiceMax: modifierGroup.choiceMax,
@@ -201,6 +207,7 @@ export default () => {
                             const newCartModifier: ICartModifier = {
                                 id: modifier.id,
                                 name: modifier.name,
+                                kitchenName: modifier.kitchenName,
                                 price: modifier.price,
                                 preSelectedQuantity: modifier.preSelectedQuantity,
                                 quantity: modifier.quantity,
@@ -319,12 +326,15 @@ export default () => {
 
             await printReceipt({
                 ...receiptPrinterModalPrintReorderData,
-                printerType: register.printers.items[0].type,
-                printerAddress: register.printers.items[0].address,
-                customerPrinter: register.printers.items[0].customerPrinter,
-                kitchenPrinter: register.printers.items[0].kitchenPrinter,
-                kitchenPrinterSmall: register.printers.items[0].kitchenPrinterSmall,
-                kitchenPrinterLarge: register.printers.items[0].kitchenPrinterLarge,
+                printerType: printer.type,
+                printerAddress: printer.address,
+                customerPrinter: printer.customerPrinter,
+                kitchenPrinter: printer.kitchenPrinter,
+                kitchenPrinterSmall: printer.kitchenPrinterSmall,
+                kitchenPrinterLarge: printer.kitchenPrinterLarge,
+                hidePreparationTime: printer.hidePreparationTime,
+                hideModifierGroupName: printer.hideModifierGroupName,
+                hideOrderType: register.availableOrderTypes.length === 0,
                 products: convertProductTypesForPrint(productsToPrint),
             });
 

@@ -11,6 +11,7 @@ import {
     EPromotionType,
     IS3Object,
     IGET_THIRD_PARTY_ORDER_RESPONSE,
+    IGET_RESTAURANT_REGISTER_PRINTER,
 } from "../../graphql/customQueries";
 import {
     restaurantPath,
@@ -57,6 +58,7 @@ import { CachedImage } from "../../tabin/components/cachedImage";
 import { UpSellCategoryModal } from "../modals/upSellCategory";
 import { useErrorLogging } from "../../context/errorLogging-context";
 import { PromotionCodeModal } from "../modals/promotionCodeModal";
+import { OrderThresholdMessageModal } from "../modals/orderThresholdMessageModal";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
 import { OrderSummary } from "./checkout/orderSummary";
 import { PaymentModal } from "../modals/paymentModal";
@@ -111,6 +113,8 @@ export const Checkout = () => {
         removeUserAppliedPromotion,
         isShownUpSellCrossSellModal,
         setIsShownUpSellCrossSellModal,
+        isShownOrderThresholdMessageModal,
+        setIsShownOrderThresholdMessageModal,
         orderScheduledAt,
         updateOrderScheduledAt,
     } = useCart();
@@ -122,7 +126,7 @@ export const Checkout = () => {
 
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
-    const { createTransaction: windcaveCreateTransaction, pollForOutcome: windcavePollForOutcome } = useWindcave();
+    const { createTransaction: windcaveCreateTransaction } = useWindcave();
 
     const [createOrderMutation] = useMutation(CREATE_ORDER, {
         update: (proxy, mutationResult) => {
@@ -168,6 +172,7 @@ export const Checkout = () => {
     const [showPromotionCodeModal, setShowPromotionCodeModal] = useState(false);
     const [showUpSellCategoryModal, setShowUpSellCategoryModal] = useState(false);
     const [showUpSellProductModal, setShowUpSellProductModal] = useState(false);
+    const [showOrderThresholdMessageModal, setShowOrderThresholdMessageModal] = useState(false);
 
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
 
@@ -215,6 +220,10 @@ export const Checkout = () => {
 
     const onClosePromotionCodeModal = () => {
         setShowPromotionCodeModal(false);
+    };
+
+    const onCloseOrderThresholdMessageModal = () => {
+        setShowOrderThresholdMessageModal(false);
     };
 
     const onCloseEditProductModal = () => {
@@ -273,6 +282,7 @@ export const Checkout = () => {
             addProduct({
                 id: product.id,
                 name: product.name,
+                kitchenName: product.kitchenName,
                 price: product.price,
                 totalPrice: product.price,
                 discount: 0,
@@ -289,6 +299,7 @@ export const Checkout = () => {
                 category: {
                     id: category.id,
                     name: category.name,
+                    kitchenName: category.kitchenName,
                     image: category.image
                         ? {
                               key: category.image.key,
@@ -323,6 +334,11 @@ export const Checkout = () => {
     };
 
     const onClickOrderButton = async () => {
+        if (restaurant.orderThresholds?.enable && restaurant.orderThresholdMessage && !isShownOrderThresholdMessageModal) {
+            setShowOrderThresholdMessageModal(true);
+            return;
+        }
+
         if (register && register.enableBuzzerNumbers && buzzerNumber === null) {
             navigate(buzzerNumberPath);
             return;
@@ -384,6 +400,7 @@ export const Checkout = () => {
             timeLeft = timeLeft - 1;
 
             if (timeLeft == 0) {
+                //@ts-ignore
                 transactionCompleteTimeoutIntervalId.current && clearInterval(transactionCompleteTimeoutIntervalId.current);
 
                 navigate(beginOrderPath);
@@ -398,6 +415,7 @@ export const Checkout = () => {
     };
 
     const clearTransactionCompleteTimeout = () => {
+        //@ts-ignore
         transactionCompleteTimeoutIntervalId.current && clearInterval(transactionCompleteTimeoutIntervalId.current);
         navigate(beginOrderPath);
         //     if (isPOS) {
@@ -408,7 +426,7 @@ export const Checkout = () => {
         clearCart();
     };
 
-    const sendReceiptPrint = async (order: IGET_RESTAURANT_ORDER_FRAGMENT, printer: any) => {
+    const sendReceiptPrint = async (order: IGET_RESTAURANT_ORDER_FRAGMENT, printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
         const productsToPrint = filterPrintProducts(order.products, printer);
 
         if (productsToPrint.length === 0) return;
@@ -435,6 +453,9 @@ export const Checkout = () => {
                 kitchenPrinter: printer.kitchenPrinter,
                 kitchenPrinterSmall: printer.kitchenPrinterSmall,
                 kitchenPrinterLarge: printer.kitchenPrinterLarge,
+                hidePreparationTime: printer.hidePreparationTime,
+                hideModifierGroupName: printer.hideModifierGroupName,
+                hideOrderType: register.availableOrderTypes.length === 1, //Don't show order type if only 1 is available
                 hideModifierGroupsForCustomer: false,
                 restaurant: {
                     name: restaurant.name,
@@ -467,6 +488,7 @@ export const Checkout = () => {
                 buzzer: order.buzzer,
                 placedAt: order.placedAt,
                 orderScheduledAt: order.orderScheduledAt,
+                preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
             });
         }
     };
@@ -657,6 +679,7 @@ export const Checkout = () => {
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
                 subTotal: subTotal,
+                preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                 registerId: register.id,
                 products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
                 placedAt: toLocalISOString(now),
@@ -705,6 +728,7 @@ export const Checkout = () => {
                     discount: promotion ? promotion.discountedAmount : undefined,
                     promotionId: promotion ? promotion.promotion.id : undefined,
                     subTotal: subTotal,
+                    preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                     registerId: register.id,
                     products: JSON.stringify(products), // copy obj so we can mutate it later
                     placedAt: now,
@@ -787,14 +811,13 @@ export const Checkout = () => {
                 const pollingUrl = await smartpayCreateTransaction(amount, "Card.Purchase");
                 outcome = await smartpayPollForOutcome(pollingUrl, delayed);
             } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
-                const txnRef = await windcaveCreateTransaction(
+                outcome = await windcaveCreateTransaction(
                     register.windcaveStationId,
                     register.windcaveStationUser,
                     register.windcaveStationKey,
                     amount,
                     "Purchase"
                 );
-                outcome = await windcavePollForOutcome(register.windcaveStationId, register.windcaveStationUser, register.windcaveStationKey, txnRef);
             } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
 
@@ -1167,6 +1190,20 @@ export const Checkout = () => {
         return <>{showPromotionCodeModal && <PromotionCodeModal isOpen={showPromotionCodeModal} onClose={onClosePromotionCodeModal} />}</>;
     };
 
+    const thresholdMessageModal = () => {
+        return (
+            <>
+                {showOrderThresholdMessageModal && (
+                    <OrderThresholdMessageModal
+                        isOpen={showOrderThresholdMessageModal}
+                        onClose={onCloseOrderThresholdMessageModal}
+                        onContinue={() => setIsShownOrderThresholdMessageModal(true)}
+                    />
+                )}
+            </>
+        );
+    };
+
     const paymentModal = () => {
         return (
             <>
@@ -1207,6 +1244,7 @@ export const Checkout = () => {
             {editProductModal()}
             {itemUpdatedModal()}
             {promotionCodeModal()}
+            {thresholdMessageModal()}
             {paymentModal()}
         </>
     );

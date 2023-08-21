@@ -100,12 +100,12 @@ const VerifoneContext = createContext<ContextProps>({
 });
 
 const VerifoneProvider = (props: { children: React.ReactNode }) => {
-    const { addVerifoneLog } = useErrorLogging();
+    const { addEftposLog } = useErrorLogging();
     const { restaurant } = useRestaurant();
     const { register, isPOS } = useRegister();
 
     const interval = 1 * 1500; // 1.5 seconds
-    const interval2 = 1 * 100; // 100 miliseconds
+    const interval2 = 1 * 100; // 150 miliseconds
     const timeout = 3 * 60 * 1000; // 3 minutes
     const noResponseTimeout = 30 * 1000; // 30 seconds
     const retryEftposConnectTimeout = 3 * 1000; // 3 seconds
@@ -147,11 +147,17 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     payload: dataPayload,
                 };
 
-                if (type === VMT.ReadyToPrintRequest && !readyToPrintRequestReplySent.current) {
+                if (type == VMT.ReadyToPrintRequest) {
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
                     addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
 
                     readyToPrintRequestReplySent.current = true;
+                } else if (type == VMT.PrintRequest) {
+                    eftposReceipt.current = dataPayload;
+                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
+                    addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
+
+                    printRequestReplySent.current = true;
                 }
 
                 lastMessageReceived.current = Number(new Date());
@@ -201,7 +207,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const createEftposTransactionLog = async (restaurantId: string, amount: number) => {
         const now = new Date();
 
-        await addVerifoneLog({
+        await addEftposLog({
             eftposProvider: "VERIFONE",
             amount: amount,
             type: eftposData.current.type,
@@ -312,7 +318,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     console.log("Waiting to receive Configure Printing Response (CP,ON)...");
                     addToLogs("Waiting to receive Configure Printing Response (CP,ON)...");
 
-                    await delay(interval);
+                    await delay(interval2);
 
                     if (!(Number(new Date()) < printingTimeoutEndTime)) {
                         const disconnectTimedOut = await disconnectEftpos();
@@ -378,39 +384,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
                 await delay(interval2);
 
-                // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
-                if (!connectedEndpoint.current) {
-                    const connectErrorMessage = await performConnectToEftpos(ipAddress, portNumber);
-                    if (connectErrorMessage) {
-                        reject({ transactionId: transactionId, message: connectErrorMessage });
-                        return;
-                    }
-                }
-
-                // Check If Eftpos Has Timed Out -------------------------------------------------------------------------------------------------------------------------------- //
-                if (!(loopDate < endTime)) {
-                    const disconnectTimedOut = await disconnectEftpos();
-                    if (disconnectTimedOut) {
-                        reject({ transactionId: transactionId, message: "There was an issue disconnecting to the Eftpos." });
-                        return;
-                    }
-
-                    reject({ transactionId: transactionId, message: "Transaction timed out." });
-                    return;
-                }
-
-                // Check If Eftpos Has Stopped Responding -------------------------------------------------------------------------------------------------------------------------------- //
-                if (!(loopDate < lastMessageReceived.current + noResponseTimeout)) {
-                    const disconnectTimedOut = await disconnectEftpos();
-                    if (disconnectTimedOut) {
-                        reject({ transactionId: transactionId, message: "There was an issue disconnecting to the Eftpos." });
-                        return;
-                    }
-
-                    reject({ transactionId: transactionId, message: "Eftpos unresponsive. Please make sure your Eftpos is powered on and working." });
-                    return;
-                }
-
                 // Check If Eftpos Has The Response -------------------------------------------------------------------------------------------------------------------------------- //
                 if (eftposData.current.type === VMT.ResultAndExtrasResponse) {
                     const verifonePurchaseResultArray = eftposData.current.payload.split(",");
@@ -423,23 +396,47 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     }
                 }
 
-                // Poll For Result -------------------------------------------------------------------------------------------------------------------------------- //
-                if (eftposData.current.type === VMT.PrintRequest && !printRequestReplySent.current) {
-                    eftposReceipt.current = eftposData.current.payload;
+                if (loopDate > lastGetResultLoopTime + interval) {
+                    console.log("Polling for result...");
+                    addToLogs("Polling for result...");
 
-                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
-                    addToLogs(`BROWSER_DATA: ${VMT.PrintResponse},OK`);
+                    // Check If Eftpos Connected -------------------------------------------------------------------------------------------------------------------------------- //
+                    if (!connectedEndpoint.current) {
+                        const connectErrorMessage = await performConnectToEftpos(ipAddress, portNumber);
+                        if (connectErrorMessage) {
+                            reject({ transactionId: transactionId, message: connectErrorMessage });
+                            return;
+                        }
+                    }
 
-                    printRequestReplySent.current = true;
+                    // Check If Eftpos Has Timed Out -------------------------------------------------------------------------------------------------------------------------------- //
+                    if (loopDate > endTime) {
+                        const disconnectTimedOut = await disconnectEftpos();
+                        if (disconnectTimedOut) {
+                            reject({ transactionId: transactionId, message: "There was an issue disconnecting to the Eftpos." });
+                            return;
+                        }
 
-                    // No need to wait another interval delay just to get the result. The result is usually ready within around 10 milliseconds.
-                    await delay(interval2);
+                        reject({ transactionId: transactionId, message: "Transaction timed out." });
+                        return;
+                    }
 
-                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
-                    addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
+                    // Check If Eftpos Has Stopped Responding -------------------------------------------------------------------------------------------------------------------------------- //
+                    if (loopDate > lastMessageReceived.current + noResponseTimeout) {
+                        const disconnectTimedOut = await disconnectEftpos();
+                        if (disconnectTimedOut) {
+                            reject({ transactionId: transactionId, message: "There was an issue disconnecting to the Eftpos." });
+                            return;
+                        }
 
-                    lastGetResultLoopTime = Number(new Date());
-                } else if (!(loopDate < lastGetResultLoopTime + interval)) {
+                        reject({
+                            transactionId: transactionId,
+                            message: "Eftpos unresponsive. Please make sure your Eftpos is powered on and working.",
+                        });
+                        return;
+                    }
+
+                    // Poll For Result -------------------------------------------------------------------------------------------------------------------------------- //
                     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
                     addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
 

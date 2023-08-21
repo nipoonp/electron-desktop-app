@@ -169,8 +169,10 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
         }
     }
 
-    printer.newLine();
-    printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
+    if (!order.hideOrderType) {
+        printer.newLine();
+        printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
+    }
 
     if (order.buzzer !== null) {
         printer.newLine();
@@ -187,6 +189,15 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
         printer.bold(true);
         printer.setTextSize(1, 1);
         printer.println(`Order: ${order.number}`);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
+
+    if (!order.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`Ready in ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "mins" : "min"}`);
         printer.setTextNormal();
         printer.bold(false);
     }
@@ -225,12 +236,14 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
         product.modifierGroups.forEach((modifierGroup: ICartModifierGroup) => {
             if (order.hideModifierGroupsForCustomer == true && modifierGroup.hideForCustomer == true) return;
 
-            printer.newLine();
-            printer.bold(true);
-            printer.underlineThick(true);
-            printer.println(`${modifierGroup.name}`);
-            printer.underlineThick(false);
-            printer.bold(false);
+            if (!order.hideModifierGroupName) {
+                printer.newLine();
+                printer.bold(true);
+                printer.underlineThick(true);
+                printer.println(`${modifierGroup.name}`);
+                printer.underlineThick(false);
+                printer.bold(false);
+            }
 
             modifierGroup.modifiers.forEach((modifier: ICartModifier) => {
                 const changedQuantity = modifier.quantity - modifier.preSelectedQuantity;
@@ -266,14 +279,16 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
                             productModifier_product.modifierGroups.forEach((productModifier_modifierGroup, index2) => {
                                 if (order.hideModifierGroupsForCustomer == true && productModifier_modifierGroup.hideForCustomer == true) return;
 
-                                if (index2 !== 0) printer.newLine();
+                                if (!order.hideModifierGroupName) {
+                                    if (index2 !== 0) printer.newLine();
 
-                                printer.print(`      `);
-                                printer.bold(true);
-                                printer.underlineThick(true);
-                                printer.println(`${productModifier_modifierGroup.name}`);
-                                printer.underlineThick(false);
-                                printer.bold(false);
+                                    printer.print(`      `);
+                                    printer.bold(true);
+                                    printer.underlineThick(true);
+                                    printer.println(`${productModifier_modifierGroup.name}`);
+                                    printer.underlineThick(false);
+                                    printer.bold(false);
+                                }
 
                                 productModifier_modifierGroup.modifiers.forEach((productModifier_modifier: ICartModifier) => {
                                     const changedQuantity = productModifier_modifier.quantity - productModifier_modifier.preSelectedQuantity;
@@ -495,12 +510,14 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
         printer.bold(false);
     }
 
-    printer.newLine();
-    printer.bold(true);
-    printer.setTextSize(1, 1);
-    printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
-    printer.setTextNormal();
-    printer.bold(false);
+    if (!order.hideOrderType) {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
 
     if (order.buzzer !== null) {
         printer.newLine();
@@ -517,6 +534,15 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
         printer.bold(true);
         printer.setTextSize(1, 1);
         printer.println(`Order: ${order.number}`);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
+
+    if (!order.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`Ready in ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "mins" : "min"}`);
         printer.setTextNormal();
         printer.bold(false);
     }
@@ -549,28 +575,30 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
         printer.drawLine();
         printer.bold(true);
         printer.setTextSize(1, 1);
-        printer.println(`${product.quantity > 1 ? product.quantity + "x " : ""}${product.name}`);
+        printer.println(`${product.quantity > 1 ? product.quantity + "x " : ""}${product.kitchenName || product.name}`);
         printer.setTextNormal();
         printer.bold(false);
 
         product.modifierGroups.forEach((modifierGroup: ICartModifierGroup) => {
             if (order.hideModifierGroupsForCustomer == true && modifierGroup.hideForCustomer == true) return;
 
-            printer.newLine();
-            printer.bold(true);
-            printer.underlineThick(true);
-            printer.println(`${modifierGroup.name}`);
-            printer.underlineThick(false);
-            printer.bold(false);
+            if (!order.hideModifierGroupName) {
+                printer.newLine();
+                printer.bold(true);
+                printer.underlineThick(true);
+                printer.println(`${modifierGroup.kitchenName || modifierGroup.name}`);
+                printer.underlineThick(false);
+                printer.bold(false);
+            }
 
             modifierGroup.modifiers.forEach((modifier: ICartModifier, modifier_index: number) => {
                 const changedQuantity = modifier.quantity - modifier.preSelectedQuantity;
                 let mStr = "";
 
                 if (changedQuantity < 0 && Math.abs(changedQuantity) == modifier.preSelectedQuantity) {
-                    mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${modifier.name}`;
+                    mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${modifier.kitchenName || modifier.name}`;
                 } else {
-                    mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)}x ` : ""}${modifier.name}`;
+                    mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)}x ` : ""}${modifier.kitchenName || modifier.name}`;
                 }
 
                 printer.print(mStr);
@@ -598,14 +626,16 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
                             productModifier_product.modifierGroups.forEach((productModifier_modifierGroup, index2) => {
                                 if (order.hideModifierGroupsForCustomer == true && productModifier_modifierGroup.hideForCustomer == true) return;
 
-                                if (index2 !== 0) printer.newLine();
+                                if (!order.hideModifierGroupName) {
+                                    if (index2 !== 0) printer.newLine();
 
-                                printer.print(`      `);
-                                printer.bold(true);
-                                printer.underlineThick(true);
-                                printer.println(`${productModifier_modifierGroup.name}`);
-                                printer.underlineThick(false);
-                                printer.bold(false);
+                                    printer.print(`      `);
+                                    printer.bold(true);
+                                    printer.underlineThick(true);
+                                    printer.println(`${productModifier_modifierGroup.kitchenName || productModifier_modifierGroup.name}`);
+                                    printer.underlineThick(false);
+                                    printer.bold(false);
+                                }
 
                                 productModifier_modifierGroup.modifiers.forEach(
                                     (productModifier_modifier: ICartModifier, productModifier_modifier_index: number) => {
@@ -614,12 +644,12 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
 
                                         if (changedQuantity < 0 && Math.abs(changedQuantity) == productModifier_modifier.preSelectedQuantity) {
                                             mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${
-                                                productModifier_modifier.name
+                                                productModifier_modifier.kitchenName || productModifier_modifier.name
                                             }`;
                                         } else {
                                             mStr = `${
                                                 productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""
-                                            }${productModifier_modifier.name}`;
+                                            }${productModifier_modifier.kitchenName || productModifier_modifier.name}`;
                                         }
 
                                         if (productModifier_modifier_index === 0) {
@@ -766,12 +796,14 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
         printer.bold(false);
     }
 
-    printer.newLine();
-    printer.bold(true);
-    printer.setTextSize(1, 1);
-    printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
-    printer.setTextNormal();
-    printer.bold(false);
+    if (!order.hideOrderType) {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
 
     if (order.buzzer !== null) {
         printer.newLine();
@@ -789,6 +821,13 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
         printer.setTextSize(1, 1);
         printer.println(`Order: ${order.number}`);
         printer.setTextNormal();
+        printer.bold(false);
+    }
+
+    if (!order.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
+        printer.newLine();
+        printer.bold(true);
+        printer.println(`Ready in ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "mins" : "min"}`);
         printer.bold(false);
     }
 
@@ -819,27 +858,29 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
     order.products.forEach((product: ICartProduct) => {
         printer.drawLine();
         printer.bold(true);
-        printer.println(`${product.quantity > 1 ? product.quantity + "x " : ""}${product.name}`);
+        printer.println(`${product.quantity > 1 ? product.quantity + "x " : ""}${product.kitchenName || product.name}`);
         printer.bold(false);
 
         product.modifierGroups.forEach((modifierGroup: ICartModifierGroup) => {
             if (order.hideModifierGroupsForCustomer == true && modifierGroup.hideForCustomer == true) return;
 
-            printer.newLine();
-            printer.bold(true);
-            printer.underlineThick(true);
-            printer.println(`${modifierGroup.name}`);
-            printer.underlineThick(false);
-            printer.bold(false);
+            if (!order.hideModifierGroupName) {
+                printer.newLine();
+                printer.bold(true);
+                printer.underlineThick(true);
+                printer.println(`${modifierGroup.kitchenName || modifierGroup.name}`);
+                printer.underlineThick(false);
+                printer.bold(false);
+            }
 
             modifierGroup.modifiers.forEach((modifier: ICartModifier, modifier_index: number) => {
                 const changedQuantity = modifier.quantity - modifier.preSelectedQuantity;
                 let mStr = "";
 
                 if (changedQuantity < 0 && Math.abs(changedQuantity) == modifier.preSelectedQuantity) {
-                    mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${modifier.name}`;
+                    mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${modifier.kitchenName || modifier.name}`;
                 } else {
-                    mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)}x ` : ""}${modifier.name}`;
+                    mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)}x ` : ""}${modifier.kitchenName || modifier.name}`;
                 }
 
                 printer.print(mStr);
@@ -867,14 +908,16 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
                             productModifier_product.modifierGroups.forEach((productModifier_modifierGroup, index2) => {
                                 if (order.hideModifierGroupsForCustomer == true && productModifier_modifierGroup.hideForCustomer == true) return;
 
-                                if (index2 !== 0) printer.newLine();
+                                if (!order.hideModifierGroupName) {
+                                    if (index2 !== 0) printer.newLine();
 
-                                printer.print(`      `);
-                                printer.bold(true);
-                                printer.underlineThick(true);
-                                printer.println(`${productModifier_modifierGroup.name}`);
-                                printer.underlineThick(false);
-                                printer.bold(false);
+                                    printer.print(`      `);
+                                    printer.bold(true);
+                                    printer.underlineThick(true);
+                                    printer.println(`${productModifier_modifierGroup.kitchenName || productModifier_modifierGroup.name}`);
+                                    printer.underlineThick(false);
+                                    printer.bold(false);
+                                }
 
                                 productModifier_modifierGroup.modifiers.forEach(
                                     (productModifier_modifier: ICartModifier, productModifier_modifier_index: number) => {
@@ -883,12 +926,12 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
 
                                         if (changedQuantity < 0 && Math.abs(changedQuantity) == productModifier_modifier.preSelectedQuantity) {
                                             mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${
-                                                productModifier_modifier.name
+                                                productModifier_modifier.kitchenName || productModifier_modifier.name
                                             }`;
                                         } else {
                                             mStr = `${
                                                 productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""
-                                            }${productModifier_modifier.name}`;
+                                            }${productModifier_modifier.kitchenName || productModifier_modifier.name}`;
                                         }
 
                                         if (productModifier_modifier_index === 0) {
@@ -1036,12 +1079,14 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
         printer.bold(false);
     }
 
-    printer.newLine();
-    printer.bold(true);
-    printer.setTextSize(1, 1);
-    printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
-    printer.setTextNormal();
-    printer.bold(false);
+    if (!order.hideOrderType) {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
 
     if (order.buzzer !== null) {
         printer.newLine();
@@ -1058,6 +1103,15 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
         printer.bold(true);
         printer.setTextSize(1, 1);
         printer.println(`Order: ${order.number}`);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
+
+    if (!order.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`Ready in ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "mins" : "min"}`);
         printer.setTextNormal();
         printer.bold(false);
     }
@@ -1090,28 +1144,30 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
         printer.drawLine();
         printer.bold(true);
         printer.setTextSize(1, 1);
-        printer.println(`${product.quantity > 1 ? product.quantity + "x " : ""}${product.name}`);
+        printer.println(`${product.quantity > 1 ? product.quantity + "x " : ""}${product.kitchenName || product.name}`);
         printer.setTextNormal();
         printer.bold(false);
 
         product.modifierGroups.forEach((modifierGroup: ICartModifierGroup) => {
             if (order.hideModifierGroupsForCustomer == true && modifierGroup.hideForCustomer == true) return;
 
-            printer.newLine();
-            printer.bold(true);
-            printer.underlineThick(true);
-            printer.println(`${modifierGroup.name}`);
-            printer.underlineThick(false);
-            printer.bold(false);
+            if (!order.hideModifierGroupName) {
+                printer.newLine();
+                printer.bold(true);
+                printer.underlineThick(true);
+                printer.println(`${modifierGroup.kitchenName || modifierGroup.name}`);
+                printer.underlineThick(false);
+                printer.bold(false);
+            }
 
             modifierGroup.modifiers.forEach((modifier: ICartModifier, modifier_index: number) => {
                 const changedQuantity = modifier.quantity - modifier.preSelectedQuantity;
                 let mStr = "";
 
                 if (changedQuantity < 0 && Math.abs(changedQuantity) == modifier.preSelectedQuantity) {
-                    mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${modifier.name}`;
+                    mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${modifier.kitchenName || modifier.name}`;
                 } else {
-                    mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)}x ` : ""}${modifier.name}`;
+                    mStr = `${modifier.quantity > 1 ? `${Math.abs(modifier.quantity)}x ` : ""}${modifier.kitchenName || modifier.name}`;
                 }
 
                 printer.bold(true);
@@ -1143,14 +1199,16 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
                             productModifier_product.modifierGroups.forEach((productModifier_modifierGroup, index2) => {
                                 if (order.hideModifierGroupsForCustomer == true && productModifier_modifierGroup.hideForCustomer == true) return;
 
-                                if (index2 !== 0) printer.newLine();
+                                if (!order.hideModifierGroupName) {
+                                    if (index2 !== 0) printer.newLine();
 
-                                printer.print(`      `);
-                                printer.bold(true);
-                                printer.underlineThick(true);
-                                printer.println(`${productModifier_modifierGroup.name}`);
-                                printer.underlineThick(false);
-                                printer.bold(false);
+                                    printer.print(`      `);
+                                    printer.bold(true);
+                                    printer.underlineThick(true);
+                                    printer.println(`${productModifier_modifierGroup.kitchenName || productModifier_modifierGroup.name}`);
+                                    printer.underlineThick(false);
+                                    printer.bold(false);
+                                }
 
                                 productModifier_modifierGroup.modifiers.forEach(
                                     (productModifier_modifier: ICartModifier, productModifier_modifier_index: number) => {
@@ -1159,12 +1217,12 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
 
                                         if (changedQuantity < 0 && Math.abs(changedQuantity) == productModifier_modifier.preSelectedQuantity) {
                                             mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${
-                                                productModifier_modifier.name
+                                                productModifier_modifier.kitchenName || productModifier_modifier.name
                                             }`;
                                         } else {
                                             mStr = `${
                                                 productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""
-                                            }${productModifier_modifier.name}`;
+                                            }${productModifier_modifier.kitchenName || productModifier_modifier.name}`;
                                         }
 
                                         printer.bold(true);

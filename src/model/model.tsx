@@ -134,6 +134,7 @@ export interface ICartProduct {
     index?: number; //index is for promos
     id: string;
     name: string;
+    kitchenName: string | null;
     price: number;
     totalPrice: number;
     discount: number;
@@ -147,12 +148,14 @@ export interface ICartProduct {
 export interface ICartCategory {
     id: string;
     name: string;
+    kitchenName: string | null;
     image: IS3Object | null;
 }
 
 export interface ICartModifierGroup {
     id: string;
     name: string;
+    kitchenName: string | null;
     choiceDuplicate: number;
     choiceMin: number;
     choiceMax: number;
@@ -163,6 +166,7 @@ export interface ICartModifierGroup {
 export interface ICartModifier {
     id: string;
     name: string;
+    kitchenName: string | null;
     price: number;
     preSelectedQuantity: number;
     quantity: number;
@@ -214,6 +218,9 @@ export interface IOrderReceipt {
     kitchenPrinter: boolean | null;
     kitchenPrinterSmall: boolean | null;
     kitchenPrinterLarge: boolean | null;
+    hidePreparationTime: boolean | null;
+    hideModifierGroupName: boolean | null;
+    hideOrderType: boolean;
     hideModifierGroupsForCustomer: boolean | null;
     restaurant: {
         name: string;
@@ -242,6 +249,7 @@ export interface IOrderReceipt {
     buzzer: string | null;
     placedAt: string;
     orderScheduledAt: string | null;
+    preparationTimeInMinutes: number | null;
 }
 
 export interface IOrderLabel {

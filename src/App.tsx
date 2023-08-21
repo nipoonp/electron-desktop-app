@@ -115,21 +115,22 @@ const App = () => {
                 <ApolloProvider client={cognitoClient}>
                     <ErrorLoggingProvider>
                         <UserProvider userId={user!.username}>
-                            <RestaurantProvider>
-                                <RegisterProvider>
-                                    <ReceiptPrinterProvider>
-                                        <CartProvider>
-                                            <VerifoneProvider>
+                            <VerifoneProvider>
+                                {/* Put this here becuase if we put it under the restaurantProvider it tirggers the useEffect event listerners twice */}
+                                <RestaurantProvider>
+                                    <RegisterProvider>
+                                        <ReceiptPrinterProvider>
+                                            <CartProvider>
                                                 <SmartpayProvider>
                                                     <WindcaveProvider>
                                                         <Main />
                                                     </WindcaveProvider>
                                                 </SmartpayProvider>
-                                            </VerifoneProvider>
-                                        </CartProvider>
-                                    </ReceiptPrinterProvider>
-                                </RegisterProvider>
-                            </RestaurantProvider>
+                                            </CartProvider>
+                                        </ReceiptPrinterProvider>
+                                    </RegisterProvider>
+                                </RestaurantProvider>
+                            </VerifoneProvider>
                         </UserProvider>
                     </ErrorLoggingProvider>
                 </ApolloProvider>

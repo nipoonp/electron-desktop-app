@@ -273,6 +273,7 @@ export default () => {
             id: product.id,
             name: product.name,
             price: product.price,
+            kitchenName: product.kitchenName,
             totalPrice: product.price,
             discount: 0,
             image: product.image
@@ -288,6 +289,7 @@ export default () => {
             category: {
                 id: category.id,
                 name: category.name,
+                kitchenName: category.kitchenName,
                 image: category.image
                     ? {
                           key: category.image.key,

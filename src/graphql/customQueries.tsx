@@ -137,6 +137,8 @@ export const GET_USER = gql`
                                     kitchenPrinter
                                     kitchenPrinterSmall
                                     kitchenPrinterLarge
+                                    hidePreparationTime
+                                    hideModifierGroupName
                                     printAllOrderReceipts
                                     printOnlineOrderReceipts
                                     ignoreCategories(limit: 500) {
@@ -177,6 +179,8 @@ export interface IGET_USER_REGISTER_PRINTER {
     kitchenPrinter: boolean;
     kitchenPrinterSmall: boolean;
     kitchenPrinterLarge: boolean;
+    hidePreparationTime: boolean;
+    hideModifierGroupName: boolean;
     ignoreCategories: {
         items: IGET_USER_REGISTER_PRINTER_IGNORE_CATEGORY[];
     };
@@ -259,8 +263,12 @@ export const GET_RESTAURANT = gql`
             autoCompleteOrders
             preparationTimeInMinutes
             delayBetweenOrdersInSeconds
+            orderThresholdMessage
             surchargePercentage
             salesReportMailingList
+            orderThresholds {
+                enable
+            }
             advertisements {
                 items {
                     id
@@ -393,6 +401,8 @@ export const GET_RESTAURANT = gql`
                             kitchenPrinter
                             kitchenPrinterSmall
                             kitchenPrinterLarge
+                            hidePreparationTime
+                            hideModifierGroupName
                             printAllOrderReceipts
                             printOnlineOrderReceipts
                             ignoreCategories(limit: 500) {
@@ -512,6 +522,7 @@ export const GET_RESTAURANT = gql`
                 items {
                     id
                     name
+                    kitchenName
                     description
                     soldOut
                     soldOutDate
@@ -560,6 +571,7 @@ export const GET_RESTAURANT = gql`
                             product {
                                 id
                                 name
+                                kitchenName
                                 description
                                 price
                                 displayPrice
@@ -611,6 +623,7 @@ export const GET_RESTAURANT = gql`
                                         category {
                                             id
                                             name
+                                            kitchenName
                                             image {
                                                 key
                                                 bucket
@@ -660,6 +673,7 @@ export const GET_RESTAURANT = gql`
                                         modifierGroup {
                                             id
                                             name
+                                            kitchenName
                                             choiceMin
                                             choiceMax
                                             choiceDuplicate
@@ -673,6 +687,7 @@ export const GET_RESTAURANT = gql`
                                                     modifier {
                                                         id
                                                         name
+                                                        kitchenName
                                                         description
                                                         price
                                                         image {
@@ -690,6 +705,7 @@ export const GET_RESTAURANT = gql`
                                                         productModifier {
                                                             id
                                                             name
+                                                            kitchenName
                                                             description
                                                             price
                                                             tags
@@ -708,6 +724,7 @@ export const GET_RESTAURANT = gql`
                                                                     category {
                                                                         id
                                                                         name
+                                                                        kitchenName
                                                                         image {
                                                                             key
                                                                             bucket
@@ -755,6 +772,7 @@ export const GET_RESTAURANT = gql`
                                                                     modifierGroup {
                                                                         id
                                                                         name
+                                                                        kitchenName
                                                                         choiceMin
                                                                         choiceMax
                                                                         choiceDuplicate
@@ -768,6 +786,7 @@ export const GET_RESTAURANT = gql`
                                                                                 modifier {
                                                                                     id
                                                                                     name
+                                                                                    kitchenName
                                                                                     price
                                                                                     image {
                                                                                         key
@@ -778,6 +797,7 @@ export const GET_RESTAURANT = gql`
                                                                                     productModifier {
                                                                                         id
                                                                                         name
+                                                                                        kitchenName
                                                                                         description
                                                                                         price
                                                                                         tags
@@ -796,6 +816,7 @@ export const GET_RESTAURANT = gql`
                                                                                                 category {
                                                                                                     id
                                                                                                     name
+                                                                                                    kitchenName
                                                                                                     image {
                                                                                                         key
                                                                                                         bucket
@@ -904,8 +925,12 @@ export interface IGET_RESTAURANT {
     autoCompleteOrders: boolean | null;
     preparationTimeInMinutes: number | null;
     delayBetweenOrdersInSeconds: number | null;
+    orderThresholdMessage: string | null;
     surchargePercentage: number | null;
     salesReportMailingList: string | null;
+    orderThresholds: {
+        enable: boolean;
+    } | null;
     advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
     thirdPartyIntegrations: IThirdPartyIntegrations | null;
     upSellCrossSell?: IGET_RESTAURANT_UP_SELL_CROSS_SELL;
@@ -1022,6 +1047,8 @@ export interface IGET_RESTAURANT_REGISTER_PRINTER {
     kitchenPrinter: boolean;
     kitchenPrinterSmall: boolean;
     kitchenPrinterLarge: boolean;
+    hidePreparationTime: boolean;
+    hideModifierGroupName: boolean;
     printAllOrderReceipts: boolean;
     printOnlineOrderReceipts: boolean;
     ignoreCategories: {
@@ -1182,6 +1209,7 @@ export enum EDiscountType {
 export interface IGET_RESTAURANT_CATEGORY {
     id: string;
     name: string;
+    kitchenName: string | null;
     description: string;
     displaySequence: number;
     image?: IS3Object;
@@ -1207,6 +1235,7 @@ export interface IGET_RESTAURANT_PRODUCT_LINK {
 export interface IGET_RESTAURANT_PRODUCT {
     id: string;
     name: string;
+    kitchenName: string | null;
     description?: string;
     price: number;
     displayPrice: string;
@@ -1235,6 +1264,7 @@ export interface IGET_RESTAURANT_MODIFIER_GROUP_LINK {
 export interface IGET_RESTAURANT_MODIFIER_GROUP {
     id: string;
     name: string;
+    kitchenName: string | null;
     choiceMin: number;
     choiceMax: number;
     choiceDuplicate: number;
@@ -1255,6 +1285,7 @@ export interface IGET_RESTAURANT_MODIFIER_LINK {
 export interface IGET_RESTAURANT_MODIFIER {
     id: string;
     name: string;
+    kitchenName: string | null;
     description: string;
     price: number;
     image?: IS3Object;

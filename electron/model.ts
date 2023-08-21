@@ -25,31 +25,49 @@ export interface IS3Object {
 }
 
 export interface ICartProduct {
+    index?: number; //index is for promos
     id: string;
     name: string;
+    kitchenName: string | null;
     price: number;
     totalPrice: number;
     discount: number;
+    image: IS3Object | null;
     quantity: number;
     notes: string | null;
+    category: ICartCategory | null; //Product modifier do not have category
     modifierGroups: ICartModifierGroup[];
+}
+
+export interface ICartCategory {
+    id: string;
+    name: string;
+    kitchenName: string | null;
+    image: IS3Object | null;
 }
 
 export interface ICartModifierGroup {
     id: string;
     name: string;
-    hideForCustomer?: boolean;
+    kitchenName: string | null;
+    choiceDuplicate: number;
+    choiceMin: number;
+    choiceMax: number;
+    hideForCustomer: boolean | null;
     modifiers: ICartModifier[];
 }
 
 export interface ICartModifier {
     id: string;
     name: string;
+    kitchenName: string | null;
     price: number;
     preSelectedQuantity: number;
     quantity: number;
     productModifiers: ICartProduct[] | null;
+    image: IS3Object | null;
 }
+
 export interface IPreSelectedModifiers {
     [modifierGroupId: string]: ICartModifier[];
 }
@@ -64,6 +82,9 @@ export interface IOrderReceipt {
     kitchenPrinter: boolean | null;
     kitchenPrinterSmall: boolean | null;
     kitchenPrinterLarge: boolean | null;
+    hidePreparationTime: boolean | null;
+    hideModifierGroupName: boolean | null;
+    hideOrderType: boolean;
     hideModifierGroupsForCustomer: boolean | null;
     restaurant: {
         name: string;
@@ -92,6 +113,7 @@ export interface IOrderReceipt {
     buzzer: string | null;
     placedAt: string;
     orderScheduledAt: string | null;
+    preparationTimeInMinutes: null | null;
 }
 
 export interface IPrintSalesDataInputDailySales {
