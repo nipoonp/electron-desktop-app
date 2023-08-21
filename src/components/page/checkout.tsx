@@ -679,6 +679,7 @@ export const Checkout = () => {
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
                 subTotal: subTotal,
+                preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                 registerId: register.id,
                 products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
                 placedAt: toLocalISOString(now),
@@ -727,6 +728,7 @@ export const Checkout = () => {
                     discount: promotion ? promotion.discountedAmount : undefined,
                     promotionId: promotion ? promotion.promotion.id : undefined,
                     subTotal: subTotal,
+                    preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                     registerId: register.id,
                     products: JSON.stringify(products), // copy obj so we can mutate it later
                     placedAt: now,
