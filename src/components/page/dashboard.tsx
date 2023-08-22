@@ -337,8 +337,6 @@ export default () => {
                 hideOrderType: register.availableOrderTypes.length === 0,
                 products: convertProductTypesForPrint(productsToPrint),
             });
-
-            setReceiptPrinterModalPrintReorderData(null);
         }
     };
 
