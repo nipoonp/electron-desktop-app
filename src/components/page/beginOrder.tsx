@@ -3,13 +3,14 @@ import { useNavigate } from "react-router";
 import { restaurantPath } from "../main";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
-import { IGET_RESTAURANT_ADVERTISEMENT } from "../../graphql/customQueries";
+import { IGET_RESTAURANT_ADVERTISEMENT, IGET_RESTAURANT_PREPRATION_TIME } from "../../graphql/customQueries";
 import { useRestaurant } from "../../context/restaurant-context";
 import { CachedImage } from "../../tabin/components/cachedImage";
 
 import "./beginOrder.scss";
 import { isItemAvailable, isVideoFile } from "../../util/util";
 import { useRegister } from "../../context/register-context";
+import { useGetRestaurantPreparationTimeLazyQuery } from "../../hooks/useGetRestaurantPreparationTimeLazyQuery";
 
 export default () => {
     const { restaurant } = useRestaurant();
@@ -38,11 +39,33 @@ const PreparationTime = () => {
     const { restaurant } = useRestaurant();
     const { isPOS } = useRegister();
 
+    const { getRestaurantPreparationTime } = useGetRestaurantPreparationTimeLazyQuery();
+
+    const [preparationTimeInMinutes, setPreparationTimeInMinutes] = useState(restaurant ? restaurant.preparationTimeInMinutes : 0);
+
+    useEffect(() => {
+        if (!restaurant) return;
+
+        const intervalId = setInterval(async () => {
+            const restaurantPreparationTimeRes = await getRestaurantPreparationTime({
+                variables: {
+                    restaurantId: restaurant.id,
+                },
+            });
+
+            const preparationTimeResponse: IGET_RESTAURANT_PREPRATION_TIME = restaurantPreparationTimeRes.data.getRestaurant;
+
+            setPreparationTimeInMinutes(preparationTimeResponse.preparationTimeInMinutes);
+        }, 2 * 60 * 1000); //2 mins
+
+        return () => clearInterval(intervalId);
+    }, [restaurant]);
+
     return (
         <>
-            {!isPOS && restaurant && restaurant.preparationTimeInMinutes && (
+            {!isPOS && preparationTimeInMinutes && (
                 <div className="preparation-time h2">
-                    Current wait time is {restaurant.preparationTimeInMinutes} {restaurant.preparationTimeInMinutes > 1 ? "minutes" : "minute"}
+                    Current wait time is {preparationTimeInMinutes} {preparationTimeInMinutes > 1 ? "minutes" : "minute"}
                 </div>
             )}
         </>
