@@ -1709,3 +1709,17 @@ export interface IGET_THIRD_PARTY_ORDER_RESPONSE {
         errorMessage: string;
     } | null;
 }
+
+export const GET_RESTAURANT_PREPRATION_TIME = gql`
+    query GetRestaurant($restaurantId: ID!) {
+        getRestaurant(id: $restaurantId) {
+            id
+            preparationTimeInMinutes
+        }
+    }
+`;
+
+export interface IGET_RESTAURANT_PREPRATION_TIME {
+    id: string;
+    preparationTimeInMinutes: number | null;
+}
