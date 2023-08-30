@@ -440,12 +440,20 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     };
 
     const addProduct = (product: ICartProduct) => {
-        let newProducts = products;
+        const { quantity: productQuantity, ...productWithoutQuantiy } = product;
+        const serializedProduct = JSON.stringify(productWithoutQuantiy);
 
-        if (newProducts != null) {
-            newProducts.push({ ...product });
+        let newProducts = products || [];
+
+        const matchingProductIndex = newProducts.findIndex((p) => {
+            const { quantity, ...pWithoutQuantiy } = p;
+            return JSON.stringify(pWithoutQuantiy) === serializedProduct;
+        });
+
+        if (matchingProductIndex !== -1) {
+            newProducts[matchingProductIndex].quantity += productQuantity;
         } else {
-            newProducts = [{ ...product }];
+            newProducts.push(product);
         }
 
         _setProducts(newProducts);
