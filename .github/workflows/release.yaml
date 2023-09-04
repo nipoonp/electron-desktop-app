@@ -2,7 +2,7 @@ name: Tabin CI/CD NEW
 
 on:
     push:
-        branches: [main]
+        branches: [update-test]
 
 jobs:
     slack_message_start:
@@ -63,27 +63,27 @@ jobs:
               run: electron-builder -w -p 'onTagOrDraft'
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-    # macos:
-    #     runs-on: macos-latest
-    #     env:
-    #         CI: false #Need this otherwise github actions will do this => "Treating warnings as errors because process.env.CI = true"
-    #     steps:
-    #         - uses: actions/checkout@v3.3.0
-    #         - uses: actions/setup-node@v3.6.0
-    #           with:
-    #               node-version: 16
-    #         - name: Install dependencies
-    #           run: npm install --legacy-peer-deps
-    #         - name: Build native dependencies
-    #           run: ./node_modules/.bin/electron-rebuild
-    #         - name: Build web
-    #           run: npm run build:web
-    #         - name: Build desktop
-    #           run: npm run build:desktop
-    #         - name: Release Electron app
-    #           run: electron-builder -m -p 'onTagOrDraft'
-    #           env:
-    #               GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+    macos:
+        runs-on: macos-latest
+        env:
+            CI: false #Need this otherwise github actions will do this => "Treating warnings as errors because process.env.CI = true"
+        steps:
+            - uses: actions/checkout@v3.3.0
+            - uses: actions/setup-node@v3.6.0
+              with:
+                  node-version: 16
+            - name: Install dependencies
+              run: npm install --legacy-peer-deps
+            - name: Build native dependencies
+              run: ./node_modules/.bin/electron-rebuild
+            - name: Build web
+              run: npm run build:web
+            - name: Build desktop
+              run: npm run build:desktop
+            - name: Release Electron app
+              run: electron-builder -m -p 'onTagOrDraft'
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
     slack_message_complete:
         needs: [slack_message_start, create_release, windows]
         runs-on: ubuntu-latest
