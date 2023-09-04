@@ -52,7 +52,7 @@ jobs:
             - name: Install electron-builder
               run: npm install --global electron-builder
             - name: Install dependencies
-              run: npm install --legacy-peer-deps
+              run: npm ci --legacy-peer-deps
             - name: Build native dependencies
               run: ./node_modules/.bin/electron-rebuild
             - name: Build web
@@ -72,8 +72,10 @@ jobs:
             - uses: actions/setup-node@v3.6.0
               with:
                   node-version: 16
+            - name: Install electron-builder
+              run: npm install --global electron-builder
             - name: Install dependencies
-              run: npm install --legacy-peer-deps
+              run: npm ci --legacy-peer-deps
             - name: Build native dependencies
               run: ./node_modules/.bin/electron-rebuild
             - name: Build web
