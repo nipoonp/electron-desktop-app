@@ -216,11 +216,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     useEffect(() => {
         if (!products) return;
 
-        processPromotions(products);
+        processPromotions(products, total);
     }, [userAppliedPromotionCode]);
 
     //This function should be a useEffect hook. But cannot make this because it cause infinite state change loop issue
-    const processPromotions = (products: ICartProduct[], newOrderType?: EOrderType) => {
+    const processPromotions = (products: ICartProduct[], newTotal: number, newOrderType?: EOrderType) => {
+        //Passing in newTotal here because if we take it from state it returns old total value.
         let bestPromotion: ICartPromotion | null = null;
         const odrType = newOrderType || orderType;
 
@@ -235,7 +236,13 @@ const CartProvider = (props: { children: React.ReactNode }) => {
             if (!odrType || !promotion.availableOrderTypes) return;
             if (!promotion.availableOrderTypes.includes(EOrderType[odrType])) return;
             if (promotion.totalNumberUsed >= promotion.totalAvailableUses) return;
-            if (total < promotion.minSpend) return;
+
+            //We need the most up to date total amount
+            if (newTotal < promotion.minSpend) {
+                _setProducts(products);
+                _setPromotion(null);
+                return;
+            }
 
             const discount = getOrderDiscountAmount(promotion, productsCpy, total);
 
@@ -413,7 +420,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const setOrderType = (orderType: EOrderType) => {
         _setOrderType(orderType);
 
-        if (products) processPromotions(products, orderType);
+        if (products) processPromotions(products, total, orderType);
     };
 
     const setPaymentMethod = (paymentMethod: EPaymentMethod | null) => {
@@ -432,11 +439,13 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setCustomerInformation(customerInformation);
     };
 
-    const setProducts = (products: ICartProduct[]) => {
-        _setProducts(products);
-        _setTotal(recalculateTotal(products));
-        updateCartQuantities(products);
-        processPromotions(products);
+    const setProducts = (newProducts: ICartProduct[]) => {
+        const newTotal = recalculateTotal(newProducts);
+
+        _setProducts(newProducts);
+        _setTotal(newTotal);
+        updateCartQuantities(newProducts);
+        processPromotions(newProducts, newTotal);
     };
 
     const addProduct = (product: ICartProduct) => {
@@ -456,10 +465,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
             newProducts.push(product);
         }
 
+        const newTotal = recalculateTotal(newProducts);
+
         _setProducts(newProducts);
-        _setTotal(recalculateTotal(newProducts));
+        _setTotal(newTotal);
         updateCartQuantities(newProducts);
-        processPromotions(newProducts);
+        processPromotions(newProducts, newTotal);
     };
 
     const updateProduct = (index: number, product: ICartProduct) => {
@@ -469,10 +480,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         const newProducts = products;
         newProducts[index] = product;
 
+        const newTotal = recalculateTotal(newProducts);
+
         _setProducts(newProducts);
-        _setTotal(recalculateTotal(newProducts));
+        _setTotal(newTotal);
         updateCartQuantities(newProducts);
-        processPromotions(newProducts);
+        processPromotions(newProducts, newTotal);
     };
 
     const updateProductQuantity = (index: number, quantity: number) => {
@@ -485,10 +498,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         productAtIndex.quantity = quantity;
         newProducts[index] = productAtIndex;
 
+        const newTotal = recalculateTotal(newProducts);
+
         _setProducts(newProducts);
-        _setTotal(recalculateTotal(newProducts));
+        _setTotal(newTotal);
         updateCartQuantities(newProducts);
-        processPromotions(newProducts);
+        processPromotions(newProducts, newTotal);
     };
 
     const applyProductDiscount = (index: number, discount: number) => {
@@ -501,10 +516,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         productAtIndex.discount = discount;
         newProducts[index] = productAtIndex;
 
+        const newTotal = recalculateTotal(newProducts);
+
         _setProducts(newProducts);
-        _setTotal(recalculateTotal(newProducts));
+        _setTotal(newTotal);
         updateCartQuantities(newProducts);
-        processPromotions(newProducts);
+        processPromotions(newProducts, newTotal);
     };
 
     const deleteProduct = (index: number) => {
@@ -514,11 +531,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         let newProducts = products;
         newProducts.splice(index, 1);
 
-        _setProducts(newProducts);
-        _setTotal(recalculateTotal(newProducts));
-        updateCartQuantities(newProducts);
+        const newTotal = recalculateTotal(newProducts);
 
-        processPromotions(newProducts);
+        _setProducts(newProducts);
+        _setTotal(newTotal);
+        updateCartQuantities(newProducts);
+        processPromotions(newProducts, newTotal);
     };
 
     const setNotes = (notes: string) => {
