@@ -63,10 +63,12 @@ const PreparationTime = () => {
 
     return (
         <>
-            {!isPOS && preparationTimeInMinutes && (
+            {!isPOS && preparationTimeInMinutes ? (
                 <div className="preparation-time h2">
                     Current wait time is {preparationTimeInMinutes} {preparationTimeInMinutes > 1 ? "minutes" : "minute"}
                 </div>
+            ) : (
+                <></>
             )}
         </>
     );

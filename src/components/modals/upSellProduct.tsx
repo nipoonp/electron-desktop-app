@@ -60,7 +60,7 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
                         />
                     )}
 
-                    <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
+                    <div className="name text-bold">{product.name}</div>
 
                     {product.description && <div className="description mt-2">{product.description}</div>}
 
@@ -100,6 +100,18 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
                     alt="product-image"
                 />
             )}
+
+            {randomItem.current.product.description && <div className="description">{randomItem.current.product.description}</div>}
+
+            {randomItem.current.product.tags && (
+                <div className="tags mt-2">
+                    {randomItem.current.product.tags.split(";").map((tag) => (
+                        <div className="tag">{tag}</div>
+                    ))}
+                </div>
+            )}
+
+            <div className="price mt-4 mb-6">${convertCentsToDollars(randomItem.current.product.price)}</div>
             <div className="button-container">
                 <Button className="button large no-thank-you-button mr-3" onClick={onModalClose}>
                     No Thank You
