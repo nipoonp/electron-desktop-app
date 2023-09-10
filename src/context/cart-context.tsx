@@ -14,6 +14,7 @@ import {
 } from "../model/model";
 import { applyDiscountToCartProducts, checkIfPromotionValid, getOrderDiscountAmount } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
+import { useRegister } from "./register-context";
 
 const initialParkedOrderId = null;
 const initialParkedOrderNumber = null;
@@ -31,6 +32,7 @@ const initialUserAppliedPromotionCode = null;
 const initialPromotion = null;
 const initialAvailablePromotions = [];
 const initialTotal = 0;
+const initialSurcharge = 0;
 const initialPaidSoFar = 0;
 const initialPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0 };
 const initialSubTotal = 0;
@@ -74,6 +76,7 @@ type ContextProps = {
     setUserAppliedPromotion: (promotion: IGET_RESTAURANT_PROMOTION) => CheckIfPromotionValidResponse;
     removeUserAppliedPromotion: () => void;
     total: number;
+    surcharge: number;
     subTotal: number;
     paidSoFar: number;
     payments: ICartPayment[];
@@ -124,6 +127,7 @@ const CartContext = createContext<ContextProps>({
     setUserAppliedPromotion: () => CheckIfPromotionValidResponse.VALID,
     removeUserAppliedPromotion: () => {},
     total: initialTotal,
+    surcharge: initialSurcharge,
     subTotal: initialSubTotal,
     paidSoFar: initialPaidSoFar,
     payments: initialPayments,
@@ -142,6 +146,7 @@ const CartContext = createContext<ContextProps>({
 
 const CartProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
+    const { register } = useRegister();
 
     const [parkedOrderId, _setParkedOrderId] = useState<string | null>(initialParkedOrderId);
     const [parkedOrderNumber, _setParkedOrderNumber] = useState<string | null>(initialParkedOrderNumber);
@@ -153,6 +158,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
     const [notes, _setNotes] = useState<string>(initialNotes);
     const [total, _setTotal] = useState<number>(initialTotal);
+    const [surcharge, _setSurcharge] = useState<number>(initialSurcharge);
     const [paymentAmounts, _setPaymentAmounts] = useState<ICartPaymentAmounts>(initialPaymentAmounts);
     const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
     const [payments, _setPayments] = useState<ICartPayment[]>(initialPayments);
@@ -178,6 +184,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         if (!products) return;
 
         let newSubTotal = total;
+        let newSurcharge = 0;
 
         if (promotion) {
             if (promotion.discountedAmount > newSubTotal) {
@@ -188,10 +195,15 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         }
 
         if (restaurant && restaurant.surchargePercentage) {
-            newSubTotal += Math.round((newSubTotal * restaurant.surchargePercentage) / 100);
+            newSurcharge += Math.round((newSubTotal * restaurant.surchargePercentage) / 100);
         }
 
-        _setSubTotal(newSubTotal);
+        if (register && register.surchargePercentage) {
+            newSurcharge += Math.round((newSubTotal * register.surchargePercentage) / 100);
+        }
+
+        _setSurcharge(newSurcharge);
+        _setSubTotal(newSubTotal + newSurcharge);
     }, [total, promotion, restaurant]);
 
     useEffect(() => {
@@ -629,6 +641,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setUserAppliedPromotion: setUserAppliedPromotion,
                 removeUserAppliedPromotion: removeUserAppliedPromotion,
                 total: total,
+                surcharge: surcharge,
                 subTotal: subTotal,
                 paidSoFar: paymentAmounts.cash + paymentAmounts.eftpos + paymentAmounts.online + paymentAmounts.uberEats + paymentAmounts.menulog,
                 paymentAmounts: paymentAmounts,
