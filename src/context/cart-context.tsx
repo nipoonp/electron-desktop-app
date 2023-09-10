@@ -14,6 +14,7 @@ import {
 } from "../model/model";
 import { applyDiscountToCartProducts, checkIfPromotionValid, getOrderDiscountAmount } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
+import { useRegister } from "./register-context";
 
 const initialParkedOrderId = null;
 const initialParkedOrderNumber = null;
@@ -142,6 +143,7 @@ const CartContext = createContext<ContextProps>({
 
 const CartProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
+    const { register } = useRegister();
 
     const [parkedOrderId, _setParkedOrderId] = useState<string | null>(initialParkedOrderId);
     const [parkedOrderNumber, _setParkedOrderNumber] = useState<string | null>(initialParkedOrderNumber);
@@ -189,6 +191,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         if (restaurant && restaurant.surchargePercentage) {
             newSubTotal += Math.round((newSubTotal * restaurant.surchargePercentage) / 100);
+        }
+
+        if (register && register.surchargePercentage) {
+            newSubTotal += Math.round((newSubTotal * register.surchargePercentage) / 100);
         }
 
         _setSubTotal(newSubTotal);
