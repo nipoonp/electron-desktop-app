@@ -56,6 +56,7 @@ export const CREATE_ORDER = gql`
         $payments: [OrderPaymentInput]
         $paymentAmounts: OrderPaymentAmountsInput
         $total: Int!
+        $surcharge: Int
         $discount: Int
         $promotionId: ID
         $subTotal: Int!
@@ -86,6 +87,7 @@ export const CREATE_ORDER = gql`
                 payments: $payments
                 paymentAmounts: $paymentAmounts
                 total: $total
+                surcharge: $surcharge
                 discount: $discount
                 promotionId: $promotionId
                 subTotal: $subTotal

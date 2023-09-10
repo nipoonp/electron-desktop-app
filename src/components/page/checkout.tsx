@@ -96,6 +96,7 @@ export const Checkout = () => {
         clearCart,
         promotion,
         total,
+        surcharge,
         subTotal,
         paidSoFar,
         transactionEftposReceipts,
@@ -676,6 +677,7 @@ export const Checkout = () => {
                 paymentAmounts: newPaymentAmounts,
                 payments: newPayments,
                 total: total,
+                surcharge: surcharge || undefined,
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
                 subTotal: subTotal,
@@ -725,6 +727,7 @@ export const Checkout = () => {
                     payments: payments,
                     paymentAmounts: paymentAmounts,
                     total: total,
+                    surcharge: surcharge || undefined,
                     discount: promotion ? promotion.discountedAmount : undefined,
                     promotionId: promotion ? promotion.promotion.id : undefined,
                     subTotal: subTotal,
@@ -1410,9 +1413,11 @@ export const Checkout = () => {
                 <></>
             )}
             {restaurant.surchargePercentage ? (
-                <div className="h3 text-center mb-2">
-                    Surcharge: $
-                    {convertCentsToDollars((subTotal * restaurant.surchargePercentage) / 100 / ((100 + restaurant.surchargePercentage) / 100))}
+                <div className="checkout-discount-wrapper mb-2 mt-1">
+                    <div>Surcharge:</div>
+                    <div>
+                        ${convertCentsToDollars((subTotal * restaurant.surchargePercentage) / 100 / ((100 + restaurant.surchargePercentage) / 100))}
+                    </div>
                 </div>
             ) : (
                 <></>
