@@ -118,6 +118,7 @@ export const GET_USER = gql`
                             askToPrintCustomerReceipt
                             orderNumberSuffix
                             orderNumberStart
+                            surchargePercentage
                             defaultCategoryView
                             customStyleSheet {
                                 key
@@ -382,6 +383,7 @@ export const GET_RESTAURANT = gql`
                     askToPrintCustomerReceipt
                     orderNumberSuffix
                     orderNumberStart
+                    surchargePercentage
                     defaultCategoryView
                     customStyleSheet {
                         key
@@ -1022,6 +1024,7 @@ export interface IGET_RESTAURANT_REGISTER {
     askToPrintCustomerReceipt: boolean;
     orderNumberSuffix: string;
     orderNumberStart: number;
+    surchargePercentage: number;
     defaultCategoryView: string;
     customStyleSheet?: IS3Object;
     printers: {
