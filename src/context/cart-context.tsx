@@ -641,6 +641,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setUserAppliedPromotion: setUserAppliedPromotion,
                 removeUserAppliedPromotion: removeUserAppliedPromotion,
                 total: total,
+                surcharge: surcharge,
                 subTotal: subTotal,
                 paidSoFar: paymentAmounts.cash + paymentAmounts.eftpos + paymentAmounts.online + paymentAmounts.uberEats + paymentAmounts.menulog,
                 paymentAmounts: paymentAmounts,

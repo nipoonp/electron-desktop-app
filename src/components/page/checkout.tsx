@@ -1412,16 +1412,7 @@ export const Checkout = () => {
             ) : (
                 <></>
             )}
-            {restaurant.surchargePercentage ? (
-                <div className="checkout-discount-wrapper mb-2 mt-1">
-                    <div>Surcharge:</div>
-                    <div>
-                        ${convertCentsToDollars((subTotal * restaurant.surchargePercentage) / 100 / ((100 + restaurant.surchargePercentage) / 100))}
-                    </div>
-                </div>
-            ) : (
-                <></>
-            )}
+            {surcharge ? <div className="h3 text-center mb-2">Surcharge: ${convertCentsToDollars(surcharge)}</div> : <></>}
             {paidSoFar > 0 ? <div className="h3 text-center mb-2">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : <></>}
             <div className={`h1 text-center ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
             <div className={`${isPOS ? "mb-0" : "mb-4"}`}>
