@@ -18,10 +18,6 @@ import { ApolloClient, ApolloProvider, defaultDataIdFromObject, from, HttpLink, 
 import { AUTH_TYPE, createAuthLink } from "aws-appsync-auth-link";
 import { createSubscriptionHandshakeLink } from "aws-appsync-subscription-link";
 
-import { ErrorBoundary } from "react-error-boundary";
-import { ErrorBoundaryFallback } from "./tabin/components/errorBoundryFallback";
-import { sendFailureNotification } from "./util/errorHandling";
-
 Amplify.configure(awsconfig);
 Amplify.Logger.LOG_LEVEL = process.env.REACT_APP_LOG_LEVEL;
 
@@ -111,8 +107,6 @@ const iamClient = new ApolloClient({
 const App = () => {
     const { user, status } = useAuth();
 
-    throw new Error("errorr!!!");
-
     switch (status) {
         case AuthenticationStatus.Loading:
             return <h1>App: Loading user</h1>;
@@ -157,20 +151,11 @@ const App = () => {
 };
 
 export default () => {
-    const logError = async (error: Error, info: { componentStack: string }) => {
-        // Do something with the error, e.g. log to an external API
-        console.log("xxx...", error.message, info.componentStack);
-
-        await sendFailureNotification(error);
-    };
-
     return (
-        <ErrorBoundary FallbackComponent={ErrorBoundaryFallback} onError={logError}>
-            <ElectronProvider>
-                <AuthProvider>
-                    <App />
-                </AuthProvider>
-            </ElectronProvider>
-        </ErrorBoundary>
+        <ElectronProvider>
+            <AuthProvider>
+                <App />
+            </AuthProvider>
+        </ElectronProvider>
     );
 };
