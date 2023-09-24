@@ -13,9 +13,13 @@ export const sendFailureNotification = async (error) => {
         //     },
         // });
 
+        console.log("Error: ", error);
+
         const result = await axios.post(
             `https://z7oa0cw11d.execute-api.ap-southeast-2.amazonaws.com/sandbox/sendEmail`,
             {
+                event: {},
+                context: {},
                 error: error,
             },
             {
