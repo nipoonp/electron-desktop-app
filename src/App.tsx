@@ -10,13 +10,17 @@ import { VerifoneProvider } from "./context/verifone-context";
 import { ReceiptPrinterProvider } from "./context/receiptPrinter-context";
 import { RegisterProvider } from "./context/register-context";
 import { ElectronProvider } from "./context/electron-context";
-import { RestaurantProvider } from "./context/restaurant-context";
+import { RestaurantProvider, useRestaurant } from "./context/restaurant-context";
 import { WindcaveProvider } from "./context/windcave-context";
 import { ErrorLoggingProvider } from "./context/errorLogging-context";
 
 import { ApolloClient, ApolloProvider, defaultDataIdFromObject, from, HttpLink, InMemoryCache, split } from "@apollo/client";
 import { AUTH_TYPE, createAuthLink } from "aws-appsync-auth-link";
 import { createSubscriptionHandshakeLink } from "aws-appsync-subscription-link";
+
+import { ErrorBoundary } from "react-error-boundary";
+import { sendFailureNotification } from "./util/errorHandling";
+import { ErrorBoundaryFallback } from "./tabin/components/errorBoundryFallback";
 
 Amplify.configure(awsconfig);
 Amplify.Logger.LOG_LEVEL = process.env.REACT_APP_LOG_LEVEL;
@@ -106,6 +110,18 @@ const iamClient = new ApolloClient({
 
 const App = () => {
     const { user, status } = useAuth();
+    const { restaurant } = useRestaurant();
+
+    const logFailureNotification = async (error: Error, info: { componentStack: string }) => {
+        // Do something with the error, e.g. log to an external API
+        console.error("Error:", error.message, info.componentStack);
+
+        await sendFailureNotification({
+            context: { restaurantId: restaurant ? restaurant.id : "", restaurantName: restaurant ? restaurant.name : "" },
+            message: error.message,
+            info: info.componentStack,
+        });
+    };
 
     switch (status) {
         case AuthenticationStatus.Loading:
@@ -123,7 +139,9 @@ const App = () => {
                                             <CartProvider>
                                                 <SmartpayProvider>
                                                     <WindcaveProvider>
-                                                        <Main />
+                                                        <ErrorBoundary FallbackComponent={ErrorBoundaryFallback} onError={logFailureNotification}>
+                                                            <Main />
+                                                        </ErrorBoundary>
                                                     </WindcaveProvider>
                                                 </SmartpayProvider>
                                             </CartProvider>

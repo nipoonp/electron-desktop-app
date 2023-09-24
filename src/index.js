@@ -14,7 +14,7 @@ import { sendFailureNotification } from "./util/errorHandling";
 const container = document.getElementById("root");
 const root = createRoot(container);
 
-const logError = async (error: Error, info: { componentStack: string }) => {
+const logFailureNotification = async (error: Error, info: { componentStack: string }) => {
     // Do something with the error, e.g. log to an external API
     console.error("Error:", error.message, info.componentStack);
 
@@ -22,7 +22,7 @@ const logError = async (error: Error, info: { componentStack: string }) => {
 };
 
 root.render(
-    <ErrorBoundary FallbackComponent={ErrorBoundaryFallback} onError={logError}>
+    <ErrorBoundary FallbackComponent={ErrorBoundaryFallback} onError={logFailureNotification}>
         <App />
     </ErrorBoundary>
 );
