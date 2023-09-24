@@ -40,9 +40,7 @@ export default () => {
     const { logError } = useErrorLogging();
 
     useEffect(() => {
-        const a: any = null;
-
-        if (status === a.SignedIn) {
+        if (status === AuthenticationStatus.SignedIn) {
             navigate(beginOrderPath, { replace: true });
         }
     }, [status]);
