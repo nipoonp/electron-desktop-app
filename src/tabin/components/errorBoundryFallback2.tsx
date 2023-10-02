@@ -1,10 +1,6 @@
 import { FallbackProps } from "react-error-boundary";
-import { useRestaurant } from "../../context/restaurant-context";
 
-export const ErrorBoundaryFallback2 = (props: FallbackProps) => {
-    const { restaurant } = useRestaurant();
-
-    console.log("xxx...I AM HERE222", props);
+export const ErrorBoundaryFallback = (props: FallbackProps) => {
     return (
         <div>
             <div>Something went wrong</div>
