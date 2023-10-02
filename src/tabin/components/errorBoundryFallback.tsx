@@ -2,7 +2,6 @@ import { FallbackProps } from "react-error-boundary";
 import { Button } from "./button";
 
 export const ErrorBoundaryFallback = (props: FallbackProps) => {
-    console.log("xxx...I AM HERE", props);
     return (
         <div className="p-6">
             <div className="h1 mb-2">Something went wrong.</div>

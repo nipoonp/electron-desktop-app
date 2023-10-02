@@ -774,6 +774,8 @@ export const Checkout = () => {
                 }
             });
 
+            console.log("Order variables: ", variables);
+
             if (parkedOrderId) {
                 const res: any = await updateOrderMutation({
                     variables: { orderId: parkedOrderId, ...variables },
@@ -782,12 +784,7 @@ export const Checkout = () => {
                 console.log("update order mutation result: ", res);
                 return res.data.updateOrder;
             } else {
-                const res: any = await createOrderMutation({
-                    variables: variables,
-                });
-
-                console.log("create order mutation result: ", res);
-                return res.data.createOrder;
+                return await retryCreateOrder(variables);
             }
         } catch (e) {
             console.log("process order mutation error: ", e);
@@ -795,6 +792,28 @@ export const Checkout = () => {
             await logError(e, JSON.stringify({ error: e, variables: variables }));
             throw e;
         }
+    };
+
+    const retryCreateOrder = async (variables) => {
+        //If the create order fails, retry up to 5 times
+        for (let i = 0; i < 5; i++) {
+            try {
+                const res: any = await createOrderMutation({
+                    variables: variables,
+                });
+
+                console.log("create order mutation result: ", res);
+
+                return res.data.createOrder;
+            } catch (error) {
+                await logError(`Attempt ${i + 1} failed: ${error}`, variables);
+
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
+        }
+
+        await logError(`Maximum retry attempts reached. Unable to create order`, variables);
+        throw new Error(`Maximum retry attempts reached. Unable to create order`);
     };
 
     const performEftposTransaction = async (amount: number): Promise<IEftposTransactionOutcome> => {

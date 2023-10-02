@@ -596,6 +596,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setPromotion(initialPromotion);
         _setAvailablePromotions(initialAvailablePromotions);
         _setTotal(initialTotal);
+        _setSurcharge(initialSurcharge);
         _setPaymentAmounts(initialPaymentAmounts);
         _setSubTotal(initialSubTotal);
         _setPayments(initialPayments);
