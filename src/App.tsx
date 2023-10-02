@@ -116,11 +116,14 @@ const App = () => {
         // Do something with the error, e.g. log to an external API
         console.error("Error:", error.message, info.componentStack);
 
-        await sendFailureNotification({
-            context: { restaurantId: restaurant ? restaurant.id : "", restaurantName: restaurant ? restaurant.name : "" },
-            message: error.message,
-            info: info.componentStack,
-        });
+        await sendFailureNotification(
+            error.message,
+            JSON.stringify({
+                page: "app.tsx",
+                context: { restaurantId: restaurant ? restaurant.id : "", restaurantName: restaurant ? restaurant.name : "" },
+                info: info.componentStack,
+            })
+        );
     };
 
     switch (status) {
@@ -129,40 +132,40 @@ const App = () => {
         case AuthenticationStatus.SignedIn:
             return (
                 <ApolloProvider client={cognitoClient}>
-                    <ErrorLoggingProvider>
-                        <UserProvider userId={user!.username}>
-                            <VerifoneProvider>
-                                {/* Put this here becuase if we put it under the restaurantProvider it tirggers the useEffect event listerners twice */}
-                                <RestaurantProvider>
-                                    <RegisterProvider>
-                                        <ReceiptPrinterProvider>
-                                            <CartProvider>
-                                                <SmartpayProvider>
-                                                    <WindcaveProvider>
+                    <UserProvider userId={user!.username}>
+                        <VerifoneProvider>
+                            {/* Put this here becuase if we put it under the restaurantProvider it tirggers the useEffect event listerners twice */}
+                            <RestaurantProvider>
+                                <RegisterProvider>
+                                    <ReceiptPrinterProvider>
+                                        <CartProvider>
+                                            <SmartpayProvider>
+                                                <WindcaveProvider>
+                                                    <ErrorLoggingProvider>
                                                         <ErrorBoundary FallbackComponent={ErrorBoundaryFallback} onError={logFailureNotification}>
                                                             <Main />
                                                         </ErrorBoundary>
-                                                    </WindcaveProvider>
-                                                </SmartpayProvider>
-                                            </CartProvider>
-                                        </ReceiptPrinterProvider>
-                                    </RegisterProvider>
-                                </RestaurantProvider>
-                            </VerifoneProvider>
-                        </UserProvider>
-                    </ErrorLoggingProvider>
+                                                    </ErrorLoggingProvider>
+                                                </WindcaveProvider>
+                                            </SmartpayProvider>
+                                        </CartProvider>
+                                    </ReceiptPrinterProvider>
+                                </RegisterProvider>
+                            </RestaurantProvider>
+                        </VerifoneProvider>
+                    </UserProvider>
                 </ApolloProvider>
             );
         default:
             return (
                 <ApolloProvider client={iamClient}>
-                    <ErrorLoggingProvider>
-                        <UserProvider userId={null}>
-                            <CartProvider>
+                    <UserProvider userId={null}>
+                        <CartProvider>
+                            <ErrorLoggingProvider>
                                 <Main />
-                            </CartProvider>
-                        </UserProvider>
-                    </ErrorLoggingProvider>
+                            </ErrorLoggingProvider>
+                        </CartProvider>
+                    </UserProvider>
                 </ApolloProvider>
             );
     }
