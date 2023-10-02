@@ -1,26 +1,15 @@
 import axios from "axios";
 
-export const sendFailureNotification = async (error) => {
+export const sendFailureNotification = async (error: string, context: string) => {
     try {
-        // const result = await axios({
-        //     method: "post",
-        //     url: `https://z7oa0cw11d.execute-api.ap-southeast-2.amazonaws.com/sandbox/sendEmail`, //Change this later for prod
-        //     headers: {
-        //         Accept: "application/json",
-        //     },
-        //     data: {
-        //         error: error,
-        //     },
-        // });
-
         console.log("Error: ", error);
 
         const result = await axios.post(
             `https://z7oa0cw11d.execute-api.ap-southeast-2.amazonaws.com/sandbox/sendEmail`,
             {
-                event: {},
-                context: {},
                 error: error,
+                event: {},
+                context: context,
             },
             {
                 headers: {

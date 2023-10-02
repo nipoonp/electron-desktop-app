@@ -205,10 +205,10 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
                 const failedPrintQueue = JSON.parse(storedFiledPrintQueue) as IPrintReceiptDataOutput[];
 
-                if (failedPrintQueue.length > 3) {
-                    //Send notification for monitoring if it passes threshold
-                    await logError("Failed receipt prints passed threshold", JSON.stringify({ failedPrintQueue: failedPrintQueue }));
-                }
+                // if (failedPrintQueue.length > 3) {
+                //     //Send notification for monitoring if it passes threshold
+                //     await logError("Failed receipt prints passed threshold", JSON.stringify({ failedPrintQueue: failedPrintQueue }));
+                // }
 
                 for (var i = 0; i < failedPrintQueue.length; i++) {
                     const failedPrint = failedPrintQueue[i];
@@ -216,10 +216,10 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                     await printReceipt(failedPrint.order, true);
                 }
             } catch (e) {
-                await logError(
-                    "Error reprinting failed orders",
-                    JSON.stringify({ error: e, failedPrintQueue: localStorage.getItem("failedPrintQueue") })
-                );
+                // await logError(
+                //     "Error reprinting failed orders",
+                //     JSON.stringify({ error: e, failedPrintQueue: localStorage.getItem("failedPrintQueue") })
+                // );
             }
         }, retryPrintLoopTime);
 
@@ -246,7 +246,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
             } catch (e) {
                 console.error(e);
                 toast.error("There was an error printing your order");
-                await logError("There was an error printing your order", JSON.stringify({ error: e, order: order }));
+                // await logError("There was an error printing your order", JSON.stringify({ error: e, order: order }));
             }
         }
     };
@@ -390,7 +390,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         } catch (e) {
             console.error(e);
             toast.error("There was an error printing your order");
-            await logError("There was an error printing your order", JSON.stringify({ error: e, order: order }));
+            // await logError("There was an error printing your order", JSON.stringify({ error: e, order: order }));
         }
     };
 
@@ -405,7 +405,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
             } catch (e) {
                 console.error(e);
                 toast.error("There was an error printing your report");
-                await logError("There was an error printing your report", JSON.stringify({ error: e, printSalesDataInput: printSalesDataInput }));
+                // await logError("There was an error printing your report", JSON.stringify({ error: e, printSalesDataInput: printSalesDataInput }));
             }
         }
     };

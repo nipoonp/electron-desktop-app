@@ -774,6 +774,8 @@ export const Checkout = () => {
                 }
             });
 
+            console.log("Order variables: ", variables);
+
             if (parkedOrderId) {
                 const res: any = await updateOrderMutation({
                     variables: { orderId: parkedOrderId, ...variables },

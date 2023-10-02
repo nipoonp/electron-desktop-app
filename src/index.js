@@ -18,7 +18,14 @@ const logFailureNotification = async (error: Error, info: { componentStack: stri
     // Do something with the error, e.g. log to an external API
     console.error("Error:", error.message, info.componentStack);
 
-    await sendFailureNotification({ message: error.message, info: info.componentStack });
+    await sendFailureNotification(
+        error.message,
+        JSON.stringify({
+            page: "index.js",
+            context: "index.js",
+            info: info.componentStack,
+        })
+    );
 };
 
 root.render(
