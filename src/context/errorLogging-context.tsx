@@ -34,11 +34,6 @@ const ErrorLoggingContext = createContext<ContextProps>({
 });
 
 const ErrorLoggingProvider = (props: { children: React.ReactNode }) => {
-    const { restaurant } = useRestaurant();
-
-    // const [logSlackErrorMutation, { data, loading, error }] = useMutation(LOG_SLACK_ERROR, {
-    //     update: (proxy, mutationResult) => {},
-    // });
     const [createEftposTransactionLogMutation] = useMutation(CREATE_EFTPOS_TRANSACTION_LOG, {
         update: (proxy, mutationResult) => {},
     });
@@ -58,8 +53,7 @@ const ErrorLoggingProvider = (props: { children: React.ReactNode }) => {
             await sendFailureNotification(
                 error,
                 JSON.stringify({
-                    restaurantId: restaurant ? restaurant.id : "invalid",
-                    restaurantName: restaurant ? restaurant.name : "invalid",
+                    restaurantId: localStorage.getItem("selectedRestaurantId") || "invalid",
                     context: context,
                 })
             );

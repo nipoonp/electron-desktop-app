@@ -132,40 +132,40 @@ const App = () => {
         case AuthenticationStatus.SignedIn:
             return (
                 <ApolloProvider client={cognitoClient}>
-                    <UserProvider userId={user!.username}>
-                        <VerifoneProvider>
-                            {/* Put this here becuase if we put it under the restaurantProvider it tirggers the useEffect event listerners twice */}
-                            <RestaurantProvider>
-                                <RegisterProvider>
-                                    <ReceiptPrinterProvider>
-                                        <CartProvider>
-                                            <SmartpayProvider>
-                                                <WindcaveProvider>
-                                                    <ErrorLoggingProvider>
+                    <ErrorLoggingProvider>
+                        <UserProvider userId={user!.username}>
+                            <VerifoneProvider>
+                                {/* Put this here becuase if we put it under the restaurantProvider it tirggers the useEffect event listerners twice */}
+                                <RestaurantProvider>
+                                    <RegisterProvider>
+                                        <ReceiptPrinterProvider>
+                                            <CartProvider>
+                                                <SmartpayProvider>
+                                                    <WindcaveProvider>
                                                         <ErrorBoundary FallbackComponent={ErrorBoundaryFallback} onError={logFailureNotification}>
                                                             <Main />
                                                         </ErrorBoundary>
-                                                    </ErrorLoggingProvider>
-                                                </WindcaveProvider>
-                                            </SmartpayProvider>
-                                        </CartProvider>
-                                    </ReceiptPrinterProvider>
-                                </RegisterProvider>
-                            </RestaurantProvider>
-                        </VerifoneProvider>
-                    </UserProvider>
+                                                    </WindcaveProvider>
+                                                </SmartpayProvider>
+                                            </CartProvider>
+                                        </ReceiptPrinterProvider>
+                                    </RegisterProvider>
+                                </RestaurantProvider>
+                            </VerifoneProvider>
+                        </UserProvider>
+                    </ErrorLoggingProvider>
                 </ApolloProvider>
             );
         default:
             return (
                 <ApolloProvider client={iamClient}>
-                    <UserProvider userId={null}>
-                        <CartProvider>
-                            <ErrorLoggingProvider>
+                    <ErrorLoggingProvider>
+                        <UserProvider userId={null}>
+                            <CartProvider>
                                 <Main />
-                            </ErrorLoggingProvider>
-                        </CartProvider>
-                    </UserProvider>
+                            </CartProvider>
+                        </UserProvider>
+                    </ErrorLoggingProvider>
                 </ApolloProvider>
             );
     }
