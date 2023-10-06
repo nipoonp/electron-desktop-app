@@ -14,6 +14,7 @@ import {
 } from "../model/model";
 import { applyDiscountToCartProducts, checkIfPromotionValid, getOrderDiscountAmount } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
+import { useRegister } from "./register-context";
 
 const initialParkedOrderId = null;
 const initialParkedOrderNumber = null;
@@ -31,6 +32,7 @@ const initialUserAppliedPromotionCode = null;
 const initialPromotion = null;
 const initialAvailablePromotions = [];
 const initialTotal = 0;
+const initialSurcharge = 0;
 const initialPaidSoFar = 0;
 const initialPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0 };
 const initialSubTotal = 0;
@@ -74,6 +76,7 @@ type ContextProps = {
     setUserAppliedPromotion: (promotion: IGET_RESTAURANT_PROMOTION) => CheckIfPromotionValidResponse;
     removeUserAppliedPromotion: () => void;
     total: number;
+    surcharge: number;
     subTotal: number;
     paidSoFar: number;
     payments: ICartPayment[];
@@ -124,6 +127,7 @@ const CartContext = createContext<ContextProps>({
     setUserAppliedPromotion: () => CheckIfPromotionValidResponse.VALID,
     removeUserAppliedPromotion: () => {},
     total: initialTotal,
+    surcharge: initialSurcharge,
     subTotal: initialSubTotal,
     paidSoFar: initialPaidSoFar,
     payments: initialPayments,
@@ -142,6 +146,7 @@ const CartContext = createContext<ContextProps>({
 
 const CartProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
+    const { register } = useRegister();
 
     const [parkedOrderId, _setParkedOrderId] = useState<string | null>(initialParkedOrderId);
     const [parkedOrderNumber, _setParkedOrderNumber] = useState<string | null>(initialParkedOrderNumber);
@@ -153,6 +158,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
     const [notes, _setNotes] = useState<string>(initialNotes);
     const [total, _setTotal] = useState<number>(initialTotal);
+    const [surcharge, _setSurcharge] = useState<number>(initialSurcharge);
     const [paymentAmounts, _setPaymentAmounts] = useState<ICartPaymentAmounts>(initialPaymentAmounts);
     const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
     const [payments, _setPayments] = useState<ICartPayment[]>(initialPayments);
@@ -178,6 +184,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         if (!products) return;
 
         let newSubTotal = total;
+        let newSurcharge = 0;
 
         if (promotion) {
             if (promotion.discountedAmount > newSubTotal) {
@@ -188,10 +195,15 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         }
 
         if (restaurant && restaurant.surchargePercentage) {
-            newSubTotal += Math.round((newSubTotal * restaurant.surchargePercentage) / 100);
+            newSurcharge += Math.round((newSubTotal * restaurant.surchargePercentage) / 100);
         }
 
-        _setSubTotal(newSubTotal);
+        if (register && register.surchargePercentage) {
+            newSurcharge += Math.round((newSubTotal * register.surchargePercentage) / 100);
+        }
+
+        _setSurcharge(newSurcharge);
+        _setSubTotal(newSubTotal + newSurcharge);
     }, [total, promotion, restaurant]);
 
     useEffect(() => {
@@ -216,11 +228,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     useEffect(() => {
         if (!products) return;
 
-        processPromotions(products);
+        processPromotions(products, total);
     }, [userAppliedPromotionCode]);
 
     //This function should be a useEffect hook. But cannot make this because it cause infinite state change loop issue
-    const processPromotions = (products: ICartProduct[], newOrderType?: EOrderType) => {
+    const processPromotions = (products: ICartProduct[], newTotal: number, newOrderType?: EOrderType) => {
+        //Passing in newTotal here because if we take it from state it returns old total value.
         let bestPromotion: ICartPromotion | null = null;
         const odrType = newOrderType || orderType;
 
@@ -235,7 +248,13 @@ const CartProvider = (props: { children: React.ReactNode }) => {
             if (!odrType || !promotion.availableOrderTypes) return;
             if (!promotion.availableOrderTypes.includes(EOrderType[odrType])) return;
             if (promotion.totalNumberUsed >= promotion.totalAvailableUses) return;
-            if (total < promotion.minSpend) return;
+
+            //We need the most up to date total amount
+            if (newTotal < promotion.minSpend) {
+                _setProducts(products);
+                _setPromotion(null);
+                return;
+            }
 
             const discount = getOrderDiscountAmount(promotion, productsCpy, total);
 
@@ -413,7 +432,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const setOrderType = (orderType: EOrderType) => {
         _setOrderType(orderType);
 
-        if (products) processPromotions(products, orderType);
+        if (products) processPromotions(products, total, orderType);
     };
 
     const setPaymentMethod = (paymentMethod: EPaymentMethod | null) => {
@@ -432,26 +451,38 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setCustomerInformation(customerInformation);
     };
 
-    const setProducts = (products: ICartProduct[]) => {
-        _setProducts(products);
-        _setTotal(recalculateTotal(products));
-        updateCartQuantities(products);
-        processPromotions(products);
+    const setProducts = (newProducts: ICartProduct[]) => {
+        const newTotal = recalculateTotal(newProducts);
+
+        _setProducts(newProducts);
+        _setTotal(newTotal);
+        updateCartQuantities(newProducts);
+        processPromotions(newProducts, newTotal);
     };
 
     const addProduct = (product: ICartProduct) => {
-        let newProducts = products;
+        const { quantity: productQuantity, ...productWithoutQuantiy } = product;
+        const serializedProduct = JSON.stringify(productWithoutQuantiy);
 
-        if (newProducts != null) {
-            newProducts.push({ ...product });
+        let newProducts = products || [];
+
+        const matchingProductIndex = newProducts.findIndex((p) => {
+            const { quantity, ...pWithoutQuantiy } = p;
+            return JSON.stringify(pWithoutQuantiy) === serializedProduct;
+        });
+
+        if (matchingProductIndex !== -1) {
+            newProducts[matchingProductIndex].quantity += productQuantity;
         } else {
-            newProducts = [{ ...product }];
+            newProducts.push(product);
         }
 
+        const newTotal = recalculateTotal(newProducts);
+
         _setProducts(newProducts);
-        _setTotal(recalculateTotal(newProducts));
+        _setTotal(newTotal);
         updateCartQuantities(newProducts);
-        processPromotions(newProducts);
+        processPromotions(newProducts, newTotal);
     };
 
     const updateProduct = (index: number, product: ICartProduct) => {
@@ -461,10 +492,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         const newProducts = products;
         newProducts[index] = product;
 
+        const newTotal = recalculateTotal(newProducts);
+
         _setProducts(newProducts);
-        _setTotal(recalculateTotal(newProducts));
+        _setTotal(newTotal);
         updateCartQuantities(newProducts);
-        processPromotions(newProducts);
+        processPromotions(newProducts, newTotal);
     };
 
     const updateProductQuantity = (index: number, quantity: number) => {
@@ -477,10 +510,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         productAtIndex.quantity = quantity;
         newProducts[index] = productAtIndex;
 
+        const newTotal = recalculateTotal(newProducts);
+
         _setProducts(newProducts);
-        _setTotal(recalculateTotal(newProducts));
+        _setTotal(newTotal);
         updateCartQuantities(newProducts);
-        processPromotions(newProducts);
+        processPromotions(newProducts, newTotal);
     };
 
     const applyProductDiscount = (index: number, discount: number) => {
@@ -493,10 +528,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         productAtIndex.discount = discount;
         newProducts[index] = productAtIndex;
 
+        const newTotal = recalculateTotal(newProducts);
+
         _setProducts(newProducts);
-        _setTotal(recalculateTotal(newProducts));
+        _setTotal(newTotal);
         updateCartQuantities(newProducts);
-        processPromotions(newProducts);
+        processPromotions(newProducts, newTotal);
     };
 
     const deleteProduct = (index: number) => {
@@ -506,11 +543,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         let newProducts = products;
         newProducts.splice(index, 1);
 
-        _setProducts(newProducts);
-        _setTotal(recalculateTotal(newProducts));
-        updateCartQuantities(newProducts);
+        const newTotal = recalculateTotal(newProducts);
 
-        processPromotions(newProducts);
+        _setProducts(newProducts);
+        _setTotal(newTotal);
+        updateCartQuantities(newProducts);
+        processPromotions(newProducts, newTotal);
     };
 
     const setNotes = (notes: string) => {
@@ -556,8 +594,9 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setCartModifierQuantitiesById(initialCartModifierQuantitiesById);
         _setUserAppliedPromotionCode(initialUserAppliedPromotionCode);
         _setPromotion(initialPromotion);
-        _setAvailablePromotions(initialAvailablePromotions);
+        // _setAvailablePromotions(initialAvailablePromotions); //Don't need this. Otherwise, it will erase availablePromotions when you clear the cart
         _setTotal(initialTotal);
+        _setSurcharge(initialSurcharge);
         _setPaymentAmounts(initialPaymentAmounts);
         _setSubTotal(initialSubTotal);
         _setPayments(initialPayments);
@@ -603,6 +642,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setUserAppliedPromotion: setUserAppliedPromotion,
                 removeUserAppliedPromotion: removeUserAppliedPromotion,
                 total: total,
+                surcharge: surcharge,
                 subTotal: subTotal,
                 paidSoFar: paymentAmounts.cash + paymentAmounts.eftpos + paymentAmounts.online + paymentAmounts.uberEats + paymentAmounts.menulog,
                 paymentAmounts: paymentAmounts,

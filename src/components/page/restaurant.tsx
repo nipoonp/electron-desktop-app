@@ -378,13 +378,15 @@ export default () => {
                         <></>
                     )}
 
-                    {product.image && (
+                    {product.imageUrl ? (
+                        <CachedImage url={`${product.imageUrl}`} className="image mb-2" alt="product-image" />
+                    ) : product.image ? (
                         <CachedImage
                             url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
                             className="image mb-2"
                             alt="product-image"
                         />
-                    )}
+                    ) : null}
 
                     <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
 

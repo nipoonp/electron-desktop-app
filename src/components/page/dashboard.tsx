@@ -75,6 +75,9 @@ export default () => {
                     kitchenPrinter: register.printers.items[0].kitchenPrinter,
                     kitchenPrinterSmall: register.printers.items[0].kitchenPrinterSmall,
                     kitchenPrinterLarge: register.printers.items[0].kitchenPrinterLarge,
+                    hidePreparationTime: register.printers.items[0].hidePreparationTime,
+                    hideModifierGroupName: register.printers.items[0].hideModifierGroupName,
+                    hideOrderType: register.availableOrderTypes.length === 0,
                     products: convertProductTypesForPrint(productsToPrint),
                     displayPaymentRequiredMessage: !order.paid,
                 });
@@ -323,16 +326,17 @@ export default () => {
 
             await printReceipt({
                 ...receiptPrinterModalPrintReorderData,
-                printerType: register.printers.items[0].type,
-                printerAddress: register.printers.items[0].address,
-                customerPrinter: register.printers.items[0].customerPrinter,
-                kitchenPrinter: register.printers.items[0].kitchenPrinter,
-                kitchenPrinterSmall: register.printers.items[0].kitchenPrinterSmall,
-                kitchenPrinterLarge: register.printers.items[0].kitchenPrinterLarge,
+                printerType: printer.type,
+                printerAddress: printer.address,
+                customerPrinter: printer.customerPrinter,
+                kitchenPrinter: printer.kitchenPrinter,
+                kitchenPrinterSmall: printer.kitchenPrinterSmall,
+                kitchenPrinterLarge: printer.kitchenPrinterLarge,
+                hidePreparationTime: printer.hidePreparationTime,
+                hideModifierGroupName: printer.hideModifierGroupName,
+                hideOrderType: register.availableOrderTypes.length === 0,
                 products: convertProductTypesForPrint(productsToPrint),
             });
-
-            setReceiptPrinterModalPrintReorderData(null);
         }
     };
 

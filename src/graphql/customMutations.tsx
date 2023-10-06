@@ -56,9 +56,11 @@ export const CREATE_ORDER = gql`
         $payments: [OrderPaymentInput]
         $paymentAmounts: OrderPaymentAmountsInput
         $total: Int!
+        $surcharge: Int
         $discount: Int
         $promotionId: ID
         $subTotal: Int!
+        $preparationTimeInMinutes: Int
         $registerId: ID!
         $products: [OrderProductInput!]
         $placedAt: String
@@ -85,9 +87,11 @@ export const CREATE_ORDER = gql`
                 payments: $payments
                 paymentAmounts: $paymentAmounts
                 total: $total
+                surcharge: $surcharge
                 discount: $discount
                 promotionId: $promotionId
                 subTotal: $subTotal
+                preparationTimeInMinutes: $preparationTimeInMinutes
                 registerId: $registerId
                 products: $products
                 placedAt: $placedAt
@@ -123,6 +127,7 @@ export const UPDATE_ORDER = gql`
         $discount: Int
         $promotionId: ID
         $subTotal: Int!
+        $preparationTimeInMinutes: Int
         $registerId: ID!
         $products: [OrderProductInput!]
         $placedAt: String
@@ -151,6 +156,7 @@ export const UPDATE_ORDER = gql`
                 discount: $discount
                 promotionId: $promotionId
                 subTotal: $subTotal
+                preparationTimeInMinutes: $preparationTimeInMinutes
                 registerId: $registerId
                 products: $products
                 placedAt: $placedAt

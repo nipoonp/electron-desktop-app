@@ -11,6 +11,7 @@ import {
     EPromotionType,
     IS3Object,
     IGET_THIRD_PARTY_ORDER_RESPONSE,
+    IGET_RESTAURANT_REGISTER_PRINTER,
 } from "../../graphql/customQueries";
 import {
     restaurantPath,
@@ -95,6 +96,7 @@ export const Checkout = () => {
         clearCart,
         promotion,
         total,
+        surcharge,
         subTotal,
         paidSoFar,
         transactionEftposReceipts,
@@ -125,7 +127,7 @@ export const Checkout = () => {
 
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
-    const { createTransaction: windcaveCreateTransaction, pollForOutcome: windcavePollForOutcome } = useWindcave();
+    const { createTransaction: windcaveCreateTransaction } = useWindcave();
 
     const [createOrderMutation] = useMutation(CREATE_ORDER, {
         update: (proxy, mutationResult) => {
@@ -425,7 +427,7 @@ export const Checkout = () => {
         clearCart();
     };
 
-    const sendReceiptPrint = async (order: IGET_RESTAURANT_ORDER_FRAGMENT, printer: any) => {
+    const sendReceiptPrint = async (order: IGET_RESTAURANT_ORDER_FRAGMENT, printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
         const productsToPrint = filterPrintProducts(order.products, printer);
 
         if (productsToPrint.length === 0) return;
@@ -452,6 +454,9 @@ export const Checkout = () => {
                 kitchenPrinter: printer.kitchenPrinter,
                 kitchenPrinterSmall: printer.kitchenPrinterSmall,
                 kitchenPrinterLarge: printer.kitchenPrinterLarge,
+                hidePreparationTime: printer.hidePreparationTime,
+                hideModifierGroupName: printer.hideModifierGroupName,
+                hideOrderType: register.availableOrderTypes.length === 1, //Don't show order type if only 1 is available
                 hideModifierGroupsForCustomer: false,
                 restaurant: {
                     name: restaurant.name,
@@ -672,9 +677,11 @@ export const Checkout = () => {
                 paymentAmounts: newPaymentAmounts,
                 payments: newPayments,
                 total: total,
+                surcharge: surcharge || undefined,
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
                 subTotal: subTotal,
+                preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                 registerId: register.id,
                 products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
                 placedAt: toLocalISOString(now),
@@ -720,9 +727,11 @@ export const Checkout = () => {
                     payments: payments,
                     paymentAmounts: paymentAmounts,
                     total: total,
+                    surcharge: surcharge || undefined,
                     discount: promotion ? promotion.discountedAmount : undefined,
                     promotionId: promotion ? promotion.promotion.id : undefined,
                     subTotal: subTotal,
+                    preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                     registerId: register.id,
                     products: JSON.stringify(products), // copy obj so we can mutate it later
                     placedAt: now,
@@ -765,6 +774,8 @@ export const Checkout = () => {
                 }
             });
 
+            console.log("Order variables: ", variables);
+
             if (parkedOrderId) {
                 const res: any = await updateOrderMutation({
                     variables: { orderId: parkedOrderId, ...variables },
@@ -773,12 +784,7 @@ export const Checkout = () => {
                 console.log("update order mutation result: ", res);
                 return res.data.updateOrder;
             } else {
-                const res: any = await createOrderMutation({
-                    variables: variables,
-                });
-
-                console.log("create order mutation result: ", res);
-                return res.data.createOrder;
+                return await retryCreateOrder(variables);
             }
         } catch (e) {
             console.log("process order mutation error: ", e);
@@ -786,6 +792,28 @@ export const Checkout = () => {
             await logError(e, JSON.stringify({ error: e, variables: variables }));
             throw e;
         }
+    };
+
+    const retryCreateOrder = async (variables) => {
+        //If the create order fails, retry up to 5 times
+        for (let i = 0; i < 5; i++) {
+            try {
+                const res: any = await createOrderMutation({
+                    variables: variables,
+                });
+
+                console.log("create order mutation result: ", res);
+
+                return res.data.createOrder;
+            } catch (error) {
+                await logError(`Attempt ${i + 1} failed: ${error}`, variables);
+
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
+        }
+
+        await logError(`Maximum retry attempts reached. Unable to create order`, variables);
+        throw new Error(`Maximum retry attempts reached. Unable to create order`);
     };
 
     const performEftposTransaction = async (amount: number): Promise<IEftposTransactionOutcome> => {
@@ -805,14 +833,13 @@ export const Checkout = () => {
                 const pollingUrl = await smartpayCreateTransaction(amount, "Card.Purchase");
                 outcome = await smartpayPollForOutcome(pollingUrl, delayed);
             } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
-                const txnRef = await windcaveCreateTransaction(
+                outcome = await windcaveCreateTransaction(
                     register.windcaveStationId,
                     register.windcaveStationUser,
                     register.windcaveStationKey,
                     amount,
                     "Purchase"
                 );
-                outcome = await windcavePollForOutcome(register.windcaveStationId, register.windcaveStationUser, register.windcaveStationKey, txnRef);
             } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
 
@@ -1404,14 +1431,7 @@ export const Checkout = () => {
             ) : (
                 <></>
             )}
-            {restaurant.surchargePercentage ? (
-                <div className="h3 text-center mb-2">
-                    Surcharge: $
-                    {convertCentsToDollars((subTotal * restaurant.surchargePercentage) / 100 / ((100 + restaurant.surchargePercentage) / 100))}
-                </div>
-            ) : (
-                <></>
-            )}
+            {surcharge ? <div className="h3 text-center mb-2">Surcharge: ${convertCentsToDollars(surcharge)}</div> : <></>}
             {paidSoFar > 0 ? <div className="h3 text-center mb-2">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : <></>}
             <div className={`h1 text-center ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
             <div className={`${isPOS ? "mb-0" : "mb-4"}`}>
