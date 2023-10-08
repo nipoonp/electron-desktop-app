@@ -229,7 +229,8 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     const printReceipt = async (order: IOrderReceipt, isRetry?: boolean) => {
         if (ipcRenderer) {
             try {
-                //Had to change code becuase ipcRenderer.invoke("RECEIPT_PRINTER_DATA", order) no longer returns anything if print is successful. Not sure why.
+                //Had to change code becuase ipcRenderer.invoke("RECEIPT_PRINTER_DATA", order) no longer returns anything if print is successful. Not sure why. But it could be a problem as well becuase there could be unresolved promise we are waiting on for await ipcRenderer.invoke("RECEIPT_PRINTER_DATA", order).
+                //Error returns the promise. But if print is successful it won't.
                 if (isRetry) {
                     //We are retrying and the retry was successful, remove order from failedPrintQueue
                     removeSuccessPrintFromFailedPrintQueue(order);
