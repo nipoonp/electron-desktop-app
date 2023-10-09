@@ -21,6 +21,7 @@ import { createSubscriptionHandshakeLink } from "aws-appsync-subscription-link";
 import { ErrorBoundary } from "react-error-boundary";
 import { sendFailureNotification } from "./util/errorHandling";
 import { ErrorBoundaryFallback } from "./tabin/components/errorBoundryFallback";
+import { ErrorInfo } from "react";
 
 Amplify.configure(awsconfig);
 Amplify.Logger.LOG_LEVEL = process.env.REACT_APP_LOG_LEVEL;
@@ -112,7 +113,7 @@ const App = () => {
     const { user, status } = useAuth();
     const { restaurant } = useRestaurant();
 
-    const logFailureNotification = async (error: Error, info: { componentStack: string }) => {
+    const logFailureNotification = async (error: Error, info: ErrorInfo) => {
         // Do something with the error, e.g. log to an external API
         console.error("Error:", error.message, info.componentStack);
 

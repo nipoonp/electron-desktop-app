@@ -229,20 +229,19 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     const printReceipt = async (order: IOrderReceipt, isRetry?: boolean) => {
         if (ipcRenderer) {
             try {
-                //TODO: Had to change code becuase ipcRenderer.invoke("RECEIPT_PRINTER_DATA", order) no longer returns anything if print is successful. Not sure why. But it could be a problem as well becuase there could be unresolved promise we are waiting on for await ipcRenderer.invoke("RECEIPT_PRINTER_DATA", order).
-                //Error returns the promise. But if print is successful it won't.
-                if (isRetry) {
-                    //We are retrying and the retry was successful, remove order from failedPrintQueue
-                    removeSuccessPrintFromFailedPrintQueue(order);
-                }
-
                 const result: IPrintReceiptDataOutput = await ipcRenderer.invoke("RECEIPT_PRINTER_DATA", order);
 
                 console.log("result", result);
 
-                if (result.error) {
+                if (result.error && isRetry) {
+                    //If retry dont readd same order into failedPrintQueue
+                    return;
+                } else if (result.error) {
                     toast.error("There was an error printing your order");
                     storeFailedPrint(result);
+                } else if (isRetry) {
+                    //We are retrying and the retry was successful, remove order from failedPrintQueue
+                    removeSuccessPrintFromFailedPrintQueue(result);
                 }
             } catch (e) {
                 console.error(e);
@@ -425,14 +424,14 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         localStorage.setItem("failedPrintQueue", JSON.stringify(newFailedPrintQueueOrders));
     };
 
-    const removeSuccessPrintFromFailedPrintQueue = (order: IOrderReceipt) => {
+    const removeSuccessPrintFromFailedPrintQueue = (successPrintOrder: IPrintReceiptDataOutput) => {
         const storedFiledPrintQueue = localStorage.getItem("failedPrintQueue");
 
         if (!storedFiledPrintQueue) return;
 
         const failedPrintQueue = JSON.parse(storedFiledPrintQueue) as IPrintReceiptDataOutput[];
 
-        const updatedFailedPrintQueue = failedPrintQueue.filter((o) => o.order.orderId != order.orderId);
+        const updatedFailedPrintQueue = failedPrintQueue.filter((o) => o.order.orderId != successPrintOrder.order.orderId);
 
         localStorage.setItem("failedPrintQueue", JSON.stringify(updatedFailedPrintQueue));
     };
