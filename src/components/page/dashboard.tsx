@@ -322,7 +322,7 @@ export default () => {
 
             setReceiptPrinterModalPrintSalesData(null);
         } else if (receiptPrinterModalPrintReorderData) {
-            const productsToPrint = filterPrintProducts(receiptPrinterModalPrintReorderData.products, register.printers.items[0]);
+            const productsToPrint = filterPrintProducts(receiptPrinterModalPrintReorderData.products, printer);
 
             await printReceipt({
                 ...receiptPrinterModalPrintReorderData,
