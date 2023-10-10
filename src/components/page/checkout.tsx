@@ -72,6 +72,7 @@ import { OrderScheduleDateTime } from "../../tabin/components/orderScheduleDateT
 import { useGetThirdPartyOrderResponseLazyQuery } from "../../hooks/useGetThirdPartyOrderResponseLazyQuery";
 
 import "./checkout.scss";
+import axios from "axios";
 
 const logger = new Logger("checkout");
 
@@ -807,6 +808,25 @@ export const Checkout = () => {
                 return res.data.createOrder;
             } catch (error) {
                 await logError(`Attempt ${i + 1} failed: ${error}`, variables);
+                console.log(`Attempt ${i + 1} failed: ${error}`, variables);
+
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
+        }
+
+        console.log("xxx...creating order via backup method");
+
+        for (let i = 0; i < 5; i++) {
+            try {
+                const result = await axios.post(`https://36p0xwo1cl.execute-api.ap-southeast-2.amazonaws.com/prod`, variables);
+                const newBackupOrder: IGET_RESTAURANT_ORDER_FRAGMENT = result.data;
+
+                console.log("backup method result", newBackupOrder);
+
+                return newBackupOrder;
+            } catch (error) {
+                await logError(`Backup: Attempt ${i + 1} failed: ${error}`, variables);
+                console.log(`Backup: Attempt ${i + 1} failed: ${error}`, variables);
 
                 await new Promise((resolve) => setTimeout(resolve, 2000));
             }
