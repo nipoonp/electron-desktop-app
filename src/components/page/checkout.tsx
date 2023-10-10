@@ -796,35 +796,40 @@ export const Checkout = () => {
     };
 
     const retryCreateOrder = async (variables) => {
-        // //If the create order fails, retry up to 5 times
-        // for (let i = 0; i < 5; i++) {
-        //     try {
-        //         const res: any = await createOrderMutation({
-        //             variables: variables,
-        //         });
+        //If the create order fails, retry up to 5 times
+        for (let i = 0; i < 5; i++) {
+            try {
+                const res: any = await createOrderMutation({
+                    variables: variables,
+                });
 
-        //         console.log("create order mutation result: ", res);
+                console.log("create order mutation result: ", res);
 
-        //         return res.data.createOrder;
-        //     } catch (error) {
-        //         await logError(`Attempt ${i + 1} failed: ${error}`, variables);
+                return res.data.createOrder;
+            } catch (error) {
+                await logError(`Attempt ${i + 1} failed: ${error}`, variables);
+                console.log(`Attempt ${i + 1} failed: ${error}`, variables);
 
-        //         await new Promise((resolve) => setTimeout(resolve, 2000));
-        //     }
-        // }
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
+        }
 
-        try {
-            console.log("xxx...creating order via backup method");
+        console.log("xxx...creating order via backup method");
 
-            const result = await axios.post(`https://36p0xwo1cl.execute-api.ap-southeast-2.amazonaws.com/prod`, variables);
+        for (let i = 0; i < 5; i++) {
+            try {
+                const result = await axios.post(`https://36p0xwo1cl.execute-api.ap-southeast-2.amazonaws.com/prod`, variables);
+                const newBackupOrder: IGET_RESTAURANT_ORDER_FRAGMENT = result.data;
 
-            const newBackupOrder: IGET_RESTAURANT_ORDER_FRAGMENT = result.data;
+                console.log("backup method result", newBackupOrder);
 
-            console.log("Backup method result", newBackupOrder);
+                return newBackupOrder;
+            } catch (error) {
+                await logError(`Backup: Attempt ${i + 1} failed: ${error}`, variables);
+                console.log(`Backup: Attempt ${i + 1} failed: ${error}`, variables);
 
-            return newBackupOrder;
-        } catch (error) {
-            console.error("Error creating order via backup method:", error);
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
         }
 
         await logError(`Maximum retry attempts reached. Unable to create order`, variables);
