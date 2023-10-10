@@ -72,6 +72,7 @@ import { OrderScheduleDateTime } from "../../tabin/components/orderScheduleDateT
 import { useGetThirdPartyOrderResponseLazyQuery } from "../../hooks/useGetThirdPartyOrderResponseLazyQuery";
 
 import "./checkout.scss";
+import axios from "axios";
 
 const logger = new Logger("checkout");
 
@@ -795,21 +796,31 @@ export const Checkout = () => {
     };
 
     const retryCreateOrder = async (variables) => {
-        //If the create order fails, retry up to 5 times
-        for (let i = 0; i < 5; i++) {
-            try {
-                const res: any = await createOrderMutation({
-                    variables: variables,
-                });
+        // //If the create order fails, retry up to 5 times
+        // for (let i = 0; i < 5; i++) {
+        //     try {
+        //         const res: any = await createOrderMutation({
+        //             variables: variables,
+        //         });
 
-                console.log("create order mutation result: ", res);
+        //         console.log("create order mutation result: ", res);
 
-                return res.data.createOrder;
-            } catch (error) {
-                await logError(`Attempt ${i + 1} failed: ${error}`, variables);
+        //         return res.data.createOrder;
+        //     } catch (error) {
+        //         await logError(`Attempt ${i + 1} failed: ${error}`, variables);
 
-                await new Promise((resolve) => setTimeout(resolve, 2000));
-            }
+        //         await new Promise((resolve) => setTimeout(resolve, 2000));
+        //     }
+        // }
+
+        try {
+            console.log("xxx...creating order via backup method");
+
+            const result = await axios.post(`https://5zidaa4rr8.execute-api.ap-southeast-2.amazonaws.com/dev`, variables);
+
+            console.log("Backend method result", JSON.stringify(result.data));
+        } catch (error) {
+            console.error("Error creating order via backup method:", error);
         }
 
         await logError(`Maximum retry attempts reached. Unable to create order`, variables);
