@@ -818,7 +818,9 @@ export const Checkout = () => {
 
             const result = await axios.post(`https://5zidaa4rr8.execute-api.ap-southeast-2.amazonaws.com/dev`, variables);
 
-            console.log("Backend method result", JSON.stringify(result.data));
+            console.log("Backend method result", result);
+
+            return result;
         } catch (error) {
             console.error("Error creating order via backup method:", error);
         }
