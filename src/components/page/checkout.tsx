@@ -816,7 +816,7 @@ export const Checkout = () => {
         try {
             console.log("xxx...creating order via backup method");
 
-            const result = await axios.post(`https://5zidaa4rr8.execute-api.ap-southeast-2.amazonaws.com/dev`, variables);
+            const result = await axios.post(`https://36p0xwo1cl.execute-api.ap-southeast-2.amazonaws.com/prod`, variables);
 
             const newBackupOrder: IGET_RESTAURANT_ORDER_FRAGMENT = result.data;
 
