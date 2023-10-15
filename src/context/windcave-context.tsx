@@ -312,7 +312,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         } catch (e) {
             console.log("Error", e);
             addToLogs(`SendTransactionError: ${JSON.stringify(e)}`);
-            throw "There was an unknown error. Please retry or contact Windcave support.";
+            throw e.message || e || "There was an unknown error. Please retry or contact Windcave support.";
         }
     };
 
@@ -382,7 +382,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         } catch (e) {
             console.log("Error", e);
             addToLogs(`SendButtonRequestError: ${JSON.stringify(e)}`);
-            throw "There was an unknown error. Please retry or contact Windcave support.";
+            throw e.message || e || "There was an unknown error. Please retry or contact Windcave support.";
         }
     };
 
@@ -552,6 +552,14 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                 // Retry mechanism
                 if (retryCount < maxRetryCount) {
                     console.log(`Retrying (${retryCount + 1}/${maxRetryCount})...`);
+                    await logError(
+                        `Retrying (${retryCount + 1}/${maxRetryCount})...`,
+                        JSON.stringify({
+                            restaurantId: restaurant ? restaurant.id : "",
+                            restaurantName: restaurant ? restaurant.name : "",
+                            logs: logs,
+                        })
+                    );
                     addToLogs(`Retrying (${retryCount + 1}/${maxRetryCount})...`);
 
                     retryCount++;
@@ -561,14 +569,15 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                     setTimeout(checkCondition, interval, resolve, reject);
                 } else {
                     await logError(
-                        "There was an unknown error. Please retry or contact Windcave support.",
+                        e.message || e || "There was an unknown error. Please retry or contact Windcave support.",
                         JSON.stringify({
                             restaurantId: restaurant ? restaurant.id : "",
                             restaurantName: restaurant ? restaurant.name : "",
                             logs: logs,
                         })
                     );
-                    reject("There was an unknown error. Please retry or contact Windcave support.");
+
+                    reject(e.message || e || "There was an unknown error. Please retry or contact Windcave support.");
                 }
             }
         };
