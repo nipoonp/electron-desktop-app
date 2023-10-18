@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { useParams } from "react-router-dom";
 import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { checkoutPath, beginOrderPath, orderTypePath, tableNumberPath } from "../main";
+import { checkoutPath, beginOrderPath, orderTypePath, tableNumberPath, customerInformationPath } from "../main";
 import { convertCentsToDollars, getQuantityRemainingText, isProductQuantityAvailable } from "../../util/util";
 import { ProductModal } from "../modals/product";
 import { SearchProductModal } from "../modals/searchProductModal";
@@ -313,6 +313,8 @@ export default () => {
         } else {
             onAddProductToCart(category, product);
         }
+
+        navigate(customerInformationPath);
     };
 
     const onClickSearchProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
@@ -673,7 +675,7 @@ export default () => {
                                 {menuProducts}
                             </div>
                         </div>
-                        {!isPOS && <div className="footer-wrapper">{restaurantFooter}</div>}
+                        {/* {!isPOS && <div className="footer-wrapper">{restaurantFooter}</div>} */}
                     </div>
                     {products && products.length > 0 && isPOS && (
                         <div className="restaurant-checkout">
