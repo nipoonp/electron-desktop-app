@@ -3,6 +3,8 @@ import { FiExternalLink, FiX } from "react-icons/fi";
 import { useRestaurant } from "../../context/restaurant-context";
 import { ISubTab, ITab } from "../../model/model";
 import config from "./../../../package.json";
+import { useRegister } from "../../context/register-context";
+
 import "./menu.scss";
 
 let electron: any;
@@ -14,6 +16,7 @@ try {
 
 export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) => void; onHideMenu: () => void }) => {
     const { restaurant } = useRestaurant();
+    const { register } = useRegister();
     const [selectedTabId, setSelectedTabId] = useState<string>("");
     const [subTabs, setSubTabs] = useState<ITab[] | null>(null);
 
@@ -26,6 +29,7 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
     }, []);
 
     if (!restaurant) return <></>;
+    if (!register) return <></>;
 
     const selectTab = (tab: ITab) => {
         if (tab.route) {
@@ -58,7 +62,9 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
                 </div>
             </div>
             <div className="separator-2"></div>
-            <div className="text-bold">{restaurant.name}</div>
+            <div className="text-bold">
+                {restaurant.name} ({register.name})
+            </div>
             <div className="separator-2"></div>
             {props.tabs.map((tab: ITab) => (
                 <div key={tab.id} className="menu-tab-wrapper">

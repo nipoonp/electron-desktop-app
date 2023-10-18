@@ -6,6 +6,7 @@ import { EEftposTransactionOutcome, EWindcaveTransactionOutcome, IEftposTransact
 import { useRegister } from "./register-context";
 import { format } from "date-fns";
 import { useErrorLogging } from "./errorLogging-context";
+import { delay } from "../model/util";
 
 var convert = require("xml-js");
 
@@ -171,6 +172,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
     const { addEftposLog } = useErrorLogging();
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
+    const { logError } = useErrorLogging();
 
     const logs = useRef<string>(initialLogs);
 
@@ -309,7 +311,8 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
             }
         } catch (e) {
             console.log("Error", e);
-            throw "There was an unknown error. Please retry or contact Windcave support.";
+            addToLogs(`SendTransactionError: ${JSON.stringify(e)}`);
+            throw e.message || e || "There was an unknown error. Please retry or contact Windcave support.";
         }
     };
 
@@ -378,7 +381,8 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
             }
         } catch (e) {
             console.log("Error", e);
-            throw "There was an unknown error. Please retry or contact Windcave support.";
+            addToLogs(`SendButtonRequestError: ${JSON.stringify(e)}`);
+            throw e.message || e || "There was an unknown error. Please retry or contact Windcave support.";
         }
     };
 
@@ -390,7 +394,10 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         action: string = ACTION
     ): Promise<IEftposTransactionOutcome> => {
         const interval = 2 * 1000; // 2 seconds
-        const timeout = 30 * 60 * 1000; // 10 minutes
+        const timeout = 3 * 60 * 1000; // 3 minutes
+
+        const maxRetryCount = 5; // Maximum number of retry attempts
+        let retryCount = 0; // Initial count of retry attempts
 
         const endTime = Number(new Date()) + timeout;
 
@@ -517,8 +524,9 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                         }
                     }
                 } else {
-                    reject("Invalid status code received. Please retry or contact Windcave support.");
+                    //Should not come here for 4xx or 5xx errors. Will go directly into the catch block.
                     console.log("Ignoring failed request...");
+                    reject("Invalid status code received. Please retry or contact Windcave support.");
                     return;
                 }
 
@@ -529,6 +537,8 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                     resolve(transactionOutcome);
                     return;
                 } else if (Number(new Date()) < endTime) {
+                    await delay(interval);
+
                     setTimeout(checkCondition, interval, resolve, reject);
                     return;
                 } else {
@@ -537,7 +547,38 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                 }
             } catch (e) {
                 console.log("Error", e);
-                reject("There was an unknown error. Please retry or contact Windcave support.");
+                addToLogs(`TransactionError: ${JSON.stringify(e)}`);
+
+                // Retry mechanism
+                if (retryCount < maxRetryCount) {
+                    console.log(`Retrying (${retryCount + 1}/${maxRetryCount})...`);
+                    await logError(
+                        `Retrying (${retryCount + 1}/${maxRetryCount})...`,
+                        JSON.stringify({
+                            restaurantId: restaurant ? restaurant.id : "",
+                            restaurantName: restaurant ? restaurant.name : "",
+                            logs: logs,
+                        })
+                    );
+                    addToLogs(`Retrying (${retryCount + 1}/${maxRetryCount})...`);
+
+                    retryCount++;
+
+                    await delay(interval); // Wait a bit before retrying
+
+                    setTimeout(checkCondition, interval, resolve, reject);
+                } else {
+                    await logError(
+                        e.message || e || "There was an unknown error. Please retry or contact Windcave support.",
+                        JSON.stringify({
+                            restaurantId: restaurant ? restaurant.id : "",
+                            restaurantName: restaurant ? restaurant.name : "",
+                            logs: logs,
+                        })
+                    );
+
+                    reject(e.message || e || "There was an unknown error. Please retry or contact Windcave support.");
+                }
             }
         };
 

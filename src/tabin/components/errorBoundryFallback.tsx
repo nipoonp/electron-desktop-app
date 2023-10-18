@@ -7,7 +7,7 @@ export const ErrorBoundaryFallback = (props: FallbackProps) => {
             <div className="h1 mb-2">Something went wrong.</div>
             <div className="h3 mb-2">Please contact a Tabin support person instantly.</div>
             <div className="h3 mb-2">{props.error.message}</div>
-            <Button onClick={props.resetErrorBoundary}>Reset</Button>
+            {/* <Button onClick={props.resetErrorBoundary}>Reset</Button> */}
         </div>
     );
 };
