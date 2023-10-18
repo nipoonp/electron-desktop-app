@@ -7,9 +7,9 @@ import { Button } from "../../tabin/components/button";
 import { Input } from "../../tabin/components/input";
 import { useRestaurant } from "../../context/restaurant-context";
 import KioskBoard from "kioskboard";
+import { FiX } from "react-icons/fi";
 
 import "./buzzerNumber.scss";
-import { FiX } from "react-icons/fi";
 
 export default () => {
     const navigate = useNavigate();
@@ -107,8 +107,8 @@ export default () => {
                             // onChange={onChange}
                             // value={buzzer ? buzzer.slice(0, 2) : ""}
                         />
+                        {buzzerError && <div className="text-error mt-2">{buzzerError ? "Required" : ""}</div>}
                     </div>
-                    {buzzerError && <div className="text-error mt-2">{buzzerError ? "Required" : ""}</div>}
                     <Button onClick={onNext}>Next</Button>
                 </div>
             </PageWrapper>

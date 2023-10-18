@@ -205,10 +205,10 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
                 const failedPrintQueue = JSON.parse(storedFiledPrintQueue) as IPrintReceiptDataOutput[];
 
-                if (failedPrintQueue.length > 3) {
-                    //Send notification for monitoring if it passes threshold
-                    await logError("Failed receipt prints passed threshold", JSON.stringify({ failedPrintQueue: failedPrintQueue }));
-                }
+                // if (failedPrintQueue.length > 3) {
+                //     //Send notification for monitoring if it passes threshold
+                //     await logError("Failed receipt prints passed threshold", JSON.stringify({ failedPrintQueue: failedPrintQueue }));
+                // }
 
                 for (var i = 0; i < failedPrintQueue.length; i++) {
                     const failedPrint = failedPrintQueue[i];
@@ -216,10 +216,10 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                     await printReceipt(failedPrint.order, true);
                 }
             } catch (e) {
-                await logError(
-                    "Error reprinting failed orders",
-                    JSON.stringify({ error: e, failedPrintQueue: localStorage.getItem("failedPrintQueue") })
-                );
+                // await logError(
+                //     "Error reprinting failed orders",
+                //     JSON.stringify({ error: e, failedPrintQueue: localStorage.getItem("failedPrintQueue") })
+                // );
             }
         }, retryPrintLoopTime);
 
@@ -229,24 +229,25 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     const printReceipt = async (order: IOrderReceipt, isRetry?: boolean) => {
         if (ipcRenderer) {
             try {
+                //TODO: Had to change code becuase ipcRenderer.invoke("RECEIPT_PRINTER_DATA", order) no longer returns anything if print is successful. Not sure why. But it could be a problem as well becuase there could be unresolved promise we are waiting on for await ipcRenderer.invoke("RECEIPT_PRINTER_DATA", order).
+                //Error returns the promise. But if print is successful it won't.
+                if (isRetry) {
+                    //We are retrying and the retry was successful, remove order from failedPrintQueue
+                    removeSuccessPrintFromFailedPrintQueue(order);
+                }
+
                 const result: IPrintReceiptDataOutput = await ipcRenderer.invoke("RECEIPT_PRINTER_DATA", order);
 
                 console.log("result", result);
 
-                if (result.error && isRetry) {
-                    //If retry dont readd same order into failedPrintQueue
-                    return;
-                } else if (result.error) {
+                if (result.error) {
                     toast.error("There was an error printing your order");
                     storeFailedPrint(result);
-                } else if (isRetry) {
-                    //We are retrying and the retry was successful, remove order from failedPrintQueue
-                    removeSuccessPrintFromFailedPrintQueue(result);
                 }
             } catch (e) {
                 console.error(e);
                 toast.error("There was an error printing your order");
-                await logError("There was an error printing your order", JSON.stringify({ error: e, order: order }));
+                // await logError("There was an error printing your order", JSON.stringify({ error: e, order: order }));
             }
         }
     };
@@ -390,7 +391,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         } catch (e) {
             console.error(e);
             toast.error("There was an error printing your order");
-            await logError("There was an error printing your order", JSON.stringify({ error: e, order: order }));
+            // await logError("There was an error printing your order", JSON.stringify({ error: e, order: order }));
         }
     };
 
@@ -405,7 +406,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
             } catch (e) {
                 console.error(e);
                 toast.error("There was an error printing your report");
-                await logError("There was an error printing your report", JSON.stringify({ error: e, printSalesDataInput: printSalesDataInput }));
+                // await logError("There was an error printing your report", JSON.stringify({ error: e, printSalesDataInput: printSalesDataInput }));
             }
         }
     };
@@ -424,14 +425,14 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         localStorage.setItem("failedPrintQueue", JSON.stringify(newFailedPrintQueueOrders));
     };
 
-    const removeSuccessPrintFromFailedPrintQueue = (successPrintOrder: IPrintReceiptDataOutput) => {
+    const removeSuccessPrintFromFailedPrintQueue = (order: IOrderReceipt) => {
         const storedFiledPrintQueue = localStorage.getItem("failedPrintQueue");
 
         if (!storedFiledPrintQueue) return;
 
         const failedPrintQueue = JSON.parse(storedFiledPrintQueue) as IPrintReceiptDataOutput[];
 
-        const updatedFailedPrintQueue = failedPrintQueue.filter((o) => o.order.orderId != successPrintOrder.order.orderId);
+        const updatedFailedPrintQueue = failedPrintQueue.filter((o) => o.order.orderId != order.orderId);
 
         localStorage.setItem("failedPrintQueue", JSON.stringify(updatedFailedPrintQueue));
     };

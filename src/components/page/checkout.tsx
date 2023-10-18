@@ -72,6 +72,7 @@ import { OrderScheduleDateTime } from "../../tabin/components/orderScheduleDateT
 import { useGetThirdPartyOrderResponseLazyQuery } from "../../hooks/useGetThirdPartyOrderResponseLazyQuery";
 
 import "./checkout.scss";
+import axios from "axios";
 
 const logger = new Logger("checkout");
 
@@ -96,6 +97,7 @@ export const Checkout = () => {
         clearCart,
         promotion,
         total,
+        surcharge,
         subTotal,
         paidSoFar,
         transactionEftposReceipts,
@@ -676,6 +678,7 @@ export const Checkout = () => {
                 paymentAmounts: newPaymentAmounts,
                 payments: newPayments,
                 total: total,
+                surcharge: surcharge || undefined,
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
                 subTotal: subTotal,
@@ -725,6 +728,7 @@ export const Checkout = () => {
                     payments: payments,
                     paymentAmounts: paymentAmounts,
                     total: total,
+                    surcharge: surcharge || undefined,
                     discount: promotion ? promotion.discountedAmount : undefined,
                     promotionId: promotion ? promotion.promotion.id : undefined,
                     subTotal: subTotal,
@@ -771,6 +775,8 @@ export const Checkout = () => {
                 }
             });
 
+            console.log("Order variables: ", variables);
+
             if (parkedOrderId) {
                 const res: any = await updateOrderMutation({
                     variables: { orderId: parkedOrderId, ...variables },
@@ -779,12 +785,7 @@ export const Checkout = () => {
                 console.log("update order mutation result: ", res);
                 return res.data.updateOrder;
             } else {
-                const res: any = await createOrderMutation({
-                    variables: variables,
-                });
-
-                console.log("create order mutation result: ", res);
-                return res.data.createOrder;
+                return await retryCreateOrder(variables);
             }
         } catch (e) {
             console.log("process order mutation error: ", e);
@@ -792,6 +793,47 @@ export const Checkout = () => {
             await logError(e, JSON.stringify({ error: e, variables: variables }));
             throw e;
         }
+    };
+
+    const retryCreateOrder = async (variables) => {
+        //If the create order fails, retry up to 5 times
+        for (let i = 0; i < 5; i++) {
+            try {
+                const res: any = await createOrderMutation({
+                    variables: variables,
+                });
+
+                console.log("create order mutation result: ", res);
+
+                return res.data.createOrder;
+            } catch (error) {
+                await logError(`Attempt ${i + 1} failed: ${error}`, variables);
+                console.log(`Attempt ${i + 1} failed: ${error}`, variables);
+
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
+        }
+
+        console.log("xxx...creating order via backup method");
+
+        for (let i = 0; i < 5; i++) {
+            try {
+                const result = await axios.post(`https://36p0xwo1cl.execute-api.ap-southeast-2.amazonaws.com/prod`, variables);
+                const newBackupOrder: IGET_RESTAURANT_ORDER_FRAGMENT = result.data;
+
+                console.log("backup method result", newBackupOrder);
+
+                return newBackupOrder;
+            } catch (error) {
+                await logError(`Backup: Attempt ${i + 1} failed: ${error}`, variables);
+                console.log(`Backup: Attempt ${i + 1} failed: ${error}`, variables);
+
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
+        }
+
+        await logError(`Maximum retry attempts reached. Unable to create order`, variables);
+        throw new Error(`Maximum retry attempts reached. Unable to create order`);
     };
 
     const performEftposTransaction = async (amount: number): Promise<IEftposTransactionOutcome> => {
@@ -1409,14 +1451,7 @@ export const Checkout = () => {
             ) : (
                 <></>
             )}
-            {restaurant.surchargePercentage ? (
-                <div className="h3 text-center mb-2">
-                    Surcharge: $
-                    {convertCentsToDollars((subTotal * restaurant.surchargePercentage) / 100 / ((100 + restaurant.surchargePercentage) / 100))}
-                </div>
-            ) : (
-                <></>
-            )}
+            {surcharge ? <div className="h3 text-center mb-2">Surcharge: ${convertCentsToDollars(surcharge)}</div> : <></>}
             {paidSoFar > 0 ? <div className="h3 text-center mb-2">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : <></>}
             <div className={`h1 text-center ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
             <div className={`${isPOS ? "mb-0" : "mb-4"}`}>

@@ -118,6 +118,7 @@ export const GET_USER = gql`
                             askToPrintCustomerReceipt
                             orderNumberSuffix
                             orderNumberStart
+                            surchargePercentage
                             defaultCategoryView
                             customStyleSheet {
                                 key
@@ -382,6 +383,7 @@ export const GET_RESTAURANT = gql`
                     askToPrintCustomerReceipt
                     orderNumberSuffix
                     orderNumberStart
+                    surchargePercentage
                     defaultCategoryView
                     customStyleSheet {
                         key
@@ -526,6 +528,7 @@ export const GET_RESTAURANT = gql`
                     description
                     soldOut
                     soldOutDate
+                    imageUrl
                     image {
                         key
                         bucket
@@ -580,6 +583,7 @@ export const GET_RESTAURANT = gql`
                                 totalQuantityAvailable
                                 soldOut
                                 soldOutDate
+                                imageUrl
                                 image {
                                     key
                                     bucket
@@ -624,6 +628,7 @@ export const GET_RESTAURANT = gql`
                                             id
                                             name
                                             kitchenName
+                                            imageUrl
                                             image {
                                                 key
                                                 bucket
@@ -690,6 +695,7 @@ export const GET_RESTAURANT = gql`
                                                         kitchenName
                                                         description
                                                         price
+                                                        imageUrl
                                                         image {
                                                             key
                                                             bucket
@@ -713,6 +719,7 @@ export const GET_RESTAURANT = gql`
                                                             totalQuantityAvailable
                                                             soldOut
                                                             soldOutDate
+                                                            imageUrl
                                                             image {
                                                                 key
                                                                 bucket
@@ -725,6 +732,7 @@ export const GET_RESTAURANT = gql`
                                                                         id
                                                                         name
                                                                         kitchenName
+                                                                        imageUrl
                                                                         image {
                                                                             key
                                                                             bucket
@@ -788,6 +796,7 @@ export const GET_RESTAURANT = gql`
                                                                                     name
                                                                                     kitchenName
                                                                                     price
+                                                                                    imageUrl
                                                                                     image {
                                                                                         key
                                                                                         bucket
@@ -805,6 +814,7 @@ export const GET_RESTAURANT = gql`
                                                                                         totalQuantityAvailable
                                                                                         soldOut
                                                                                         soldOutDate
+                                                                                        imageUrl
                                                                                         image {
                                                                                             key
                                                                                             bucket
@@ -817,6 +827,7 @@ export const GET_RESTAURANT = gql`
                                                                                                     id
                                                                                                     name
                                                                                                     kitchenName
+                                                                                                    imageUrl
                                                                                                     image {
                                                                                                         key
                                                                                                         bucket
@@ -1022,6 +1033,7 @@ export interface IGET_RESTAURANT_REGISTER {
     askToPrintCustomerReceipt: boolean;
     orderNumberSuffix: string;
     orderNumberStart: number;
+    surchargePercentage: number;
     defaultCategoryView: string;
     customStyleSheet?: IS3Object;
     printers: {
@@ -1212,6 +1224,7 @@ export interface IGET_RESTAURANT_CATEGORY {
     kitchenName: string | null;
     description: string;
     displaySequence: number;
+    imageUrl?: string;
     image?: IS3Object;
     availablePlatforms: ERegisterType[];
     soldOut?: boolean;
@@ -1244,6 +1257,7 @@ export interface IGET_RESTAURANT_PRODUCT {
     totalQuantityAvailable?: number;
     soldOut?: boolean;
     soldOutDate?: string;
+    imageUrl?: string;
     image?: IS3Object;
     availablePlatforms: ERegisterType[];
     availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
@@ -1288,6 +1302,7 @@ export interface IGET_RESTAURANT_MODIFIER {
     kitchenName: string | null;
     description: string;
     price: number;
+    imageUrl?: string;
     image?: IS3Object;
     totalQuantitySold?: number;
     totalQuantityAvailable?: number;
@@ -1462,6 +1477,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                 totalQuantityAvailable
                 soldOut
                 soldOutDate
+                imageUrl
                 image {
                     key
                     bucket
@@ -1505,6 +1521,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                         category {
                             id
                             name
+                            imageUrl
                             image {
                                 key
                                 bucket
@@ -1568,6 +1585,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                         id
                                         name
                                         price
+                                        imageUrl
                                         image {
                                             key
                                             bucket
@@ -1589,6 +1607,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                             totalQuantityAvailable
                                             soldOut
                                             soldOutDate
+                                            imageUrl
                                             image {
                                                 key
                                                 bucket
@@ -1600,6 +1619,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                     category {
                                                         id
                                                         name
+                                                        imageUrl
                                                         image {
                                                             key
                                                             bucket
@@ -1661,6 +1681,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                                     id
                                                                     name
                                                                     price
+                                                                    imageUrl
                                                                     image {
                                                                         key
                                                                         bucket
@@ -1708,4 +1729,18 @@ export interface IGET_THIRD_PARTY_ORDER_RESPONSE {
         isSuccess: boolean;
         errorMessage: string;
     } | null;
+}
+
+export const GET_RESTAURANT_PREPRATION_TIME = gql`
+    query GetRestaurant($restaurantId: ID!) {
+        getRestaurant(id: $restaurantId) {
+            id
+            preparationTimeInMinutes
+        }
+    }
+`;
+
+export interface IGET_RESTAURANT_PREPRATION_TIME {
+    id: string;
+    preparationTimeInMinutes: number | null;
 }
