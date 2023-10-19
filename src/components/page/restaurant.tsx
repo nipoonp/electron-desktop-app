@@ -26,6 +26,7 @@ import { Input } from "../../tabin/components/input";
 import { useGetProductsBySKUCodeByRestaurantLazyQuery } from "../../hooks/useGetProductsBySKUCodeByRestaurantLazyQuery";
 import { Checkout } from "./checkout";
 import { toast } from "../../tabin/components/toast";
+import KioskBoard from "kioskboard";
 
 import "./restaurant.scss";
 
@@ -72,6 +73,8 @@ export default () => {
     const shakeButtonDurationSeconds = 5;
     const userOnPageDuration: React.MutableRefObject<number> = useRef(1);
 
+    const numpadRef = useRef(null);
+
     // const inputRef = useRef<HTMLInputElement | null>(null);
 
     // useEffect(() => {
@@ -103,6 +106,35 @@ export default () => {
     }, []);
 
     useEffect(() => {
+        if (numpadRef.current) {
+            KioskBoard.run(numpadRef.current, {
+                theme: "light",
+                keysArrayOfObjects: [
+                    {
+                        "0": "7",
+                        "1": "8",
+                        "2": "9",
+                    },
+                    {
+                        "0": "4",
+                        "1": "5",
+                        "2": "6",
+                    },
+                    {
+                        "0": "1",
+                        "1": "2",
+                        "2": "3",
+                    },
+                    {
+                        "0": "0",
+                        "1": ".",
+                    },
+                ],
+            });
+        }
+    }, [numpadRef]);
+
+    useEffect(() => {
         if (restaurant) {
             setRestaurant(restaurant);
 
@@ -113,7 +145,10 @@ export default () => {
             } else if (register && register.defaultCategoryView) {
                 const selectedCategoryItem = restaurantCategories[register.defaultCategoryView];
 
-                if (selectedCategoryItem) setSelectedCategory(selectedCategoryItem);
+                if (selectedCategoryItem) {
+                    setSelectedCategory(selectedCategoryItem);
+                    onProcessSubCategories(selectedCategoryItem);
+                }
             }
 
             if (selectedProductId) {
@@ -268,13 +303,18 @@ export default () => {
         return <div>Restaurant is not verified</div>;
     }
 
-    const onAddProductToCart = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
+    const onAddProductToCart = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT, amount?: number) => {
+        console.log("xxx...amount", amount);
+        if (amount) {
+            amount = amount * 100;
+        }
+
         const productToOrder: ICartProduct = {
             id: product.id,
-            name: product.name,
-            price: product.price,
-            kitchenName: product.kitchenName,
-            totalPrice: product.price,
+            name: amount ? "Custom Amount" : product.name,
+            price: amount ? amount : product.price,
+            kitchenName: amount ? "Custom Amount" : product.kitchenName,
+            totalPrice: amount ? amount : product.price,
             discount: 0,
             image: product.image
                 ? {
@@ -657,6 +697,16 @@ export default () => {
         </>
     );
 
+    const onAddCustomAmount = () => {
+        if (!restaurant.categories.items[0] || !restaurant.products.items[0]) return;
+
+        if (numpadRef.current) {
+            //@ts-ignore
+            onAddProductToCart(restaurant.categories.items[0], restaurant.products.items[0], numpadRef.current.value);
+            navigate(customerInformationPath);
+        }
+    };
+
     return (
         <>
             <PageWrapper>
@@ -673,6 +723,21 @@ export default () => {
                             <div className="products-wrapper">
                                 {menuMostPopularProducts}
                                 {menuProducts}
+                                <div style={{ display: "flex", alignItems: "center", flexDirection: "column" }}>
+                                    <div className="h2 mt-6 mb-2">Or enter a custom amount...</div>
+                                    <div style={{ width: "350px", display: "flex", alignItems: "center", justifyContent: "center", gap: "12px" }}>
+                                        <input
+                                            className="inputFromKey input"
+                                            ref={numpadRef}
+                                            data-kioskboard-type="numpad"
+                                            type="number"
+                                            // autoFocus={true}
+                                            // onChange={onChange}
+                                            // value={buzzer ? buzzer.slice(0, 2) : ""}
+                                        />
+                                        <Button onClick={onAddCustomAmount}>Next</Button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         {/* {!isPOS && <div className="footer-wrapper">{restaurantFooter}</div>} */}

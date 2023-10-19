@@ -1311,13 +1311,14 @@ export const Checkout = () => {
     );
 
     const onOrderMore = () => {
+        clearCart();
         navigate(`/restaurant/${restaurant.id}`);
     };
 
     const title = (
         <div className="title mb-6">
             <CachedImage className="image mr-2" url={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.png`} alt="shopping-bag-icon" />
-            <div className="h1">Your Order</div>
+            <div className="h1">Summary</div>
         </div>
     );
 
@@ -1410,14 +1411,14 @@ export const Checkout = () => {
         <>
             <div className={isPOS ? "mt-4" : "mt-10"}></div>
             {title}
-            {register && register.availableOrderTypes.length > 1 && restaurantOrderType}
+            {/* {register && register.availableOrderTypes.length > 1 && restaurantOrderType} */}
             {promotionInformation}
             {tableNumber && <div className="mb-4">{restaurantTableNumber}</div>}
             {buzzerNumber && <div className="mb-4">{restaurantBuzzerNumber}</div>}
             {customerInformation && <div className="mb-4">{restaurantCustomerInformation}</div>}
             <div className="separator-6"></div>
             {orderSummary}
-            <div className="restaurant-notes-wrapper">{restaurantNotes}</div>
+            {/* <div className="restaurant-notes-wrapper">{restaurantNotes}</div> */}
             <div className={isPOS ? "mb-4" : "mb-10"}></div>
         </>
     );
@@ -1453,16 +1454,16 @@ export const Checkout = () => {
             )}
             {surcharge ? <div className="h3 text-center mb-2">Surcharge: ${convertCentsToDollars(surcharge)}</div> : <></>}
             {paidSoFar > 0 ? <div className="h3 text-center mb-2">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : <></>}
-            <div className={`h1 text-center ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
+            {/* <div className={`h1 text-center ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div> */}
             <div className={`${isPOS ? "mb-0" : "mb-4"}`}>
                 <div className="checkout-buttons-container">
                     {!isPOS && (
                         <Button onClick={onOrderMore} className="button large mr-3 order-more-button">
-                            Order More
+                            Start Again
                         </Button>
                     )}
                     <Button onClick={onClickOrderButton} className="button large complete-order-button">
-                        Complete Order
+                        Retry Eftpos
                     </Button>
                 </div>
                 {payments.length === 0 && register.enablePayLater && (
@@ -1470,15 +1471,15 @@ export const Checkout = () => {
                         <Link onClick={onClickPayLater}>Pay later at counter...</Link>
                     </div>
                 )}
-                <div className={`apply-promo-code-link ${isPOS ? "mt-3" : "mt-4"}`}>
+                {/* <div className={`apply-promo-code-link ${isPOS ? "mt-3" : "mt-4"}`}>
                     <Link onClick={onClickApplyPromotionCode}>Apply promo code</Link>
-                </div>
+                </div> */}
             </div>
-            {!isPOS && (
+            {/* {!isPOS && (
                 <Button className="cancel-button" onClick={onCancelOrder}>
                     Cancel Order
                 </Button>
-            )}
+            )} */}
         </div>
     );
 

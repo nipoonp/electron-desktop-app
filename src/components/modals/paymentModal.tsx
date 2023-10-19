@@ -285,7 +285,12 @@ const PaymentAccepted = (props: {
 
     return (
         <>
-            {paymentComplete ? (
+            <div className="h1 mb-6">Your donation has been made. Thank you!</div>
+            <img
+                style={{ borderRadius: "20px", width: "700px" }}
+                src="https://www.harekrishna.org.nz/content/images/2023/04/IMG_8174-X2-1.jpeg"
+            ></img>
+            {/* {paymentComplete ? (
                 <>
                     <div className="h2 mb-6">Transaction Accepted!</div>
                     {buzzerNumber !== null ? (
@@ -318,7 +323,7 @@ const PaymentAccepted = (props: {
                         <div>Remaining: (${convertCentsToDollars(totalRemaining)})</div>
                     </div>
                 </>
-            )}
+            )} */}
         </>
     );
 };
@@ -425,7 +430,12 @@ const PaymentCashPayment = (props: {
 
     return (
         <>
-            <div className="all-done h1 mb-4">All Done!</div>
+            <div className="h1 mb-6">Your donation has been made. Thank you!</div>
+            <img
+                style={{ borderRadius: "20px", width: "700px" }}
+                src="https://www.harekrishna.org.nz/content/images/2023/04/IMG_8174-X2-1.jpeg"
+            ></img>
+            {/* <div className="all-done h1 mb-4">All Done!</div>
             <div className="h2 mb-6">Please pay cash at the counter.</div>
             {buzzerNumber !== null ? (
                 <>
@@ -444,7 +454,7 @@ const PaymentCashPayment = (props: {
                 onPrintCustomerReceipt={onPrintCustomerReceipt}
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                 onContinueToNextOrder={onContinueToNextOrder}
-            />
+            /> */}
         </>
     );
 };
