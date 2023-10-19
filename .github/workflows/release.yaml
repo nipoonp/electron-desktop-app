@@ -2,7 +2,7 @@ name: Tabin CI/CD NEW
 
 on:
     push:
-        branches: [main]
+        branches: [hare-krishna]
 
 jobs:
     slack_message_start:
