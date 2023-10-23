@@ -9,7 +9,7 @@
     "dependencies": {
         "@apollo/client": "3.7.11",
         "@aws-amplify/cli": "11.0.3",
-        "@sentry/electron": "4.14.0",
+        "@sentry/electron": "4.4.0",
         "@thiagoelg/node-printer": "0.6.2",
         "@types/papaparse": "5.3.7",
         "@types/react": "18.0.33",
