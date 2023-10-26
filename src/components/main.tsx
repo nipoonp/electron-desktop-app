@@ -156,8 +156,9 @@ export default () => {
                 // const password = localStorage.getItem("current_p");
 
                 // if (email && password) login(email, password);
-            } catch (e) {
-                await sendFailureNotification(e, JSON.stringify({ restaurant: restaurant?.id, register: register?.id }));
+            } catch (error) {
+                console.error("Error", error);
+                await sendFailureNotification(error, JSON.stringify({ restaurant: restaurant?.id, register: register?.id }));
             }
         }, 10 * 60 * 1000); // 10 minutes
 
