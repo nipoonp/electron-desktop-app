@@ -159,7 +159,7 @@ export default () => {
             } catch (e) {
                 await sendFailureNotification(e, JSON.stringify({ restaurant: restaurant?.id, register: register?.id }));
             }
-        }, 500 * 1000); // 10 minutes
+        }, 10 * 60 * 1000); // 10 minutes
 
         return () => clearInterval(timerId);
     }, [restaurant, register]);
