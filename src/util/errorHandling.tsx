@@ -17,7 +17,7 @@ export const sendFailureNotification = async (error: string, context: string) =>
             },
         });
 
-        console.log("Error result.data", JSON.stringify(result.data));
+        console.log("result.data", JSON.stringify(result.data));
     } catch (error) {
         console.error("Error sending failure notification:", error);
     }
