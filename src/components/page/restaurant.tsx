@@ -213,7 +213,7 @@ export default () => {
         setSubCategories(newSubCategories);
 
         if (newSubCategories.length > 0) {
-            setSelectedSubCategory(newSubCategories[0]);
+            setSelectedSubCategory(null);
         } else {
             setSelectedSubCategory(null);
         }
@@ -628,7 +628,7 @@ export default () => {
                         <>
                             <div className="product-category-name h1 text-center mb-6">{c.name}</div>
                             {c.description && <div className="product-category-description text-bold text-center mb-6 h3">{c.description}</div>}
-                            {subCategories.length > 0 && (
+                            {/* {subCategories.length > 0 && (
                                 <div className="product-sub-category-wrapper mb-6">
                                     {subCategories.map((subCategory) => (
                                         <div
@@ -645,7 +645,7 @@ export default () => {
                                         All
                                     </div>
                                 </div>
-                            )}
+                            )} */}
                             {c.image && (
                                 <div className="product-category-image-wrapper mb-6">
                                     <CachedImage
@@ -655,14 +655,34 @@ export default () => {
                                     />
                                 </div>
                             )}
+                            <div className="h2 text-center mb-2" style={{ textDecoration: "underline" }}>
+                                Standard
+                            </div>
                             <div className="products">
                                 {c.products &&
                                     c.products.items.map((p) => {
                                         if (p.product.availablePlatforms && !p.product.availablePlatforms.includes(register.type)) return;
                                         if (
-                                            (selectedSubCategory &&
-                                                p.product.subCategories &&
-                                                !p.product.subCategories.split(";").includes(selectedSubCategory)) ||
+                                            (p.product.subCategories && !p.product.subCategories.split(";").includes("Standard")) ||
+                                            (selectedSubCategory && selectedSubCategory && !p.product.subCategories)
+                                        )
+                                            return;
+
+                                        return productDisplay(c, p.product);
+                                    })}
+                            </div>
+
+                            <div className="separator-6"></div>
+
+                            <div className="h2 text-center mb-2" style={{ textDecoration: "underline" }}>
+                                Other
+                            </div>
+                            <div className="products">
+                                {c.products &&
+                                    c.products.items.map((p) => {
+                                        if (p.product.availablePlatforms && !p.product.availablePlatforms.includes(register.type)) return;
+                                        if (
+                                            (p.product.subCategories && !p.product.subCategories.split(";").includes("Other")) ||
                                             (selectedSubCategory && selectedSubCategory && !p.product.subCategories)
                                         )
                                             return;
@@ -723,8 +743,11 @@ export default () => {
                             <div className="products-wrapper">
                                 {menuMostPopularProducts}
                                 {menuProducts}
+                                <div className="separator-6"></div>
                                 <div style={{ display: "flex", alignItems: "center", flexDirection: "column" }}>
-                                    <div className="h2 mt-6 mb-2">Or enter a custom amount...</div>
+                                    <div className="h2 mb-2" style={{ textDecoration: "underline" }}>
+                                        Or enter a custom amount...
+                                    </div>
                                     <div style={{ width: "350px", display: "flex", alignItems: "center", justifyContent: "center", gap: "12px" }}>
                                         <input
                                             className="inputFromKey input"
