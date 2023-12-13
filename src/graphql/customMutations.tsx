@@ -236,11 +236,12 @@ export const UPDATE_ORDER_STATUS = gql`
 
 export const CREATE_FEEDBACK = gql`
     mutation createFeedback(
-        $rating: Int!
+        $rating: Int
         $name: String
         $phoneNumber: String
         $comments: String
-        $owner: ID
+        $orderId: Int
+        $feedbackRestaurantId: ID!
     ) {
         createFeedback(
             input: {
@@ -248,7 +249,8 @@ export const CREATE_FEEDBACK = gql`
                 name: $name
                 phoneNumber: $phoneNumber
                 comments: $comments
-                owner: $owner
+                orderId: $orderId
+                feedbackRestaurantId: $feedbackRestaurantId
             }
         ) {
             id

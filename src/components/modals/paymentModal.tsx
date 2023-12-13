@@ -9,6 +9,7 @@ import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { Button } from "../../tabin/components/button";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { Input } from "../../tabin/components/input";
+import { TextArea } from "../../tabin/components/textArea";
 import { Link } from "../../tabin/components/link";
 import { Modal } from "../../tabin/components/modal";
 import { convertCentsToDollars, convertDollarsToCentsReturnInt } from "../../util/util";
@@ -759,61 +760,82 @@ const FeedbackSection = (props: {
         update: (proxy, mutationResult) => {},
     });
 
-    const { onContinueToNextOrder } = props;
+    // const { onContinueToNextOrder } = props;
+    const { restaurant } = useRestaurant();
     const { register } = useRegister();
-    const [submitFeedback,setSubmitFeedback]=useState(false)
-    
-    const feedbackSubmit=async(val)=>{
+    const [submitFeedback,setSubmitFeedback]=useState<number>(0)
+    const [comment,setComment]=useState<string>("");
+    const [feedbackAdded,setFeedbackAdded]=useState<boolean>(false)
+
+    const feedbackSubmit=(val)=>{
         setSubmitFeedback(val)
+        
+        // Redirect to home
+        // onContinueToNextOrder()
+    }
+
+    const submitFeedbackEvent=async()=>{
         try {
             await createFeedback({
                 variables: {
-                    rating:val,
+                    rating:submitFeedback,
                     name:'',
                     phoneNumber:'',
-                    comments:'Tabin have great idea',
+                    comments:comment,
                     orderId:1,
+                    // owner:1,
+                    feedbackRestaurantId:restaurant?.id
                 },
             });
+            setFeedbackAdded(true)
         } catch (e) {
             console.log("Error in creating eftpos transaction log", e);
         }
-        // Redirect to home
-        // onContinueToNextOrder()
     }
 
     return (
         <>
         {register?.enableFeedback ? 
         <>
-            {submitFeedback ? 
-                <div className="h2 mb-6">Thank you for feedback</div>
+            {feedbackAdded ? 
+                <div className="h2 mb-6">Thank you for Feedback</div>
             :
-            <>
-                <p> Your Feedback</p>
-                <div className="feedback">
-                    <div onClick={()=>feedbackSubmit('5')}>
-                        <CachedImage className="feedback-card-image" url={`/images/1excellent.png`} alt="awaiting-card-gif" />
-                        <p>Excellent</p>
+            <div className="feedback--body">
+                <p>Your Feedback</p>
+                <div className="feedback-content">
+                    <div className="feedback">
+                        <div onClick={()=>feedbackSubmit(5)} className={submitFeedback===5 ? "active" : "" }>
+                            <CachedImage className={"feedback-card-image"} url={`/images/1excellent.png`} alt="awaiting-card-gif" />
+                            <p>Excellent</p>
+                        </div>
+                        <div onClick={()=>feedbackSubmit(4)} className={submitFeedback===4 ? "active" : "" }>
+                            <CachedImage className="feedback-card-image" url={`/images/2great.png`} alt="awaiting-card-gif" />
+                            <p>Great</p>
+                        </div>
+                        <div onClick={()=>feedbackSubmit(3)} className={submitFeedback===3 ? "active" : "" }>
+                            <CachedImage className="feedback-card-image" url={`/images/3good.png`} alt="awaiting-card-gif" />
+                            <p>Good</p>
+                        </div>
+                        <div onClick={()=>feedbackSubmit(2)} className={submitFeedback===2 ? "active" : "" }>
+                            <CachedImage className="feedback-card-image" url={`/images/4okay.png`} alt="awaiting-card-gif" />
+                            <p>Okay</p>
+                        </div>
+                        <div onClick={()=>feedbackSubmit(1)} className={submitFeedback===1 ? "active" : "" }>
+                            <CachedImage className="feedback-card-image" url={`/images/5bad.png`} alt="awaiting-card-gif" />
+                            <p>Bad</p>
+                        </div>
                     </div>
-                    <div onClick={()=>feedbackSubmit('4')}>
-                        <CachedImage className="feedback-card-image" url={`/images/2great.png`} alt="awaiting-card-gif" />
-                        <p>Great</p>
-                    </div>
-                    <div onClick={()=>feedbackSubmit('3')}>
-                        <CachedImage className="feedback-card-image" url={`/images/3good.png`} alt="awaiting-card-gif" />
-                        <p>Good</p>
-                    </div>
-                    {/* <div onClick={()=>feedbackSubmit('2')}>
-                        <CachedImage className="feedback-card-image" url={`/images/4bad.png`} alt="awaiting-card-gif" />
-                        <p>Bad</p>
-                    </div> */}
-                    <div onClick={()=>feedbackSubmit('1')}>
-                        <CachedImage className="feedback-card-image" url={`/images/5very_bad.png`} alt="awaiting-card-gif" />
-                        <p>Bad</p>
-                    </div>
+                        <TextArea
+                                className="payment-modal-amount-input mb-1"
+                                rows={5}
+                                name="amountToPay"
+                                value={comment}
+                                placeholder="Enter feedback comment"
+                                onChange={(e)=>setComment(e.target.value)}
+                            />
+                    <Button onClick={()=>submitFeedbackEvent()}>Submit Feedback</Button>
                 </div>
-            </>
+            </div>
             }
         </>
         : null
