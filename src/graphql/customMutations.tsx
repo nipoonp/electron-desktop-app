@@ -233,3 +233,25 @@ export const UPDATE_ORDER_STATUS = gql`
         }
     }
 `;
+
+export const CREATE_FEEDBACK = gql`
+    mutation createFeedback(
+        $rating: Int!
+        $name: String
+        $phoneNumber: String
+        $comments: String
+        $owner: ID
+    ) {
+        createFeedback(
+            input: {
+                rating: $rating
+                name: $name
+                phoneNumber: $phoneNumber
+                comments: $comments
+                owner: $owner
+            }
+        ) {
+            id
+        }
+    }
+`;

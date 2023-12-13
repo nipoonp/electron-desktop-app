@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FiArrowDown, FiX } from "react-icons/fi";
 import { useCart } from "../../context/cart-context";
+import { useMutation } from "@apollo/client";
 import { useRegister } from "../../context/register-context";
 import { useRestaurant } from "../../context/restaurant-context";
 import { EEftposTransactionOutcome, EPaymentModalState, IEftposTransactionOutcome } from "../../model/model";
@@ -11,6 +12,7 @@ import { Input } from "../../tabin/components/input";
 import { Link } from "../../tabin/components/link";
 import { Modal } from "../../tabin/components/modal";
 import { convertCentsToDollars, convertDollarsToCentsReturnInt } from "../../util/util";
+import {  CREATE_FEEDBACK } from "../../graphql/customMutations";
 
 import "./paymentModal.scss";
 
@@ -378,6 +380,7 @@ const PaymentPayLater = (props: {
                     <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
                 </>
             )}
+            <FeedbackSection onContinueToNextOrder={onContinueToNextOrder} />
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -438,6 +441,7 @@ const PaymentCashPayment = (props: {
                     <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
                 </>
             )}
+            <FeedbackSection onContinueToNextOrder={onContinueToNextOrder} />
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -481,6 +485,7 @@ const PaymentCashPaymentPOS = (props: {
                     <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
                 </>
             )}
+            <FeedbackSection onContinueToNextOrder={onContinueToNextOrder} />
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -515,6 +520,7 @@ const PaymentUberEatsPayment = (props: {
                     <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
                 </>
             )}
+            <FeedbackSection onContinueToNextOrder={onContinueToNextOrder} />
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -549,6 +555,7 @@ const PaymentMenulogPayment = (props: {
                     <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
                 </>
             )}
+            <FeedbackSection onContinueToNextOrder={onContinueToNextOrder} />
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -744,6 +751,76 @@ const CreateOrderFailed = (props: { createOrderError: string; onCancelOrder: () 
         </>
     );
 };
+
+const FeedbackSection = (props: {
+    onContinueToNextOrder: () => void;
+}) => {
+    const [createFeedback] = useMutation(CREATE_FEEDBACK, {
+        update: (proxy, mutationResult) => {},
+    });
+
+    const { onContinueToNextOrder } = props;
+    const { register } = useRegister();
+    const [submitFeedback,setSubmitFeedback]=useState(false)
+    
+    const feedbackSubmit=async(val)=>{
+        setSubmitFeedback(val)
+        try {
+            await createFeedback({
+                variables: {
+                    rating:val,
+                    name:'',
+                    phoneNumber:'',
+                    comments:'Tabin have great idea',
+                    orderId:1,
+                },
+            });
+        } catch (e) {
+            console.log("Error in creating eftpos transaction log", e);
+        }
+        // Redirect to home
+        // onContinueToNextOrder()
+    }
+
+    return (
+        <>
+        {register?.enableFeedback ? 
+        <>
+            {submitFeedback ? 
+                <div className="h2 mb-6">Thank you for feedback</div>
+            :
+            <>
+                <p> Your Feedback</p>
+                <div className="feedback">
+                    <div onClick={()=>feedbackSubmit('5')}>
+                        <CachedImage className="feedback-card-image" url={`/images/1excellent.png`} alt="awaiting-card-gif" />
+                        <p>Excellent</p>
+                    </div>
+                    <div onClick={()=>feedbackSubmit('4')}>
+                        <CachedImage className="feedback-card-image" url={`/images/2great.png`} alt="awaiting-card-gif" />
+                        <p>Great</p>
+                    </div>
+                    <div onClick={()=>feedbackSubmit('3')}>
+                        <CachedImage className="feedback-card-image" url={`/images/3good.png`} alt="awaiting-card-gif" />
+                        <p>Good</p>
+                    </div>
+                    {/* <div onClick={()=>feedbackSubmit('2')}>
+                        <CachedImage className="feedback-card-image" url={`/images/4bad.png`} alt="awaiting-card-gif" />
+                        <p>Bad</p>
+                    </div> */}
+                    <div onClick={()=>feedbackSubmit('1')}>
+                        <CachedImage className="feedback-card-image" url={`/images/5very_bad.png`} alt="awaiting-card-gif" />
+                        <p>Bad</p>
+                    </div>
+                </div>
+            </>
+            }
+        </>
+        : null
+        }
+        </>
+    )
+}
 
 const PreparationTime = () => {
     const { restaurant } = useRestaurant();

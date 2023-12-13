@@ -96,6 +96,7 @@ export const GET_USER = gql`
                             enableTableFlags
                             enableBuzzerNumbers
                             enableSkuScanner
+                            enableFeedback
                             enablePayLater
                             enableCashPayments
                             enableEftposPayments
@@ -360,6 +361,7 @@ export const GET_RESTAURANT = gql`
                     enableTableFlags
                     enableBuzzerNumbers
                     enableSkuScanner
+                    enableFeedback
                     enablePayLater
                     enableCashPayments
                     enableEftposPayments
@@ -1015,6 +1017,7 @@ export interface IGET_RESTAURANT_REGISTER {
     enableTableFlags: boolean;
     enableBuzzerNumbers: boolean;
     enableSkuScanner: boolean;
+    enableFeedback: boolean;
     enablePayLater: boolean;
     enableCashPayments: boolean;
     enableEftposPayments: boolean;
