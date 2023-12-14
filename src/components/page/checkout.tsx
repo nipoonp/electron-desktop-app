@@ -119,6 +119,8 @@ export const Checkout = () => {
         setIsShownOrderThresholdMessageModal,
         orderScheduledAt,
         updateOrderScheduledAt,
+        orderDetail,
+        updateOrderDetail
     } = useCart();
     const { restaurant, restaurantBase64Logo } = useRestaurant();
     const { register, isPOS } = useRegister();
@@ -564,7 +566,8 @@ export const Checkout = () => {
             );
 
             createdOrder.current = newOrder;
-
+            updateOrderDetail(newOrder)
+            
             if (register.printers && register.printers.items.length > 0 && !parkedOrderId) {
                 await printReceipts(newOrder);
             }

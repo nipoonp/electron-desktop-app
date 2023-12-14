@@ -759,14 +759,15 @@ const FeedbackSection = (props: {
     const [createFeedback] = useMutation(CREATE_FEEDBACK, {
         update: (proxy, mutationResult) => {},
     });
-
+    const { orderDetail } = useCart();
+    // console.log('orderDetail',orderDetail);
+    
     // const { onContinueToNextOrder } = props;
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
     const [submitFeedback,setSubmitFeedback]=useState<number>(0)
     const [comment,setComment]=useState<string>("");
     const [feedbackAdded,setFeedbackAdded]=useState<boolean>(false)
-
     const feedbackSubmit=(val)=>{
         setSubmitFeedback(val)
         
@@ -782,7 +783,7 @@ const FeedbackSection = (props: {
                     name:'',
                     phoneNumber:'',
                     comments:comment,
-                    orderId:1,
+                    orderId:orderDetail?.id,
                     // owner:1,
                     feedbackRestaurantId:restaurant?.id
                 },

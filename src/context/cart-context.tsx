@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { EPromotionType, IGET_RESTAURANT_PROMOTION } from "../graphql/customQueries";
+import {IGET_RESTAURANT_ORDER_FRAGMENT} from '../graphql/customFragments';
 
 import {
     ICartProduct,
@@ -41,6 +42,7 @@ const initialTransactionEftposReceipts = "";
 const initialIsShownUpSellCrossSellModal = false;
 const initialIsShownOrderThresholdMessageModal = false;
 const initialOrderScheduledAt = null;
+const initialOrderDetail=null;
 
 type ContextProps = {
     // restaurant: IGET_RESTAURANT | null;
@@ -91,6 +93,8 @@ type ContextProps = {
     setIsShownOrderThresholdMessageModal: (isShownOrderThresholdMessageModal: boolean) => void;
     orderScheduledAt: string | null;
     updateOrderScheduledAt: (orderScheduledAt: string | null) => void;
+    orderDetail:IGET_RESTAURANT_ORDER_FRAGMENT | null;
+    updateOrderDetail:(orderDetail:IGET_RESTAURANT_ORDER_FRAGMENT)=>void;
 };
 
 const CartContext = createContext<ContextProps>({
@@ -142,6 +146,8 @@ const CartContext = createContext<ContextProps>({
     setIsShownOrderThresholdMessageModal: () => {},
     orderScheduledAt: initialOrderScheduledAt,
     updateOrderScheduledAt: (orderScheduledAt: string | null) => {},
+    orderDetail:initialOrderDetail,
+    updateOrderDetail:(orderDetail:object)=>{}
 });
 
 const CartProvider = (props: { children: React.ReactNode }) => {
@@ -175,6 +181,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [cartModifierQuantitiesById, _setCartModifierQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartModifierQuantitiesById);
 
     const [orderScheduledAt, _setOrderScheduledAt] = useState<string | null>(initialOrderScheduledAt);
+    const [orderDetail,_setOrderDetail]=useState<IGET_RESTAURANT_ORDER_FRAGMENT | null>(initialOrderDetail);
 
     // useEffect(() => {
     // console.log("xxx...products", products);
@@ -579,6 +586,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setOrderScheduledAt(orderScheduledAt);
     };
 
+    const updateOrderDetail=(orderDetail:IGET_RESTAURANT_ORDER_FRAGMENT)=>{
+        _setOrderDetail(orderDetail)
+    }
+
     const clearCart = () => {
         _setParkedOrderId(initialParkedOrderId);
         _setParkedOrderNumber(initialParkedOrderNumber);
@@ -657,6 +668,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setIsShownOrderThresholdMessageModal: setIsShownOrderThresholdMessageModal,
                 orderScheduledAt: orderScheduledAt,
                 updateOrderScheduledAt: updateOrderScheduledAt,
+                orderDetail:orderDetail,
+                updateOrderDetail:updateOrderDetail
             }}
             children={props.children}
         />

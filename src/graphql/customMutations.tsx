@@ -240,7 +240,7 @@ export const CREATE_FEEDBACK = gql`
         $name: String
         $phoneNumber: String
         $comments: String
-        $orderId: Int
+        $orderId: ID
         $feedbackRestaurantId: ID!
     ) {
         createFeedback(
