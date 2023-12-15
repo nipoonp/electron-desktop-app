@@ -32,6 +32,7 @@ interface IPaymentModalProps {
     onPrintCustomerReceipt: () => void;
     onPrintParkedOrderReceipts: () => void;
     paymentOutcomeOrderNumber: string | null;
+    addTimeToTimer: (time:number) => void;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
     cashTransactionChangeAmount: number | null;
@@ -53,6 +54,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         onClose,
         paymentModalState,
         paymentOutcomeOrderNumber,
+        addTimeToTimer,
         paymentOutcomeApprovedRedirectTimeLeft,
         onContinueToNextOrder,
         onPrintCustomerReceipt,
@@ -192,6 +194,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                         paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                         onContinueToNextOrder={onContinueToNextOrder}
+                        addTimeToTimer={addTimeToTimer}
                     />
                 );
             } else {
@@ -202,6 +205,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                         paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                         onContinueToNextOrder={onContinueToNextOrder}
+                        addTimeToTimer={addTimeToTimer}
                     />
                 );
             }
@@ -212,6 +216,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                     paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                     onContinueToNextOrder={onContinueToNextOrder}
+                    addTimeToTimer={addTimeToTimer}
                 />
             );
         } else if (paymentModalState === EPaymentModalState.MenulogResult) {
@@ -221,6 +226,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                     paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                     onContinueToNextOrder={onContinueToNextOrder}
+                    addTimeToTimer={addTimeToTimer}
                 />
             );
         } else if (paymentModalState === EPaymentModalState.PayLater) {
@@ -230,6 +236,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                     paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                     onContinueToNextOrder={onContinueToNextOrder}
+                    addTimeToTimer={addTimeToTimer}
                 />
             );
         } else if (paymentModalState === EPaymentModalState.Park) {
@@ -362,8 +369,9 @@ const PaymentPayLater = (props: {
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
+    addTimeToTimer:(time:number)=>void;
 }) => {
-    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder,addTimeToTimer } = props;
     const { buzzerNumber } = useCart();
 
     return (
@@ -381,7 +389,11 @@ const PaymentPayLater = (props: {
                     <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
                 </>
             )}
-            <FeedbackSection onContinueToNextOrder={onContinueToNextOrder} />
+            <FeedbackSection 
+                onContinueToNextOrder={onContinueToNextOrder} 
+                paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                addTimeToTimer={addTimeToTimer}
+            />
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -423,8 +435,9 @@ const PaymentCashPayment = (props: {
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
+    addTimeToTimer:(time:number) => void;
 }) => {
-    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder,addTimeToTimer } = props;
     const { buzzerNumber } = useCart();
 
     return (
@@ -442,7 +455,11 @@ const PaymentCashPayment = (props: {
                     <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
                 </>
             )}
-            <FeedbackSection onContinueToNextOrder={onContinueToNextOrder} />
+            <FeedbackSection 
+                onContinueToNextOrder={onContinueToNextOrder} 
+                paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                addTimeToTimer={addTimeToTimer}
+            />
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -460,6 +477,7 @@ const PaymentCashPaymentPOS = (props: {
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
+    addTimeToTimer:(time:number) => void;
 }) => {
     const {
         onPrintCustomerReceipt,
@@ -467,6 +485,7 @@ const PaymentCashPaymentPOS = (props: {
         paymentOutcomeOrderNumber,
         paymentOutcomeApprovedRedirectTimeLeft,
         onContinueToNextOrder,
+        addTimeToTimer
     } = props;
     const { buzzerNumber } = useCart();
 
@@ -486,7 +505,11 @@ const PaymentCashPaymentPOS = (props: {
                     <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
                 </>
             )}
-            <FeedbackSection onContinueToNextOrder={onContinueToNextOrder} />
+            <FeedbackSection 
+                onContinueToNextOrder={onContinueToNextOrder} 
+                paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                addTimeToTimer={addTimeToTimer}
+            />
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -503,8 +526,9 @@ const PaymentUberEatsPayment = (props: {
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
+    addTimeToTimer:(time:number) => void;
 }) => {
-    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder, addTimeToTimer } = props;
     const { buzzerNumber } = useCart();
 
     return (
@@ -521,7 +545,11 @@ const PaymentUberEatsPayment = (props: {
                     <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
                 </>
             )}
-            <FeedbackSection onContinueToNextOrder={onContinueToNextOrder} />
+            <FeedbackSection 
+                onContinueToNextOrder={onContinueToNextOrder} 
+                paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                addTimeToTimer={addTimeToTimer}
+            />
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -538,8 +566,9 @@ const PaymentMenulogPayment = (props: {
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
+    addTimeToTimer: (time:number) => void;
 }) => {
-    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder,addTimeToTimer } = props;
     const { buzzerNumber } = useCart();
 
     return (
@@ -556,7 +585,11 @@ const PaymentMenulogPayment = (props: {
                     <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
                 </>
             )}
-            <FeedbackSection onContinueToNextOrder={onContinueToNextOrder} />
+            <FeedbackSection 
+                onContinueToNextOrder={onContinueToNextOrder} 
+                paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                addTimeToTimer={addTimeToTimer}
+            />
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
             <PaymentModalFooter
@@ -754,7 +787,9 @@ const CreateOrderFailed = (props: { createOrderError: string; onCancelOrder: () 
 };
 
 const FeedbackSection = (props: {
+    paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
+    addTimeToTimer: (time:number) => void;
 }) => {
     const [createFeedback] = useMutation(CREATE_FEEDBACK, {
         update: (proxy, mutationResult) => {},
@@ -762,15 +797,17 @@ const FeedbackSection = (props: {
     const { orderDetail } = useCart();
     // console.log('orderDetail',orderDetail);
     
-    // const { onContinueToNextOrder } = props;
+    const { onContinueToNextOrder, addTimeToTimer } = props;
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
     const [submitFeedback,setSubmitFeedback]=useState<number>(0)
     const [comment,setComment]=useState<string>("");
-    const [feedbackAdded,setFeedbackAdded]=useState<boolean>(false)
+    const [feedbackAdded,setFeedbackAdded]=useState<boolean>(false);
+    const [showComment,setShowComment]=useState<boolean>(false);
+
     const feedbackSubmit=(val)=>{
         setSubmitFeedback(val)
-        
+        setShowComment(true)
         // Redirect to home
         // onContinueToNextOrder()
     }
@@ -789,9 +826,18 @@ const FeedbackSection = (props: {
                 },
             });
             setFeedbackAdded(true)
+            addTimeToTimer(3)
         } catch (e) {
             console.log("Error in creating eftpos transaction log", e);
         }
+    }
+
+    const commentChangeEvent=(e)=>{
+        setComment(e.target.value)
+    }
+
+    const handleFocusEvent=()=>{
+        addTimeToTimer(30)
     }
 
     return (
@@ -811,29 +857,33 @@ const FeedbackSection = (props: {
                         </div>
                         <div onClick={()=>feedbackSubmit(4)} className={submitFeedback===4 ? "active" : "" }>
                             <CachedImage className="feedback-card-image" url={`/images/2great.png`} alt="awaiting-card-gif" />
-                            <p>Great</p>
+                            <p>Good</p>
                         </div>
                         <div onClick={()=>feedbackSubmit(3)} className={submitFeedback===3 ? "active" : "" }>
                             <CachedImage className="feedback-card-image" url={`/images/3good.png`} alt="awaiting-card-gif" />
-                            <p>Good</p>
+                            <p>Okay</p>
                         </div>
                         <div onClick={()=>feedbackSubmit(2)} className={submitFeedback===2 ? "active" : "" }>
-                            <CachedImage className="feedback-card-image" url={`/images/4okay.png`} alt="awaiting-card-gif" />
-                            <p>Okay</p>
+                            <CachedImage className="feedback-card-image" url={`/images/bad.png`} alt="awaiting-card-gif" />
+                            <p>Bad</p>
                         </div>
                         <div onClick={()=>feedbackSubmit(1)} className={submitFeedback===1 ? "active" : "" }>
                             <CachedImage className="feedback-card-image" url={`/images/5bad.png`} alt="awaiting-card-gif" />
-                            <p>Bad</p>
+                            <p>Horrible</p>
                         </div>
                     </div>
+                    {showComment ? 
                         <TextArea
                                 className="payment-modal-amount-input mb-1"
                                 rows={5}
                                 name="amountToPay"
                                 value={comment}
                                 placeholder="Enter feedback comment"
-                                onChange={(e)=>setComment(e.target.value)}
+                                onChange={(e)=>commentChangeEvent(e)}
+                                onFocus={(e) => handleFocusEvent()}
                             />
+                            : null
+                    }
                     <Button onClick={()=>submitFeedbackEvent()}>Submit Feedback</Button>
                 </div>
             </div>
