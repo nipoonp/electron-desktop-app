@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FiArrowDown, FiX } from "react-icons/fi";
 import { useCart } from "../../context/cart-context";
-import { useMutation } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
 import { useRegister } from "../../context/register-context";
 import { useRestaurant } from "../../context/restaurant-context";
 import { EEftposTransactionOutcome, EPaymentModalState, IEftposTransactionOutcome } from "../../model/model";
@@ -13,7 +13,7 @@ import { TextArea } from "../../tabin/components/textArea";
 import { Link } from "../../tabin/components/link";
 import { Modal } from "../../tabin/components/modal";
 import { convertCentsToDollars, convertDollarsToCentsReturnInt } from "../../util/util";
-import {  CREATE_FEEDBACK } from "../../graphql/customMutations";
+import {  CREATE_FEEDBACK, GET_FEEDBACK_BY_RESTAURANT } from "../../graphql/customMutations";
 
 import "./paymentModal.scss";
 
@@ -791,15 +791,25 @@ const FeedbackSection = (props: {
     onContinueToNextOrder: () => void;
     addTimeToTimer: (time:number) => void;
 }) => {
+    
+    const { restaurant } = useRestaurant();
+    const { register } = useRegister();
+    
     const [createFeedback] = useMutation(CREATE_FEEDBACK, {
         update: (proxy, mutationResult) => {},
     });
+    
+    const { loading, error, data:getFeedback } = useQuery(GET_FEEDBACK_BY_RESTAURANT, {
+        variables: {
+            feedbackRestaurantId: restaurant?.id,
+        },
+    });
+
+    
     const { orderDetail } = useCart();
     // console.log('orderDetail',orderDetail);
     
     const { onContinueToNextOrder, addTimeToTimer } = props;
-    const { restaurant } = useRestaurant();
-    const { register } = useRegister();
     const [submitFeedback,setSubmitFeedback]=useState<number>(0)
     const [comment,setComment]=useState<string>("");
     const [feedbackAdded,setFeedbackAdded]=useState<boolean>(false);
@@ -812,25 +822,43 @@ const FeedbackSection = (props: {
         // onContinueToNextOrder()
     }
 
-    const submitFeedbackEvent=async()=>{
-        try {
-            await createFeedback({
-                variables: {
-                    rating:submitFeedback,
-                    name:'',
-                    phoneNumber:'',
-                    comments:comment,
-                    orderId:orderDetail?.id,
-                    // owner:1,
-                    feedbackRestaurantId:restaurant?.id
-                },
+    const submitFeedbackEvent = async () => {
+
+        console.log('getFeedback',getFeedback)
+
+        const createFeedbackCommentsInput = {
+          comment: comment,
+          rate:submitFeedback,
+          feedbackRestaurantId: restaurant?.id,
+          orderId: orderDetail?.id, 
+        };
+
+        const createFeedbackInput = {
+            averageRating: 4.5,
+            totalNumberOfRatings: 10,
+            feedbackRestaurantId: restaurant?.id,
+            comments: [
+                createFeedbackCommentsInput
+            ] 
+          };
+        
+        
+          try {
+             await createFeedback({
+              variables: {
+                createFeedbackInput,
+                createFeedbackCommentsInput
+              },
             });
+        
             setFeedbackAdded(true)
             addTimeToTimer(3)
-        } catch (e) {
-            console.log("Error in creating eftpos transaction log", e);
-        }
-    }
+          } catch (error) {
+            // Handle errors
+            console.error(error);
+          }
+
+    };
 
     const commentChangeEvent=(e)=>{
         setComment(e.target.value)

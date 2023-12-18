@@ -234,26 +234,67 @@ export const UPDATE_ORDER_STATUS = gql`
     }
 `;
 
+// export const CREATE_FEEDBACK = gql`
+//   mutation CreateFeedback(
+//     $averageRating: Float!,
+//     $totalNumberOfRatings: Int!,
+//     $comments: [String]!, 
+//     $feedbackRestaurantId: ID!
+//   ) {
+//     createFeedback(input: {
+//       averageRating: $averageRating,
+//       totalNumberOfRatings: $totalNumberOfRatings,
+//       comments: $comments,
+//       feedbackRestaurantId: $feedbackRestaurantId
+//     }) {
+//       id
+//       averageRating
+//       totalNumberOfRatings
+//       comments
+//       feedbackRestaurantId
+//     }
+//   }
+// `;
+
 export const CREATE_FEEDBACK = gql`
-    mutation createFeedback(
-        $rating: Int
-        $name: String
-        $phoneNumber: String
-        $comments: String
-        $orderId: ID
-        $feedbackRestaurantId: ID!
-    ) {
-        createFeedback(
-            input: {
-                rating: $rating
-                name: $name
-                phoneNumber: $phoneNumber
-                comments: $comments
-                orderId: $orderId
-                feedbackRestaurantId: $feedbackRestaurantId
-            }
-        ) {
-            id
-        }
+  mutation CreateFeedback($createFeedbackInput: CreateFeedbackInput!, $createFeedbackCommentsInput: CreateFeedbackCommentsInput!) {
+    createFeedback(input: $createFeedbackInput) {
+      id
+      averageRating
+      totalNumberOfRatings
+      comments
+      feedbackRestaurantId
+      feedbackComments {
+        id
+        comment
+      }
     }
+
+    createFeedbackComments(input: $createFeedbackCommentsInput) {
+      id
+      comment
+      rate
+      feedbackRestaurantId
+      feedback {
+        id
+        averageRating
+        totalNumberOfRatings
+        comments
+        feedbackRestaurantId
+      }
+    }
+  }
 `;
+
+export const GET_FEEDBACK_BY_RESTAURANT = gql`
+  query GetFeedbackByRestaurant($feedbackRestaurantId: ID!) {
+    listFeedbackByRestaurant(feedbackRestaurantId: $feedbackRestaurantId) {
+      items {
+        id
+        averageRating
+        totalNumberOfRatings
+      }
+    }
+  }
+`;
+
