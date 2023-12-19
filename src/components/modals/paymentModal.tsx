@@ -907,23 +907,23 @@ const FeedbackSection = (props: { paymentOutcomeApprovedRedirectTimeLeft: number
                             <div className="feedback-content">
                                 <div className="feedback">
                                     <div onClick={() => feedbackSubmit(1)} className={newRating === 1 ? "active" : ""}>
-                                        <CachedImage className="feedback-card-image" url={`/images/5bad.png`} alt="awaiting-card-gif" />
+                                        <CachedImage className="feedback-card-image" url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-5.png`} alt="awaiting-card-gif" />
                                         <p>Horrible</p>
                                     </div>
                                     <div onClick={() => feedbackSubmit(2)} className={newRating === 2 ? "active" : ""}>
-                                        <CachedImage className="feedback-card-image" url={`/images/bad.png`} alt="awaiting-card-gif" />
+                                        <CachedImage className="feedback-card-image" url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-4.png`} alt="awaiting-card-gif" />
                                         <p>Bad</p>
                                     </div>
                                     <div onClick={() => feedbackSubmit(3)} className={newRating === 3 ? "active" : ""}>
-                                        <CachedImage className="feedback-card-image" url={`/images/3good.png`} alt="awaiting-card-gif" />
+                                        <CachedImage className="feedback-card-image" url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-3.png`} alt="awaiting-card-gif" />
                                         <p>Okay</p>
                                     </div>
                                     <div onClick={() => feedbackSubmit(4)} className={newRating === 4 ? "active" : ""}>
-                                        <CachedImage className="feedback-card-image" url={`/images/2great.png`} alt="awaiting-card-gif" />
+                                        <CachedImage className="feedback-card-image" url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-2.png`} alt="awaiting-card-gif" />
                                         <p>Good</p>
                                     </div>
                                     <div onClick={() => feedbackSubmit(5)} className={newRating === 5 ? "active" : ""}>
-                                        <CachedImage className={"feedback-card-image"} url={`/images/1excellent.png`} alt="awaiting-card-gif" />
+                                        <CachedImage className={"feedback-card-image"} url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-1.png`} alt="awaiting-card-gif" />
                                         <p>Excellent</p>
                                     </div>
                                 </div>
