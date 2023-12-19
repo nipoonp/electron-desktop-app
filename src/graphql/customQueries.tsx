@@ -1748,19 +1748,16 @@ export interface IGET_RESTAURANT_PREPRATION_TIME {
     preparationTimeInMinutes: number | null;
 }
 
-
-
-export interface ILIST_FEEDBACK {
+export interface IGET_FEEDBACK_BY_RESTAURANT {
     id: string;
-    averageRating: GLfloat
-    totalNumberOfRatings: number
-    feedbackRestaurantId: string
-    comments: [FeedbackComments]
+    averageRating: number;
+    totalNumberOfRatings: number;
+    comments: IGET_FEEDBACK_BY_RESTAURANT_COMMENT[];
+    feedbackRestaurantId: string;
 }
 
-export interface FeedbackComments{
-    comment: string
-    rate:GLfloat
-    feedbackRestaurantId: string
-    orderId: string
+export interface IGET_FEEDBACK_BY_RESTAURANT_COMMENT {
+    comment: string;
+    rating: number;
+    orderId: string;
 }

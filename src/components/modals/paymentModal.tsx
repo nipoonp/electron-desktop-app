@@ -13,10 +13,11 @@ import { TextArea } from "../../tabin/components/textArea";
 import { Link } from "../../tabin/components/link";
 import { Modal } from "../../tabin/components/modal";
 import { convertCentsToDollars, convertDollarsToCentsReturnInt } from "../../util/util";
-import {  CREATE_FEEDBACK, UPDATE_FEEDBACK } from "../../graphql/customMutations";
+import { CREATE_FEEDBACK, UPDATE_FEEDBACK } from "../../graphql/customMutations";
 import { useListFeedbackLazyQuery } from "../../hooks/useGetFeeddbackByRestaurant";
 
 import "./paymentModal.scss";
+import { IGET_FEEDBACK_BY_RESTAURANT } from "../../graphql/customQueries";
 
 const AMOUNT_5 = "5.00";
 const AMOUNT_10 = "10.00";
@@ -33,7 +34,7 @@ interface IPaymentModalProps {
     onPrintCustomerReceipt: () => void;
     onPrintParkedOrderReceipts: () => void;
     paymentOutcomeOrderNumber: string | null;
-    addTimeToTimer: (time:number) => void;
+    incrementRedirectTimer: (time: number) => void;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
     cashTransactionChangeAmount: number | null;
@@ -55,7 +56,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         onClose,
         paymentModalState,
         paymentOutcomeOrderNumber,
-        addTimeToTimer,
+        incrementRedirectTimer,
         paymentOutcomeApprovedRedirectTimeLeft,
         onContinueToNextOrder,
         onPrintCustomerReceipt,
@@ -195,7 +196,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                         paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                         onContinueToNextOrder={onContinueToNextOrder}
-                        addTimeToTimer={addTimeToTimer}
+                        incrementRedirectTimer={incrementRedirectTimer}
                     />
                 );
             } else {
@@ -206,7 +207,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                         paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                         onContinueToNextOrder={onContinueToNextOrder}
-                        addTimeToTimer={addTimeToTimer}
+                        incrementRedirectTimer={incrementRedirectTimer}
                     />
                 );
             }
@@ -217,7 +218,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                     paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                     onContinueToNextOrder={onContinueToNextOrder}
-                    addTimeToTimer={addTimeToTimer}
+                    incrementRedirectTimer={incrementRedirectTimer}
                 />
             );
         } else if (paymentModalState === EPaymentModalState.MenulogResult) {
@@ -227,7 +228,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                     paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                     onContinueToNextOrder={onContinueToNextOrder}
-                    addTimeToTimer={addTimeToTimer}
+                    incrementRedirectTimer={incrementRedirectTimer}
                 />
             );
         } else if (paymentModalState === EPaymentModalState.PayLater) {
@@ -237,7 +238,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                     paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                     onContinueToNextOrder={onContinueToNextOrder}
-                    addTimeToTimer={addTimeToTimer}
+                    incrementRedirectTimer={incrementRedirectTimer}
                 />
             );
         } else if (paymentModalState === EPaymentModalState.Park) {
@@ -370,9 +371,15 @@ const PaymentPayLater = (props: {
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
-    addTimeToTimer:(time:number)=>void;
+    incrementRedirectTimer: (time: number) => void;
 }) => {
-    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder,addTimeToTimer } = props;
+    const {
+        onPrintCustomerReceipt,
+        paymentOutcomeOrderNumber,
+        paymentOutcomeApprovedRedirectTimeLeft,
+        onContinueToNextOrder,
+        incrementRedirectTimer,
+    } = props;
     const { buzzerNumber } = useCart();
 
     return (
@@ -390,10 +397,9 @@ const PaymentPayLater = (props: {
                     <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
                 </>
             )}
-            <FeedbackSection 
-                onContinueToNextOrder={onContinueToNextOrder} 
+            <FeedbackSection
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
-                addTimeToTimer={addTimeToTimer}
+                incrementRedirectTimer={incrementRedirectTimer}
             />
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
@@ -436,9 +442,15 @@ const PaymentCashPayment = (props: {
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
-    addTimeToTimer:(time:number) => void;
+    incrementRedirectTimer: (time: number) => void;
 }) => {
-    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder,addTimeToTimer } = props;
+    const {
+        onPrintCustomerReceipt,
+        paymentOutcomeOrderNumber,
+        paymentOutcomeApprovedRedirectTimeLeft,
+        onContinueToNextOrder,
+        incrementRedirectTimer,
+    } = props;
     const { buzzerNumber } = useCart();
 
     return (
@@ -456,10 +468,9 @@ const PaymentCashPayment = (props: {
                     <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
                 </>
             )}
-            <FeedbackSection 
-                onContinueToNextOrder={onContinueToNextOrder} 
+            <FeedbackSection
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
-                addTimeToTimer={addTimeToTimer}
+                incrementRedirectTimer={incrementRedirectTimer}
             />
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
@@ -478,7 +489,7 @@ const PaymentCashPaymentPOS = (props: {
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
-    addTimeToTimer:(time:number) => void;
+    incrementRedirectTimer: (time: number) => void;
 }) => {
     const {
         onPrintCustomerReceipt,
@@ -486,7 +497,7 @@ const PaymentCashPaymentPOS = (props: {
         paymentOutcomeOrderNumber,
         paymentOutcomeApprovedRedirectTimeLeft,
         onContinueToNextOrder,
-        addTimeToTimer
+        incrementRedirectTimer,
     } = props;
     const { buzzerNumber } = useCart();
 
@@ -506,10 +517,9 @@ const PaymentCashPaymentPOS = (props: {
                     <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
                 </>
             )}
-            <FeedbackSection 
-                onContinueToNextOrder={onContinueToNextOrder} 
+            <FeedbackSection
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
-                addTimeToTimer={addTimeToTimer}
+                incrementRedirectTimer={incrementRedirectTimer}
             />
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
@@ -527,9 +537,15 @@ const PaymentUberEatsPayment = (props: {
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
-    addTimeToTimer:(time:number) => void;
+    incrementRedirectTimer: (time: number) => void;
 }) => {
-    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder, addTimeToTimer } = props;
+    const {
+        onPrintCustomerReceipt,
+        paymentOutcomeOrderNumber,
+        paymentOutcomeApprovedRedirectTimeLeft,
+        onContinueToNextOrder,
+        incrementRedirectTimer,
+    } = props;
     const { buzzerNumber } = useCart();
 
     return (
@@ -546,10 +562,9 @@ const PaymentUberEatsPayment = (props: {
                     <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
                 </>
             )}
-            <FeedbackSection 
-                onContinueToNextOrder={onContinueToNextOrder} 
+            <FeedbackSection
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
-                addTimeToTimer={addTimeToTimer}
+                incrementRedirectTimer={incrementRedirectTimer}
             />
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
@@ -567,9 +582,15 @@ const PaymentMenulogPayment = (props: {
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
-    addTimeToTimer: (time:number) => void;
+    incrementRedirectTimer: (time: number) => void;
 }) => {
-    const { onPrintCustomerReceipt, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder,addTimeToTimer } = props;
+    const {
+        onPrintCustomerReceipt,
+        paymentOutcomeOrderNumber,
+        paymentOutcomeApprovedRedirectTimeLeft,
+        onContinueToNextOrder,
+        incrementRedirectTimer,
+    } = props;
     const { buzzerNumber } = useCart();
 
     return (
@@ -586,10 +607,9 @@ const PaymentMenulogPayment = (props: {
                     <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
                 </>
             )}
-            <FeedbackSection 
-                onContinueToNextOrder={onContinueToNextOrder} 
+            <FeedbackSection
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
-                addTimeToTimer={addTimeToTimer}
+                incrementRedirectTimer={incrementRedirectTimer}
             />
             <PreparationTime />
             <div className="separator-6 mb-6"></div>
@@ -787,193 +807,146 @@ const CreateOrderFailed = (props: { createOrderError: string; onCancelOrder: () 
     );
 };
 
-
-interface FeedbackComment {
-    comment: string;
-    rate: number;
-    feedbackRestaurantId: string;
-    orderId: string;
-  }
-  
-  interface FeedbackData {
-    id:string;
-    comments: FeedbackComment[];
-    totalNumberOfRatings:Number
-    // Add other properties if needed
-  }
-
-const FeedbackSection = (props: {
-    paymentOutcomeApprovedRedirectTimeLeft: number;
-    onContinueToNextOrder: () => void;
-    addTimeToTimer: (time:number) => void;
-}) => {
-    
+const FeedbackSection = (props: { paymentOutcomeApprovedRedirectTimeLeft: number; incrementRedirectTimer: (time: number) => void }) => {
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
     const { orderDetail } = useCart();
-    const { data:getFeedback, error:errorFeedback, loading:loadingFeedback } = useListFeedbackLazyQuery(restaurant ? restaurant?.id : "");
-    
-    
-    const { onContinueToNextOrder, addTimeToTimer } = props;
-    const [submitFeedback,setSubmitFeedback]=useState<number>(0)
-    const [comment,setComment]=useState<string>("");
-    const [feedbackAdded,setFeedbackAdded]=useState<boolean>(false);
-    const [showComment,setShowComment]=useState<boolean>(false);
+    const { data: getFeedbackData, error: errorFeedback, loading: loadingFeedback } = useListFeedbackLazyQuery(restaurant ? restaurant?.id : "");
 
-    const feedbackSubmit=(val)=>{
-        setSubmitFeedback(val)
-        setShowComment(true)
-        // Redirect to home
-        // onContinueToNextOrder()
-    }
+    const { incrementRedirectTimer } = props;
+    const [newRating, setNewRating] = useState<number>(0);
+    const [comment, setComment] = useState<string>("");
+    const [feedbackAdded, setFeedbackAdded] = useState<boolean>(false);
+    const [showComment, setShowComment] = useState<boolean>(false);
+
+    const feedbackSubmit = (rating) => {
+        setNewRating(rating);
+        setShowComment(true);
+    };
 
     const [createFeedback] = useMutation(CREATE_FEEDBACK, {
         update: (proxy, mutationResult) => {},
     });
-    const [updateFeedback] = useMutation(UPDATE_FEEDBACK);  
+    const [updateFeedback] = useMutation(UPDATE_FEEDBACK);
 
-    if (errorFeedback) return <div>Please select a restaurant.</div>;
-    if (loadingFeedback) return <p>Loading restaurant</p>;
-    
-    const submitFeedbackEvent = async () => {
-            if(getFeedback){
+    if (errorFeedback) return <div>Unable to lead feedback</div>;
+    if (loadingFeedback) return <p>Loading feedback</p>;
+
+    const onSubmitFeedback = async () => {
+        try {
+            if (getFeedbackData && getFeedbackData.length > 0) {
                 // Update
-                let old_data: FeedbackData = getFeedback[0];
-                let old_comments: FeedbackComment[] = [];
-                let totalrate=0;
-                let totalNumberOfRatings=0;
+                let oldFeedback: IGET_FEEDBACK_BY_RESTAURANT = getFeedbackData[0];
+                let totalRating = getFeedbackData[0].totalNumberOfRatings * getFeedbackData[0].averageRating;
+                let totalNumberOfRatings = getFeedbackData[0].totalNumberOfRatings;
 
-                old_data.comments.forEach((element: FeedbackComment) => {
-                    old_comments.push({
-                        comment: element.comment,
-                        rate: element.rate,
-                        feedbackRestaurantId: element.feedbackRestaurantId,
-                        orderId: element.orderId
-                    });
-                    totalrate=totalrate+element.rate;
-                    totalNumberOfRatings=totalNumberOfRatings+1;
-                });
-
-                const createFeedbackCommentsInput = {
+                const newFeedbackComment = {
                     comment: comment,
-                    rate:submitFeedback,
-                    feedbackRestaurantId: restaurant?.id,
-                    orderId: orderDetail?.id
-                  };
-                  totalrate=totalrate+submitFeedback;
-                  totalNumberOfRatings=totalNumberOfRatings+1
+                    rating: newRating,
+                    orderId: orderDetail?.id,
+                };
 
-                 try {
-                    await updateFeedback({variables: {
-                        id: old_data.id, 
-                        averageRating: totalrate/totalNumberOfRatings, 
+                totalRating = totalRating + newRating;
+                totalNumberOfRatings = totalNumberOfRatings + 1;
+
+                await updateFeedback({
+                    variables: {
+                        id: oldFeedback.id,
+                        averageRating: totalRating / totalNumberOfRatings,
                         totalNumberOfRatings: totalNumberOfRatings,
                         feedbackRestaurantId: restaurant?.id,
-                        comments:[...old_comments,createFeedbackCommentsInput]
-                      }}); 
-                    } catch (error) {
-                      // Handle errors
-                      console.error(error);
-                    }
-            }
-            else{
-                // Create
-
-                const createFeedbackCommentsInput = {
+                        comments: [...getFeedbackData[0].comments, newFeedbackComment],
+                    },
+                });
+            } else {
+                const newFeedbackComment = {
                     comment: comment,
-                    rate:submitFeedback,
-                    feedbackRestaurantId: restaurant?.id,
-                    orderId: orderDetail?.id
-                  };
-        
+                    rating: newRating,
+                    orderId: orderDetail?.id,
+                };
+
                 const createFeedbackInput = {
-                    averageRating: 1,
+                    averageRating: newRating,
                     totalNumberOfRatings: 1,
                     feedbackRestaurantId: restaurant?.id,
-                    comments:[createFeedbackCommentsInput]
+                    comments: [newFeedbackComment],
                 };
-                    try {
-                       await createFeedback({
-                        variables: {
-                          createFeedbackInput
-                        },
-                      });
-                      
-                   
-                    } catch (error) {
-                      // Handle errors
-                      console.error(error);
-                    }
+
+                await createFeedback({
+                    variables: {
+                        createFeedbackInput,
+                    },
+                });
             }
-            
-            setFeedbackAdded(true)
-            addTimeToTimer(3)
-        
+
+            setFeedbackAdded(true);
+            incrementRedirectTimer(3);
+        } catch (error) {
+            // Handle errors
+            console.error(error);
+        }
     };
 
-    const commentChangeEvent=(e)=>{
-        setComment(e.target.value)
-    }
+    const commentChangeEvent = (e) => {
+        setComment(e.target.value);
+    };
 
-    const handleFocusEvent=()=>{
-        addTimeToTimer(30)
-    }
+    const onFocusFeedbackComment = () => {
+        incrementRedirectTimer(30);
+    };
 
     return (
         <>
-        {register?.enableFeedback ? 
-        <>
-            {feedbackAdded ? 
-                <div className="h2 mb-6">Thank you for Feedback</div>
-            :
-            <div className="feedback--body">
-                <p>Your Feedback</p>
-                <div className="feedback-content">
-                    <div className="feedback">
-                        
-                        <div onClick={()=>feedbackSubmit(1)} className={submitFeedback===1 ? "active" : "" }>
-                            <CachedImage className="feedback-card-image" url={`/images/5bad.png`} alt="awaiting-card-gif" />
-                            <p>Horrible</p>
+            {register?.enableFeedback ? (
+                <>
+                    {feedbackAdded ? (
+                        <div className="h2 mb-6">Thank you for Feedback</div>
+                    ) : (
+                        <div className="feedback--body">
+                            <p>Your Feedback</p>
+                            <div className="feedback-content">
+                                <div className="feedback">
+                                    <div onClick={() => feedbackSubmit(1)} className={newRating === 1 ? "active" : ""}>
+                                        <CachedImage className="feedback-card-image" url={`/images/5bad.png`} alt="awaiting-card-gif" />
+                                        <p>Horrible</p>
+                                    </div>
+                                    <div onClick={() => feedbackSubmit(2)} className={newRating === 2 ? "active" : ""}>
+                                        <CachedImage className="feedback-card-image" url={`/images/bad.png`} alt="awaiting-card-gif" />
+                                        <p>Bad</p>
+                                    </div>
+                                    <div onClick={() => feedbackSubmit(3)} className={newRating === 3 ? "active" : ""}>
+                                        <CachedImage className="feedback-card-image" url={`/images/3good.png`} alt="awaiting-card-gif" />
+                                        <p>Okay</p>
+                                    </div>
+                                    <div onClick={() => feedbackSubmit(4)} className={newRating === 4 ? "active" : ""}>
+                                        <CachedImage className="feedback-card-image" url={`/images/2great.png`} alt="awaiting-card-gif" />
+                                        <p>Good</p>
+                                    </div>
+                                    <div onClick={() => feedbackSubmit(5)} className={newRating === 5 ? "active" : ""}>
+                                        <CachedImage className={"feedback-card-image"} url={`/images/1excellent.png`} alt="awaiting-card-gif" />
+                                        <p>Excellent</p>
+                                    </div>
+                                </div>
+                                {showComment ? (
+                                    <TextArea
+                                        className="payment-modal-amount-input mb-1"
+                                        rows={5}
+                                        name="amountToPay"
+                                        value={comment}
+                                        placeholder="Enter feedback comment"
+                                        onChange={(e) => commentChangeEvent(e)}
+                                        onFocus={(e) => onFocusFeedbackComment()}
+                                    />
+                                ) : null}
+                                <Button onClick={() => onSubmitFeedback()}>Submit Feedback</Button>
+                            </div>
                         </div>
-                        <div onClick={()=>feedbackSubmit(2)} className={submitFeedback===2 ? "active" : "" }>
-                            <CachedImage className="feedback-card-image" url={`/images/bad.png`} alt="awaiting-card-gif" />
-                            <p>Bad</p>
-                        </div>
-                        <div onClick={()=>feedbackSubmit(3)} className={submitFeedback===3 ? "active" : "" }>
-                            <CachedImage className="feedback-card-image" url={`/images/3good.png`} alt="awaiting-card-gif" />
-                            <p>Okay</p>
-                        </div>
-                        <div onClick={()=>feedbackSubmit(4)} className={submitFeedback===4 ? "active" : "" }>
-                            <CachedImage className="feedback-card-image" url={`/images/2great.png`} alt="awaiting-card-gif" />
-                            <p>Good</p>
-                        </div>
-                        <div onClick={()=>feedbackSubmit(5)} className={submitFeedback===5 ? "active" : "" }>
-                            <CachedImage className={"feedback-card-image"} url={`/images/1excellent.png`} alt="awaiting-card-gif" />
-                            <p>Excellent</p>
-                        </div>
-                    </div>
-                    {showComment ? 
-                        <TextArea
-                                className="payment-modal-amount-input mb-1"
-                                rows={5}
-                                name="amountToPay"
-                                value={comment}
-                                placeholder="Enter feedback comment"
-                                onChange={(e)=>commentChangeEvent(e)}
-                                onFocus={(e) => handleFocusEvent()}
-                            />
-                            : null
-                    }
-                    <Button onClick={()=>submitFeedbackEvent()}>Submit Feedback</Button>
-                </div>
-            </div>
-            }
+                    )}
+                </>
+            ) : null}
         </>
-        : null
-        }
-        </>
-    )
-}
+    );
+};
 
 const PreparationTime = () => {
     const { restaurant } = useRestaurant();

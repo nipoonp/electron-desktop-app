@@ -120,7 +120,7 @@ export const Checkout = () => {
         orderScheduledAt,
         updateOrderScheduledAt,
         orderDetail,
-        updateOrderDetail
+        updateOrderDetail,
     } = useCart();
     const { restaurant, restaurantBase64Logo } = useRestaurant();
     const { register, isPOS } = useRegister();
@@ -171,7 +171,7 @@ export const Checkout = () => {
     const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(
         restaurant?.delayBetweenOrdersInSeconds || 10
     );
-    let transactionCompleteRedirectTime = restaurant?.delayBetweenOrdersInSeconds || 10;
+    const transactionCompleteRedirectTime = restaurant?.delayBetweenOrdersInSeconds || 10;
 
     const [showPromotionCodeModal, setShowPromotionCodeModal] = useState(false);
     const [showUpSellCategoryModal, setShowUpSellCategoryModal] = useState(false);
@@ -197,11 +197,10 @@ export const Checkout = () => {
     if (!restaurant) navigate(beginOrderPath);
     if (!restaurant) throw "Restaurant is invalid";
 
-    const addTimeToTimer=(time:number)=>{
-        setPaymentOutcomeApprovedRedirectTimeLeft(time)
-        transactionCompleteRedirectTime=time;
-        beginTransactionCompleteTimeout()
-    }
+    const incrementRedirectTimer = (time: number) => {
+        setPaymentOutcomeApprovedRedirectTimeLeft(time);
+        beginTransactionCompleteTimeout();
+    };
 
     const onCancelOrder = () => {
         const cancelOrder = () => {
@@ -403,7 +402,6 @@ export const Checkout = () => {
     };
 
     const beginTransactionCompleteTimeout = () => {
-        clearInterval(transactionCompleteTimeoutIntervalId.current);
         let timeLeft = transactionCompleteRedirectTime;
 
         transactionCompleteTimeoutIntervalId.current = setInterval(() => {
@@ -573,8 +571,8 @@ export const Checkout = () => {
             );
 
             createdOrder.current = newOrder;
-            updateOrderDetail(newOrder)
-            
+            updateOrderDetail(newOrder);
+
             if (register.printers && register.printers.items.length > 0 && !parkedOrderId) {
                 await printReceipts(newOrder);
             }
@@ -1270,7 +1268,7 @@ export const Checkout = () => {
                         onPrintCustomerReceipt={() => createdOrder.current && onPrintCustomerReceipt(createdOrder.current)}
                         onPrintParkedOrderReceipts={() => createdOrder.current && onPrintParkedOrderReceipts(createdOrder.current)}
                         paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
-                        addTimeToTimer={addTimeToTimer}
+                        incrementRedirectTimer={incrementRedirectTimer}
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                         onContinueToNextOrder={onContinueToNextOrder}
                         createOrderError={createOrderError}
