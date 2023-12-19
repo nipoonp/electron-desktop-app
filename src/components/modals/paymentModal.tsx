@@ -840,6 +840,8 @@ const FeedbackSection = (props: {
                 // Update
                 let old_data: FeedbackData = getFeedback[0];
                 let old_comments: FeedbackComment[] = [];
+                let totalrate=0;
+                let totalNumberOfRatings=0;
 
                 old_data.comments.forEach((element: FeedbackComment) => {
                     old_comments.push({
@@ -848,6 +850,8 @@ const FeedbackSection = (props: {
                         feedbackRestaurantId: element.feedbackRestaurantId,
                         orderId: element.orderId
                     });
+                    totalrate=totalrate+element.rate;
+                    totalNumberOfRatings=totalNumberOfRatings+1;
                 });
 
                 const createFeedbackCommentsInput = {
@@ -856,12 +860,14 @@ const FeedbackSection = (props: {
                     feedbackRestaurantId: restaurant?.id,
                     orderId: orderDetail?.id
                   };
-        
+                  totalrate=totalrate+submitFeedback;
+                  totalNumberOfRatings=totalNumberOfRatings+1
+
                  try {
                     await updateFeedback({variables: {
                         id: old_data.id, 
-                        averageRating: 4.6, 
-                        totalNumberOfRatings: old_data.totalNumberOfRatings,
+                        averageRating: totalrate/totalNumberOfRatings, 
+                        totalNumberOfRatings: totalNumberOfRatings,
                         feedbackRestaurantId: restaurant?.id,
                         comments:[...old_comments,createFeedbackCommentsInput]
                       }}); 
@@ -881,8 +887,8 @@ const FeedbackSection = (props: {
                   };
         
                 const createFeedbackInput = {
-                    averageRating: 4.5,
-                    totalNumberOfRatings: 10,
+                    averageRating: 1,
+                    totalNumberOfRatings: 1,
                     feedbackRestaurantId: restaurant?.id,
                     comments:[createFeedbackCommentsInput]
                 };
