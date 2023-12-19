@@ -13,7 +13,8 @@ import { TextArea } from "../../tabin/components/textArea";
 import { Link } from "../../tabin/components/link";
 import { Modal } from "../../tabin/components/modal";
 import { convertCentsToDollars, convertDollarsToCentsReturnInt } from "../../util/util";
-import {  CREATE_FEEDBACK, GET_FEEDBACK_BY_RESTAURANT } from "../../graphql/customMutations";
+import {  CREATE_FEEDBACK, UPDATE_FEEDBACK } from "../../graphql/customMutations";
+import { useListFeedbackLazyQuery } from "../../hooks/useGetFeeddbackByRestaurant";
 
 import "./paymentModal.scss";
 
@@ -786,6 +787,21 @@ const CreateOrderFailed = (props: { createOrderError: string; onCancelOrder: () 
     );
 };
 
+
+interface FeedbackComment {
+    comment: string;
+    rate: number;
+    feedbackRestaurantId: string;
+    orderId: string;
+  }
+  
+  interface FeedbackData {
+    id:string;
+    comments: FeedbackComment[];
+    totalNumberOfRatings:Number
+    // Add other properties if needed
+  }
+
 const FeedbackSection = (props: {
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
@@ -794,20 +810,9 @@ const FeedbackSection = (props: {
     
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
-    
-    const [createFeedback] = useMutation(CREATE_FEEDBACK, {
-        update: (proxy, mutationResult) => {},
-    });
-    
-    const { loading, error, data:getFeedback } = useQuery(GET_FEEDBACK_BY_RESTAURANT, {
-        variables: {
-            feedbackRestaurantId: restaurant?.id,
-        },
-    });
-
-    
     const { orderDetail } = useCart();
-    // console.log('orderDetail',orderDetail);
+    const { data:getFeedback, error:errorFeedback, loading:loadingFeedback } = useListFeedbackLazyQuery(restaurant ? restaurant?.id : "");
+    
     
     const { onContinueToNextOrder, addTimeToTimer } = props;
     const [submitFeedback,setSubmitFeedback]=useState<number>(0)
@@ -822,42 +827,82 @@ const FeedbackSection = (props: {
         // onContinueToNextOrder()
     }
 
+    const [createFeedback] = useMutation(CREATE_FEEDBACK, {
+        update: (proxy, mutationResult) => {},
+    });
+    const [updateFeedback] = useMutation(UPDATE_FEEDBACK);  
+
+    if (errorFeedback) return <div>Please select a restaurant.</div>;
+    if (loadingFeedback) return <p>Loading restaurant</p>;
+    
     const submitFeedbackEvent = async () => {
+            if(getFeedback){
+                // Update
+                let old_data: FeedbackData = getFeedback[0];
+                let old_comments: FeedbackComment[] = [];
 
-        console.log('getFeedback',getFeedback)
+                old_data.comments.forEach((element: FeedbackComment) => {
+                    old_comments.push({
+                        comment: element.comment,
+                        rate: element.rate,
+                        feedbackRestaurantId: element.feedbackRestaurantId,
+                        orderId: element.orderId
+                    });
+                });
 
-        const createFeedbackCommentsInput = {
-          comment: comment,
-          rate:submitFeedback,
-          feedbackRestaurantId: restaurant?.id,
-          orderId: orderDetail?.id, 
-        };
+                const createFeedbackCommentsInput = {
+                    comment: comment,
+                    rate:submitFeedback,
+                    feedbackRestaurantId: restaurant?.id,
+                    orderId: orderDetail?.id
+                  };
+        
+                 try {
+                    await updateFeedback({variables: {
+                        id: old_data.id, 
+                        averageRating: 4.6, 
+                        totalNumberOfRatings: old_data.totalNumberOfRatings,
+                        feedbackRestaurantId: restaurant?.id,
+                        comments:[...old_comments,createFeedbackCommentsInput]
+                      }}); 
+                    } catch (error) {
+                      // Handle errors
+                      console.error(error);
+                    }
+            }
+            else{
+                // Create
 
-        const createFeedbackInput = {
-            averageRating: 4.5,
-            totalNumberOfRatings: 10,
-            feedbackRestaurantId: restaurant?.id,
-            comments: [
-                createFeedbackCommentsInput
-            ] 
-          };
+                const createFeedbackCommentsInput = {
+                    comment: comment,
+                    rate:submitFeedback,
+                    feedbackRestaurantId: restaurant?.id,
+                    orderId: orderDetail?.id
+                  };
         
-        
-          try {
-             await createFeedback({
-              variables: {
-                createFeedbackInput,
-                createFeedbackCommentsInput
-              },
-            });
-        
+                const createFeedbackInput = {
+                    averageRating: 4.5,
+                    totalNumberOfRatings: 10,
+                    feedbackRestaurantId: restaurant?.id,
+                    comments:[createFeedbackCommentsInput]
+                };
+                    try {
+                       await createFeedback({
+                        variables: {
+                          createFeedbackInput
+                        },
+                      });
+                      
+                   
+                    } catch (error) {
+                      // Handle errors
+                      console.error(error);
+                    }
+            }
+            
             setFeedbackAdded(true)
             addTimeToTimer(3)
-          } catch (error) {
-            // Handle errors
-            console.error(error);
-          }
-
+        
     };
 
     const commentChangeEvent=(e)=>{

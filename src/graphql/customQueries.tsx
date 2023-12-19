@@ -1747,3 +1747,20 @@ export interface IGET_RESTAURANT_PREPRATION_TIME {
     id: string;
     preparationTimeInMinutes: number | null;
 }
+
+
+
+export interface ILIST_FEEDBACK {
+    id: string;
+    averageRating: GLfloat
+    totalNumberOfRatings: number
+    feedbackRestaurantId: string
+    comments: [FeedbackComments]
+}
+
+export interface FeedbackComments{
+    comment: string
+    rate:GLfloat
+    feedbackRestaurantId: string
+    orderId: string
+}

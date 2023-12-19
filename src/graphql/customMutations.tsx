@@ -234,65 +234,139 @@ export const UPDATE_ORDER_STATUS = gql`
     }
 `;
 
+export const CREATE_FEEDBACK = gql`
+  mutation CreateFeedback($createFeedbackInput: CreateFeedbackInput!) {
+    createFeedback(input: $createFeedbackInput) {
+      id
+    }
+  }
+`;
+
 // export const CREATE_FEEDBACK = gql`
-//   mutation CreateFeedback(
-//     $averageRating: Float!,
-//     $totalNumberOfRatings: Int!,
-//     $comments: [String]!, 
-//     $feedbackRestaurantId: ID!
-//   ) {
-//     createFeedback(input: {
-//       averageRating: $averageRating,
-//       totalNumberOfRatings: $totalNumberOfRatings,
-//       comments: $comments,
-//       feedbackRestaurantId: $feedbackRestaurantId
-//     }) {
+//   mutation CreateFeedback($createFeedbackInput: CreateFeedbackInput!) {
+//     createFeedback(input: $createFeedbackInput) {
 //       id
 //       averageRating
 //       totalNumberOfRatings
-//       comments
 //       feedbackRestaurantId
 //     }
 //   }
 // `;
 
-export const CREATE_FEEDBACK = gql`
-  mutation CreateFeedback($createFeedbackInput: CreateFeedbackInput!, $createFeedbackCommentsInput: CreateFeedbackCommentsInput!) {
-    createFeedback(input: $createFeedbackInput) {
-      id
-      averageRating
-      totalNumberOfRatings
-      comments
-      feedbackRestaurantId
-      feedbackComments {
-        id
-        comment
-      }
-    }
+// export const CREATE_FEEDBACK_COMMENT = gql`
+//   mutation CreateFeedbackComment($createFeedbackCommentsInput: CreateFeedbackCommentsInput!) {
+//     createFeedbackComments(input: $createFeedbackCommentsInput) {
+//       id
+//       comment
+//       rate
+//       feedbackRestaurantId
+//     }
+//   }
+// `;
 
-    createFeedbackComments(input: $createFeedbackCommentsInput) {
-      id
-      comment
-      rate
-      feedbackRestaurantId
-      feedback {
-        id
-        averageRating
-        totalNumberOfRatings
-        comments
-        feedbackRestaurantId
-      }
-    }
-  }
-`;
+// export const CREATE_FEEDBACK = gql`
+// mutation CreateFeedback {
+//     createFeedback(input: {
+//       averageRating: 4.6,
+//       totalNumberOfRatings: 111,
+//       feedbackRestaurantId: "bb8d2724-c034-405e-ad97-a25731512519",
+//       feedbackComments: [
+//         {
+//           comment: "Test Comment",
+//           rate: 4,
+//           orderId: "bb8d2724-c034-405e-ad97-a25731512519",
+//           feedbackRestaurantId: "bb8d2724-c034-405e-ad97-a25731512519"
+//         }
+//       ]
+//     }) {
+//       id
+//       averageRating
+//       totalNumberOfRatings
+//       feedbackRestaurantId
+//       feedbackComments {
+//         items {
+//           id
+//           comment
+//           rate
+//           orderId
+//         }
+//       }
+//     }
+//   }
+// `;
+
+
 
 export const GET_FEEDBACK_BY_RESTAURANT = gql`
   query GetFeedbackByRestaurant($feedbackRestaurantId: ID!) {
     listFeedbackByRestaurant(feedbackRestaurantId: $feedbackRestaurantId) {
-      items {
-        id
-        averageRating
-        totalNumberOfRatings
+        items {
+            averageRating
+            createdAt
+            feedbackRestaurantId
+            comments {
+              comment
+              feedbackRestaurantId
+              orderId
+              rate
+            }
+            id
+            totalNumberOfRatings
+            updatedAt
+        }
+      }
+  }
+`;
+
+export const GET_FEEDBACKCOMMMENT_BY_FEEDBACK=gql`
+  query GetFeedbackCommentByFeedback($feedbackId:ID!){
+    listFeedbackCommentByFeedback(feedbackId:$feedbackId){
+        items{
+            id
+            comment
+            rate
+            feedbackRestaurantId
+            orderId
+            feedbackId
+        }
+    }
+  }
+`
+
+export const DELETE_FEEDBACK=gql`
+    mutation DeleteFeedback($id: ID!) {
+        deleteFeedback(input: { id: $id }) {
+            id
+        }
+    }
+`;
+
+export const UPDATE_FEEDBACK = gql`
+mutation updateFeedback(
+    $id: ID!,
+    $averageRating: Float,
+    $totalNumberOfRatings: Int,
+    $feedbackRestaurantId: ID,
+    $comments: [FeedbackCommentsInput!]
+  ) {
+    updateFeedback(
+      input: {
+        id: $id,
+        averageRating: $averageRating,
+        totalNumberOfRatings: $totalNumberOfRatings,
+        feedbackRestaurantId: $feedbackRestaurantId,
+        comments: $comments
+      }
+    ) {
+      id
+      averageRating
+      totalNumberOfRatings
+      feedbackRestaurantId
+      comments {
+        comment
+        rate
+        feedbackRestaurantId
+        orderId
       }
     }
   }
