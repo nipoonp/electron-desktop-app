@@ -930,25 +930,26 @@ const FeedbackSection = (props: {
                 <p>Your Feedback</p>
                 <div className="feedback-content">
                     <div className="feedback">
-                        <div onClick={()=>feedbackSubmit(5)} className={submitFeedback===5 ? "active" : "" }>
-                            <CachedImage className={"feedback-card-image"} url={`/images/1excellent.png`} alt="awaiting-card-gif" />
-                            <p>Excellent</p>
-                        </div>
-                        <div onClick={()=>feedbackSubmit(4)} className={submitFeedback===4 ? "active" : "" }>
-                            <CachedImage className="feedback-card-image" url={`/images/2great.png`} alt="awaiting-card-gif" />
-                            <p>Good</p>
-                        </div>
-                        <div onClick={()=>feedbackSubmit(3)} className={submitFeedback===3 ? "active" : "" }>
-                            <CachedImage className="feedback-card-image" url={`/images/3good.png`} alt="awaiting-card-gif" />
-                            <p>Okay</p>
+                        
+                        <div onClick={()=>feedbackSubmit(1)} className={submitFeedback===1 ? "active" : "" }>
+                            <CachedImage className="feedback-card-image" url={`/images/5bad.png`} alt="awaiting-card-gif" />
+                            <p>Horrible</p>
                         </div>
                         <div onClick={()=>feedbackSubmit(2)} className={submitFeedback===2 ? "active" : "" }>
                             <CachedImage className="feedback-card-image" url={`/images/bad.png`} alt="awaiting-card-gif" />
                             <p>Bad</p>
                         </div>
-                        <div onClick={()=>feedbackSubmit(1)} className={submitFeedback===1 ? "active" : "" }>
-                            <CachedImage className="feedback-card-image" url={`/images/5bad.png`} alt="awaiting-card-gif" />
-                            <p>Horrible</p>
+                        <div onClick={()=>feedbackSubmit(3)} className={submitFeedback===3 ? "active" : "" }>
+                            <CachedImage className="feedback-card-image" url={`/images/3good.png`} alt="awaiting-card-gif" />
+                            <p>Okay</p>
+                        </div>
+                        <div onClick={()=>feedbackSubmit(4)} className={submitFeedback===4 ? "active" : "" }>
+                            <CachedImage className="feedback-card-image" url={`/images/2great.png`} alt="awaiting-card-gif" />
+                            <p>Good</p>
+                        </div>
+                        <div onClick={()=>feedbackSubmit(5)} className={submitFeedback===5 ? "active" : "" }>
+                            <CachedImage className={"feedback-card-image"} url={`/images/1excellent.png`} alt="awaiting-card-gif" />
+                            <p>Excellent</p>
                         </div>
                     </div>
                     {showComment ? 
