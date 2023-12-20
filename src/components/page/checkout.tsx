@@ -171,7 +171,7 @@ export const Checkout = () => {
     const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(
         restaurant?.delayBetweenOrdersInSeconds || 10
     );
-    const transactionCompleteRedirectTime = restaurant?.delayBetweenOrdersInSeconds || 10;
+    let transactionCompleteRedirectTime = restaurant?.delayBetweenOrdersInSeconds || 10;
 
     const [showPromotionCodeModal, setShowPromotionCodeModal] = useState(false);
     const [showUpSellCategoryModal, setShowUpSellCategoryModal] = useState(false);
@@ -199,6 +199,7 @@ export const Checkout = () => {
 
     const incrementRedirectTimer = (time: number) => {
         setPaymentOutcomeApprovedRedirectTimeLeft(time);
+        transactionCompleteRedirectTime=time;
         beginTransactionCompleteTimeout();
     };
 
@@ -402,6 +403,7 @@ export const Checkout = () => {
     };
 
     const beginTransactionCompleteTimeout = () => {
+        clearInterval(transactionCompleteTimeoutIntervalId.current);
         let timeLeft = transactionCompleteRedirectTime;
 
         transactionCompleteTimeoutIntervalId.current = setInterval(() => {

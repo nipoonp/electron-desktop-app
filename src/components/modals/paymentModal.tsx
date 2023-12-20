@@ -848,14 +848,14 @@ const FeedbackSection = (props: { paymentOutcomeApprovedRedirectTimeLeft: number
 
                 totalRating = totalRating + newRating;
                 totalNumberOfRatings = totalNumberOfRatings + 1;
-
+                const modifiedResponse = JSON.parse(JSON.stringify(getFeedbackData[0], (key, value) => key === '__typename' ? undefined : value));
                 await updateFeedback({
                     variables: {
                         id: oldFeedback.id,
                         averageRating: totalRating / totalNumberOfRatings,
                         totalNumberOfRatings: totalNumberOfRatings,
                         feedbackRestaurantId: restaurant?.id,
-                        comments: [...getFeedbackData[0].comments, newFeedbackComment],
+                        comments: [...modifiedResponse.comments, newFeedbackComment],
                     },
                 });
             } else {

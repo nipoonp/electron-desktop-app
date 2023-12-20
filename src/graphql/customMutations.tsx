@@ -266,7 +266,7 @@ export const UPDATE_FEEDBACK = gql`
         $averageRating: Float
         $totalNumberOfRatings: Int
         $feedbackRestaurantId: ID
-        $comments: [FeedbackCommentsInput!]
+        $comments: [FeedbackCommentInput!]
     ) {
         updateFeedback(
             input: {
@@ -283,8 +283,7 @@ export const UPDATE_FEEDBACK = gql`
             feedbackRestaurantId
             comments {
                 comment
-                rate
-                feedbackRestaurantId
+                rating
                 orderId
             }
         }
