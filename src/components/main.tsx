@@ -2,7 +2,7 @@ import { useEffect, lazy, Suspense } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router";
 import { HashRouter } from "react-router-dom";
 import Modal from "react-modal";
-import { Logger } from "aws-amplify";
+import { Auth, Logger } from "aws-amplify";
 import { AlertProvider } from "../tabin/components/alert";
 import { ToastContainer } from "../tabin/components/toast";
 import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
@@ -14,6 +14,7 @@ import { useRegister } from "../context/register-context";
 import { ITab } from "../model/model";
 import { FiDollarSign, FiLock, FiMenu } from "react-icons/fi";
 import RequireCustomerInformation from "./page/customerInformation";
+import { sendFailureNotification } from "../util/errorHandling";
 
 import "react-toastify/dist/ReactToastify.min.css";
 
@@ -114,7 +115,8 @@ export const tabs: ITab[] = [
 ];
 
 export default () => {
-    const { user } = useAuth();
+    const { user, login } = useAuth();
+    const { restaurant } = useRestaurant();
     const { register } = useRegister();
 
     useEffect(() => {
@@ -127,6 +129,41 @@ export default () => {
                 register: r,
             });
     }, [user, register]);
+
+    useEffect(() => {
+        if (!restaurant) return;
+        if (!register) return;
+
+        const timerId = setInterval(async () => {
+            try {
+                //We are having an issue where we get "NotAuthorizedException: Refresh Token has expired".
+                //To avoid the refresh_token from expiring, we will force it to refresh every 10 minutes.
+                //I can see the access_token and id_token get refreshed. But not sure about the refresh_token.
+                //https://github.com/aws-amplify/amplify-js/issues/2560
+                //Also in AWS Dashboard under Cognito User Pools > App Integration > We set the 'Refresh token expiration' to 365 days.
+                //So monitor the next few weeks howmany of those errors we get rearing "NotAuthorizedException: Refresh Token has expired" issue.
+                //If we don't get such errors then we can try remove this code below.
+                const cognitoUser = await Auth.currentAuthenticatedUser();
+                const currentSession = await Auth.currentSession();
+
+                cognitoUser.refreshSession(currentSession.getRefreshToken(), (err, session) => {
+                    console.log("New session", err, session);
+                    // const { idToken, refreshToken, accessToken } = session;
+                });
+
+                //If the above code doesn't refresh the refresh_token then uncomment the below lines and get the user to relog in again.
+                // const email = localStorage.getItem("current_e");
+                // const password = localStorage.getItem("current_p");
+
+                // if (email && password) login(email, password);
+            } catch (error) {
+                console.error("Error", error);
+                await sendFailureNotification(error, JSON.stringify({ restaurant: restaurant?.id, register: register?.id }));
+            }
+        }, 10 * 60 * 1000); // 10 minutes
+
+        return () => clearInterval(timerId);
+    }, [restaurant, register]);
 
     return (
         <>

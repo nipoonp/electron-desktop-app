@@ -263,7 +263,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 return;
             }
 
-            const discount = getOrderDiscountAmount(promotion, productsCpy, total);
+            const discount = getOrderDiscountAmount(promotion, productsCpy, newTotal);
 
             if (!discount || discount.discountedAmount <= 0) return;
 

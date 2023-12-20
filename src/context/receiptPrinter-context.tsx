@@ -234,7 +234,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 console.log("result", result);
 
                 if (result.error && isRetry) {
-                    //If retry dont readd same order into failedPrintQueue
+                    //If retry don't readd same order into failedPrintQueue
                     return;
                 } else if (result.error) {
                     toast.error("There was an error printing your order");
