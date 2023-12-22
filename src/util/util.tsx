@@ -1,5 +1,5 @@
 import { eachMinuteOfInterval, format, getDay, isAfter, isWithinInterval, startOfDay } from "date-fns";
-import { addDays, isEqual } from "date-fns/esm";
+import { addDays, isEqual } from "date-fns";
 import { IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
 import {
     EDiscountType,
