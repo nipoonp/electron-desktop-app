@@ -17,8 +17,6 @@ import {
     IGET_RESTAURANT_OPERATING_HOURS,
     IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT,
     EPromotionType,
-    IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIME,
-    IGET_RESTAURANT_ITEM_AVAILABILITY_TIME,
 } from "../graphql/customQueries";
 import {
     CheckIfPromotionValidResponse,
@@ -104,7 +102,6 @@ export const isItemSoldOut = (soldOut?: boolean, soldOutDate?: string) => {
 export const isPromotionAvailable = (availability?: IGET_RESTAURANT_PROMOTION_AVAILABILITY) => {
     if (!availability) return true;
 
-    // const dayTimes: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[] = getPromotionDayData(availability);
     const dayTimes: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[] = getPromotionDayData(availability);
 
     if (dayTimes.length == 0) return true;
@@ -150,7 +147,7 @@ export const isPromotionAvailable = (availability?: IGET_RESTAURANT_PROMOTION_AV
 export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS | IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_HOURS) => {
     if (!availability) return true;
 
-    const dayTimes: IGET_RESTAURANT_ITEM_AVAILABILITY_TIME[] = getDayData(availability);
+    const dayTimes: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] = getDayData(availability);
 
     if (dayTimes.length == 0) return true;
 
@@ -274,19 +271,19 @@ const getPromotionDayData = (availability: IGET_RESTAURANT_PROMOTION_AVAILABILIT
 
     switch (day) {
         case 1:
-            return availability.monday.time;
+            return availability.monday;
         case 2:
-            return availability.tuesday.time;
+            return availability.tuesday;
         case 3:
-            return availability.wednesday.time;
+            return availability.wednesday;
         case 4:
-            return availability.thursday.time;
+            return availability.thursday;
         case 5:
-            return availability.friday.time;
+            return availability.friday;
         case 6:
-            return availability.saturday.time;
+            return availability.saturday;
         case 0: //0 is sunday in date-fns
-            return availability.sunday.time;
+            return availability.sunday;
         default:
             return [];
     }
@@ -297,19 +294,19 @@ const getDayData = (availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS | IGET
 
     switch (day) {
         case 1:
-            return availability.monday.time;
+            return availability.monday;
         case 2:
-            return availability.tuesday.time;
+            return availability.tuesday;
         case 3:
-            return availability.wednesday.time;
+            return availability.wednesday;
         case 4:
-            return availability.thursday.time;
+            return availability.thursday;
         case 5:
-            return availability.friday.time;
+            return availability.friday;
         case 6:
-            return availability.saturday.time;
+            return availability.saturday;
         case 0: //0 is sunday in date-fns
-            return availability.sunday.time;
+            return availability.sunday;
         default:
             return [];
     }

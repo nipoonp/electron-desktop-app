@@ -284,53 +284,32 @@ export const GET_RESTAURANT = gql`
                     }
                     availability {
                         monday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                         tuesday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                         wednesday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                         thursday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                         friday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                         saturday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                         sunday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                     }
                 }
@@ -464,53 +443,32 @@ export const GET_RESTAURANT = gql`
                     endDate
                     availability {
                         monday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                         tuesday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                         wednesday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                         thursday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                         friday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                         saturday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                         sunday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                     }
                     availablePlatforms
@@ -584,53 +542,32 @@ export const GET_RESTAURANT = gql`
                     availablePlatforms
                     availability {
                         monday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                         tuesday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                         wednesday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                         thursday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                         friday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                         saturday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                         sunday {
-                            available
-                            time {
-                                endTime
-                                startTime
-                            }
+                            startTime
+                            endTime
                         }
                     }
                     products(limit: 100) {
@@ -659,53 +596,32 @@ export const GET_RESTAURANT = gql`
                                 availablePlatforms
                                 availability {
                                     monday {
-                                        available
-                                        time {
-                                            endTime
-                                            startTime
-                                        }
+                                        startTime
+                                        endTime
                                     }
                                     tuesday {
-                                        available
-                                        time {
-                                            endTime
-                                            startTime
-                                        }
+                                        startTime
+                                        endTime
                                     }
                                     wednesday {
-                                        available
-                                        time {
-                                            endTime
-                                            startTime
-                                        }
+                                        startTime
+                                        endTime
                                     }
                                     thursday {
-                                        available
-                                        time {
-                                            endTime
-                                            startTime
-                                        }
+                                        startTime
+                                        endTime
                                     }
                                     friday {
-                                        available
-                                        time {
-                                            endTime
-                                            startTime
-                                        }
+                                        startTime
+                                        endTime
                                     }
                                     saturday {
-                                        available
-                                        time {
-                                            endTime
-                                            startTime
-                                        }
+                                        startTime
+                                        endTime
                                     }
                                     sunday {
-                                        available
-                                        time {
-                                            endTime
-                                            startTime
-                                        }
+                                        startTime
+                                        endTime
                                     }
                                 }
                                 subCategories
@@ -726,53 +642,32 @@ export const GET_RESTAURANT = gql`
                                             availablePlatforms
                                             availability {
                                                 monday {
-                                                    available
-                                                    time {
-                                                        endTime
-                                                        startTime
-                                                    }
+                                                    startTime
+                                                    endTime
                                                 }
                                                 tuesday {
-                                                    available
-                                                    time {
-                                                        endTime
-                                                        startTime
-                                                    }
+                                                    startTime
+                                                    endTime
                                                 }
                                                 wednesday {
-                                                    available
-                                                    time {
-                                                        endTime
-                                                        startTime
-                                                    }
+                                                    startTime
+                                                    endTime
                                                 }
                                                 thursday {
-                                                    available
-                                                    time {
-                                                        endTime
-                                                        startTime
-                                                    }
+                                                    startTime
+                                                    endTime
                                                 }
                                                 friday {
-                                                    available
-                                                    time {
-                                                        endTime
-                                                        startTime
-                                                    }
+                                                    startTime
+                                                    endTime
                                                 }
                                                 saturday {
-                                                    available
-                                                    time {
-                                                        endTime
-                                                        startTime
-                                                    }
+                                                    startTime
+                                                    endTime
                                                 }
                                                 sunday {
-                                                    available
-                                                    time {
-                                                        endTime
-                                                        startTime
-                                                    }
+                                                    startTime
+                                                    endTime
                                                 }
                                             }
                                         }
@@ -852,53 +747,32 @@ export const GET_RESTAURANT = gql`
                                                             }
                                                             availability {
                                                                 monday {
-                                                                    available
-                                                                    time {
-                                                                        endTime
-                                                                        startTime
-                                                                    }
+                                                                    startTime
+                                                                    endTime
                                                                 }
                                                                 tuesday {
-                                                                    available
-                                                                    time {
-                                                                        endTime
-                                                                        startTime
-                                                                    }
+                                                                    startTime
+                                                                    endTime
                                                                 }
                                                                 wednesday {
-                                                                    available
-                                                                    time {
-                                                                        endTime
-                                                                        startTime
-                                                                    }
+                                                                    startTime
+                                                                    endTime
                                                                 }
                                                                 thursday {
-                                                                    available
-                                                                    time {
-                                                                        endTime
-                                                                        startTime
-                                                                    }
+                                                                    startTime
+                                                                    endTime
                                                                 }
                                                                 friday {
-                                                                    available
-                                                                    time {
-                                                                        endTime
-                                                                        startTime
-                                                                    }
+                                                                    startTime
+                                                                    endTime
                                                                 }
                                                                 saturday {
-                                                                    available
-                                                                    time {
-                                                                        endTime
-                                                                        startTime
-                                                                    }
+                                                                    startTime
+                                                                    endTime
                                                                 }
                                                                 sunday {
-                                                                    available
-                                                                    time {
-                                                                        endTime
-                                                                        startTime
-                                                                    }
+                                                                    startTime
+                                                                    endTime
                                                                 }
                                                             }
                                                             modifierGroups(limit: 20) {
@@ -968,53 +842,32 @@ export const GET_RESTAURANT = gql`
                                                                                         }
                                                                                         availability {
                                                                                             monday {
-                                                                                                available
-                                                                                                time {
-                                                                                                    endTime
-                                                                                                    startTime
-                                                                                                }
+                                                                                                startTime
+                                                                                                endTime
                                                                                             }
                                                                                             tuesday {
-                                                                                                available
-                                                                                                time {
-                                                                                                    endTime
-                                                                                                    startTime
-                                                                                                }
+                                                                                                startTime
+                                                                                                endTime
                                                                                             }
                                                                                             wednesday {
-                                                                                                available
-                                                                                                time {
-                                                                                                    endTime
-                                                                                                    startTime
-                                                                                                }
+                                                                                                startTime
+                                                                                                endTime
                                                                                             }
                                                                                             thursday {
-                                                                                                available
-                                                                                                time {
-                                                                                                    endTime
-                                                                                                    startTime
-                                                                                                }
+                                                                                                startTime
+                                                                                                endTime
                                                                                             }
                                                                                             friday {
-                                                                                                available
-                                                                                                time {
-                                                                                                    endTime
-                                                                                                    startTime
-                                                                                                }
+                                                                                                startTime
+                                                                                                endTime
                                                                                             }
                                                                                             saturday {
-                                                                                                available
-                                                                                                time {
-                                                                                                    endTime
-                                                                                                    startTime
-                                                                                                }
+                                                                                                startTime
+                                                                                                endTime
                                                                                             }
                                                                                             sunday {
-                                                                                                available
-                                                                                                time {
-                                                                                                    endTime
-                                                                                                    startTime
-                                                                                                }
+                                                                                                startTime
+                                                                                                endTime
                                                                                             }
                                                                                         }
                                                                                     }
@@ -1143,22 +996,17 @@ export interface IGET_RESTAURANT_ADVERTISEMENT {
 }
 
 export interface IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_HOURS {
-    monday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES;
-    tuesday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES;
-    wednesday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES;
-    thursday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES;
-    friday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES;
-    saturday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES;
-    sunday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES;
-    [key: string]: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES; //this is used to map over the operating hours object, https://www.logicbig.com/tutorials/misc/typescript/indexable-types.html
+    monday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES[];
+    tuesday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES[];
+    wednesday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES[];
+    thursday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES[];
+    friday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES[];
+    saturday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES[];
+    sunday: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES[];
+    [key: string]: IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES[]; //this is used to map over the operating hours object, https://www.logicbig.com/tutorials/misc/typescript/indexable-types.html
 }
 
 export interface IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES {
-    time:IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIME[];
-    available:boolean;
-}
-
-export interface IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIME {
     startTime: string;
     endTime: string;
 }
@@ -1284,22 +1132,17 @@ export interface IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT {
 }
 
 export interface IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS {
-    monday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES;
-    tuesday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES;
-    wednesday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES;
-    thursday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES;
-    friday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES;
-    saturday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES;
-    sunday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES;
-    [key: string]: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES; //this is used to map over the operating hours object, https://www.logicbig.com/tutorials/misc/typescript/indexable-types.html
+    monday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
+    tuesday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
+    wednesday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
+    thursday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
+    friday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
+    saturday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
+    sunday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
+    [key: string]: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[]; //this is used to map over the operating hours object, https://www.logicbig.com/tutorials/misc/typescript/indexable-types.html
 }
 
 export interface IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES {
-    time:IGET_RESTAURANT_ITEM_AVAILABILITY_TIME[],
-    available:boolean;
-}
-
-export interface IGET_RESTAURANT_ITEM_AVAILABILITY_TIME {
     startTime: string;
     endTime: string;
 }
@@ -1329,18 +1172,13 @@ export interface IGET_RESTAURANT_PROMOTION {
 }
 
 export interface IGET_RESTAURANT_PROMOTION_AVAILABILITY {
-    monday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIME;
-    tuesday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIME;
-    wednesday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIME;
-    thursday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIME;
-    friday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIME;
-    saturday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIME;
-    sunday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIME;
-}
-
-export interface IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIME {
-    time: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
-    available:boolean;
+    monday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
+    tuesday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
+    wednesday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
+    thursday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
+    friday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
+    saturday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
+    sunday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
 }
 
 export interface IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES {
