@@ -230,11 +230,19 @@ export interface IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT {
     price: number;
     totalPrice: number;
     discount: number;
+    availablePlatforms:ERegisterType[],
     quantity: number;
     notes: string | null;
     image: IS3Object | null;
     category: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | null;
     modifierGroups: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] | null;
+}
+
+export enum ERegisterType {
+    KIOSK = "KIOSK",
+    POS = "POS",
+    ONLINE = "ONLINE",
+    IsAgeRescricted= "IsAgeRescricted",
 }
 
 export interface IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT {

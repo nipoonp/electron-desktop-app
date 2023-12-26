@@ -276,6 +276,7 @@ export default () => {
             kitchenName: product.kitchenName,
             totalPrice: product.price,
             discount: 0,
+            availablePlatforms:product.availablePlatforms,
             image: product.image
                 ? {
                       key: product.image.key,

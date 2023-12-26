@@ -138,11 +138,19 @@ export interface ICartProduct {
     price: number;
     totalPrice: number;
     discount: number;
+    availablePlatforms:ERegisterType[];
     image: IS3Object | null;
     quantity: number;
     notes: string | null;
     category: ICartCategory | null; //Product modifier do not have category
     modifierGroups: ICartModifierGroup[];
+}
+
+export enum ERegisterType {
+    KIOSK = "KIOSK",
+    POS = "POS",
+    ONLINE = "ONLINE",
+    IsAgeRescricted= "IsAgeRescricted",
 }
 
 export interface ICartCategory {

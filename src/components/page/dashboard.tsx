@@ -118,38 +118,39 @@ export default () => {
             }
 
             const newCartProduct: ICartProduct = {
-                id: product.id,
-                name: product.name,
-                kitchenName: product.kitchenName,
-                price: product.price,
-                totalPrice: product.totalPrice,
-                discount: 0, //Set discount to total because we do not want to add any discount or promotions to parked orders
-                image: product.image
-                    ? {
-                          key: product.image.key,
-                          bucket: product.image.bucket,
-                          region: product.image.region,
-                          identityPoolId: product.image.identityPoolId,
-                      }
-                    : null, //To avoid __typename error
-                quantity: product.quantity,
-                notes: product.notes,
-                category: product.category
-                    ? {
-                          id: product.category.id,
-                          name: product.category.name,
-                          kitchenName: product.category.kitchenName,
-                          image: product.category.image
-                              ? {
-                                    key: product.category.image.key,
-                                    bucket: product.category.image.bucket,
-                                    region: product.category.image.region,
-                                    identityPoolId: product.category.image.identityPoolId,
-                                }
-                              : null, //To avoid __typename error
-                      }
-                    : null,
-                modifierGroups: [],
+              id: product.id,
+              name: product.name,
+              kitchenName: product.kitchenName,
+              price: product.price,
+              totalPrice: product.totalPrice,
+              discount: 0, //Set discount to total because we do not want to add any discount or promotions to parked orders
+              availablePlatforms: product.availablePlatforms,
+              image: product.image
+                ? {
+                    key: product.image.key,
+                    bucket: product.image.bucket,
+                    region: product.image.region,
+                    identityPoolId: product.image.identityPoolId,
+                  }
+                : null, //To avoid __typename error
+              quantity: product.quantity,
+              notes: product.notes,
+              category: product.category
+                ? {
+                    id: product.category.id,
+                    name: product.category.name,
+                    kitchenName: product.category.kitchenName,
+                    image: product.category.image
+                      ? {
+                          key: product.category.image.key,
+                          bucket: product.category.image.bucket,
+                          region: product.category.image.region,
+                          identityPoolId: product.category.image.identityPoolId,
+                        }
+                      : null, //To avoid __typename error
+                  }
+                : null,
+              modifierGroups: [],
             };
 
             const newCartModifierGroups: ICartModifierGroup[] = [];
