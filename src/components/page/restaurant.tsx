@@ -270,37 +270,38 @@ export default () => {
 
     const onAddProductToCart = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
         const productToOrder: ICartProduct = {
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            kitchenName: product.kitchenName,
-            totalPrice: product.price,
-            discount: 0,
-            availablePlatforms:product.availablePlatforms,
-            image: product.image
-                ? {
-                      key: product.image.key,
-                      region: product.image.region,
-                      bucket: product.image.bucket,
-                      identityPoolId: product.image.identityPoolId,
-                  }
-                : null,
-            quantity: 1,
-            notes: null,
-            category: {
-                id: category.id,
-                name: category.name,
-                kitchenName: category.kitchenName,
-                image: category.image
-                    ? {
-                          key: category.image.key,
-                          region: category.image.region,
-                          bucket: category.image.bucket,
-                          identityPoolId: category.image.identityPoolId,
-                      }
-                    : null,
-            },
-            modifierGroups: [],
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          kitchenName: product.kitchenName,
+          totalPrice: product.price,
+          discount: 0,
+          availablePlatforms: product.availablePlatforms,
+          isAgeRescricted: product.isAgeRescricted,
+          image: product.image
+            ? {
+                key: product.image.key,
+                region: product.image.region,
+                bucket: product.image.bucket,
+                identityPoolId: product.image.identityPoolId,
+              }
+            : null,
+          quantity: 1,
+          notes: null,
+          category: {
+            id: category.id,
+            name: category.name,
+            kitchenName: category.kitchenName,
+            image: category.image
+              ? {
+                  key: category.image.key,
+                  region: category.image.region,
+                  bucket: category.image.bucket,
+                  identityPoolId: category.image.identityPoolId,
+                }
+              : null,
+          },
+          modifierGroups: [],
         };
 
         onAddProduct(productToOrder);

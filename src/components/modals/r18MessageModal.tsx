@@ -24,8 +24,8 @@ export const R18MessageModal = (props: IPromotionCodeModalProps) => {
       >
         <div className="promo-code-modal">
           <div className="h3 mb-3">
-            Before you can shop from our range of {props?.message}, We need you
-            to confirm you are over 18, Cheers!
+            Before you can shop from our range of Wine or Beer, We need you to
+            confirm you are over 18, Cheers!
           </div>
           <Button onClick={onContinue} className="mb-1">
             Yes, I am over 18

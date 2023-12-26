@@ -672,30 +672,31 @@ const processProductsForPrint = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMEN
             });
 
         convertedP.push({
-            id: p.id,
-            name: p.name,
-            kitchenName: p.kitchenName,
-            price: p.price,
-            totalPrice: p.totalPrice,
-            discount: p.discount,
-            image: p.image,
-            quantity: p.quantity,
-            availablePlatforms:p.availablePlatforms,
-            notes: p.notes,
-            category: p.category
-                ? {
-                      id: p.category.id,
-                      name: p.category.name,
-                      kitchenName: p.category.kitchenName,
-                      image: p.category.image,
-                  }
-                : {
-                      id: "invalid",
-                      name: "invalid",
-                      kitchenName: "invalid",
-                      image: null,
-                  },
-            modifierGroups: convertedMG,
+          id: p.id,
+          name: p.name,
+          kitchenName: p.kitchenName,
+          price: p.price,
+          totalPrice: p.totalPrice,
+          discount: p.discount,
+          image: p.image,
+          quantity: p.quantity,
+          availablePlatforms: p.availablePlatforms,
+          isAgeRescricted: p.isAgeRescricted,
+          notes: p.notes,
+          category: p.category
+            ? {
+                id: p.category.id,
+                name: p.category.name,
+                kitchenName: p.category.kitchenName,
+                image: p.category.image,
+              }
+            : {
+                id: "invalid",
+                name: "invalid",
+                kitchenName: "invalid",
+                image: null,
+              },
+          modifierGroups: convertedMG,
         });
     });
 

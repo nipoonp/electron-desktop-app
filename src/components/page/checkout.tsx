@@ -204,14 +204,7 @@ export const Checkout = () => {
     if (autoClickCompleteOrderOnLoad) onClickOrderButton();
 
     const ageRestrictedProducts =
-      products &&
-      products
-        .filter(
-          (product) =>
-            product.availablePlatforms &&
-            product.availablePlatforms.includes(ERegisterType.IsAgeRescricted)
-        )
-        .map((product) => product.name);
+      products && products.filter((product) => product.isAgeRescricted);
 
     if (ageRestrictedProducts && ageRestrictedProducts.length > 0) {
       setShowModal(ageRestrictedProducts.toString());
@@ -342,6 +335,7 @@ export const Checkout = () => {
         totalPrice: product.price,
         discount: 0,
         availablePlatforms: product.availablePlatforms,
+        isAgeRescricted: product.isAgeRescricted,
         image: product.image
           ? {
               key: product.image.key,

@@ -224,25 +224,25 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
 }
 
 export interface IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT {
-    id: string;
-    name: string;
-    kitchenName: string | null;
-    price: number;
-    totalPrice: number;
-    discount: number;
-    availablePlatforms:ERegisterType[],
-    quantity: number;
-    notes: string | null;
-    image: IS3Object | null;
-    category: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | null;
-    modifierGroups: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] | null;
+  id: string;
+  name: string;
+  kitchenName: string | null;
+  price: number;
+  totalPrice: number;
+  discount: number;
+  availablePlatforms: ERegisterType[];
+  isAgeRescricted: boolean;
+  quantity: number;
+  notes: string | null;
+  image: IS3Object | null;
+  category: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | null;
+  modifierGroups: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] | null;
 }
 
 export enum ERegisterType {
-    KIOSK = "KIOSK",
-    POS = "POS",
-    ONLINE = "ONLINE",
-    IsAgeRescricted= "IsAgeRescricted",
+  KIOSK = "KIOSK",
+  POS = "POS",
+  ONLINE = "ONLINE",
 }
 
 export interface IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT {
