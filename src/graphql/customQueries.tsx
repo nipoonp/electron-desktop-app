@@ -1132,14 +1132,14 @@ export interface IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT {
 }
 
 export interface IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS {
-  monday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
-  tuesday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
-  wednesday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
-  thursday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
-  friday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
-  saturday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
-  sunday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
-  [key: string]: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[]; //this is used to map over the operating hours object, https://www.logicbig.com/tutorials/misc/typescript/indexable-types.html
+  monday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] | null;
+  tuesday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] | null;
+  wednesday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] | null;
+  thursday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] | null;
+  friday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] | null;
+  saturday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] | null;
+  sunday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] | null;
+  [key: string]: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] | null; //this is used to map over the operating hours object, https://www.logicbig.com/tutorials/misc/typescript/indexable-types.html
 }
 
 export interface IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES {

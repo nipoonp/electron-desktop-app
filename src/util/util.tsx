@@ -157,15 +157,15 @@ export const isItemAvailable = (
 ) => {
   if (!availability) return true;
 
-  const dayTimes: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] =
+  const dayTimes: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] | null =
     getDayData(availability);
 
-  if (dayTimes.length == 0) return true;
+  if (dayTimes?.length == 0) return true;
 
   const currentDateTime = new Date();
   let isWithinTimeSlot = false;
 
-  dayTimes.forEach((timeSlot) => {
+  dayTimes?.forEach((timeSlot) => {
     let startDateTime = new Date(
       currentDateTime.getFullYear(),
       currentDateTime.getMonth(),
@@ -293,7 +293,7 @@ const getPromotionDayData = (
 
   switch (day) {
     case 1:
-      return availability !== null ? availability?.monday : [];
+      return availability !== null ? availability.monday : [];
     case 2:
       return availability !== null ? availability.tuesday : [];
     case 3:
@@ -311,27 +311,31 @@ const getPromotionDayData = (
   }
 };
 
-const getDayData = (availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS | IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_HOURS) => {
-    const day: number = getDay(new Date());
+const getDayData = (
+  availability:
+    | IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS
+    | IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_HOURS
+) => {
+  const day: number = getDay(new Date());
 
-    switch (day) {
-        case 1:
-            return availability.monday;
-        case 2:
-            return availability.tuesday;
-        case 3:
-            return availability.wednesday;
-        case 4:
-            return availability.thursday;
-        case 5:
-            return availability.friday;
-        case 6:
-            return availability.saturday;
-        case 0: //0 is sunday in date-fns
-            return availability.sunday;
-        default:
-            return [];
-    }
+  switch (day) {
+    case 1:
+      return availability !== null ? availability.monday : [];
+    case 2:
+      return availability !== null ? availability.tuesday : [];
+    case 3:
+      return availability !== null ? availability.wednesday : [];
+    case 4:
+      return availability !== null ? availability.thursday : [];
+    case 5:
+      return availability !== null ? availability.friday : [];
+    case 6:
+      return availability !== null ? availability.saturday : [];
+    case 0: //0 is sunday in date-fns
+      return availability !== null ? availability.sunday : [];
+    default:
+      return [];
+  }
 };
 
 export const toLocalISOString = (date: Date) => {
