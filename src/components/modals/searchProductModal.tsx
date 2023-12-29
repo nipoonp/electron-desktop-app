@@ -52,8 +52,8 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
         restaurant.categories.items.forEach((category) => {
             category.products &&
                 category.products.items.forEach((p) => {
-                    if (!category.availablePlatforms.includes(register.type)) return;
-                    if (!p.product.availablePlatforms.includes(register.type)) return;
+                    if (category.availablePlatforms && !category.availablePlatforms.includes(register.type)) return;
+                    if (p.product.availablePlatforms && !p.product.availablePlatforms.includes(register.type)) return;
 
                     if (p.product.name.toLowerCase().includes(value.toLowerCase())) {
                         newFilteredProducts.push({
@@ -101,6 +101,8 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
             props.onClickSearchProduct(category, product);
         };
 
+        console.log("xxx...", product.image);
+
         return (
             <>
                 <div key={product.id} className={`product ${isValid ? "" : "sold-out"}`} onClick={() => isValid && onClickProduct(category, product)}>
@@ -110,15 +112,15 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
                         <></>
                     )}
 
-                    <div style={{ margin: "0 auto" }}>
-                        {product.image && (
-                            <CachedImage
-                                className="image mb-2"
-                                url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
-                                alt="product-image"
-                            />
-                        )}
-                    </div>
+                    {product.imageUrl ? (
+                        <CachedImage url={`${product.imageUrl}`} className="image mb-2" alt="product-image" />
+                    ) : product.image ? (
+                        <CachedImage
+                            url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                            className="image mb-2"
+                            alt="product-image"
+                        />
+                    ) : null}
 
                     <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
 
