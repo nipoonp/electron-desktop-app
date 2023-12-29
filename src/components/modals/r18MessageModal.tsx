@@ -1,6 +1,6 @@
 import { Button } from "../../tabin/components/button";
 import { ModalV2 } from "../../tabin/components/modalv2";
-
+import "./itemAddedUpdatedModal.scss";
 interface IPromotionCodeModalProps {
   isOpen: string;
   message: string;
@@ -24,13 +24,16 @@ export const R18MessageModal = (props: IPromotionCodeModalProps) => {
       >
         <div className="promo-code-modal">
           <div className="h3 mb-3">
-            Before you can shop from our range of Wine or Beer, We need you to
-            confirm you are over 18, Cheers!
+            Before you can shop from our range of {props.message}, We need you
+            to confirm you are over 18, Cheers!
           </div>
-          <Button onClick={onContinue} className="mb-1">
-            Yes, I am over 18
-          </Button>
-          <Button onClick={props.onClose}>No, I am not over 18</Button>
+          <div className="h4 mb-3">Redirecting in 1 Seconds .....</div>
+          <div className="d-flex gap-1 j-content-end">
+            <Button onClick={onContinue}>Yes, I am over 18</Button>
+            <Button onClick={props.onClose} className="cancel-button">
+              No, I am not over 18
+            </Button>
+          </div>
         </div>
       </ModalV2>
     </>

@@ -204,8 +204,10 @@ export const Checkout = () => {
     if (autoClickCompleteOrderOnLoad) onClickOrderButton();
 
     const ageRestrictedProducts =
-      products && products.filter((product) => product.isAgeRescricted);
-
+      products &&
+      products
+        .filter((product) => product.isAgeRescricted)
+        .map((product) => product.name);
     if (ageRestrictedProducts && ageRestrictedProducts.length > 0) {
       setShowModal(ageRestrictedProducts.toString());
     } else {

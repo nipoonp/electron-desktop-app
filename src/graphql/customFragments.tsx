@@ -2,193 +2,218 @@ import { gql } from "@apollo/client";
 import { EOrderStatus, EOrderType, IS3Object } from "./customQueries";
 
 export const ORDER_FIELDS_FRAGMENT = gql`
-    fragment OrderFieldsFragment on Order {
+  fragment OrderFieldsFragment on Order {
+    id
+    placedAt
+    completedAt
+    cancelledAt
+    refundedAt
+    notes
+    eftposReceipt
+    total
+    discount
+    promotionId
+    subTotal
+    paid
+    paymentAmounts {
+      cash
+      eftpos
+      online
+      uberEats
+      menulog
+      __typename
+    }
+    onlineOrder
+    guestCheckout
+    orderScheduledAt
+    customerInformation {
+      firstName
+      email
+      phoneNumber
+      signature {
+        bucket
+        region
+        key
+        identityPoolId
+        __typename
+      }
+      __typename
+    }
+    status
+    type
+    number
+    table
+    buzzer
+    registerId
+    products {
+      id
+      name
+      kitchenName
+      price
+      totalPrice
+      discount
+      quantity
+      notes
+      image {
+        bucket
+        region
+        key
+        identityPoolId
+        __typename
+      }
+      category {
         id
-        placedAt
-        completedAt
-        cancelledAt
-        refundedAt
-        notes
-        eftposReceipt
-        total
-        discount
-        promotionId
-        subTotal
-        paid
-        paymentAmounts {
-            cash
-            eftpos
-            online
-            uberEats
-            menulog
+        name
+        kitchenName
+        image {
+          bucket
+          region
+          key
+          identityPoolId
+          __typename
         }
-        onlineOrder
-        guestCheckout
-        orderScheduledAt
-        customerInformation {
-            firstName
-            email
-            phoneNumber
-            signature {
-                bucket
-                region
-                key
-                identityPoolId
-            }
-        }
-        status
-        type
-        number
-        table
-        buzzer
-        registerId
-        products {
+        __typename
+      }
+      modifierGroups {
+        id
+        name
+        kitchenName
+        choiceDuplicate
+        choiceMin
+        choiceMax
+        hideForCustomer
+        modifiers {
+          id
+          name
+          kitchenName
+          price
+          preSelectedQuantity
+          quantity
+          productModifiers {
             id
             name
             kitchenName
             price
-            totalPrice
-            discount
             quantity
             notes
             image {
+              bucket
+              region
+              key
+              identityPoolId
+              __typename
+            }
+            category {
+              id
+              name
+              kitchenName
+              image {
                 bucket
                 region
                 key
                 identityPoolId
+                __typename
+              }
+              __typename
             }
-            category {
+            modifierGroups {
+              id
+              name
+              kitchenName
+              choiceDuplicate
+              choiceMin
+              choiceMax
+              hideForCustomer
+              modifiers {
                 id
                 name
                 kitchenName
+                price
+                preSelectedQuantity
+                quantity
                 image {
+                  bucket
+                  region
+                  key
+                  identityPoolId
+                  __typename
+                }
+                productModifiers {
+                  id
+                  name
+                  kitchenName
+                  price
+                  quantity
+                  notes
+                  image {
                     bucket
                     region
                     key
                     identityPoolId
-                }
-            }
-            modifierGroups {
-                id
-                name
-                kitchenName
-                choiceDuplicate
-                choiceMin
-                choiceMax
-                hideForCustomer
-                modifiers {
+                    __typename
+                  }
+                  category {
                     id
                     name
                     kitchenName
-                    price
-                    preSelectedQuantity
-                    quantity
-                    productModifiers {
-                        id
-                        name
-                        kitchenName
-                        price
-                        quantity
-                        notes
-                        image {
-                            bucket
-                            region
-                            key
-                            identityPoolId
-                        }
-                        category {
-                            id
-                            name
-                            kitchenName
-                            image {
-                                bucket
-                                region
-                                key
-                                identityPoolId
-                            }
-                        }
-                        modifierGroups {
-                            id
-                            name
-                            kitchenName
-                            choiceDuplicate
-                            choiceMin
-                            choiceMax
-                            hideForCustomer
-                            modifiers {
-                                id
-                                name
-                                kitchenName
-                                price
-                                preSelectedQuantity
-                                quantity
-                                image {
-                                    bucket
-                                    region
-                                    key
-                                    identityPoolId
-                                }
-                                productModifiers {
-                                    id
-                                    name
-                                    kitchenName
-                                    price
-                                    quantity
-                                    notes
-                                    image {
-                                        bucket
-                                        region
-                                        key
-                                        identityPoolId
-                                    }
-                                    category {
-                                        id
-                                        name
-                                        kitchenName
-                                        image {
-                                            bucket
-                                            region
-                                            key
-                                            identityPoolId
-                                        }
-                                    }
-                                    modifierGroups {
-                                        id
-                                        name
-                                        kitchenName
-                                        choiceDuplicate
-                                        choiceMin
-                                        choiceMax
-                                        hideForCustomer
-                                        modifiers {
-                                            id
-                                            name
-                                            kitchenName
-                                            price
-                                            preSelectedQuantity
-                                            quantity
-                                            image {
-                                                bucket
-                                                region
-                                                key
-                                                identityPoolId
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
                     image {
+                      bucket
+                      region
+                      key
+                      identityPoolId
+                      __typename
+                    }
+                    __typename
+                  }
+                  modifierGroups {
+                    id
+                    name
+                    kitchenName
+                    choiceDuplicate
+                    choiceMin
+                    choiceMax
+                    hideForCustomer
+                    modifiers {
+                      id
+                      name
+                      kitchenName
+                      price
+                      preSelectedQuantity
+                      quantity
+                      image {
                         bucket
                         region
                         key
                         identityPoolId
+                        __typename
+                      }
+                      __typename
                     }
+                    __typename
+                  }
+                  __typename
                 }
+                __typename
+              }
+              __typename
             }
+            __typename
+          }
+          image {
+            bucket
+            region
+            key
+            identityPoolId
+            __typename
+          }
+          __typename
         }
+        __typename
+      }
+      __typename
     }
+    __typename
+  }
 `;
 
 export interface IGET_RESTAURANT_ORDER_FRAGMENT {
