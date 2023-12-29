@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Button } from "../../tabin/components/button";
 import { ModalV2 } from "../../tabin/components/modalv2";
 import "./itemAddedUpdatedModal.scss";
@@ -6,6 +7,8 @@ interface IPromotionCodeModalProps {
   message: string;
   onClose: () => void;
   onContinue: () => void;
+  paymentOutcomeApprovedRedirectTimeLeft: number;
+  incrementRedirectTimer: (time: number) => void;
 }
 
 export const R18MessageModal = (props: IPromotionCodeModalProps) => {
@@ -13,6 +16,10 @@ export const R18MessageModal = (props: IPromotionCodeModalProps) => {
     props.onContinue();
     props.onClose();
   };
+
+  useEffect(() => {
+    props.incrementRedirectTimer(30);
+  }, []);
 
   return (
     <>
@@ -27,7 +34,13 @@ export const R18MessageModal = (props: IPromotionCodeModalProps) => {
             Before you can shop from our range of {props.message}, We need you
             to confirm you are over 18, Cheers!
           </div>
-          <div className="h4 mb-3">Redirecting in 1 Seconds .....</div>
+          <div className="h4 mb-3">
+            Redirecting in {props.paymentOutcomeApprovedRedirectTimeLeft}{" "}
+            {props.paymentOutcomeApprovedRedirectTimeLeft > 1
+              ? " seconds"
+              : " second"}{" "}
+            ...
+          </div>
           <div className="d-flex gap-1 j-content-end">
             <Button onClick={onContinue}>Yes, I am over 18</Button>
             <Button onClick={props.onClose} className="cancel-button">

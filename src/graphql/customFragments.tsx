@@ -21,7 +21,6 @@ export const ORDER_FIELDS_FRAGMENT = gql`
       online
       uberEats
       menulog
-      __typename
     }
     onlineOrder
     guestCheckout
@@ -35,9 +34,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         region
         key
         identityPoolId
-        __typename
       }
-      __typename
     }
     status
     type
@@ -59,7 +56,6 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         region
         key
         identityPoolId
-        __typename
       }
       category {
         id
@@ -70,9 +66,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
           region
           key
           identityPoolId
-          __typename
         }
-        __typename
       }
       modifierGroups {
         id
@@ -101,7 +95,6 @@ export const ORDER_FIELDS_FRAGMENT = gql`
               region
               key
               identityPoolId
-              __typename
             }
             category {
               id
@@ -112,9 +105,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                 region
                 key
                 identityPoolId
-                __typename
               }
-              __typename
             }
             modifierGroups {
               id
@@ -136,7 +127,6 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                   region
                   key
                   identityPoolId
-                  __typename
                 }
                 productModifiers {
                   id
@@ -150,7 +140,6 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                     region
                     key
                     identityPoolId
-                    __typename
                   }
                   category {
                     id
@@ -161,9 +150,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                       region
                       key
                       identityPoolId
-                      __typename
                     }
-                    __typename
                   }
                   modifierGroups {
                     id
@@ -185,34 +172,22 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                         region
                         key
                         identityPoolId
-                        __typename
                       }
-                      __typename
                     }
-                    __typename
                   }
-                  __typename
                 }
-                __typename
               }
-              __typename
             }
-            __typename
           }
           image {
             bucket
             region
             key
             identityPoolId
-            __typename
           }
-          __typename
         }
-        __typename
       }
-      __typename
     }
-    __typename
   }
 `;
 

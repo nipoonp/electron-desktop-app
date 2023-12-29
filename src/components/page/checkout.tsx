@@ -1492,6 +1492,10 @@ export const Checkout = () => {
             message={showModal}
             onClose={onCloseR18MessageModal}
             onContinue={() => setIsShownOrderThresholdMessageModal(true)}
+            paymentOutcomeApprovedRedirectTimeLeft={
+              paymentOutcomeApprovedRedirectTimeLeft
+            }
+            incrementRedirectTimer={incrementRedirectTimer}
           />
         )}
       </>
