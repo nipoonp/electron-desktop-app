@@ -1096,7 +1096,7 @@ export const Checkout = () => {
             const upSellCrossSellCategories = restaurant.upSellCrossSell.customCategories.items;
 
             menuCategories.forEach((category) => {
-                if (!category.availablePlatforms.includes(register.type)) return;
+                if (category.availablePlatforms && !category.availablePlatforms.includes(register.type)) return;
 
                 upSellCrossSellCategories.forEach((upSellCategory) => {
                     if (category.id === upSellCategory.id) {
@@ -1129,11 +1129,11 @@ export const Checkout = () => {
             const upSellCrossSellProducts = restaurant.upSellCrossSell.customProducts.items;
 
             menuCategories.forEach((category) => {
-                if (!category.availablePlatforms.includes(register.type)) return;
+                if (category.availablePlatforms && !category.availablePlatforms.includes(register.type)) return;
 
                 category.products &&
                     category.products.items.forEach((p) => {
-                        if (!p.product.availablePlatforms.includes(register.type)) return;
+                        if (p.product.availablePlatforms && !p.product.availablePlatforms.includes(register.type)) return;
 
                         upSellCrossSellProducts.forEach((upSellProduct) => {
                             if (p.product.id === upSellProduct.id) {
