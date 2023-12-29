@@ -1555,7 +1555,6 @@ export const Checkout = () => {
       {promotionCodeModal()}
       {thresholdMessageModal()}
       {paymentModal()}
-      {r18MessageModal()}
     </>
   );
 
@@ -1800,6 +1799,7 @@ export const Checkout = () => {
             <div className="footer p-4">{checkoutFooter}</div>
           )}
         </div>
+        {r18MessageModal()}
         {modalsAndSpinners}
       </PageWrapper>
     </>
