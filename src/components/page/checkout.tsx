@@ -102,6 +102,7 @@ export const Checkout = () => {
     surcharge,
     subTotal,
     paidSoFar,
+    extraCharge,
     transactionEftposReceipts,
     setTransactionEftposReceipts,
     paymentAmounts,
@@ -921,6 +922,14 @@ export const Checkout = () => {
 
         if (product.category.image == null) {
           delete product.category.image;
+        }
+
+        if (product.availablePlatforms == null) {
+          delete product.availablePlatforms;
+        }
+
+        if (product.isAgeRescricted == null) {
+          delete product.isAgeRescricted;
         }
       });
 
@@ -1747,6 +1756,14 @@ export const Checkout = () => {
       ) : (
         <></>
       )}
+      {extraCharge > 0 ? (
+        <div className="h3 text-center mb-2">
+          Extra Charge: ${convertCentsToDollars(extraCharge)}
+        </div>
+      ) : (
+        <></>
+      )}
+
       <div className={`h1 text-center ${isPOS ? "mb-2" : "mb-4"}`}>
         Total: ${convertCentsToDollars(subTotal)}
       </div>
