@@ -1261,6 +1261,7 @@ export const ModifierGroup = (props: {
 
   const isMaxReached = (
     max: number,
+    min: number,
     selectedModifiers?: ICartModifier[]
   ): boolean => {
     if (selectedModifiers === undefined) {
@@ -1272,7 +1273,9 @@ export const ModifierGroup = (props: {
     selectedModifiers.forEach(
       (selectedModifier) => (count += selectedModifier.quantity)
     );
-
+    if (min === 0 && max === 0) {
+      return false;
+    }
     return count >= max;
   };
 
@@ -1286,7 +1289,11 @@ export const ModifierGroup = (props: {
     );
     const isMaxChoiceReached =
       !isSingleChoice &&
-      isMaxReached(modifierGroup.choiceMax, selectedModifiers);
+      isMaxReached(
+        modifierGroup.choiceMax,
+        modifierGroup.choiceMin,
+        selectedModifiers
+      );
 
     if (isUnlimitedChoice) return false;
 
@@ -1454,6 +1461,7 @@ export const ModifierGroup = (props: {
                     checked={checkModifierSelected(m.modifier)}
                     maxReached={isMaxReached(
                       modifierGroup.choiceMax,
+                      modifierGroup.choiceMin,
                       selectedModifiers
                     )}
                     modifiersSelectedCount={getModifiersSelectedCount(
