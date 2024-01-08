@@ -21,7 +21,7 @@ const OrderType = () => {
   if (!register) throw "Register is not valid";
   if (restaurant == null) throw "Restaurant is invalid!";
 
-  console.log("register chargesOrderTypes", register.chargesOrderTypes);
+  console.log("register orderTypeSurcharge", register.orderTypeSurcharge);
   const onSelectOrderType = (orderType: EOrderType) => {
     setOrderType(orderType);
 
@@ -56,10 +56,10 @@ const OrderType = () => {
               <div className="dine-in-image-override"></div>
               <div className="dine-in-text h2">Dine In</div>
               <div className="dine-in-text h5">
-                {register?.chargesOrderTypes != null &&
-                register?.chargesOrderTypes.dinein
+                {register?.orderTypeSurcharge != null &&
+                register?.orderTypeSurcharge.dinein
                   ? `Extra charge $${convertCentsToDollars(
-                      register?.chargesOrderTypes.dinein
+                      register?.orderTypeSurcharge.dinein
                     )}`
                   : ""}
               </div>
@@ -76,10 +76,10 @@ const OrderType = () => {
               <div className="take-away-image-override"></div>
               <div className="take-away-text h2">Takeaway</div>
               <div className="dine-in-text h5">
-                {register?.chargesOrderTypes != null &&
-                register?.chargesOrderTypes.takeaway
+                {register?.orderTypeSurcharge != null &&
+                register?.orderTypeSurcharge.takeaway
                   ? `Extra charge $${convertCentsToDollars(
-                      register?.chargesOrderTypes.takeaway
+                      register?.orderTypeSurcharge.takeaway
                     )}`
                   : ""}
               </div>

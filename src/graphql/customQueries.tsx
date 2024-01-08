@@ -368,7 +368,7 @@ export const GET_RESTAURANT = gql`
           enableUberEatsPayments
           enableMenulogPayments
           availableOrderTypes
-          chargesOrderTypes {
+          orderTypeSurcharge {
             dinein
             takeaway
           }
@@ -1029,7 +1029,7 @@ export interface IGET_RESTAURANT_REGISTER {
   enableUberEatsPayments: boolean;
   enableMenulogPayments: boolean;
   availableOrderTypes: EOrderType[];
-  chargesOrderTypes: ChargesOrderTypesType;
+  orderTypeSurcharge: OrderTypeSurchargeType;
   type: ERegisterType;
   requestCustomerInformation?: RequestCustomerInformationType;
   eftposProvider: string;
@@ -1057,7 +1057,7 @@ export interface RequestCustomerInformationType {
   signature: boolean;
 }
 
-export interface ChargesOrderTypesType {
+export interface OrderTypeSurchargeType {
   dinein: GLfloat;
   takeaway: GLfloat;
 }

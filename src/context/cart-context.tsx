@@ -491,8 +491,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
     const setOrderType = (orderType: EOrderType) => {
       const extra_charge =
-        register?.chargesOrderTypes != null
-          ? register?.chargesOrderTypes[orderType.toLocaleLowerCase()]
+        register?.orderTypeSurcharge != null
+          ? register?.orderTypeSurcharge[orderType.toLocaleLowerCase()]
           : 0;
       _setOrderType(orderType);
       _setExtraCharge(extra_charge);
