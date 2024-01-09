@@ -454,74 +454,45 @@ const Restaurant = () => {
       products && products.find((item) => item.id === product.id);
 
     return (
-      <>
-        <div
-          key={product.id}
-          className={`product ${isValid ? "" : "sold-out"} ${
-            addToCart ? "add-to-Cart" : ""
-          }`}
-          onClick={() => isValid && onClickProduct(category, product)}
-        >
-          <div className="product-quantity">
-            {addToCart && addToCart.quantity}
-          </div>
-          {product.totalQuantityAvailable &&
-          product.totalQuantityAvailable <= 5 ? (
-            <span className="quantity-remaining ml-2">
-              {getQuantityRemainingText(product.totalQuantityAvailable)}
-            </span>
-          ) : (
-            <></>
-          )}
+        <>
+            <div
+                key={product.id}
+                className={`product ${isValid ? "" : "sold-out"} ${addToCart ? "add-to-cart" : ""}`}
+                onClick={() => isValid && onClickProduct(category, product)}
+            >
+                <div className="product-quantity">{addToCart && addToCart.quantity}</div>
+                {product.totalQuantityAvailable && product.totalQuantityAvailable <= 5 ? (
+                    <span className="quantity-remaining ml-2">{getQuantityRemainingText(product.totalQuantityAvailable)}</span>
+                ) : (
+                    <></>
+                )}
 
-          {product.imageUrl ? (
-            <CachedImage
-              url={`${product.imageUrl}`}
-              className="image mb-2"
-              alt="product-image"
-            />
-          ) : product.image ? (
-            <CachedImage
-              url={`${getCloudFrontDomainName()}/protected/${
-                product.image.identityPoolId
-              }/${product.image.key}`}
-              className="image mb-2"
-              alt="product-image"
-            />
-          ) : null}
+                {product.imageUrl ? (
+                    <CachedImage url={`${product.imageUrl}`} className="image mb-2" alt="product-image" />
+                ) : product.image ? (
+                    <CachedImage
+                        url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                        className="image mb-2"
+                        alt="product-image"
+                    />
+                ) : null}
 
-          <div className="name text-bold">
-            {isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}
-          </div>
+                <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
 
-          {product.description && (
-            <div className="description mt-2">{product.description}</div>
-          )}
+                {product.description && <div className="description mt-2">{product.description}</div>}
 
-          {product.tags && (
-            <div className="tags mt-2">
-              {product.tags.split(";").map((tag) => (
-                <div className="tag">{tag}</div>
-              ))}
+                {product.tags && (
+                    <div className="tags mt-2">
+                        {product.tags.split(";").map((tag) => (
+                            <div className="tag">{tag}</div>
+                        ))}
+                    </div>
+                )}
+
+                <div className={`display-price mt-4 ${product.displayPrice ? "" : "display-none"}`}>{product.displayPrice}</div>
+                <div className={`price mt-4 ${product.displayPrice ? "display-none" : ""}`}>${convertCentsToDollars(product.price)}</div>
             </div>
-          )}
-
-          <div
-            className={`display-price mt-4 ${
-              product.displayPrice ? "" : "display-none"
-            }`}
-          >
-            {product.displayPrice}
-          </div>
-          <div
-            className={`price mt-4 ${
-              product.displayPrice ? "display-none" : ""
-            }`}
-          >
-            ${convertCentsToDollars(product.price)}
-          </div>
-        </div>
-      </>
+        </>
     );
   };
 

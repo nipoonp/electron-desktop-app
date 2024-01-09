@@ -175,18 +175,22 @@
                     }
                 }
 
-                .add-to-Cart{
+                .add-to-cart{
                     border: 1px solid black;
                     position: relative;
 
                     .product-quantity{
                         position: absolute;
-                        top: -10px;
-                        right: -10px;
-                        background-color: #979797;
+                        top: -15px;
+                        right: -15px;
+                        background-color: var(--primary-color);
                         color: white;
-                        padding: 5px 10px;
                         border-radius: 50%;
+                        height: 35px;
+                        width: 35px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
                     }
                 }
             }
