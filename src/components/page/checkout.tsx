@@ -270,6 +270,8 @@ export const Checkout = () => {
 
   const onCloseR18MessageModal = () => {
     setShowModal("");
+    navigate(restaurantPath + "/" + restaurant!.id);
+    clearCart();
   };
 
   const onCloseEditProductModal = () => {
