@@ -1540,14 +1540,14 @@ const Modifier = (props: {
 
   const stepperHeight = 28;
   const showRadio = choiceMin !== 0 && choiceMax === 1;
-  const showStepper =
-    choiceDuplicate > 1 && (displayModifierStepper || modifierQuantity > 0);
+  const showStepper = showRadio
+    ? false
+    : choiceDuplicate > 1 && (displayModifierStepper || modifierQuantity > 0);
   const showCollapsedStepper = showRadio
     ? false
     : choiceDuplicate > 1 && !displayModifierStepper && modifierQuantity == 0;
   const showCheckbox = !showRadio && !showStepper && !showCollapsedStepper;
-  // console.log("@@@ showRadio", showRadio);
-  // console.log("@@@ showCollapsedStepper", showCollapsedStepper);
+
   const getModifierOrProductModifierQuantityAvailable = () => {
     if (modifier.productModifier) {
       if (!modifier.productModifier.totalQuantityAvailable) return null;
