@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   ICartModifier,
   IPreSelectedModifiers,
@@ -65,8 +65,6 @@ export const ProductModal = (props: {
     productCartIndex: number;
   };
 }) => {
-  const targetDivRef = useRef<HTMLDivElement>(null);
-
   const { register } = useRegister();
   const {
     category,
@@ -781,6 +779,7 @@ export const ProductModal = (props: {
     if (Object.keys(error).length > 0) {
       toast.error(error[Object.keys(error)[0]]);
       setError(error);
+      scrollToDiv();
       return;
     }
 
@@ -856,6 +855,16 @@ export const ProductModal = (props: {
     setNotes(e.target.value);
   };
 
+  const scrollToDiv = () => {
+    const targetElement = document.getElementById("scroll-here");
+    if (targetElement) {
+      // Scroll to the element if it exists
+      targetElement.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
   const modifierGroups = (
     <>
       {product.modifierGroups &&
@@ -934,7 +943,7 @@ export const ProductModal = (props: {
                 productQuantity={quantity}
                 error={error[mg.modifierGroup.id]}
                 disabled={false}
-                targetDivRef={targetDivRef}
+                scrollToDiv={scrollToDiv}
               />
               <div className="separator-6"></div>
             </>
@@ -1138,7 +1147,7 @@ export const ModifierGroup = (props: {
   productQuantity: number;
   error?: string;
   disabled: boolean;
-  targetDivRef;
+  scrollToDiv;
 }) => {
   const {
     modifierGroup,
@@ -1151,7 +1160,7 @@ export const ModifierGroup = (props: {
     productQuantity,
     error,
     disabled,
-    targetDivRef,
+    scrollToDiv,
   } = props;
 
   const { register } = useRegister();
@@ -1192,15 +1201,6 @@ export const ModifierGroup = (props: {
   useEffect(() => {
     scrollToDiv();
   }, [error]);
-
-  const scrollToDiv = () => {
-    if (targetDivRef.current) {
-      targetDivRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }
-  };
 
   const modifierQuantity = (modifier: IGET_RESTAURANT_MODIFIER) => {
     let m = selectedModifiers.find(
@@ -1320,11 +1320,10 @@ export const ModifierGroup = (props: {
   };
   return (
     <>
-      {/* <div ref={}>This is the target div!</div> */}
       <div
         className="modifier-group-header-wrapper"
         onClick={onToggleCollapsed}
-        {...(error ? { ref: targetDivRef } : {})}
+        id={error ? "scroll-here" : ""}
       >
         <div className="modifier-group-header">
           <div className="h2 mb-2">{modifierGroup.name}</div>
@@ -1540,14 +1539,15 @@ const Modifier = (props: {
   const [displayModifierStepper, setDisplayModifierStepper] = useState(false);
 
   const stepperHeight = 28;
-
   const showRadio = choiceMin !== 0 && choiceMax === 1;
   const showStepper =
     choiceDuplicate > 1 && (displayModifierStepper || modifierQuantity > 0);
-  const showCollapsedStepper =
-    choiceDuplicate > 1 && !displayModifierStepper && modifierQuantity == 0;
+  const showCollapsedStepper = showRadio
+    ? false
+    : choiceDuplicate > 1 && !displayModifierStepper && modifierQuantity == 0;
   const showCheckbox = !showRadio && !showStepper && !showCollapsedStepper;
-
+  // console.log("@@@ showRadio", showRadio);
+  // console.log("@@@ showCollapsedStepper", showCollapsedStepper);
   const getModifierOrProductModifierQuantityAvailable = () => {
     if (modifier.productModifier) {
       if (!modifier.productModifier.totalQuantityAvailable) return null;
