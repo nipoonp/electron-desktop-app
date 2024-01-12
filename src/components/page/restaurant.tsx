@@ -2,20 +2,38 @@ import { useEffect, useRef, useState } from "react";
 
 import { useNavigate } from "react-router";
 import { useParams } from "react-router-dom";
+import { S3Image } from "aws-amplify-react";
 import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { checkoutPath, beginOrderPath, orderTypePath, tableNumberPath } from "../main";
-import { convertCentsToDollars, getQuantityRemainingText, isProductQuantityAvailable } from "../../util/util";
+import {
+  checkoutPath,
+  beginOrderPath,
+  orderTypePath,
+  tableNumberPath,
+} from "../main";
+import {
+  convertCentsToDollars,
+  getQuantityRemainingText,
+  isProductQuantityAvailable,
+} from "../../util/util";
 import { ProductModal } from "../modals/product";
 import { SearchProductModal } from "../modals/searchProductModal";
-import { IGET_RESTAURANT_PRODUCT, IGET_RESTAURANT_CATEGORY, IS3Object, EOrderType } from "../../graphql/customQueries";
+import {
+  IGET_RESTAURANT_PRODUCT,
+  IGET_RESTAURANT_CATEGORY,
+  IS3Object,
+  EOrderType,
+} from "../../graphql/customQueries";
 import { useCart } from "../../context/cart-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { Button } from "../../tabin/components/button";
 import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
 import { ICartProduct } from "../../model/model";
 import { isItemAvailable, isItemSoldOut } from "../../util/util";
-import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
+import {
+  getCloudFrontDomainName,
+  getPublicCloudFrontDomainName,
+} from "../../private/aws-custom";
 //@ts-ignore as it does not have the types
 import { Shake } from "reshake";
 import { useRestaurant } from "../../context/restaurant-context";
@@ -30,12 +48,12 @@ import { toast } from "../../tabin/components/toast";
 import "./restaurant.scss";
 
 interface IMostPopularProduct {
-    category: IGET_RESTAURANT_CATEGORY;
-    product: IGET_RESTAURANT_PRODUCT;
+  category: IGET_RESTAURANT_CATEGORY;
+  product: IGET_RESTAURANT_PRODUCT;
 }
 
 export interface IMostPopularProductObj {
-    [id: string]: boolean;
+  [id: string]: boolean;
 }
 
 const Restaurant = () => {
@@ -454,45 +472,72 @@ const Restaurant = () => {
       products && products.find((item) => item.id === product.id);
 
     return (
-        <>
-            <div
-                key={product.id}
-                className={`product ${isValid ? "" : "sold-out"} ${addToCart ? "add-to-cart" : ""}`}
-                onClick={() => isValid && onClickProduct(category, product)}
-            >
-                <div className="product-quantity">{addToCart && addToCart.quantity}</div>
-                {product.totalQuantityAvailable && product.totalQuantityAvailable <= 5 ? (
-                    <span className="quantity-remaining ml-2">{getQuantityRemainingText(product.totalQuantityAvailable)}</span>
-                ) : (
-                    <></>
-                )}
+      <>
+        <div
+          key={product.id}
+          className={`product ${isValid ? "" : "sold-out"} ${
+            addToCart ? "add-to-cart" : ""
+          }`}
+          onClick={() => isValid && onClickProduct(category, product)}
+        >
+          <div className="product-quantity">
+            {addToCart && addToCart.quantity}
+          </div>
+          {product.totalQuantityAvailable &&
+          product.totalQuantityAvailable <= 5 ? (
+            <span className="quantity-remaining ml-2">
+              {getQuantityRemainingText(product.totalQuantityAvailable)}
+            </span>
+          ) : (
+            <></>
+          )}
 
-                {product.imageUrl ? (
-                    <CachedImage url={`${product.imageUrl}`} className="image mb-2" alt="product-image" />
-                ) : product.image ? (
-                    <CachedImage
-                        url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
-                        className="image mb-2"
-                        alt="product-image"
-                    />
-                ) : null}
+          {product.imageUrl ? (
+            <CachedImage
+              url={`${product.imageUrl}`}
+              className="image mb-2"
+              alt="product-image"
+            />
+          ) : product.image ? (
+            <S3Image
+              imgKey={product.image.key}
+              level="public"
+              className="image mb-2"
+            />
+          ) : null}
 
-                <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
+          <div className="name text-bold">
+            {isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}
+          </div>
 
-                {product.description && <div className="description mt-2">{product.description}</div>}
+          {product.description && (
+            <div className="description mt-2">{product.description}</div>
+          )}
 
-                {product.tags && (
-                    <div className="tags mt-2">
-                        {product.tags.split(";").map((tag) => (
-                            <div className="tag">{tag}</div>
-                        ))}
-                    </div>
-                )}
-
-                <div className={`display-price mt-4 ${product.displayPrice ? "" : "display-none"}`}>{product.displayPrice}</div>
-                <div className={`price mt-4 ${product.displayPrice ? "display-none" : ""}`}>${convertCentsToDollars(product.price)}</div>
+          {product.tags && (
+            <div className="tags mt-2">
+              {product.tags.split(";").map((tag) => (
+                <div className="tag">{tag}</div>
+              ))}
             </div>
-        </>
+          )}
+
+          <div
+            className={`display-price mt-4 ${
+              product.displayPrice ? "" : "display-none"
+            }`}
+          >
+            {product.displayPrice}
+          </div>
+          <div
+            className={`price mt-4 ${
+              product.displayPrice ? "display-none" : ""
+            }`}
+          >
+            ${convertCentsToDollars(product.price)}
+          </div>
+        </div>
+      </>
     );
   };
 
