@@ -501,7 +501,7 @@ const Restaurant = () => {
           ) : product.image ? (
             <S3Image
               imgKey={product.image.key}
-              level="public"
+              level="protected"
               className="image mb-2"
             />
           ) : null}
