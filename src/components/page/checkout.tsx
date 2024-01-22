@@ -270,7 +270,7 @@ export const Checkout = () => {
 
   const onCloseR18MessageModal = () => {
     setShowModal("");
-    navigate(restaurantPath + "/" + restaurant!.id);
+    navigate(beginOrderPath);
     clearCart();
   };
 
@@ -1502,7 +1502,7 @@ export const Checkout = () => {
             isOpen={showModal}
             message={showModal}
             onClose={onCloseR18MessageModal}
-            onContinue={() => setIsShownOrderThresholdMessageModal(true)}
+            onContinue={() => setShowModal("")}
             paymentOutcomeApprovedRedirectTimeLeft={
               paymentOutcomeApprovedRedirectTimeLeft
             }
