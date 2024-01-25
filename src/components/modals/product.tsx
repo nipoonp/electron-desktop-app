@@ -1162,7 +1162,6 @@ export const ModifierGroup = (props: {
     disabled,
     scrollToDiv,
   } = props;
-
   const { register } = useRegister();
   const { cartProductQuantitiesById, cartModifierQuantitiesById } = useCart();
 
@@ -1374,105 +1373,112 @@ export const ModifierGroup = (props: {
           )}
           <div className="modifiers">
             {modifierGroup.modifiers &&
-              modifierGroup.modifiers.items.map((m) => {
-                if (
-                  register &&
-                  m.modifier.availablePlatforms &&
-                  !m.modifier.availablePlatforms.includes(register.type)
+              modifierGroup.modifiers.items
+                .slice()
+                .sort((a, b) =>
+                  modifierGroup.sorting
+                    ? a.modifier.name.localeCompare(b.modifier.name)
+                    : 0
                 )
-                  return;
-                if (
-                  (selectedSubModifierGroup &&
-                    m.modifier.subModifierGroups &&
-                    !m.modifier.subModifierGroups
-                      .split(";")
-                      .includes(selectedSubModifierGroup)) ||
-                  (selectedSubModifierGroup &&
-                    selectedSubModifierGroup &&
-                    !m.modifier.subModifierGroups)
-                )
-                  return;
+                .map((m) => {
+                  if (
+                    register &&
+                    m.modifier.availablePlatforms &&
+                    !m.modifier.availablePlatforms.includes(register.type)
+                  )
+                    return;
+                  if (
+                    (selectedSubModifierGroup &&
+                      m.modifier.subModifierGroups &&
+                      !m.modifier.subModifierGroups
+                        .split(";")
+                        .includes(selectedSubModifierGroup)) ||
+                    (selectedSubModifierGroup &&
+                      selectedSubModifierGroup &&
+                      !m.modifier.subModifierGroups)
+                  )
+                    return;
 
-                const isValid = checkModifierIsValid(m.modifier);
-                const selectedModifier = selectedModifiers.find(
-                  (modifier) => modifier.id == m.modifier.id
-                );
+                  const isValid = checkModifierIsValid(m.modifier);
+                  const selectedModifier = selectedModifiers.find(
+                    (modifier) => modifier.id == m.modifier.id
+                  );
 
-                return (
-                  <Modifier
-                    modifier={m.modifier}
-                    selectedModifier={selectedModifier}
-                    currentSelectedProductModifier={
-                      currentSelectedProductModifier
-                    }
-                    choiceMin={modifierGroup.choiceMin}
-                    choiceMax={modifierGroup.choiceMax}
-                    choiceDuplicate={modifierGroup.choiceDuplicate}
-                    onEditSelectionsProductModifier={(
-                      index: number,
-                      selectedModifier: ICartModifier,
-                      productModifier: IGET_RESTAURANT_PRODUCT
-                    ) =>
-                      props.onEditSelectionsProductModifier(
-                        index,
-                        selectedModifier,
-                        productModifier
-                      )
-                    }
-                    onCheckingModifier={(
-                      selectedModifier: IGET_RESTAURANT_MODIFIER
-                    ) => {
-                      onCheckingModifier(
-                        selectedModifier,
-                        m.preSelectedQuantity
-                      );
-                    }}
-                    onUnCheckingModifier={(
-                      selectedModifier: IGET_RESTAURANT_MODIFIER
-                    ) => {
-                      onUnCheckingModifier(
-                        selectedModifier,
-                        m.preSelectedQuantity
-                      );
-                    }}
-                    onChangeModifierQuantity={(
-                      selectedModifier: IGET_RESTAURANT_MODIFIER,
-                      isIncremented: boolean,
-                      quantity: number
-                    ) => {
-                      onChangeModifierQuantity(
-                        selectedModifier,
-                        m.preSelectedQuantity,
-                        isIncremented,
-                        quantity
-                      );
-                    }}
-                    onSelectRadioModifier={(
-                      selectedModifier: IGET_RESTAURANT_MODIFIER
-                    ) => {
-                      onSelectRadioModifier(
-                        selectedModifier,
-                        m.preSelectedQuantity
-                      );
-                    }}
-                    modifierQuantity={modifierQuantity(m.modifier)}
-                    productQuantity={productQuantity}
-                    checked={checkModifierSelected(m.modifier)}
-                    maxReached={isMaxReached(
-                      modifierGroup.choiceMax,
-                      modifierGroup.choiceMin,
-                      selectedModifiers
-                    )}
-                    modifiersSelectedCount={getModifiersSelectedCount(
-                      selectedModifiers
-                    )}
-                    isValid={isValid}
-                    disabled={
-                      disabled || !isValid || checkMaxReached(m.modifier)
-                    }
-                  />
-                );
-              })}
+                  return (
+                    <Modifier
+                      modifier={m.modifier}
+                      selectedModifier={selectedModifier}
+                      currentSelectedProductModifier={
+                        currentSelectedProductModifier
+                      }
+                      choiceMin={modifierGroup.choiceMin}
+                      choiceMax={modifierGroup.choiceMax}
+                      choiceDuplicate={modifierGroup.choiceDuplicate}
+                      onEditSelectionsProductModifier={(
+                        index: number,
+                        selectedModifier: ICartModifier,
+                        productModifier: IGET_RESTAURANT_PRODUCT
+                      ) =>
+                        props.onEditSelectionsProductModifier(
+                          index,
+                          selectedModifier,
+                          productModifier
+                        )
+                      }
+                      onCheckingModifier={(
+                        selectedModifier: IGET_RESTAURANT_MODIFIER
+                      ) => {
+                        onCheckingModifier(
+                          selectedModifier,
+                          m.preSelectedQuantity
+                        );
+                      }}
+                      onUnCheckingModifier={(
+                        selectedModifier: IGET_RESTAURANT_MODIFIER
+                      ) => {
+                        onUnCheckingModifier(
+                          selectedModifier,
+                          m.preSelectedQuantity
+                        );
+                      }}
+                      onChangeModifierQuantity={(
+                        selectedModifier: IGET_RESTAURANT_MODIFIER,
+                        isIncremented: boolean,
+                        quantity: number
+                      ) => {
+                        onChangeModifierQuantity(
+                          selectedModifier,
+                          m.preSelectedQuantity,
+                          isIncremented,
+                          quantity
+                        );
+                      }}
+                      onSelectRadioModifier={(
+                        selectedModifier: IGET_RESTAURANT_MODIFIER
+                      ) => {
+                        onSelectRadioModifier(
+                          selectedModifier,
+                          m.preSelectedQuantity
+                        );
+                      }}
+                      modifierQuantity={modifierQuantity(m.modifier)}
+                      productQuantity={productQuantity}
+                      checked={checkModifierSelected(m.modifier)}
+                      maxReached={isMaxReached(
+                        modifierGroup.choiceMax,
+                        modifierGroup.choiceMin,
+                        selectedModifiers
+                      )}
+                      modifiersSelectedCount={getModifiersSelectedCount(
+                        selectedModifiers
+                      )}
+                      isValid={isValid}
+                      disabled={
+                        disabled || !isValid || checkMaxReached(m.modifier)
+                      }
+                    />
+                  );
+                })}
           </div>
         </>
       )}
