@@ -14,6 +14,7 @@ interface IPromotionCodeModalProps {
 export const R18MessageModal = (props: IPromotionCodeModalProps) => {
   const onContinue = () => {
     props.onContinue();
+    props.incrementRedirectTimer(0);
   };
 
   useEffect(() => {

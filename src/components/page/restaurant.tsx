@@ -501,7 +501,7 @@ const Restaurant = () => {
           ) : product.image ? (
             <S3Image
               imgKey={product.image.key}
-              level="public"
+              level="protected"
               className="image mb-2"
             />
           ) : null}
@@ -875,9 +875,9 @@ const Restaurant = () => {
 const RestaurantLogo = (props: { image: IS3Object }) => {
   return (
     <CachedImage
-      url={`${getCloudFrontDomainName()}/public/${props.image.identityPoolId}/${
-        props.image.key
-      }`}
+      url={`${getCloudFrontDomainName()}/protected/${
+        props.image.identityPoolId
+      }/${props.image.key}`}
       className="restaurant-logo"
       alt="restaurant-logo"
     />
