@@ -551,30 +551,24 @@ const Restaurant = () => {
     const isSoldOut = isItemSoldOut(category.soldOut, category.soldOutDate);
     const isAvailable = isItemAvailable(category.availability);
 
-    const isCategoryValid = !isSoldOut && isAvailable;
-
-    if (!isCategoryValid) return <></>;
+    const isValid = !isSoldOut && isAvailable;
 
     return (
-      <div
-        key={category.id}
-        className={`category ${isSelected ? "selected" : ""} ${
-          isAvailable ? "" : "unavailable"
-        }`}
-        onClick={() => {
-          isAvailable && onCategorySelected(category);
-        }}
-      >
-        {!isAvailable ? (
-          <div className={`name unavailable`}>
-            {category.name} (UNAVAILABLE)
-          </div>
-        ) : isSelected ? (
-          <div className="name text-bold">{category.name}</div>
-        ) : (
-          <div className="name">{category.name}</div>
-        )}
-      </div>
+        <div
+            key={category.id}
+            className={`category ${isSelected ? "selected" : ""} ${isValid ? "" : "sold-out"}`}
+            onClick={() => {
+                isValid && onCategorySelected(category);
+            }}
+        >
+            {!isValid ? (
+                <div className={`name`}>{category.name} (UNAVAILABLE)</div>
+            ) : isSelected ? (
+                <div className="name text-bold">{category.name}</div>
+            ) : (
+                <div className="name">{category.name}</div>
+            )}
+        </div>
     );
   };
 
