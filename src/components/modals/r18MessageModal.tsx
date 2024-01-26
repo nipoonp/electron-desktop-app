@@ -14,13 +14,9 @@ interface IPromotionCodeModalProps {
 export const R18MessageModal = (props: IPromotionCodeModalProps) => {
   const onContinue = () => {
     props.onContinue();
-    props.incrementRedirectTimer(0);
   };
 
-  useEffect(() => {
-    props.incrementRedirectTimer(30);
-  }, []);
-
+  
   return (
     <>
       <ModalV2
@@ -34,13 +30,7 @@ export const R18MessageModal = (props: IPromotionCodeModalProps) => {
             Before you can shop from our range of {props.message}, We need you
             to confirm you are over 18, Cheers!
           </div>
-          <div className="h4 mb-3">
-            Redirecting in {props.paymentOutcomeApprovedRedirectTimeLeft}{" "}
-            {props.paymentOutcomeApprovedRedirectTimeLeft > 1
-              ? " seconds"
-              : " second"}{" "}
-            ...
-          </div>
+
           <div className="d-flex gap-1 j-content-end">
             <Button onClick={onContinue}>Yes, I am over 18</Button>
             <Button onClick={props.onClose} className="cancel-button">
