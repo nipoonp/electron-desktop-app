@@ -114,6 +114,7 @@ export const ProductModal = (props: {
                             bucket: modifierLink.modifier.image.bucket,
                             identityPoolId:
                               modifierLink.modifier.image.identityPoolId,
+                            level: modifierLink.modifier.image.level,
                           }
                         : null,
                     },
@@ -231,6 +232,7 @@ export const ProductModal = (props: {
                     region: modifier.image.region,
                     bucket: modifier.image.bucket,
                     identityPoolId: modifier.image.identityPoolId,
+                    level: modifier.image.level,
                   }
                 : null,
             };
@@ -290,6 +292,7 @@ export const ProductModal = (props: {
                     bucket: selectedModifier.productModifier.image.bucket,
                     identityPoolId:
                       selectedModifier.productModifier.image.identityPoolId,
+                    level:selectedModifier.productModifier.image.level
                   }
                 : null,
               quantity: 1,
@@ -319,6 +322,8 @@ export const ProductModal = (props: {
                             identityPoolId:
                               selectedModifier.productModifier.categories
                                 .items[0].category.image.identityPoolId,
+                            level:selectedModifier.productModifier.categories
+                            .items[0].category.image.level
                           }
                         : null,
                     }
@@ -342,6 +347,7 @@ export const ProductModal = (props: {
             region: selectedModifier.image.region,
             bucket: selectedModifier.image.bucket,
             identityPoolId: selectedModifier.image.identityPoolId,
+            level: selectedModifier.image.level,
           }
         : null,
     };
@@ -395,6 +401,7 @@ export const ProductModal = (props: {
             region: selectedModifier.image.region,
             bucket: selectedModifier.image.bucket,
             identityPoolId: selectedModifier.image.identityPoolId,
+            level: selectedModifier.image.level,
           }
         : null,
     };
@@ -462,6 +469,7 @@ export const ProductModal = (props: {
                     bucket: selectedModifier.productModifier.image.bucket,
                     identityPoolId:
                       selectedModifier.productModifier.image.identityPoolId,
+                    level: selectedModifier.productModifier.image.level,
                   }
                 : null,
               quantity: 1,
@@ -491,6 +499,9 @@ export const ProductModal = (props: {
                             identityPoolId:
                               selectedModifier.productModifier.categories
                                 .items[0].category.image.identityPoolId,
+                            level:
+                              selectedModifier.productModifier.categories
+                                .items[0].category.image.level,
                           }
                         : null,
                     }
@@ -514,6 +525,7 @@ export const ProductModal = (props: {
             region: selectedModifier.image.region,
             bucket: selectedModifier.image.bucket,
             identityPoolId: selectedModifier.image.identityPoolId,
+            level: selectedModifier.image.level,
           }
         : null,
     };
@@ -613,6 +625,7 @@ export const ProductModal = (props: {
                     bucket: selectedModifier.productModifier.image.bucket,
                     identityPoolId:
                       selectedModifier.productModifier.image.identityPoolId,
+                    level: selectedModifier.productModifier.image.level,
                   }
                 : null,
               quantity: 1,
@@ -642,6 +655,9 @@ export const ProductModal = (props: {
                             identityPoolId:
                               selectedModifier.productModifier.categories
                                 .items[0].category.image.identityPoolId,
+                            level:
+                              selectedModifier.productModifier.categories
+                                .items[0].category.image.level,
                           }
                         : null,
                     }
@@ -665,6 +681,7 @@ export const ProductModal = (props: {
             region: selectedModifier.image.region,
             bucket: selectedModifier.image.bucket,
             identityPoolId: selectedModifier.image.identityPoolId,
+            level: selectedModifier.image.level,
           }
         : null,
     };
@@ -817,6 +834,7 @@ export const ProductModal = (props: {
             region: product.image.region,
             bucket: product.image.bucket,
             identityPoolId: product.image.identityPoolId,
+            level: product.image.level,
           }
         : null,
       quantity: quantity,
@@ -831,6 +849,7 @@ export const ProductModal = (props: {
               region: category.image.region,
               bucket: category.image.bucket,
               identityPoolId: category.image.identityPoolId,
+              level: category.image.level,
             }
           : null,
       },

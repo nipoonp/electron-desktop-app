@@ -347,6 +347,7 @@ export const Checkout = () => {
               region: product.image.region,
               bucket: product.image.bucket,
               identityPoolId: product.image.identityPoolId,
+              level: product.image.level,
             }
           : null,
         quantity: 1,
@@ -361,6 +362,7 @@ export const Checkout = () => {
                 region: category.image.region,
                 bucket: category.image.bucket,
                 identityPoolId: category.image.identityPoolId,
+                level: category.image.level,
               }
             : null,
         },
@@ -679,6 +681,7 @@ export const Checkout = () => {
           bucket: awsconfig.aws_user_files_s3_bucket,
           region: awsconfig.aws_project_region,
           identityPoolId: user ? user.identityPoolId : "",
+          level: "protected",
         };
       }
 

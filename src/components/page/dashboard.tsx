@@ -132,6 +132,7 @@ export default () => {
                     bucket: product.image.bucket,
                     region: product.image.region,
                     identityPoolId: product.image.identityPoolId,
+                    level: product.image.level,
                   }
                 : null, //To avoid __typename error
               quantity: product.quantity,
@@ -147,6 +148,7 @@ export default () => {
                           bucket: product.category.image.bucket,
                           region: product.category.image.region,
                           identityPoolId: product.category.image.identityPoolId,
+                          level: product.category.image.level,
                         }
                       : null, //To avoid __typename error
                   }
@@ -207,21 +209,25 @@ export default () => {
                             }
 
                             const newCartModifier: ICartModifier = {
-                                id: modifier.id,
-                                name: modifier.name,
-                                kitchenName: modifier.kitchenName,
-                                price: modifier.price,
-                                preSelectedQuantity: modifier.preSelectedQuantity,
-                                quantity: modifier.quantity,
-                                productModifiers: processedProductModifiers ? processedProductModifiers.newCartProducts : null,
-                                image: modifier.image
-                                    ? {
-                                          key: modifier.image.key,
-                                          bucket: modifier.image.bucket,
-                                          region: modifier.image.region,
-                                          identityPoolId: modifier.image.identityPoolId,
-                                      }
-                                    : null, //To avoid __typename error
+                              id: modifier.id,
+                              name: modifier.name,
+                              kitchenName: modifier.kitchenName,
+                              price: modifier.price,
+                              preSelectedQuantity: modifier.preSelectedQuantity,
+                              quantity: modifier.quantity,
+                              productModifiers: processedProductModifiers
+                                ? processedProductModifiers.newCartProducts
+                                : null,
+                              image: modifier.image
+                                ? {
+                                    key: modifier.image.key,
+                                    bucket: modifier.image.bucket,
+                                    region: modifier.image.region,
+                                    identityPoolId:
+                                      modifier.image.identityPoolId,
+                                    level: modifier.image.level,
+                                  }
+                                : null, //To avoid __typename error
                             };
 
                             newCartModifiers.push(newCartModifier);

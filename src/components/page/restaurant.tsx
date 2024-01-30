@@ -347,6 +347,7 @@ const Restaurant = () => {
             region: product.image.region,
             bucket: product.image.bucket,
             identityPoolId: product.image.identityPoolId,
+            level: product.image.level,
           }
         : null,
       quantity: 1,
@@ -361,6 +362,7 @@ const Restaurant = () => {
               region: category.image.region,
               bucket: category.image.bucket,
               identityPoolId: category.image.identityPoolId,
+              level: category.image.level,
             }
           : null,
       },
@@ -450,7 +452,7 @@ const Restaurant = () => {
     </>
   );
 
-  const productDisplay = (
+  const ProductDisplay = (
     category: IGET_RESTAURANT_CATEGORY,
     product: IGET_RESTAURANT_PRODUCT
   ) => {
@@ -499,11 +501,15 @@ const Restaurant = () => {
               alt="product-image"
             />
           ) : product.image ? (
-            <S3Image
-              imgKey={product.image.key}
-              level="protected"
-              className="image mb-2"
-            />
+            <>
+              <S3Image
+                imgKey={product.image.key}
+                level={
+                  product?.image?.level ? product?.image?.level : "protected"
+                }
+                className="image mb-2"
+              />
+            </>
           ) : null}
 
           <div className="name text-bold">
@@ -554,21 +560,23 @@ const Restaurant = () => {
     const isValid = !isSoldOut && isAvailable;
 
     return (
-        <div
-            key={category.id}
-            className={`category ${isSelected ? "selected" : ""} ${isValid ? "" : "sold-out"}`}
-            onClick={() => {
-                isValid && onCategorySelected(category);
-            }}
-        >
-            {!isValid ? (
-                <div className={`name`}>{category.name} (UNAVAILABLE)</div>
-            ) : isSelected ? (
-                <div className="name text-bold">{category.name}</div>
-            ) : (
-                <div className="name">{category.name}</div>
-            )}
-        </div>
+      <div
+        key={category.id}
+        className={`category ${isSelected ? "selected" : ""} ${
+          isValid ? "" : "sold-out"
+        }`}
+        onClick={() => {
+          isValid && onCategorySelected(category);
+        }}
+      >
+        {!isValid ? (
+          <div className={`name`}>{category.name} (UNAVAILABLE)</div>
+        ) : isSelected ? (
+          <div className="name text-bold">{category.name}</div>
+        ) : (
+          <div className="name">{category.name}</div>
+        )}
+      </div>
     );
   };
 
@@ -721,7 +729,7 @@ const Restaurant = () => {
           </div>
           <div className="products">
             {mostPopularProducts.map((mostPopularProduct) =>
-              productDisplay(
+              ProductDisplay(
                 mostPopularProduct.category,
                 mostPopularProduct.product
               )
@@ -806,7 +814,7 @@ const Restaurant = () => {
                     )
                       return;
 
-                    return productDisplay(c, p.product);
+                    return ProductDisplay(c, p.product);
                   })}
               </div>
             </>

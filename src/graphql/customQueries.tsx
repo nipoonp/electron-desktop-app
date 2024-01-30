@@ -595,6 +595,7 @@ export const GET_RESTAURANT = gql`
                   bucket
                   region
                   identityPoolId
+                  level
                 }
                 availablePlatforms
                 isAgeRescricted
@@ -1332,10 +1333,11 @@ export interface IGET_RESTAURANT_MODIFIER {
 }
 
 export interface IS3Object {
-    key: string;
-    bucket: string;
-    region: string;
-    identityPoolId: string;
+  key: string;
+  bucket: string;
+  region: string;
+  identityPoolId: string;
+  level: string;
 }
 
 export const GET_PROMOTION_BY_CODE = gql`
