@@ -197,6 +197,12 @@ export const printCustomerReceipt = async (
         printer.bold(false);
     }
 
+    if (receiptTotalNumber && receiptTotalNumber > 1) {
+        printer.newLine();
+        printer.alignCenter();
+        printer.println(`Receipt ${receiptIndex} of ${receiptTotalNumber}`);
+    }
+
     if (!order.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
         printer.newLine();
         printer.bold(true);
@@ -421,12 +427,6 @@ export const printCustomerReceipt = async (
 
     // if (order.eftposReceipt) printer.println(order.eftposReceipt);
 
-    if (receiptIndex) {
-        printer.newLine();
-        printer.alignCenter();
-        printer.println(`Receipt ${receiptIndex} of ${receiptTotalNumber}`);
-    }
-
     printer.newLine();
     printer.alignCenter();
 
@@ -547,6 +547,12 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
         printer.println(`Order: ${order.number}`);
         printer.setTextNormal();
         printer.bold(false);
+    }
+
+    if (receiptTotalNumber && receiptTotalNumber > 1) {
+        printer.newLine();
+        printer.alignCenter();
+        printer.println(`Receipt ${receiptIndex} of ${receiptTotalNumber}`);
     }
 
     if (!order.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
@@ -705,12 +711,6 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
         printer.bold(false);
         printer.setTextNormal();
         printer.alignLeft();
-    }
-
-    if (receiptIndex) {
-        printer.newLine();
-        printer.alignCenter();
-        printer.println(`Receipt ${receiptIndex} of ${receiptTotalNumber}`);
     }
 
     printer.newLine();
@@ -845,6 +845,12 @@ export const printKitchenReceiptSmall = async (
         printer.bold(false);
     }
 
+    if (receiptTotalNumber && receiptTotalNumber > 1) {
+        printer.newLine();
+        printer.alignCenter();
+        printer.println(`Receipt ${receiptIndex} of ${receiptTotalNumber}`);
+    }
+
     if (!order.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
         printer.newLine();
         printer.bold(true);
@@ -999,12 +1005,6 @@ export const printKitchenReceiptSmall = async (
         printer.alignLeft();
     }
 
-    if (receiptIndex) {
-        printer.newLine();
-        printer.alignCenter();
-        printer.println(`Receipt ${receiptIndex} of ${receiptTotalNumber}`);
-    }
-
     printer.newLine();
     printer.alignCenter();
     printer.setTypeFontB();
@@ -1136,6 +1136,12 @@ export const printKitchenReceiptLarge = async (
         printer.println(`Order: ${order.number}`);
         printer.setTextNormal();
         printer.bold(false);
+    }
+
+    if (receiptTotalNumber && receiptTotalNumber > 1) {
+        printer.newLine();
+        printer.alignCenter();
+        printer.println(`Receipt ${receiptIndex} of ${receiptTotalNumber}`);
     }
 
     if (!order.hidePreparationTime && !order.orderScheduledAt && order.preparationTimeInMinutes) {
@@ -1310,12 +1316,6 @@ export const printKitchenReceiptLarge = async (
         printer.bold(false);
         printer.setTextNormal();
         printer.alignLeft();
-    }
-
-    if (receiptIndex) {
-        printer.newLine();
-        printer.alignCenter();
-        printer.println(`Receipt ${receiptIndex} of ${receiptTotalNumber}`);
     }
 
     printer.newLine();
