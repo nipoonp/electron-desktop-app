@@ -277,13 +277,22 @@ ipcMain.handle("RECEIPT_PRINTER_DATA", async (event: any, order: IOrderReceipt):
     }
 });
 
-const printReceipts = async (order: IOrderReceipt, printFunction: (order: IOrderReceipt) => Promise<IPrintReceiptOutput>) => {
+const printReceipts = async (
+    order: IOrderReceipt,
+    printFunction: (order: IOrderReceipt, receiptIndex?: number, receiptTotalNumber?: number) => Promise<IPrintReceiptOutput>
+) => {
     if (order.printReceiptForEachProduct) {
+        let receiptTotalNumber = 0;
+
+        for (const orderProduct of order.products) {
+            receiptTotalNumber += orderProduct.quantity;
+        }
+
         for (const orderProduct of order.products) {
             const tempOrder = { ...order, products: [{ ...orderProduct, quantity: 1 }] };
 
             for (let i = 0; i < orderProduct.quantity; i++) {
-                const result = await printFunction(tempOrder);
+                const result = await printFunction(tempOrder, i + 1, receiptTotalNumber);
 
                 if (result.error) return { error: result.error, order: order };
             }

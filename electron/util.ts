@@ -95,7 +95,11 @@ const getProductTotal = (product: ICartProduct) => {
     return price;
 };
 
-export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrintReceiptOutput> => {
+export const printCustomerReceipt = async (
+    order: IOrderReceipt,
+    receiptIndex?: number,
+    receiptTotalNumber?: number
+): Promise<IPrintReceiptOutput> => {
     let printer;
 
     if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -417,8 +421,15 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
 
     // if (order.eftposReceipt) printer.println(order.eftposReceipt);
 
+    if (receiptIndex) {
+        printer.newLine();
+        printer.alignCenter();
+        printer.println(`Receipt ${receiptIndex} of ${receiptTotalNumber}`);
+    }
+
     printer.newLine();
     printer.alignCenter();
+
     if (order.receiptFooterText) {
         printer.bold(true);
         printer.setTextSize(1, 1);
@@ -448,7 +459,7 @@ export const printCustomerReceipt = async (order: IOrderReceipt): Promise<IPrint
     }
 };
 
-export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintReceiptOutput> => {
+export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: number, receiptTotalNumber?: number): Promise<IPrintReceiptOutput> => {
     let printer;
 
     if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -696,6 +707,12 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
         printer.alignLeft();
     }
 
+    if (receiptIndex) {
+        printer.newLine();
+        printer.alignCenter();
+        printer.println(`Receipt ${receiptIndex} of ${receiptTotalNumber}`);
+    }
+
     printer.newLine();
     printer.alignCenter();
     printer.setTypeFontB();
@@ -719,7 +736,11 @@ export const printKitchenReceipt = async (order: IOrderReceipt): Promise<IPrintR
     }
 };
 
-export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IPrintReceiptOutput> => {
+export const printKitchenReceiptSmall = async (
+    order: IOrderReceipt,
+    receiptIndex?: number,
+    receiptTotalNumber?: number
+): Promise<IPrintReceiptOutput> => {
     let printer;
 
     if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -978,6 +999,12 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
         printer.alignLeft();
     }
 
+    if (receiptIndex) {
+        printer.newLine();
+        printer.alignCenter();
+        printer.println(`Receipt ${receiptIndex} of ${receiptTotalNumber}`);
+    }
+
     printer.newLine();
     printer.alignCenter();
     printer.setTypeFontB();
@@ -1001,7 +1028,11 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt): Promise<IP
     }
 };
 
-export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IPrintReceiptOutput> => {
+export const printKitchenReceiptLarge = async (
+    order: IOrderReceipt,
+    receiptIndex?: number,
+    receiptTotalNumber?: number
+): Promise<IPrintReceiptOutput> => {
     let printer;
 
     if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -1255,14 +1286,18 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
         if (product.notes) {
             printer.bold(false);
             printer.newLine();
+            printer.setTextSize(1, 1);
             printer.println(`Notes: ${product.notes}`);
+            printer.setTextNormal();
         }
     });
 
     printer.drawLine();
 
     if (order.notes) {
+        printer.setTextSize(1, 1);
         printer.println(`Notes: ${order.notes}`);
+        printer.setTextNormal();
         printer.newLine();
     }
 
@@ -1277,9 +1312,13 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt): Promise<IP
         printer.alignLeft();
     }
 
-    printer.newLine();
-    printer.alignCenter();
+    if (receiptIndex) {
+        printer.newLine();
+        printer.alignCenter();
+        printer.println(`Receipt ${receiptIndex} of ${receiptTotalNumber}`);
+    }
 
+    printer.newLine();
     printer.alignCenter();
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
