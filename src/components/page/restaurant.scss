@@ -263,5 +263,17 @@
                 font-weight: 300;
             }
         }
+
+        .fixed-button {
+            position: fixed;
+            bottom: 173px;
+            right: 50%;
+            padding: 10px;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
     }
+
 }

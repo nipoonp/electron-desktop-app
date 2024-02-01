@@ -44,6 +44,7 @@ import { Input } from "../../tabin/components/input";
 import { useGetProductsBySKUCodeByRestaurantLazyQuery } from "../../hooks/useGetProductsBySKUCodeByRestaurantLazyQuery";
 import { Checkout } from "./checkout";
 import { toast } from "../../tabin/components/toast";
+import { FiArrowDownCircle } from "react-icons/fi";
 
 import "./restaurant.scss";
 
@@ -113,6 +114,27 @@ const Restaurant = () => {
   const startShakeAfterSeconds = 30;
   const shakeButtonDurationSeconds = 5;
   const userOnPageDuration: React.MutableRefObject<number> = useRef(1);
+  const [isScrollable, setIsScrollable] = useState(false);
+
+  useEffect(() => {
+    const checkDivScrollable = () => {
+      const scrollableDiv = document.getElementById("productsWrapperScroll");
+
+      if (scrollableDiv) {
+        const isDivScrollable =
+          scrollableDiv.scrollHeight > scrollableDiv.clientHeight;
+        setIsScrollable(isDivScrollable);
+      }
+    };
+
+    window.addEventListener("resize", checkDivScrollable);
+
+    checkDivScrollable();
+
+    return () => {
+      window.removeEventListener("resize", checkDivScrollable);
+    };
+  }, [selectedCategory]);
 
   // const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -848,6 +870,12 @@ const Restaurant = () => {
     </>
   );
 
+  const scrollDown = () => {
+    const scrollableDiv = document.getElementById("productsWrapperScroll");
+    if (scrollableDiv) {
+      scrollableDiv.scrollTop += 100; // You can adjust the value as needed
+    }
+  };
   return (
     <>
       <PageWrapper>
@@ -861,11 +889,16 @@ const Restaurant = () => {
                 {menuMostPopularCategory}
                 {menuCategories}
               </div>
-              <div className="products-wrapper">
+              <div className="products-wrapper" id="productsWrapperScroll">
                 {menuMostPopularProducts}
                 {menuProducts}
               </div>
             </div>
+            {isScrollable ? (
+              <Button className="fixed-button" onClick={scrollDown}>
+                <FiArrowDownCircle />
+              </Button>
+            ) : null}
             {!isPOS && <div className="footer-wrapper">{restaurantFooter}</div>}
           </div>
           {products && products.length > 0 && isPOS && (
