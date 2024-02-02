@@ -49,6 +49,7 @@
 
         /* Hide scrollbar for IE, Edge and Firefox */
         .products-wrapper {
+            position: relative;
             -ms-overflow-style: none;
             /* IE and Edge */
             scrollbar-width: none;
@@ -265,8 +266,8 @@
         }
 
         .fixed-button {
-            position: fixed;
-            bottom: 173px;
+            position: absolute;
+            bottom: 10px;
             right: 50%;
             padding: 10px;
             color: #fff;

@@ -892,13 +892,13 @@ const Restaurant = () => {
               <div className="products-wrapper" id="productsWrapperScroll">
                 {menuMostPopularProducts}
                 {menuProducts}
+                {isScrollable ? (
+                  <Button className="fixed-button" onClick={scrollDown}>
+                    <FiArrowDownCircle />
+                  </Button>
+                ) : null}
               </div>
             </div>
-            {isScrollable ? (
-              <Button className="fixed-button" onClick={scrollDown}>
-                <FiArrowDownCircle />
-              </Button>
-            ) : null}
             {!isPOS && <div className="footer-wrapper">{restaurantFooter}</div>}
           </div>
           {products && products.length > 0 && isPOS && (
