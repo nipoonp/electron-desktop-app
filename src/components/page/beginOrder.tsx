@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { restaurantPath } from "../main";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
-import { IGET_RESTAURANT_ADVERTISEMENT, IGET_RESTAURANT_PREPRATION_TIME } from "../../graphql/customQueries";
+import { IGET_RESTAURANT_ADVERTISEMENT, IGET_RESTAURANT_PING_DATA } from "../../graphql/customQueries";
 import { useRestaurant } from "../../context/restaurant-context";
 import { CachedImage } from "../../tabin/components/cachedImage";
 
@@ -53,9 +53,9 @@ const PreparationTime = () => {
                 },
             });
 
-            const preparationTimeResponse: IGET_RESTAURANT_PREPRATION_TIME = restaurantPreparationTimeRes.data.getRestaurant;
+            const restaurantData: IGET_RESTAURANT_PING_DATA = restaurantPreparationTimeRes.data.getRestaurant;
 
-            setPreparationTimeInMinutes(preparationTimeResponse.preparationTimeInMinutes);
+            setPreparationTimeInMinutes(restaurantData.preparationTimeInMinutes);
         }, 2 * 60 * 1000); //2 mins
 
         return () => clearInterval(intervalId);

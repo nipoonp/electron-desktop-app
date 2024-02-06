@@ -1,5 +1,5 @@
 import { eachMinuteOfInterval, format, getDay, isAfter, isWithinInterval, startOfDay } from "date-fns";
-import { addDays, isEqual } from "date-fns/esm";
+import { addDays, isEqual } from "date-fns";
 import { IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
 import {
     EDiscountType,
@@ -393,9 +393,9 @@ const getMatchingPromotionProducts = (
         const matchingProductsTemp: ICartProduct[] = [];
         let quantityCounted = 0;
 
-        item.categories.items.forEach((c) => {
+        item.categoryIds.forEach((categoryId) => {
             cartProducts.forEach((cartProduct) => {
-                if (c.id === cartProduct.category?.id) {
+                if (categoryId === cartProduct.category?.id) {
                     quantityCounted += cartProduct.quantity;
 
                     matchingProductsTemp.push(cartProduct);
@@ -403,9 +403,9 @@ const getMatchingPromotionProducts = (
             });
         });
 
-        item.products.items.forEach((p) => {
+        item.productIds.forEach((productId) => {
             cartProducts.forEach((cartProduct) => {
-                if (p.id === cartProduct.id) {
+                if (productId === cartProduct.id) {
                     quantityCounted += cartProduct.quantity;
 
                     matchingProductsTemp.push(cartProduct);
