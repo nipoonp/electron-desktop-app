@@ -692,7 +692,7 @@ export const GET_RESTAURANT = gql`
                       choiceDuplicate
                       collapsedByDefault
                       availablePlatforms
-                      sorting
+                      alphabeticalSorting
                       modifiers(limit: 50) {
                         items {
                           id
@@ -1301,7 +1301,7 @@ export interface IGET_RESTAURANT_MODIFIER_GROUP {
   choiceDuplicate: number;
   collapsedByDefault?: boolean | null;
   availablePlatforms: ERegisterType[];
-  sorting: boolean;
+  alphabeticalSorting: boolean;
   modifiers?: {
     items: IGET_RESTAURANT_MODIFIER_LINK[];
   };

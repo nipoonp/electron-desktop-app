@@ -1395,7 +1395,7 @@ export const ModifierGroup = (props: {
               modifierGroup.modifiers.items
                 .slice()
                 .sort((a, b) =>
-                  modifierGroup.sorting
+                  modifierGroup.alphabeticalSorting
                     ? a.modifier.name.localeCompare(b.modifier.name)
                     : 0
                 )
