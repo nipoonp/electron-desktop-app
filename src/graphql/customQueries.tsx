@@ -1739,4 +1739,5 @@ export const GET_RESTAURANT_PING_DATA = gql`
 export interface IGET_RESTAURANT_PING_DATA {
     id: string;
     preparationTimeInMinutes: number | null;
+    advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
 }

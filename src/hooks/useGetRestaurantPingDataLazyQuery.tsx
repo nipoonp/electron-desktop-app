@@ -2,10 +2,10 @@ import { GET_RESTAURANT_PING_DATA, IGET_RESTAURANT_PING_DATA } from "../graphql/
 import { useLazyQuery } from "@apollo/client";
 import { useEffect, useState } from "react";
 
-export const useGetRestaurantPreparationTimeLazyQuery = () => {
+export const useGetRestaurantPingDataLazyQuery = () => {
     const [data, setSavedData] = useState<IGET_RESTAURANT_PING_DATA[] | null>(null);
 
-    const [getRestaurantPreparationTime, { loading, error, data: _data }] = useLazyQuery(GET_RESTAURANT_PING_DATA, {
+    const [getRestaurantPingData, { loading, error, data: _data }] = useLazyQuery(GET_RESTAURANT_PING_DATA, {
         fetchPolicy: "network-only",
     });
 
@@ -16,7 +16,7 @@ export const useGetRestaurantPreparationTimeLazyQuery = () => {
     }, [_data]);
 
     return {
-        getRestaurantPreparationTime,
+        getRestaurantPingData,
         data,
         error,
         loading,
