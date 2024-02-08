@@ -255,29 +255,20 @@ ipcMain.on("EXIT_ELECTRON_APP", (event: any) => {
 // Webapp Receipt Printer Side
 ipcMain.handle("RECEIPT_PRINTER_DATA", async (event: any, order: IOrderReceipt): Promise<IPrintReceiptDataOutput> => {
     try {
-        // A receipt request could have print customer receipts and kitchen receipts enabled. So we would have to print 2 copies.
         if (order.customerPrinter) {
-            const result: IPrintReceiptOutput = await printCustomerReceipt(order);
-
-            if (result.error) return { error: result.error, order: order };
+            await printReceipts(order, printCustomerReceipt);
         }
 
         if (order.kitchenPrinter) {
-            const result: IPrintReceiptOutput = await printKitchenReceipt(order);
-
-            if (result.error) return { error: result.error, order: order };
+            await printReceipts(order, printKitchenReceipt);
         }
 
         if (order.kitchenPrinterSmall) {
-            const result: IPrintReceiptOutput = await printKitchenReceiptSmall(order);
-
-            if (result.error) return { error: result.error, order: order };
+            await printReceipts(order, printKitchenReceiptSmall);
         }
 
         if (order.kitchenPrinterLarge) {
-            const result: IPrintReceiptOutput = await printKitchenReceiptLarge(order);
-
-            if (result.error) return { error: result.error, order: order };
+            await printReceipts(order, printKitchenReceiptLarge);
         }
 
         return { error: null, order: order };
@@ -285,6 +276,33 @@ ipcMain.handle("RECEIPT_PRINTER_DATA", async (event: any, order: IOrderReceipt):
         return { error: e, order: order };
     }
 });
+
+const printReceipts = async (
+    order: IOrderReceipt,
+    printFunction: (order: IOrderReceipt, receiptIndex?: number, receiptTotalNumber?: number) => Promise<IPrintReceiptOutput>
+) => {
+    if (order.printReceiptForEachProduct) {
+        let receiptTotalNumber = 0;
+
+        for (const orderProduct of order.products) {
+            receiptTotalNumber += orderProduct.quantity;
+        }
+
+        for (const orderProduct of order.products) {
+            const tempOrder = { ...order, products: [{ ...orderProduct, quantity: 1 }] };
+
+            for (let i = 0; i < orderProduct.quantity; i++) {
+                const result = await printFunction(tempOrder, i + 1, receiptTotalNumber);
+
+                if (result.error) return { error: result.error, order: order };
+            }
+        }
+    } else {
+        const result = await printFunction(order);
+
+        if (result.error) return { error: result.error, order: order };
+    }
+};
 
 ipcMain.handle("RECEIPT_SALES_DATA", async (event: any, printSalesDataInput: IPrintSalesDataInput): Promise<IPrintSalesDataOutput> => {
     try {

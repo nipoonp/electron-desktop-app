@@ -59,6 +59,7 @@ export const CREATE_ORDER = gql`
         $surcharge: Int
         $discount: Int
         $promotionId: ID
+        $promotionType: PromotionType
         $subTotal: Int!
         $preparationTimeInMinutes: Int
         $registerId: ID!
@@ -90,6 +91,7 @@ export const CREATE_ORDER = gql`
                 surcharge: $surcharge
                 discount: $discount
                 promotionId: $promotionId
+                promotionType: $promotionType
                 subTotal: $subTotal
                 preparationTimeInMinutes: $preparationTimeInMinutes
                 registerId: $registerId

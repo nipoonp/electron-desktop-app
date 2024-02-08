@@ -419,9 +419,9 @@ const getMatchingPromotionProducts = (
         const matchingProductsTemp: ICartProduct[] = [];
         let quantityCounted = 0;
 
-        item.categories.items.forEach((c) => {
+        item.categoryIds.forEach((categoryId) => {
             cartProducts.forEach((cartProduct) => {
-                if (c.id === cartProduct.category?.id) {
+                if (categoryId === cartProduct.category?.id) {
                     quantityCounted += cartProduct.quantity;
 
                     matchingProductsTemp.push(cartProduct);
@@ -429,9 +429,9 @@ const getMatchingPromotionProducts = (
             });
         });
 
-        item.products.items.forEach((p) => {
+        item.productIds.forEach((productId) => {
             cartProducts.forEach((cartProduct) => {
-                if (p.id === cartProduct.id) {
+                if (productId === cartProduct.id) {
                     quantityCounted += cartProduct.quantity;
 
                     matchingProductsTemp.push(cartProduct);
