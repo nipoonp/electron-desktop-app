@@ -57,10 +57,7 @@ export default () => {
     return (
         <>
             <div className="ad-wrapper">
-                <img
-                    className="ad-image"
-                    src="https://tabin182909-prod.s3.ap-southeast-2.amazonaws.com/protected/ap-southeast-2%3A8cf93543-6537-4120-b190-d98eb9b7b010/2023-10-14_01%3A17%3A16.819-rect17052-6.webp"
-                />
+                <img className="ad-image" src="https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/Boss+Don+ad.png" />
                 <div className="store-1" onClick={onClickStore1}></div>
                 <div className="store-2" onClick={onClickStore2}></div>
             </div>
