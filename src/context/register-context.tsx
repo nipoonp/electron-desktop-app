@@ -49,28 +49,28 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
     });
 
     const connectRegister = (key: string) => {
-        let keyValid = false;
+        // let keyValid = false;
 
-        restaurant &&
-            restaurant.registers.items.forEach((register) => {
-                if (key == register.id && register.active == false) {
-                    keyValid = true;
-                }
-            });
+        // restaurant &&
+        //     restaurant.registers.items.forEach((register) => {
+        //         if (key == register.id && register.active == false) {
+        //             keyValid = true;
+        //         }
+        //     });
 
-        if (keyValid) {
-            localStorage.setItem("registerKey", key);
-            _setRegisterKey(key);
+        // if (keyValid) {
+        localStorage.setItem("registerKey", key);
+        _setRegisterKey(key);
 
-            return updateRegisterKeyMutation({
-                variables: {
-                    id: key,
-                    active: true,
-                },
-            });
-        } else {
-            throw "This register key is invalid or already in use. Please contact a Tabin representative.";
-        }
+        return updateRegisterKeyMutation({
+            variables: {
+                id: key,
+                active: true,
+            },
+        });
+        // } else {
+        //     throw "This register key is invalid or already in use. Please contact a Tabin representative.";
+        // }
     };
 
     const disconnectRegister = (key: string) => {

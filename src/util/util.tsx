@@ -28,6 +28,8 @@ import {
     ICartPromotion,
 } from "../model/model";
 
+export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
 export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0);
 
 export const convertDollarsToCentsReturnInt = (price: number) => parseInt((price * 100).toFixed(0));

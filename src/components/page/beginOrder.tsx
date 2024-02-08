@@ -8,181 +8,62 @@ import { useRestaurant } from "../../context/restaurant-context";
 import { CachedImage } from "../../tabin/components/cachedImage";
 
 import "./beginOrder.scss";
-import { isItemAvailable, isVideoFile } from "../../util/util";
+import { delay, isItemAvailable, isVideoFile } from "../../util/util";
 import { useRegister } from "../../context/register-context";
 import { useGetRestaurantPingDataLazyQuery } from "../../hooks/useGetRestaurantPingDataLazyQuery";
 
 export default () => {
-    const { restaurant } = useRestaurant();
-    const { isPOS } = useRegister();
-    const { getRestaurantPingData } = useGetRestaurantPingDataLazyQuery();
+    const navigate = useNavigate();
+    const { register, connectRegister, disconnectRegister } = useRegister();
+    const { restaurant, selectRestaurant } = useRestaurant();
 
-    const getAvailableAds = (restaurantPingData: IGET_RESTAURANT_ADVERTISEMENT[]) => {
-        const ads: IGET_RESTAURANT_ADVERTISEMENT[] = [];
+    if (!restaurant) return <div>This user has not selected any restaurant</div>;
 
-        restaurantPingData.forEach((ad) => {
-            if (isItemAvailable(ad.availability)) ads.push(ad);
-        });
+    const restaurant1 = "00f05bb8-baca-46e7-b6e1-5c81e4fd1d3f"; //Boss Don
+    const restaurantRegister1 = "c60d89f7-7177-4331-924e-339956dc84c1";
+    const restaurant2 = "97f47fc8-462d-4d33-b530-0fe900048b01"; //Auckland Bagel Club
+    const restaurantRegister2 = "aaefa4b7-f1e4-4000-b6cc-7045d95501a3";
 
-        return ads;
+    const onClickStore1 = async () => {
+        // ABC Buzz A
+        await disconnectRegister(restaurantRegister2);
+
+        // await delay(1000);
+
+        selectRestaurant(restaurant1);
+
+        await delay(1000);
+
+        await connectRegister(restaurantRegister1);
+
+        navigate(restaurantPath + "/" + restaurant1);
     };
 
-    const [availableAds, setAvailableAds] = useState<IGET_RESTAURANT_ADVERTISEMENT[]>(
-        restaurant && restaurant.advertisements.items ? getAvailableAds(restaurant && restaurant.advertisements.items) : []
-    );
+    const onClickStore2 = async () => {
+        //Boss Don
+        await disconnectRegister(restaurantRegister1);
 
-    const [preparationTimeInMinutes, setPreparationTimeInMinutes] = useState(restaurant ? restaurant.preparationTimeInMinutes : 0);
+        // await delay(1000);
 
-    useEffect(() => {
-        if (!restaurant) return;
+        selectRestaurant(restaurant2);
 
-        const fetchDataAndUpdate = async () => {
-            const restaurantPreparationTimeRes = await getRestaurantPingData({
-                variables: {
-                    restaurantId: restaurant.id,
-                },
-            });
+        await delay(1000);
 
-            const restaurantPingData = restaurantPreparationTimeRes.data.getRestaurant;
+        await connectRegister(restaurantRegister2);
 
-            setPreparationTimeInMinutes(restaurantPingData.preparationTimeInMinutes);
-            setAvailableAds(getAvailableAds(restaurantPingData.advertisements.items));
-        };
-
-        // Calculate delay until the next 5 minute mark
-        // const now = new Date();
-        // const delay = (5 - (now.getMinutes() % 5)) * 60 * 1000 - now.getSeconds() * 1000 - now.getMilliseconds();
-
-        // Delay until the schedule aligns with a 5-minute interval, then start interval
-        // const timeoutId = setTimeout(() => {
-        const intervalId = setInterval(fetchDataAndUpdate, 30000); // Start an interval every 5 minutes after the delay
-
-        return () => clearInterval(intervalId);
-        // }, 5000);
-
-        // return () => clearTimeout(timeoutId);
-    }, []);
-
-    if (!restaurant) return <div>This user has not selected any restaurant</div>;
+        navigate(restaurantPath + "/" + restaurant2);
+    };
 
     return (
         <>
-            {!isPOS && preparationTimeInMinutes ? (
-                <div className="preparation-time h2">
-                    Current wait time is {preparationTimeInMinutes} {preparationTimeInMinutes > 1 ? "minutes" : "minute"}
-                </div>
-            ) : (
-                <></>
-            )}
-            {availableAds.length > 0 ? <BeginOrderAdvertisements availableAds={availableAds} /> : <BeginOrderDefault />}
-        </>
-    );
-};
-
-const BeginOrderAdvertisements = (props: { availableAds: IGET_RESTAURANT_ADVERTISEMENT[] }) => {
-    const { availableAds } = props;
-    const navigate = useNavigate();
-    const { restaurant } = useRestaurant();
-
-    const [currentAd, setCurrentAd] = useState(0);
-
-    useEffect(() => {
-        const timerId = setInterval(() => {
-            if (availableAds.length <= 1) {
-                setCurrentAd(0);
-            } else {
-                setCurrentAd((prevCurrentAd) => (prevCurrentAd === availableAds.length - 1 ? 0 : prevCurrentAd + 1));
-            }
-        }, 6000);
-
-        return () => clearInterval(timerId);
-    }, [availableAds]);
-
-    if (!restaurant) return <div>This user has not selected any restaurant</div>;
-
-    return (
-        <PageWrapper>
-            <div className="begin-order">
-                <div
-                    className="wrapper"
-                    onClick={() => {
-                        navigate(restaurantPath + "/" + restaurant.id);
-                    }}
-                >
-                    <div className="touch-to-begin-wrapper">
-                        <CachedImage className="icon" url={`${getPublicCloudFrontDomainName()}/images/touch-here-dark.png`} alt="hand-icon" />
-                        <div className="h3">TOUCH TO BEGIN</div>
-                    </div>
-                </div>
-                <div className="advertisements-wrapper">
-                    {availableAds.map((advertisement, index) => (
-                        <div
-                            key={advertisement.id}
-                            className={`image-wrapper ${availableAds.length > 1 ? "slide-animation" : ""} ${
-                                currentAd == index ? "active" : "inactive"
-                            }`}
-                        >
-                            {isVideoFile(advertisement.content.key) ? (
-                                <video className="splash-screen-video" autoPlay loop muted>
-                                    <source
-                                        src={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${
-                                            advertisement.content.key
-                                        }`}
-                                    />
-                                </video>
-                            ) : (
-                                <CachedImage
-                                    className="image"
-                                    url={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${
-                                        advertisement.content.key
-                                    }`}
-                                    alt="advertisement-image"
-                                />
-                            )}
-                        </div>
-                    ))}
-                </div>
+            <div className="ad-wrapper">
+                <img
+                    className="ad-image"
+                    src="https://tabin182909-prod.s3.ap-southeast-2.amazonaws.com/protected/ap-southeast-2%3A8cf93543-6537-4120-b190-d98eb9b7b010/2023-10-14_01%3A17%3A16.819-rect17052-6.webp"
+                />
+                <div className="store-1" onClick={onClickStore1}></div>
+                <div className="store-2" onClick={onClickStore2}></div>
             </div>
-        </PageWrapper>
-    );
-};
-
-const BeginOrderDefault = () => {
-    const navigate = useNavigate();
-    const { restaurant } = useRestaurant();
-
-    if (!restaurant) {
-        return <div>This user has not selected any restaurant</div>;
-    }
-
-    return (
-        <>
-            <PageWrapper>
-                <div className="begin-order-default">
-                    <div className="container">
-                        <div
-                            className="wrapper"
-                            onClick={() => {
-                                navigate(restaurantPath + "/" + restaurant.id);
-                            }}
-                        >
-                            <div className="order-text">ORDER</div>
-                            <div className="here-text">HERE</div>
-                            <div className="and-pay-text">AND PAY</div>
-                            <CachedImage
-                                className="touch-icon"
-                                url={`${getPublicCloudFrontDomainName()}/images/touch-here.png`}
-                                alt="touch-here-icon"
-                            />
-                            <div className="touch-icon-text">Touch to get started</div>
-                        </div>
-                        <div className="powered-by-tabin-wrapper">
-                            <div className="h2 powered-by-text">Powered by</div>
-                            <div className="h2 tabin-text">TABIN</div>
-                        </div>
-                    </div>
-                </div>
-            </PageWrapper>
         </>
     );
 };

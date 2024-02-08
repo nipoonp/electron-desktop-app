@@ -47,7 +47,8 @@ export default () => {
     return (
         <>
             <PageWrapper>
-                {showFullScreenSpinner && <FullScreenSpinner show={true} />}
+                {<FullScreenSpinner show={true} />}
+                {/* {showFullScreenSpinner && <FullScreenSpinner show={true} />} */}
                 <div className="register-list">
                     <div className="h2 mb-6">Select a register to use</div>
                     {restaurant.registers.items.map((reg, index) => (

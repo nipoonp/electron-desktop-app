@@ -6,7 +6,7 @@ export const FullScreenSpinner = (props: { show: boolean; text?: string }) => {
             {props.show && (
                 <div
                     style={{
-                        backgroundColor: "rgba(255, 255, 255, 0.9)",
+                        backgroundColor: "rgba(255, 255, 255, 1)",
                         position: "fixed",
                         top: "0",
                         left: "0",

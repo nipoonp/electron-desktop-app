@@ -47,6 +47,7 @@ export default () => {
     return (
         <>
             <PageWrapper>
+                {<FullScreenSpinner show={true} />}
                 {!userRestaurants && <FullScreenSpinner show={true} text={"Loading user"} />}
                 {showFullScreenSpinner && <FullScreenSpinner show={true} />}
                 <div className="restaurant-list">
