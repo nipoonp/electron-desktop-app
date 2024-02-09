@@ -49,48 +49,63 @@ export default () => {
     restaurant ? restaurant.preparationTimeInMinutes : 0
   );
 
+  useEffect(() => {}, []);
+
   useEffect(() => {
     if (!restaurant) return;
+    let availableAddForCheck, intervalId, shortIntervalId;
 
-    const fetchDataAndUpdate = async () => {
-      const restaurantPreparationTimeRes = await getRestaurantPingData({
-        variables: {
-          restaurantId: restaurant.id,
-        },
-      });
+    startDefaultInterval();
+    function startDefaultInterval() {
+      if (!restaurant) return;
+      const fetchDataAndUpdate = async () => {
+        const restaurantPreparationTimeRes = await getRestaurantPingData({
+          variables: {
+            restaurantId: restaurant.id,
+          },
+        });
 
-      const restaurantPingData =
-        restaurantPreparationTimeRes.data.getRestaurant;
+        const restaurantPingData =
+          restaurantPreparationTimeRes.data.getRestaurant;
 
-      // console.log("restaurantPingData", restaurantPingData);
-      if (restaurantPingData?.advertisements?.items.length) {
-        const availableAdd = getAvailableAds(
-          restaurantPingData.advertisements.items
-        );
-        // console.log("availableAdd", availableAdd);
-        if (availableAdd.length) {
+        if (restaurantPingData?.advertisements?.items.length) {
+          availableAddForCheck = restaurantPingData.advertisements.items;
+          const availableAdd = getAvailableAds(
+            restaurantPingData.advertisements.items
+          );
+          // console.log("availableAdd", availableAdd);
+          if (availableAdd.length) {
+            clearInterval(intervalId);
+            // console.log("availableAdd in side length after clear");
+            startShortInterval();
+          }
+          setAvailableAds(availableAdd);
           setPreparationTimeInMinutes(
             restaurantPingData.preparationTimeInMinutes
           );
-          setAvailableAds(availableAdd);
-          clearInterval(intervalId);
-          // console.log("availableAdd in side length after clear");
         }
-      }
+      };
+
+      intervalId = setInterval(fetchDataAndUpdate, 3000);
+    }
+    function startShortInterval() {
+      shortIntervalId = setInterval(function () {
+        // console.log("availableAddForCheck", availableAddForCheck);
+        if (availableAddForCheck) {
+          const isInCurrentTime = getAvailableAds(availableAddForCheck);
+          // console.log("isInCurrentTime", isInCurrentTime);
+          if (!isInCurrentTime.length) {
+            clearInterval(shortIntervalId);
+            startDefaultInterval();
+          }
+        }
+      }, 1000);
+    }
+
+    return () => {
+      clearInterval(intervalId);
+      clearInterval(shortIntervalId);
     };
-
-    // Calculate delay until the next 5 minute mark
-    // const now = new Date();
-    // const delay = (5 - (now.getMinutes() % 5)) * 60 * 1000 - now.getSeconds() * 1000 - now.getMilliseconds();
-
-    // Delay until the schedule aligns with a 5-minute interval, then start interval
-    // const timeoutId = setTimeout(() => {
-    const intervalId = setInterval(fetchDataAndUpdate, 30000); // Start an interval every 5 minutes after the delay
-
-    return () => clearInterval(intervalId);
-    // }, 5000);
-
-    // return () => clearTimeout(timeoutId);
   }, []);
 
   if (!restaurant) return <div>This user has not selected any restaurant</div>;
