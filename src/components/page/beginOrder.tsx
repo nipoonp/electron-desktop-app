@@ -19,6 +19,7 @@ import { isItemAvailable, isVideoFile } from "../../util/util";
 import { useRegister } from "../../context/register-context";
 import { useGetRestaurantPingDataLazyQuery } from "../../hooks/useGetRestaurantPingDataLazyQuery";
 
+// eslint-disable-next-line import/no-anonymous-default-export
 export default () => {
   const { restaurant } = useRestaurant();
   const { isPOS } = useRegister();
@@ -61,8 +62,21 @@ export default () => {
       const restaurantPingData =
         restaurantPreparationTimeRes.data.getRestaurant;
 
-      setPreparationTimeInMinutes(restaurantPingData.preparationTimeInMinutes);
-      setAvailableAds(getAvailableAds(restaurantPingData.advertisements.items));
+      // console.log("restaurantPingData", restaurantPingData);
+      if (restaurantPingData?.advertisements?.items.length) {
+        const availableAdd = getAvailableAds(
+          restaurantPingData.advertisements.items
+        );
+        // console.log("availableAdd", availableAdd);
+        if (availableAdd.length) {
+          setPreparationTimeInMinutes(
+            restaurantPingData.preparationTimeInMinutes
+          );
+          setAvailableAds(availableAdd);
+          clearInterval(intervalId);
+          // console.log("availableAdd in side length after clear");
+        }
+      }
     };
 
     // Calculate delay until the next 5 minute mark
@@ -80,7 +94,7 @@ export default () => {
   }, []);
 
   if (!restaurant) return <div>This user has not selected any restaurant</div>;
-  console.log("availableAds", availableAds);
+
   return (
     <>
       {!isPOS && preparationTimeInMinutes ? (
@@ -109,19 +123,19 @@ const BeginOrderAdvertisements = (props: {
 
   const [currentAd, setCurrentAd] = useState(0);
 
-  //   useEffect(() => {
-  //     const timerId = setInterval(() => {
-  //       if (availableAds.length <= 1) {
-  //         setCurrentAd(0);
-  //       } else {
-  //         setCurrentAd((prevCurrentAd) =>
-  //           prevCurrentAd === availableAds.length - 1 ? 0 : prevCurrentAd + 1
-  //         );
-  //       }
-  //     }, 6000);
+  useEffect(() => {
+    const timerId = setInterval(() => {
+      if (availableAds.length <= 1) {
+        setCurrentAd(0);
+      } else {
+        setCurrentAd((prevCurrentAd) =>
+          prevCurrentAd === availableAds.length - 1 ? 0 : prevCurrentAd + 1
+        );
+      }
+    }, 6000);
 
-  //     return () => clearInterval(timerId);
-  //   }, [availableAds]);
+    return () => clearInterval(timerId);
+  }, [availableAds]);
 
   if (!restaurant) return <div>This user has not selected any restaurant</div>;
 
