@@ -1000,43 +1000,45 @@ export interface IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES {
 }
 
 export interface IGET_RESTAURANT_REGISTER {
-    id: string;
-    active: boolean;
-    name: string;
-    enableTableFlags: boolean;
-    enableBuzzerNumbers: boolean;
-    enableSkuScanner: boolean;
-    enablePayLater: boolean;
-    enableCashPayments: boolean;
-    enableEftposPayments: boolean;
-    enableUberEatsPayments: boolean;
-    enableMenulogPayments: boolean;
-    availableOrderTypes: EOrderType[];
-    type: ERegisterType;
-    requestCustomerInformation?: RequestCustomerInformationType;
-    eftposProvider: string;
-    eftposIpAddress: string;
-    eftposPortNumber: string;
-    windcaveStationId: string;
-    windcaveStationUser: string;
-    windcaveStationKey: string;
-    skipEftposReceiptSignature: boolean;
-    askToPrintCustomerReceipt: boolean;
-    orderNumberSuffix: string;
-    orderNumberStart: number;
-    surchargePercentage: number;
-    defaultCategoryView: string;
-    customStyleSheet?: IS3Object;
-    printers: {
-        items: IGET_RESTAURANT_REGISTER_PRINTER[];
-    };
+  id: string;
+  active: boolean;
+  name: string;
+  enableTableFlags: boolean;
+  enableBuzzerNumbers: boolean;
+  enableSkuScanner: boolean;
+  enableFeedback: boolean;
+  enablePayLater: boolean;
+  enableCashPayments: boolean;
+  enableEftposPayments: boolean;
+  enableUberEatsPayments: boolean;
+  enableMenulogPayments: boolean;
+  availableOrderTypes: EOrderType[];
+  orderTypeSurcharge: OrderTypeSurchargeType;
+  type: ERegisterType;
+  requestCustomerInformation?: RequestCustomerInformationType;
+  eftposProvider: string;
+  eftposIpAddress: string;
+  eftposPortNumber: string;
+  windcaveStationId: string;
+  windcaveStationUser: string;
+  windcaveStationKey: string;
+  skipEftposReceiptSignature: boolean;
+  askToPrintCustomerReceipt: boolean;
+  orderNumberSuffix: string;
+  orderNumberStart: number;
+  surchargePercentage: number;
+  defaultCategoryView: string;
+  customStyleSheet?: IS3Object;
+  printers: {
+    items: IGET_RESTAURANT_REGISTER_PRINTER[];
+  };
 }
 
 export interface RequestCustomerInformationType {
-    firstName: boolean;
-    email: boolean;
-    phoneNumber: boolean;
-    signature: boolean;
+  firstName: boolean;
+  email: boolean;
+  phoneNumber: boolean;
+  signature: boolean;
 }
 
 export interface OrderTypeSurchargeType {
@@ -1044,125 +1046,124 @@ export interface OrderTypeSurchargeType {
   takeaway: GLfloat;
 }
 
-
 export interface IGET_RESTAURANT_REGISTER_PRINTER {
-    id: string;
-    name: string;
-    type: ERegisterPrinterType;
-    printerType: EReceiptPrinterPrinterType;
-    address: string;
-    receiptFooterText: string | null;
-    customerPrinter: boolean;
-    kitchenPrinter: boolean;
-    kitchenPrinterSmall: boolean;
-    kitchenPrinterLarge: boolean;
-    hidePreparationTime: boolean;
-    hideModifierGroupName: boolean;
-    printReceiptForEachProduct: boolean;
-    printAllOrderReceipts: boolean;
-    printOnlineOrderReceipts: boolean;
-    ignoreCategories: {
-        items: IGET_RESTAURANT_REGISTER_PRINTER_IGNORE_CATEGORY[];
-    };
-    ignoreProducts: {
-        items: IGET_RESTAURANT_REGISTER_PRINTER_IGNORE_PRODUCT[];
-    };
+  id: string;
+  name: string;
+  type: ERegisterPrinterType;
+  printerType: EReceiptPrinterPrinterType;
+  address: string;
+  receiptFooterText: string | null;
+  customerPrinter: boolean;
+  kitchenPrinter: boolean;
+  kitchenPrinterSmall: boolean;
+  kitchenPrinterLarge: boolean;
+  hidePreparationTime: boolean;
+  hideModifierGroupName: boolean;
+  printReceiptForEachProduct: boolean;
+  printAllOrderReceipts: boolean;
+  printOnlineOrderReceipts: boolean;
+  ignoreCategories: {
+    items: IGET_RESTAURANT_REGISTER_PRINTER_IGNORE_CATEGORY[];
+  };
+  ignoreProducts: {
+    items: IGET_RESTAURANT_REGISTER_PRINTER_IGNORE_PRODUCT[];
+  };
 }
 
 export interface IGET_RESTAURANT_REGISTER_PRINTER_IGNORE_CATEGORY {
+  id: string;
+  category: {
     id: string;
-    category: {
-        id: string;
-        name: string;
-    };
+    name: string;
+  };
 }
 
 export interface IGET_RESTAURANT_REGISTER_PRINTER_IGNORE_PRODUCT {
+  id: string;
+  product: {
     id: string;
-    product: {
-        id: string;
-        name: string;
-    };
+    name: string;
+  };
 }
 
 export interface IGET_RESTAURANT_UP_SELL_CROSS_SELL {
-    id: string;
-    customCategories: {
-        items: IGET_RESTAURANT_UP_SELL_CROSS_SELL_CUSTOM_CATEGORY[];
-    };
-    customProducts: {
-        items: IGET_RESTAURANT_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT[];
-    };
+  id: string;
+  customCategories: {
+    items: IGET_RESTAURANT_UP_SELL_CROSS_SELL_CUSTOM_CATEGORY[];
+  };
+  customProducts: {
+    items: IGET_RESTAURANT_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT[];
+  };
 }
 
 export interface IGET_RESTAURANT_UP_SELL_CROSS_SELL_CUSTOM_CATEGORY {
-    id: string;
+  id: string;
 }
 
 export interface IGET_RESTAURANT_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT {
-    id: string;
-    categories: {
-        items: IGET_RESTAURANT_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT_CATEGORY[];
-    };
+  id: string;
+  categories: {
+    items: IGET_RESTAURANT_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT_CATEGORY[];
+  };
 }
 
 export interface IGET_RESTAURANT_UP_SELL_CROSS_SELL_CUSTOM_PRODUCT_CATEGORY {
-    id: string;
+  id: string;
 }
 
 export interface IGET_RESTAURANT_OPERATING_HOURS {
-    sunday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
-    monday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
-    tuesday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
-    wednesday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
-    thursday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
-    friday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
-    saturday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+  sunday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+  monday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+  tuesday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+  wednesday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+  thursday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+  friday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
+  saturday: IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT[];
 }
 
 export interface IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT {
-    openingTime: string;
-    closingTime: string;
+  openingTime: string;
+  closingTime: string;
 }
 
 export interface IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS {
-    monday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
-    tuesday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
-    wednesday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
-    thursday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
-    friday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
-    saturday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
-    sunday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
-    [key: string]: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[]; //this is used to map over the operating hours object, https://www.logicbig.com/tutorials/misc/typescript/indexable-types.html
+  monday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
+  tuesday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
+  wednesday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
+  thursday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
+  friday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
+  saturday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
+  sunday: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[];
+  [key: string]: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[]; //this is used to map over the operating hours object, https://www.logicbig.com/tutorials/misc/typescript/indexable-types.html
 }
 
 export interface IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES {
-    startTime: string;
-    endTime: string;
+  startTime: string;
+  endTime: string;
 }
 
 export interface IGET_RESTAURANT_PROMOTION {
-    id: string;
-    name: string;
-    code: string;
-    autoApply: boolean;
-    startDate: string;
-    endDate: string;
-    availability: IGET_RESTAURANT_PROMOTION_AVAILABILITY;
-    availablePlatforms: ERegisterType[];
-    availableOrderTypes: EOrderType[];
-    totalNumberUsed: number;
-    totalAvailableUses: number;
-    minSpend: number;
-    applyToCheapest: boolean;
-    applyToModifiers: boolean;
-    type: EPromotionType;
-    items: { items: IGET_RESTAURANT_PROMOTION_ITEMS[] };
-    discounts: { items: IGET_RESTAURANT_PROMOTION_DISCOUNT[] };
-    promotionRestaurantId: string;
-    owner: string;
-    createdAt: string;
-    updatedAt: string;
+  id: string;
+  name: string;
+  code: string;
+  autoApply: boolean;
+  startDate: string;
+  endDate: string;
+  availability: IGET_RESTAURANT_PROMOTION_AVAILABILITY;
+  availablePlatforms: ERegisterType[];
+  availableOrderTypes: EOrderType[];
+  totalNumberUsed: number;
+  totalAvailableUses: number;
+  minSpend: number;
+  applyToCheapest: boolean;
+  applyToModifiers: boolean;
+  type: EPromotionType;
+  items: { items: IGET_RESTAURANT_PROMOTION_ITEMS[] };
+  discounts: { items: IGET_RESTAURANT_PROMOTION_DISCOUNT[] };
+  promotionRestaurantId: string;
+  owner: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface IGET_RESTAURANT_PROMOTION_AVAILABILITY {
@@ -1176,130 +1177,132 @@ export interface IGET_RESTAURANT_PROMOTION_AVAILABILITY {
 }
 
 export interface IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES {
-    startTime: string;
-    endTime: string;
+  startTime: string;
+  endTime: string;
 }
 
 export enum EPromotionType {
-    ENTIREORDER = "ENTIREORDER",
-    COMBO = "COMBO",
-    RELATEDITEMS = "RELATEDITEMS",
+  ENTIREORDER = "ENTIREORDER",
+  COMBO = "COMBO",
+  RELATEDITEMS = "RELATEDITEMS",
 }
 
 export interface IGET_RESTAURANT_PROMOTION_ITEMS {
-    id: string;
-    minQuantity: number;
-    categoryIds: string[];
-    productIds: string[];
+  id: string;
+  minQuantity: number;
+  categoryIds: string[];
+  productIds: string[];
 }
 
 export interface IGET_RESTAURANT_PROMOTION_DISCOUNT {
-    id: string;
-    amount: number;
-    type: EDiscountType;
-    items: { items: IGET_RESTAURANT_PROMOTION_ITEMS[] };
+  id: string;
+  amount: number;
+  type: EDiscountType;
+  items: { items: IGET_RESTAURANT_PROMOTION_ITEMS[] };
 }
 
 export enum EDiscountType {
-    FIXED = "FIXED",
-    PERCENTAGE = "PERCENTAGE",
-    SETPRICE = "SETPRICE",
+  FIXED = "FIXED",
+  PERCENTAGE = "PERCENTAGE",
+  SETPRICE = "SETPRICE",
 }
 
 export interface IGET_RESTAURANT_CATEGORY {
-    id: string;
-    name: string;
-    kitchenName: string | null;
-    description: string;
-    displaySequence: number;
-    imageUrl?: string;
-    image?: IS3Object;
-    availablePlatforms: ERegisterType[];
-    soldOut?: boolean;
-    soldOutDate?: string;
-    availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
-    products?: {
-        items: IGET_RESTAURANT_PRODUCT_LINK[];
-    };
+  id: string;
+  name: string;
+  kitchenName: string | null;
+  description: string;
+  displaySequence: number;
+  imageUrl?: string;
+  image?: IS3Object;
+  availablePlatforms: ERegisterType[];
+  soldOut?: boolean;
+  soldOutDate?: string;
+  availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
+  products?: {
+    items: IGET_RESTAURANT_PRODUCT_LINK[];
+  };
 }
 
 export interface IGET_RESTAURANT_CATEGORY_LINK {
-    category: IGET_RESTAURANT_CATEGORY;
+  category: IGET_RESTAURANT_CATEGORY;
 }
 
 export interface IGET_RESTAURANT_PRODUCT_LINK {
-    id: string;
-    displaySequence: number;
-    product: IGET_RESTAURANT_PRODUCT;
+  id: string;
+  displaySequence: number;
+  product: IGET_RESTAURANT_PRODUCT;
 }
 
 export interface IGET_RESTAURANT_PRODUCT {
-    id: string;
-    name: string;
-    kitchenName: string | null;
-    description?: string;
-    price: number;
-    displayPrice: string;
-    tags: string | null;
-    totalQuantitySold?: number;
-    totalQuantityAvailable?: number;
-    soldOut?: boolean;
-    soldOutDate?: string;
-    imageUrl?: string;
-    image?: IS3Object;
-    availablePlatforms: ERegisterType[];
-    isAgeRescricted: boolean;
-    availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
-    subCategories?: string;
-    categories: { items: IGET_RESTAURANT_CATEGORY_LINK[] };
-    modifierGroups?: {
-        items: IGET_RESTAURANT_MODIFIER_GROUP_LINK[];
-    };
+  id: string;
+  name: string;
+  kitchenName: string | null;
+  description?: string;
+  price: number;
+  displayPrice: string;
+  tags: string | null;
+  totalQuantitySold?: number;
+  totalQuantityAvailable?: number;
+  soldOut?: boolean;
+  soldOutDate?: string;
+  imageUrl?: string;
+  image?: IS3Object;
+  availablePlatforms: ERegisterType[];
+  isAgeRescricted: boolean;
+  availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
+  subCategories?: string;
+  categories: { items: IGET_RESTAURANT_CATEGORY_LINK[] };
+  modifierGroups?: {
+    items: IGET_RESTAURANT_MODIFIER_GROUP_LINK[];
+  };
 }
 
 export interface IGET_RESTAURANT_MODIFIER_GROUP_LINK {
-    id: string;
-    displaySequence: number;
-    hideForCustomer: boolean | null;
-    modifierGroup: IGET_RESTAURANT_MODIFIER_GROUP;
+  id: string;
+  displaySequence: number;
+  hideForCustomer: boolean | null;
+  modifierGroup: IGET_RESTAURANT_MODIFIER_GROUP;
 }
 
 export interface IGET_RESTAURANT_MODIFIER_GROUP {
-    id: string;
-    name: string;
-    kitchenName: string | null;
-    choiceMin: number;
-    choiceMax: number;
-    choiceDuplicate: number;
-    collapsedByDefault?: boolean | null;
-    availablePlatforms: ERegisterType[];
-    modifiers?: {
-        items: IGET_RESTAURANT_MODIFIER_LINK[];
-    };
+  id: string;
+  name: string;
+  kitchenName: string | null;
+  choiceMin: number;
+  choiceMax: number;
+  choiceDuplicate: number;
+  collapsedByDefault?: boolean | null;
+  availablePlatforms: ERegisterType[];
+  alphabeticalSorting: boolean;
+  modifiers?: {
+    items: IGET_RESTAURANT_MODIFIER_LINK[];
+  };
 }
 
 export interface IGET_RESTAURANT_MODIFIER_LINK {
-    id: string;
-    displaySequence: number;
-    preSelectedQuantity: number;
-    modifier: IGET_RESTAURANT_MODIFIER;
+  id: string;
+  displaySequence: number;
+  preSelectedQuantity: number;
+  modifier: IGET_RESTAURANT_MODIFIER;
 }
 
 export interface IGET_RESTAURANT_MODIFIER {
-    id: string;
-    name: string;
-    kitchenName: string | null;
-    description: string;
-    price: number;
-    imageUrl?: string;
-    image?: IS3Object;
-    totalQuantitySold?: number;
-    totalQuantityAvailable?: number;
-    soldOut?: boolean;
-    soldOutDate?: string;
-    availablePlatforms: ERegisterType[];
-    subModifierGroups: string;
-    productModifier?: IGET_RESTAURANT_PRODUCT;
+  id: string;
+  name: string;
+  kitchenName: string | null;
+  description: string;
+  price: number;
+  imageUrl?: string;
+  image?: IS3Object;
+  totalQuantitySold?: number;
+  totalQuantityAvailable?: number;
+  soldOut?: boolean;
+  soldOutDate?: string;
+  availablePlatforms: ERegisterType[];
+  isAgeRescricted: boolean;
+  subModifierGroups: string;
+  productModifier?: IGET_RESTAURANT_PRODUCT;
 }
 
 export interface IS3Object {
