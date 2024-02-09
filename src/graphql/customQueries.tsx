@@ -209,705 +209,706 @@ export interface IGET_USER_REGISTER_PRINTER_IGNORE_PRODUCT {
 }
 
 export const GET_RESTAURANT = gql`
-    query GetRestaurant($restaurantId: ID!) {
-        getRestaurant(id: $restaurantId) {
+  query GetRestaurant($restaurantId: ID!) {
+    getRestaurant(id: $restaurantId) {
+      id
+      name
+      description
+      isAcceptingOrders
+      verified
+      address {
+        aptSuite
+        formattedAddress
+      }
+      operatingHours {
+        monday {
+          openingTime
+          closingTime
+        }
+        tuesday {
+          openingTime
+          closingTime
+        }
+        wednesday {
+          openingTime
+          closingTime
+        }
+        thursday {
+          openingTime
+          closingTime
+        }
+        friday {
+          openingTime
+          closingTime
+        }
+        saturday {
+          openingTime
+          closingTime
+        }
+        sunday {
+          openingTime
+          closingTime
+        }
+      }
+      logo {
+        key
+        bucket
+        region
+        identityPoolId
+      }
+      gstNumber
+      customStyleSheet {
+        key
+        bucket
+        region
+        identityPoolId
+      }
+      autoCompleteOrders
+      preparationTimeInMinutes
+      delayBetweenOrdersInSeconds
+      orderThresholdMessage
+      surchargePercentage
+      salesReportMailingList
+      orderThresholds {
+        enable
+      }
+      advertisements {
+        items {
+          id
+          name
+          content {
+            key
+            bucket
+            region
+            identityPoolId
+            level
+          }
+          availability {
+            monday {
+              startTime
+              endTime
+            }
+            tuesday {
+              startTime
+              endTime
+            }
+            wednesday {
+              startTime
+              endTime
+            }
+            thursday {
+              startTime
+              endTime
+            }
+            friday {
+              startTime
+              endTime
+            }
+            saturday {
+              startTime
+              endTime
+            }
+            sunday {
+              startTime
+              endTime
+            }
+          }
+        }
+      }
+      thirdPartyIntegrations {
+        enable
+        awaitThirdPartyResponse
+        shift8 {
+          enable
+          storeApiUrl
+          storeUuid
+          storeLocationNumber
+        }
+        wizBang {
+          enable
+          storeApiUrl
+          username
+          password
+        }
+        doshii {
+          enable
+          locationId
+        }
+      }
+      upSellCrossSell {
+        id
+        customCategories {
+          items {
             id
-            name
-            description
-            isAcceptingOrders
-            verified
-            address {
-                aptSuite
-                formattedAddress
+          }
+        }
+        customProducts {
+          items {
+            id
+            categories {
+              items {
+                category {
+                  id
+                }
+              }
             }
-            operatingHours {
-                monday {
-                    openingTime
-                    closingTime
-                }
-                tuesday {
-                    openingTime
-                    closingTime
-                }
-                wednesday {
-                    openingTime
-                    closingTime
-                }
-                thursday {
-                    openingTime
-                    closingTime
-                }
-                friday {
-                    openingTime
-                    closingTime
-                }
-                saturday {
-                    openingTime
-                    closingTime
-                }
-                sunday {
-                    openingTime
-                    closingTime
-                }
-            }
-            logo {
-                key
-                bucket
-                region
-                identityPoolId
-            }
-            gstNumber
-            customStyleSheet {
-                key
-                bucket
-                region
-                identityPoolId
-            }
-            autoCompleteOrders
-            preparationTimeInMinutes
-            delayBetweenOrdersInSeconds
-            orderThresholdMessage
-            surchargePercentage
-            salesReportMailingList
-            orderThresholds {
-                enable
-            }
-            advertisements {
+          }
+        }
+      }
+      registers {
+        items {
+          id
+          active
+          name
+          enableTableFlags
+          enableBuzzerNumbers
+          enableSkuScanner
+          enableFeedback
+          enablePayLater
+          enableCashPayments
+          enableEftposPayments
+          enableUberEatsPayments
+          enableMenulogPayments
+          availableOrderTypes
+          orderTypeSurcharge {
+            dinein
+            takeaway
+          }
+          type
+          requestCustomerInformation {
+            firstName
+            email
+            phoneNumber
+            signature
+          }
+          eftposProvider
+          eftposIpAddress
+          eftposPortNumber
+          windcaveStationId
+          windcaveStationUser
+          windcaveStationKey
+          skipEftposReceiptSignature
+          askToPrintCustomerReceipt
+          orderNumberSuffix
+          orderNumberStart
+          surchargePercentage
+          defaultCategoryView
+          customStyleSheet {
+            key
+            bucket
+            region
+            identityPoolId
+          }
+          printers {
+            items {
+              id
+              name
+              type
+              printerType
+              address
+              receiptFooterText
+              customerPrinter
+              kitchenPrinter
+              kitchenPrinterSmall
+              kitchenPrinterLarge
+              hidePreparationTime
+              hideModifierGroupName
+              printReceiptForEachProduct
+              printAllOrderReceipts
+              printOnlineOrderReceipts
+              ignoreCategories(limit: 500) {
                 items {
+                  id
+                  category {
                     id
                     name
-                    content {
+                  }
+                }
+              }
+              ignoreProducts(limit: 500) {
+                items {
+                  id
+                  product {
+                    id
+                    name
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      promotions {
+        items {
+          id
+          name
+          type
+          code
+          autoApply
+          startDate
+          endDate
+          availability {
+            monday {
+              startTime
+              endTime
+            }
+            tuesday {
+              startTime
+              endTime
+            }
+            wednesday {
+              startTime
+              endTime
+            }
+            thursday {
+              startTime
+              endTime
+            }
+            friday {
+              startTime
+              endTime
+            }
+            saturday {
+              startTime
+              endTime
+            }
+            sunday {
+              startTime
+              endTime
+            }
+          }
+          availablePlatforms
+          availableOrderTypes
+          totalNumberUsed
+          totalAvailableUses
+          minSpend
+          applyToCheapest
+          applyToModifiers
+          items {
+            items {
+              id
+              minQuantity
+              categoryIds
+              productIds
+            }
+          }
+          discounts {
+            items {
+              id
+              amount
+              type
+              items {
+                items {
+                  id
+                  minQuantity
+                  categoryIds
+                  productIds
+                }
+              }
+            }
+          }
+        }
+      }
+      categories(limit: 20) {
+        items {
+          id
+          name
+          kitchenName
+          description
+          soldOut
+          soldOutDate
+          imageUrl
+          image {
+            key
+            bucket
+            region
+            identityPoolId
+          }
+          displaySequence
+          availablePlatforms
+          availability {
+            monday {
+              startTime
+              endTime
+            }
+            tuesday {
+              startTime
+              endTime
+            }
+            wednesday {
+              startTime
+              endTime
+            }
+            thursday {
+              startTime
+              endTime
+            }
+            friday {
+              startTime
+              endTime
+            }
+            saturday {
+              startTime
+              endTime
+            }
+            sunday {
+              startTime
+              endTime
+            }
+          }
+          products(limit: 100) {
+            items {
+              id
+              displaySequence
+              product {
+                id
+                name
+                kitchenName
+                description
+                price
+                displayPrice
+                tags
+                totalQuantitySold
+                totalQuantityAvailable
+                soldOut
+                soldOutDate
+                imageUrl
+                image {
+                  key
+                  bucket
+                  region
+                  identityPoolId
+                  level
+                }
+                availablePlatforms
+                isAgeRescricted
+                availability {
+                  monday {
+                    startTime
+                    endTime
+                  }
+                  tuesday {
+                    startTime
+                    endTime
+                  }
+                  wednesday {
+                    startTime
+                    endTime
+                  }
+                  thursday {
+                    startTime
+                    endTime
+                  }
+                  friday {
+                    startTime
+                    endTime
+                  }
+                  saturday {
+                    startTime
+                    endTime
+                  }
+                  sunday {
+                    startTime
+                    endTime
+                  }
+                }
+                subCategories
+                categories {
+                  items {
+                    category {
+                      id
+                      name
+                      kitchenName
+                      imageUrl
+                      image {
                         key
                         bucket
                         region
                         identityPoolId
-                    }
-                    availability {
+                      }
+                      displaySequence
+                      availablePlatforms
+                      availability {
                         monday {
-                            startTime
-                            endTime
+                          startTime
+                          endTime
                         }
                         tuesday {
-                            startTime
-                            endTime
+                          startTime
+                          endTime
                         }
                         wednesday {
-                            startTime
-                            endTime
+                          startTime
+                          endTime
                         }
                         thursday {
-                            startTime
-                            endTime
+                          startTime
+                          endTime
                         }
                         friday {
-                            startTime
-                            endTime
+                          startTime
+                          endTime
                         }
                         saturday {
-                            startTime
-                            endTime
+                          startTime
+                          endTime
                         }
                         sunday {
-                            startTime
-                            endTime
+                          startTime
+                          endTime
                         }
+                      }
                     }
+                  }
                 }
-            }
-            thirdPartyIntegrations {
-                enable
-                awaitThirdPartyResponse
-                shift8 {
-                    enable
-                    storeApiUrl
-                    storeUuid
-                    storeLocationNumber
-                }
-                wizBang {
-                    enable
-                    storeApiUrl
-                    username
-                    password
-                }
-                doshii {
-                    enable
-                    locationId
-                }
-            }
-            upSellCrossSell {
-                id
-                customCategories {
-                    items {
-                        id
-                    }
-                }
-                customProducts {
-                    items {
-                        id
-                        categories {
-                            items {
-                                category {
-                                    id
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            registers {
-                items {
+                modifierGroups(limit: 20) {
+                  items {
                     id
-                    active
-                    name
-                    enableTableFlags
-                    enableBuzzerNumbers
-                    enableSkuScanner
-                    enableFeedback
-                    enablePayLater
-                    enableCashPayments
-                    enableEftposPayments
-                    enableUberEatsPayments
-                    enableMenulogPayments
-                    availableOrderTypes
-                    orderTypeSurcharge {
-                        dinein
-                        takeaway
-                    }
-                    type
-                    requestCustomerInformation {
-                        firstName
-                        email
-                        phoneNumber
-                        signature
-                    }
-                    eftposProvider
-                    eftposIpAddress
-                    eftposPortNumber
-                    windcaveStationId
-                    windcaveStationUser
-                    windcaveStationKey
-                    skipEftposReceiptSignature
-                    askToPrintCustomerReceipt
-                    orderNumberSuffix
-                    orderNumberStart
-                    surchargePercentage
-                    defaultCategoryView
-                    customStyleSheet {
-                        key
-                        bucket
-                        region
-                        identityPoolId
-                    }
-                    printers {
+                    displaySequence
+                    hideForCustomer
+                    modifierGroup {
+                      id
+                      name
+                      kitchenName
+                      choiceMin
+                      choiceMax
+                      choiceDuplicate
+                      collapsedByDefault
+                      availablePlatforms
+                      alphabeticalSorting
+                      modifiers(limit: 50) {
                         items {
+                          id
+                          displaySequence
+                          preSelectedQuantity
+                          modifier {
                             id
                             name
-                            type
-                            printerType
-                            address
-                            receiptFooterText
-                            customerPrinter
-                            kitchenPrinter
-                            kitchenPrinterSmall
-                            kitchenPrinterLarge
-                            hidePreparationTime
-                            hideModifierGroupName
-                            printReceiptForEachProduct
-                            printAllOrderReceipts
-                            printOnlineOrderReceipts
-                            ignoreCategories(limit: 500) {
-                                items {
-                                    id
-                                    category {
-                                        id
-                                        name
-                                    }
-                                }
+                            kitchenName
+                            description
+                            price
+                            imageUrl
+                            image {
+                              key
+                              bucket
+                              region
+                              identityPoolId
                             }
-                            ignoreProducts(limit: 500) {
+                            totalQuantitySold
+                            totalQuantityAvailable
+                            soldOut
+                            soldOutDate
+                            availablePlatforms
+                            subModifierGroups
+                            productModifier {
+                              id
+                              name
+                              kitchenName
+                              description
+                              price
+                              tags
+                              totalQuantitySold
+                              totalQuantityAvailable
+                              soldOut
+                              soldOutDate
+                              imageUrl
+                              image {
+                                key
+                                bucket
+                                region
+                                identityPoolId
+                              }
+                              categories {
                                 items {
+                                  category {
                                     id
-                                    product {
-                                        id
-                                        name
+                                    name
+                                    kitchenName
+                                    imageUrl
+                                    image {
+                                      key
+                                      bucket
+                                      region
+                                      identityPoolId
                                     }
+                                  }
                                 }
-                            }
-                        }
-                    }
-                }
-            }
-            promotions {
-                items {
-                    id
-                    name
-                    type
-                    code
-                    autoApply
-                    startDate
-                    endDate
-                    availability {
-                        monday {
-                            startTime
-                            endTime
-                        }
-                        tuesday {
-                            startTime
-                            endTime
-                        }
-                        wednesday {
-                            startTime
-                            endTime
-                        }
-                        thursday {
-                            startTime
-                            endTime
-                        }
-                        friday {
-                            startTime
-                            endTime
-                        }
-                        saturday {
-                            startTime
-                            endTime
-                        }
-                        sunday {
-                            startTime
-                            endTime
-                        }
-                    }
-                    availablePlatforms
-                    availableOrderTypes
-                    totalNumberUsed
-                    totalAvailableUses
-                    minSpend
-                    applyToCheapest
-                    applyToModifiers
-                    items {
-                        items {
-                            id
-                            minQuantity
-                            categoryIds
-                            productIds
-                        }
-                    }
-                    discounts {
-                        items {
-                            id
-                            amount
-                            type
-                            items {
+                              }
+                              availability {
+                                monday {
+                                  startTime
+                                  endTime
+                                }
+                                tuesday {
+                                  startTime
+                                  endTime
+                                }
+                                wednesday {
+                                  startTime
+                                  endTime
+                                }
+                                thursday {
+                                  startTime
+                                  endTime
+                                }
+                                friday {
+                                  startTime
+                                  endTime
+                                }
+                                saturday {
+                                  startTime
+                                  endTime
+                                }
+                                sunday {
+                                  startTime
+                                  endTime
+                                }
+                              }
+                              modifierGroups(limit: 20) {
                                 items {
+                                  id
+                                  displaySequence
+                                  hideForCustomer
+                                  modifierGroup {
                                     id
-                                    minQuantity
-                                    categoryIds
-                                    productIds
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            categories(limit: 20) {
-                items {
-                    id
-                    name
-                    kitchenName
-                    description
-                    soldOut
-                    soldOutDate
-                    imageUrl
-                    image {
-                        key
-                        bucket
-                        region
-                        identityPoolId
-                    }
-                    displaySequence
-                    availablePlatforms
-                    availability {
-                        monday {
-                            startTime
-                            endTime
-                        }
-                        tuesday {
-                            startTime
-                            endTime
-                        }
-                        wednesday {
-                            startTime
-                            endTime
-                        }
-                        thursday {
-                            startTime
-                            endTime
-                        }
-                        friday {
-                            startTime
-                            endTime
-                        }
-                        saturday {
-                            startTime
-                            endTime
-                        }
-                        sunday {
-                            startTime
-                            endTime
-                        }
-                    }
-                    products(limit: 100) {
-                        items {
-                            id
-                            displaySequence
-                            product {
-                                id
-                                name
-                                kitchenName
-                                description
-                                price
-                                displayPrice
-                                tags
-                                totalQuantitySold
-                                totalQuantityAvailable
-                                soldOut
-                                soldOutDate
-                                imageUrl
-                                image {
-                                    key
-                                    bucket
-                                    region
-                                    identityPoolId
-                                    level
-                                }
-                                availablePlatforms
-                                isAgeRescricted
-                                availability {
-                                    monday {
-                                        startTime
-                                        endTime
-                                    }
-                                    tuesday {
-                                        startTime
-                                        endTime
-                                    }
-                                    wednesday {
-                                        startTime
-                                        endTime
-                                    }
-                                    thursday {
-                                        startTime
-                                        endTime
-                                    }
-                                    friday {
-                                        startTime
-                                        endTime
-                                    }
-                                    saturday {
-                                        startTime
-                                        endTime
-                                    }
-                                    sunday {
-                                        startTime
-                                        endTime
-                                    }
-                                }
-                                subCategories
-                                categories {
-                                    items {
-                                        category {
-                                            id
-                                            name
-                                            kitchenName
-                                            imageUrl
-                                            image {
-                                                key
-                                                bucket
-                                                region
-                                                identityPoolId
-                                            }
-                                            displaySequence
-                                            availablePlatforms
-                                            availability {
-                                                monday {
-                                                    startTime
-                                                    endTime
-                                                }
-                                                tuesday {
-                                                    startTime
-                                                    endTime
-                                                }
-                                                wednesday {
-                                                    startTime
-                                                    endTime
-                                                }
-                                                thursday {
-                                                    startTime
-                                                    endTime
-                                                }
-                                                friday {
-                                                    startTime
-                                                    endTime
-                                                }
-                                                saturday {
-                                                    startTime
-                                                    endTime
-                                                }
-                                                sunday {
-                                                    startTime
-                                                    endTime
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                modifierGroups(limit: 20) {
-                                    items {
+                                    name
+                                    kitchenName
+                                    choiceMin
+                                    choiceMax
+                                    choiceDuplicate
+                                    collapsedByDefault
+                                    availablePlatforms
+                                    modifiers(limit: 50) {
+                                      items {
                                         id
                                         displaySequence
-                                        hideForCustomer
-                                        modifierGroup {
+                                        preSelectedQuantity
+                                        modifier {
+                                          id
+                                          name
+                                          kitchenName
+                                          price
+                                          imageUrl
+                                          image {
+                                            key
+                                            bucket
+                                            region
+                                            identityPoolId
+                                          }
+                                          productModifier {
                                             id
                                             name
                                             kitchenName
-                                            choiceMin
-                                            choiceMax
-                                            choiceDuplicate
-                                            collapsedByDefault
-                                            availablePlatforms
-                                            alphabeticalSorting
-                                            modifiers(limit: 50) {
-                                                items {
-                                                    id
-                                                    displaySequence
-                                                    preSelectedQuantity
-                                                    modifier {
-                                                        id
-                                                        name
-                                                        kitchenName
-                                                        description
-                                                        price
-                                                        imageUrl
-                                                        image {
-                                                            key
-                                                            bucket
-                                                            region
-                                                            identityPoolId
-                                                        }
-                                                        totalQuantitySold
-                                                        totalQuantityAvailable
-                                                        soldOut
-                                                        soldOutDate
-                                                        availablePlatforms
-                                                        subModifierGroups
-                                                        productModifier {
-                                                            id
-                                                            name
-                                                            kitchenName
-                                                            description
-                                                            price
-                                                            tags
-                                                            totalQuantitySold
-                                                            totalQuantityAvailable
-                                                            soldOut
-                                                            soldOutDate
-                                                            imageUrl
-                                                            image {
-                                                                key
-                                                                bucket
-                                                                region
-                                                                identityPoolId
-                                                            }
-                                                            categories {
-                                                                items {
-                                                                    category {
-                                                                        id
-                                                                        name
-                                                                        kitchenName
-                                                                        imageUrl
-                                                                        image {
-                                                                            key
-                                                                            bucket
-                                                                            region
-                                                                            identityPoolId
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                            availability {
-                                                                monday {
-                                                                    startTime
-                                                                    endTime
-                                                                }
-                                                                tuesday {
-                                                                    startTime
-                                                                    endTime
-                                                                }
-                                                                wednesday {
-                                                                    startTime
-                                                                    endTime
-                                                                }
-                                                                thursday {
-                                                                    startTime
-                                                                    endTime
-                                                                }
-                                                                friday {
-                                                                    startTime
-                                                                    endTime
-                                                                }
-                                                                saturday {
-                                                                    startTime
-                                                                    endTime
-                                                                }
-                                                                sunday {
-                                                                    startTime
-                                                                    endTime
-                                                                }
-                                                            }
-                                                            modifierGroups(limit: 20) {
-                                                                items {
-                                                                    id
-                                                                    displaySequence
-                                                                    hideForCustomer
-                                                                    modifierGroup {
-                                                                        id
-                                                                        name
-                                                                        kitchenName
-                                                                        choiceMin
-                                                                        choiceMax
-                                                                        choiceDuplicate
-                                                                        collapsedByDefault
-                                                                        availablePlatforms
-                                                                        modifiers(limit: 50) {
-                                                                            items {
-                                                                                id
-                                                                                displaySequence
-                                                                                preSelectedQuantity
-                                                                                modifier {
-                                                                                    id
-                                                                                    name
-                                                                                    kitchenName
-                                                                                    price
-                                                                                    imageUrl
-                                                                                    image {
-                                                                                        key
-                                                                                        bucket
-                                                                                        region
-                                                                                        identityPoolId
-                                                                                    }
-                                                                                    productModifier {
-                                                                                        id
-                                                                                        name
-                                                                                        kitchenName
-                                                                                        description
-                                                                                        price
-                                                                                        tags
-                                                                                        totalQuantitySold
-                                                                                        totalQuantityAvailable
-                                                                                        soldOut
-                                                                                        soldOutDate
-                                                                                        imageUrl
-                                                                                        image {
-                                                                                            key
-                                                                                            bucket
-                                                                                            region
-                                                                                            identityPoolId
-                                                                                        }
-                                                                                        categories {
-                                                                                            items {
-                                                                                                category {
-                                                                                                    id
-                                                                                                    name
-                                                                                                    kitchenName
-                                                                                                    imageUrl
-                                                                                                    image {
-                                                                                                        key
-                                                                                                        bucket
-                                                                                                        region
-                                                                                                        identityPoolId
-                                                                                                    }
-                                                                                                }
-                                                                                            }
-                                                                                        }
-                                                                                        availability {
-                                                                                            monday {
-                                                                                                startTime
-                                                                                                endTime
-                                                                                            }
-                                                                                            tuesday {
-                                                                                                startTime
-                                                                                                endTime
-                                                                                            }
-                                                                                            wednesday {
-                                                                                                startTime
-                                                                                                endTime
-                                                                                            }
-                                                                                            thursday {
-                                                                                                startTime
-                                                                                                endTime
-                                                                                            }
-                                                                                            friday {
-                                                                                                startTime
-                                                                                                endTime
-                                                                                            }
-                                                                                            saturday {
-                                                                                                startTime
-                                                                                                endTime
-                                                                                            }
-                                                                                            sunday {
-                                                                                                startTime
-                                                                                                endTime
-                                                                                            }
-                                                                                        }
-                                                                                    }
-                                                                                    totalQuantitySold
-                                                                                    totalQuantityAvailable
-                                                                                    soldOut
-                                                                                    soldOutDate
-                                                                                    availablePlatforms
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
+                                            description
+                                            price
+                                            tags
+                                            totalQuantitySold
+                                            totalQuantityAvailable
+                                            soldOut
+                                            soldOutDate
+                                            imageUrl
+                                            image {
+                                              key
+                                              bucket
+                                              region
+                                              identityPoolId
                                             }
+                                            categories {
+                                              items {
+                                                category {
+                                                  id
+                                                  name
+                                                  kitchenName
+                                                  imageUrl
+                                                  image {
+                                                    key
+                                                    bucket
+                                                    region
+                                                    identityPoolId
+                                                  }
+                                                }
+                                              }
+                                            }
+                                            availability {
+                                              monday {
+                                                startTime
+                                                endTime
+                                              }
+                                              tuesday {
+                                                startTime
+                                                endTime
+                                              }
+                                              wednesday {
+                                                startTime
+                                                endTime
+                                              }
+                                              thursday {
+                                                startTime
+                                                endTime
+                                              }
+                                              friday {
+                                                startTime
+                                                endTime
+                                              }
+                                              saturday {
+                                                startTime
+                                                endTime
+                                              }
+                                              sunday {
+                                                startTime
+                                                endTime
+                                              }
+                                            }
+                                          }
+                                          totalQuantitySold
+                                          totalQuantityAvailable
+                                          soldOut
+                                          soldOutDate
+                                          availablePlatforms
                                         }
+                                      }
                                     }
+                                  }
                                 }
+                              }
                             }
+                          }
                         }
+                      }
                     }
+                  }
                 }
+              }
             }
-            products(limit: 500) {
-                items {
-                    id
-                    name
-                    soldOut
-                    soldOutDate
-                    totalQuantityAvailable
-                }
-            }
-            # Only for stock component
-            modifiers(limit: 500) {
-                items {
-                    id
-                    name
-                    soldOut
-                    soldOutDate
-                    totalQuantityAvailable
-                    productModifier {
-                        id
-                        name
-                        price
-                    }
-                }
-            }
+          }
         }
+      }
+      products(limit: 500) {
+        items {
+          id
+          name
+          soldOut
+          soldOutDate
+          totalQuantityAvailable
+        }
+      }
+      # Only for stock component
+      modifiers(limit: 500) {
+        items {
+          id
+          name
+          soldOut
+          soldOutDate
+          totalQuantityAvailable
+          productModifier {
+            id
+            name
+            price
+          }
+        }
+      }
     }
+  }
 `;
 
 export interface IGET_RESTAURANT {
@@ -1705,54 +1706,55 @@ export interface IGET_THIRD_PARTY_ORDER_RESPONSE {
 }
 
 export const GET_RESTAURANT_PING_DATA = gql`
-    query GetRestaurant($restaurantId: ID!) {
-        getRestaurant(id: $restaurantId) {
-            id
-            preparationTimeInMinutes
-            advertisements {
-                items {
-                    id
-                    name
-                    content {
-                        key
-                        bucket
-                        region
-                        identityPoolId
-                    }
-                    availability {
-                        monday {
-                            startTime
-                            endTime
-                        }
-                        tuesday {
-                            startTime
-                            endTime
-                        }
-                        wednesday {
-                            startTime
-                            endTime
-                        }
-                        thursday {
-                            startTime
-                            endTime
-                        }
-                        friday {
-                            startTime
-                            endTime
-                        }
-                        saturday {
-                            startTime
-                            endTime
-                        }
-                        sunday {
-                            startTime
-                            endTime
-                        }
-                    }
-                }
+  query GetRestaurant($restaurantId: ID!) {
+    getRestaurant(id: $restaurantId) {
+      id
+      preparationTimeInMinutes
+      advertisements {
+        items {
+          id
+          name
+          content {
+            key
+            bucket
+            region
+            identityPoolId
+            level
+          }
+          availability {
+            monday {
+              startTime
+              endTime
             }
+            tuesday {
+              startTime
+              endTime
+            }
+            wednesday {
+              startTime
+              endTime
+            }
+            thursday {
+              startTime
+              endTime
+            }
+            friday {
+              startTime
+              endTime
+            }
+            saturday {
+              startTime
+              endTime
+            }
+            sunday {
+              startTime
+              endTime
+            }
+          }
         }
+      }
     }
+  }
 `;
 
 export interface IGET_RESTAURANT_PING_DATA {

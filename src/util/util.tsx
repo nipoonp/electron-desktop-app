@@ -156,7 +156,6 @@ export const isItemAvailable = (
     | IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_HOURS
 ) => {
   if (!availability) return true;
-
   const dayTimes: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] | null =
     getDayData(availability);
 
