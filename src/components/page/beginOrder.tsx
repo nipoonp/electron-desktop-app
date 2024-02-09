@@ -109,19 +109,19 @@ const BeginOrderAdvertisements = (props: {
 
   const [currentAd, setCurrentAd] = useState(0);
 
-  useEffect(() => {
-    const timerId = setInterval(() => {
-      if (availableAds.length <= 1) {
-        setCurrentAd(0);
-      } else {
-        setCurrentAd((prevCurrentAd) =>
-          prevCurrentAd === availableAds.length - 1 ? 0 : prevCurrentAd + 1
-        );
-      }
-    }, 6000);
+  //   useEffect(() => {
+  //     const timerId = setInterval(() => {
+  //       if (availableAds.length <= 1) {
+  //         setCurrentAd(0);
+  //       } else {
+  //         setCurrentAd((prevCurrentAd) =>
+  //           prevCurrentAd === availableAds.length - 1 ? 0 : prevCurrentAd + 1
+  //         );
+  //       }
+  //     }, 6000);
 
-    return () => clearInterval(timerId);
-  }, [availableAds]);
+  //     return () => clearInterval(timerId);
+  //   }, [availableAds]);
 
   if (!restaurant) return <div>This user has not selected any restaurant</div>;
 
