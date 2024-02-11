@@ -5,7 +5,7 @@ import { Select } from "./select";
 import "./orderScheduleDateTime.scss";
 import { IGET_RESTAURANT_OPERATING_HOURS } from "../../graphql/customQueries";
 import { getIsRestaurantOpen, getRestaurantTimings } from "../../util/util";
-import { addMinutes } from "date-fns/esm";
+import { addMinutes } from "date-fns";
 
 const RESTAURANT_TIMINGS_INTERVAL = 5;
 
