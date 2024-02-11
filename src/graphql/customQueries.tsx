@@ -1717,36 +1717,6 @@ export const GET_RESTAURANT_PING_DATA = gql`
                         region
                         identityPoolId
                     }
-                    availability {
-                        monday {
-                            startTime
-                            endTime
-                        }
-                        tuesday {
-                            startTime
-                            endTime
-                        }
-                        wednesday {
-                            startTime
-                            endTime
-                        }
-                        thursday {
-                            startTime
-                            endTime
-                        }
-                        friday {
-                            startTime
-                            endTime
-                        }
-                        saturday {
-                            startTime
-                            endTime
-                        }
-                        sunday {
-                            startTime
-                            endTime
-                        }
-                    }
                 }
             }
         }
@@ -1756,7 +1726,6 @@ export const GET_RESTAURANT_PING_DATA = gql`
 export interface IGET_RESTAURANT_PING_DATA {
     id: string;
     preparationTimeInMinutes: number | null;
-    advertisements: { items: IGET_RESTAURANT_ADVERTISEMENT[] };
 }
 
 export interface IGET_FEEDBACK_BY_RESTAURANT {
