@@ -589,7 +589,7 @@ export const Checkout = () => {
 
     const pollForThirdPartyResponse = (orderId) => {
         const interval = 2 * 1000; // 2 seconds
-        const timeout = 30 * 1000; // 20 seconds
+        const timeout = 60 * 1000; // 60 seconds
 
         const endTime = Number(new Date()) + timeout;
 
@@ -682,6 +682,7 @@ export const Checkout = () => {
                 surcharge: surcharge || undefined,
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
+                promotionType: promotion ? promotion.promotion.type : undefined,
                 subTotal: subTotal,
                 preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                 registerId: register.id,
@@ -732,6 +733,7 @@ export const Checkout = () => {
                     surcharge: surcharge || undefined,
                     discount: promotion ? promotion.discountedAmount : undefined,
                     promotionId: promotion ? promotion.promotion.id : undefined,
+                    promotionType: promotion ? promotion.promotion.type : undefined,
                     subTotal: subTotal,
                     preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                     registerId: register.id,
