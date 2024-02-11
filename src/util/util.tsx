@@ -99,242 +99,228 @@ export const isItemSoldOut = (soldOut?: boolean, soldOutDate?: string) => {
     return false;
 };
 
-export const isPromotionAvailable = (
-  availability?: IGET_RESTAURANT_PROMOTION_AVAILABILITY
-) => {
-  if (!availability) return true;
+export const isPromotionAvailable = (availability?: IGET_RESTAURANT_PROMOTION_AVAILABILITY) => {
+    if (!availability) return true;
 
-  const dayTimes: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[] | null =
-    getPromotionDayData(availability);
+    const dayTimes: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[] | null = getPromotionDayData(availability);
 
-  if (dayTimes?.length == 0) return true;
+    if (dayTimes?.length == 0) return true;
 
-  const currentDateTime = new Date();
-  let isWithinTimeSlot = false;
+    const currentDateTime = new Date();
+    let isWithinTimeSlot = false;
 
-  dayTimes?.forEach((timeSlot) => {
-    let startDateTime = new Date(
-      currentDateTime.getFullYear(),
-      currentDateTime.getMonth(),
-      currentDateTime.getDate(),
-      parseInt(timeSlot.startTime.split(":")[0]),
-      parseInt(timeSlot.startTime.split(":")[1]),
-      0,
-      0
-    );
-    let endDateTime = new Date(
-      currentDateTime.getFullYear(),
-      currentDateTime.getMonth(),
-      currentDateTime.getDate(),
-      parseInt(timeSlot.endTime.split(":")[0]),
-      parseInt(timeSlot.endTime.split(":")[1]),
-      0,
-      0
-    );
+    dayTimes?.forEach((timeSlot) => {
+        let startDateTime = new Date(
+            currentDateTime.getFullYear(),
+            currentDateTime.getMonth(),
+            currentDateTime.getDate(),
+            parseInt(timeSlot.startTime.split(":")[0]),
+            parseInt(timeSlot.startTime.split(":")[1]),
+            0,
+            0
+        );
+        let endDateTime = new Date(
+            currentDateTime.getFullYear(),
+            currentDateTime.getMonth(),
+            currentDateTime.getDate(),
+            parseInt(timeSlot.endTime.split(":")[0]),
+            parseInt(timeSlot.endTime.split(":")[1]),
+            0,
+            0
+        );
 
-    //Check if endDateTime is set for 12:00AM, if it is add one day because it should be start of next day.
-    if (isEqual(endDateTime, startOfDay(endDateTime))) {
-      endDateTime = addDays(endDateTime, 1);
-    }
+        //Check if endDateTime is set for 12:00AM, if it is add one day because it should be start of next day.
+        if (isEqual(endDateTime, startOfDay(endDateTime))) {
+            endDateTime = addDays(endDateTime, 1);
+        }
 
-    const isWithin = isWithinInterval(currentDateTime, {
-      start: startDateTime,
-      end: endDateTime,
+        const isWithin = isWithinInterval(currentDateTime, {
+            start: startDateTime,
+            end: endDateTime,
+        });
+
+        if (isWithin && !isWithinTimeSlot) {
+            isWithinTimeSlot = true;
+        }
     });
 
-    if (isWithin && !isWithinTimeSlot) {
-      isWithinTimeSlot = true;
-    }
-  });
-
-  return isWithinTimeSlot;
+    return isWithinTimeSlot;
 };
 
-export const isItemAvailable = (
-  availability?:
-    | IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS
-    | IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_HOURS
-) => {
-  if (!availability) return true;
-  const dayTimes: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] | null =
-    getDayData(availability);
+export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS | IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_HOURS) => {
+    if (!availability) return true;
+    const dayTimes: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] | null = getDayData(availability);
 
-  if (dayTimes?.length == 0) return true;
+    if (dayTimes?.length == 0) return true;
 
-  const currentDateTime = new Date();
-  let isWithinTimeSlot = false;
+    const currentDateTime = new Date();
+    let isWithinTimeSlot = false;
 
-  dayTimes?.forEach((timeSlot) => {
-    let startDateTime = new Date(
-      currentDateTime.getFullYear(),
-      currentDateTime.getMonth(),
-      currentDateTime.getDate(),
-      parseInt(timeSlot.startTime.split(":")[0]),
-      parseInt(timeSlot.startTime.split(":")[1]),
-      0,
-      0
-    );
+    dayTimes?.forEach((timeSlot) => {
+        let startDateTime = new Date(
+            currentDateTime.getFullYear(),
+            currentDateTime.getMonth(),
+            currentDateTime.getDate(),
+            parseInt(timeSlot.startTime.split(":")[0]),
+            parseInt(timeSlot.startTime.split(":")[1]),
+            0,
+            0
+        );
 
-    let endDateTime = new Date(
-      currentDateTime.getFullYear(),
-      currentDateTime.getMonth(),
-      currentDateTime.getDate(),
-      parseInt(timeSlot.endTime.split(":")[0]),
-      parseInt(timeSlot.endTime.split(":")[1]),
-      0,
-      0
-    );
+        let endDateTime = new Date(
+            currentDateTime.getFullYear(),
+            currentDateTime.getMonth(),
+            currentDateTime.getDate(),
+            parseInt(timeSlot.endTime.split(":")[0]),
+            parseInt(timeSlot.endTime.split(":")[1]),
+            0,
+            0
+        );
 
-    if (isAfter(startDateTime, endDateTime)) return;
+        if (isAfter(startDateTime, endDateTime)) return;
 
-    //Check if endDateTime is set for 12:00AM, if it is add one day because it should be start of next day.
-    if (isEqual(endDateTime, startOfDay(endDateTime))) {
-      endDateTime = addDays(endDateTime, 1);
-    }
+        //Check if endDateTime is set for 12:00AM, if it is add one day because it should be start of next day.
+        if (isEqual(endDateTime, startOfDay(endDateTime))) {
+            endDateTime = addDays(endDateTime, 1);
+        }
 
-    const isWithin = isWithinInterval(currentDateTime, {
-      start: startDateTime,
-      end: endDateTime,
+        const isWithin = isWithinInterval(currentDateTime, {
+            start: startDateTime,
+            end: endDateTime,
+        });
+
+        if (isWithin && !isWithinTimeSlot) {
+            isWithinTimeSlot = true;
+        }
     });
 
-    if (isWithin && !isWithinTimeSlot) {
-      isWithinTimeSlot = true;
-    }
-  });
-
-  return isWithinTimeSlot;
+    return isWithinTimeSlot;
 };
 
 export const getProductQuantityAvailable = (
-  menuProductItem: {
-    id: string;
-    totalQuantityAvailable: number;
-  },
-  cartProducts: ICartItemQuantitiesById
+    menuProductItem: {
+        id: string;
+        totalQuantityAvailable: number;
+    },
+    cartProducts: ICartItemQuantitiesById
 ) => {
-  let quantityAvailable = menuProductItem.totalQuantityAvailable;
+    let quantityAvailable = menuProductItem.totalQuantityAvailable;
 
-  if (cartProducts[menuProductItem.id] != undefined) {
-    quantityAvailable -= cartProducts[menuProductItem.id].quantity;
-  }
+    if (cartProducts[menuProductItem.id] != undefined) {
+        quantityAvailable -= cartProducts[menuProductItem.id].quantity;
+    }
 
-  return quantityAvailable;
+    return quantityAvailable;
 };
 
 export const isProductQuantityAvailable = (
-  menuProductItem: {
-    id: string;
-    totalQuantityAvailable?: number;
-  },
-  cartProducts: ICartItemQuantitiesById
-) => {
-  if (!menuProductItem.totalQuantityAvailable) return true;
-
-  const productQuantityAvailable = getProductQuantityAvailable(
-    {
-      id: menuProductItem.id,
-      totalQuantityAvailable: menuProductItem.totalQuantityAvailable,
+    menuProductItem: {
+        id: string;
+        totalQuantityAvailable?: number;
     },
-    cartProducts
-  );
+    cartProducts: ICartItemQuantitiesById
+) => {
+    if (!menuProductItem.totalQuantityAvailable) return true;
 
-  return productQuantityAvailable > 0;
+    const productQuantityAvailable = getProductQuantityAvailable(
+        {
+            id: menuProductItem.id,
+            totalQuantityAvailable: menuProductItem.totalQuantityAvailable,
+        },
+        cartProducts
+    );
+
+    return productQuantityAvailable > 0;
 };
 
 export const getModifierQuantityAvailable = (
-  menuModifierItem: {
-    id: string;
-    totalQuantityAvailable: number;
-  },
-  cartModifiers: ICartItemQuantitiesById
+    menuModifierItem: {
+        id: string;
+        totalQuantityAvailable: number;
+    },
+    cartModifiers: ICartItemQuantitiesById
 ) => {
-  let quantityAvailable = menuModifierItem.totalQuantityAvailable;
+    let quantityAvailable = menuModifierItem.totalQuantityAvailable;
 
-  if (cartModifiers[menuModifierItem.id] != undefined) {
-    quantityAvailable -= cartModifiers[menuModifierItem.id].quantity;
-  }
+    if (cartModifiers[menuModifierItem.id] != undefined) {
+        quantityAvailable -= cartModifiers[menuModifierItem.id].quantity;
+    }
 
-  return quantityAvailable;
+    return quantityAvailable;
 };
 
 export const isModifierQuantityAvailable = (
-  menuModifierItem: {
-    id: string;
-    totalQuantityAvailable?: number;
-  },
-  cartModifiers: ICartItemQuantitiesById
-) => {
-  if (!menuModifierItem.totalQuantityAvailable) return true;
-
-  const modifierQuantityAvailable = getModifierQuantityAvailable(
-    {
-      id: menuModifierItem.id,
-      totalQuantityAvailable: menuModifierItem.totalQuantityAvailable,
+    menuModifierItem: {
+        id: string;
+        totalQuantityAvailable?: number;
     },
-    cartModifiers
-  );
+    cartModifiers: ICartItemQuantitiesById
+) => {
+    if (!menuModifierItem.totalQuantityAvailable) return true;
 
-  return modifierQuantityAvailable > 0;
+    const modifierQuantityAvailable = getModifierQuantityAvailable(
+        {
+            id: menuModifierItem.id,
+            totalQuantityAvailable: menuModifierItem.totalQuantityAvailable,
+        },
+        cartModifiers
+    );
+
+    return modifierQuantityAvailable > 0;
 };
 
 export const getQuantityRemainingText = (quantityRemaining: number) => {
-  if (quantityRemaining == 1) {
-    return "Last one!";
-  } else {
-    return `${quantityRemaining} left!`;
-  }
+    if (quantityRemaining == 1) {
+        return "Last one!";
+    } else {
+        return `${quantityRemaining} left!`;
+    }
 };
 
-const getPromotionDayData = (
-  availability: IGET_RESTAURANT_PROMOTION_AVAILABILITY
-) => {
-  const day: number = getDay(new Date());
+const getPromotionDayData = (availability: IGET_RESTAURANT_PROMOTION_AVAILABILITY) => {
+    const day: number = getDay(new Date());
 
-  switch (day) {
-    case 1:
-      return availability !== null ? availability.monday : [];
-    case 2:
-      return availability !== null ? availability.tuesday : [];
-    case 3:
-      return availability !== null ? availability.wednesday : [];
-    case 4:
-      return availability !== null ? availability.thursday : [];
-    case 5:
-      return availability !== null ? availability.friday : [];
-    case 6:
-      return availability !== null ? availability.saturday : [];
-    case 0: //0 is sunday in date-fns
-      return availability !== null ? availability.sunday : [];
-    default:
-      return [];
-  }
+    switch (day) {
+        case 1:
+            return availability !== null ? availability.monday : [];
+        case 2:
+            return availability !== null ? availability.tuesday : [];
+        case 3:
+            return availability !== null ? availability.wednesday : [];
+        case 4:
+            return availability !== null ? availability.thursday : [];
+        case 5:
+            return availability !== null ? availability.friday : [];
+        case 6:
+            return availability !== null ? availability.saturday : [];
+        case 0: //0 is sunday in date-fns
+            return availability !== null ? availability.sunday : [];
+        default:
+            return [];
+    }
 };
 
-const getDayData = (
-  availability:
-    | IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS
-    | IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_HOURS
-) => {
-  const day: number = getDay(new Date());
+const getDayData = (availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS | IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_HOURS) => {
+    const day: number = getDay(new Date());
 
-  switch (day) {
-    case 1:
-      return availability !== null ? availability.monday : [];
-    case 2:
-      return availability !== null ? availability.tuesday : [];
-    case 3:
-      return availability !== null ? availability.wednesday : [];
-    case 4:
-      return availability !== null ? availability.thursday : [];
-    case 5:
-      return availability !== null ? availability.friday : [];
-    case 6:
-      return availability !== null ? availability.saturday : [];
-    case 0: //0 is sunday in date-fns
-      return availability !== null ? availability.sunday : [];
-    default:
-      return [];
-  }
+    switch (day) {
+        case 1:
+            return availability !== null ? availability.monday : [];
+        case 2:
+            return availability !== null ? availability.tuesday : [];
+        case 3:
+            return availability !== null ? availability.wednesday : [];
+        case 4:
+            return availability !== null ? availability.thursday : [];
+        case 5:
+            return availability !== null ? availability.friday : [];
+        case 6:
+            return availability !== null ? availability.saturday : [];
+        case 0: //0 is sunday in date-fns
+            return availability !== null ? availability.sunday : [];
+        default:
+            return [];
+    }
 };
 
 export const toLocalISOString = (date: Date) => {
@@ -418,7 +404,7 @@ const getMatchingPromotionProducts = (
         const matchingProductsTemp: ICartProduct[] = [];
         let quantityCounted = 0;
 
-        item.categoryIds.forEach((categoryId) => {
+        item.categoryIds?.forEach((categoryId) => {
             cartProducts.forEach((cartProduct) => {
                 if (categoryId === cartProduct.category?.id) {
                     quantityCounted += cartProduct.quantity;
@@ -428,7 +414,7 @@ const getMatchingPromotionProducts = (
             });
         });
 
-        item.productIds.forEach((productId) => {
+        item.productIds?.forEach((productId) => {
             cartProducts.forEach((cartProduct) => {
                 if (productId === cartProduct.id) {
                     quantityCounted += cartProduct.quantity;
@@ -697,31 +683,31 @@ const processProductsForPrint = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMEN
             });
 
         convertedP.push({
-          id: p.id,
-          name: p.name,
-          kitchenName: p.kitchenName,
-          price: p.price,
-          totalPrice: p.totalPrice,
-          discount: p.discount,
-          image: p.image,
-          quantity: p.quantity,
-          availablePlatforms: p.availablePlatforms,
-          isAgeRescricted: p.isAgeRescricted,
-          notes: p.notes,
-          category: p.category
-            ? {
-                id: p.category.id,
-                name: p.category.name,
-                kitchenName: p.category.kitchenName,
-                image: p.category.image,
-              }
-            : {
-                id: "invalid",
-                name: "invalid",
-                kitchenName: "invalid",
-                image: null,
-              },
-          modifierGroups: convertedMG,
+            id: p.id,
+            name: p.name,
+            kitchenName: p.kitchenName,
+            price: p.price,
+            totalPrice: p.totalPrice,
+            discount: p.discount,
+            image: p.image,
+            quantity: p.quantity,
+            availablePlatforms: p.availablePlatforms,
+            isAgeRescricted: p.isAgeRescricted,
+            notes: p.notes,
+            category: p.category
+                ? {
+                      id: p.category.id,
+                      name: p.category.name,
+                      kitchenName: p.category.kitchenName,
+                      image: p.category.image,
+                  }
+                : {
+                      id: "invalid",
+                      name: "invalid",
+                      kitchenName: "invalid",
+                      image: null,
+                  },
+            modifierGroups: convertedMG,
         });
     });
 
