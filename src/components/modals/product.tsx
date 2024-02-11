@@ -79,518 +79,406 @@ export const ProductModal = (props: {
   const { cartProductQuantitiesById } = useCart();
 
   const getPreSelectedModifiers = () => {
-    //Set preselected modifiers logic
-    let newOrderedModifiers: IPreSelectedModifiers = {};
+      //Set preselected modifiers logic
+      let newOrderedModifiers: IPreSelectedModifiers = {};
 
-    product.modifierGroups &&
-      product.modifierGroups.items.forEach((modifierGroupLink) => {
-        modifierGroupLink.modifierGroup.modifiers &&
-          modifierGroupLink.modifierGroup.modifiers.items.map(
-            (modifierLink) => {
-              if (modifierLink.preSelectedQuantity) {
-                if (
-                  newOrderedModifiers[modifierGroupLink.modifierGroup.id] ===
-                  undefined
-                ) {
-                  newOrderedModifiers[modifierGroupLink.modifierGroup.id] = [];
-                }
-
-                newOrderedModifiers = {
-                  ...newOrderedModifiers,
-                  [modifierGroupLink.modifierGroup.id]: [
-                    ...newOrderedModifiers[modifierGroupLink.modifierGroup.id],
-                    {
-                      id: modifierLink.modifier.id,
-                      name: modifierLink.modifier.name,
-                      kitchenName: modifierLink.modifier.kitchenName,
-                      price: modifierLink.modifier.price,
-                      preSelectedQuantity: modifierLink.preSelectedQuantity,
-                      quantity: modifierLink.preSelectedQuantity,
-                      productModifiers: null,
-                      image: modifierLink.modifier.image
-                        ? {
-                            key: modifierLink.modifier.image.key,
-                            region: modifierLink.modifier.image.region,
-                            bucket: modifierLink.modifier.image.bucket,
-                            identityPoolId:
-                              modifierLink.modifier.image.identityPoolId,
-                            level: modifierLink.modifier.image.level,
+      product.modifierGroups &&
+          product.modifierGroups.items.forEach((modifierGroupLink) => {
+              modifierGroupLink.modifierGroup.modifiers &&
+                  modifierGroupLink.modifierGroup.modifiers.items.map((modifierLink) => {
+                      if (modifierLink.preSelectedQuantity) {
+                          if (newOrderedModifiers[modifierGroupLink.modifierGroup.id] === undefined) {
+                              newOrderedModifiers[modifierGroupLink.modifierGroup.id] = [];
                           }
-                        : null,
-                    },
-                  ],
-                };
-              }
-            }
-          );
-      });
 
-    return newOrderedModifiers;
+                          newOrderedModifiers = {
+                              ...newOrderedModifiers,
+                              [modifierGroupLink.modifierGroup.id]: [
+                                  ...newOrderedModifiers[modifierGroupLink.modifierGroup.id],
+                                  {
+                                      id: modifierLink.modifier.id,
+                                      name: modifierLink.modifier.name,
+                                      kitchenName: modifierLink.modifier.kitchenName,
+                                      price: modifierLink.modifier.price,
+                                      preSelectedQuantity: modifierLink.preSelectedQuantity,
+                                      quantity: modifierLink.preSelectedQuantity,
+                                      productModifiers: null,
+                                      image: modifierLink.modifier.image
+                                          ? {
+                                                key: modifierLink.modifier.image.key,
+                                                region: modifierLink.modifier.image.region,
+                                                bucket: modifierLink.modifier.image.bucket,
+                                                identityPoolId: modifierLink.modifier.image.identityPoolId,
+                                            }
+                                          : null,
+                                  },
+                              ],
+                          };
+                      }
+                  });
+          });
+
+      return newOrderedModifiers;
   };
 
-  const [orderedModifiers, setOrderedModifiers] =
-    useState<IPreSelectedModifiers>(
+  const [orderedModifiers, setOrderedModifiers] = useState<IPreSelectedModifiers>(
       editProduct ? editProduct.orderedModifiers : getPreSelectedModifiers()
-    );
-  const [quantity, setQuantity] = useState(
-    editProduct ? editProduct.quantity : 1
   );
+  const [quantity, setQuantity] = useState(editProduct ? editProduct.quantity : 1);
   const [totalDisplayPrice, setTotalDisplayPrice] = useState(product.price);
   const [notes, setNotes] = useState(editProduct ? editProduct.notes : "");
   const [error, setError] = useState<{ [modifierGroupId: string]: string }>({});
 
-  const [selectedProductModifier, setSelectedProductModifier] =
-    useState<ISelectedProductModifier | null>(null);
+  const [selectedProductModifier, setSelectedProductModifier] = useState<ISelectedProductModifier | null>(null);
 
   // useEffect(() => {
   //     console.log("xxx...orderedModifiers", orderedModifiers);
   // }, [orderedModifiers]);
 
   useEffect(() => {
-    let price = product.price;
+      let price = product.price;
 
-    Object.values(orderedModifiers).forEach((orderedModifier) => {
-      orderedModifier.forEach((m) => {
-        const changedQuantity = m.quantity - m.preSelectedQuantity;
+      Object.values(orderedModifiers).forEach((orderedModifier) => {
+          orderedModifier.forEach((m) => {
+              const changedQuantity = m.quantity - m.preSelectedQuantity;
 
-        if (changedQuantity > 0) {
-          price += m.price * changedQuantity;
-        }
-
-        if (m.productModifiers) {
-          m.productModifiers.forEach((productModifier) => {
-            productModifier.modifierGroups.forEach(
-              (orderedProductModifierModifierGroup) => {
-                orderedProductModifierModifierGroup.modifiers.forEach(
-                  (orderedProductModifierModifier) => {
-                    const changedQuantity =
-                      orderedProductModifierModifier.quantity -
-                      orderedProductModifierModifier.preSelectedQuantity;
-
-                    if (changedQuantity > 0) {
-                      price +=
-                        orderedProductModifierModifier.price * changedQuantity;
-                    }
-                  }
-                );
+              if (changedQuantity > 0) {
+                  price += m.price * changedQuantity;
               }
-            );
-          });
-        }
-      });
-    });
 
-    price = price * quantity;
-    setTotalDisplayPrice(price);
+              if (m.productModifiers) {
+                  m.productModifiers.forEach((productModifier) => {
+                      productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
+                          orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
+                              const changedQuantity = orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
+
+                              if (changedQuantity > 0) {
+                                  price += orderedProductModifierModifier.price * changedQuantity;
+                              }
+                          });
+                      });
+                  });
+              }
+          });
+      });
+
+      price = price * quantity;
+      setTotalDisplayPrice(price);
   }, [orderedModifiers, quantity]);
 
   const onModalClose = () => {
-    onClose();
+      onClose();
   };
 
   const onProcessProductModifier = (
-    selectedModifier: ICartModifier,
-    selectedModifierGroupId: string,
-    selectedProductModifierProduct: IGET_RESTAURANT_PRODUCT,
-    newOrderedModifiers: IPreSelectedModifiers,
-    editSelectionsProductModifierIndex?: number //If editing selections
+      selectedModifier: ICartModifier,
+      selectedModifierGroupId: string,
+      selectedProductModifierProduct: IGET_RESTAURANT_PRODUCT,
+      newOrderedModifiers: IPreSelectedModifiers,
+      editSelectionsProductModifierIndex?: number //If editing selections
   ) => {
-    //Add productModifier directly as modifier, if productModifier has no modifier groups
-    if (
-      selectedProductModifierProduct.modifierGroups &&
-      selectedProductModifierProduct.modifierGroups.items.length === 0
-    )
-      return;
+      //Add productModifier directly as modifier, if productModifier has no modifier groups
+      if (selectedProductModifierProduct.modifierGroups && selectedProductModifierProduct.modifierGroups.items.length === 0) return;
 
-    let selectedProductModifierOrderedModifiers = {};
+      let selectedProductModifierOrderedModifiers = {};
 
-    if (editSelectionsProductModifierIndex !== undefined) {
-      //Check for undefined here specifically
-      selectedModifier.productModifiers &&
-        selectedModifier.productModifiers[
-          editSelectionsProductModifierIndex
-        ].modifierGroups.forEach((modifierGroup) => {
-          modifierGroup.modifiers.forEach((modifier) => {
-            if (
-              selectedProductModifierOrderedModifiers[modifierGroup.id] ===
-              undefined
-            ) {
-              selectedProductModifierOrderedModifiers[modifierGroup.id] = [];
-            }
+      if (editSelectionsProductModifierIndex !== undefined) {
+          //Check for undefined here specifically
+          selectedModifier.productModifiers &&
+              selectedModifier.productModifiers[editSelectionsProductModifierIndex].modifierGroups.forEach((modifierGroup) => {
+                  modifierGroup.modifiers.forEach((modifier) => {
+                      if (selectedProductModifierOrderedModifiers[modifierGroup.id] === undefined) {
+                          selectedProductModifierOrderedModifiers[modifierGroup.id] = [];
+                      }
 
-            const newOrderedProductModifierItem: ICartModifier = {
-              id: modifier.id,
-              name: modifier.name,
-              kitchenName: modifier.kitchenName,
-              price: modifier.price,
-              preSelectedQuantity: modifier.preSelectedQuantity,
-              quantity: modifier.quantity,
-              productModifiers: modifier.productModifiers,
-              image: modifier.image
-                ? {
-                    key: modifier.image.key,
-                    region: modifier.image.region,
-                    bucket: modifier.image.bucket,
-                    identityPoolId: modifier.image.identityPoolId,
-                    level: modifier.image.level,
-                  }
-                : null,
-            };
+                      const newOrderedProductModifierItem: ICartModifier = {
+                          id: modifier.id,
+                          name: modifier.name,
+                          kitchenName: modifier.kitchenName,
+                          price: modifier.price,
+                          preSelectedQuantity: modifier.preSelectedQuantity,
+                          quantity: modifier.quantity,
+                          productModifiers: modifier.productModifiers,
+                          image: modifier.image
+                              ? {
+                                    key: modifier.image.key,
+                                    region: modifier.image.region,
+                                    bucket: modifier.image.bucket,
+                                    identityPoolId: modifier.image.identityPoolId,
+                                }
+                              : null,
+                      };
 
-            selectedProductModifierOrderedModifiers[modifierGroup.id] = [
-              ...selectedProductModifierOrderedModifiers[modifierGroup.id],
-              newOrderedProductModifierItem,
-            ];
-          });
-        });
-    }
-
-    setSelectedProductModifier({
-      selectedModifier: selectedModifier,
-      product: selectedProductModifierProduct,
-      selectedModifierGroupId: selectedModifierGroupId,
-      newOrderedModifiers: newOrderedModifiers,
-      selectedProductModifierOrderedModifiers:
-        selectedProductModifierOrderedModifiers,
-      editSelectionsProductModifierIndex: editSelectionsProductModifierIndex,
-    });
-  };
-
-  const onCheckingModifier = (
-    selectedModifierGroupId: string,
-    preSelectedModifierQuantity: number,
-    selectedModifier: IGET_RESTAURANT_MODIFIER
-  ) => {
-    setError({});
-
-    if (orderedModifiers[selectedModifierGroupId] === undefined) {
-      orderedModifiers[selectedModifierGroupId] = [];
-    }
-
-    const requiresProcessProductModifier =
-      selectedModifier.productModifier &&
-      selectedModifier.productModifier.modifierGroups &&
-      selectedModifier.productModifier.modifierGroups.items.length > 0;
-
-    //We only want to add pms only if we are not going to open another product modal for productModifier with modifier groups
-    const pms =
-      !requiresProcessProductModifier && selectedModifier.productModifier
-        ? [
-            {
-              id: selectedModifier.productModifier.id,
-              name: selectedModifier.productModifier.name,
-              kitchenName: selectedModifier.productModifier.kitchenName,
-              price: selectedModifier.productModifier.price,
-              totalPrice: selectedModifier.productModifier.price,
-              discount: 0,
-              availablePlatforms: selectedModifier.availablePlatforms,
-              isAgeRescricted: selectedModifier.isAgeRescricted,
-              image: selectedModifier.productModifier.image
-                ? {
-                    key: selectedModifier.productModifier.image.key,
-                    region: selectedModifier.productModifier.image.region,
-                    bucket: selectedModifier.productModifier.image.bucket,
-                    identityPoolId:
-                      selectedModifier.productModifier.image.identityPoolId,
-                    level:selectedModifier.productModifier.image.level
-                  }
-                : null,
-              quantity: 1,
-              notes: null,
-              category:
-                selectedModifier.productModifier.categories &&
-                selectedModifier.productModifier.categories.items.length > 0
-                  ? {
-                      id: selectedModifier.productModifier.categories.items[0]
-                        .category.id,
-                      name: selectedModifier.productModifier.categories.items[0]
-                        .category.name,
-                      kitchenName:
-                        selectedModifier.productModifier.categories.items[0]
-                          .category.kitchenName,
-                      image: selectedModifier.productModifier.categories
-                        .items[0].category.image
-                        ? {
-                            key: selectedModifier.productModifier.categories
-                              .items[0].category.image.key,
-                            region:
-                              selectedModifier.productModifier.categories
-                                .items[0].category.image.region,
-                            bucket:
-                              selectedModifier.productModifier.categories
-                                .items[0].category.image.bucket,
-                            identityPoolId:
-                              selectedModifier.productModifier.categories
-                                .items[0].category.image.identityPoolId,
-                            level:selectedModifier.productModifier.categories
-                            .items[0].category.image.level
-                          }
-                        : null,
-                    }
-                  : null,
-              modifierGroups: [],
-            },
-          ]
-        : null;
-
-    const newOrderedModifierItem: ICartModifier = {
-      id: selectedModifier.id,
-      name: selectedModifier.name,
-      kitchenName: selectedModifier.kitchenName,
-      price: selectedModifier.price,
-      preSelectedQuantity: preSelectedModifierQuantity,
-      quantity: 1,
-      productModifiers: pms,
-      image: selectedModifier.image
-        ? {
-            key: selectedModifier.image.key,
-            region: selectedModifier.image.region,
-            bucket: selectedModifier.image.bucket,
-            identityPoolId: selectedModifier.image.identityPoolId,
-            level: selectedModifier.image.level,
-          }
-        : null,
-    };
-
-    //Deselect modifier if you clicked on it again
-    let newOrderedModifiers = {
-      ...orderedModifiers,
-      [selectedModifierGroupId]: orderedModifiers[
-        selectedModifierGroupId
-      ].filter((m) => m.id !== selectedModifier.id),
-    };
-
-    let newOrderedModifiers2 = {
-      ...newOrderedModifiers,
-      [selectedModifierGroupId]: [
-        ...newOrderedModifiers[selectedModifierGroupId],
-        newOrderedModifierItem,
-      ],
-    };
-
-    if (requiresProcessProductModifier && selectedModifier.productModifier) {
-      onProcessProductModifier(
-        newOrderedModifierItem,
-        selectedModifierGroupId,
-        selectedModifier.productModifier,
-        newOrderedModifiers2
-      );
-    } else {
-      setOrderedModifiers(newOrderedModifiers2);
-    }
-  };
-
-  const onUnCheckingModifier = (
-    selectedModifierGroupId: string,
-    preSelectedModifierQuantity: number,
-    selectedModifier: IGET_RESTAURANT_MODIFIER
-  ) => {
-    setError({});
-
-    const newOrderedModifierItem: ICartModifier = {
-      id: selectedModifier.id,
-      name: selectedModifier.name,
-      kitchenName: selectedModifier.kitchenName,
-      price: selectedModifier.price,
-      preSelectedQuantity: preSelectedModifierQuantity,
-      quantity: 0,
-      productModifiers: null,
-      image: selectedModifier.image
-        ? {
-            key: selectedModifier.image.key,
-            region: selectedModifier.image.region,
-            bucket: selectedModifier.image.bucket,
-            identityPoolId: selectedModifier.image.identityPoolId,
-            level: selectedModifier.image.level,
-          }
-        : null,
-    };
-
-    let newOrderedModifiers = {
-      ...orderedModifiers,
-      [selectedModifierGroupId]: orderedModifiers[
-        selectedModifierGroupId
-      ].filter((m) => m.id !== selectedModifier.id),
-    };
-
-    if (!preSelectedModifierQuantity || preSelectedModifierQuantity == 0) {
-      // If no selected modifies inside a modifier group. Delete the group.
-      if (newOrderedModifiers[selectedModifierGroupId].length == 0) {
-        delete newOrderedModifiers[selectedModifierGroupId];
+                      selectedProductModifierOrderedModifiers[modifierGroup.id] = [
+                          ...selectedProductModifierOrderedModifiers[modifierGroup.id],
+                          newOrderedProductModifierItem,
+                      ];
+                  });
+              });
       }
-    } else {
-      newOrderedModifiers = {
-        ...newOrderedModifiers,
-        [selectedModifierGroupId]: [
-          ...newOrderedModifiers[selectedModifierGroupId],
-          newOrderedModifierItem,
-        ],
-      };
-    }
 
-    setOrderedModifiers(newOrderedModifiers);
+      setSelectedProductModifier({
+          selectedModifier: selectedModifier,
+          product: selectedProductModifierProduct,
+          selectedModifierGroupId: selectedModifierGroupId,
+          newOrderedModifiers: newOrderedModifiers,
+          selectedProductModifierOrderedModifiers: selectedProductModifierOrderedModifiers,
+          editSelectionsProductModifierIndex: editSelectionsProductModifierIndex,
+      });
+  };
+
+  const onCheckingModifier = (selectedModifierGroupId: string, preSelectedModifierQuantity: number, selectedModifier: IGET_RESTAURANT_MODIFIER) => {
+      setError({});
+
+      if (orderedModifiers[selectedModifierGroupId] === undefined) {
+          orderedModifiers[selectedModifierGroupId] = [];
+      }
+
+      const requiresProcessProductModifier =
+          selectedModifier.productModifier &&
+          selectedModifier.productModifier.modifierGroups &&
+          selectedModifier.productModifier.modifierGroups.items.length > 0;
+
+      //We only want to add pms only if we are not going to open another product modal for productModifier with modifier groups
+      const pms =
+          !requiresProcessProductModifier && selectedModifier.productModifier
+              ? [
+                    {
+                        id: selectedModifier.productModifier.id,
+                        name: selectedModifier.productModifier.name,
+                        kitchenName: selectedModifier.productModifier.kitchenName,
+                        price: selectedModifier.productModifier.price,
+                        totalPrice: selectedModifier.productModifier.price,
+                        discount: 0,
+                        availablePlatforms: selectedModifier.availablePlatforms,
+                        isAgeRescricted: selectedModifier.isAgeRescricted,
+                        image: selectedModifier.productModifier.image
+                            ? {
+                                  key: selectedModifier.productModifier.image.key,
+                                  region: selectedModifier.productModifier.image.region,
+                                  bucket: selectedModifier.productModifier.image.bucket,
+                                  identityPoolId: selectedModifier.productModifier.image.identityPoolId,
+                              }
+                            : null,
+                        quantity: 1,
+                        notes: null,
+                        category:
+                            selectedModifier.productModifier.categories && selectedModifier.productModifier.categories.items.length > 0
+                                ? {
+                                      id: selectedModifier.productModifier.categories.items[0].category.id,
+                                      name: selectedModifier.productModifier.categories.items[0].category.name,
+                                      kitchenName: selectedModifier.productModifier.categories.items[0].category.kitchenName,
+                                      image: selectedModifier.productModifier.categories.items[0].category.image
+                                          ? {
+                                                key: selectedModifier.productModifier.categories.items[0].category.image.key,
+                                                region: selectedModifier.productModifier.categories.items[0].category.image.region,
+                                                bucket: selectedModifier.productModifier.categories.items[0].category.image.bucket,
+                                                identityPoolId: selectedModifier.productModifier.categories.items[0].category.image.identityPoolId,
+                                            }
+                                          : null,
+                                  }
+                                : null,
+                        modifierGroups: [],
+                    },
+                ]
+              : null;
+
+      const newOrderedModifierItem: ICartModifier = {
+          id: selectedModifier.id,
+          name: selectedModifier.name,
+          kitchenName: selectedModifier.kitchenName,
+          price: selectedModifier.price,
+          preSelectedQuantity: preSelectedModifierQuantity,
+          quantity: 1,
+          productModifiers: pms,
+          image: selectedModifier.image
+              ? {
+                    key: selectedModifier.image.key,
+                    region: selectedModifier.image.region,
+                    bucket: selectedModifier.image.bucket,
+                    identityPoolId: selectedModifier.image.identityPoolId,
+                }
+              : null,
+      };
+
+      //Deselect modifier if you clicked on it again
+      let newOrderedModifiers = {
+          ...orderedModifiers,
+          [selectedModifierGroupId]: orderedModifiers[selectedModifierGroupId].filter((m) => m.id !== selectedModifier.id),
+      };
+
+      let newOrderedModifiers2 = {
+          ...newOrderedModifiers,
+          [selectedModifierGroupId]: [...newOrderedModifiers[selectedModifierGroupId], newOrderedModifierItem],
+      };
+
+      if (requiresProcessProductModifier && selectedModifier.productModifier) {
+          onProcessProductModifier(newOrderedModifierItem, selectedModifierGroupId, selectedModifier.productModifier, newOrderedModifiers2);
+      } else {
+          setOrderedModifiers(newOrderedModifiers2);
+      }
+  };
+
+  const onUnCheckingModifier = (selectedModifierGroupId: string, preSelectedModifierQuantity: number, selectedModifier: IGET_RESTAURANT_MODIFIER) => {
+      setError({});
+
+      const newOrderedModifierItem: ICartModifier = {
+          id: selectedModifier.id,
+          name: selectedModifier.name,
+          kitchenName: selectedModifier.kitchenName,
+          price: selectedModifier.price,
+          preSelectedQuantity: preSelectedModifierQuantity,
+          quantity: 0,
+          productModifiers: null,
+          image: selectedModifier.image
+              ? {
+                    key: selectedModifier.image.key,
+                    region: selectedModifier.image.region,
+                    bucket: selectedModifier.image.bucket,
+                    identityPoolId: selectedModifier.image.identityPoolId,
+                }
+              : null,
+      };
+
+      let newOrderedModifiers = {
+          ...orderedModifiers,
+          [selectedModifierGroupId]: orderedModifiers[selectedModifierGroupId].filter((m) => m.id !== selectedModifier.id),
+      };
+
+      if (!preSelectedModifierQuantity || preSelectedModifierQuantity == 0) {
+          // If no selected modifies inside a modifier group. Delete the group.
+          if (newOrderedModifiers[selectedModifierGroupId].length == 0) {
+              delete newOrderedModifiers[selectedModifierGroupId];
+          }
+      } else {
+          newOrderedModifiers = {
+              ...newOrderedModifiers,
+              [selectedModifierGroupId]: [...newOrderedModifiers[selectedModifierGroupId], newOrderedModifierItem],
+          };
+      }
+
+      setOrderedModifiers(newOrderedModifiers);
   };
 
   const onChangeModifierQuantity = (
-    selectedModifierGroupId: string,
-    preSelectedModifierQuantity: number,
-    selectedModifier: IGET_RESTAURANT_MODIFIER,
-    isIncremented: boolean,
-    quantity: number
+      selectedModifierGroupId: string,
+      preSelectedModifierQuantity: number,
+      selectedModifier: IGET_RESTAURANT_MODIFIER,
+      isIncremented: boolean,
+      quantity: number
   ) => {
-    setError({});
+      setError({});
 
-    if (orderedModifiers[selectedModifierGroupId] === undefined) {
-      orderedModifiers[selectedModifierGroupId] = [];
-    }
+      if (orderedModifiers[selectedModifierGroupId] === undefined) {
+          orderedModifiers[selectedModifierGroupId] = [];
+      }
 
-    const requiresProcessProductModifier =
-      selectedModifier.productModifier &&
-      selectedModifier.productModifier.modifierGroups &&
-      selectedModifier.productModifier.modifierGroups.items.length > 0;
+      const requiresProcessProductModifier =
+          selectedModifier.productModifier &&
+          selectedModifier.productModifier.modifierGroups &&
+          selectedModifier.productModifier.modifierGroups.items.length > 0;
 
-    //We only want to add pms only if we are not going to open another product modal for productModifier with modifier groups
-    const pms =
-      !requiresProcessProductModifier && selectedModifier.productModifier
-        ? [
-            {
-              id: selectedModifier.productModifier.id,
-              name: selectedModifier.productModifier.name,
-              kitchenName: selectedModifier.productModifier.kitchenName,
-              price: selectedModifier.productModifier.price,
-              totalPrice: selectedModifier.productModifier.price,
-              discount: 0,
-              availablePlatforms: selectedModifier.availablePlatforms,
-              isAgeRescricted: selectedModifier.isAgeRescricted,
-              image: selectedModifier.productModifier.image
-                ? {
-                    key: selectedModifier.productModifier.image.key,
-                    region: selectedModifier.productModifier.image.region,
-                    bucket: selectedModifier.productModifier.image.bucket,
-                    identityPoolId:
-                      selectedModifier.productModifier.image.identityPoolId,
-                    level: selectedModifier.productModifier.image.level,
-                  }
-                : null,
-              quantity: 1,
-              notes: null,
-              category:
-                selectedModifier.productModifier.categories &&
-                selectedModifier.productModifier.categories.items.length > 0
-                  ? {
-                      id: selectedModifier.productModifier.categories.items[0]
-                        .category.id,
-                      name: selectedModifier.productModifier.categories.items[0]
-                        .category.name,
-                      kitchenName:
-                        selectedModifier.productModifier.categories.items[0]
-                          .category.kitchenName,
-                      image: selectedModifier.productModifier.categories
-                        .items[0].category.image
-                        ? {
-                            key: selectedModifier.productModifier.categories
-                              .items[0].category.image.key,
-                            region:
-                              selectedModifier.productModifier.categories
-                                .items[0].category.image.region,
-                            bucket:
-                              selectedModifier.productModifier.categories
-                                .items[0].category.image.bucket,
-                            identityPoolId:
-                              selectedModifier.productModifier.categories
-                                .items[0].category.image.identityPoolId,
-                            level:
-                              selectedModifier.productModifier.categories
-                                .items[0].category.image.level,
-                          }
-                        : null,
-                    }
-                  : null,
-              modifierGroups: [],
-            },
-          ]
-        : null;
+      //We only want to add pms only if we are not going to open another product modal for productModifier with modifier groups
+      const pms =
+          !requiresProcessProductModifier && selectedModifier.productModifier
+              ? [
+                    {
+                        id: selectedModifier.productModifier.id,
+                        name: selectedModifier.productModifier.name,
+                        kitchenName: selectedModifier.productModifier.kitchenName,
+                        price: selectedModifier.productModifier.price,
+                        totalPrice: selectedModifier.productModifier.price,
+                        discount: 0,
+                        availablePlatforms: selectedModifier.availablePlatforms,
+                        isAgeRescricted: selectedModifier.isAgeRescricted,
+                        image: selectedModifier.productModifier.image
+                            ? {
+                                  key: selectedModifier.productModifier.image.key,
+                                  region: selectedModifier.productModifier.image.region,
+                                  bucket: selectedModifier.productModifier.image.bucket,
+                                  identityPoolId: selectedModifier.productModifier.image.identityPoolId,
+                              }
+                            : null,
+                        quantity: 1,
+                        notes: null,
+                        category:
+                            selectedModifier.productModifier.categories && selectedModifier.productModifier.categories.items.length > 0
+                                ? {
+                                      id: selectedModifier.productModifier.categories.items[0].category.id,
+                                      name: selectedModifier.productModifier.categories.items[0].category.name,
+                                      kitchenName: selectedModifier.productModifier.categories.items[0].category.kitchenName,
+                                      image: selectedModifier.productModifier.categories.items[0].category.image
+                                          ? {
+                                                key: selectedModifier.productModifier.categories.items[0].category.image.key,
+                                                region: selectedModifier.productModifier.categories.items[0].category.image.region,
+                                                bucket: selectedModifier.productModifier.categories.items[0].category.image.bucket,
+                                                identityPoolId: selectedModifier.productModifier.categories.items[0].category.image.identityPoolId,
+                                            }
+                                          : null,
+                                  }
+                                : null,
+                        modifierGroups: [],
+                    },
+                ]
+              : null;
 
-    const newOrderedModifierItem: ICartModifier = {
-      id: selectedModifier.id,
-      name: selectedModifier.name,
-      kitchenName: selectedModifier.kitchenName,
-      price: selectedModifier.price,
-      preSelectedQuantity: preSelectedModifierQuantity,
-      quantity: quantity,
-      productModifiers: pms,
-      image: selectedModifier.image
-        ? {
-            key: selectedModifier.image.key,
-            region: selectedModifier.image.region,
-            bucket: selectedModifier.image.bucket,
-            identityPoolId: selectedModifier.image.identityPoolId,
-            level: selectedModifier.image.level,
+      const newOrderedModifierItem: ICartModifier = {
+          id: selectedModifier.id,
+          name: selectedModifier.name,
+          kitchenName: selectedModifier.kitchenName,
+          price: selectedModifier.price,
+          preSelectedQuantity: preSelectedModifierQuantity,
+          quantity: quantity,
+          productModifiers: pms,
+          image: selectedModifier.image
+              ? {
+                    key: selectedModifier.image.key,
+                    region: selectedModifier.image.region,
+                    bucket: selectedModifier.image.bucket,
+                    identityPoolId: selectedModifier.image.identityPoolId,
+                }
+              : null,
+      };
+
+      //Remove the modifier group and then add it back in with updated quantity later
+      let newOrderedModifiers = {
+          ...orderedModifiers,
+          [selectedModifierGroupId]: orderedModifiers[selectedModifierGroupId].filter((m) => m.id !== selectedModifier.id),
+      };
+
+      // If quantity is 0, don't add a 0 quantity modifier.
+      if (quantity == 0 && (!preSelectedModifierQuantity || preSelectedModifierQuantity == 0)) {
+          // If no selected modifies inside a modifier group. Delete the group.
+          if (newOrderedModifiers[selectedModifierGroupId].length == 0) {
+              delete newOrderedModifiers[selectedModifierGroupId];
           }
-        : null,
-    };
+      } else {
+          //Extract the productModifiers array from the removed modifier and add it back later. We should only have 1 matching modifier. So take 0th index
+          const removedSelectedModifier = orderedModifiers[selectedModifierGroupId].filter((m) => m.id === selectedModifier.id);
+          let removedSelectedModifierProductModifiers =
+              removedSelectedModifier && removedSelectedModifier.length > 0 ? removedSelectedModifier[0].productModifiers : null;
 
-    //Remove the modifier group and then add it back in with updated quantity later
-    let newOrderedModifiers = {
-      ...orderedModifiers,
-      [selectedModifierGroupId]: orderedModifiers[
-        selectedModifierGroupId
-      ].filter((m) => m.id !== selectedModifier.id),
-    };
+          //If user pressed decrement in the modifier quantity. Make sure our productModifiers array is not longer than quantity selected.
+          if (!isIncremented && removedSelectedModifierProductModifiers) {
+              removedSelectedModifierProductModifiers = removedSelectedModifierProductModifiers.slice(0, quantity);
+          }
 
-    // If quantity is 0, don't add a 0 quantity modifier.
-    if (
-      quantity == 0 &&
-      (!preSelectedModifierQuantity || preSelectedModifierQuantity == 0)
-    ) {
-      // If no selected modifies inside a modifier group. Delete the group.
-      if (newOrderedModifiers[selectedModifierGroupId].length == 0) {
-        delete newOrderedModifiers[selectedModifierGroupId];
-      }
-    } else {
-      //Extract the productModifiers array from the removed modifier and add it back later. We should only have 1 matching modifier. So take 0th index
-      const removedSelectedModifier = orderedModifiers[
-        selectedModifierGroupId
-      ].filter((m) => m.id === selectedModifier.id);
-      let removedSelectedModifierProductModifiers =
-        removedSelectedModifier && removedSelectedModifier.length > 0
-          ? removedSelectedModifier[0].productModifiers
-          : null;
+          const newOrderedModifierItemWithProductModifiers = {
+              ...newOrderedModifierItem,
+              productModifiers: removedSelectedModifierProductModifiers,
+          };
 
-      //If user pressed decrement in the modifier quantity. Make sure our productModifiers array is not longer than quantity selected.
-      if (!isIncremented && removedSelectedModifierProductModifiers) {
-        removedSelectedModifierProductModifiers =
-          removedSelectedModifierProductModifiers.slice(0, quantity);
+          newOrderedModifiers = {
+              ...newOrderedModifiers,
+              [selectedModifierGroupId]: [...newOrderedModifiers[selectedModifierGroupId], newOrderedModifierItemWithProductModifiers],
+          };
       }
 
-      const newOrderedModifierItemWithProductModifiers = {
-        ...newOrderedModifierItem,
-        productModifiers: removedSelectedModifierProductModifiers,
-      };
-
-      newOrderedModifiers = {
-        ...newOrderedModifiers,
-        [selectedModifierGroupId]: [
-          ...newOrderedModifiers[selectedModifierGroupId],
-          newOrderedModifierItemWithProductModifiers,
-        ],
-      };
-    }
-
-    if (
-      requiresProcessProductModifier &&
-      selectedModifier.productModifier &&
-      isIncremented
-    ) {
-      onProcessProductModifier(
-        newOrderedModifierItem,
-        selectedModifierGroupId,
-        selectedModifier.productModifier,
-        newOrderedModifiers
-      );
-    } else {
-      setOrderedModifiers(newOrderedModifiers);
-    }
+      if (requiresProcessProductModifier && selectedModifier.productModifier && isIncremented) {
+          onProcessProductModifier(newOrderedModifierItem, selectedModifierGroupId, selectedModifier.productModifier, newOrderedModifiers);
+      } else {
+          setOrderedModifiers(newOrderedModifiers);
+      }
   };
 
   const onSelectRadioModifier = (
@@ -607,83 +495,64 @@ export const ProductModal = (props: {
 
     //We only want to add pms only if we are not going to open another product modal for productModifier with modifier groups
     const pms =
-      !requiresProcessProductModifier && selectedModifier.productModifier
-        ? [
-            {
-              id: selectedModifier.productModifier.id,
-              name: selectedModifier.productModifier.name,
-              kitchenName: selectedModifier.productModifier.kitchenName,
-              price: selectedModifier.productModifier.price,
-              totalPrice: selectedModifier.productModifier.price,
-              discount: 0,
-              availablePlatforms: selectedModifier.availablePlatforms,
-              isAgeRescricted: selectedModifier.isAgeRescricted,
-              image: selectedModifier.productModifier.image
-                ? {
-                    key: selectedModifier.productModifier.image.key,
-                    region: selectedModifier.productModifier.image.region,
-                    bucket: selectedModifier.productModifier.image.bucket,
-                    identityPoolId:
-                      selectedModifier.productModifier.image.identityPoolId,
-                    level: selectedModifier.productModifier.image.level,
-                  }
-                : null,
-              quantity: 1,
-              notes: null,
-              category:
-                selectedModifier.productModifier.categories &&
-                selectedModifier.productModifier.categories.items.length > 0
-                  ? {
-                      id: selectedModifier.productModifier.categories.items[0]
-                        .category.id,
-                      name: selectedModifier.productModifier.categories.items[0]
-                        .category.name,
-                      kitchenName:
-                        selectedModifier.productModifier.categories.items[0]
-                          .category.kitchenName,
-                      image: selectedModifier.productModifier.categories
-                        .items[0].category.image
-                        ? {
-                            key: selectedModifier.productModifier.categories
-                              .items[0].category.image.key,
-                            region:
-                              selectedModifier.productModifier.categories
-                                .items[0].category.image.region,
-                            bucket:
-                              selectedModifier.productModifier.categories
-                                .items[0].category.image.bucket,
-                            identityPoolId:
-                              selectedModifier.productModifier.categories
-                                .items[0].category.image.identityPoolId,
-                            level:
-                              selectedModifier.productModifier.categories
-                                .items[0].category.image.level,
-                          }
-                        : null,
-                    }
-                  : null,
-              modifierGroups: [],
-            },
-          ]
-        : null;
+        !requiresProcessProductModifier && selectedModifier.productModifier
+            ? [
+                  {
+                      id: selectedModifier.productModifier.id,
+                      name: selectedModifier.productModifier.name,
+                      kitchenName: selectedModifier.productModifier.kitchenName,
+                      price: selectedModifier.productModifier.price,
+                      totalPrice: selectedModifier.productModifier.price,
+                      discount: 0,
+                      availablePlatforms: selectedModifier.availablePlatforms,
+                      isAgeRescricted: selectedModifier.isAgeRescricted,
+                      image: selectedModifier.productModifier.image
+                          ? {
+                                key: selectedModifier.productModifier.image.key,
+                                region: selectedModifier.productModifier.image.region,
+                                bucket: selectedModifier.productModifier.image.bucket,
+                                identityPoolId: selectedModifier.productModifier.image.identityPoolId,
+                            }
+                          : null,
+                      quantity: 1,
+                      notes: null,
+                      category:
+                          selectedModifier.productModifier.categories && selectedModifier.productModifier.categories.items.length > 0
+                              ? {
+                                    id: selectedModifier.productModifier.categories.items[0].category.id,
+                                    name: selectedModifier.productModifier.categories.items[0].category.name,
+                                    kitchenName: selectedModifier.productModifier.categories.items[0].category.kitchenName,
+                                    image: selectedModifier.productModifier.categories.items[0].category.image
+                                        ? {
+                                              key: selectedModifier.productModifier.categories.items[0].category.image.key,
+                                              region: selectedModifier.productModifier.categories.items[0].category.image.region,
+                                              bucket: selectedModifier.productModifier.categories.items[0].category.image.bucket,
+                                              identityPoolId: selectedModifier.productModifier.categories.items[0].category.image.identityPoolId,
+                                          }
+                                        : null,
+                                }
+                              : null,
+                      modifierGroups: [],
+                  },
+              ]
+            : null;
 
     const newOrderedModifierItem: ICartModifier = {
-      id: selectedModifier.id,
-      name: selectedModifier.name,
-      kitchenName: selectedModifier.kitchenName,
-      price: selectedModifier.price,
-      preSelectedQuantity: preSelectedModifierQuantity,
-      quantity: 1,
-      productModifiers: pms,
-      image: selectedModifier.image
-        ? {
-            key: selectedModifier.image.key,
-            region: selectedModifier.image.region,
-            bucket: selectedModifier.image.bucket,
-            identityPoolId: selectedModifier.image.identityPoolId,
-            level: selectedModifier.image.level,
-          }
-        : null,
+        id: selectedModifier.id,
+        name: selectedModifier.name,
+        kitchenName: selectedModifier.kitchenName,
+        price: selectedModifier.price,
+        preSelectedQuantity: preSelectedModifierQuantity,
+        quantity: 1,
+        productModifiers: pms,
+        image: selectedModifier.image
+            ? {
+                  key: selectedModifier.image.key,
+                  region: selectedModifier.image.region,
+                  bucket: selectedModifier.image.bucket,
+                  identityPoolId: selectedModifier.image.identityPoolId,
+              }
+            : null,
     };
 
     let newOrderedModifiers: IPreSelectedModifiers = {
@@ -820,40 +689,38 @@ export const ProductModal = (props: {
       });
 
     const productToOrder: ICartProduct = {
-      id: product.id,
-      name: product.name,
-      kitchenName: product.kitchenName,
-      price: product.price,
-      totalPrice: totalDisplayPrice / quantity,
-      discount: 0,
-      availablePlatforms: product.availablePlatforms,
-      isAgeRescricted: product.isAgeRescricted,
-      image: product.image
-        ? {
-            key: product.image.key,
-            region: product.image.region,
-            bucket: product.image.bucket,
-            identityPoolId: product.image.identityPoolId,
-            level: product.image.level,
-          }
-        : null,
-      quantity: quantity,
-      notes: notes || null,
-      category: {
-        id: category.id,
-        name: category.name,
-        kitchenName: category.kitchenName,
-        image: category.image
-          ? {
-              key: category.image.key,
-              region: category.image.region,
-              bucket: category.image.bucket,
-              identityPoolId: category.image.identityPoolId,
-              level: category.image.level,
-            }
-          : null,
-      },
-      modifierGroups: selectedModifierGroups,
+        id: product.id,
+        name: product.name,
+        kitchenName: product.kitchenName,
+        price: product.price,
+        totalPrice: totalDisplayPrice / quantity,
+        discount: 0,
+        availablePlatforms: product.availablePlatforms,
+        isAgeRescricted: product.isAgeRescricted,
+        image: product.image
+            ? {
+                  key: product.image.key,
+                  region: product.image.region,
+                  bucket: product.image.bucket,
+                  identityPoolId: product.image.identityPoolId,
+              }
+            : null,
+        quantity: quantity,
+        notes: notes || null,
+        category: {
+            id: category.id,
+            name: category.name,
+            kitchenName: category.kitchenName,
+            image: category.image
+                ? {
+                      key: category.image.key,
+                      region: category.image.region,
+                      bucket: category.image.bucket,
+                      identityPoolId: category.image.identityPoolId,
+                  }
+                : null,
+        },
+        modifierGroups: selectedModifierGroups,
     };
 
     if (editProduct) {

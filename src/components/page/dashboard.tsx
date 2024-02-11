@@ -119,42 +119,40 @@ export default () => {
             }
 
             const newCartProduct: ICartProduct = {
-              id: product.id,
-              name: product.name,
-              kitchenName: product.kitchenName,
-              price: product.price,
-              totalPrice: product.totalPrice,
-              discount: 0, //Set discount to total because we do not want to add any discount or promotions to parked orders
-              availablePlatforms: product.availablePlatforms,
-              isAgeRescricted: product.isAgeRescricted,
-              image: product.image
-                ? {
-                    key: product.image.key,
-                    bucket: product.image.bucket,
-                    region: product.image.region,
-                    identityPoolId: product.image.identityPoolId,
-                    level: product.image.level,
-                  }
-                : null, //To avoid __typename error
-              quantity: product.quantity,
-              notes: product.notes,
-              category: product.category
-                ? {
-                    id: product.category.id,
-                    name: product.category.name,
-                    kitchenName: product.category.kitchenName,
-                    image: product.category.image
-                      ? {
-                          key: product.category.image.key,
-                          bucket: product.category.image.bucket,
-                          region: product.category.image.region,
-                          identityPoolId: product.category.image.identityPoolId,
-                          level: product.category.image.level,
-                        }
-                      : null, //To avoid __typename error
-                  }
-                : null,
-              modifierGroups: [],
+                id: product.id,
+                name: product.name,
+                kitchenName: product.kitchenName,
+                price: product.price,
+                totalPrice: product.totalPrice,
+                discount: 0, //Set discount to total because we do not want to add any discount or promotions to parked orders
+                availablePlatforms: product.availablePlatforms,
+                isAgeRescricted: product.isAgeRescricted,
+                image: product.image
+                    ? {
+                          key: product.image.key,
+                          bucket: product.image.bucket,
+                          region: product.image.region,
+                          identityPoolId: product.image.identityPoolId,
+                      }
+                    : null, //To avoid __typename error
+                quantity: product.quantity,
+                notes: product.notes,
+                category: product.category
+                    ? {
+                          id: product.category.id,
+                          name: product.category.name,
+                          kitchenName: product.category.kitchenName,
+                          image: product.category.image
+                              ? {
+                                    key: product.category.image.key,
+                                    bucket: product.category.image.bucket,
+                                    region: product.category.image.region,
+                                    identityPoolId: product.category.image.identityPoolId,
+                                }
+                              : null, //To avoid __typename error
+                      }
+                    : null,
+                modifierGroups: [],
             };
 
             const newCartModifierGroups: ICartModifierGroup[] = [];
@@ -210,25 +208,21 @@ export default () => {
                             }
 
                             const newCartModifier: ICartModifier = {
-                              id: modifier.id,
-                              name: modifier.name,
-                              kitchenName: modifier.kitchenName,
-                              price: modifier.price,
-                              preSelectedQuantity: modifier.preSelectedQuantity,
-                              quantity: modifier.quantity,
-                              productModifiers: processedProductModifiers
-                                ? processedProductModifiers.newCartProducts
-                                : null,
-                              image: modifier.image
-                                ? {
-                                    key: modifier.image.key,
-                                    bucket: modifier.image.bucket,
-                                    region: modifier.image.region,
-                                    identityPoolId:
-                                      modifier.image.identityPoolId,
-                                    level: modifier.image.level,
-                                  }
-                                : null, //To avoid __typename error
+                                id: modifier.id,
+                                name: modifier.name,
+                                kitchenName: modifier.kitchenName,
+                                price: modifier.price,
+                                preSelectedQuantity: modifier.preSelectedQuantity,
+                                quantity: modifier.quantity,
+                                productModifiers: processedProductModifiers ? processedProductModifiers.newCartProducts : null,
+                                image: modifier.image
+                                    ? {
+                                          key: modifier.image.key,
+                                          bucket: modifier.image.bucket,
+                                          region: modifier.image.region,
+                                          identityPoolId: modifier.image.identityPoolId,
+                                      }
+                                    : null, //To avoid __typename error
                             };
 
                             newCartModifiers.push(newCartModifier);

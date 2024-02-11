@@ -155,55 +155,39 @@ const BeginOrderAdvertisements = (props: {
   if (!restaurant) return <div>This user has not selected any restaurant</div>;
 
   return (
-    <PageWrapper>
-      <div className="begin-order">
-        <div
-          className="wrapper"
-          onClick={() => {
-            navigate(restaurantPath + "/" + restaurant.id);
-          }}
-        >
-          <div className="touch-to-begin-wrapper">
-            <CachedImage
-              className="icon"
-              url={`${getPublicCloudFrontDomainName()}/images/touch-here-dark.png`}
-              alt="hand-icon"
-            />
-            <div className="h3">TOUCH TO BEGIN</div>
-          </div>
-        </div>
-        <div className="advertisements-wrapper">
-          {availableAds.map((advertisement, index) => (
-            <div
-              key={advertisement.id}
-              className={`image-wrapper ${
-                availableAds.length > 1 ? "slide-animation" : ""
-              } ${currentAd == index ? "active" : "inactive"}`}
-            >
-              {isVideoFile(advertisement.content.key) ? (
-                <video className="splash-screen-video" autoPlay loop muted>
-                  <source
-                    src={`${getCloudFrontDomainName()}/${
-                      advertisement?.content?.level
-                        ? advertisement.content.level
-                        : "protected"
-                    }/${advertisement.content.identityPoolId}/${
-                      advertisement.content.key
-                    }`}
-                  />
-                </video>
-              ) : (
-                <>
-                  <S3Image
-                    imgKey={advertisement.content.key}
-                    level={
-                      advertisement?.content?.level
-                        ? advertisement?.content?.level
-                        : "protected"
-                    }
-                    className="image mb-2"
-                  />
-                  {/* <CachedImage
+      <PageWrapper>
+          <div className="begin-order">
+              <div
+                  className="wrapper"
+                  onClick={() => {
+                      navigate(restaurantPath + "/" + restaurant.id);
+                  }}
+              >
+                  <div className="touch-to-begin-wrapper">
+                      <CachedImage className="icon" url={`${getPublicCloudFrontDomainName()}/images/touch-here-dark.png`} alt="hand-icon" />
+                      <div className="h3">TOUCH TO BEGIN</div>
+                  </div>
+              </div>
+              <div className="advertisements-wrapper">
+                  {availableAds.map((advertisement, index) => (
+                      <div
+                          key={advertisement.id}
+                          className={`image-wrapper ${availableAds.length > 1 ? "slide-animation" : ""} ${
+                              currentAd == index ? "active" : "inactive"
+                          }`}
+                      >
+                          {isVideoFile(advertisement.content.key) ? (
+                              <video className="splash-screen-video" autoPlay loop muted>
+                                  <source
+                                      src={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${
+                                          advertisement.content.key
+                                      }`}
+                                  />
+                              </video>
+                          ) : (
+                              <>
+                                  <S3Image imgKey={advertisement.content.key} level="protected" className="image mb-2" />
+                                  {/* <CachedImage
                             className="image"
                             url={`${getCloudFrontDomainName()}/${
                             advertisement?.content?.level
@@ -214,13 +198,13 @@ const BeginOrderAdvertisements = (props: {
                             }`}
                             alt="advertisement-image"
                         /> */}
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </PageWrapper>
+                              </>
+                          )}
+                      </div>
+                  ))}
+              </div>
+          </div>
+      </PageWrapper>
   );
 };
 

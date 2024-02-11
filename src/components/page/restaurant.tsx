@@ -350,223 +350,150 @@ const Restaurant = () => {
     return <div>Restaurant is not verified</div>;
   }
 
-  const onAddProductToCart = (
-    category: IGET_RESTAURANT_CATEGORY,
-    product: IGET_RESTAURANT_PRODUCT
-  ) => {
-    const productToOrder: ICartProduct = {
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      kitchenName: product.kitchenName,
-      totalPrice: product.price,
-      discount: 0,
-      availablePlatforms: product.availablePlatforms,
-      isAgeRescricted: product.isAgeRescricted,
-      image: product.image
-        ? {
-            key: product.image.key,
-            region: product.image.region,
-            bucket: product.image.bucket,
-            identityPoolId: product.image.identityPoolId,
-            level: product.image.level,
-          }
-        : null,
-      quantity: 1,
-      notes: null,
-      category: {
-        id: category.id,
-        name: category.name,
-        kitchenName: category.kitchenName,
-        image: category.image
-          ? {
-              key: category.image.key,
-              region: category.image.region,
-              bucket: category.image.bucket,
-              identityPoolId: category.image.identityPoolId,
-              level: category.image.level,
-            }
-          : null,
-      },
-      modifierGroups: [],
-    };
+  const onAddProductToCart = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
+      const productToOrder: ICartProduct = {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          kitchenName: product.kitchenName,
+          totalPrice: product.price,
+          discount: 0,
+          availablePlatforms: product.availablePlatforms,
+          isAgeRescricted: product.isAgeRescricted,
+          image: product.image
+              ? {
+                    key: product.image.key,
+                    region: product.image.region,
+                    bucket: product.image.bucket,
+                    identityPoolId: product.image.identityPoolId,
+                }
+              : null,
+          quantity: 1,
+          notes: null,
+          category: {
+              id: category.id,
+              name: category.name,
+              kitchenName: category.kitchenName,
+              image: category.image
+                  ? {
+                        key: category.image.key,
+                        region: category.image.region,
+                        bucket: category.image.bucket,
+                        identityPoolId: category.image.identityPoolId,
+                    }
+                  : null,
+          },
+          modifierGroups: [],
+      };
 
-    onAddProduct(productToOrder);
+      onAddProduct(productToOrder);
   };
 
-  const onClickProduct = (
-    category: IGET_RESTAURANT_CATEGORY,
-    product: IGET_RESTAURANT_PRODUCT
-  ) => {
-    if (product.modifierGroups && product.modifierGroups.items.length > 0) {
-      setSelectedCategoryForProductModal(category);
-      setSelectedProductForProductModal(product);
-      setShowProductModal(true);
-    } else {
-      onAddProductToCart(category, product);
-    }
+  const onClickProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
+      if (product.modifierGroups && product.modifierGroups.items.length > 0) {
+          setSelectedCategoryForProductModal(category);
+          setSelectedProductForProductModal(product);
+          setShowProductModal(true);
+      } else {
+          onAddProductToCart(category, product);
+      }
   };
 
-  const onClickSearchProduct = (
-    category: IGET_RESTAURANT_CATEGORY,
-    product: IGET_RESTAURANT_PRODUCT
-  ) => {
-    if (
-      !isPOS &&
-      product.modifierGroups &&
-      product.modifierGroups.items.length > 0
-    ) {
-      setSelectedCategoryForProductModal(category);
-      setSelectedProductForProductModal(product);
-      onCloseSearchProductModal();
-      setShowProductModal(true);
-    } else {
-      onAddProductToCart(category, product);
-      onCloseSearchProductModal();
-    }
+  const onClickSearchProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
+      if (!isPOS && product.modifierGroups && product.modifierGroups.items.length > 0) {
+          setSelectedCategoryForProductModal(category);
+          setSelectedProductForProductModal(product);
+          onCloseSearchProductModal();
+          setShowProductModal(true);
+      } else {
+          onAddProductToCart(category, product);
+          onCloseSearchProductModal();
+      }
   };
 
   const productModal = (
-    <>
-      {selectedCategoryForProductModal &&
-        selectedProductForProductModal &&
-        showProductModal && (
-          <ProductModal
-            isOpen={showProductModal}
-            onClose={onCloseProductModal}
-            category={selectedCategoryForProductModal}
-            product={selectedProductForProductModal}
-            onAddProduct={onAddProduct}
-          />
-        )}
-    </>
+      <>
+          {selectedCategoryForProductModal && selectedProductForProductModal && showProductModal && (
+              <ProductModal
+                  isOpen={showProductModal}
+                  onClose={onCloseProductModal}
+                  category={selectedCategoryForProductModal}
+                  product={selectedProductForProductModal}
+                  onAddProduct={onAddProduct}
+              />
+          )}
+      </>
   );
 
   const itemAddedModal = (
-    <>
-      {showItemAddedModal && (
-        <ItemAddedUpdatedModal
-          isOpen={showItemAddedModal}
-          onClose={onCloseItemAddedModal}
-          isProductUpdate={false}
-        />
-      )}
-    </>
+      <>{showItemAddedModal && <ItemAddedUpdatedModal isOpen={showItemAddedModal} onClose={onCloseItemAddedModal} isProductUpdate={false} />}</>
   );
 
   const searchProductModal = (
-    <>
-      {showSearchProductModal && (
-        <SearchProductModal
-          isOpen={showSearchProductModal}
-          onClose={onCloseSearchProductModal}
-          onClickSearchProduct={onClickSearchProduct}
-        />
-      )}
-    </>
+      <>
+          {showSearchProductModal && (
+              <SearchProductModal isOpen={showSearchProductModal} onClose={onCloseSearchProductModal} onClickSearchProduct={onClickSearchProduct} />
+          )}
+      </>
   );
 
   const modals = (
-    <>
-      {productModal}
-      {itemAddedModal}
-      {searchProductModal}
-    </>
+      <>
+          {productModal}
+          {itemAddedModal}
+          {searchProductModal}
+      </>
   );
 
-  const ProductDisplay = (
-    category: IGET_RESTAURANT_CATEGORY,
-    product: IGET_RESTAURANT_PRODUCT
-  ) => {
-    const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
-    const isProductAvailable = isItemAvailable(product.availability);
-    const isCategoryAvailable = isItemAvailable(category.availability);
-    const isQuantityAvailable = isProductQuantityAvailable(
-      product,
-      cartProductQuantitiesById
-    );
+  const ProductDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
+      const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
+      const isProductAvailable = isItemAvailable(product.availability);
+      const isCategoryAvailable = isItemAvailable(category.availability);
+      const isQuantityAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById);
 
-    const isValid =
-      !isSoldOut &&
-      isProductAvailable &&
-      isCategoryAvailable &&
-      isQuantityAvailable;
+      const isValid = !isSoldOut && isProductAvailable && isCategoryAvailable && isQuantityAvailable;
 
-    const addToCart =
-      products && products.find((item) => item.id === product.id);
+      const addToCart = products && products.find((item) => item.id === product.id);
 
-    return (
-      <>
-        <div
-          key={product.id}
-          className={`product ${isValid ? "" : "sold-out"} ${
-            addToCart ? "add-to-cart" : ""
-          }`}
-          onClick={() => isValid && onClickProduct(category, product)}
-        >
-          <div className="product-quantity">
-            {addToCart && addToCart.quantity}
-          </div>
-          {product.totalQuantityAvailable &&
-          product.totalQuantityAvailable <= 5 ? (
-            <span className="quantity-remaining ml-2">
-              {getQuantityRemainingText(product.totalQuantityAvailable)}
-            </span>
-          ) : (
-            <></>
-          )}
+      return (
+          <>
+              <div
+                  key={product.id}
+                  className={`product ${isValid ? "" : "sold-out"} ${addToCart ? "add-to-cart" : ""}`}
+                  onClick={() => isValid && onClickProduct(category, product)}
+              >
+                  <div className="product-quantity">{addToCart && addToCart.quantity}</div>
+                  {product.totalQuantityAvailable && product.totalQuantityAvailable <= 5 ? (
+                      <span className="quantity-remaining ml-2">{getQuantityRemainingText(product.totalQuantityAvailable)}</span>
+                  ) : (
+                      <></>
+                  )}
 
-          {product.imageUrl ? (
-            <CachedImage
-              url={`${product.imageUrl}`}
-              className="image mb-2"
-              alt="product-image"
-            />
-          ) : product.image ? (
-            <>
-              <S3Image
-                imgKey={product.image.key}
-                level={
-                  product?.image?.level ? product?.image?.level : "protected"
-                }
-                className="image mb-2"
-              />
-            </>
-          ) : null}
+                  {product.imageUrl ? (
+                      <CachedImage url={`${product.imageUrl}`} className="image mb-2" alt="product-image" />
+                  ) : product.image ? (
+                      <>
+                          <S3Image imgKey={product.image.key} level="protected" className="image mb-2" />
+                      </>
+                  ) : null}
 
-          <div className="name text-bold">
-            {isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}
-          </div>
+                  <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
 
-          {product.description && (
-            <div className="description mt-2">{product.description}</div>
-          )}
+                  {product.description && <div className="description mt-2">{product.description}</div>}
 
-          {product.tags && (
-            <div className="tags mt-2">
-              {product.tags.split(";").map((tag) => (
-                <div className="tag">{tag}</div>
-              ))}
-            </div>
-          )}
+                  {product.tags && (
+                      <div className="tags mt-2">
+                          {product.tags.split(";").map((tag) => (
+                              <div className="tag">{tag}</div>
+                          ))}
+                      </div>
+                  )}
 
-          <div
-            className={`display-price mt-4 ${
-              product.displayPrice ? "" : "display-none"
-            }`}
-          >
-            {product.displayPrice}
-          </div>
-          <div
-            className={`price mt-4 ${
-              product.displayPrice ? "display-none" : ""
-            }`}
-          >
-            ${convertCentsToDollars(product.price)}
-          </div>
-        </div>
-      </>
-    );
+                  <div className={`display-price mt-4 ${product.displayPrice ? "" : "display-none"}`}>{product.displayPrice}</div>
+                  <div className={`price mt-4 ${product.displayPrice ? "display-none" : ""}`}>${convertCentsToDollars(product.price)}</div>
+              </div>
+          </>
+      );
   };
 
   const Category = (props: {
