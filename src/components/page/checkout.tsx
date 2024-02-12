@@ -656,7 +656,6 @@ export const Checkout = () => {
         signatureS3Object: IS3Object | null
     ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
         const now = new Date();
-
         if (!user) {
             await logError("Invalid user", JSON.stringify({ user: user }));
             throw "Invalid user";
@@ -702,6 +701,7 @@ export const Checkout = () => {
                 payments: newPayments,
                 total: total,
                 surcharge: surcharge || undefined,
+                extraCharge:extraCharge || undefined,
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
                 promotionType: promotion ? promotion.promotion.type : undefined,
