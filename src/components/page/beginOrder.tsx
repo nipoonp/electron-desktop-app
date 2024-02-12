@@ -3,14 +3,14 @@ import { useNavigate } from "react-router";
 import { restaurantPath } from "../main";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
-import { IGET_RESTAURANT_ADVERTISEMENT, IGET_RESTAURANT_PREPRATION_TIME } from "../../graphql/customQueries";
+import { IGET_RESTAURANT_ADVERTISEMENT, IGET_RESTAURANT_PING_DATA } from "../../graphql/customQueries";
 import { useRestaurant } from "../../context/restaurant-context";
 import { CachedImage } from "../../tabin/components/cachedImage";
-
-import "./beginOrder.scss";
 import { isItemAvailable, isVideoFile } from "../../util/util";
 import { useRegister } from "../../context/register-context";
-import { useGetRestaurantPreparationTimeLazyQuery } from "../../hooks/useGetRestaurantPreparationTimeLazyQuery";
+import { useGetRestaurantPingDataLazyQuery } from "../../hooks/useGetRestaurantPingDataLazyQuery";
+
+import "./beginOrder.scss";
 
 export default () => {
     const { restaurant } = useRestaurant();
@@ -21,16 +21,8 @@ export default () => {
 
     return (
         <>
-            <PreparationTime />
-            {ads.length > 0 ? (
-                <>
-                    <BeginOrderAdvertisements ads={ads} />
-                </>
-            ) : (
-                <>
-                    <BeginOrderDefault />
-                </>
-            )}
+            {restaurant.preparationTimeInMinutes && <PreparationTime />}
+            {ads.length > 0 ? <BeginOrderAdvertisements ads={ads} /> : <BeginOrderDefault />}
         </>
     );
 };
@@ -39,21 +31,22 @@ const PreparationTime = () => {
     const { restaurant } = useRestaurant();
     const { isPOS } = useRegister();
 
-    const { getRestaurantPreparationTime } = useGetRestaurantPreparationTimeLazyQuery();
+    const { getRestaurantPingData } = useGetRestaurantPingDataLazyQuery();
 
     const [preparationTimeInMinutes, setPreparationTimeInMinutes] = useState(restaurant ? restaurant.preparationTimeInMinutes : 0);
 
     useEffect(() => {
         if (!restaurant) return;
+        if (!restaurant.preparationTimeInMinutes) return;
 
         const intervalId = setInterval(async () => {
-            const restaurantPreparationTimeRes = await getRestaurantPreparationTime({
+            const restaurantPreparationTimeRes = await getRestaurantPingData({
                 variables: {
                     restaurantId: restaurant.id,
                 },
             });
 
-            const preparationTimeResponse: IGET_RESTAURANT_PREPRATION_TIME = restaurantPreparationTimeRes.data.getRestaurant;
+            const preparationTimeResponse: IGET_RESTAURANT_PING_DATA = restaurantPreparationTimeRes.data.getRestaurant;
 
             setPreparationTimeInMinutes(preparationTimeResponse.preparationTimeInMinutes);
         }, 2 * 60 * 1000); //2 mins
@@ -78,25 +71,39 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
     const navigate = useNavigate();
 
     const [availableAds, setAvailableAds] = useState<IGET_RESTAURANT_ADVERTISEMENT[]>([]);
-    const [currentAd, setCurrentAd] = useState(0);
+    const [currentAdIndex, setCurrentAdIndex] = useState(0);
     const { restaurant } = useRestaurant();
 
     useEffect(() => {
-        const availableAds: IGET_RESTAURANT_ADVERTISEMENT[] = [];
-
-        props.ads.forEach((ad) => {
-            if (isItemAvailable(ad.availability)) availableAds.push(ad);
-        });
-
-        setAvailableAds(availableAds);
+        setCurrentAdIndex((oldAdIndex) => processAds(oldAdIndex));
     }, []);
 
-    useEffect(() => {
-        if (availableAds.length <= 1) return;
+    const processAds = (oldAdIndex) => {
+        let newIndex = 0;
+        const newAvailAds: IGET_RESTAURANT_ADVERTISEMENT[] = [];
 
+        props.ads.forEach((ad) => {
+            if (isItemAvailable(ad.availability)) newAvailAds.push(ad);
+        });
+
+        if (availableAds.length !== newAvailAds.length) {
+            setAvailableAds(newAvailAds);
+            newIndex = 0;
+        } else {
+            if (oldAdIndex >= newAvailAds.length - 1) {
+                newIndex = 0;
+            } else {
+                newIndex = oldAdIndex + 1;
+            }
+        }
+
+        return newIndex;
+    };
+
+    useEffect(() => {
         const timerId = setInterval(() => {
-            setCurrentAd((prevCurrentAd) => (prevCurrentAd === availableAds.length - 1 ? 0 : prevCurrentAd + 1));
-        }, 6000);
+            setCurrentAdIndex((oldAdIndex) => processAds(oldAdIndex));
+        }, 6 * 1000);
 
         return () => clearInterval(timerId);
     }, [availableAds]);
@@ -122,7 +129,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
                         <div
                             key={advertisement.id}
                             className={`image-wrapper ${availableAds.length > 1 ? "slide-animation" : ""} ${
-                                currentAd == index ? "active" : "inactive"
+                                currentAdIndex == index ? "active" : "inactive"
                             }`}
                         >
                             {isVideoFile(advertisement.content.key) ? (
@@ -154,9 +161,7 @@ const BeginOrderDefault = () => {
     const navigate = useNavigate();
     const { restaurant } = useRestaurant();
 
-    if (!restaurant) {
-        return <div>This user has not selected any restaurant</div>;
-    }
+    if (!restaurant) return <div>This user has not selected any restaurant</div>;
 
     return (
         <>

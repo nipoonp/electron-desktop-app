@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router";
 import { checkoutPath, restaurantPath, tableNumberPath } from "../main";
+import { convertCentsToDollars } from "../../util/util";
+
 import { EOrderType } from "../../model/model";
 import { useCart } from "../../context/cart-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -10,7 +12,7 @@ import { useRestaurant } from "../../context/restaurant-context";
 
 import "./orderType.scss";
 
-export default () => {
+const OrderType = () => {
     const navigate = useNavigate();
     const { setOrderType } = useCart();
     const { register, isPOS } = useRegister();
@@ -19,6 +21,7 @@ export default () => {
     if (!register) throw "Register is not valid";
     if (restaurant == null) throw "Restaurant is invalid!";
 
+    console.log("register orderTypeSurcharge", register.orderTypeSurcharge);
     const onSelectOrderType = (orderType: EOrderType) => {
         setOrderType(orderType);
 
@@ -47,6 +50,11 @@ export default () => {
                             />
                             <div className="dine-in-image-override"></div>
                             <div className="dine-in-text h2">Dine In</div>
+                            <div className="dine-in-text h5">
+                                {register?.orderTypeSurcharge != null && register?.orderTypeSurcharge.dinein
+                                    ? `Extra charge $${convertCentsToDollars(register?.orderTypeSurcharge.dinein)}`
+                                    : ""}
+                            </div>
                         </div>
                         <div className="take-away-image-wrapper" onClick={() => onSelectOrderType(EOrderType.TAKEAWAY)}>
                             <CachedImage
@@ -56,6 +64,11 @@ export default () => {
                             />
                             <div className="take-away-image-override"></div>
                             <div className="take-away-text h2">Takeaway</div>
+                            <div className="dine-in-text h5">
+                                {register?.orderTypeSurcharge != null && register?.orderTypeSurcharge.takeaway
+                                    ? `Extra charge $${convertCentsToDollars(register?.orderTypeSurcharge.takeaway)}`
+                                    : ""}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -63,3 +76,5 @@ export default () => {
         </>
     );
 };
+
+export default OrderType;

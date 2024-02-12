@@ -96,7 +96,6 @@ export const GET_USER = gql`
                             enableTableFlags
                             enableBuzzerNumbers
                             enableSkuScanner
-                            enableFeedback
                             enablePayLater
                             enableCashPayments
                             enableEftposPayments
@@ -141,6 +140,7 @@ export const GET_USER = gql`
                                     kitchenPrinterLarge
                                     hidePreparationTime
                                     hideModifierGroupName
+                                    printReceiptForEachProduct
                                     printAllOrderReceipts
                                     printOnlineOrderReceipts
                                     ignoreCategories(limit: 500) {
@@ -183,6 +183,7 @@ export interface IGET_USER_REGISTER_PRINTER {
     kitchenPrinterLarge: boolean;
     hidePreparationTime: boolean;
     hideModifierGroupName: boolean;
+    printReceiptForEachProduct: boolean;
     ignoreCategories: {
         items: IGET_USER_REGISTER_PRINTER_IGNORE_CATEGORY[];
     };
@@ -368,6 +369,10 @@ export const GET_RESTAURANT = gql`
                     enableUberEatsPayments
                     enableMenulogPayments
                     availableOrderTypes
+                    orderTypeSurcharge {
+                        dinein
+                        takeaway
+                    }
                     type
                     requestCustomerInformation {
                         firstName
@@ -407,6 +412,7 @@ export const GET_RESTAURANT = gql`
                             kitchenPrinterLarge
                             hidePreparationTime
                             hideModifierGroupName
+                            printReceiptForEachProduct
                             printAllOrderReceipts
                             printOnlineOrderReceipts
                             ignoreCategories(limit: 500) {
@@ -481,18 +487,8 @@ export const GET_RESTAURANT = gql`
                         items {
                             id
                             minQuantity
-                            categories {
-                                items {
-                                    id
-                                    name
-                                }
-                            }
-                            products {
-                                items {
-                                    id
-                                    name
-                                }
-                            }
+                            categoryIds
+                            productIds
                         }
                     }
                     discounts {
@@ -504,18 +500,8 @@ export const GET_RESTAURANT = gql`
                                 items {
                                     id
                                     minQuantity
-                                    categories {
-                                        items {
-                                            id
-                                            name
-                                        }
-                                    }
-                                    products {
-                                        items {
-                                            id
-                                            name
-                                        }
-                                    }
+                                    categoryIds
+                                    productIds
                                 }
                             }
                         }
@@ -593,6 +579,7 @@ export const GET_RESTAURANT = gql`
                                     identityPoolId
                                 }
                                 availablePlatforms
+                                isAgeRescricted
                                 availability {
                                     monday {
                                         startTime
@@ -686,6 +673,7 @@ export const GET_RESTAURANT = gql`
                                             choiceDuplicate
                                             collapsedByDefault
                                             availablePlatforms
+                                            alphabeticalSorting
                                             modifiers(limit: 50) {
                                                 items {
                                                     id
@@ -1024,6 +1012,7 @@ export interface IGET_RESTAURANT_REGISTER {
     enableUberEatsPayments: boolean;
     enableMenulogPayments: boolean;
     availableOrderTypes: EOrderType[];
+    orderTypeSurcharge: OrderTypeSurchargeType;
     type: ERegisterType;
     requestCustomerInformation?: RequestCustomerInformationType;
     eftposProvider: string;
@@ -1051,6 +1040,11 @@ export interface RequestCustomerInformationType {
     signature: boolean;
 }
 
+export interface OrderTypeSurchargeType {
+    dinein: number;
+    takeaway: number;
+}
+
 export interface IGET_RESTAURANT_REGISTER_PRINTER {
     id: string;
     name: string;
@@ -1064,6 +1058,7 @@ export interface IGET_RESTAURANT_REGISTER_PRINTER {
     kitchenPrinterLarge: boolean;
     hidePreparationTime: boolean;
     hideModifierGroupName: boolean;
+    printReceiptForEachProduct: boolean;
     printAllOrderReceipts: boolean;
     printOnlineOrderReceipts: boolean;
     ignoreCategories: {
@@ -1171,13 +1166,13 @@ export interface IGET_RESTAURANT_PROMOTION {
 }
 
 export interface IGET_RESTAURANT_PROMOTION_AVAILABILITY {
-    monday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
-    tuesday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
-    wednesday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
-    thursday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
-    friday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
-    saturday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
-    sunday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[];
+    monday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[] | null;
+    tuesday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[] | null;
+    wednesday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[] | null;
+    thursday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[] | null;
+    friday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[] | null;
+    saturday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[] | null;
+    sunday: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[] | null;
 }
 
 export interface IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES {
@@ -1194,18 +1189,8 @@ export enum EPromotionType {
 export interface IGET_RESTAURANT_PROMOTION_ITEMS {
     id: string;
     minQuantity: number;
-    categories: {
-        items: {
-            id: string;
-            name: string;
-        }[];
-    };
-    products: {
-        items: {
-            id: string;
-            name: string;
-        }[];
-    };
+    categoryIds: string[];
+    productIds: string[];
 }
 
 export interface IGET_RESTAURANT_PROMOTION_DISCOUNT {
@@ -1263,6 +1248,7 @@ export interface IGET_RESTAURANT_PRODUCT {
     imageUrl?: string;
     image?: IS3Object;
     availablePlatforms: ERegisterType[];
+    isAgeRescricted: boolean;
     availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
     subCategories?: string;
     categories: { items: IGET_RESTAURANT_CATEGORY_LINK[] };
@@ -1287,6 +1273,7 @@ export interface IGET_RESTAURANT_MODIFIER_GROUP {
     choiceDuplicate: number;
     collapsedByDefault?: boolean | null;
     availablePlatforms: ERegisterType[];
+    alphabeticalSorting: boolean;
     modifiers?: {
         items: IGET_RESTAURANT_MODIFIER_LINK[];
     };
@@ -1312,6 +1299,7 @@ export interface IGET_RESTAURANT_MODIFIER {
     soldOut?: boolean;
     soldOutDate?: string;
     availablePlatforms: ERegisterType[];
+    isAgeRescricted: boolean;
     subModifierGroups: string;
     productModifier?: IGET_RESTAURANT_PRODUCT;
 }
@@ -1375,18 +1363,8 @@ export const GET_PROMOTION_BY_CODE = gql`
                     items {
                         id
                         minQuantity
-                        categories {
-                            items {
-                                id
-                                name
-                            }
-                        }
-                        products {
-                            items {
-                                id
-                                name
-                            }
-                        }
+                        categoryIds
+                        productIds
                     }
                 }
                 discounts {
@@ -1398,18 +1376,8 @@ export const GET_PROMOTION_BY_CODE = gql`
                             items {
                                 id
                                 minQuantity
-                                categories {
-                                    items {
-                                        id
-                                        name
-                                    }
-                                }
-                                products {
-                                    items {
-                                        id
-                                        name
-                                    }
-                                }
+                                categoryIds
+                                productIds
                             }
                         }
                     }
@@ -1734,16 +1702,28 @@ export interface IGET_THIRD_PARTY_ORDER_RESPONSE {
     } | null;
 }
 
-export const GET_RESTAURANT_PREPRATION_TIME = gql`
+export const GET_RESTAURANT_PING_DATA = gql`
     query GetRestaurant($restaurantId: ID!) {
         getRestaurant(id: $restaurantId) {
             id
             preparationTimeInMinutes
+            advertisements {
+                items {
+                    id
+                    name
+                    content {
+                        key
+                        bucket
+                        region
+                        identityPoolId
+                    }
+                }
+            }
         }
     }
 `;
 
-export interface IGET_RESTAURANT_PREPRATION_TIME {
+export interface IGET_RESTAURANT_PING_DATA {
     id: string;
     preparationTimeInMinutes: number | null;
 }

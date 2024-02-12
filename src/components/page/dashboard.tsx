@@ -77,6 +77,7 @@ export default () => {
                     kitchenPrinterLarge: register.printers.items[0].kitchenPrinterLarge,
                     hidePreparationTime: register.printers.items[0].hidePreparationTime,
                     hideModifierGroupName: register.printers.items[0].hideModifierGroupName,
+                    printReceiptForEachProduct: register.printers.items[0].printReceiptForEachProduct,
                     hideOrderType: register.availableOrderTypes.length === 0,
                     products: convertProductTypesForPrint(productsToPrint),
                     displayPaymentRequiredMessage: !order.paid,
@@ -124,6 +125,8 @@ export default () => {
                 price: product.price,
                 totalPrice: product.totalPrice,
                 discount: 0, //Set discount to total because we do not want to add any discount or promotions to parked orders
+                availablePlatforms: product.availablePlatforms,
+                isAgeRescricted: product.isAgeRescricted,
                 image: product.image
                     ? {
                           key: product.image.key,
@@ -334,6 +337,7 @@ export default () => {
                 kitchenPrinterLarge: printer.kitchenPrinterLarge,
                 hidePreparationTime: printer.hidePreparationTime,
                 hideModifierGroupName: printer.hideModifierGroupName,
+                printReceiptForEachProduct: printer.printReceiptForEachProduct,
                 hideOrderType: register.availableOrderTypes.length === 0,
                 products: convertProductTypesForPrint(productsToPrint),
             });

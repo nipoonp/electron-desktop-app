@@ -38,6 +38,7 @@ import {
     EReceiptPrinterPrinterType,
     EPaymentMethod,
     EVerifoneTransactionOutcome,
+    ERegisterType,
 } from "../../model/model";
 import { useUser } from "../../context/user-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -73,6 +74,7 @@ import { useGetThirdPartyOrderResponseLazyQuery } from "../../hooks/useGetThirdP
 
 import "./checkout.scss";
 import axios from "axios";
+import { R18MessageModal } from "../modals/r18MessageModal";
 
 const logger = new Logger("checkout");
 
@@ -100,6 +102,7 @@ export const Checkout = () => {
         surcharge,
         subTotal,
         paidSoFar,
+        extraCharge,
         transactionEftposReceipts,
         setTransactionEftposReceipts,
         paymentAmounts,
@@ -179,9 +182,15 @@ export const Checkout = () => {
     const [showOrderThresholdMessageModal, setShowOrderThresholdMessageModal] = useState(false);
 
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
-
+    const [showModal, setShowModal] = useState<string>("");
     useEffect(() => {
         if (autoClickCompleteOrderOnLoad) onClickOrderButton();
+        const ageRestrictedProducts = products && products.filter((product) => product.isAgeRescricted).map((product) => product.name);
+        if (ageRestrictedProducts && ageRestrictedProducts.length > 0) {
+            setShowModal(ageRestrictedProducts.toString());
+        } else {
+            setShowModal("");
+        }
     }, []);
 
     useEffect(() => {
@@ -196,10 +205,9 @@ export const Checkout = () => {
     if (!register) throw "Register is not valid";
     if (!restaurant) navigate(beginOrderPath);
     if (!restaurant) throw "Restaurant is invalid";
-
     const incrementRedirectTimer = (time: number) => {
         setPaymentOutcomeApprovedRedirectTimeLeft(time);
-        transactionCompleteRedirectTime=time;
+        transactionCompleteRedirectTime = time;
         beginTransactionCompleteTimeout();
     };
 
@@ -235,7 +243,11 @@ export const Checkout = () => {
     const onCloseOrderThresholdMessageModal = () => {
         setShowOrderThresholdMessageModal(false);
     };
-
+    const onCloseR18MessageModal = () => {
+        setShowModal("");
+        navigate(beginOrderPath);
+        clearCart();
+    };
     const onCloseEditProductModal = () => {
         setProductToEdit(null);
         setShowEditProductModal(false);
@@ -296,6 +308,8 @@ export const Checkout = () => {
                 price: product.price,
                 totalPrice: product.price,
                 discount: 0,
+                availablePlatforms: product.availablePlatforms,
+                isAgeRescricted: product.isAgeRescricted,
                 image: product.image
                     ? {
                           key: product.image.key,
@@ -466,6 +480,7 @@ export const Checkout = () => {
                 kitchenPrinterLarge: printer.kitchenPrinterLarge,
                 hidePreparationTime: printer.hidePreparationTime,
                 hideModifierGroupName: printer.hideModifierGroupName,
+                printReceiptForEachProduct: printer.printReceiptForEachProduct,
                 hideOrderType: register.availableOrderTypes.length === 1, //Don't show order type if only 1 is available
                 hideModifierGroupsForCustomer: false,
                 restaurant: {
@@ -551,7 +566,6 @@ export const Checkout = () => {
                 );
 
                 const uploadedObject: any = await Storage.put(`${filename}.${fileExtension}`, signatureFile, {
-                    level: "protected",
                     contentType: `image/${fileExtension}`, //signature image png, png required to print to receipt printer
                 });
 
@@ -573,7 +587,6 @@ export const Checkout = () => {
             );
 
             createdOrder.current = newOrder;
-            updateOrderDetail(newOrder);
 
             if (register.printers && register.printers.items.length > 0 && !parkedOrderId) {
                 await printReceipts(newOrder);
@@ -643,7 +656,6 @@ export const Checkout = () => {
         signatureS3Object: IS3Object | null
     ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
         const now = new Date();
-
         if (!user) {
             await logError("Invalid user", JSON.stringify({ user: user }));
             throw "Invalid user";
@@ -689,8 +701,10 @@ export const Checkout = () => {
                 payments: newPayments,
                 total: total,
                 surcharge: surcharge || undefined,
+                extraCharge:extraCharge || undefined,
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
+                promotionType: promotion ? promotion.promotion.type : undefined,
                 subTotal: subTotal,
                 preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                 registerId: register.id,
@@ -741,6 +755,7 @@ export const Checkout = () => {
                     surcharge: surcharge || undefined,
                     discount: promotion ? promotion.discountedAmount : undefined,
                     promotionId: promotion ? promotion.promotion.id : undefined,
+                    promotionType: promotion ? promotion.promotion.type : undefined,
                     subTotal: subTotal,
                     preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                     registerId: register.id,
@@ -782,6 +797,13 @@ export const Checkout = () => {
 
                 if (product.category.image == null) {
                     delete product.category.image;
+                }
+                if (product.availablePlatforms == null) {
+                    delete product.availablePlatforms;
+                }
+
+                if (product.isAgeRescricted == null) {
+                    delete product.isAgeRescricted;
                 }
             });
 
@@ -936,7 +958,10 @@ export const Checkout = () => {
                 const newEftposPaymentAmounts = paymentAmounts.eftpos + amount;
                 const newTotalPaymentAmounts = newEftposPaymentAmounts + paymentAmounts.cash;
 
-                const newPaymentAmounts: ICartPaymentAmounts = { ...paymentAmounts, eftpos: newEftposPaymentAmounts };
+                const newPaymentAmounts: ICartPaymentAmounts = {
+                    ...paymentAmounts,
+                    eftpos: newEftposPaymentAmounts,
+                };
                 const newPayments: ICartPayment[] = [...payments, { type: register.eftposProvider, amount: amount }];
 
                 setPaymentAmounts(newPaymentAmounts);
@@ -1065,7 +1090,13 @@ export const Checkout = () => {
     const onClickPayLater = async () => {
         setShowPaymentModal(true);
 
-        const newPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0 };
+        const newPaymentAmounts: ICartPaymentAmounts = {
+            cash: 0,
+            eftpos: 0,
+            online: 0,
+            uberEats: 0,
+            menulog: 0,
+        };
         const newPayments: ICartPayment[] = [];
 
         try {
@@ -1080,7 +1111,13 @@ export const Checkout = () => {
     const onParkOrder = async () => {
         setShowPaymentModal(true);
 
-        const newPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0 };
+        const newPaymentAmounts: ICartPaymentAmounts = {
+            cash: 0,
+            eftpos: 0,
+            online: 0,
+            uberEats: 0,
+            menulog: 0,
+        };
         const newPayments: ICartPayment[] = [];
 
         setPaymentModalState(EPaymentModalState.Park);
@@ -1106,7 +1143,7 @@ export const Checkout = () => {
             const upSellCrossSellCategories = restaurant.upSellCrossSell.customCategories.items;
 
             menuCategories.forEach((category) => {
-                if (!category.availablePlatforms.includes(register.type)) return;
+                if (category.availablePlatforms && !category.availablePlatforms.includes(register.type)) return;
 
                 upSellCrossSellCategories.forEach((upSellCategory) => {
                     if (category.id === upSellCategory.id) {
@@ -1147,7 +1184,10 @@ export const Checkout = () => {
 
                         upSellCrossSellProducts.forEach((upSellProduct) => {
                             if (p.product.id === upSellProduct.id) {
-                                upSellCrossSaleProductItems.push({ category: category, product: p.product });
+                                upSellCrossSaleProductItems.push({
+                                    category: category,
+                                    product: p.product,
+                                });
                             }
                         });
                     });
@@ -1250,6 +1290,23 @@ export const Checkout = () => {
                         isOpen={showOrderThresholdMessageModal}
                         onClose={onCloseOrderThresholdMessageModal}
                         onContinue={() => setIsShownOrderThresholdMessageModal(true)}
+                    />
+                )}
+            </>
+        );
+    };
+
+    const r18MessageModal = () => {
+        return (
+            <>
+                {showModal && (
+                    <R18MessageModal
+                        isOpen={showModal}
+                        message={showModal}
+                        onClose={onCloseR18MessageModal}
+                        onContinue={() => setShowModal("")}
+                        paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                        incrementRedirectTimer={incrementRedirectTimer}
                     />
                 )}
             </>
@@ -1464,6 +1521,7 @@ export const Checkout = () => {
             )}
             {surcharge ? <div className="h3 text-center mb-2">Surcharge: ${convertCentsToDollars(surcharge)}</div> : <></>}
             {paidSoFar > 0 ? <div className="h3 text-center mb-2">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : <></>}
+            {extraCharge > 0 ? <div className="h3 text-center mb-2">Order Type Surcharge: ${convertCentsToDollars(extraCharge)}</div> : <></>}
             <div className={`h1 text-center ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
             <div className={`${isPOS ? "mb-0" : "mb-4"}`}>
                 <div className="checkout-buttons-container">
@@ -1506,6 +1564,7 @@ export const Checkout = () => {
                     {isPOS && payments.length === 0 && <div>{parkOrderFooter}</div>}
                     {products && products.length > 0 && <div className="footer p-4">{checkoutFooter}</div>}
                 </div>
+                {r18MessageModal()}
                 {modalsAndSpinners}
             </PageWrapper>
         </>

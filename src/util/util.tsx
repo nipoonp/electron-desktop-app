@@ -1,5 +1,5 @@
 import { eachMinuteOfInterval, format, getDay, isAfter, isWithinInterval, startOfDay } from "date-fns";
-import { addDays, isEqual } from "date-fns/esm";
+import { addDays, isEqual } from "date-fns";
 import { IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
 import {
     EDiscountType,
@@ -102,14 +102,14 @@ export const isItemSoldOut = (soldOut?: boolean, soldOutDate?: string) => {
 export const isPromotionAvailable = (availability?: IGET_RESTAURANT_PROMOTION_AVAILABILITY) => {
     if (!availability) return true;
 
-    const dayTimes: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[] = getPromotionDayData(availability);
+    const dayTimes: IGET_RESTAURANT_PROMOTION_AVAILABILITY_TIMES[] | null = getPromotionDayData(availability);
 
-    if (dayTimes.length == 0) return true;
+    if (dayTimes?.length == 0) return true;
 
     const currentDateTime = new Date();
     let isWithinTimeSlot = false;
 
-    dayTimes.forEach((timeSlot) => {
+    dayTimes?.forEach((timeSlot) => {
         let startDateTime = new Date(
             currentDateTime.getFullYear(),
             currentDateTime.getMonth(),
@@ -134,7 +134,10 @@ export const isPromotionAvailable = (availability?: IGET_RESTAURANT_PROMOTION_AV
             endDateTime = addDays(endDateTime, 1);
         }
 
-        const isWithin = isWithinInterval(currentDateTime, { start: startDateTime, end: endDateTime });
+        const isWithin = isWithinInterval(currentDateTime, {
+            start: startDateTime,
+            end: endDateTime,
+        });
 
         if (isWithin && !isWithinTimeSlot) {
             isWithinTimeSlot = true;
@@ -146,15 +149,14 @@ export const isPromotionAvailable = (availability?: IGET_RESTAURANT_PROMOTION_AV
 
 export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS | IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_HOURS) => {
     if (!availability) return true;
+    const dayTimes: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] | null = getDayData(availability);
 
-    const dayTimes: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] = getDayData(availability);
-
-    if (dayTimes.length == 0) return true;
+    if (dayTimes?.length == 0) return true;
 
     const currentDateTime = new Date();
     let isWithinTimeSlot = false;
 
-    dayTimes.forEach((timeSlot) => {
+    dayTimes?.forEach((timeSlot) => {
         let startDateTime = new Date(
             currentDateTime.getFullYear(),
             currentDateTime.getMonth(),
@@ -182,7 +184,10 @@ export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY
             endDateTime = addDays(endDateTime, 1);
         }
 
-        const isWithin = isWithinInterval(currentDateTime, { start: startDateTime, end: endDateTime });
+        const isWithin = isWithinInterval(currentDateTime, {
+            start: startDateTime,
+            end: endDateTime,
+        });
 
         if (isWithin && !isWithinTimeSlot) {
             isWithinTimeSlot = true;
@@ -218,7 +223,10 @@ export const isProductQuantityAvailable = (
     if (!menuProductItem.totalQuantityAvailable) return true;
 
     const productQuantityAvailable = getProductQuantityAvailable(
-        { id: menuProductItem.id, totalQuantityAvailable: menuProductItem.totalQuantityAvailable },
+        {
+            id: menuProductItem.id,
+            totalQuantityAvailable: menuProductItem.totalQuantityAvailable,
+        },
         cartProducts
     );
 
@@ -251,7 +259,10 @@ export const isModifierQuantityAvailable = (
     if (!menuModifierItem.totalQuantityAvailable) return true;
 
     const modifierQuantityAvailable = getModifierQuantityAvailable(
-        { id: menuModifierItem.id, totalQuantityAvailable: menuModifierItem.totalQuantityAvailable },
+        {
+            id: menuModifierItem.id,
+            totalQuantityAvailable: menuModifierItem.totalQuantityAvailable,
+        },
         cartModifiers
     );
 
@@ -271,19 +282,19 @@ const getPromotionDayData = (availability: IGET_RESTAURANT_PROMOTION_AVAILABILIT
 
     switch (day) {
         case 1:
-            return availability.monday;
+            return availability !== null ? availability.monday : [];
         case 2:
-            return availability.tuesday;
+            return availability !== null ? availability.tuesday : [];
         case 3:
-            return availability.wednesday;
+            return availability !== null ? availability.wednesday : [];
         case 4:
-            return availability.thursday;
+            return availability !== null ? availability.thursday : [];
         case 5:
-            return availability.friday;
+            return availability !== null ? availability.friday : [];
         case 6:
-            return availability.saturday;
+            return availability !== null ? availability.saturday : [];
         case 0: //0 is sunday in date-fns
-            return availability.sunday;
+            return availability !== null ? availability.sunday : [];
         default:
             return [];
     }
@@ -294,19 +305,19 @@ const getDayData = (availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS | IGET
 
     switch (day) {
         case 1:
-            return availability.monday;
+            return availability !== null ? availability.monday : [];
         case 2:
-            return availability.tuesday;
+            return availability !== null ? availability.tuesday : [];
         case 3:
-            return availability.wednesday;
+            return availability !== null ? availability.wednesday : [];
         case 4:
-            return availability.thursday;
+            return availability !== null ? availability.thursday : [];
         case 5:
-            return availability.friday;
+            return availability !== null ? availability.friday : [];
         case 6:
-            return availability.saturday;
+            return availability !== null ? availability.saturday : [];
         case 0: //0 is sunday in date-fns
-            return availability.sunday;
+            return availability !== null ? availability.sunday : [];
         default:
             return [];
     }
@@ -393,9 +404,9 @@ const getMatchingPromotionProducts = (
         const matchingProductsTemp: ICartProduct[] = [];
         let quantityCounted = 0;
 
-        item.categories.items.forEach((c) => {
+        item.categoryIds?.forEach((categoryId) => {
             cartProducts.forEach((cartProduct) => {
-                if (c.id === cartProduct.category?.id) {
+                if (categoryId === cartProduct.category?.id) {
                     quantityCounted += cartProduct.quantity;
 
                     matchingProductsTemp.push(cartProduct);
@@ -403,9 +414,9 @@ const getMatchingPromotionProducts = (
             });
         });
 
-        item.products.items.forEach((p) => {
+        item.productIds?.forEach((productId) => {
             cartProducts.forEach((cartProduct) => {
-                if (p.id === cartProduct.id) {
+                if (productId === cartProduct.id) {
                     quantityCounted += cartProduct.quantity;
 
                     matchingProductsTemp.push(cartProduct);
@@ -680,6 +691,8 @@ const processProductsForPrint = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMEN
             discount: p.discount,
             image: p.image,
             quantity: p.quantity,
+            availablePlatforms: p.availablePlatforms,
+            isAgeRescricted: p.isAgeRescricted,
             notes: p.notes,
             category: p.category
                 ? {

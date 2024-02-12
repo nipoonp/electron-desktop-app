@@ -52,13 +52,15 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
                         <></>
                     )}
 
-                    {product.image && (
+                    {product.imageUrl ? (
+                        <CachedImage url={`${product.imageUrl}`} className="image mb-2" alt="product-image" />
+                    ) : product.image ? (
                         <CachedImage
-                            className="image mb-2"
                             url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                            className="image mb-2"
                             alt="product-image"
                         />
-                    )}
+                    ) : null}
 
                     <div className="name text-bold">{product.name}</div>
 
@@ -91,15 +93,17 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
     const mainImage = (
         <>
             <div className="h1 mb-6 text-center">{randomItem.current.product.name}</div>
-            {randomItem.current.product.image && (
+            {randomItem.current.product.imageUrl ? (
+                <CachedImage url={`${randomItem.current.product.imageUrl}`} className="main-image mb-2" alt="product-image" />
+            ) : randomItem.current.product.image ? (
                 <CachedImage
-                    className="main-image mb-4"
                     url={`${getCloudFrontDomainName()}/protected/${randomItem.current.product.image.identityPoolId}/${
                         randomItem.current.product.image.key
                     }`}
+                    className="main-image mb-2"
                     alt="product-image"
                 />
-            )}
+            ) : null}
 
             {randomItem.current.product.description && <div className="description">{randomItem.current.product.description}</div>}
 
