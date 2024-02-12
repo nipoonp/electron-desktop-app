@@ -701,7 +701,7 @@ export const Checkout = () => {
                 payments: newPayments,
                 total: total,
                 surcharge: surcharge || undefined,
-                extraCharge:extraCharge || undefined,
+                orderTypeSurcharge:extraCharge || undefined,
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
                 promotionType: promotion ? promotion.promotion.type : undefined,
