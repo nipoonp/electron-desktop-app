@@ -2,7 +2,7 @@ name: Tabin CI/CD NEW
 
 on:
     push:
-        branches: [main]
+        branches: [LIVE-bossDon-aucklandBagelClub]
 
 jobs:
     slack_message_start:
