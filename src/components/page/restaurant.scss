@@ -49,6 +49,7 @@
 
         /* Hide scrollbar for IE, Edge and Firefox */
         .products-wrapper {
+            position: relative;
             -ms-overflow-style: none;
             /* IE and Edge */
             scrollbar-width: none;
@@ -174,6 +175,25 @@
                         font-size: 18px;
                     }
                 }
+
+                .add-to-cart{
+                    border: 1px solid black;
+                    position: relative;
+
+                    .product-quantity{
+                        position: absolute;
+                        top: -15px;
+                        right: -15px;
+                        background-color: var(--primary-color);
+                        color: white;
+                        border-radius: 50%;
+                        height: 35px;
+                        width: 35px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                }
             }
         }
 
@@ -198,7 +218,7 @@
                 background-color: #e0e0e0;
             }
 
-            .unavailable {
+            .sold-out {
                 opacity: 0.5;
             }
 
@@ -244,5 +264,14 @@
                 font-weight: 300;
             }
         }
+
+        .fixed-button {
+          
+            position: fixed;
+            bottom: 192px;
+            left: calc(50% + 4.5rem);
+            transform: translate(50%, 50%);
+        }
     }
+
 }
