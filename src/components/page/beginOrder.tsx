@@ -6,64 +6,53 @@ import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../pr
 import { IGET_RESTAURANT_ADVERTISEMENT, IGET_RESTAURANT_PING_DATA } from "../../graphql/customQueries";
 import { useRestaurant } from "../../context/restaurant-context";
 import { CachedImage } from "../../tabin/components/cachedImage";
-
-import "./beginOrder.scss";
 import { isItemAvailable, isVideoFile } from "../../util/util";
 import { useRegister } from "../../context/register-context";
 import { useGetRestaurantPingDataLazyQuery } from "../../hooks/useGetRestaurantPingDataLazyQuery";
 
+import "./beginOrder.scss";
+
 export default () => {
     const { restaurant } = useRestaurant();
-    const { isPOS } = useRegister();
-    const { getRestaurantPingData } = useGetRestaurantPingDataLazyQuery();
 
-    const getAvailableAds = (restaurantPingData: IGET_RESTAURANT_ADVERTISEMENT[]) => {
-        const ads: IGET_RESTAURANT_ADVERTISEMENT[] = [];
+    if (!restaurant) return <div>This user has not selected any restaurant</div>;
 
-        restaurantPingData.forEach((ad) => {
-            if (isItemAvailable(ad.availability)) ads.push(ad);
-        });
+    const ads = restaurant && restaurant.advertisements.items;
 
-        return ads;
-    };
-
-    const [availableAds, setAvailableAds] = useState<IGET_RESTAURANT_ADVERTISEMENT[]>(
-        restaurant && restaurant.advertisements.items ? getAvailableAds(restaurant && restaurant.advertisements.items) : []
+    return (
+        <>
+            {restaurant.preparationTimeInMinutes && <PreparationTime />}
+            {ads.length > 0 ? <BeginOrderAdvertisements ads={ads} /> : <BeginOrderDefault />}
+        </>
     );
+};
+
+const PreparationTime = () => {
+    const { restaurant } = useRestaurant();
+    const { isPOS } = useRegister();
+
+    const { getRestaurantPingData } = useGetRestaurantPingDataLazyQuery();
 
     const [preparationTimeInMinutes, setPreparationTimeInMinutes] = useState(restaurant ? restaurant.preparationTimeInMinutes : 0);
 
     useEffect(() => {
         if (!restaurant) return;
+        if (!restaurant.preparationTimeInMinutes) return;
 
-        const fetchDataAndUpdate = async () => {
+        const intervalId = setInterval(async () => {
             const restaurantPreparationTimeRes = await getRestaurantPingData({
                 variables: {
                     restaurantId: restaurant.id,
                 },
             });
 
-            const restaurantPingData = restaurantPreparationTimeRes.data.getRestaurant;
+            const preparationTimeResponse: IGET_RESTAURANT_PING_DATA = restaurantPreparationTimeRes.data.getRestaurant;
 
-            setPreparationTimeInMinutes(restaurantPingData.preparationTimeInMinutes);
-            setAvailableAds(getAvailableAds(restaurantPingData.advertisements.items));
-        };
-
-        // Calculate delay until the next 5 minute mark
-        // const now = new Date();
-        // const delay = (5 - (now.getMinutes() % 5)) * 60 * 1000 - now.getSeconds() * 1000 - now.getMilliseconds();
-
-        // Delay until the schedule aligns with a 5-minute interval, then start interval
-        // const timeoutId = setTimeout(() => {
-        const intervalId = setInterval(fetchDataAndUpdate, 30000); // Start an interval every 5 minutes after the delay
+            setPreparationTimeInMinutes(preparationTimeResponse.preparationTimeInMinutes);
+        }, 2 * 60 * 1000); //2 mins
 
         return () => clearInterval(intervalId);
-        // }, 5000);
-
-        // return () => clearTimeout(timeoutId);
-    }, []);
-
-    if (!restaurant) return <div>This user has not selected any restaurant</div>;
+    }, [restaurant]);
 
     return (
         <>
@@ -74,26 +63,47 @@ export default () => {
             ) : (
                 <></>
             )}
-            {availableAds.length > 0 ? <BeginOrderAdvertisements availableAds={availableAds} /> : <BeginOrderDefault />}
         </>
     );
 };
 
-const BeginOrderAdvertisements = (props: { availableAds: IGET_RESTAURANT_ADVERTISEMENT[] }) => {
-    const { availableAds } = props;
+const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] }) => {
     const navigate = useNavigate();
+
+    const [availableAds, setAvailableAds] = useState<IGET_RESTAURANT_ADVERTISEMENT[]>([]);
+    const [currentAdIndex, setCurrentAdIndex] = useState(0);
     const { restaurant } = useRestaurant();
 
-    const [currentAd, setCurrentAd] = useState(0);
+    useEffect(() => {
+        setCurrentAdIndex((oldAdIndex) => processAds(oldAdIndex));
+    }, []);
+
+    const processAds = (oldAdIndex) => {
+        let newIndex = 0;
+        const newAvailAds: IGET_RESTAURANT_ADVERTISEMENT[] = [];
+
+        props.ads.forEach((ad) => {
+            if (isItemAvailable(ad.availability)) newAvailAds.push(ad);
+        });
+
+        if (availableAds.length !== newAvailAds.length) {
+            setAvailableAds(newAvailAds);
+            newIndex = 0;
+        } else {
+            if (oldAdIndex >= newAvailAds.length - 1) {
+                newIndex = 0;
+            } else {
+                newIndex = oldAdIndex + 1;
+            }
+        }
+
+        return newIndex;
+    };
 
     useEffect(() => {
         const timerId = setInterval(() => {
-            if (availableAds.length <= 1) {
-                setCurrentAd(0);
-            } else {
-                setCurrentAd((prevCurrentAd) => (prevCurrentAd === availableAds.length - 1 ? 0 : prevCurrentAd + 1));
-            }
-        }, 6000);
+            setCurrentAdIndex((oldAdIndex) => processAds(oldAdIndex));
+        }, 6 * 1000);
 
         return () => clearInterval(timerId);
     }, [availableAds]);
@@ -119,7 +129,7 @@ const BeginOrderAdvertisements = (props: { availableAds: IGET_RESTAURANT_ADVERTI
                         <div
                             key={advertisement.id}
                             className={`image-wrapper ${availableAds.length > 1 ? "slide-animation" : ""} ${
-                                currentAd == index ? "active" : "inactive"
+                                currentAdIndex == index ? "active" : "inactive"
                             }`}
                         >
                             {isVideoFile(advertisement.content.key) ? (
@@ -151,9 +161,7 @@ const BeginOrderDefault = () => {
     const navigate = useNavigate();
     const { restaurant } = useRestaurant();
 
-    if (!restaurant) {
-        return <div>This user has not selected any restaurant</div>;
-    }
+    if (!restaurant) return <div>This user has not selected any restaurant</div>;
 
     return (
         <>

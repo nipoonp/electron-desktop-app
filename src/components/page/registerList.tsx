@@ -45,43 +45,45 @@ export default () => {
     };
 
     return (
-        <>
-            <PageWrapper>
-                {showFullScreenSpinner && <FullScreenSpinner show={true} />}
-                <div className="register-list">
-                    <div className="h2 mb-6">Select a register to use</div>
-                    {restaurant.registers.items.map((reg, index) => (
-                        <>
-                            {index != 0 && <div className="separator-4"></div>}
-                            <div className="register-list-item">
-                                <div>{reg.name}</div>
-                                {register && register.id == reg.id ? (
-                                    <>
-                                        <Button
-                                            onClick={() => {
-                                                onDisconnect(reg.id);
-                                            }}
-                                        >
-                                            Disconnect
-                                        </Button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Button
-                                            disabled={reg.active}
-                                            onClick={() => {
-                                                onConnect(reg.id);
-                                            }}
-                                        >
-                                            {reg.active ? "Unavailable" : "Use"}
-                                        </Button>
-                                    </>
-                                )}
-                            </div>
-                        </>
-                    ))}
-                </div>
-            </PageWrapper>
-        </>
+      <>
+        <PageWrapper>
+          {showFullScreenSpinner && <FullScreenSpinner show={true} />}
+          <div className="register-list">
+            <>
+              <div className="h2 mb-6">Select a register to use</div>
+              {restaurant.registers.items.map((reg, index) => (
+                <>
+                  {index != 0 && <div className="separator-4"></div>}
+                  <div className="register-list-item">
+                    <div>{reg.name}</div>
+                    {register && register.id == reg.id ? (
+                      <>
+                        <Button
+                          onClick={() => {
+                            onDisconnect(reg.id);
+                          }}
+                        >
+                          Disconnect
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          disabled={reg.active}
+                          onClick={() => {
+                            onConnect(reg.id);
+                          }}
+                        >
+                          {reg.active ? "Unavailable" : "Use"}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </>
+              ))}
+            </>
+          </div>
+        </PageWrapper>
+      </>
     );
 };

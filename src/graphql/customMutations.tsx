@@ -57,6 +57,7 @@ export const CREATE_ORDER = gql`
         $paymentAmounts: OrderPaymentAmountsInput
         $total: Int!
         $surcharge: Int
+        $orderTypeSurcharge: Int
         $discount: Int
         $promotionId: ID
         $promotionType: PromotionType
@@ -89,6 +90,7 @@ export const CREATE_ORDER = gql`
                 paymentAmounts: $paymentAmounts
                 total: $total
                 surcharge: $surcharge
+                orderTypeSurcharge: $orderTypeSurcharge
                 discount: $discount
                 promotionId: $promotionId
                 promotionType: $promotionType
@@ -232,6 +234,62 @@ export const UPDATE_ORDER_STATUS = gql`
             }
         ) {
             id
+        }
+    }
+`;
+
+export const CREATE_FEEDBACK = gql`
+    mutation CreateFeedback($createFeedbackInput: CreateFeedbackInput!) {
+        createFeedback(input: $createFeedbackInput) {
+            id
+        }
+    }
+`;
+
+export const GET_FEEDBACK_BY_RESTAURANT = gql`
+    query GetFeedbackByRestaurant($feedbackRestaurantId: ID!) {
+        getFeedbackByRestaurant(feedbackRestaurantId: $feedbackRestaurantId) {
+            items {
+                id
+                averageRating
+                totalNumberOfRatings
+                comments {
+                    comment
+                    rating
+                    orderId
+                }
+                feedbackRestaurantId
+            }
+        }
+    }
+`;
+
+export const UPDATE_FEEDBACK = gql`
+    mutation updateFeedback(
+        $id: ID!
+        $averageRating: Float
+        $totalNumberOfRatings: Int
+        $feedbackRestaurantId: ID
+        $comments: [FeedbackCommentInput!]
+    ) {
+        updateFeedback(
+            input: {
+                id: $id
+                averageRating: $averageRating
+                totalNumberOfRatings: $totalNumberOfRatings
+                feedbackRestaurantId: $feedbackRestaurantId
+                comments: $comments
+            }
+        ) {
+            id
+            averageRating
+            totalNumberOfRatings
+            feedbackRestaurantId
+            comments {
+                comment
+                rating
+                orderId
+            }
         }
     }
 `;
