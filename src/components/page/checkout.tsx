@@ -587,7 +587,7 @@ export const Checkout = () => {
             );
 
             createdOrder.current = newOrder;
-
+            updateOrderDetail(newOrder);
             if (register.printers && register.printers.items.length > 0 && !parkedOrderId) {
                 await printReceipts(newOrder);
             }
