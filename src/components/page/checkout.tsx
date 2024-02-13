@@ -798,13 +798,13 @@ export const Checkout = () => {
                 if (product.category.image == null) {
                     delete product.category.image;
                 }
-                if (product.availablePlatforms == null) {
+                // if (product.availablePlatforms == null) {
                     delete product.availablePlatforms;
-                }
+                // }
 
-                if (product.isAgeRescricted == null) {
+                // if (product.isAgeRescricted == null) {
                     delete product.isAgeRescricted;
-                }
+                // }
             });
 
             console.log("Order variables: ", variables);
