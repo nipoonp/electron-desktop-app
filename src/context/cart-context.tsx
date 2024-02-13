@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { EPromotionType, IGET_RESTAURANT_PROMOTION } from "../graphql/customQueries";
+import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
 
 import {
     ICartProduct,
@@ -34,6 +35,7 @@ const initialAvailablePromotions = [];
 const initialTotal = 0;
 const initialSurcharge = 0;
 const initialPaidSoFar = 0;
+const initialOrderTypeSurcharge = 0;
 const initialPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0 };
 const initialSubTotal = 0;
 const initialPayments = [];
@@ -41,6 +43,7 @@ const initialTransactionEftposReceipts = "";
 const initialIsShownUpSellCrossSellModal = false;
 const initialIsShownOrderThresholdMessageModal = false;
 const initialOrderScheduledAt = null;
+const initialOrderDetail = null;
 
 type ContextProps = {
     // restaurant: IGET_RESTAURANT | null;
@@ -79,6 +82,7 @@ type ContextProps = {
     surcharge: number;
     subTotal: number;
     paidSoFar: number;
+    orderTypeSurcharge:number;
     payments: ICartPayment[];
     setPayments: (payment: ICartPayment[]) => void;
     paymentAmounts: ICartPaymentAmounts;
@@ -91,6 +95,8 @@ type ContextProps = {
     setIsShownOrderThresholdMessageModal: (isShownOrderThresholdMessageModal: boolean) => void;
     orderScheduledAt: string | null;
     updateOrderScheduledAt: (orderScheduledAt: string | null) => void;
+    orderDetail: IGET_RESTAURANT_ORDER_FRAGMENT | null;
+    updateOrderDetail: (orderDetail: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
 };
 
 const CartContext = createContext<ContextProps>({
@@ -130,6 +136,7 @@ const CartContext = createContext<ContextProps>({
     surcharge: initialSurcharge,
     subTotal: initialSubTotal,
     paidSoFar: initialPaidSoFar,
+    orderTypeSurcharge:initialOrderTypeSurcharge,
     payments: initialPayments,
     setPayments: () => {},
     paymentAmounts: initialPaymentAmounts,
@@ -142,6 +149,8 @@ const CartContext = createContext<ContextProps>({
     setIsShownOrderThresholdMessageModal: () => {},
     orderScheduledAt: initialOrderScheduledAt,
     updateOrderScheduledAt: (orderScheduledAt: string | null) => {},
+    orderDetail: initialOrderDetail,
+    updateOrderDetail: (orderDetail: object) => {},
 });
 
 const CartProvider = (props: { children: React.ReactNode }) => {
@@ -162,277 +171,333 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [paymentAmounts, _setPaymentAmounts] = useState<ICartPaymentAmounts>(initialPaymentAmounts);
     const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
     const [payments, _setPayments] = useState<ICartPayment[]>(initialPayments);
-    const [transactionEftposReceipts, _setTransactionEftposReceipts] = useState<string>(initialTransactionEftposReceipts);
-    const [isShownUpSellCrossSellModal, _setIsShownUpSellCrossSellModal] = useState<boolean>(initialIsShownUpSellCrossSellModal);
-    const [isShownOrderThresholdMessageModal, _setIsShownOrderThresholdMessageModal] = useState(initialIsShownOrderThresholdMessageModal);
+    const [orderTypeSurcharge, _setOrderTypeSurcharge] = useState<number>(0);
+    const [transactionEftposReceipts, _setTransactionEftposReceipts] =
+      useState<string>(initialTransactionEftposReceipts);
+    const [isShownUpSellCrossSellModal, _setIsShownUpSellCrossSellModal] =
+      useState<boolean>(initialIsShownUpSellCrossSellModal);
+    const [
+      isShownOrderThresholdMessageModal,
+      _setIsShownOrderThresholdMessageModal,
+    ] = useState(initialIsShownOrderThresholdMessageModal);
 
-    const [userAppliedPromotionCode, _setUserAppliedPromotionCode] = useState<string | null>(initialUserAppliedPromotionCode);
-    const [promotion, _setPromotion] = useState<ICartPromotion | null>(initialPromotion);
-    const [availablePromotions, _setAvailablePromotions] = useState<IGET_RESTAURANT_PROMOTION[]>(initialAvailablePromotions);
+    const [userAppliedPromotionCode, _setUserAppliedPromotionCode] = useState<
+      string | null
+    >(initialUserAppliedPromotionCode);
+    const [promotion, _setPromotion] = useState<ICartPromotion | null>(
+      initialPromotion
+    );
+    const [availablePromotions, _setAvailablePromotions] = useState<
+      IGET_RESTAURANT_PROMOTION[]
+    >(initialAvailablePromotions);
 
-    const [cartCategoryQuantitiesById, _setCartCategoryQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartCategoryQuantitiesById);
-    const [cartProductQuantitiesById, _setCartProductQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartProductQuantitiesById);
-    const [cartModifierQuantitiesById, _setCartModifierQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartModifierQuantitiesById);
+    const [cartCategoryQuantitiesById, _setCartCategoryQuantitiesById] =
+      useState<ICartItemQuantitiesById>(initialCartCategoryQuantitiesById);
+    const [cartProductQuantitiesById, _setCartProductQuantitiesById] =
+      useState<ICartItemQuantitiesById>(initialCartProductQuantitiesById);
+    const [cartModifierQuantitiesById, _setCartModifierQuantitiesById] =
+      useState<ICartItemQuantitiesById>(initialCartModifierQuantitiesById);
 
-    const [orderScheduledAt, _setOrderScheduledAt] = useState<string | null>(initialOrderScheduledAt);
+    const [orderScheduledAt, _setOrderScheduledAt] = useState<string | null>(
+      initialOrderScheduledAt
+    );
+    const [orderDetail, _setOrderDetail] =
+      useState<IGET_RESTAURANT_ORDER_FRAGMENT | null>(initialOrderDetail);
 
     // useEffect(() => {
     // console.log("xxx...products", products);
     // }, [products]);
 
     useEffect(() => {
-        if (!products) return;
+      if (!products) return;
 
-        let newSubTotal = total;
-        let newSurcharge = 0;
-
-        if (promotion) {
-            if (promotion.discountedAmount > newSubTotal) {
-                newSubTotal = 0;
-            } else {
-                newSubTotal -= promotion.discountedAmount;
-            }
+      let newSubTotal = total;
+      let newSurcharge = 0;
+      if (promotion) {
+        if (promotion.discountedAmount > newSubTotal) {
+          newSubTotal = 0;
+        } else {
+          newSubTotal -= promotion.discountedAmount;
         }
+      }
 
-        if (restaurant && restaurant.surchargePercentage) {
-            newSurcharge += Math.round((newSubTotal * restaurant.surchargePercentage) / 100);
-        }
+      if (restaurant && restaurant.surchargePercentage) {
+        newSurcharge += Math.round(
+          (newSubTotal * restaurant.surchargePercentage) / 100
+        );
+      }
 
-        if (register && register.surchargePercentage) {
-            newSurcharge += Math.round((newSubTotal * register.surchargePercentage) / 100);
-        }
+      if (register && register.surchargePercentage) {
+        newSurcharge += Math.round(
+          (newSubTotal * register.surchargePercentage) / 100
+        );
+      }
 
-        _setSurcharge(newSurcharge);
-        _setSubTotal(newSubTotal + newSurcharge);
-    }, [total, promotion, restaurant]);
+      _setSurcharge(newSurcharge);
+     _setSubTotal(newSubTotal + newSurcharge + orderTypeSurcharge);
+    }, [total, promotion, restaurant, orderTypeSurcharge]);
 
     useEffect(() => {
-        if (userAppliedPromotionCode) return; //Only apply restaurant promos if user has not applied one themselves
+      if (userAppliedPromotionCode) return; //Only apply restaurant promos if user has not applied one themselves
+      const availPromotions: IGET_RESTAURANT_PROMOTION[] = [];
 
-        const availPromotions: IGET_RESTAURANT_PROMOTION[] = [];
+      restaurant &&
+        restaurant.promotions.items.forEach((promotion) => {
+          if (!promotion.autoApply) return;
 
-        restaurant &&
-            restaurant.promotions.items.forEach((promotion) => {
-                if (!promotion.autoApply) return;
+          const status = checkIfPromotionValid(promotion);
 
-                const status = checkIfPromotionValid(promotion);
+          if (status !== CheckIfPromotionValidResponse.VALID) return;
 
-                if (status !== CheckIfPromotionValidResponse.VALID) return;
+          availPromotions.push(promotion);
+        });
 
-                availPromotions.push(promotion);
-            });
-
-        _setAvailablePromotions(availPromotions);
+      _setAvailablePromotions(availPromotions);
     }, [restaurant, userAppliedPromotionCode]);
 
     useEffect(() => {
-        if (!products) return;
+      if (!products) return;
 
-        processPromotions(products, total);
+      processPromotions(products, total);
     }, [userAppliedPromotionCode]);
 
     //This function should be a useEffect hook. But cannot make this because it cause infinite state change loop issue
-    const processPromotions = (products: ICartProduct[], newTotal: number, newOrderType?: EOrderType) => {
-        //Passing in newTotal here because if we take it from state it returns old total value.
-        let bestPromotion: ICartPromotion | null = null;
-        const odrType = newOrderType || orderType;
+    const processPromotions = (
+      products: ICartProduct[],
+      newTotal: number,
+      newOrderType?: EOrderType
+    ) => {
+      //Passing in newTotal here because if we take it from state it returns old total value.
+      let bestPromotion: ICartPromotion | null = null;
+      const odrType = newOrderType || orderType;
 
-        let productsCpy: ICartProduct[] = JSON.parse(JSON.stringify(products));
+      let productsCpy: ICartProduct[] = JSON.parse(JSON.stringify(products));
 
-        productsCpy = productsCpy.map((p, index) => ({
-            ...p,
-            index,
-        }));
+      productsCpy = productsCpy.map((p, index) => ({
+        ...p,
+        index,
+      }));
+      availablePromotions.forEach((promotion) => {
+        if (!odrType || !promotion.availableOrderTypes) return;
+        if (!promotion.availableOrderTypes.includes(EOrderType[odrType]))
+          return;
+        if (promotion.totalNumberUsed >= promotion.totalAvailableUses) return;
 
-        availablePromotions.forEach((promotion) => {
-            if (!odrType || !promotion.availableOrderTypes) return;
-            if (!promotion.availableOrderTypes.includes(EOrderType[odrType])) return;
-            if (promotion.totalNumberUsed >= promotion.totalAvailableUses) return;
+        //We need the most up to date total amount
+        if (newTotal < promotion.minSpend) {
+          _setProducts(products);
+          _setPromotion(null);
+          return;
+        }
 
-            //We need the most up to date total amount
-            if (newTotal < promotion.minSpend) {
-                _setProducts(products);
-                _setPromotion(null);
-                return;
-            }
+        const discount = getOrderDiscountAmount(
+          promotion,
+          productsCpy,
+          newTotal
+        );
 
-            const discount = getOrderDiscountAmount(promotion, productsCpy, newTotal);
+        if (!discount || discount.discountedAmount <= 0) return;
 
-            if (!discount || discount.discountedAmount <= 0) return;
+        if (
+          !bestPromotion ||
+          discount.discountedAmount > bestPromotion.discountedAmount
+        ) {
+          bestPromotion = {
+            discountedAmount: discount.discountedAmount,
+            matchingProducts: discount.matchingProducts,
+            promotion: promotion,
+          };
+        }
+      });
 
-            if (!bestPromotion || discount.discountedAmount > bestPromotion.discountedAmount) {
-                bestPromotion = {
-                    discountedAmount: discount.discountedAmount,
-                    matchingProducts: discount.matchingProducts,
-                    promotion: promotion,
-                };
-            }
-        });
+      console.log("xxx...bestPromotion", bestPromotion);
 
-        console.log("xxx...bestPromotion", bestPromotion);
-
-        //If bestPromotion is null, the function will still reset all the product.discount values to 0
-        const discountedProducts = applyDiscountToCartProducts(bestPromotion, products);
-
-        _setProducts(discountedProducts);
-        _setPromotion(bestPromotion);
+      //If bestPromotion is null, the function will still reset all the product.discount values to 0
+      const discountedProducts = applyDiscountToCartProducts(
+        bestPromotion,
+        products
+      );
+      console.log("bestPromotion", bestPromotion);
+      _setProducts(discountedProducts);
+      _setPromotion(bestPromotion);
     };
 
-    const setUserAppliedPromotion = (promotion: IGET_RESTAURANT_PROMOTION): CheckIfPromotionValidResponse => {
-        if (!products) return CheckIfPromotionValidResponse.UNAVAILABLE;
+    const setUserAppliedPromotion = (
+      promotion: IGET_RESTAURANT_PROMOTION
+    ): CheckIfPromotionValidResponse => {
+      if (!products) return CheckIfPromotionValidResponse.UNAVAILABLE;
 
-        const status = checkIfPromotionValid(promotion);
+      const status = checkIfPromotionValid(promotion);
 
-        if (status !== CheckIfPromotionValidResponse.VALID) return status;
+      if (status !== CheckIfPromotionValidResponse.VALID) return status;
 
-        _setAvailablePromotions([promotion]);
-        _setUserAppliedPromotionCode(promotion.code);
+      _setAvailablePromotions([promotion]);
+      _setUserAppliedPromotionCode(promotion.code);
 
-        return CheckIfPromotionValidResponse.VALID;
+      return CheckIfPromotionValidResponse.VALID;
     };
 
     const removeUserAppliedPromotion = () => {
-        _setUserAppliedPromotionCode(null);
-        _setAvailablePromotions([]);
+      _setUserAppliedPromotionCode(null);
+      _setAvailablePromotions([]);
     };
 
     const updateCartQuantities = (products: ICartProduct[] | null) => {
-        const newCartCategoryQuantitiesById: ICartItemQuantitiesById = {};
-        const newCartProductQuantitiesById: ICartItemQuantitiesById = {};
-        const newCartModifierQuantitiesById: ICartItemQuantitiesById = {};
+      const newCartCategoryQuantitiesById: ICartItemQuantitiesById = {};
+      const newCartProductQuantitiesById: ICartItemQuantitiesById = {};
+      const newCartModifierQuantitiesById: ICartItemQuantitiesById = {};
 
-        products &&
-            products.forEach((product) => {
-                if (!product.category) return; //Product will not have a product.category only if its productModifier
+      products &&
+        products.forEach((product) => {
+          if (!product.category) return; //Product will not have a product.category only if its productModifier
 
-                if (newCartCategoryQuantitiesById[product.category.id]) {
-                    //We use product.quantity here because category does not have quantity assigned to it. The number of products select is same as the quantity for the category.
-                    newCartCategoryQuantitiesById[product.category.id].quantity += product.quantity;
-                } else {
-                    newCartCategoryQuantitiesById[product.category.id] = {
-                        id: product.category.id,
-                        name: product.category.name,
-                        quantity: product.quantity,
-                        price: product.price,
-                        discount: 0,
-                        categoryId: null,
-                    };
-                }
-                //We do this because there could be the same product in the products array twice.
-                if (newCartProductQuantitiesById[product.id]) {
-                    newCartProductQuantitiesById[product.id].quantity += product.quantity;
-                } else {
-                    const modifiers: {
-                        id: string;
-                        quantity: number;
-                        price: number;
-                    }[] = [];
+          if (newCartCategoryQuantitiesById[product.category.id]) {
+            //We use product.quantity here because category does not have quantity assigned to it. The number of products select is same as the quantity for the category.
+            newCartCategoryQuantitiesById[product.category.id].quantity +=
+              product.quantity;
+          } else {
+            newCartCategoryQuantitiesById[product.category.id] = {
+              id: product.category.id,
+              name: product.category.name,
+              quantity: product.quantity,
+              price: product.price,
+              discount: 0,
+              categoryId: null,
+            };
+          }
+          //We do this because there could be the same product in the products array twice.
+          if (newCartProductQuantitiesById[product.id]) {
+            newCartProductQuantitiesById[product.id].quantity +=
+              product.quantity;
+          } else {
+            const modifiers: {
+              id: string;
+              quantity: number;
+              price: number;
+            }[] = [];
 
-                    product.modifierGroups.forEach((modifierGroup) => {
-                        modifierGroup.modifiers.forEach((modifier) => {
-                            modifiers.push({ id: modifier.id, quantity: modifier.quantity, price: modifier.price });
-                        });
-                    });
-                    newCartProductQuantitiesById[product.id] = {
-                        id: product.id,
-                        name: product.name,
-                        quantity: product.quantity,
-                        price: product.price,
-                        discount: 0,
-                        categoryId: product.category.id,
-                    };
-                }
-
-                product.modifierGroups.forEach((modifierGroup) => {
-                    modifierGroup.modifiers.forEach((modifier) => {
-                        //Not sure if we should be calculating quantity of productModifiers.
-                        // if (modifier.productModifiers) {
-                        //     modifier.productModifiers.forEach((productModifier) => {
-                        //         if (newCartProductQuantitiesById[productModifier.id]) {
-                        //             newCartProductQuantitiesById[productModifier.id].quantity += product.quantity * modifier.quantity;
-                        //         } else {
-                        //             newCartProductQuantitiesById[productModifier.id] = {
-                        //                 id: product.id,
-                        //                 name: product.name,
-                        //                 quantity: product.quantity,
-                        //                 price: product.price,
-                        //                 categoryId: product.category.id,
-                        //             };
-                        //         }
-                        //     });
-                        // } else {
-                        if (newCartModifierQuantitiesById[modifier.id]) {
-                            newCartModifierQuantitiesById[modifier.id].quantity += product.quantity * modifier.quantity;
-                        } else {
-                            newCartModifierQuantitiesById[modifier.id] = {
-                                id: product.id,
-                                name: product.name,
-                                quantity: product.quantity,
-                                price: product.price,
-                                discount: 0,
-                                categoryId: null,
-                            };
-                        }
-                        // }
-                    });
+            product.modifierGroups.forEach((modifierGroup) => {
+              modifierGroup.modifiers.forEach((modifier) => {
+                modifiers.push({
+                  id: modifier.id,
+                  quantity: modifier.quantity,
+                  price: modifier.price,
                 });
+              });
             });
+            newCartProductQuantitiesById[product.id] = {
+              id: product.id,
+              name: product.name,
+              quantity: product.quantity,
+              price: product.price,
+              discount: 0,
+              categoryId: product.category.id,
+            };
+          }
 
-        _setCartCategoryQuantitiesById(newCartCategoryQuantitiesById);
-        _setCartProductQuantitiesById(newCartProductQuantitiesById);
-        _setCartModifierQuantitiesById(newCartModifierQuantitiesById);
+          product.modifierGroups.forEach((modifierGroup) => {
+            modifierGroup.modifiers.forEach((modifier) => {
+              //Not sure if we should be calculating quantity of productModifiers.
+              // if (modifier.productModifiers) {
+              //     modifier.productModifiers.forEach((productModifier) => {
+              //         if (newCartProductQuantitiesById[productModifier.id]) {
+              //             newCartProductQuantitiesById[productModifier.id].quantity += product.quantity * modifier.quantity;
+              //         } else {
+              //             newCartProductQuantitiesById[productModifier.id] = {
+              //                 id: product.id,
+              //                 name: product.name,
+              //                 quantity: product.quantity,
+              //                 price: product.price,
+              //                 categoryId: product.category.id,
+              //             };
+              //         }
+              //     });
+              // } else {
+              if (newCartModifierQuantitiesById[modifier.id]) {
+                newCartModifierQuantitiesById[modifier.id].quantity +=
+                  product.quantity * modifier.quantity;
+              } else {
+                newCartModifierQuantitiesById[modifier.id] = {
+                  id: product.id,
+                  name: product.name,
+                  quantity: product.quantity,
+                  price: product.price,
+                  discount: 0,
+                  categoryId: null,
+                };
+              }
+              // }
+            });
+          });
+        });
+
+      _setCartCategoryQuantitiesById(newCartCategoryQuantitiesById);
+      _setCartProductQuantitiesById(newCartProductQuantitiesById);
+      _setCartModifierQuantitiesById(newCartModifierQuantitiesById);
     };
 
     const recalculateTotal = (products: ICartProduct[] | null) => {
-        let totalPrice = 0;
+      let totalPrice = 0;
 
-        products &&
-            products.forEach((p) => {
-                let price = p.price;
+      products &&
+        products.forEach((p) => {
+          let price = p.price;
 
-                p.modifierGroups.forEach((mg) => {
-                    mg.modifiers.forEach((m) => {
-                        const changedQuantity = m.quantity - m.preSelectedQuantity;
+          p.modifierGroups.forEach((mg) => {
+            mg.modifiers.forEach((m) => {
+              const changedQuantity = m.quantity - m.preSelectedQuantity;
 
-                        if (changedQuantity > 0) {
-                            price += m.price * changedQuantity;
+              if (changedQuantity > 0) {
+                price += m.price * changedQuantity;
+              }
+
+              if (m.productModifiers) {
+                m.productModifiers.forEach((productModifier) => {
+                  productModifier.modifierGroups.forEach(
+                    (orderedProductModifierModifierGroup) => {
+                      orderedProductModifierModifierGroup.modifiers.forEach(
+                        (orderedProductModifierModifier) => {
+                          const changedQuantity =
+                            orderedProductModifierModifier.quantity -
+                            orderedProductModifierModifier.preSelectedQuantity;
+
+                          if (changedQuantity > 0) {
+                            price +=
+                              orderedProductModifierModifier.price *
+                              changedQuantity;
+                          }
                         }
-
-                        if (m.productModifiers) {
-                            m.productModifiers.forEach((productModifier) => {
-                                productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
-                                    orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
-                                        const changedQuantity =
-                                            orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
-
-                                        if (changedQuantity > 0) {
-                                            price += orderedProductModifierModifier.price * changedQuantity;
-                                        }
-                                    });
-                                });
-                            });
-                        }
-                    });
+                      );
+                    }
+                  );
                 });
-
-                totalPrice += price * p.quantity;
+              }
             });
+          });
 
-        return totalPrice;
+          totalPrice += price * p.quantity;
+        });
+
+      return totalPrice;
     };
 
     const setParkedOrderId = (parkedOrderId: string | null) => {
-        _setParkedOrderId(parkedOrderId);
+      _setParkedOrderId(parkedOrderId);
     };
 
     const setParkedOrderNumber = (parkedOrderNumber: string | null) => {
-        _setParkedOrderNumber(parkedOrderNumber);
+      _setParkedOrderNumber(parkedOrderNumber);
     };
 
     const setOrderType = (orderType: EOrderType) => {
-        _setOrderType(orderType);
+      const order_type_surcharge =
+        register?.orderTypeSurcharge != null
+          ? register?.orderTypeSurcharge[orderType.toLocaleLowerCase()]
+          : 0;
+      _setOrderType(orderType);
+      _setOrderTypeSurcharge(order_type_surcharge);
 
-        if (products) processPromotions(products, total, orderType);
+      if (products) processPromotions(products, total, orderType);
     };
 
     const setPaymentMethod = (paymentMethod: EPaymentMethod | null) => {
@@ -579,6 +644,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setOrderScheduledAt(orderScheduledAt);
     };
 
+    const updateOrderDetail = (orderDetail: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+        _setOrderDetail(orderDetail);
+    };
+
     const clearCart = () => {
         _setParkedOrderId(initialParkedOrderId);
         _setParkedOrderNumber(initialParkedOrderNumber);
@@ -645,6 +714,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 surcharge: surcharge,
                 subTotal: subTotal,
                 paidSoFar: paymentAmounts.cash + paymentAmounts.eftpos + paymentAmounts.online + paymentAmounts.uberEats + paymentAmounts.menulog,
+                orderTypeSurcharge:orderTypeSurcharge,
                 paymentAmounts: paymentAmounts,
                 setPaymentAmounts: setPaymentAmounts,
                 payments: payments,
@@ -657,6 +727,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setIsShownOrderThresholdMessageModal: setIsShownOrderThresholdMessageModal,
                 orderScheduledAt: orderScheduledAt,
                 updateOrderScheduledAt: updateOrderScheduledAt,
+                orderDetail: orderDetail,
+                updateOrderDetail: updateOrderDetail,
             }}
             children={props.children}
         />

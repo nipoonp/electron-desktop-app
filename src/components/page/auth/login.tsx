@@ -24,7 +24,7 @@ const logger = new Logger("Login");
 const emailSchema = yup.string().email("Please enter a valid email address").required("Email is required");
 const passwordSchema = yup.string().min(8, "Password must be at least 8 characters long").required("Password is required");
 
-export default () => {
+const Login= () => {
     const { login } = useAuth();
     const navigate = useNavigate();
 
@@ -189,3 +189,5 @@ export default () => {
         </>
     );
 };
+
+export default Login;
