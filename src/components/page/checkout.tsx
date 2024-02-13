@@ -102,7 +102,7 @@ export const Checkout = () => {
         surcharge,
         subTotal,
         paidSoFar,
-        extraCharge,
+        orderTypeSurcharge,
         transactionEftposReceipts,
         setTransactionEftposReceipts,
         paymentAmounts,
@@ -587,7 +587,7 @@ export const Checkout = () => {
             );
 
             createdOrder.current = newOrder;
-
+            updateOrderDetail(newOrder);
             if (register.printers && register.printers.items.length > 0 && !parkedOrderId) {
                 await printReceipts(newOrder);
             }
@@ -701,7 +701,7 @@ export const Checkout = () => {
                 payments: newPayments,
                 total: total,
                 surcharge: surcharge || undefined,
-                orderTypeSurcharge:extraCharge || undefined,
+                orderTypeSurcharge:orderTypeSurcharge || undefined,
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
                 promotionType: promotion ? promotion.promotion.type : undefined,
@@ -798,13 +798,13 @@ export const Checkout = () => {
                 if (product.category.image == null) {
                     delete product.category.image;
                 }
-                if (product.availablePlatforms == null) {
+                // if (product.availablePlatforms == null) {
                     delete product.availablePlatforms;
-                }
+                // }
 
-                if (product.isAgeRescricted == null) {
+                // if (product.isAgeRescricted == null) {
                     delete product.isAgeRescricted;
-                }
+                // }
             });
 
             console.log("Order variables: ", variables);
@@ -1521,7 +1521,7 @@ export const Checkout = () => {
             )}
             {surcharge ? <div className="h3 text-center mb-2">Surcharge: ${convertCentsToDollars(surcharge)}</div> : <></>}
             {paidSoFar > 0 ? <div className="h3 text-center mb-2">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : <></>}
-            {extraCharge > 0 ? <div className="h3 text-center mb-2">Order Type Surcharge: ${convertCentsToDollars(extraCharge)}</div> : <></>}
+            {orderTypeSurcharge > 0 ? <div className="h3 text-center mb-2">Order Type Surcharge: ${convertCentsToDollars(orderTypeSurcharge)}</div> : <></>}
             <div className={`h1 text-center ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
             <div className={`${isPOS ? "mb-0" : "mb-4"}`}>
                 <div className="checkout-buttons-container">

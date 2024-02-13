@@ -35,7 +35,7 @@ const initialAvailablePromotions = [];
 const initialTotal = 0;
 const initialSurcharge = 0;
 const initialPaidSoFar = 0;
-const initialExtraCharge = 0;
+const initialOrderTypeSurcharge = 0;
 const initialPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0 };
 const initialSubTotal = 0;
 const initialPayments = [];
@@ -82,7 +82,7 @@ type ContextProps = {
     surcharge: number;
     subTotal: number;
     paidSoFar: number;
-    extraCharge:number;
+    orderTypeSurcharge:number;
     payments: ICartPayment[];
     setPayments: (payment: ICartPayment[]) => void;
     paymentAmounts: ICartPaymentAmounts;
@@ -136,7 +136,7 @@ const CartContext = createContext<ContextProps>({
     surcharge: initialSurcharge,
     subTotal: initialSubTotal,
     paidSoFar: initialPaidSoFar,
-    extraCharge:initialExtraCharge,
+    orderTypeSurcharge:initialOrderTypeSurcharge,
     payments: initialPayments,
     setPayments: () => {},
     paymentAmounts: initialPaymentAmounts,
@@ -171,7 +171,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [paymentAmounts, _setPaymentAmounts] = useState<ICartPaymentAmounts>(initialPaymentAmounts);
     const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
     const [payments, _setPayments] = useState<ICartPayment[]>(initialPayments);
-    const [extraCharge, _setExtraCharge] = useState<number>(0);
+    const [orderTypeSurcharge, _setOrderTypeSurcharge] = useState<number>(0);
     const [transactionEftposReceipts, _setTransactionEftposReceipts] =
       useState<string>(initialTransactionEftposReceipts);
     const [isShownUpSellCrossSellModal, _setIsShownUpSellCrossSellModal] =
@@ -234,8 +234,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
       }
 
       _setSurcharge(newSurcharge);
-     _setSubTotal(newSubTotal + newSurcharge + extraCharge);
-    }, [total, promotion, restaurant, extraCharge]);
+     _setSubTotal(newSubTotal + newSurcharge + orderTypeSurcharge);
+    }, [total, promotion, restaurant, orderTypeSurcharge]);
 
     useEffect(() => {
       if (userAppliedPromotionCode) return; //Only apply restaurant promos if user has not applied one themselves
@@ -490,12 +490,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     };
 
     const setOrderType = (orderType: EOrderType) => {
-      const extra_charge =
+      const order_type_surcharge =
         register?.orderTypeSurcharge != null
           ? register?.orderTypeSurcharge[orderType.toLocaleLowerCase()]
           : 0;
       _setOrderType(orderType);
-      _setExtraCharge(extra_charge);
+      _setOrderTypeSurcharge(order_type_surcharge);
 
       if (products) processPromotions(products, total, orderType);
     };
@@ -714,7 +714,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 surcharge: surcharge,
                 subTotal: subTotal,
                 paidSoFar: paymentAmounts.cash + paymentAmounts.eftpos + paymentAmounts.online + paymentAmounts.uberEats + paymentAmounts.menulog,
-                extraCharge:extraCharge,
+                orderTypeSurcharge:orderTypeSurcharge,
                 paymentAmounts: paymentAmounts,
                 setPaymentAmounts: setPaymentAmounts,
                 payments: payments,
