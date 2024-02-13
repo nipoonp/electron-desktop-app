@@ -6,6 +6,7 @@ interface ICloudFrontDomainNames {
     [key: string]: string;
 }
 const cloudFrontDomainNames: ICloudFrontDomainNames = {
+    sandbox: "https://d1roylqijj5dlt.cloudfront.net",
     dev: "https://d2nmoln0sb0cri.cloudfront.net",
     test: "https://d7g1r2w4ykupn.cloudfront.net",
     prod: "https://d1hfsnuz4i23pd.cloudfront.net",

@@ -43,6 +43,16 @@
     display: flex;
 }
 
+// Gap Between
+.gap-1{
+    gap:1rem
+}
+
+// Justify Content
+.j-content-end{
+    justify-content:end
+}
+
 //Headings
 .h1 {
     font-size: 36px;
@@ -648,4 +658,11 @@
 
 .display-none {
     display: none;
+}
+.unavailable-center{
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
