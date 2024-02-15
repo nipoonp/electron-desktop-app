@@ -820,7 +820,7 @@ const Restaurant = () => {
                 {menuMostPopularProducts}
                 {menuProducts}
                 {isScrollable ? (
-                  <div className="fixed-button" onClick={scrollDown}>
+                  <div className={register.type==="POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
                     <div>
                       <FiArrowDownCircle size="40" color="#2b318c" />
                     </div>

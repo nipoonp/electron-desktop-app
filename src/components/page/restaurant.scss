@@ -266,11 +266,14 @@
         }
 
         .fixed-button {
-          
             position: fixed;
             bottom: 192px;
             left: calc(50% + 4.5rem);
             transform: translate(50%, 50%);
+        }
+
+        .mr-btm{
+            bottom: 32px;
         }
     }
 
