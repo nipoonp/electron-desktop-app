@@ -95,8 +95,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         const eftposAmountFloat = parseFloat(eftposAmount);
         const eftposAmountCents = convertDollarsToCentsReturnInt(eftposAmountFloat);
         const totalRemaining = subTotal - paidSoFar;
-
-        if (eftposAmountCents == 0) {
+        if (subTotal!==0 && eftposAmountCents == 0) {
             setAmountError("Value cannot be 0.00");
             return;
         } else if (eftposAmountCents <= 0) {
@@ -113,11 +112,11 @@ export const PaymentModal = (props: IPaymentModalProps) => {
     const onClickCash = (cashAmount: string) => {
         const cashAmountFloat = parseFloat(cashAmount);
         const cashAmountCents = convertDollarsToCentsReturnInt(cashAmountFloat);
-
-        if (cashAmountCents == 0) {
+        if (subTotal!==0 && cashAmountCents == 0) {
             setAmountError("Value cannot be 0.00");
             return;
         }
+        
 
         onConfirmCashTransaction(cashAmountCents);
     };
@@ -126,7 +125,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         const uberEatsAmountFloat = parseFloat(uberEatsAmount);
         const uberEatsAmountCents = convertDollarsToCentsReturnInt(uberEatsAmountFloat);
 
-        if (uberEatsAmountCents == 0) {
+        if (subTotal!==0 && uberEatsAmountCents == 0) {
             setAmountError("Value cannot be 0.00");
             return;
         }
@@ -138,7 +137,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         const menuLogAmountFloat = parseFloat(menuLogAmount);
         const menuLogAmountCents = convertDollarsToCentsReturnInt(menuLogAmountFloat);
 
-        if (menuLogAmountCents == 0) {
+        if (subTotal!==0 && menuLogAmountCents == 0) {
             setAmountError("Value cannot be 0.00");
             return;
         }
