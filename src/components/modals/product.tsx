@@ -16,6 +16,7 @@ import {
   isModifierQuantityAvailable,
   isProductQuantityAvailable,
 } from "../../util/util";
+import { FiArrowDownCircle } from "react-icons/fi";
 import { convertCentsToDollars } from "../../util/util";
 import { PlusIcon } from "../../tabin/components/icons/plusIcon";
 import {
@@ -130,6 +131,34 @@ export const ProductModal = (props: {
   const [error, setError] = useState<{ [modifierGroupId: string]: string }>({});
 
   const [selectedProductModifier, setSelectedProductModifier] = useState<ISelectedProductModifier | null>(null);
+  const [isScrollable, setIsScrollable] = useState(false);
+  const [tryToCheckModel,setTryToCheckModel]=useState(0)
+  
+  useEffect(() => {
+    window.addEventListener("resize", checkDivScrollable);
+    checkDivScrollable();
+
+    return () => {
+      window.removeEventListener("resize", checkDivScrollable);
+    };
+  }, [product.modifierGroups]);
+
+  const checkDivScrollable = () => {
+    const scrollableDiv = document.getElementById("productsWrapperScrollModel");
+    if (scrollableDiv) {
+      const isDivScrollable =
+        scrollableDiv.scrollHeight > scrollableDiv.clientHeight;
+      setIsScrollable(isDivScrollable);
+    }
+    else{
+      setTimeout(() => {
+        if(tryToCheckModel<6){
+          checkDivScrollable()
+        }
+      }, 100);
+    }
+    setTryToCheckModel(tryToCheckModel+1)
+  };
 
   // useEffect(() => {
   //     console.log("xxx...orderedModifiers", orderedModifiers);
@@ -751,6 +780,7 @@ export const ProductModal = (props: {
       });
     }
   };
+  
   const modifierGroups = (
     <>
       {product.modifierGroups &&
@@ -894,10 +924,17 @@ export const ProductModal = (props: {
       </div>
     </>
   );
+  
+  const scrollDown = () => {
+        const scrollableDiv = document.getElementById("productsWrapperScrollModel");
+        if (scrollableDiv) {
+          scrollableDiv.scrollTop += 100;
+        }
+  };
 
   const content = (
     <>
-      <div className="product">
+      <div className="product" id="productsWrapperScrollModel">
         <div className="mt-11" />
         <div className="h1 mb-4 name">
           {currentSelectedProductModifier
@@ -912,6 +949,13 @@ export const ProductModal = (props: {
         <div className="product-notes-wrapper">
           {!currentSelectedProductModifier && productNotes}
         </div>
+        {isScrollable ? (
+                <div className={register?.type==="POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
+                    <div>
+                        <FiArrowDownCircle size="40" color="#2b318c" />
+                    </div>
+                </div>
+            ):null}
       </div>
       <div className="footer">{footer}</div>
     </>
@@ -971,7 +1015,7 @@ export const ProductModal = (props: {
 
   return (
     <>
-      <Modal isOpen={isOpen} onRequestClose={onModalClose}>
+      <Modal isOpen={isOpen} onRequestClose={onModalClose} >
         <div className="product-modal">{content}</div>
       </Modal>
 

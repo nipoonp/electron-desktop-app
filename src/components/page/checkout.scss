@@ -26,6 +26,7 @@
         }
 
         .order {
+            position: relative;
             overflow: scroll;
             width: 100%;
 
@@ -81,6 +82,17 @@
                 display: grid;
                 grid-template-columns: 1fr auto;
                 align-items: center;
+            }
+
+            .fixed-button {
+                position: fixed;
+                bottom: 26rem;
+                left: calc(50%);
+                transform: translate(50%, 50%);
+            }
+        
+            .mr-btm{
+                bottom: 32px;
             }
         }
     }

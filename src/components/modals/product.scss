@@ -4,6 +4,7 @@
     height: 100%;
 
     .product {
+        position: relative;
         flex: 1;
         padding: 0 84px 84px 84px;
         overflow: scroll;
@@ -117,6 +118,17 @@
                     }
                 }
             }
+        }
+
+        .fixed-button {
+            position: fixed;
+            bottom: 14rem;
+            left: calc(50%);
+            transform: translate(50%, 50%);
+        }
+    
+        .mr-btm{
+            bottom: 32px;
         }
     }
 

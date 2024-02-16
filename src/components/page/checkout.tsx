@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { convertBase64ToFile, convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
+import { FiArrowDownCircle } from "react-icons/fi";
 import {
     IGET_RESTAURANT_CATEGORY,
     IGET_RESTAURANT_PRODUCT,
@@ -134,7 +135,7 @@ export const Checkout = () => {
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
     const { createTransaction: windcaveCreateTransaction } = useWindcave();
-
+    const [isScrollable, setIsScrollable] = useState(false);
     const [createOrderMutation] = useMutation(CREATE_ORDER, {
         update: (proxy, mutationResult) => {
             logger.debug("create order mutation result: ", mutationResult);
@@ -183,6 +184,27 @@ export const Checkout = () => {
 
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
     const [showModal, setShowModal] = useState<string>("");
+
+    useEffect(() => {
+        const checkDivScrollable = () => {
+          const scrollableDiv = document.getElementById("productsWrapperScroll");
+          const footer=document.getElementById("footer");
+          if (scrollableDiv) {
+            const isDivScrollable =
+              scrollableDiv.scrollHeight+(footer?.scrollHeight||0) > scrollableDiv.clientHeight;
+            setIsScrollable(isDivScrollable);
+          }
+        };
+    
+        window.addEventListener("resize", checkDivScrollable);
+    
+        checkDivScrollable();
+    
+        return () => {
+          window.removeEventListener("resize", checkDivScrollable);
+        };
+      }, []);
+
     useEffect(() => {
         if (autoClickCompleteOrderOnLoad) onClickOrderButton();
         const ageRestrictedProducts = products && products.filter((product) => product.isAgeRescricted).map((product) => product.name);
@@ -1474,6 +1496,13 @@ export const Checkout = () => {
         </>
     );
 
+    const scrollDown = () => {
+        const scrollableDiv = document.getElementById("productsWrapperScroll");
+        if (scrollableDiv) {
+          scrollableDiv.scrollTop += 100;
+        }
+    };
+
     const order = (
         <>
             <div className={isPOS ? "mt-4" : "mt-10"}></div>
@@ -1487,6 +1516,13 @@ export const Checkout = () => {
             {orderSummary}
             <div className="restaurant-notes-wrapper">{restaurantNotes}</div>
             <div className={isPOS ? "mb-4" : "mb-10"}></div>
+            {isScrollable ? (
+                <div className={register.type==="POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
+                    <div>
+                        <FiArrowDownCircle size="40" color="#2b318c" />
+                    </div>
+                </div>
+            ):null}
         </>
     );
 
@@ -1556,13 +1592,13 @@ export const Checkout = () => {
             <PageWrapper>
                 <div className="checkout">
                     <div className="order-wrapper">
-                        <div className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`}>
+                        <div className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`} id="productsWrapperScroll">
                             {(!products || products.length == 0) && cartEmptyDisplay}
                             {products && products.length > 0 && order}
                         </div>
                     </div>
                     {isPOS && payments.length === 0 && <div>{parkOrderFooter}</div>}
-                    {products && products.length > 0 && <div className="footer p-4">{checkoutFooter}</div>}
+                    {products && products.length > 0 && <div className="footer p-4" id="footer">{checkoutFooter}</div>}
                 </div>
                 {r18MessageModal()}
                 {modalsAndSpinners}
