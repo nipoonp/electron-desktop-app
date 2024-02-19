@@ -328,7 +328,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     ): CheckIfPromotionValidResponse => {
       if (!products) return CheckIfPromotionValidResponse.UNAVAILABLE;
 
-      const status = checkIfPromotionValid(promotion);
+      const status = promotion.startDate==null || promotion.endDate==null ? "VALID" : checkIfPromotionValid(promotion);
 
       if (status !== CheckIfPromotionValidResponse.VALID) return status;
 
