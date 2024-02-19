@@ -123,12 +123,8 @@
         .fixed-button {
             position: fixed;
             bottom: 14rem;
-            left: calc(50%);
-            transform: translate(50%, 50%);
-        }
-    
-        .mr-btm{
-            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
         }
     }
 

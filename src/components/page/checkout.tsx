@@ -1516,13 +1516,6 @@ export const Checkout = () => {
             {orderSummary}
             <div className="restaurant-notes-wrapper">{restaurantNotes}</div>
             <div className={isPOS ? "mb-4" : "mb-10"}></div>
-            {isScrollable ? (
-                <div className={register.type==="POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
-                    <div>
-                        <FiArrowDownCircle size="40" color="#2b318c" />
-                    </div>
-                </div>
-            ):null}
         </>
     );
 
@@ -1595,6 +1588,13 @@ export const Checkout = () => {
                         <div className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`} id="productsWrapperScroll">
                             {(!products || products.length == 0) && cartEmptyDisplay}
                             {products && products.length > 0 && order}
+                            {isScrollable ? (
+                                <div className={register.type==="POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
+                                    <div>
+                                        <FiArrowDownCircle size="40" color="#2b318c" />
+                                    </div>
+                                </div>
+                            ):null}
                         </div>
                     </div>
                     {isPOS && payments.length === 0 && <div>{parkOrderFooter}</div>}
