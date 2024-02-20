@@ -58,8 +58,8 @@ export default () => {
         const hours = now.getHours();
         const minutes = now.getMinutes();
         const currentTimeInMinutes = hours * 60 + minutes; // Convert current time to minutes
-        const startTimeInMinutes = 12 * 60; // 12pm in minutes
-        const endTimeInMinutes = 21 * 60 + 15; // 9:15pm in minutes
+        const startTimeInMinutes = 8 * 60; // 8am in minutes
+        const endTimeInMinutes = 14 * 60 + 30; // 2:30pm in minutes
 
         // Check if the current time is between 8am and 2:30pm
         if (currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes) {
