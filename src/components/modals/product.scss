@@ -125,6 +125,55 @@
             bottom: 14rem;
             left: 50%;
             transform: translateX(-50%);
+
+            @keyframes fadeIn {
+                from {
+                  opacity: 0;
+                }
+                to {
+                  opacity: 1;
+                }
+            }
+              
+            @keyframes fadeIn {
+              from {
+                opacity: 0;
+                transform: translateY(20px); /* Start slightly below */
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+              
+            @keyframes fadeOut {
+              from {
+                opacity: 1;
+                transform: translateY(0);
+              }
+              to {
+                opacity: 0;
+                transform: translateY(20px); /* End slightly below */
+              }
+            }
+              
+            .arrow-containerModel {
+              animation-duration: 0.5s;
+              animation-timing-function: ease-in-out;
+              opacity: 0; /* Start with arrow hidden */
+              pointer-events: none; /* Make the arrow not clickable while hidden */
+            }
+              
+            .fade-in {
+              animation-name: fadeIn;
+              opacity: 1;
+              pointer-events: auto; /* Enable pointer events when visible */
+            }
+              
+            .fade-out {
+              animation-name: fadeOut;
+              pointer-events: none; /* Disable pointer events when hidden */
+            }
         }
     }
 

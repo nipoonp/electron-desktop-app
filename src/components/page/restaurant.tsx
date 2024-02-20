@@ -119,11 +119,19 @@ const Restaurant = () => {
   useEffect(() => {
     const checkDivScrollable = () => {
       const scrollableDiv = document.getElementById("productsWrapperScroll");
+      const arrowContainer = document.querySelector('.arrow-container');
 
       if (scrollableDiv) {
         const isDivScrollable =
           scrollableDiv.scrollHeight > scrollableDiv.clientHeight;
         setIsScrollable(isDivScrollable);
+        if (isDivScrollable) {
+          arrowContainer?.classList.remove('fade-out');
+          arrowContainer?.classList.add('fade-in');
+        } else {
+          arrowContainer?.classList.remove('fade-in');
+          arrowContainer?.classList.add('fade-out');
+        }
       }
     };
 
@@ -135,6 +143,38 @@ const Restaurant = () => {
       window.removeEventListener("resize", checkDivScrollable);
     };
   }, [selectedCategory]);
+
+  useEffect(() => {
+    const scrollableDiv = document.getElementById("productsWrapperScroll");
+    const arrowContainer = document.querySelector('.arrow-container');
+    const handleScroll = () => {
+      if(scrollableDiv){
+        const isAtBottom = scrollableDiv.scrollTop + scrollableDiv.clientHeight === scrollableDiv.scrollHeight;
+        if (!isAtBottom) {
+          arrowContainer?.classList.remove('fade-out');
+          arrowContainer?.classList.add('fade-in');
+        } else {
+          arrowContainer?.classList.remove('fade-in');
+          arrowContainer?.classList.add('fade-out');
+        }
+      }
+    };
+  
+    if (scrollableDiv) {
+      const isDivScrollable = scrollableDiv.scrollHeight > scrollableDiv.clientHeight;
+      if (isDivScrollable) {
+        arrowContainer?.classList.remove('fade-out');
+        arrowContainer?.classList.add('fade-in');
+      } else {
+        arrowContainer?.classList.remove('fade-in');
+        arrowContainer?.classList.add('fade-out');
+      }
+      scrollableDiv.addEventListener('scroll', handleScroll);
+      return () => {
+        scrollableDiv.removeEventListener('scroll', handleScroll);
+      };
+    }
+  }, [isScrollable]);
 
   // const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -819,13 +859,13 @@ const Restaurant = () => {
               <div className="products-wrapper" id="productsWrapperScroll">
                 {menuMostPopularProducts}
                 {menuProducts}
-                {isScrollable ? (
+                {isScrollable?
                   <div className={register.type==="POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
-                    <div>
+                    <div className={`arrow-container`}>
                       <FiArrowDownCircle size="40" color="#2b318c" />
                     </div>
                   </div>
-                ) : null}
+                :null}
               </div>
             </div>
             {!isPOS && <div className="footer-wrapper">{restaurantFooter}</div>}

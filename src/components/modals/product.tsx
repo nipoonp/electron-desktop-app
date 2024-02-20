@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ICartModifier,
   IPreSelectedModifiers,
@@ -133,9 +133,36 @@ export const ProductModal = (props: {
   const [selectedProductModifier, setSelectedProductModifier] = useState<ISelectedProductModifier | null>(null);
   const [isScrollable, setIsScrollable] = useState(false);
   const [tryToCheckModel,setTryToCheckModel]=useState(0)
-  
+
   useEffect(() => {
+    const checkDivScrollable = () => {
+      const scrollableDiv = document.getElementById("productsWrapperScrollModel");
+      const arrowContainer = document.querySelector('.arrow-containerModel');
+
+      if (scrollableDiv) {
+        const isDivScrollable =
+          scrollableDiv.scrollHeight > scrollableDiv.clientHeight;
+        setIsScrollable(isDivScrollable);
+        if (isDivScrollable) {
+          arrowContainer?.classList.remove('fade-out');
+          arrowContainer?.classList.add('fade-in');
+        } else {
+          arrowContainer?.classList.remove('fade-in');
+          arrowContainer?.classList.add('fade-out');
+        }
+      }
+      else{
+        setTimeout(() => {
+          if(tryToCheckModel<10){
+            checkDivScrollable()
+            setTryToCheckModel(tryToCheckModel+1)
+          }
+        }, 100);
+      }
+    };
+
     window.addEventListener("resize", checkDivScrollable);
+
     checkDivScrollable();
 
     return () => {
@@ -143,22 +170,34 @@ export const ProductModal = (props: {
     };
   }, [product.modifierGroups]);
 
-  const checkDivScrollable = () => {
-    const scrollableDiv = document.getElementById("productsWrapperScrollModel");
-    if (scrollableDiv) {
-      const isDivScrollable =
-        scrollableDiv.scrollHeight > scrollableDiv.clientHeight;
-      setIsScrollable(isDivScrollable);
-    }
-    else{
-      setTimeout(() => {
-        if(tryToCheckModel<6){
-          checkDivScrollable()
+  const [productsWrapperElement, setProductsWrapperElement] = useState<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollableDiv = document.getElementById("productsWrapperScrollModel");
+      const arrowContainer = document.querySelector('.arrow-containerModel');
+  
+      if (scrollableDiv) {
+        const isAtBottom = scrollableDiv.scrollTop + scrollableDiv.clientHeight === scrollableDiv.scrollHeight;
+        if (!isAtBottom) {
+          arrowContainer?.classList.remove('fade-out');
+          arrowContainer?.classList.add('fade-in');
+        } else {
+          arrowContainer?.classList.remove('fade-in');
+          arrowContainer?.classList.add('fade-out');
         }
-      }, 100);
+      }
+    };
+
+    const productsWrapperScroll = document.getElementById("productsWrapperScrollModel");
+    if(productsWrapperScroll){
+      productsWrapperScroll.addEventListener('scroll', handleScroll);
+      return () => {
+        productsWrapperScroll.removeEventListener('scroll', handleScroll);
+      };
     }
-    setTryToCheckModel(tryToCheckModel+1)
-  };
+   
+  }, [productsWrapperElement]);
 
   // useEffect(() => {
   //     console.log("xxx...orderedModifiers", orderedModifiers);
@@ -934,7 +973,7 @@ export const ProductModal = (props: {
 
   const content = (
     <>
-      <div className="product" id="productsWrapperScrollModel">
+      <div ref={(ref) => setProductsWrapperElement(ref)} className="product" id="productsWrapperScrollModel">
         <div className="mt-11" />
         <div className="h1 mb-4 name">
           {currentSelectedProductModifier
@@ -950,12 +989,12 @@ export const ProductModal = (props: {
           {!currentSelectedProductModifier && productNotes}
         </div>
         {isScrollable ? (
-                <div className={register?.type==="POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
-                    <div>
-                        <FiArrowDownCircle size="40" color="#2b318c" />
-                    </div>
-                </div>
-            ):null}
+          <div className={register?.type==="POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
+              <div className={`arrow-containerModel ${isScrollable ? 'fade-in' : 'fade-out'}`}>
+                  <FiArrowDownCircle size="40" color="#2b318c" />
+              </div>
+          </div>
+        ):null}
       </div>
       <div className="footer">{footer}</div>
     </>

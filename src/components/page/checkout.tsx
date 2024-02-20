@@ -188,11 +188,19 @@ export const Checkout = () => {
     useEffect(() => {
         const checkDivScrollable = () => {
           const scrollableDiv = document.getElementById("productsWrapperScroll");
+          const arrowContainer = document.querySelector('.arrow-container');
           const footer=document.getElementById("footer");
           if (scrollableDiv) {
             const isDivScrollable =
               scrollableDiv.scrollHeight+(footer?.scrollHeight||0) > scrollableDiv.clientHeight;
             setIsScrollable(isDivScrollable);
+            if (isDivScrollable) {
+                arrowContainer?.classList.remove('fade-out');
+                arrowContainer?.classList.add('fade-in');
+              } else {
+                arrowContainer?.classList.remove('fade-in');
+                arrowContainer?.classList.add('fade-out');
+              }
           }
         };
     
@@ -203,7 +211,35 @@ export const Checkout = () => {
         return () => {
           window.removeEventListener("resize", checkDivScrollable);
         };
-      }, []);
+    }, []);
+
+    const [productsWrapperElement, setProductsWrapperElement] = useState<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const handleScroll = () => {
+        const scrollableDiv = document.getElementById("productsWrapperScroll");
+        const arrowContainer = document.querySelector('.arrow-container');
+  
+        if (scrollableDiv) {
+            const isAtBottom = scrollableDiv.scrollTop + scrollableDiv.clientHeight === scrollableDiv.scrollHeight;
+            if (!isAtBottom) {
+                arrowContainer?.classList.remove('fade-out');
+                arrowContainer?.classList.add('fade-in');
+            } else {
+                arrowContainer?.classList.remove('fade-in');
+                arrowContainer?.classList.add('fade-out');
+            }
+        }
+        };
+
+        const productsWrapperScroll = document.getElementById("productsWrapperScroll");
+        if(productsWrapperScroll){
+        productsWrapperScroll.addEventListener('scroll', handleScroll);
+        return () => {
+            productsWrapperScroll.removeEventListener('scroll', handleScroll);
+        };
+        }
+    }, [productsWrapperElement]);
 
     useEffect(() => {
         if (autoClickCompleteOrderOnLoad) onClickOrderButton();
@@ -1585,12 +1621,12 @@ export const Checkout = () => {
             <PageWrapper>
                 <div className="checkout">
                     <div className="order-wrapper">
-                        <div className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`} id="productsWrapperScroll">
+                        <div ref={(ref) => setProductsWrapperElement(ref)} className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`} id="productsWrapperScroll">
                             {(!products || products.length == 0) && cartEmptyDisplay}
                             {products && products.length > 0 && order}
                             {isScrollable ? (
                                 <div className={register.type==="POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
-                                    <div>
+                                    <div className={`arrow-container ${isScrollable ? 'fade-in' : 'fade-out'}`}>
                                         <FiArrowDownCircle size="40" color="#2b318c" />
                                     </div>
                                 </div>
