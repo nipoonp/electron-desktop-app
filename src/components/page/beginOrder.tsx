@@ -11,6 +11,7 @@ import "./beginOrder.scss";
 import { delay, isItemAvailable, isVideoFile } from "../../util/util";
 import { useRegister } from "../../context/register-context";
 import { useGetRestaurantPingDataLazyQuery } from "../../hooks/useGetRestaurantPingDataLazyQuery";
+import { toast } from "../../tabin/components/toast";
 
 export default () => {
     const navigate = useNavigate();
@@ -25,39 +26,68 @@ export default () => {
     const restaurantRegister2 = "aaefa4b7-f1e4-4000-b6cc-7045d95501a3";
 
     const onClickStore1 = async () => {
-        // ABC Buzz A
-        await disconnectRegister(restaurantRegister2);
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        const currentTimeInMinutes = hours * 60 + minutes; // Convert current time to minutes
+        const startTimeInMinutes = 12 * 60; // 12pm in minutes
+        const endTimeInMinutes = 21 * 60 + 15; // 9:15pm in minutes
 
-        // await delay(1000);
+        // Check if the current time is between 12pm and 9:15pm
+        if (currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes) {
+            // ABC Buzz A
+            await disconnectRegister(restaurantRegister2);
 
-        selectRestaurant(restaurant1);
+            // await delay(1000);
 
-        await delay(1000);
+            selectRestaurant(restaurant1);
 
-        await connectRegister(restaurantRegister1);
+            await delay(1000);
 
-        navigate(restaurantPath + "/" + restaurant1);
+            await connectRegister(restaurantRegister1);
+
+            navigate(restaurantPath + "/" + restaurant1);
+        } else {
+            // If not between 12pm and 9:15pm, display an alert to the user
+            toast.error("This store is only open between 12pm and 9:15pm.");
+        }
     };
 
     const onClickStore2 = async () => {
-        //Boss Don
-        await disconnectRegister(restaurantRegister1);
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes();
+        const currentTimeInMinutes = hours * 60 + minutes; // Convert current time to minutes
+        const startTimeInMinutes = 12 * 60; // 12pm in minutes
+        const endTimeInMinutes = 21 * 60 + 15; // 9:15pm in minutes
 
-        // await delay(1000);
+        // Check if the current time is between 8am and 2:30pm
+        if (currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes) {
+            // Boss Don
+            await disconnectRegister(restaurantRegister1);
 
-        selectRestaurant(restaurant2);
+            // await delay(1000);
 
-        await delay(1000);
+            selectRestaurant(restaurant2);
 
-        await connectRegister(restaurantRegister2);
+            await delay(1000);
 
-        navigate(restaurantPath + "/" + restaurant2);
+            await connectRegister(restaurantRegister2);
+
+            navigate(restaurantPath + "/" + restaurant2);
+        } else {
+            // If not between 8am and 2:30pm, display an alert to the user
+            toast.error("This store is only open between 8am and 2:30pm.");
+        }
     };
 
     return (
         <>
             <div className="ad-wrapper">
-                <img className="ad-image" src="https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/Boss+Don+ad.png" />
+                <img
+                    className="ad-image"
+                    src="https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/2023-10-14_01-17-16.819-rect17052-6.webp"
+                />
                 <div className="store-1" onClick={onClickStore1}></div>
                 <div className="store-2" onClick={onClickStore2}></div>
             </div>
