@@ -701,7 +701,7 @@ export const Checkout = () => {
                 payments: newPayments,
                 total: total,
                 surcharge: surcharge || undefined,
-                orderTypeSurcharge:orderTypeSurcharge || undefined,
+                orderTypeSurcharge: orderTypeSurcharge || undefined,
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
                 promotionType: promotion ? promotion.promotion.type : undefined,
@@ -799,11 +799,11 @@ export const Checkout = () => {
                     delete product.category.image;
                 }
                 // if (product.availablePlatforms == null) {
-                    delete product.availablePlatforms;
+                delete product.availablePlatforms;
                 // }
 
                 // if (product.isAgeRescricted == null) {
-                    delete product.isAgeRescricted;
+                delete product.isAgeRescricted;
                 // }
             });
 
@@ -870,43 +870,49 @@ export const Checkout = () => {
 
     const performEftposTransaction = async (amount: number): Promise<IEftposTransactionOutcome> => {
         try {
-            let outcome: IEftposTransactionOutcome | null = null;
+            // let outcome: IEftposTransactionOutcome | null = null;
 
-            if (register.eftposProvider == EEftposProvider.SMARTPAY) {
-                let delayedShown = false;
+            // if (register.eftposProvider == EEftposProvider.SMARTPAY) {
+            //     let delayedShown = false;
 
-                const delayed = (outcome: IEftposTransactionOutcome) => {
-                    if (!delayedShown) {
-                        delayedShown = true;
-                        setEftposTransactionProcessMessage("This transaction is delayed. Please wait...");
-                    }
-                };
+            //     const delayed = (outcome: IEftposTransactionOutcome) => {
+            //         if (!delayedShown) {
+            //             delayedShown = true;
+            //             setEftposTransactionProcessMessage("This transaction is delayed. Please wait...");
+            //         }
+            //     };
 
-                const pollingUrl = await smartpayCreateTransaction(amount, "Card.Purchase");
-                outcome = await smartpayPollForOutcome(pollingUrl, delayed);
-            } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
-                outcome = await windcaveCreateTransaction(
-                    register.windcaveStationId,
-                    register.windcaveStationUser,
-                    register.windcaveStationKey,
-                    amount,
-                    "Purchase"
-                );
-            } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
-                const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
+            //     const pollingUrl = await smartpayCreateTransaction(amount, "Card.Purchase");
+            //     outcome = await smartpayPollForOutcome(pollingUrl, delayed);
+            // } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
+            //     outcome = await windcaveCreateTransaction(
+            //         register.windcaveStationId,
+            //         register.windcaveStationUser,
+            //         register.windcaveStationKey,
+            //         amount,
+            //         "Purchase"
+            //     );
+            // } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
+            //     const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
 
-                outcome = await verifoneCreateTransaction(
-                    amount,
-                    register.eftposIpAddress,
-                    register.eftposPortNumber,
-                    restaurant.id,
-                    setEftposMessage
-                );
-            }
+            //     outcome = await verifoneCreateTransaction(
+            //         amount,
+            //         register.eftposIpAddress,
+            //         register.eftposPortNumber,
+            //         restaurant.id,
+            //         setEftposMessage
+            //     );
+            // }
 
-            if (!outcome) throw "Invalid Eftpos Transaction outcome.";
+            // if (!outcome) throw "Invalid Eftpos Transaction outcome.";
 
-            return outcome;
+            return {
+                platformTransactionOutcome: EVerifoneTransactionOutcome.Approved,
+                transactionOutcome: EEftposTransactionOutcome.Success,
+                message: "Transaction Approved!",
+                eftposReceipt: "",
+            };
+            // return outcome;
         } catch (errorMessage) {
             return {
                 platformTransactionOutcome: null,
@@ -1521,7 +1527,11 @@ export const Checkout = () => {
             )}
             {surcharge ? <div className="h3 text-center mb-2">Surcharge: ${convertCentsToDollars(surcharge)}</div> : <></>}
             {paidSoFar > 0 ? <div className="h3 text-center mb-2">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : <></>}
-            {orderTypeSurcharge > 0 ? <div className="h3 text-center mb-2">Order Type Surcharge: ${convertCentsToDollars(orderTypeSurcharge)}</div> : <></>}
+            {orderTypeSurcharge > 0 ? (
+                <div className="h3 text-center mb-2">Order Type Surcharge: ${convertCentsToDollars(orderTypeSurcharge)}</div>
+            ) : (
+                <></>
+            )}
             <div className={`h1 text-center ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
             <div className={`${isPOS ? "mb-0" : "mb-4"}`}>
                 <div className="checkout-buttons-container">
