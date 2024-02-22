@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 
 import { useNavigate } from "react-router";
 import { useParams } from "react-router-dom";
-import { S3Image } from "aws-amplify-react";
 import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import {
@@ -513,7 +512,11 @@ const Restaurant = () => {
                       <CachedImage url={`${product.imageUrl}`} className="image mb-2" alt="product-image" />
                   ) : product.image ? (
                       <>
-                          <S3Image imgKey={product.image.key} level="protected" className="image mb-2" />
+                          <CachedImage
+                            className="image mb-2"
+                            url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                            alt="product-image"
+                        />
                       </>
                   ) : null}
 
