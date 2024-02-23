@@ -964,13 +964,7 @@ export const Checkout = () => {
 
             if (!outcome) throw "Invalid Eftpos Transaction outcome.";
 
-            return {
-                platformTransactionOutcome: EVerifoneTransactionOutcome.Approved,
-                transactionOutcome: EEftposTransactionOutcome.Success,
-                message: "Transaction Approved!",
-                eftposReceipt: "",
-            };
-            // return outcome;
+            return outcome;
         } catch (errorMessage) {
             return {
                 platformTransactionOutcome: null,
