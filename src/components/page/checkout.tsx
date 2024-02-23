@@ -928,41 +928,41 @@ export const Checkout = () => {
 
     const performEftposTransaction = async (amount: number): Promise<IEftposTransactionOutcome> => {
         try {
-            // let outcome: IEftposTransactionOutcome | null = null;
+            let outcome: IEftposTransactionOutcome | null = null;
 
-            // if (register.eftposProvider == EEftposProvider.SMARTPAY) {
-            //     let delayedShown = false;
+            if (register.eftposProvider == EEftposProvider.SMARTPAY) {
+                let delayedShown = false;
 
-            //     const delayed = (outcome: IEftposTransactionOutcome) => {
-            //         if (!delayedShown) {
-            //             delayedShown = true;
-            //             setEftposTransactionProcessMessage("This transaction is delayed. Please wait...");
-            //         }
-            //     };
+                const delayed = (outcome: IEftposTransactionOutcome) => {
+                    if (!delayedShown) {
+                        delayedShown = true;
+                        setEftposTransactionProcessMessage("This transaction is delayed. Please wait...");
+                    }
+                };
 
-            //     const pollingUrl = await smartpayCreateTransaction(amount, "Card.Purchase");
-            //     outcome = await smartpayPollForOutcome(pollingUrl, delayed);
-            // } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
-            //     outcome = await windcaveCreateTransaction(
-            //         register.windcaveStationId,
-            //         register.windcaveStationUser,
-            //         register.windcaveStationKey,
-            //         amount,
-            //         "Purchase"
-            //     );
-            // } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
-            //     const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
+                const pollingUrl = await smartpayCreateTransaction(amount, "Card.Purchase");
+                outcome = await smartpayPollForOutcome(pollingUrl, delayed);
+            } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
+                outcome = await windcaveCreateTransaction(
+                    register.windcaveStationId,
+                    register.windcaveStationUser,
+                    register.windcaveStationKey,
+                    amount,
+                    "Purchase"
+                );
+            } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
+                const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
 
-            //     outcome = await verifoneCreateTransaction(
-            //         amount,
-            //         register.eftposIpAddress,
-            //         register.eftposPortNumber,
-            //         restaurant.id,
-            //         setEftposMessage
-            //     );
-            // }
+                outcome = await verifoneCreateTransaction(
+                    amount,
+                    register.eftposIpAddress,
+                    register.eftposPortNumber,
+                    restaurant.id,
+                    setEftposMessage
+                );
+            }
 
-            // if (!outcome) throw "Invalid Eftpos Transaction outcome.";
+            if (!outcome) throw "Invalid Eftpos Transaction outcome.";
 
             return {
                 platformTransactionOutcome: EVerifoneTransactionOutcome.Approved,
