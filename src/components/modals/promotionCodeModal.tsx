@@ -43,9 +43,11 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
             } else {
                 const appliedPromotion = getPromotionsByCodeData[0];
 
-                if (appliedPromotion.totalNumberUsed >= appliedPromotion.totalAvailableUses) {
-                    setError("This code has no more uses remaining. Please try another code");
-                    return;
+                if(appliedPromotion.totalAvailableUses !== null){
+                    if (appliedPromotion.totalNumberUsed >= appliedPromotion.totalAvailableUses) {
+                        setError("This code has no more uses remaining. Please try another code");
+                        return;
+                    }
                 }
 
                 if (!orderType || !appliedPromotion.availableOrderTypes) {

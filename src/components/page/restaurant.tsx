@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 
 import { useNavigate } from "react-router";
 import { useParams } from "react-router-dom";
-import { S3Image } from "aws-amplify-react";
 import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import {
@@ -119,11 +118,19 @@ const Restaurant = () => {
   useEffect(() => {
     const checkDivScrollable = () => {
       const scrollableDiv = document.getElementById("productsWrapperScroll");
+      const arrowContainer = document.querySelector('.arrow-container');
 
       if (scrollableDiv) {
         const isDivScrollable =
           scrollableDiv.scrollHeight > scrollableDiv.clientHeight;
         setIsScrollable(isDivScrollable);
+        if (isDivScrollable) {
+          arrowContainer?.classList.remove('fade-out');
+          arrowContainer?.classList.add('fade-in');
+        } else {
+          arrowContainer?.classList.remove('fade-in');
+          arrowContainer?.classList.add('fade-out');
+        }
       }
     };
 
@@ -135,6 +142,38 @@ const Restaurant = () => {
       window.removeEventListener("resize", checkDivScrollable);
     };
   }, [selectedCategory]);
+
+  useEffect(() => {
+    const scrollableDiv = document.getElementById("productsWrapperScroll");
+    const arrowContainer = document.querySelector('.arrow-container');
+    const handleScroll = () => {
+      if(scrollableDiv){
+        const isAtBottom = scrollableDiv.scrollTop + scrollableDiv.clientHeight === scrollableDiv.scrollHeight;
+        if (!isAtBottom) {
+          arrowContainer?.classList.remove('fade-out');
+          arrowContainer?.classList.add('fade-in');
+        } else {
+          arrowContainer?.classList.remove('fade-in');
+          arrowContainer?.classList.add('fade-out');
+        }
+      }
+    };
+  
+    if (scrollableDiv) {
+      const isDivScrollable = scrollableDiv.scrollHeight > scrollableDiv.clientHeight;
+      if (isDivScrollable) {
+        arrowContainer?.classList.remove('fade-out');
+        arrowContainer?.classList.add('fade-in');
+      } else {
+        arrowContainer?.classList.remove('fade-in');
+        arrowContainer?.classList.add('fade-out');
+      }
+      scrollableDiv.addEventListener('scroll', handleScroll);
+      return () => {
+        scrollableDiv.removeEventListener('scroll', handleScroll);
+      };
+    }
+  }, [isScrollable]);
 
   // const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -473,7 +512,11 @@ const Restaurant = () => {
                       <CachedImage url={`${product.imageUrl}`} className="image mb-2" alt="product-image" />
                   ) : product.image ? (
                       <>
-                          <S3Image imgKey={product.image.key} level="protected" className="image mb-2" />
+                          <CachedImage
+                            className="image mb-2"
+                            url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                            alt="product-image"
+                        />
                       </>
                   ) : null}
 
@@ -819,13 +862,13 @@ const Restaurant = () => {
               <div className="products-wrapper" id="productsWrapperScroll">
                 {menuMostPopularProducts}
                 {menuProducts}
-                {isScrollable ? (
-                  <div className="fixed-button" onClick={scrollDown}>
-                    <div>
-                      <FiArrowDownCircle size="40" color="#2b318c" />
+                {isScrollable?
+                  <div className={register.type==="POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
+                    <div className={`arrow-container`}>
+                      <FiArrowDownCircle size="46" />
                     </div>
                   </div>
-                ) : null}
+                :null}
               </div>
             </div>
             {!isPOS && <div className="footer-wrapper">{restaurantFooter}</div>}

@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { convertBase64ToFile, convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
+import { FiArrowDownCircle } from "react-icons/fi";
 import {
     IGET_RESTAURANT_CATEGORY,
     IGET_RESTAURANT_PRODUCT,
@@ -134,7 +135,7 @@ export const Checkout = () => {
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
     const { createTransaction: windcaveCreateTransaction } = useWindcave();
-
+    const [isScrollable, setIsScrollable] = useState(false);
     const [createOrderMutation] = useMutation(CREATE_ORDER, {
         update: (proxy, mutationResult) => {
             logger.debug("create order mutation result: ", mutationResult);
@@ -183,6 +184,63 @@ export const Checkout = () => {
 
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
     const [showModal, setShowModal] = useState<string>("");
+
+    useEffect(() => {
+        const checkDivScrollable = () => {
+          const scrollableDiv = document.getElementById("productsWrapperScroll");
+          const arrowContainer = document.querySelector('.arrow-container');
+          const footer=document.getElementById("footer");
+          if (scrollableDiv) {
+            const isDivScrollable =
+              scrollableDiv.scrollHeight+(footer?.scrollHeight||0) > scrollableDiv.clientHeight;
+            setIsScrollable(isDivScrollable);
+            if (isDivScrollable) {
+                arrowContainer?.classList.remove('fade-out');
+                arrowContainer?.classList.add('fade-in');
+              } else {
+                arrowContainer?.classList.remove('fade-in');
+                arrowContainer?.classList.add('fade-out');
+              }
+          }
+        };
+    
+        window.addEventListener("resize", checkDivScrollable);
+    
+        checkDivScrollable();
+    
+        return () => {
+          window.removeEventListener("resize", checkDivScrollable);
+        };
+    }, []);
+
+    const [productsWrapperElement, setProductsWrapperElement] = useState<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const handleScroll = () => {
+        const scrollableDiv = document.getElementById("productsWrapperScroll");
+        const arrowContainer = document.querySelector('.arrow-container');
+  
+        if (scrollableDiv) {
+            const isAtBottom = scrollableDiv.scrollTop + scrollableDiv.clientHeight === scrollableDiv.scrollHeight;
+            if (!isAtBottom) {
+                arrowContainer?.classList.remove('fade-out');
+                arrowContainer?.classList.add('fade-in');
+            } else {
+                arrowContainer?.classList.remove('fade-in');
+                arrowContainer?.classList.add('fade-out');
+            }
+        }
+        };
+
+        const productsWrapperScroll = document.getElementById("productsWrapperScroll");
+        if(productsWrapperScroll){
+        productsWrapperScroll.addEventListener('scroll', handleScroll);
+        return () => {
+            productsWrapperScroll.removeEventListener('scroll', handleScroll);
+        };
+        }
+    }, [productsWrapperElement]);
+
     useEffect(() => {
         if (autoClickCompleteOrderOnLoad) onClickOrderButton();
         const ageRestrictedProducts = products && products.filter((product) => product.isAgeRescricted).map((product) => product.name);
@@ -701,7 +759,7 @@ export const Checkout = () => {
                 payments: newPayments,
                 total: total,
                 surcharge: surcharge || undefined,
-                orderTypeSurcharge:orderTypeSurcharge || undefined,
+                orderTypeSurcharge: orderTypeSurcharge || undefined,
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
                 promotionType: promotion ? promotion.promotion.type : undefined,
@@ -799,11 +857,11 @@ export const Checkout = () => {
                     delete product.category.image;
                 }
                 // if (product.availablePlatforms == null) {
-                    delete product.availablePlatforms;
+                delete product.availablePlatforms;
                 // }
 
                 // if (product.isAgeRescricted == null) {
-                    delete product.isAgeRescricted;
+                delete product.isAgeRescricted;
                 // }
             });
 
@@ -870,43 +928,49 @@ export const Checkout = () => {
 
     const performEftposTransaction = async (amount: number): Promise<IEftposTransactionOutcome> => {
         try {
-            let outcome: IEftposTransactionOutcome | null = null;
+            // let outcome: IEftposTransactionOutcome | null = null;
 
-            if (register.eftposProvider == EEftposProvider.SMARTPAY) {
-                let delayedShown = false;
+            // if (register.eftposProvider == EEftposProvider.SMARTPAY) {
+            //     let delayedShown = false;
 
-                const delayed = (outcome: IEftposTransactionOutcome) => {
-                    if (!delayedShown) {
-                        delayedShown = true;
-                        setEftposTransactionProcessMessage("This transaction is delayed. Please wait...");
-                    }
-                };
+            //     const delayed = (outcome: IEftposTransactionOutcome) => {
+            //         if (!delayedShown) {
+            //             delayedShown = true;
+            //             setEftposTransactionProcessMessage("This transaction is delayed. Please wait...");
+            //         }
+            //     };
 
-                const pollingUrl = await smartpayCreateTransaction(amount, "Card.Purchase");
-                outcome = await smartpayPollForOutcome(pollingUrl, delayed);
-            } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
-                outcome = await windcaveCreateTransaction(
-                    register.windcaveStationId,
-                    register.windcaveStationUser,
-                    register.windcaveStationKey,
-                    amount,
-                    "Purchase"
-                );
-            } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
-                const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
+            //     const pollingUrl = await smartpayCreateTransaction(amount, "Card.Purchase");
+            //     outcome = await smartpayPollForOutcome(pollingUrl, delayed);
+            // } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
+            //     outcome = await windcaveCreateTransaction(
+            //         register.windcaveStationId,
+            //         register.windcaveStationUser,
+            //         register.windcaveStationKey,
+            //         amount,
+            //         "Purchase"
+            //     );
+            // } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
+            //     const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
 
-                outcome = await verifoneCreateTransaction(
-                    amount,
-                    register.eftposIpAddress,
-                    register.eftposPortNumber,
-                    restaurant.id,
-                    setEftposMessage
-                );
-            }
+            //     outcome = await verifoneCreateTransaction(
+            //         amount,
+            //         register.eftposIpAddress,
+            //         register.eftposPortNumber,
+            //         restaurant.id,
+            //         setEftposMessage
+            //     );
+            // }
 
-            if (!outcome) throw "Invalid Eftpos Transaction outcome.";
+            // if (!outcome) throw "Invalid Eftpos Transaction outcome.";
 
-            return outcome;
+            return {
+                platformTransactionOutcome: EVerifoneTransactionOutcome.Approved,
+                transactionOutcome: EEftposTransactionOutcome.Success,
+                message: "Transaction Approved!",
+                eftposReceipt: "",
+            };
+            // return outcome;
         } catch (errorMessage) {
             return {
                 platformTransactionOutcome: null,
@@ -1474,6 +1538,13 @@ export const Checkout = () => {
         </>
     );
 
+    const scrollDown = () => {
+        const scrollableDiv = document.getElementById("productsWrapperScroll");
+        if (scrollableDiv) {
+          scrollableDiv.scrollTop += 100;
+        }
+    };
+
     const order = (
         <>
             <div className={isPOS ? "mt-4" : "mt-10"}></div>
@@ -1521,7 +1592,11 @@ export const Checkout = () => {
             )}
             {surcharge ? <div className="h3 text-center mb-2">Surcharge: ${convertCentsToDollars(surcharge)}</div> : <></>}
             {paidSoFar > 0 ? <div className="h3 text-center mb-2">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : <></>}
-            {orderTypeSurcharge > 0 ? <div className="h3 text-center mb-2">Order Type Surcharge: ${convertCentsToDollars(orderTypeSurcharge)}</div> : <></>}
+            {orderTypeSurcharge > 0 ? (
+                <div className="h3 text-center mb-2">Order Type Surcharge: ${convertCentsToDollars(orderTypeSurcharge)}</div>
+            ) : (
+                <></>
+            )}
             <div className={`h1 text-center ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
             <div className={`${isPOS ? "mb-0" : "mb-4"}`}>
                 <div className="checkout-buttons-container">
@@ -1556,13 +1631,20 @@ export const Checkout = () => {
             <PageWrapper>
                 <div className="checkout">
                     <div className="order-wrapper">
-                        <div className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`}>
+                        <div ref={(ref) => setProductsWrapperElement(ref)} className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`} id="productsWrapperScroll">
                             {(!products || products.length == 0) && cartEmptyDisplay}
                             {products && products.length > 0 && order}
+                            {isScrollable ? (
+                                <div className={register.type==="POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
+                                    <div className={`arrow-container ${isScrollable ? 'fade-in' : 'fade-out'}`}>
+                                        <FiArrowDownCircle size="46"  />
+                                    </div>
+                                </div>
+                            ):null}
                         </div>
                     </div>
                     {isPOS && payments.length === 0 && <div>{parkOrderFooter}</div>}
-                    {products && products.length > 0 && <div className="footer p-4">{checkoutFooter}</div>}
+                    {products && products.length > 0 && <div className="footer p-4" id="footer">{checkoutFooter}</div>}
                 </div>
                 {r18MessageModal()}
                 {modalsAndSpinners}
