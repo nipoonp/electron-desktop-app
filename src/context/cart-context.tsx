@@ -281,8 +281,9 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         if (!odrType || !promotion.availableOrderTypes) return;
         if (!promotion.availableOrderTypes.includes(EOrderType[odrType]))
           return;
-        if (promotion.totalNumberUsed >= promotion.totalAvailableUses) return;
-
+        if(promotion.totalAvailableUses !== null){
+          if (promotion.totalNumberUsed >= promotion.totalAvailableUses) return;
+        }
         //We need the most up to date total amount
         if (newTotal < promotion.minSpend) {
           _setProducts(products);
@@ -327,7 +328,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     ): CheckIfPromotionValidResponse => {
       if (!products) return CheckIfPromotionValidResponse.UNAVAILABLE;
 
-      const status = checkIfPromotionValid(promotion);
+      const status = promotion.startDate==null || promotion.endDate==null ? "VALID" : checkIfPromotionValid(promotion);
 
       if (status !== CheckIfPromotionValidResponse.VALID) return status;
 
