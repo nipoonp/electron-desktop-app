@@ -270,6 +270,8 @@
             bottom: 192px;
             left: calc(50% + 7.6rem);
             transform: translateX(-50%);
+            background-color: var(--background-color);
+            border-radius: 50%;
 
             @keyframes fadeIn {
                 from {
