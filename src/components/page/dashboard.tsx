@@ -125,7 +125,6 @@ export default () => {
                 price: product.price,
                 totalPrice: product.totalPrice,
                 discount: 0, //Set discount to total because we do not want to add any discount or promotions to parked orders
-                availablePlatforms: product.availablePlatforms,
                 isAgeRescricted: product.isAgeRescricted,
                 image: product.image
                     ? {

@@ -318,7 +318,6 @@ export const ProductModal = (props: {
                         price: selectedModifier.productModifier.price,
                         totalPrice: selectedModifier.productModifier.price,
                         discount: 0,
-                        availablePlatforms: selectedModifier.availablePlatforms,
                         isAgeRescricted: selectedModifier.isAgeRescricted,
                         image: selectedModifier.productModifier.image
                             ? {
@@ -457,7 +456,6 @@ export const ProductModal = (props: {
                         price: selectedModifier.productModifier.price,
                         totalPrice: selectedModifier.productModifier.price,
                         discount: 0,
-                        availablePlatforms: selectedModifier.availablePlatforms,
                         isAgeRescricted: selectedModifier.isAgeRescricted,
                         image: selectedModifier.productModifier.image
                             ? {
@@ -572,7 +570,6 @@ export const ProductModal = (props: {
                       price: selectedModifier.productModifier.price,
                       totalPrice: selectedModifier.productModifier.price,
                       discount: 0,
-                      availablePlatforms: selectedModifier.availablePlatforms,
                       isAgeRescricted: selectedModifier.isAgeRescricted,
                       image: selectedModifier.productModifier.image
                           ? {
@@ -763,7 +760,6 @@ export const ProductModal = (props: {
         price: product.price,
         totalPrice: totalDisplayPrice / quantity,
         discount: 0,
-        availablePlatforms: product.availablePlatforms,
         isAgeRescricted: product.isAgeRescricted,
         image: product.image
             ? {
