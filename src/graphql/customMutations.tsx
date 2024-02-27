@@ -293,3 +293,14 @@ export const UPDATE_FEEDBACK = gql`
         }
     }
 `;
+
+export const GET_PRODUCT_BY_ID = gql`
+    query GetProduct($id: ID!) {
+        getProduct(id: $id) {
+            id
+            name
+            soldOut
+            soldOutDate
+        }
+    }
+`;

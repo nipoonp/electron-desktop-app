@@ -76,6 +76,7 @@ import { useGetThirdPartyOrderResponseLazyQuery } from "../../hooks/useGetThirdP
 import "./checkout.scss";
 import axios from "axios";
 import { R18MessageModal } from "../modals/r18MessageModal";
+import { useGetProductByIdQuery } from "../../hooks/useGetProductByIdQuery";
 
 const logger = new Logger("checkout");
 
@@ -126,6 +127,8 @@ export const Checkout = () => {
         orderDetail,
         updateOrderDetail,
     } = useCart();
+    const { getProduct } =
+    useGetProductByIdQuery();
     const { restaurant, restaurantBase64Logo } = useRestaurant();
     const { register, isPOS } = useRegister();
     const { printReceipt, printLabel } = useReceiptPrinter();
@@ -211,7 +214,7 @@ export const Checkout = () => {
         return () => {
           window.removeEventListener("resize", checkDivScrollable);
         };
-    }, []);
+    }, [products]);
 
     const [productsWrapperElement, setProductsWrapperElement] = useState<HTMLDivElement | null>(null);
 
@@ -734,7 +737,22 @@ export const Checkout = () => {
             throw "No products have been selected";
         }
 
-        let variables;
+        let variables,products_data:ICartProduct[]=[];
+
+        for (let i = 0; i < products.length; i++) {
+            const element = products[i];    
+            const res = await getProduct({
+                variables: {
+                  id: element.id
+                },
+              });
+              if(res.data.getProduct.soldOut){
+                console.log('Product is sold out')
+              }
+              else{
+                products_data.push(element)
+              }
+        }
 
         try {
             variables = {
@@ -766,7 +784,7 @@ export const Checkout = () => {
                 subTotal: subTotal,
                 preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                 registerId: register.id,
-                products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
+                products: JSON.parse(JSON.stringify(products_data)) as ICartProduct[], // copy obj so we can mutate it later
                 placedAt: toLocalISOString(now),
                 placedAtUtc: now.toISOString(),
                 orderUserId: user.id,
@@ -817,7 +835,7 @@ export const Checkout = () => {
                     subTotal: subTotal,
                     preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                     registerId: register.id,
-                    products: JSON.stringify(products), // copy obj so we can mutate it later
+                    products: JSON.stringify(products_data), // copy obj so we can mutate it later
                     placedAt: now,
                     placedAtUtc: now,
                     orderUserId: user.id,
