@@ -366,7 +366,6 @@ export const Checkout = () => {
                 price: product.price,
                 totalPrice: product.price,
                 discount: 0,
-                availablePlatforms: product.availablePlatforms,
                 isAgeRescricted: product.isAgeRescricted,
                 image: product.image
                     ? {
@@ -856,9 +855,6 @@ export const Checkout = () => {
                 if (product.category.image == null) {
                     delete product.category.image;
                 }
-                // if (product.availablePlatforms == null) {
-                delete product.availablePlatforms;
-                // }
 
                 // if (product.isAgeRescricted == null) {
                 delete product.isAgeRescricted;

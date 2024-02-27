@@ -18,7 +18,6 @@ const TEST_PRODUCT: ICartProduct[] = [
     discount: 0,
     image: null,
     quantity: 2,
-    availablePlatforms: [],
     isAgeRescricted: false,
     category: {
       id: "",

@@ -230,7 +230,6 @@ export interface IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT {
   price: number;
   totalPrice: number;
   discount: number;
-  availablePlatforms: ERegisterType[];
   isAgeRescricted: boolean;
   quantity: number;
   notes: string | null;

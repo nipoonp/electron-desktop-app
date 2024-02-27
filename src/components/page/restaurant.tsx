@@ -397,7 +397,6 @@ const Restaurant = () => {
           kitchenName: product.kitchenName,
           totalPrice: product.price,
           discount: 0,
-          availablePlatforms: product.availablePlatforms,
           isAgeRescricted: product.isAgeRescricted,
           image: product.image
               ? {
