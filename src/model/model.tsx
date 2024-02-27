@@ -138,7 +138,6 @@ export interface ICartProduct {
   price: number;
   totalPrice: number;
   discount: number;
-  availablePlatforms: ERegisterType[];
   isAgeRescricted: boolean;
   image: IS3Object | null;
   quantity: number;

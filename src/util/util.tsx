@@ -691,7 +691,6 @@ const processProductsForPrint = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMEN
             discount: p.discount,
             image: p.image,
             quantity: p.quantity,
-            availablePlatforms: p.availablePlatforms,
             isAgeRescricted: p.isAgeRescricted,
             notes: p.notes,
             category: p.category
