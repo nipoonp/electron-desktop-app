@@ -371,10 +371,13 @@ export const checkIfPromotionValid = (promotion: IGET_RESTAURANT_PROMOTION): Che
     if (!platform || !promotion.availablePlatforms) return CheckIfPromotionValidResponse.INVALID_PLATFORM;
     if (!promotion.availablePlatforms.includes(ERegisterType[platform])) return CheckIfPromotionValidResponse.INVALID_PLATFORM;
 
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0); 
     const startDate = new Date(promotion.startDate);
+    startDate.setHours(0, 0, 0, 0); 
     const endDate = new Date(promotion.endDate);
+    endDate.setHours(0, 0, 0, 0); 
 
-    const isWithin = isWithinInterval(now, { start: startDate, end: endDate });
+    const isWithin = isWithinInterval(today, { start: startDate, end: endDate });
 
     if (!isWithin) return CheckIfPromotionValidResponse.EXPIRED;
 
