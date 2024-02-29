@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router";
 import { checkoutPath, restaurantPath, tableNumberPath } from "../main";
-import { EPaymentMethod } from "../../model/model";
+import { EPaymentMethod, ICartProduct } from "../../model/model";
 import { useCart } from "../../context/cart-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { useRegister } from "../../context/register-context";
@@ -12,13 +12,16 @@ import "./paymentMethod.scss";
 import { Button } from "../../tabin/components/button";
 import { Link } from "../../tabin/components/link";
 import { FiX } from "react-icons/fi";
+import { useEffect, useState } from "react";
+import { ProductSoldOutModal } from "../modals/ProductSoldOutModal";
+import { useGetProductByIdQuery } from "../../hooks/useGetProductByIdQuery";
 
 export default () => {
     const navigate = useNavigate();
-    const { setPaymentMethod } = useCart();
+    const { getProduct } = useGetProductByIdQuery();
+    const { products,soldOutProduct,setSoldOutProduct,setPaymentMethod,deleteProduct } = useCart();
     const { register } = useRegister();
     const { restaurant } = useRestaurant();
-
     if (!register) throw "Register is not valid";
     if (restaurant == null) throw "Restaurant is invalid!";
 
@@ -26,10 +29,67 @@ export default () => {
         navigate(`${checkoutPath}`);
     };
 
-    const onSelectPaymentMethod = (paymentMethod: EPaymentMethod) => {
-        setPaymentMethod(paymentMethod);
+    const removeSoldoutProduct = () => {
+        return new Promise(async (resolve, reject) => {
+            try {
+                if (products) {
+                    const soldOutProducts:ICartProduct[] = [];
+                    for (let i = 0; i < products.length; i++) {
+                        const element = products[i];
+                        const res = await getProduct({
+                            variables: {
+                                id: products[i].id
+                            },
+                        });
+    
+                        if (res.data.getProduct.soldOut) {
+                            deleteProduct(i);
+                            soldOutProducts.push(element)
+                        }
+                    }
+                    console.log('soldOutProducts',soldOutProducts)
+                    setSoldOutProduct(soldOutProducts);
+                    resolve(true);
+                } else {
+                    reject(new Error('Products array is undefined or empty')); // Reject the promise if products array is not available
+                }
+            } catch (error) {
+                reject(error); // Reject the promise if there's an error during the process
+            }
+        });
+    };
 
+    const onSelectPaymentMethod = async(paymentMethod: EPaymentMethod) => {
+        try {
+            await removeSoldoutProduct()
+            if(soldOutProduct && soldOutProduct?.length==0){
+                setPaymentMethod(paymentMethod);
+                navigate(`${checkoutPath}/true`);
+            }
+        } catch (error) {
+            console.log('Error',error)    
+        }
+    };
+
+    const onCloseEvent=()=>{
+        setSoldOutProduct([])
+    
         navigate(`${checkoutPath}/true`);
+    }
+
+    const productSoldOutModal = () => {
+        return (
+            <>
+                {soldOutProduct && soldOutProduct.length && (
+                    <ProductSoldOutModal
+                        isOpen={soldOutProduct.length ? true:false}
+                        soldOutProduct={soldOutProduct}
+                        onClose={()=>onCloseEvent()}
+                        onContinue={() => onCloseEvent()}
+                    />
+                )}
+            </>
+        );
     };
 
     return (
@@ -58,6 +118,7 @@ export default () => {
                         </Link>
                     )}
                 </div>
+                {productSoldOutModal()}
             </PageWrapper>
         </>
     );

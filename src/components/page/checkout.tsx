@@ -76,6 +76,7 @@ import { useGetThirdPartyOrderResponseLazyQuery } from "../../hooks/useGetThirdP
 import "./checkout.scss";
 import axios from "axios";
 import { R18MessageModal } from "../modals/r18MessageModal";
+import {ProductSoldOutModal} from "../modals/ProductSoldOutModal";
 import { useGetProductByIdQuery } from "../../hooks/useGetProductByIdQuery";
 
 const logger = new Logger("checkout");
@@ -91,6 +92,8 @@ export const Checkout = () => {
         parkedOrderNumber,
         orderType,
         products,
+        soldOutProduct,
+        setSoldOutProduct,
         notes,
         buzzerNumber,
         customerInformation,
@@ -187,6 +190,45 @@ export const Checkout = () => {
 
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
     const [showModal, setShowModal] = useState<string>("");
+    
+    // useEffect(()=>{
+    //     removeSoldoutProduct()      
+    // },[])
+
+    // useEffect(()=>{
+    //     removeSoldoutProduct()      
+    // },[paymentMethod])
+
+    // const removeSoldoutProduct = () => {
+    //     return new Promise(async (resolve, reject) => {
+    //         try {
+    //             if (products) {
+    //                 const soldOutProducts:ICartProduct[] = [];
+    //                 for (let i = 0; i < products.length; i++) {
+    //                     const element = products[i];
+    //                     const res = await getProduct({
+    //                         variables: {
+    //                             id: products[i].id
+    //                         },
+    //                     });
+    
+    //                     if (res.data.getProduct.soldOut) {
+    //                         console.log('Product is sold out', element);
+    //                         soldOutProducts.push(element)
+    //                         deleteProduct(i);
+    //                     }
+    //                 }
+    //                 console.log('soldOutProducts',soldOutProducts)
+    //                 setSoldOutProduct(soldOutProducts);
+    //                 resolve(true);
+    //             } else {
+    //                 reject(new Error('Products array is undefined or empty')); // Reject the promise if products array is not available
+    //             }
+    //         } catch (error) {
+    //             reject(error); // Reject the promise if there's an error during the process
+    //         }
+    //     });
+    // };
 
     useEffect(() => {
         const checkDivScrollable = () => {
@@ -415,53 +457,57 @@ export const Checkout = () => {
     };
 
     const onRemoveProduct = (displayOrder: number) => {
+        console.log('displayOrder',displayOrder)
         deleteProduct(displayOrder);
     };
 
     const onClickOrderButton = async () => {
-        if (restaurant.orderThresholds?.enable && restaurant.orderThresholdMessage && !isShownOrderThresholdMessageModal) {
-            setShowOrderThresholdMessageModal(true);
-            return;
-        }
-
-        if (register && register.enableBuzzerNumbers && buzzerNumber === null) {
-            navigate(buzzerNumberPath);
-            return;
-        }
-
-        if (register && register.requestCustomerInformation) {
-            let invalid = false;
-
-            if (register.requestCustomerInformation.firstName && (!customerInformation || !customerInformation.firstName)) invalid = true;
-            if (register.requestCustomerInformation.email && (!customerInformation || !customerInformation.email)) invalid = true;
-            if (register.requestCustomerInformation.phoneNumber && (!customerInformation || !customerInformation.phoneNumber)) invalid = true;
-            if (register.requestCustomerInformation.signature && (!customerInformation || !customerInformation.signatureBase64)) invalid = true;
-            //    if(register.) orderScheduledAt
-
-            if (invalid) {
-                navigate(customerInformationPath);
+        // await removeSoldoutProduct()
+        // if(soldOutProduct && soldOutProduct?.length==0){
+            if (restaurant.orderThresholds?.enable && restaurant.orderThresholdMessage && !isShownOrderThresholdMessageModal) {
+                setShowOrderThresholdMessageModal(true);
                 return;
             }
-        }
 
-        if (!isPOS && register.enableEftposPayments && register.enableCashPayments && paymentMethod === null) {
-            navigate(paymentMethodPath);
-            return;
-        }
-
-        setShowPaymentModal(true);
-
-        if (isPOS) {
-            setPaymentModalState(EPaymentModalState.POSScreen);
-        } else {
-            if ((paymentMethod === null && register.enableEftposPayments) || paymentMethod === EPaymentMethod.EFTPOS) {
-                await onConfirmTotalOrRetryEftposTransaction(subTotal);
-            } else if ((paymentMethod === null && register.enableCashPayments) || paymentMethod === EPaymentMethod.CASH) {
-                await onConfirmCashTransaction(subTotal);
-            } else if ((paymentMethod === null && register.enablePayLater) || paymentMethod === EPaymentMethod.LATER) {
-                await onClickPayLater();
+            if (register && register.enableBuzzerNumbers && buzzerNumber === null) {
+                navigate(buzzerNumberPath);
+                return;
             }
-        }
+
+            if (register && register.requestCustomerInformation) {
+                let invalid = false;
+
+                if (register.requestCustomerInformation.firstName && (!customerInformation || !customerInformation.firstName)) invalid = true;
+                if (register.requestCustomerInformation.email && (!customerInformation || !customerInformation.email)) invalid = true;
+                if (register.requestCustomerInformation.phoneNumber && (!customerInformation || !customerInformation.phoneNumber)) invalid = true;
+                if (register.requestCustomerInformation.signature && (!customerInformation || !customerInformation.signatureBase64)) invalid = true;
+                //    if(register.) orderScheduledAt
+
+                if (invalid) {
+                    navigate(customerInformationPath);
+                    return;
+                }
+            }
+
+            if (!isPOS && register.enableEftposPayments && register.enableCashPayments && paymentMethod === null) {
+                navigate(paymentMethodPath);
+                return;
+            }
+
+            setShowPaymentModal(true);
+
+            if (isPOS) {
+                setPaymentModalState(EPaymentModalState.POSScreen);
+            } else {
+                if ((paymentMethod === null && register.enableEftposPayments) || paymentMethod === EPaymentMethod.EFTPOS) {
+                    await onConfirmTotalOrRetryEftposTransaction(subTotal);
+                } else if ((paymentMethod === null && register.enableCashPayments) || paymentMethod === EPaymentMethod.CASH) {
+                    await onConfirmCashTransaction(subTotal);
+                } else if ((paymentMethod === null && register.enablePayLater) || paymentMethod === EPaymentMethod.LATER) {
+                    await onClickPayLater();
+                }
+            }
+        // }
     };
 
     const onClosePaymentModal = () => {
@@ -611,7 +657,7 @@ export const Checkout = () => {
             parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
 
         setPaymentOutcomeOrderNumber(orderNumber);
-
+        // await removeSoldoutProduct();
         try {
             let signatureS3Object: IS3Object | null = null;
 
@@ -737,23 +783,25 @@ export const Checkout = () => {
             throw "No products have been selected";
         }
 
-        let variables,products_data:ICartProduct[]=[];
+        let variables;
+        // let products_data:ICartProduct[]=[], soldOutProducts:ICartProduct[]=[];
 
-        for (let i = 0; i < products.length; i++) {
-            const element = products[i];    
-            const res = await getProduct({
-                variables: {
-                  id: element.id
-                },
-              });
-              if(res.data.getProduct.soldOut){
-                console.log('Product is sold out')
-              }
-              else{
-                products_data.push(element)
-              }
-        }
-
+        // for (let i = 0; i < products.length; i++) {
+        //     const element = products[i];    
+        //     const res = await getProduct({
+        //         variables: {
+        //           id: element.id
+        //         },
+        //       });
+        //       if(res.data.getProduct.soldOut){
+        //         console.log('Product is sold out',element)
+        //         deleteProduct(i)
+        //         // soldOutProducts.push(element);
+        //       }
+        //       else{
+        //         // products_data.push(element);
+        //       }
+        // }
         try {
             variables = {
                 status: "NEW",
@@ -784,7 +832,7 @@ export const Checkout = () => {
                 subTotal: subTotal,
                 preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                 registerId: register.id,
-                products: JSON.parse(JSON.stringify(products_data)) as ICartProduct[], // copy obj so we can mutate it later
+                products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
                 placedAt: toLocalISOString(now),
                 placedAtUtc: now.toISOString(),
                 orderUserId: user.id,
@@ -835,7 +883,7 @@ export const Checkout = () => {
                     subTotal: subTotal,
                     preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                     registerId: register.id,
-                    products: JSON.stringify(products_data), // copy obj so we can mutate it later
+                    products: JSON.stringify(products), // copy obj so we can mutate it later
                     placedAt: now,
                     placedAtUtc: now,
                     orderUserId: user.id,
@@ -1389,6 +1437,27 @@ export const Checkout = () => {
         );
     };
 
+    const onCloseEvent=()=>{
+        console.log('Close click from checkout')
+        setSoldOutProduct([])
+    
+    }
+
+    const productSoldOutModal = () => {
+        return (
+            <>
+                {soldOutProduct && soldOutProduct.length && (
+                    <ProductSoldOutModal
+                        isOpen={soldOutProduct.length ? true:false}
+                        soldOutProduct={soldOutProduct}
+                        onClose={()=>onCloseEvent()}
+                        onContinue={() => onCloseEvent()}
+                    />
+                )}
+            </>
+        );
+    };
+
     const paymentModal = () => {
         return (
             <>
@@ -1655,6 +1724,7 @@ export const Checkout = () => {
                     {products && products.length > 0 && <div className="footer p-4" id="footer">{checkoutFooter}</div>}
                 </div>
                 {r18MessageModal()}
+                {productSoldOutModal()}
                 {modalsAndSpinners}
             </PageWrapper>
         </>

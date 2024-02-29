@@ -63,6 +63,8 @@ type ContextProps = {
     customerInformation: ICustomerInformation | null;
     setCustomerInformation: (customerInformation: ICustomerInformation | null) => void;
     products: ICartProduct[] | null;
+    soldOutProduct: ICartProduct[] | null;
+    setSoldOutProduct: (soldOutProduct: ICartProduct[]) => void;
     cartProductQuantitiesById: ICartItemQuantitiesById;
     cartModifierQuantitiesById: ICartItemQuantitiesById;
     setProducts: (products: ICartProduct[]) => void;
@@ -117,6 +119,8 @@ const CartContext = createContext<ContextProps>({
     customerInformation: initialCustomerInformation,
     setCustomerInformation: () => {},
     products: initialProducts,
+    soldOutProduct: initialProducts,
+    setSoldOutProduct: () => {},
     cartProductQuantitiesById: {},
     cartModifierQuantitiesById: {},
     setProducts: () => {},
@@ -165,6 +169,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [buzzerNumber, _setBuzzerNumber] = useState<string | null>(initialBuzzerNumber);
     const [customerInformation, _setCustomerInformation] = useState<ICustomerInformation | null>(initialCustomerInformation);
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
+    const [soldOutProduct, _setSoldOutProduct] = useState<ICartProduct[] | null>(initialProducts);
     const [notes, _setNotes] = useState<string>(initialNotes);
     const [total, _setTotal] = useState<number>(initialTotal);
     const [surcharge, _setSurcharge] = useState<number>(initialSurcharge);
@@ -526,6 +531,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         processPromotions(newProducts, newTotal);
     };
 
+    const setSoldOutProduct=(newProducts: ICartProduct[]) => {
+      _setSoldOutProduct(newProducts);
+    };
+
     const addProduct = (product: ICartProduct) => {
         const { quantity: productQuantity, ...productWithoutQuantiy } = product;
         const serializedProduct = JSON.stringify(productWithoutQuantiy);
@@ -696,6 +705,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 customerInformation: customerInformation,
                 setCustomerInformation: setCustomerInformation,
                 products: products,
+                soldOutProduct: soldOutProduct,
+                setSoldOutProduct: setSoldOutProduct,
                 cartProductQuantitiesById: cartProductQuantitiesById,
                 cartModifierQuantitiesById: cartModifierQuantitiesById,
                 setProducts: setProducts,
