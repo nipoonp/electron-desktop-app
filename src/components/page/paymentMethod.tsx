@@ -4,19 +4,16 @@ import { EPaymentMethod, ICartProduct } from "../../model/model";
 import { useCart } from "../../context/cart-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { useRegister } from "../../context/register-context";
-import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
-import { CachedImage } from "../../tabin/components/cachedImage";
 import { useRestaurant } from "../../context/restaurant-context";
 
 import "./paymentMethod.scss";
 import { Button } from "../../tabin/components/button";
 import { Link } from "../../tabin/components/link";
 import { FiX } from "react-icons/fi";
-import { useEffect, useState } from "react";
 import { ProductSoldOutModal } from "../modals/ProductSoldOutModal";
 import { useGetProductByIdQuery } from "../../hooks/useGetProductByIdQuery";
 
-export default () => {
+const PaymentMethod= () => {
     const navigate = useNavigate();
     const { getProduct } = useGetProductByIdQuery();
     const { products,soldOutProduct,setSoldOutProduct,setPaymentMethod,deleteProduct } = useCart();
@@ -51,10 +48,10 @@ export default () => {
                     setSoldOutProduct(soldOutProducts);
                     resolve(true);
                 } else {
-                    reject(new Error('Products array is undefined or empty')); // Reject the promise if products array is not available
+                    reject(new Error('Products array is undefined or empty')); 
                 }
             } catch (error) {
-                reject(error); // Reject the promise if there's an error during the process
+                reject(error); 
             }
         });
     };
@@ -123,3 +120,5 @@ export default () => {
         </>
     );
 };
+
+export default PaymentMethod;

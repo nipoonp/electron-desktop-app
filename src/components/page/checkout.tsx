@@ -191,44 +191,6 @@ export const Checkout = () => {
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
     const [showModal, setShowModal] = useState<string>("");
     
-    // useEffect(()=>{
-    //     removeSoldoutProduct()      
-    // },[])
-
-    // useEffect(()=>{
-    //     removeSoldoutProduct()      
-    // },[paymentMethod])
-
-    // const removeSoldoutProduct = () => {
-    //     return new Promise(async (resolve, reject) => {
-    //         try {
-    //             if (products) {
-    //                 const soldOutProducts:ICartProduct[] = [];
-    //                 for (let i = 0; i < products.length; i++) {
-    //                     const element = products[i];
-    //                     const res = await getProduct({
-    //                         variables: {
-    //                             id: products[i].id
-    //                         },
-    //                     });
-    
-    //                     if (res.data.getProduct.soldOut) {
-    //                         console.log('Product is sold out', element);
-    //                         soldOutProducts.push(element)
-    //                         deleteProduct(i);
-    //                     }
-    //                 }
-    //                 console.log('soldOutProducts',soldOutProducts)
-    //                 setSoldOutProduct(soldOutProducts);
-    //                 resolve(true);
-    //             } else {
-    //                 reject(new Error('Products array is undefined or empty')); // Reject the promise if products array is not available
-    //             }
-    //         } catch (error) {
-    //             reject(error); // Reject the promise if there's an error during the process
-    //         }
-    //     });
-    // };
 
     useEffect(() => {
         const checkDivScrollable = () => {
@@ -784,24 +746,7 @@ export const Checkout = () => {
         }
 
         let variables;
-        // let products_data:ICartProduct[]=[], soldOutProducts:ICartProduct[]=[];
-
-        // for (let i = 0; i < products.length; i++) {
-        //     const element = products[i];    
-        //     const res = await getProduct({
-        //         variables: {
-        //           id: element.id
-        //         },
-        //       });
-        //       if(res.data.getProduct.soldOut){
-        //         console.log('Product is sold out',element)
-        //         deleteProduct(i)
-        //         // soldOutProducts.push(element);
-        //       }
-        //       else{
-        //         // products_data.push(element);
-        //       }
-        // }
+        
         try {
             variables = {
                 status: "NEW",
