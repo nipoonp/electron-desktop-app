@@ -12,13 +12,15 @@ import { Link } from "../../tabin/components/link";
 import { FiX } from "react-icons/fi";
 import { ProductSoldOutModal } from "../modals/ProductSoldOutModal";
 import { useGetProductByIdQuery } from "../../hooks/useGetProductByIdQuery";
+import { useState } from "react";
 
 const PaymentMethod= () => {
     const navigate = useNavigate();
     const { getProduct } = useGetProductByIdQuery();
-    const { products,soldOutProduct,setSoldOutProduct,setPaymentMethod,deleteProduct } = useCart();
+    const { products,setPaymentMethod,deleteProduct } = useCart();
     const { register } = useRegister();
     const { restaurant } = useRestaurant();
+    const [soldOutProduct,setSoldOutProduct]=useState<ICartProduct[]>([]);
     if (!register) throw "Register is not valid";
     if (restaurant == null) throw "Restaurant is invalid!";
 
@@ -46,20 +48,22 @@ const PaymentMethod= () => {
                     }
                     console.log('soldOutProducts',soldOutProducts)
                     setSoldOutProduct(soldOutProducts);
-                    resolve(true);
+                    resolve(soldOutProducts);
                 } else {
-                    reject(new Error('Products array is undefined or empty')); 
+                    reject([]); 
                 }
             } catch (error) {
-                reject(error); 
+                reject([]); 
             }
         });
     };
 
     const onSelectPaymentMethod = async(paymentMethod: EPaymentMethod) => {
         try {
-            await removeSoldoutProduct()
-            if(soldOutProduct && soldOutProduct?.length==0){
+            const res: ICartProduct[] | unknown=await removeSoldoutProduct();
+            console.log('res',res);
+            console.log('soldOutProduct in selctetion',soldOutProduct)
+            if(Array.isArray(res) && res?.length===0){
                 setPaymentMethod(paymentMethod);
                 navigate(`${checkoutPath}/true`);
             }
