@@ -304,3 +304,30 @@ export const GET_PRODUCT_BY_ID = gql`
         }
     }
 `;
+
+export const LIST_PRODUCTS_BY_RESTAURANT_PRODUCT_FRAGMENT = gql`
+    fragment ListProductsByRestaurantProductFragment on Product {
+        id
+        name
+        description
+        price
+        skuCode
+        soldOut
+        soldOutDate
+        totalQuantityAvailable
+        subCategories
+        categories {
+            items {
+                id
+                category {
+                    id
+                }
+            }
+        }
+        modifierGroups {
+            items {
+                id
+            }
+        }
+    }
+`;

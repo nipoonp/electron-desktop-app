@@ -1,6 +1,6 @@
 import { gql } from "@apollo/client";
 import { EReceiptPrinterPrinterType } from "../model/model";
-import { ORDER_FIELDS_FRAGMENT } from "./customFragments";
+import { ORDER_FIELDS_FRAGMENT,LIST_PRODUCTS_BY_RESTAURANT_PRODUCT_FRAGMENT } from "./customFragments";
 
 export enum EOrderStatus {
     NEW = "NEW",
@@ -1740,4 +1740,41 @@ export interface IGET_FEEDBACK_BY_RESTAURANT_COMMENT {
     comment: string;
     rating: number;
     orderId: string;
+}
+
+export const LIST_PRODUCTS_BY_RESTAURANT = gql`
+    ${LIST_PRODUCTS_BY_RESTAURANT_PRODUCT_FRAGMENT}
+    query listProductsByRestaurantByName($restaurantId: ID!, $nextToken: String) {
+        listProductsByRestaurantByName(limit: 1000000, productRestaurantId: $restaurantId, nextToken: $nextToken) {
+            nextToken
+            items {
+                ...ListProductsByRestaurantProductFragment
+            }
+        }
+    }
+`;
+
+export interface ILIST_PRODUCTS_BY_RESTAURANT {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    skuCode: string;
+    soldOut: boolean;
+    soldOutDate: string;
+    totalQuantityAvailable: number;
+    subCategories: string;
+    categories: {
+        items: {
+            id: string;
+            category: {
+                id: string;
+            };
+        }[];
+    };
+    modifierGroups: {
+        items: {
+            id: string;
+        }[];
+    };
 }

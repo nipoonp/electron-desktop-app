@@ -191,6 +191,15 @@ export const ORDER_FIELDS_FRAGMENT = gql`
   }
 `;
 
+export const LIST_PRODUCTS_BY_RESTAURANT_PRODUCT_FRAGMENT = gql`
+    fragment ListProductsByRestaurantProductFragment on Product {
+        id
+        name
+        soldOut
+        soldOutDate    
+    }
+`;
+
 export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     id: string;
     placedAt: string;

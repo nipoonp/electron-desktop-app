@@ -5,18 +5,17 @@ import { useCart } from "../../context/cart-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { useRegister } from "../../context/register-context";
 import { useRestaurant } from "../../context/restaurant-context";
-
+import { useListProductsByRestaurantLazyQuery } from "../../hooks/useListProductsByRestaurantLazyQuery";
 import "./paymentMethod.scss";
 import { Button } from "../../tabin/components/button";
 import { Link } from "../../tabin/components/link";
 import { FiX } from "react-icons/fi";
 import { ProductSoldOutModal } from "../modals/ProductSoldOutModal";
-import { useGetProductByIdQuery } from "../../hooks/useGetProductByIdQuery";
 import { useState } from "react";
 
 const PaymentMethod= () => {
     const navigate = useNavigate();
-    const { getProduct } = useGetProductByIdQuery();
+    const { listProductsByRestaurantByName } = useListProductsByRestaurantLazyQuery();
     const { products,setPaymentMethod,deleteProduct } = useCart();
     const { register } = useRegister();
     const { restaurant } = useRestaurant();
@@ -28,25 +27,40 @@ const PaymentMethod= () => {
         navigate(`${checkoutPath}`);
     };
 
+    const fetchProducts = async (restaurantId: string, currentNextToken: string | null) => {
+        const res = await listProductsByRestaurantByName({
+            variables: {
+                restaurantId: restaurantId,
+                nextToken: currentNextToken,
+            },
+        });
+
+        const products: ICartProduct[] = res.data.listProductsByRestaurantByName.items;
+        const nextToken: string = res.data.listProductsByRestaurantByName.nextToken;
+
+        return { products, nextToken };
+    };
+
+    function getMatchingElements(arr, idToMatch) {
+        return arr.filter(item => item.id === idToMatch);
+    }
+
+    
     const removeSoldoutProduct = () => {
         return new Promise(async (resolve, reject) => {
             try {
+                const res = await fetchProducts(restaurant.id, null);
                 if (products) {
                     const soldOutProducts:ICartProduct[] = [];
                     for (let i = 0; i < products.length; i++) {
                         const element = products[i];
-                        const res = await getProduct({
-                            variables: {
-                                id: products[i].id
-                            },
-                        });
-    
-                        if (res.data.getProduct.soldOut) {
+                        const res_data= getMatchingElements(res.products,element.id)
+                        console.log('res_data',res_data)
+                        if (res_data[0].soldOut) {
                             deleteProduct(i);
                             soldOutProducts.push(element)
                         }
                     }
-                    console.log('soldOutProducts',soldOutProducts)
                     setSoldOutProduct(soldOutProducts);
                     resolve(soldOutProducts);
                 } else {
@@ -61,7 +75,7 @@ const PaymentMethod= () => {
     const onSelectPaymentMethod = async(paymentMethod: EPaymentMethod) => {
         try {
             const res: ICartProduct[] | unknown=await removeSoldoutProduct();
-            console.log('res',res);
+            console.log('onSelectPaymentMethod res',res);
             console.log('soldOutProduct in selctetion',soldOutProduct)
             if(Array.isArray(res) && res?.length===0){
                 setPaymentMethod(paymentMethod);
