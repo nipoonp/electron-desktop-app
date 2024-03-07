@@ -20,6 +20,7 @@ const PaymentMethod= () => {
     const { register } = useRegister();
     const { restaurant } = useRestaurant();
     const [soldOutProduct,setSoldOutProduct]=useState<ICartProduct[]>([]);
+    const [inCartProducts,setInCartProducts]=useState<ICartProduct[]>([]);
     if (!register) throw "Register is not valid";
     if (restaurant == null) throw "Restaurant is invalid!";
 
@@ -52,15 +53,21 @@ const PaymentMethod= () => {
                 const res = await fetchProducts(restaurant.id, null);
                 if (products) {
                     const soldOutProducts:ICartProduct[] = [];
+                    const inCartProduct:ICartProduct[] = [];
+                    console.log('products',products)
                     for (let i = 0; i < products.length; i++) {
                         const element = products[i];
                         const res_data= getMatchingElements(res.products,element.id)
                         console.log('res_data',res_data)
-                        if (res_data[0].soldOut) {
-                            deleteProduct(i);
+                        if (res_data[0].soldOut===false) {
+                            inCartProduct.push(element)
+                        }
+                        else{
                             soldOutProducts.push(element)
+                            deleteProduct(i);
                         }
                     }
+                    setInCartProducts(inCartProduct);
                     setSoldOutProduct(soldOutProducts);
                     resolve(soldOutProducts);
                 } else {
@@ -76,7 +83,6 @@ const PaymentMethod= () => {
         try {
             const res: ICartProduct[] | unknown=await removeSoldoutProduct();
             console.log('onSelectPaymentMethod res',res);
-            console.log('soldOutProduct in selctetion',soldOutProduct)
             if(Array.isArray(res) && res?.length===0){
                 setPaymentMethod(paymentMethod);
                 navigate(`${checkoutPath}/true`);
@@ -87,9 +93,14 @@ const PaymentMethod= () => {
     };
 
     const onCloseEvent=()=>{
+        console.log('inCartProducts',inCartProducts)
+        if(inCartProducts.length){
+            navigate(`${checkoutPath}/true`);
+        }
+        else{
+            navigate(`${checkoutPath}`);
+        }
         setSoldOutProduct([])
-    
-        navigate(`${checkoutPath}/true`);
     }
 
     const productSoldOutModal = () => {
