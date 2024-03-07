@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router";
 import { checkoutPath, restaurantPath, tableNumberPath } from "../main";
+import { isToday, parse } from 'date-fns';
 import { EPaymentMethod, ICartProduct } from "../../model/model";
 import { useCart } from "../../context/cart-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -59,7 +60,11 @@ const PaymentMethod= () => {
                         const element = products[i];
                         const res_data= getMatchingElements(res.products,element.id)
                         console.log('res_data',res_data)
-                        if (res_data[0].soldOut===false) {
+                        if(res_data[0].soldOutDate && isToday(parse(res_data[0].soldOutDate,'yyyy-MM-dd',new Date()))){
+                            soldOutProducts.push(element)
+                            deleteProduct(i);
+                        }
+                        else if (res_data[0].soldOut===false) {
                             inCartProduct.push(element)
                         }
                         else{
