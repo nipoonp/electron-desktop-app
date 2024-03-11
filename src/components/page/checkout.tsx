@@ -6,6 +6,8 @@ import { convertBase64ToFile, convertCentsToDollars, convertProductTypesForPrint
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
 import { FiArrowDownCircle } from "react-icons/fi";
+import { isCurrentTimeWithinOperatingHours } from "../../util/util";
+import {StoreNotAvailableModal} from '../modals/StoreNotAvailableModal';
 import {
     IGET_RESTAURANT_CATEGORY,
     IGET_RESTAURANT_PRODUCT,
@@ -190,8 +192,9 @@ export const Checkout = () => {
 
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
     const [showModal, setShowModal] = useState<string>("");
-    
-
+    const [isBetweenOperatingHours,setIsBetweenOperatingHours]=useState<Boolean>(true);
+    const [isBetweenOperatingHoursOpen,setIsBetweenOperatingHoursOpen]=useState<Boolean>(true);
+        
     useEffect(() => {
         const checkDivScrollable = () => {
           const scrollableDiv = document.getElementById("productsWrapperScroll");
@@ -249,13 +252,21 @@ export const Checkout = () => {
     }, [productsWrapperElement]);
 
     useEffect(() => {
-        if (autoClickCompleteOrderOnLoad) onClickOrderButton();
+        if (autoClickCompleteOrderOnLoad)  onClickOrderButton();
         const ageRestrictedProducts = products && products.filter((product) => product.isAgeRescricted).map((product) => product.name);
         if (ageRestrictedProducts && ageRestrictedProducts.length > 0) {
             setShowModal(ageRestrictedProducts.toString());
         } else {
             setShowModal("");
         }
+
+        if(restaurant){
+            const isBetween=isCurrentTimeWithinOperatingHours(restaurant.operatingHours);
+            console.log('isCurrentTimeWithinOperatingHours',isBetween)
+            setIsBetweenOperatingHours(!isBetween)
+            setIsBetweenOperatingHoursOpen(!isBetween)
+        }
+       
     }, []);
 
     useEffect(() => {
@@ -1627,7 +1638,7 @@ export const Checkout = () => {
                             Order More
                         </Button>
                     )}
-                    <Button onClick={onClickOrderButton} className="button large complete-order-button">
+                    <Button onClick={onClickOrderButton} className="button large complete-order-button" disabled={isBetweenOperatingHours ? true : false}>
                         Complete Order
                     </Button>
                 </div>
@@ -1645,6 +1656,10 @@ export const Checkout = () => {
                     Cancel Order
                 </Button>
             )}
+            <StoreNotAvailableModal
+                        isOpen={isBetweenOperatingHoursOpen ? true : false}  
+                        onClose={()=>setIsBetweenOperatingHoursOpen(false)}                  
+                />
         </div>
     );
 

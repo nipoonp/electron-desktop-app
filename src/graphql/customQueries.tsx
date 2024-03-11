@@ -224,30 +224,37 @@ export const GET_RESTAURANT = gql`
                 monday {
                     openingTime
                     closingTime
+                    ordersValue
                 }
                 tuesday {
                     openingTime
                     closingTime
+                    ordersValue
                 }
                 wednesday {
                     openingTime
                     closingTime
+                    ordersValue
                 }
                 thursday {
                     openingTime
                     closingTime
+                    ordersValue
                 }
                 friday {
                     openingTime
                     closingTime
+                    ordersValue
                 }
                 saturday {
                     openingTime
                     closingTime
+                    ordersValue
                 }
                 sunday {
                     openingTime
                     closingTime
+                    ordersValue
                 }
             }
             logo {

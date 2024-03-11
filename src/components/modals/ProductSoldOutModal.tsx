@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Button } from "../../tabin/components/button";
 import { ModalV2 } from "../../tabin/components/modalv2";
 import "./itemAddedUpdatedModal.scss";

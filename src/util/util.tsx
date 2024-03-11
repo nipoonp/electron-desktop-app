@@ -896,3 +896,30 @@ export const getRestaurantTimings = (operatingHours: IGET_RESTAURANT_OPERATING_H
 
     return timings;
 };
+
+export const isCurrentTimeWithinOperatingHours=(operatingHours:IGET_RESTAURANT_OPERATING_HOURS) =>{
+    const today = new Date();
+    const currentDay = today.getDay();
+
+    const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const currentDayString = daysOfWeek[currentDay].toLowerCase(); 
+
+    if (operatingHours[currentDayString] && operatingHours[currentDayString].length > 0) {
+        const currentHour = today.getHours();
+        const currentMinute = today.getMinutes();
+
+        const openingHour = parseInt(operatingHours[currentDayString][0].openingTime.split(":")[0], 10);
+        const openingMinute = parseInt(operatingHours[currentDayString][0].openingTime.split(":")[1], 10);
+
+        const closingHour = parseInt(operatingHours[currentDayString][0].closingTime.split(":")[0], 10);
+        const closingMinute = parseInt(operatingHours[currentDayString][0].closingTime.split(":")[1], 10);
+
+        const isAfterOpeningTime = currentHour > openingHour || (currentHour === openingHour && currentMinute >= openingMinute);
+        const isBeforeClosingTime = currentHour < closingHour || (currentHour === closingHour && currentMinute <= closingMinute);
+
+        return isAfterOpeningTime && isBeforeClosingTime;
+    }
+    else{
+        return true
+    }
+}
