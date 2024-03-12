@@ -21,7 +21,7 @@ export default () => {
 
     return (
         <>
-            {restaurant.preparationTimeInMinutes && <PreparationTime />}
+            {restaurant.preparationTimeInMinutes ? <PreparationTime /> : <></>}
             {ads.length > 0 ? <BeginOrderAdvertisements ads={ads} /> : <BeginOrderDefault />}
         </>
     );
