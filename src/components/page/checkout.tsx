@@ -5,8 +5,9 @@ import { useNavigate } from "react-router-dom";
 import { convertBase64ToFile, convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
+import { useGetRestaurantOrdersByBeginWithPlacedAt } from "../../hooks/useGetRestaurantOrdersByBeginWithPlacedAt";
 import { FiArrowDownCircle } from "react-icons/fi";
-import { isCurrentTimeWithinOperatingHours } from "../../util/util";
+import { isCurrentTimeWithinOperatingHours ,getTotalOrdersAllow} from "../../util/util";
 import {StoreNotAvailableModal} from '../modals/StoreNotAvailableModal';
 import {
     IGET_RESTAURANT_CATEGORY,
@@ -194,7 +195,10 @@ export const Checkout = () => {
     const [showModal, setShowModal] = useState<string>("");
     const [isBetweenOperatingHours,setIsBetweenOperatingHours]=useState<Boolean>(true);
     const [isBetweenOperatingHoursOpen,setIsBetweenOperatingHoursOpen]=useState<Boolean>(true);
-        
+    const [storeMessage,setStoreMessage]=useState("");
+    const date =format(new Date(), "yyyy-MM-dd");
+    const { data: orders, error, loading } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant ? restaurant.id : "", date);
+
     useEffect(() => {
         const checkDivScrollable = () => {
           const scrollableDiv = document.getElementById("productsWrapperScroll");
@@ -252,7 +256,7 @@ export const Checkout = () => {
     }, [productsWrapperElement]);
 
     useEffect(() => {
-        if (autoClickCompleteOrderOnLoad)  onClickOrderButton();
+        // if (autoClickCompleteOrderOnLoad)  onClickOrderButton();
         const ageRestrictedProducts = products && products.filter((product) => product.isAgeRescricted).map((product) => product.name);
         if (ageRestrictedProducts && ageRestrictedProducts.length > 0) {
             setShowModal(ageRestrictedProducts.toString());
@@ -262,12 +266,21 @@ export const Checkout = () => {
 
         if(restaurant){
             const isBetween=isCurrentTimeWithinOperatingHours(restaurant.operatingHours);
-            console.log('isCurrentTimeWithinOperatingHours',isBetween)
             setIsBetweenOperatingHours(!isBetween)
             setIsBetweenOperatingHoursOpen(!isBetween)
+            setStoreMessage("Store is not open for this time.")
         }
        
     }, []);
+
+    useEffect(()=>{
+        if(restaurant){
+            const isOrderAllow=getTotalOrdersAllow(restaurant.operatingHours, orders?.length || 0)
+            setIsBetweenOperatingHours(!isOrderAllow)
+            setIsBetweenOperatingHoursOpen(!isOrderAllow)
+            setStoreMessage("Store order limit is over.")
+        }
+    },[orders])
 
     useEffect(() => {
         if (isShownUpSellCrossSellModal) return;
@@ -281,6 +294,8 @@ export const Checkout = () => {
     if (!register) throw "Register is not valid";
     if (!restaurant) navigate(beginOrderPath);
     if (!restaurant) throw "Restaurant is invalid";
+    
+
     const incrementRedirectTimer = (time: number) => {
         setPaymentOutcomeApprovedRedirectTimeLeft(time);
         transactionCompleteRedirectTime = time;
@@ -1658,7 +1673,8 @@ export const Checkout = () => {
             )}
             <StoreNotAvailableModal
                         isOpen={isBetweenOperatingHoursOpen ? true : false}  
-                        onClose={()=>setIsBetweenOperatingHoursOpen(false)}                  
+                        onClose={()=>setIsBetweenOperatingHoursOpen(false)}  
+                        storeMessage={storeMessage}                
                 />
         </div>
     );

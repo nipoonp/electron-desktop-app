@@ -5,6 +5,7 @@ import "./itemAddedUpdatedModal.scss";
 interface IPromotionCodeModalProps {
   isOpen: boolean;
   onClose: () => void;
+  storeMessage: string;
 }
 
 export const StoreNotAvailableModal = (props: IPromotionCodeModalProps) => {
@@ -18,7 +19,7 @@ export const StoreNotAvailableModal = (props: IPromotionCodeModalProps) => {
       >
         <div className="promo-code-modal">
             <div className="h3 mb-3">
-                Store is not open for this time.
+                {props.storeMessage}
             </div>
           
 

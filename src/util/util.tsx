@@ -923,3 +923,17 @@ export const isCurrentTimeWithinOperatingHours=(operatingHours:IGET_RESTAURANT_O
         return true
     }
 }
+
+export const getTotalOrdersAllow=(operatingHours:IGET_RESTAURANT_OPERATING_HOURS,allow:Number)=>{
+    const today = new Date();
+    const currentDay = today.getDay();
+
+    const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const currentDayString = daysOfWeek[currentDay].toLowerCase(); 
+    if (operatingHours[currentDayString] && operatingHours[currentDayString].length > 0) {
+        return Number(operatingHours[currentDayString][0].ordersValue) >= Number(allow);
+    }
+    else{
+        return true;
+    }
+}

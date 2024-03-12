@@ -111,14 +111,14 @@ const PaymentMethod= () => {
     const productSoldOutModal = () => {
         return (
             <>
-                {soldOutProduct && soldOutProduct.length && (
+                {soldOutProduct && soldOutProduct.length ?(
                     <ProductSoldOutModal
                         isOpen={soldOutProduct.length ? true:false}
                         soldOutProduct={soldOutProduct}
                         onClose={()=>onCloseEvent()}
                         onContinue={() => onCloseEvent()}
                     />
-                )}
+                ):null}
             </>
         );
     };
