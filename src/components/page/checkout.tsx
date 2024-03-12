@@ -256,7 +256,7 @@ export const Checkout = () => {
     }, [productsWrapperElement]);
 
     useEffect(() => {
-        // if (autoClickCompleteOrderOnLoad)  onClickOrderButton();
+        if (autoClickCompleteOrderOnLoad)  onClickOrderButton();
         const ageRestrictedProducts = products && products.filter((product) => product.isAgeRescricted).map((product) => product.name);
         if (ageRestrictedProducts && ageRestrictedProducts.length > 0) {
             setShowModal(ageRestrictedProducts.toString());
