@@ -702,6 +702,18 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
         printer.newLine();
     }
 
+
+    order.discount &&
+    printer.tableCustom([
+        { text: "Discount", align: "LEFT", width: 0.75, bold: true },
+        {
+            text: `-\$${convertCentsToDollars(order.discount)}`,
+            align: "RIGHT",
+            width: 0.25,
+            bold: true,
+        },
+    ]);
+
     if (order.displayPaymentRequiredMessage) {
         printer.newLine();
         printer.alignCenter();
@@ -992,6 +1004,28 @@ export const printKitchenReceiptSmall = async (
     if (order.notes) {
         printer.println(`Notes: ${order.notes}`);
         printer.newLine();
+    }
+
+    order.discount &&
+    printer.tableCustom([
+        { text: "Discount", align: "LEFT", width: 0.75, bold: true },
+        {
+            text: `-\$${convertCentsToDollars(order.discount)}`,
+            align: "RIGHT",
+            width: 0.25,
+            bold: true,
+        },
+    ]);
+
+    if (order.displayPaymentRequiredMessage) {
+        printer.newLine();
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.bold(true);
+        printer.println(`Total: $${convertCentsToDollars(order.subTotal)}`);
+        printer.bold(false);
+        printer.setTextNormal();
+        printer.alignLeft();
     }
 
     if (order.displayPaymentRequiredMessage) {
@@ -1306,6 +1340,17 @@ export const printKitchenReceiptLarge = async (
         printer.setTextNormal();
         printer.newLine();
     }
+
+    order.discount &&
+    printer.tableCustom([
+        { text: "Discount", align: "LEFT", width: 0.75, bold: true },
+        {
+            text: `-\$${convertCentsToDollars(order.discount)}`,
+            align: "RIGHT",
+            width: 0.25,
+            bold: true,
+        },
+    ]);
 
     if (order.displayPaymentRequiredMessage) {
         printer.newLine();
