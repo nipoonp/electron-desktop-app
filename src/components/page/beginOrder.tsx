@@ -55,31 +55,52 @@ export default () => {
 
     const onClickStore2 = async () => {
         const now = new Date();
+        const dayOfWeek = now.getDay(); // Sunday - 0, Monday - 1, ..., Saturday - 6
         const hours = now.getHours();
         const minutes = now.getMinutes();
         const currentTimeInMinutes = hours * 60 + minutes; // Convert current time to minutes
-        const startTimeInMinutes = 8 * 60; // 8am in minutes
-        const endTimeInMinutes = 14 * 60 + 30; // 2:30pm in minutes
-
-        // Check if the current time is between 8am and 2:30pm
-        if (currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes) {
-            // Boss Don
+    
+        let isOpen = false;
+        let startTimeInMinutes;
+        let endTimeInMinutes = 14 * 60 + 30; // 2:30pm in minutes, common closing time for all open days
+    
+        switch (dayOfWeek) {
+            case 0: // Sunday
+            case 6: // Saturday
+                startTimeInMinutes = 8 * 60; // 8am in minutes
+                isOpen = currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
+                break;
+            case 1: // Monday
+            case 2: // Tuesday
+                isOpen = false; // Closed all day
+                break;
+            case 3: // Wednesday
+            case 4: // Thursday
+            case 5: // Friday
+                startTimeInMinutes = 8 * 60 + 30; // 8:30am in minutes
+                isOpen = currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
+                break;
+        }
+    
+        if (isOpen) {
+            // Business Logic for Open Hours
             await disconnectRegister(restaurantRegister1);
-
+    
             // await delay(1000);
-
+    
             selectRestaurant(restaurant2);
-
+    
             await delay(1000);
-
+    
             await connectRegister(restaurantRegister2);
-
+    
             navigate(restaurantPath + "/" + restaurant2);
         } else {
-            // If not between 8am and 2:30pm, display an alert to the user
-            toast.error("This store is only open between 8am and 2:30pm.");
+            // If not within the specified operating hours, display an error message
+            toast.error("This store is currently closed. Please check our operating hours.");
         }
     };
+    
 
     return (
         <>
