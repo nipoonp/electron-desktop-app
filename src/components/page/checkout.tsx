@@ -264,21 +264,30 @@ export const Checkout = () => {
             setShowModal("");
         }
 
-        if(restaurant){
-            const isBetween=isCurrentTimeWithinOperatingHours(restaurant.operatingHours);
-            setIsBetweenOperatingHours(!isBetween)
-            setIsBetweenOperatingHoursOpen(!isBetween)
-            setStoreMessage("Store is not open for this time.")
-        }
+        // if(restaurant){
+        //     const isBetween=isCurrentTimeWithinOperatingHours(restaurant.operatingHours);
+        //     setIsBetweenOperatingHours(!isBetween)
+        //     setIsBetweenOperatingHoursOpen(!isBetween)
+        //     setStoreMessage("Store is not open for this time.")
+        // }
        
     }, []);
 
     useEffect(()=>{
         if(restaurant){
-            const isOrderAllow=getTotalOrdersAllow(restaurant.operatingHours, orders?.length || 0)
-            setIsBetweenOperatingHours(!isOrderAllow)
-            setIsBetweenOperatingHoursOpen(!isOrderAllow)
-            setStoreMessage("Store order limit is over.")
+            const isBetween=isCurrentTimeWithinOperatingHours(restaurant.operatingHours);
+          
+            if(isBetween){
+                const isOrderAllow=getTotalOrdersAllow(restaurant.operatingHours, orders?.length || 0)
+                setIsBetweenOperatingHours(!isOrderAllow)
+                setIsBetweenOperatingHoursOpen(!isOrderAllow)
+                setStoreMessage("Store order limit is over.")
+            }
+            else{
+                setIsBetweenOperatingHours(!isBetween)
+                setIsBetweenOperatingHoursOpen(!isBetween)
+                setStoreMessage("Store is not open for this time.")
+            }
         }
     },[orders])
 

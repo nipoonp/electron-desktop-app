@@ -898,29 +898,13 @@ export const getRestaurantTimings = (operatingHours: IGET_RESTAURANT_OPERATING_H
 };
 
 export const isCurrentTimeWithinOperatingHours=(operatingHours:IGET_RESTAURANT_OPERATING_HOURS) =>{
-    const today = new Date();
-    const currentDay = today.getDay();
-
-    const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const currentDayString = daysOfWeek[currentDay].toLowerCase(); 
-
-    if (operatingHours[currentDayString] && operatingHours[currentDayString].length > 0) {
-        const currentHour = today.getHours();
-        const currentMinute = today.getMinutes();
-
-        const openingHour = parseInt(operatingHours[currentDayString][0].openingTime.split(":")[0], 10);
-        const openingMinute = parseInt(operatingHours[currentDayString][0].openingTime.split(":")[1], 10);
-
-        const closingHour = parseInt(operatingHours[currentDayString][0].closingTime.split(":")[0], 10);
-        const closingMinute = parseInt(operatingHours[currentDayString][0].closingTime.split(":")[1], 10);
-
-        const isAfterOpeningTime = currentHour > openingHour || (currentHour === openingHour && currentMinute >= openingMinute);
-        const isBeforeClosingTime = currentHour < closingHour || (currentHour === closingHour && currentMinute <= closingMinute);
-
-        return isAfterOpeningTime && isBeforeClosingTime;
+    const setifyHour=checkIsCurrentTimeBetween(operatingHours);
+    console.log('setifyHour',setifyHour)
+    if(setifyHour){
+        return true
     }
     else{
-        return true
+        return false
     }
 }
 
@@ -931,10 +915,51 @@ export const getTotalOrdersAllow=(operatingHours:IGET_RESTAURANT_OPERATING_HOURS
     const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const currentDayString = daysOfWeek[currentDay].toLowerCase(); 
     if (operatingHours[currentDayString] && operatingHours[currentDayString].length > 0) {
-        console.log('return Number(operatingHours[currentDayString][0].ordersValue) > Number(allow)', Number(operatingHours[currentDayString][0].ordersValue) , Number(allow))
-        return Number(operatingHours[currentDayString][0].ordersValue) > Number(allow);
+       
+        const setifyHour=checkIsCurrentTimeBetween(operatingHours);
+        console.log('setifyHour',setifyHour)
+        if(setifyHour){
+            if(setifyHour.ordersValue !== ""){
+                return Number(setifyHour.ordersValue) > Number(allow);
+            }
+            else{
+                return true;
+            }
+        }
+        else{
+            return false;
+        }
+
     }
     else{
         return true;
     }
+}
+
+const checkIsCurrentTimeBetween=(operatingHours:IGET_RESTAURANT_OPERATING_HOURS)=>{
+    const today = new Date();
+    const currentHour = today.getHours();
+    const currentMinute = today.getMinutes();
+    const currentDay = today.getDay();
+
+    const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const currentDayString = daysOfWeek[currentDay].toLowerCase(); 
+
+    for (let i = 0; i < operatingHours[currentDayString].length; i++) {
+        const element = operatingHours[currentDayString][i];
+        
+        const openingHour = parseInt(element.openingTime.split(":")[0], 10);
+        const openingMinute = parseInt(element.openingTime.split(":")[1], 10);
+
+        const closingHour = parseInt(element.closingTime.split(":")[0], 10);
+        const closingMinute = parseInt(element.closingTime.split(":")[1], 10);
+
+        const isAfterOpeningTime = currentHour > openingHour || (currentHour === openingHour && currentMinute >= openingMinute);
+        const isBeforeClosingTime = currentHour < closingHour || (currentHour === closingHour && currentMinute <= closingMinute);
+
+        if(isAfterOpeningTime &&  isBeforeClosingTime){
+            return element
+        }
+    }
+
 }
