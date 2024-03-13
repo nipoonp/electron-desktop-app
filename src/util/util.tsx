@@ -945,21 +945,50 @@ const checkIsCurrentTimeBetween=(operatingHours:IGET_RESTAURANT_OPERATING_HOURS)
     const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const currentDayString = daysOfWeek[currentDay].toLowerCase(); 
 
+    // for (let i = 0; i < operatingHours[currentDayString].length; i++) {
+    //     const element = operatingHours[currentDayString][i];
+        
+    //     const openingHour = parseInt(element.openingTime.split(":")[0], 10);
+    //     const openingMinute = parseInt(element.openingTime.split(":")[1], 10);
+
+    //     const closingHour = parseInt(element.closingTime.split(":")[0], 10);
+    //     const closingMinute = parseInt(element.closingTime.split(":")[1], 10);
+    //     console.log(`${openingHour}:${openingMinute} - ${closingHour}:${closingMinute}`)
+    //     console.log(`${currentHour}:${currentMinute}`)
+    //     const isAfterOpeningTime = currentHour > openingHour || (currentHour === openingHour && currentMinute >= openingMinute);
+    //     const isBeforeClosingTime = currentHour < closingHour || (currentHour === closingHour && currentMinute <= closingMinute);
+    //     console.log('isAfterOpeningTime &&  isBeforeClosingTime',isAfterOpeningTime ,  isBeforeClosingTime)
+    //     if(isAfterOpeningTime &&  isBeforeClosingTime){
+    //         return element
+    //     }
+    // }
     for (let i = 0; i < operatingHours[currentDayString].length; i++) {
         const element = operatingHours[currentDayString][i];
         
-        const openingHour = parseInt(element.openingTime.split(":")[0], 10);
-        const openingMinute = parseInt(element.openingTime.split(":")[1], 10);
-
-        const closingHour = parseInt(element.closingTime.split(":")[0], 10);
-        const closingMinute = parseInt(element.closingTime.split(":")[1], 10);
-
-        const isAfterOpeningTime = currentHour > openingHour || (currentHour === openingHour && currentMinute >= openingMinute);
-        const isBeforeClosingTime = currentHour < closingHour || (currentHour === closingHour && currentMinute <= closingMinute);
-
-        if(isAfterOpeningTime &&  isBeforeClosingTime){
-            return element
+        const isOpen = isTimeBetween(element.openingTime, element.closingTime, `${currentHour}:${currentMinute}`);
+        
+        if (isOpen) {
+            return element; 
         }
     }
 
+}
+
+function isTimeBetween(startTime, endTime, checkTime) {
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const [endHour, endMinute] = endTime.split(':').map(Number);
+    const [checkHour, checkMinute] = checkTime.split(':').map(Number);
+    
+    let startTotalMinutes = startHour * 60 + startMinute;
+    let endTotalMinutes = endHour * 60 + endMinute;
+    let checkTotalMinutes = checkHour * 60 + checkMinute;
+   
+    if(startTotalMinutes === endTotalMinutes){
+        return true
+    }
+    else if (endTotalMinutes < startTotalMinutes) {
+        endTotalMinutes += 24 * 60; 
+    }
+    
+    return startTotalMinutes <= checkTotalMinutes && checkTotalMinutes <= endTotalMinutes;
 }
