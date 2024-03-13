@@ -931,7 +931,8 @@ export const getTotalOrdersAllow=(operatingHours:IGET_RESTAURANT_OPERATING_HOURS
     const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const currentDayString = daysOfWeek[currentDay].toLowerCase(); 
     if (operatingHours[currentDayString] && operatingHours[currentDayString].length > 0) {
-        return Number(operatingHours[currentDayString][0].ordersValue) >= Number(allow);
+        console.log('return Number(operatingHours[currentDayString][0].ordersValue) > Number(allow)', Number(operatingHours[currentDayString][0].ordersValue) , Number(allow))
+        return Number(operatingHours[currentDayString][0].ordersValue) > Number(allow);
     }
     else{
         return true;
