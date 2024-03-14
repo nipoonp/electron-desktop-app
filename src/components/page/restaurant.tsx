@@ -136,7 +136,9 @@ const Restaurant = () => {
 
     window.addEventListener("resize", checkDivScrollable);
 
-    checkDivScrollable();
+    setTimeout(() => {
+      checkDivScrollable();
+    }, 1000);
 
     return () => {
       window.removeEventListener("resize", checkDivScrollable);

@@ -919,8 +919,8 @@ export const getTotalOrdersAllow=(operatingHours:IGET_RESTAURANT_OPERATING_HOURS
         const setifyHour=checkIsCurrentTimeBetween(operatingHours);
         console.log('setifyHour',setifyHour)
         if(setifyHour){
-            if(setifyHour.ordersValue !== ""){
-                return Number(setifyHour.ordersValue) > Number(allow);
+            if(setifyHour.operatingTimeThreshold !== ""){
+                return Number(setifyHour.operatingTimeThreshold) > Number(allow);
             }
             else{
                 return true;
