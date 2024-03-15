@@ -865,7 +865,7 @@ const Restaurant = () => {
                 {menuMostPopularProducts}
                 {menuProducts}
                 {isScrollable?
-                  <div className={register.type==="POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
+                  <div className={register.type==="POS" ? "pop-arrow-bottom fixed-button" : "fixed-button"} onClick={scrollDown}>
                     <div className={`arrow-container`}>
                       <FiArrowDownCircle size="46" />
                     </div>

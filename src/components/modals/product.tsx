@@ -989,7 +989,7 @@ export const ProductModal = (props: {
           {!currentSelectedProductModifier && productNotes}
         </div>
         {isScrollable ? (
-          <div className={register?.type==="POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
+          <div className={register?.type==="POS" ? "display-none fixed-button" : "fixed-button"} onClick={scrollDown}>
               <div className={`arrow-containerModel ${isScrollable ? 'fade-in' : 'fade-out'}`}>
                   <FiArrowDownCircle size="46" />
               </div>

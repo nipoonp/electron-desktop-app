@@ -1699,7 +1699,7 @@ export const Checkout = () => {
                             {(!products || products.length == 0) && cartEmptyDisplay}
                             {products && products.length > 0 && order}
                             {isScrollable ? (
-                                <div className={register.type==="POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
+                                <div className={register.type==="POS" ? "display-none fixed-button" : "fixed-button"} onClick={scrollDown}>
                                     <div className={`arrow-container ${isScrollable ? 'fade-in' : 'fade-out'}`}>
                                         <FiArrowDownCircle size="46"  />
                                     </div>
