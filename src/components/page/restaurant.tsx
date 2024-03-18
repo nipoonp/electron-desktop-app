@@ -114,6 +114,29 @@ const Restaurant = () => {
   const shakeButtonDurationSeconds = 5;
   const userOnPageDuration: React.MutableRefObject<number> = useRef(1);
   const [isScrollable, setIsScrollable] = useState(false);
+  const [hideMostPopularCategory,setHideMostPopularCategory]=useState(false);
+
+  useEffect(()=>{
+    if(register && register.requestCustomerInformation){
+      setHideMostPopularCategory(register.requestCustomerInformation.hideMostPopularCategory)
+      if(restaurant && register.requestCustomerInformation.hideMostPopularCategory){
+        for (let i = 0; i < restaurant.categories.items.length; i++) {
+          const element = restaurant.categories.items[i];
+          const isSoldOut = isItemSoldOut(element.soldOut, element.soldOutDate);
+          const isAvailable = isItemAvailable(element.availability);
+
+          const isValid = !isSoldOut && isAvailable;
+        
+          if(isValid){
+            setSelectedCategory(element);
+            return;
+          }
+        }
+      }
+    }    
+  },[]);
+
+  
 
   useEffect(() => {
     const checkDivScrollable = () => {
@@ -858,7 +881,11 @@ const Restaurant = () => {
                 {restaurant.logo && <RestaurantLogo image={restaurant.logo} />}
                 {menuSearchProduct}
                 {register.enableSkuScanner && menuSkuSearchProduct}
-                {menuMostPopularCategory}
+                {
+                  hideMostPopularCategory===false ? 
+                    menuMostPopularCategory : 
+                    null
+                }
                 {menuCategories}
               </div>
               <div className="products-wrapper" id="productsWrapperScroll">

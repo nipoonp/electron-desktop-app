@@ -386,6 +386,7 @@ export const GET_RESTAURANT = gql`
                         email
                         phoneNumber
                         signature
+                        hideMostPopularCategory
                     }
                     eftposProvider
                     eftposIpAddress
@@ -1045,6 +1046,7 @@ export interface RequestCustomerInformationType {
     email: boolean;
     phoneNumber: boolean;
     signature: boolean;
+    hideMostPopularCategory: boolean;
 }
 
 export interface OrderTypeSurchargeType {
