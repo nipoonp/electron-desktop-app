@@ -52,7 +52,9 @@ export default () => {
                 <div className="restaurant-list">
                     <div className="h2 mb-6">Select a restaurant to access</div>
                     {userRestaurants &&
-                        userRestaurants.map((userRestaurant, index) => (
+                        userRestaurants
+                        .sort((a,b)=>a.name.localeCompare(b.name))
+                        .map((userRestaurant, index) => (
                             <div key={userRestaurant.id}>
                                 {index != 0 && <div className="separator-4"></div>}
                                 <div className="restaurant-list-item">
