@@ -117,9 +117,9 @@ const Restaurant = () => {
   const [hideMostPopularCategory,setHideMostPopularCategory]=useState(false);
 
   useEffect(()=>{
-    if(register && register.requestCustomerInformation){
-      setHideMostPopularCategory(register.requestCustomerInformation.hideMostPopularCategory)
-      if(restaurant && register.requestCustomerInformation.hideMostPopularCategory){
+    if(register){
+      setHideMostPopularCategory(register.hideMostPopularCategory)
+      if(restaurant && register.hideMostPopularCategory){
         for (let i = 0; i < restaurant.categories.items.length; i++) {
           const element = restaurant.categories.items[i];
           const isSoldOut = isItemSoldOut(element.soldOut, element.soldOutDate);

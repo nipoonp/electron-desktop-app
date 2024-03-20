@@ -386,8 +386,8 @@ export const GET_RESTAURANT = gql`
                         email
                         phoneNumber
                         signature
-                        hideMostPopularCategory
                     }
+                    hideMostPopularCategory
                     eftposProvider
                     eftposIpAddress
                     eftposPortNumber
@@ -1023,6 +1023,7 @@ export interface IGET_RESTAURANT_REGISTER {
     orderTypeSurcharge: OrderTypeSurchargeType;
     type: ERegisterType;
     requestCustomerInformation?: RequestCustomerInformationType;
+    hideMostPopularCategory: boolean;
     eftposProvider: string;
     eftposIpAddress: string;
     eftposPortNumber: string;
@@ -1046,7 +1047,6 @@ export interface RequestCustomerInformationType {
     email: boolean;
     phoneNumber: boolean;
     signature: boolean;
-    hideMostPopularCategory: boolean;
 }
 
 export interface OrderTypeSurchargeType {
