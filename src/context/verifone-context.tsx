@@ -449,6 +449,13 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             // Return Transaction Outcome -------------------------------------------------------------------------------------------------------------------------------- //
             let transactionOutcome: IEftposTransactionOutcome | null = null;
 
+            if (iSO8583ResponseCode === "09") {
+                // We should not come in here if its on kiosk mode, unattended mode for Verifone
+                console.log("Transaction Approved With Signature");
+                addToLogs("Transaction Approved With Signature");
+                transactionApprovedWithSignature = true;
+            }
+
             switch (iSO8583ResponseCode) {
                 case "00":
                     transactionOutcome = {
@@ -458,25 +465,24 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                         eftposReceipt: eftposReceipt.current,
                     };
                     break;
-                case "09":
-                    // We should not come in here if its on kiosk mode, unattended mode for Verifone
-                    transactionApprovedWithSignature = true;
-                    // if ((register && register.skipEftposReceiptSignature) || isPOS) {
-                    // transactionOutcome = {
-                    //     platformTransactionOutcome: EVerifoneTransactionOutcome.Approved,
-                    //     transactionOutcome: EEftposTransactionOutcome.Success,
-                    //     message: "Transaction Approved With Signature!",
-                    //     eftposReceipt: eftposReceipt.current,
-                    // };
-                    // } else {
-                    //     transactionOutcome = {
-                    //         platformTransactionOutcome: EVerifoneTransactionOutcome.ApprovedWithSignature,
-                    //         transactionOutcome: EEftposTransactionOutcome.Fail,
-                    //         message: "Transaction Approved With Signature Not Allowed In Kiosk Mode!",
-                    //         eftposReceipt: eftposReceipt.current,
-                    //     };
-                    // }
-                    break;
+                // case "09":
+                //     // We should not come in here if its on kiosk mode, unattended mode for Verifone
+                //     // if ((register && register.skipEftposReceiptSignature) || isPOS) {
+                //     // transactionOutcome = {
+                //     //     platformTransactionOutcome: EVerifoneTransactionOutcome.Approved,
+                //     //     transactionOutcome: EEftposTransactionOutcome.Success,
+                //     //     message: "Transaction Approved With Signature!",
+                //     //     eftposReceipt: eftposReceipt.current,
+                //     // };
+                //     // } else {
+                //     //     transactionOutcome = {
+                //     //         platformTransactionOutcome: EVerifoneTransactionOutcome.ApprovedWithSignature,
+                //     //         transactionOutcome: EEftposTransactionOutcome.Fail,
+                //     //         message: "Transaction Approved With Signature Not Allowed In Kiosk Mode!",
+                //     //         eftposReceipt: eftposReceipt.current,
+                //     //     };
+                //     // }
+                //     break;
                 case "CC":
                     transactionOutcome = {
                         platformTransactionOutcome: EVerifoneTransactionOutcome.Cancelled,
