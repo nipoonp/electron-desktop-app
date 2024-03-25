@@ -347,6 +347,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         const merchantId = 0;
         let iSO8583ResponseCode;
 
+        let transactionApprovedWithSignature = false;
+
         readyToPrintRequestReplySent.current = false;
         printRequestReplySent.current = false;
 
@@ -458,13 +460,14 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     break;
                 case "09":
                     // We should not come in here if its on kiosk mode, unattended mode for Verifone
+                    transactionApprovedWithSignature = true;
                     // if ((register && register.skipEftposReceiptSignature) || isPOS) {
-                    transactionOutcome = {
-                        platformTransactionOutcome: EVerifoneTransactionOutcome.Approved,
-                        transactionOutcome: EEftposTransactionOutcome.Success,
-                        message: "Transaction Approved With Signature!",
-                        eftposReceipt: eftposReceipt.current,
-                    };
+                    // transactionOutcome = {
+                    //     platformTransactionOutcome: EVerifoneTransactionOutcome.Approved,
+                    //     transactionOutcome: EEftposTransactionOutcome.Success,
+                    //     message: "Transaction Approved With Signature!",
+                    //     eftposReceipt: eftposReceipt.current,
+                    // };
                     // } else {
                     //     transactionOutcome = {
                     //         platformTransactionOutcome: EVerifoneTransactionOutcome.ApprovedWithSignature,
@@ -483,12 +486,22 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     };
                     break;
                 case "55":
-                    transactionOutcome = {
-                        platformTransactionOutcome: EVerifoneTransactionOutcome.Declined,
-                        transactionOutcome: EEftposTransactionOutcome.Fail,
-                        message: "Transaction Declined! Please try again.",
-                        eftposReceipt: eftposReceipt.current,
-                    };
+                    //Accept the transaction if it was accepted with signature. Cannot end with "09" condition as it shows that transaction is still not completed.
+                    if (transactionApprovedWithSignature) {
+                        transactionOutcome = {
+                            platformTransactionOutcome: EVerifoneTransactionOutcome.Approved,
+                            transactionOutcome: EEftposTransactionOutcome.Success,
+                            message: "Transaction Approved With Signature!",
+                            eftposReceipt: eftposReceipt.current,
+                        };
+                    } else {
+                        transactionOutcome = {
+                            platformTransactionOutcome: EVerifoneTransactionOutcome.Declined,
+                            transactionOutcome: EEftposTransactionOutcome.Fail,
+                            message: "Transaction Declined! Please try again.",
+                            eftposReceipt: eftposReceipt.current,
+                        };
+                    }
                     break;
                 case "90":
                     // You should never come in this state. Don't even know what settledOk is. Cannot find any references in docs as well.
