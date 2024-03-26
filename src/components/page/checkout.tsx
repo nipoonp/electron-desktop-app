@@ -187,29 +187,28 @@ export const Checkout = () => {
 
     useEffect(() => {
         const checkDivScrollable = () => {
-          const scrollableDiv = document.getElementById("productsWrapperScroll");
-          const arrowContainer = document.querySelector('.arrow-container');
-          const footer=document.getElementById("footer");
-          if (scrollableDiv) {
-            const isDivScrollable =
-              scrollableDiv.scrollHeight+(footer?.scrollHeight||0) > scrollableDiv.clientHeight;
-            setIsScrollable(isDivScrollable);
-            if (isDivScrollable) {
-                arrowContainer?.classList.remove('fade-out');
-                arrowContainer?.classList.add('fade-in');
-              } else {
-                arrowContainer?.classList.remove('fade-in');
-                arrowContainer?.classList.add('fade-out');
-              }
-          }
+            const scrollableDiv = document.getElementById("productsWrapperScroll");
+            const arrowContainer = document.querySelector(".arrow-container");
+            const footer = document.getElementById("footer");
+            if (scrollableDiv) {
+                const isDivScrollable = scrollableDiv.scrollHeight + (footer?.scrollHeight || 0) > scrollableDiv.clientHeight;
+                setIsScrollable(isDivScrollable);
+                if (isDivScrollable) {
+                    arrowContainer?.classList.remove("fade-out");
+                    arrowContainer?.classList.add("fade-in");
+                } else {
+                    arrowContainer?.classList.remove("fade-in");
+                    arrowContainer?.classList.add("fade-out");
+                }
+            }
         };
-    
+
         window.addEventListener("resize", checkDivScrollable);
-    
+
         checkDivScrollable();
-    
+
         return () => {
-          window.removeEventListener("resize", checkDivScrollable);
+            window.removeEventListener("resize", checkDivScrollable);
         };
     }, []);
 
@@ -217,27 +216,27 @@ export const Checkout = () => {
 
     useEffect(() => {
         const handleScroll = () => {
-        const scrollableDiv = document.getElementById("productsWrapperScroll");
-        const arrowContainer = document.querySelector('.arrow-container');
-  
-        if (scrollableDiv) {
-            const isAtBottom = scrollableDiv.scrollTop + scrollableDiv.clientHeight === scrollableDiv.scrollHeight;
-            if (!isAtBottom) {
-                arrowContainer?.classList.remove('fade-out');
-                arrowContainer?.classList.add('fade-in');
-            } else {
-                arrowContainer?.classList.remove('fade-in');
-                arrowContainer?.classList.add('fade-out');
+            const scrollableDiv = document.getElementById("productsWrapperScroll");
+            const arrowContainer = document.querySelector(".arrow-container");
+
+            if (scrollableDiv) {
+                const isAtBottom = scrollableDiv.scrollTop + scrollableDiv.clientHeight === scrollableDiv.scrollHeight;
+                if (!isAtBottom) {
+                    arrowContainer?.classList.remove("fade-out");
+                    arrowContainer?.classList.add("fade-in");
+                } else {
+                    arrowContainer?.classList.remove("fade-in");
+                    arrowContainer?.classList.add("fade-out");
+                }
             }
-        }
         };
 
         const productsWrapperScroll = document.getElementById("productsWrapperScroll");
-        if(productsWrapperScroll){
-        productsWrapperScroll.addEventListener('scroll', handleScroll);
-        return () => {
-            productsWrapperScroll.removeEventListener('scroll', handleScroll);
-        };
+        if (productsWrapperScroll) {
+            productsWrapperScroll.addEventListener("scroll", handleScroll);
+            return () => {
+                productsWrapperScroll.removeEventListener("scroll", handleScroll);
+            };
         }
     }, [productsWrapperElement]);
 
@@ -1238,10 +1237,14 @@ export const Checkout = () => {
 
                         upSellCrossSellProducts.forEach((upSellProduct) => {
                             if (p.product.id === upSellProduct.id) {
-                                upSellCrossSaleProductItems.push({
-                                    category: category,
-                                    product: p.product,
-                                });
+                                const isAlreadyAdded = upSellCrossSaleProductItems.some((item) => item.product.id === upSellProduct.id);
+
+                                if (!isAlreadyAdded) {
+                                    upSellCrossSaleProductItems.push({
+                                        category: category,
+                                        product: p.product,
+                                    });
+                                }
                             }
                         });
                     });
@@ -1531,7 +1534,7 @@ export const Checkout = () => {
     const scrollDown = () => {
         const scrollableDiv = document.getElementById("productsWrapperScroll");
         if (scrollableDiv) {
-          scrollableDiv.scrollTop += 100;
+            scrollableDiv.scrollTop += 100;
         }
     };
 
@@ -1621,20 +1624,28 @@ export const Checkout = () => {
             <PageWrapper>
                 <div className="checkout">
                     <div className="order-wrapper">
-                        <div ref={(ref) => setProductsWrapperElement(ref)} className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`} id="productsWrapperScroll">
+                        <div
+                            ref={(ref) => setProductsWrapperElement(ref)}
+                            className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`}
+                            id="productsWrapperScroll"
+                        >
                             {(!products || products.length == 0) && cartEmptyDisplay}
                             {products && products.length > 0 && order}
                             {isScrollable ? (
-                                <div className={register.type==="POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
-                                    <div className={`arrow-container ${isScrollable ? 'fade-in' : 'fade-out'}`}>
-                                        <FiArrowDownCircle size="46"  />
+                                <div className={register.type === "POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
+                                    <div className={`arrow-container ${isScrollable ? "fade-in" : "fade-out"}`}>
+                                        <FiArrowDownCircle size="46" />
                                     </div>
                                 </div>
-                            ):null}
+                            ) : null}
                         </div>
                     </div>
                     {isPOS && payments.length === 0 && <div>{parkOrderFooter}</div>}
-                    {products && products.length > 0 && <div className="footer p-4" id="footer">{checkoutFooter}</div>}
+                    {products && products.length > 0 && (
+                        <div className="footer p-4" id="footer">
+                            {checkoutFooter}
+                        </div>
+                    )}
                 </div>
                 {r18MessageModal()}
                 {modalsAndSpinners}
