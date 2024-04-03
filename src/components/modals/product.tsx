@@ -87,7 +87,7 @@ export const ProductModal = (props: {
           product.modifierGroups.items.forEach((modifierGroupLink) => {
               modifierGroupLink.modifierGroup.modifiers &&
                   modifierGroupLink.modifierGroup.modifiers.items.map((modifierLink) => {
-                      if (modifierLink.preSelectedQuantity) {
+                      if (modifierLink.modifier.preSelectedQuantity) {
                           if (newOrderedModifiers[modifierGroupLink.modifierGroup.id] === undefined) {
                               newOrderedModifiers[modifierGroupLink.modifierGroup.id] = [];
                           }
@@ -101,8 +101,8 @@ export const ProductModal = (props: {
                                       name: modifierLink.modifier.name,
                                       kitchenName: modifierLink.modifier.kitchenName,
                                       price: modifierLink.modifier.price,
-                                      preSelectedQuantity: modifierLink.preSelectedQuantity,
-                                      quantity: modifierLink.preSelectedQuantity,
+                                      preSelectedQuantity: modifierLink.modifier.preSelectedQuantity,
+                                      quantity: modifierLink.modifier.preSelectedQuantity,
                                       productModifiers: null,
                                       image: modifierLink.modifier.image
                                           ? {
@@ -824,7 +824,7 @@ export const ProductModal = (props: {
     <>
       {product.modifierGroups &&
         product.modifierGroups.items.map((mg) => {
-          if (mg.hideForCustomer) return;
+          if (mg.modifierGroup.hideForCustomer) return;
           if (
             register &&
             mg.modifierGroup.availablePlatforms &&

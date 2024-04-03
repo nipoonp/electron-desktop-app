@@ -671,7 +671,6 @@ export const GET_RESTAURANT = gql`
                                     items {
                                         id
                                         displaySequence
-                                        hideForCustomer
                                         modifierGroup {
                                             id
                                             name
@@ -680,19 +679,20 @@ export const GET_RESTAURANT = gql`
                                             choiceMax
                                             choiceDuplicate
                                             collapsedByDefault
+                                            hideForCustomer
                                             availablePlatforms
                                             alphabeticalSorting
                                             modifiers(limit: 50) {
                                                 items {
                                                     id
                                                     displaySequence
-                                                    preSelectedQuantity
                                                     modifier {
                                                         id
                                                         name
                                                         kitchenName
                                                         description
                                                         price
+                                                        preSelectedQuantity
                                                         imageUrl
                                                         image {
                                                             key
@@ -774,7 +774,6 @@ export const GET_RESTAURANT = gql`
                                                                 items {
                                                                     id
                                                                     displaySequence
-                                                                    hideForCustomer
                                                                     modifierGroup {
                                                                         id
                                                                         name
@@ -783,17 +782,18 @@ export const GET_RESTAURANT = gql`
                                                                         choiceMax
                                                                         choiceDuplicate
                                                                         collapsedByDefault
+                                                                        hideForCustomer
                                                                         availablePlatforms
                                                                         modifiers(limit: 50) {
                                                                             items {
                                                                                 id
                                                                                 displaySequence
-                                                                                preSelectedQuantity
                                                                                 modifier {
                                                                                     id
                                                                                     name
                                                                                     kitchenName
                                                                                     price
+                                                                                    preSelectedQuantity
                                                                                     imageUrl
                                                                                     image {
                                                                                         key
@@ -1281,6 +1281,7 @@ export interface IGET_RESTAURANT_MODIFIER_GROUP {
     choiceMax: number;
     choiceDuplicate: number;
     collapsedByDefault?: boolean | null;
+    hideForCustomer?: boolean | null;
     availablePlatforms: ERegisterType[];
     alphabeticalSorting: boolean;
     modifiers?: {
@@ -1301,6 +1302,7 @@ export interface IGET_RESTAURANT_MODIFIER {
     kitchenName: string | null;
     description: string;
     price: number;
+    preSelectedQuantity: number;
     imageUrl?: string;
     image?: IS3Object;
     totalQuantitySold?: number;
@@ -1547,7 +1549,6 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                     items {
                         id
                         displaySequence
-                        hideForCustomer
                         modifierGroup {
                             id
                             name
@@ -1555,16 +1556,17 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                             choiceMax
                             choiceDuplicate
                             collapsedByDefault
+                            hideForCustomer
                             availablePlatforms
                             modifiers(limit: 500) {
                                 items {
                                     id
                                     displaySequence
-                                    preSelectedQuantity
                                     modifier {
                                         id
                                         name
                                         price
+                                        preSelectedQuantity
                                         imageUrl
                                         image {
                                             key
@@ -1643,7 +1645,6 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                 items {
                                                     id
                                                     displaySequence
-                                                    hideForCustomer
                                                     modifierGroup {
                                                         id
                                                         name
@@ -1651,16 +1652,17 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                         choiceMax
                                                         choiceDuplicate
                                                         collapsedByDefault
+                                                        hideForCustomer
                                                         availablePlatforms
                                                         modifiers(limit: 500) {
                                                             items {
                                                                 id
                                                                 displaySequence
-                                                                preSelectedQuantity
                                                                 modifier {
                                                                     id
                                                                     name
                                                                     price
+                                                                    preSelectedQuantity
                                                                     imageUrl
                                                                     image {
                                                                         key
