@@ -85,6 +85,9 @@ export const ProductModal = (props: {
 
       product.modifierGroups &&
           product.modifierGroups.items.forEach((modifierGroupLink) => {
+            console.log('modifierGroupLink',modifierGroupLink);
+            const choiceMin=modifierGroupLink.modifierGroup.choiceMin;
+            const choiceMax=modifierGroupLink.modifierGroup.choiceMax;
               modifierGroupLink.modifierGroup.modifiers &&
                   modifierGroupLink.modifierGroup.modifiers.items.map((modifierLink) => {
                       if (modifierLink.modifier.preSelectedQuantity) {
@@ -101,8 +104,8 @@ export const ProductModal = (props: {
                                       name: modifierLink.modifier.name,
                                       kitchenName: modifierLink.modifier.kitchenName,
                                       price: modifierLink.modifier.price,
-                                      preSelectedQuantity: modifierLink.modifier.preSelectedQuantity,
-                                      quantity: modifierLink.modifier.preSelectedQuantity,
+                                      preSelectedQuantity:choiceMax > modifierLink.modifier.preSelectedQuantity ? modifierLink.modifier.preSelectedQuantity: choiceMax,
+                                      quantity: choiceMax > modifierLink.modifier.preSelectedQuantity ? modifierLink.modifier.preSelectedQuantity: choiceMax,
                                       productModifiers: null,
                                       image: modifierLink.modifier.image
                                           ? {
