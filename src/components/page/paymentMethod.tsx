@@ -86,8 +86,10 @@ const PaymentMethod= () => {
 
     const onSelectPaymentMethod = async(paymentMethod: EPaymentMethod) => {
         try {
-            const res: ICartProduct[] | unknown=await removeSoldoutProduct();
-            console.log('onSelectPaymentMethod res',res);
+            let res : ICartProduct[] | unknown = [];
+            if(register?.checkConditionsBeforeCreateOrder){
+                res=await removeSoldoutProduct();
+            }
             if(Array.isArray(res) && res?.length===0){
                 setPaymentMethod(paymentMethod);
                 navigate(`${checkoutPath}/true`);
