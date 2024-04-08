@@ -197,7 +197,8 @@ export const Checkout = () => {
     const [isBetweenOperatingHoursOpen,setIsBetweenOperatingHoursOpen]=useState<Boolean>(true);
     const [storeMessage,setStoreMessage]=useState("");
     const date =format(new Date(), "yyyy-MM-dd");
-    const { data: orders, error, loading } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant ? restaurant.id : "", date);
+    
+    // const { data: orders, error, loading } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant ? restaurant.id : "", date);
 
     useEffect(() => {
         const checkDivScrollable = () => {
@@ -275,12 +276,30 @@ export const Checkout = () => {
        
     }, []);
 
+    const { getRestaurantOrdersByBeginWithPlacedAt } = useGetRestaurantOrdersByBeginWithPlacedAt(); //Skip the first iteration. Get new orders from refetch.
+    
     useEffect(()=>{
+        if(register?.checkConditionsBeforeCreateOrder){
+            checkRestaurant()
+        }
+        else{
+            setIsBetweenOperatingHours(false)
+            setIsBetweenOperatingHoursOpen(false);
+        }
+    },[])
+
+    const checkRestaurant=async()=>{
+        const orders = await getRestaurantOrdersByBeginWithPlacedAt({
+            variables: {
+                orderRestaurantId:restaurant ? restaurant.id : "", 
+                placedAt:date
+            },
+        });
+
         if(restaurant){
             const isBetween=isCurrentTimeWithinOperatingHours(restaurant.operatingHours);
-          
             if(isBetween){
-                const isOrderAllow=getTotalOrdersAllow(restaurant.operatingHours, orders?.length || 0)
+                const isOrderAllow=getTotalOrdersAllow(restaurant.operatingHours, orders?.data?.getOrdersByRestaurantByPlacedAt?.items?.length || 0)
                 setIsBetweenOperatingHours(!isOrderAllow)
                 setIsBetweenOperatingHoursOpen(!isOrderAllow)
                 setStoreMessage("Store order limit is over.")
@@ -291,7 +310,7 @@ export const Checkout = () => {
                 setStoreMessage("Store is not open for this time.")
             }
         }
-    },[orders])
+    }
 
     useEffect(() => {
         if (isShownUpSellCrossSellModal) return;
