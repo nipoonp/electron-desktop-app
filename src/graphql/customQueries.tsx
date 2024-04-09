@@ -679,6 +679,7 @@ export const GET_RESTAURANT = gql`
                                             choiceMin
                                             choiceMax
                                             choiceDuplicate
+                                            modifierCredit
                                             collapsedByDefault
                                             hideForCustomer
                                             availablePlatforms
@@ -782,6 +783,7 @@ export const GET_RESTAURANT = gql`
                                                                         choiceMin
                                                                         choiceMax
                                                                         choiceDuplicate
+                                                                        modifierCredit
                                                                         collapsedByDefault
                                                                         hideForCustomer
                                                                         availablePlatforms
@@ -1282,6 +1284,7 @@ export interface IGET_RESTAURANT_MODIFIER_GROUP {
     choiceMin: number;
     choiceMax: number;
     choiceDuplicate: number;
+    modifierCredit: number;
     collapsedByDefault?: boolean | null;
     hideForCustomer?: boolean | null;
     availablePlatforms: ERegisterType[];
@@ -1557,6 +1560,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                             choiceMin
                             choiceMax
                             choiceDuplicate
+                            modifierCredit
                             collapsedByDefault
                             hideForCustomer
                             availablePlatforms
@@ -1653,6 +1657,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                         choiceMin
                                                         choiceMax
                                                         choiceDuplicate
+                                                        modifierCredit
                                                         collapsedByDefault
                                                         hideForCustomer
                                                         availablePlatforms

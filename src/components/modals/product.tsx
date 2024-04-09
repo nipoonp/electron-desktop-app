@@ -85,9 +85,9 @@ export const ProductModal = (props: {
 
       product.modifierGroups &&
           product.modifierGroups.items.forEach((modifierGroupLink) => {
-            console.log('modifierGroupLink',modifierGroupLink);
             const choiceMin=modifierGroupLink.modifierGroup.choiceMin;
             const choiceMax=modifierGroupLink.modifierGroup.choiceMax;
+            const modifierCredit=modifierGroupLink.modifierGroup.modifierCredit;
               modifierGroupLink.modifierGroup.modifiers &&
                   modifierGroupLink.modifierGroup.modifiers.items.map((modifierLink) => {
                       if (modifierLink.modifier.preSelectedQuantity) {
@@ -1383,6 +1383,7 @@ export const ModifierGroup = (props: {
                       currentSelectedProductModifier={
                         currentSelectedProductModifier
                       }
+                      modifierCredit={modifierGroup.modifierCredit}
                       choiceMin={modifierGroup.choiceMin}
                       choiceMax={modifierGroup.choiceMax}
                       choiceDuplicate={modifierGroup.choiceDuplicate}
@@ -1464,6 +1465,7 @@ const Modifier = (props: {
   currentSelectedProductModifier?: ISelectedProductModifier;
   choiceMin: number;
   choiceMax: number;
+  modifierCredit: number;
   choiceDuplicate: number;
   maxReached: boolean;
   modifiersSelectedCount: number;
@@ -1498,6 +1500,7 @@ const Modifier = (props: {
     currentSelectedProductModifier,
     choiceMin,
     choiceMax,
+    modifierCredit,
     choiceDuplicate,
     maxReached,
     modifiersSelectedCount,
@@ -1604,6 +1607,8 @@ const Modifier = (props: {
     onChangeModifierQuantity(modifier, true, 1);
   };
 
+  const price= modifier.price > modifierCredit ? modifier.price - modifierCredit : 0;
+
   const modifierChildren = (
     <>
       <div className="modifier-item">
@@ -1621,10 +1626,10 @@ const Modifier = (props: {
           <div>
             <div>
               {modifier.name}
-              {modifier.price > 0
-                ? ` (+$${convertCentsToDollars(modifier.price)})`
-                : modifier.price < 0
-                ? ` (-$${convertCentsToDollars(Math.abs(modifier.price))})`
+              {price > 0
+                ? ` (+$${convertCentsToDollars(price)})`
+                : price < 0
+                ? ` (-$${convertCentsToDollars(Math.abs(price))})`
                 : ""}
               {modifierQuantityAvailable && modifierQuantityAvailable <= 5 ? (
                 <span className="quantity-remaining ml-2">
@@ -1639,8 +1644,8 @@ const Modifier = (props: {
         ) : (
           <div>
             {modifier.name}{" "}
-            {modifier.price > 0 &&
-              `(+$${convertCentsToDollars(modifier.price)})`}{" "}
+            {price > 0 &&
+              `(+$${convertCentsToDollars(price)})`}{" "}
             (SOLD OUT)
             <div className="description text-grey">{modifier.description}</div>
           </div>
