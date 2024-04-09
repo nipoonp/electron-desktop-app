@@ -71,8 +71,23 @@ export enum EVerifoneTransactionOutcome {
     TerminalBusy, // BB
 }
 
+export enum ETyroTransactionOutcome {
+    APPROVED,
+    CANCELLED,
+    REVERSED,
+    DECLINED,
+    SYSTEMERROR,
+    NOTSTARTED,
+    UNKNOWN,
+}
+
 export interface IEftposTransactionOutcome {
-    platformTransactionOutcome: ESmartpayTransactionOutcome | EWindcaveTransactionOutcome | EVerifoneTransactionOutcome | null;
+    platformTransactionOutcome:
+        | ESmartpayTransactionOutcome
+        | EWindcaveTransactionOutcome
+        | EVerifoneTransactionOutcome
+        | ETyroTransactionOutcome
+        | null;
     transactionOutcome: EEftposTransactionOutcome;
     message: string;
     eftposReceipt: string | null;
@@ -91,10 +106,93 @@ export enum EPaymentModalState {
     None,
 }
 
-export interface IPairTerminalResponseReceivedCallback {
+export interface ITyroPairTerminalResponseReceivedCallback {
     status: "inProgress" | "success" | "failure"; //If inProgress more responses will follow.
     message: string; //Text to show the merchant.
     integrationKey: string; //Integration key to be used when transacting.
+}
+
+export interface ITyroInitiatePurchaseInput {
+    amount: string; // The purchase amount in cents.
+    cashout?: string; // Optional cash out amount in cents.
+    integratedReceipt: boolean; // Indicate where receipts will be printed.
+    mid?: number; // Optional MID for overriding configured MID.
+    tid?: number; // Optional TID for overriding configured TID.
+    integrationKey?: string; // Optional integration key.
+    transactionId?: string; // Optional transaction Id.
+    healthpointTransactionId?: string; // Optional HealthPoint Claim transaction ID.
+    enableSurcharge?: boolean; // Optional flag to apply surcharge.
+    requestCardToken?: boolean; // Optional flag to request card token.
+}
+
+export interface ITyroInitiatePurchaseCallback {
+    questionCallback: (question: ITyroInitiatePurchaseQuestionCallbackQuestion, answerCallback: (answer: string) => void) => void; // Invoked for merchant questions.
+    statusMessageCallback: (statusMessage: string) => void; // Invoked for terminal status messages.
+    receiptCallback?: (receipt: ITyroInitiatePurchaseReceiptCallback) => void; // Invoked for merchant copy of the receipt.
+    transactionCompleteCallback: (transactionData: ITyroInitiatePurchaseTransactionCompleteCallback) => void; // Invoked upon transaction completion.
+}
+
+interface ITyroInitiatePurchaseQuestionCallbackQuestion {
+    text: string; // The message to present to the merchant.
+    optionsArray: string[]; // The set of button labels to present for the merchant to choose from.
+}
+
+interface ITyroInitiatePurchaseReceiptCallback {
+    signatureRequired: boolean; // Indicates if a signature line should be printed.
+    merchantReceipt: string; // Text representation of the Tyro receipt for the merchant.
+}
+
+interface ITyroInitiatePurchaseReceiptCallback {
+    claimAmount: string; // Claim Item amount in cents.
+    rebateAmount: string; // Rebate amount for the claim made.
+    serviceCode: string; // Item Service Code.
+    description: string; // Item description.
+    serviceReference: string; // Item Service Reference.
+    patientId: string; // Patient id as on card.
+    serviceDate: string; // Date of claim in format "yyyyMMddhhmmss".
+    responseCode: string; // Individual response code for this item.
+}
+
+interface ITyroInitiatePurchaseTransactionCompleteCallback {
+    result: "APPROVED" | "CANCELLED" | "REVERSED" | "DECLINED" | "SYSTEM ERROR" | "NOT STARTED" | "UNKNOWN"; //The merchant will only receive money if this value is APPROVED. UNKNOWN means the merchant should look at the terminal to determine what happened. Typically this would indicate a network error.
+    cardType?: string; // The scheme displayed on the card.
+    transactionReference?: string; // Tyro's reference to this transaction.
+    authorisationCode?: string; // The Scheme's reference to the transaction.
+    issuerActionCode?: string; // The raw result code returned by the card issuer.
+    elidedPan?: string; // The (elided) credit card number used for this transaction.
+    rrn?: string; // The Retrieval Reference Number, unique for a 7-day period.
+    tipAmount?: string; // The tip component, in cents, for Tip Completion transactions.
+    tipCompletionReference?: string; // Tyro's reference to the Tip Completion.
+    tabCompletionReference?: string; // Tyro's reference to a Tab Completion.
+    preAuthCompletionReference?: string; // Tyro's reference to a PreAuth Completion.
+    cardToken?: string; // The Card Token, if requested.
+    cardTokenExpiryDate?: string; // The expiry of the Card Token, if requested.
+    cardTokenStatusCode?: string; // The status code of the Card Token request.
+    cardTokenErrorMessage?: string; // The error message, if the Card Token request fails.
+    customerReceipt?: string; // Text representation of the Tyro receipt for the customer.
+    //For Healthpoint Claims, Rebate Estimates and Cancellations
+    healthpointRefTag: string; // The reference tag identifying a transaction per terminal.
+    healthpointTotalBenefitAmount: string; // Total benefit amount for all claim items, in cents.
+    healthpointSettlementDateTime: string; // Settlement date and time as decided by the iCS system/health fund.
+    healthpointTerminalDateTime: string; // The transaction date and time of the claim/s.
+    healthpointMemberNumber: string; // Private health fund member number of the cardholder.
+    healthpointProviderId: string; // Provider ID matching the original request.
+    healthpointServiceType: string; // Service type matching the original request.
+    healthpointGapAmount: string; // The gap amount, present only on successful claims and voids.
+    healthpointPhfResponseCode: string; // The response code from the private health fund.
+    healthpointPhfResponseCodeDescription: string; // The description of the response code from the private health fund.
+    healthpointHealthFundName: string; // The name of the private health fund.
+    healthpointHealthFundIdentifyingDigits: string; // The identifying digits of the private health fund.
+    healthpointClaimItems?: {
+        claimAmount: string; // Claim Item amount in cents
+        rebateAmount: string; // Rebate amount for the claim made
+        serviceCode: string; // Item Service Code
+        description: string; // Item description
+        serviceReference: string; // Item Service Ref
+        patientId: string; // Patient id as on card
+        serviceDate: string; // Date of claim in format "yyyyMMddhhmmss"
+        responseCode: string; // Individual response code for this item
+    }[];
 }
 
 export enum EOrderType {

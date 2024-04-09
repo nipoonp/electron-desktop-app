@@ -1,22 +1,34 @@
 import { createContext, useContext, useEffect } from "react";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
-import { IPairTerminalResponseReceivedCallback } from "../model/model";
+import {
+    EEftposTransactionOutcome,
+    ETyroTransactionOutcome,
+    IEftposTransactionOutcome,
+    ITyroInitiatePurchaseCallback,
+    ITyroInitiatePurchaseInput,
+    ITyroPairTerminalResponseReceivedCallback,
+} from "../model/model";
 import config from "./../../package.json";
 import { delay } from "../model/util";
 
-var apiKey = "Test API Key"; // API Key not validated test environments
-var posProductInfo = {
+const apiKey = "Test API Key"; // API Key not validated test environments
+const posProductInfo = {
     posProductVendor: "Tabin",
     posProductName: "Tabin Kiosk",
     posProductVersion: config.version,
 };
 //@ts-ignore
-var iclient = new window.TYRO.IClient(apiKey, posProductInfo);
+const iclient = new window.TYRO.IClient(apiKey, posProductInfo);
 
 type ContextProps = {
     sendParingRequest: (merchantId: string, terminalId: string, customerMessageCallback: (message: string) => void) => Promise<string>;
-    createTransaction: (amount: number, integrationKey: string) => Promise<string>;
+    createTransaction: (
+        amount: string,
+        integrationKey: string,
+        customerMessageCallback: (message: string) => void
+    ) => Promise<IEftposTransactionOutcome>;
+    cancelTransaction: () => void;
 };
 
 const TyroContext = createContext<ContextProps>({
@@ -25,7 +37,12 @@ const TyroContext = createContext<ContextProps>({
             console.log("");
         });
     },
-    createTransaction: (amount: number, integrationKey: string) => {
+    createTransaction: (amount: string, integrationKey: string, customerMessageCallback: (message: string) => void) => {
+        return new Promise(() => {
+            console.log("");
+        });
+    },
+    cancelTransaction: () => {
         return new Promise(() => {
             console.log("");
         });
@@ -36,18 +53,18 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
     const { register } = useRegister();
     const { restaurant } = useRestaurant();
 
-    useEffect(() => {
-        if (restaurant) setPosBusinessName(restaurant.name);
-    }, [restaurant]);
+    // useEffect(() => {
+    //     if (restaurant) setPosBusinessName(restaurant.name);
+    // }, [restaurant]);
 
-    useEffect(() => {
-        if (register) {
-            setPosRegisterId(register.id);
-            setPosRegisterName(register.name);
-        }
-    }, [register]);
+    // useEffect(() => {
+    //     if (register) {
+    //         setPosRegisterId(register.id);
+    //         setPosRegisterName(register.name);
+    //     }
+    // }, [register]);
 
-    const sendParingRequest = (merchantId: string, terminalId: string, customerMessageCallback: (message: string) => {}): Promise<string> => {
+    const sendParingRequest = (merchantId: string, terminalId: string, customerMessageCallback: (message: string) => void): Promise<string> => {
         return new Promise(async (resolve, reject) => {
             if (!merchantId) {
                 reject("A merchantId has to be supplied.");
@@ -60,7 +77,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
             }
 
             try {
-                iclient.pairTerminal(merchantId, terminalId, (response: IPairTerminalResponseReceivedCallback) => {
+                iclient.pairTerminal(merchantId, terminalId, (response: ITyroPairTerminalResponseReceivedCallback) => {
                     console.log("Pairing response", response);
 
                     customerMessageCallback(response.message);
@@ -68,7 +85,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                     if (response.status === "success") {
                         resolve(response.integrationKey);
                         return;
-                    } else {
+                    } else if (response.status === "failure") {
                         reject(response.message);
                     }
                 });
@@ -79,7 +96,19 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
         });
     };
 
-    const createTransaction = (amount: number, integrationKey: string): Promise<string> => {
+    const cancelTransaction = () => {
+        try {
+            iclient.cancelCurrentTransaction();
+        } catch (err) {
+            console.log(err.message);
+        }
+    };
+
+    const createTransaction = (
+        amount: string,
+        integrationKey: string,
+        customerMessageCallback: (message: string) => void
+    ): Promise<IEftposTransactionOutcome> => {
         const interval = 2 * 1000; // 2 seconds
         const timeout = 10 * 60 * 1000; // 10 minutes
 
@@ -92,7 +121,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
             }
 
             try {
-                const requestParams = {
+                const requestParams: ITyroInitiatePurchaseInput = {
                     amount: amount, //The purchase amount (amount to charge the customer) in cents.
                     // cashout: "0", //Cash out amount in cents.
                     integratedReceipt: true, //indicate whether receipts will be printed on the POS (true) or on the terminal (false).
@@ -105,57 +134,121 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                     // requestCardToken: true, //Request a token representing the card used for the current purchase.
                 };
 
-                const transactionCallbacks = {
-                    statusMessageCallback: (message) => {
-                        console.log("statusMessageCallback Message:", message);
-
-                        setPurchaseStatus(message);
-                    },
+                const transactionCallbacks: ITyroInitiatePurchaseCallback = {
+                    //Invoked when the terminal requires the merchant to answer a question in order to proceed with the transaction. Called with the following parameters:
                     questionCallback: (question, answerCallback) => {
                         console.log("questionCallback Question:", question);
 
-                        if (question.isError) {
-                            setPurchaseError(question.text);
-                        } else if (question.isManualCancel) {
-                            //Are you sure you want to cancel?
-                            answerCallback("YES");
-                        } else if (question.text.includes("Signature OK?")) {
-                            //APPROVED W/ SIGNATURE. Signature OK?
+                        if (question.text.includes("APPROVED W/ SIGNATURE. Signature OK?")) {
                             answerCallback("NO");
                         } else if (question.text.includes("Cancel this transaction?")) {
-                            //Cancel this transaction?
                             answerCallback("YES");
+                        } else if (question.text.includes("Invalid transaction details (400).")) {
+                            answerCallback("OK");
                         }
                     },
+                    //Invoked to advertise what is happening on terminal, which is typically facing the customer rather than the merchant. Called with a single String argument. For example "Select account".
+                    statusMessageCallback: (message: string) => {
+                        console.log("statusMessageCallback Message:", message);
+
+                        customerMessageCallback(message);
+                    },
+                    //Invoked when integrated receipts are enabled and a merchant copy of the receipt is available. Ignored if integrated receipt printing is disabled. Called with the following parameters:
                     receiptCallback: (receipt) => {
                         console.log("receiptCallback Receipt:", receipt);
 
                         if (receipt.signatureRequired == true) {
-                            cancel();
+                            cancelTransaction();
                         } else {
-                            console.log("xxx...receipt.merchantReceipt", receipt.merchantReceipt);
-                            alert(receipt.merchantReceipt);
+                            console.log("MerchantReceipt", receipt.merchantReceipt);
                         }
                     },
+                    //Invoked when the transaction has been completed on the terminal. Called with a subset of the following parameters:
                     transactionCompleteCallback: (response) => {
                         console.log("transactionCompleteCallback Response:", response);
-                        setPurchaseStatus("Complete");
-                        setTransactionId(response.transactionId);
 
-                        if (response.customerReceipt) {
-                            console.log("xxx...receipt.customerReceipt", response.customerReceipt);
+                        let transactionOutcome: IEftposTransactionOutcome | null = null;
+
+                        switch (response.result) {
+                            case "APPROVED":
+                                transactionOutcome = {
+                                    platformTransactionOutcome: ETyroTransactionOutcome.APPROVED,
+                                    transactionOutcome: EEftposTransactionOutcome.Success,
+                                    message: "Transaction Approved!",
+                                    eftposReceipt: response.customerReceipt || "",
+                                };
+                                break;
+                            case "CANCELLED":
+                                transactionOutcome = {
+                                    platformTransactionOutcome: ETyroTransactionOutcome.CANCELLED,
+                                    transactionOutcome: EEftposTransactionOutcome.Fail,
+                                    message: "Transaction Cancelled!",
+                                    eftposReceipt: response.customerReceipt || "",
+                                };
+                                break;
+                            case "REVERSED":
+                                transactionOutcome = {
+                                    platformTransactionOutcome: ETyroTransactionOutcome.REVERSED,
+                                    transactionOutcome: EEftposTransactionOutcome.Fail,
+                                    message: "Transaction Reversed!",
+                                    eftposReceipt: response.customerReceipt || "",
+                                };
+                                break;
+                            case "DECLINED":
+                                transactionOutcome = {
+                                    platformTransactionOutcome: ETyroTransactionOutcome.DECLINED,
+                                    transactionOutcome: EEftposTransactionOutcome.Fail,
+                                    message: "Transaction Declined! Please try again.",
+                                    eftposReceipt: response.customerReceipt || "",
+                                };
+                                break;
+                            case "SYSTEM ERROR":
+                                // You should never come in this state. Don't even know what settledOk is. Cannot find any references in docs as well.
+                                transactionOutcome = {
+                                    platformTransactionOutcome: ETyroTransactionOutcome.SYSTEMERROR,
+                                    transactionOutcome: EEftposTransactionOutcome.Fail,
+                                    message: "System Error.",
+                                    eftposReceipt: response.customerReceipt || "",
+                                };
+                                break;
+                            case "NOT STARTED":
+                                transactionOutcome = {
+                                    platformTransactionOutcome: ETyroTransactionOutcome.NOTSTARTED,
+                                    transactionOutcome: EEftposTransactionOutcome.Fail,
+                                    message: "Transaction Not Started",
+                                    eftposReceipt: response.customerReceipt || "",
+                                };
+                                break;
+                            case "UNKNOWN":
+                                transactionOutcome = {
+                                    platformTransactionOutcome: ETyroTransactionOutcome.UNKNOWN,
+                                    transactionOutcome: EEftposTransactionOutcome.Fail,
+                                    message: "Please look at the terminal to determine what happened. Typically indicates a network error.",
+                                    eftposReceipt: response.customerReceipt || "",
+                                };
+                                break;
+                            default:
+                                transactionOutcome = {
+                                    platformTransactionOutcome: ETyroTransactionOutcome.UNKNOWN,
+                                    transactionOutcome: EEftposTransactionOutcome.Fail,
+                                    message: "Unknown. Invalid State...",
+                                    eftposReceipt: response.customerReceipt || "",
+                                };
+                                break;
                         }
+
+                        resolve(transactionOutcome);
                     },
                 };
 
-                console.log("xxx...requestParams", requestParams);
+                console.log("RequestParams", requestParams);
                 iclient.initiatePurchase(requestParams, transactionCallbacks);
 
                 while (true) {
                     if (Number(new Date()) < endTime) {
                         await delay(interval);
                     } else {
-                        reject("Polling timed out");
+                        reject("Transaction timed out");
                         return;
                     }
                 }
@@ -172,7 +265,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
             value={{
                 sendParingRequest: sendParingRequest,
                 createTransaction: createTransaction,
-                pollForOutcome: pollForOutcome,
+                cancelTransaction: cancelTransaction,
             }}
             children={props.children}
         />

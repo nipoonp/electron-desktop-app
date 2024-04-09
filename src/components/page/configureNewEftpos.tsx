@@ -43,14 +43,14 @@ export default () => {
                     </Radio>
 
                     <Radio
-                        className="mb-6"
+                        className="mb-2"
                         selected={eftposProvider == EftposProvider.WINDCAVE}
                         onSelect={() => setEftposProvider(EftposProvider.WINDCAVE)}
                     >
                         Windcave
                     </Radio>
 
-                    <Radio className="mb-2" selected={eftposProvider == EftposProvider.TYRO} onSelect={() => setEftposProvider(EftposProvider.TYRO)}>
+                    <Radio className="mb-6" selected={eftposProvider == EftposProvider.TYRO} onSelect={() => setEftposProvider(EftposProvider.TYRO)}>
                         Tyro
                     </Radio>
 

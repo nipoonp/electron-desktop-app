@@ -76,6 +76,7 @@ import { useGetThirdPartyOrderResponseLazyQuery } from "../../hooks/useGetThirdP
 import "./checkout.scss";
 import axios from "axios";
 import { R18MessageModal } from "../modals/r18MessageModal";
+import { useTyro } from "../../context/tyro-context";
 
 const logger = new Logger("checkout");
 
@@ -135,6 +136,7 @@ export const Checkout = () => {
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
     const { createTransaction: windcaveCreateTransaction } = useWindcave();
+    const { createTransaction: tyroCreateTransaction } = useTyro();
     const [isScrollable, setIsScrollable] = useState(false);
     const [createOrderMutation] = useMutation(CREATE_ORDER, {
         update: (proxy, mutationResult) => {
@@ -955,6 +957,10 @@ export const Checkout = () => {
                     restaurant.id,
                     setEftposMessage
                 );
+            } else if (register.eftposProvider == EEftposProvider.TYRO) {
+                const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
+
+                outcome = await tyroCreateTransaction(amount.toString(), "f90891541e4c7c1e695b105e6ecae092", setEftposMessage);
             }
 
             if (!outcome) throw "Invalid Eftpos Transaction outcome.";
