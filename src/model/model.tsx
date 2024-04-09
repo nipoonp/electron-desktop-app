@@ -91,6 +91,12 @@ export enum EPaymentModalState {
     None,
 }
 
+export interface IPairTerminalResponseReceivedCallback {
+    status: "inProgress" | "success" | "failure"; //If inProgress more responses will follow.
+    message: string; //Text to show the merchant.
+    integrationKey: string; //Integration key to be used when transacting.
+}
+
 export enum EOrderType {
     DINEIN = "DINEIN",
     TAKEAWAY = "TAKEAWAY",
@@ -107,6 +113,7 @@ export enum EEftposProvider {
     SMARTPAY = "SMARTPAY",
     VERIFONE = "VERIFONE",
     WINDCAVE = "WINDCAVE",
+    TYRO = "TYRO",
 }
 
 export interface ICustomerInformation {
@@ -131,25 +138,25 @@ export interface ICartItemQuantitiesByIdValue {
 
 //ICartProduct is used to pass into the DB. So its good to have it as ? undefined rather than null. Null is a type in dynamoDB so it will create a field with type Null.
 export interface ICartProduct {
-  index?: number; //index is for promos
-  id: string;
-  name: string;
-  kitchenName: string | null;
-  price: number;
-  totalPrice: number;
-  discount: number;
-  isAgeRescricted: boolean;
-  image: IS3Object | null;
-  quantity: number;
-  notes: string | null;
-  category: ICartCategory | null; //Product modifier do not have category
-  modifierGroups: ICartModifierGroup[];
+    index?: number; //index is for promos
+    id: string;
+    name: string;
+    kitchenName: string | null;
+    price: number;
+    totalPrice: number;
+    discount: number;
+    isAgeRescricted: boolean;
+    image: IS3Object | null;
+    quantity: number;
+    notes: string | null;
+    category: ICartCategory | null; //Product modifier do not have category
+    modifierGroups: ICartModifierGroup[];
 }
 
 export enum ERegisterType {
-  KIOSK = "KIOSK",
-  POS = "POS",
-  ONLINE = "ONLINE",
+    KIOSK = "KIOSK",
+    POS = "POS",
+    ONLINE = "ONLINE",
 }
 
 export interface ICartCategory {

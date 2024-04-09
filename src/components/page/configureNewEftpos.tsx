@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Verifone } from "./configureNewEftpos/verifone";
 import { SmartPay } from "./configureNewEftpos/smartpay";
+import { Tyro } from "./configureNewEftpos/tyro";
 import { ReceiptPrinter } from "./configureNewEftpos/receiptPrinter";
 import { Radio } from "../../tabin/components/radio";
 
@@ -9,9 +10,10 @@ import { Windcave } from "./configureNewEftpos/windcave";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 
 enum EftposProvider {
-    VERIFONE,
     SMARTPAY,
+    VERIFONE,
     WINDCAVE,
+    TYRO,
 }
 export default () => {
     const [eftposProvider, setEftposProvider] = useState(EftposProvider.WINDCAVE);
@@ -48,12 +50,18 @@ export default () => {
                         Windcave
                     </Radio>
 
+                    <Radio className="mb-2" selected={eftposProvider == EftposProvider.TYRO} onSelect={() => setEftposProvider(EftposProvider.TYRO)}>
+                        Tyro
+                    </Radio>
+
                     {eftposProvider == EftposProvider.VERIFONE ? (
                         <Verifone />
                     ) : eftposProvider == EftposProvider.SMARTPAY ? (
                         <SmartPay />
                     ) : eftposProvider == EftposProvider.WINDCAVE ? (
                         <Windcave />
+                    ) : eftposProvider == EftposProvider.TYRO ? (
+                        <Tyro />
                     ) : (
                         <></>
                     )}

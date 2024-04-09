@@ -7,6 +7,7 @@ import { AuthProvider, useAuth, AuthenticationStatus } from "./context/auth-cont
 import { UserProvider } from "./context/user-context";
 import { SmartpayProvider } from "./context/smartpay-context";
 import { VerifoneProvider } from "./context/verifone-context";
+import { TyroProvider } from "./context/tyro-context";
 import { ReceiptPrinterProvider } from "./context/receiptPrinter-context";
 import { RegisterProvider } from "./context/register-context";
 import { ElectronProvider } from "./context/electron-context";
@@ -143,9 +144,11 @@ const App = () => {
                                             <CartProvider>
                                                 <SmartpayProvider>
                                                     <WindcaveProvider>
-                                                        <ErrorBoundary FallbackComponent={ErrorBoundaryFallback} onError={logFailureNotification}>
-                                                            <Main />
-                                                        </ErrorBoundary>
+                                                        <TyroProvider>
+                                                            <ErrorBoundary FallbackComponent={ErrorBoundaryFallback} onError={logFailureNotification}>
+                                                                <Main />
+                                                            </ErrorBoundary>
+                                                        </TyroProvider>
                                                     </WindcaveProvider>
                                                 </SmartpayProvider>
                                             </CartProvider>
