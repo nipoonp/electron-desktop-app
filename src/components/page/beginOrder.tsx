@@ -21,7 +21,7 @@ export default () => {
 
     return (
         <>
-            {restaurant.preparationTimeInMinutes ? <PreparationTime /> : <></>}
+            {restaurant.preparationTimeInMinutes && <PreparationTime />}
             {ads.length > 0 ? <BeginOrderAdvertisements ads={ads} /> : <BeginOrderDefault />}
         </>
     );
@@ -78,7 +78,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
         setCurrentAdIndex((oldAdIndex) => processAds(oldAdIndex));
     }, []);
 
-    const processAds = (oldAdIndex) => {
+    const processAds = (oldAdIndex: number) => {
         let newIndex = 0;
         const newAvailAds: IGET_RESTAURANT_ADVERTISEMENT[] = [];
 
@@ -86,15 +86,19 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
             if (isItemAvailable(ad.availability)) newAvailAds.push(ad);
         });
 
-        if (availableAds.length !== newAvailAds.length) {
+        // Check if the lengths are different
+        const areAdsDifferent =
+            availableAds.length !== newAvailAds.length ||
+            // Check if any ad.id in availableAds is not found in newAvailAds
+            availableAds.some((ad) => !newAvailAds.some((newAd) => newAd.id === ad.id)) ||
+            // Also check the other way around to ensure all ids in newAvailAds are in availableAds
+            newAvailAds.some((newAd) => !availableAds.some((ad) => ad.id === newAd.id));
+
+        if (areAdsDifferent) {
             setAvailableAds(newAvailAds);
             newIndex = 0;
         } else {
-            if (oldAdIndex >= newAvailAds.length - 1) {
-                newIndex = 0;
-            } else {
-                newIndex = oldAdIndex + 1;
-            }
+            newIndex = oldAdIndex >= newAvailAds.length - 1 ? 0 : oldAdIndex + 1;
         }
 
         return newIndex;
@@ -119,10 +123,10 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
                         navigate(restaurantPath + "/" + restaurant.id);
                     }}
                 >
-                    <div className="touch-to-begin-wrapper">
+                    {/* <div className="touch-to-begin-wrapper">
                         <CachedImage className="icon" url={`${getPublicCloudFrontDomainName()}/images/touch-here-dark.png`} alt="hand-icon" />
                         <div className="h3">TOUCH TO BEGIN</div>
-                    </div>
+                    </div> */}
                 </div>
                 <div className="advertisements-wrapper">
                     {availableAds.map((advertisement, index) => (
