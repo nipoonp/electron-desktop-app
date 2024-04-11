@@ -22,6 +22,8 @@ import {
   IGET_RESTAURANT_CATEGORY,
   IS3Object,
   EOrderType,
+  IGET_RESTAURANT,
+  IGET_RESTAURANT_PRODUCT_LINK,
 } from "../../graphql/customQueries";
 import { useCart } from "../../context/cart-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -250,7 +252,7 @@ const Restaurant = () => {
 
       if (selectedProductId) {
         const selectedProductItem = restaurantProducts[selectedProductId];
-
+        console.log('@@@ selectedProductItem',selectedProductItem)
         if (selectedProductItem)
           setSelectedProductForProductModal(selectedProductItem);
 
@@ -455,8 +457,22 @@ const Restaurant = () => {
 
   const onClickProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
       if (product.modifierGroups && product.modifierGroups.items.length > 0) {
+          const newProduct: IGET_RESTAURANT_PRODUCT = {
+            ...product,
+            modifierGroups: {
+                items: product.modifierGroups.items.map(mg => {
+                    const modifierCredit = mg.modifierGroup.modifierCredit;
+                    const updatedModifiers = mg?.modifierGroup?.modifiers?.items?.map(modi => {
+                        const price = modi.modifier.price;
+                        const newprice = price > modifierCredit ? price - modifierCredit : 0;
+                        return { ...modi, modifier: { ...modi.modifier, price: newprice } };
+                    }) || []; // Default to an empty array if items is undefined
+                    return { ...mg, modifierGroup: { ...mg.modifierGroup, modifiers: { items: updatedModifiers || []} } };
+                })
+            }
+          };
           setSelectedCategoryForProductModal(category);
-          setSelectedProductForProductModal(product);
+          setSelectedProductForProductModal(newProduct);
           setShowProductModal(true);
       } else {
           onAddProductToCart(category, product);

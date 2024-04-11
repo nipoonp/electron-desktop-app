@@ -87,7 +87,6 @@ export const ProductModal = (props: {
           product.modifierGroups.items.forEach((modifierGroupLink) => {
             const choiceMin=modifierGroupLink.modifierGroup.choiceMin;
             const choiceMax=modifierGroupLink.modifierGroup.choiceMax;
-            const modifierCredit=modifierGroupLink.modifierGroup.modifierCredit;
               modifierGroupLink.modifierGroup.modifiers &&
                   modifierGroupLink.modifierGroup.modifiers.items.map((modifierLink) => {
                       if (modifierLink.modifier.preSelectedQuantity) {
@@ -1607,7 +1606,7 @@ const Modifier = (props: {
     onChangeModifierQuantity(modifier, true, 1);
   };
 
-  const price= modifier.price > modifierCredit ? modifier.price - modifierCredit : 0;
+  const price= modifier.price ;
 
   const modifierChildren = (
     <>
