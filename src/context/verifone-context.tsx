@@ -101,8 +101,6 @@ const VerifoneContext = createContext<ContextProps>({
 
 const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const { addEftposLog } = useErrorLogging();
-    const { restaurant } = useRestaurant();
-    const { register, isPOS } = useRegister();
 
     const interval = 1 * 1500; // 1.5 seconds
     const interval2 = 1 * 100; // 150 miliseconds

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect } from "react";
+import { createContext, useContext, useRef } from "react";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
 import {
@@ -12,6 +12,9 @@ import {
 } from "../model/model";
 import config from "./../../package.json";
 import { delay } from "../model/util";
+import { format } from "date-fns";
+import { useErrorLogging } from "./errorLogging-context";
+import { toLocalISOString } from "../util/util";
 
 const apiKey = "Test API Key"; // API Key not validated test environments
 const posProductInfo = {
@@ -21,6 +24,8 @@ const posProductInfo = {
 };
 //@ts-ignore
 const iclient = new window.TYRO.IClient(apiKey, posProductInfo);
+
+const initialLogs = "";
 
 type ContextProps = {
     sendParingRequest: (merchantId: string, terminalId: string, customerMessageCallback: (message: string) => void) => Promise<string>;
@@ -57,7 +62,38 @@ const TyroContext = createContext<ContextProps>({
 });
 
 const TyroProvider = (props: { children: React.ReactNode }) => {
+    const { addEftposLog } = useErrorLogging();
+
+    const { restaurant } = useRestaurant();
     const { register, isPOS } = useRegister();
+
+    const logs = useRef<string>(initialLogs);
+
+    const resetVariables = () => {
+        //Add new reset if new variables are added above.
+        logs.current = initialLogs;
+    };
+
+    const addToLogs = (log) => {
+        const newLog = format(new Date(), "dd/MM/yy HH:mm:ss.SSS ") + log;
+
+        console.log(newLog);
+        logs.current += newLog + "\n";
+    };
+
+    const createEftposTransactionLog = async (restaurantId: string, transactionType: string, amount: number) => {
+        const now = new Date();
+
+        await addEftposLog({
+            eftposProvider: "TYRO",
+            amount: amount,
+            type: transactionType,
+            payload: logs.current,
+            restaurantId: restaurantId,
+            timestamp: toLocalISOString(now),
+            expiry: Number(Math.floor(Number(now) / 1000) + 2592000), // Add 30 days to timeStamp for DynamoDB TTL
+        });
+    };
 
     const sendParingRequest = (merchantId: string, terminalId: string, customerMessageCallback: (message: string) => void): Promise<string> => {
         return new Promise(async (resolve, reject) => {
@@ -96,6 +132,8 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
         integrationKey: string,
         customerMessageCallback: (message: string) => void
     ): Promise<IEftposTransactionOutcome> => {
+        resetVariables();
+
         const interval = 10 * 1000; // 10 seconds
         const timeout = 10 * 60 * 1000; // 10 minutes
 
@@ -126,28 +164,28 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                 const transactionCallbacks: ITyroTransactionCallback = {
                     //Invoked when the terminal requires the merchant to answer a question in order to proceed with the transaction. Called with the following parameters:
                     questionCallback: (question, answerCallback) => {
-                        console.log("questionCallback Question:", question);
+                        addToLogs(`questionCallback Question: ${JSON.stringify(question)}`);
 
                         if (question.text.includes("APPROVED W/ SIGNATURE. Signature OK?")) {
                             approvedWithSignature = true;
-                            console.log("Answer back with NO");
+                            addToLogs("Answer back with NO");
                             answerCallback("NO");
                         } else if (question.text.includes("Are you sure you want to cancel?")) {
-                            console.log("Answer back with YES");
+                            addToLogs("Answer back with YES");
                             answerCallback("YES");
                         } else if (question.text.includes("Cancel this transaction?")) {
-                            console.log("Answer back with YES");
+                            addToLogs("Answer back with YES");
                             answerCallback("YES");
                         } else if (question.text.includes("POS is not paired with a terminal.")) {
-                            console.log("Answer back with OK");
+                            addToLogs("Answer back with OK");
                             answerCallback("OK");
                         } else if (question.text.includes("Invalid transaction details (400).")) {
-                            console.log("Answer back with OK");
+                            addToLogs("Answer back with OK");
                             answerCallback("OK");
                         }
 
                         if (question.isError) {
-                            console.log("Returning with error");
+                            addToLogs("Returning with error");
 
                             resolve({
                                 platformTransactionOutcome: ETyroTransactionOutcome.UNKNOWN,
@@ -159,17 +197,17 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                     },
                     //Invoked to advertise what is happening on terminal, which is typically facing the customer rather than the merchant. Called with a single String argument. For example "Select account".
                     statusMessageCallback: (message: string) => {
-                        console.log("statusMessageCallback Message:", message);
+                        addToLogs(`statusMessageCallback Message: ${JSON.stringify(message)}`);
 
                         customerMessageCallback(message);
                     },
                     //Invoked when integrated receipts are enabled and a merchant copy of the receipt is available. Ignored if integrated receipt printing is disabled. Called with the following parameters:
                     receiptCallback: (receipt) => {
-                        console.log("receiptCallback Receipt:", receipt);
+                        addToLogs(`receiptCallback Receipt: ${JSON.stringify(receipt)}`);
                     },
                     //Invoked when the transaction has been completed on the terminal. Called with a subset of the following parameters:
                     transactionCompleteCallback: (response) => {
-                        console.log("transactionCompleteCallback Response:", response);
+                        addToLogs(`transactionCompleteCallback Response: ${JSON.stringify(response)}`);
 
                         let transactionOutcome: IEftposTransactionOutcome | null = null;
 
@@ -253,21 +291,25 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                     },
                 };
 
-                console.log("RequestParams", requestParams);
+                addToLogs(`RequestParams: ${JSON.stringify(requestParams)}`);
                 iclient.initiatePurchase(requestParams, transactionCallbacks);
 
                 while (true) {
                     if (Number(new Date()) < endTime) {
                         await delay(interval);
                     } else {
-                        console.log("Cancelling transaction due to timeout");
+                        addToLogs("Cancelling transaction due to timeout");
                         cancelTransaction();
                         reject("Transaction timed out");
                         return;
                     }
                 }
             } catch (error) {
+                addToLogs(`error.message: ${error.message}`);
+
                 reject(error);
+            } finally {
+                await createEftposTransactionLog(restaurant ? restaurant.id : "", "Create Transaction", parseInt(amount));
             }
         };
 
@@ -278,7 +320,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
         try {
             iclient.cancelCurrentTransaction();
         } catch (err) {
-            console.log(err.message);
+            addToLogs(err.message);
         }
     };
 
