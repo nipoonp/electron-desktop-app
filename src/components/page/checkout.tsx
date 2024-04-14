@@ -960,7 +960,7 @@ export const Checkout = () => {
             } else if (register.eftposProvider == EEftposProvider.TYRO) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
 
-                outcome = await tyroCreateTransaction(amount.toString(), "f90891541e4c7c1e695b105e6ecae092", setEftposMessage);
+                outcome = await tyroCreateTransaction(amount.toString(), register.tyroIntegrationKey, setEftposMessage);
             }
 
             if (!outcome) throw "Invalid Eftpos Transaction outcome.";

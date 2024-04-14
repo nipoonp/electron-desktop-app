@@ -125,35 +125,34 @@ export interface ITyroInitiatePurchaseInput {
     requestCardToken?: boolean; // Optional flag to request card token.
 }
 
-export interface ITyroInitiatePurchaseCallback {
-    questionCallback: (question: ITyroInitiatePurchaseQuestionCallbackQuestion, answerCallback: (answer: string) => void) => void; // Invoked for merchant questions.
-    statusMessageCallback: (statusMessage: string) => void; // Invoked for terminal status messages.
-    receiptCallback?: (receipt: ITyroInitiatePurchaseReceiptCallback) => void; // Invoked for merchant copy of the receipt.
-    transactionCompleteCallback: (transactionData: ITyroInitiatePurchaseTransactionCompleteCallback) => void; // Invoked upon transaction completion.
+export interface ITyroInitiateRefundInput {
+    amount: string; // The purchase amount in cents.
+    integratedReceipt: boolean; // Indicate where receipts will be printed.
+    mid?: number; // Optional MID for overriding configured MID.
+    tid?: number; // Optional TID for overriding configured TID.
+    integrationKey?: string; // Optional integration key.
+    transactionId?: string; // Optional transaction Id.
 }
 
-interface ITyroInitiatePurchaseQuestionCallbackQuestion {
+export interface ITyroTransactionCallback {
+    questionCallback: (question: ITyroTransactionQuestionCallbackQuestion, answerCallback: (answer: string) => void) => void; // Invoked for merchant questions.
+    statusMessageCallback: (statusMessage: string) => void; // Invoked for terminal status messages.
+    receiptCallback?: (receipt: ITyroTransactionReceiptCallback) => void; // Invoked for merchant copy of the receipt.
+    transactionCompleteCallback: (transactionData: ITyroTransactionCompleteCallback) => void; // Invoked upon transaction completion.
+}
+
+interface ITyroTransactionQuestionCallbackQuestion {
     text: string; // The message to present to the merchant.
     optionsArray: string[]; // The set of button labels to present for the merchant to choose from.
+    isError?: boolean;
 }
 
-interface ITyroInitiatePurchaseReceiptCallback {
+interface ITyroTransactionReceiptCallback {
     signatureRequired: boolean; // Indicates if a signature line should be printed.
     merchantReceipt: string; // Text representation of the Tyro receipt for the merchant.
 }
 
-interface ITyroInitiatePurchaseReceiptCallback {
-    claimAmount: string; // Claim Item amount in cents.
-    rebateAmount: string; // Rebate amount for the claim made.
-    serviceCode: string; // Item Service Code.
-    description: string; // Item description.
-    serviceReference: string; // Item Service Reference.
-    patientId: string; // Patient id as on card.
-    serviceDate: string; // Date of claim in format "yyyyMMddhhmmss".
-    responseCode: string; // Individual response code for this item.
-}
-
-interface ITyroInitiatePurchaseTransactionCompleteCallback {
+interface ITyroTransactionCompleteCallback {
     result: "APPROVED" | "CANCELLED" | "REVERSED" | "DECLINED" | "SYSTEM ERROR" | "NOT STARTED" | "UNKNOWN"; //The merchant will only receive money if this value is APPROVED. UNKNOWN means the merchant should look at the terminal to determine what happened. Typically this would indicate a network error.
     cardType?: string; // The scheme displayed on the card.
     transactionReference?: string; // Tyro's reference to this transaction.

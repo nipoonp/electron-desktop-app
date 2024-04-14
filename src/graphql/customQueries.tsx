@@ -114,6 +114,7 @@ export const GET_USER = gql`
                             windcaveStationId
                             windcaveStationUser
                             windcaveStationKey
+                            tyroIntegrationKey
                             skipEftposReceiptSignature
                             askToPrintCustomerReceipt
                             orderNumberSuffix
@@ -386,6 +387,7 @@ export const GET_RESTAURANT = gql`
                     windcaveStationId
                     windcaveStationUser
                     windcaveStationKey
+                    tyroIntegrationKey
                     skipEftposReceiptSignature
                     askToPrintCustomerReceipt
                     orderNumberSuffix
@@ -1021,6 +1023,7 @@ export interface IGET_RESTAURANT_REGISTER {
     windcaveStationId: string;
     windcaveStationUser: string;
     windcaveStationKey: string;
+    tyroIntegrationKey: string;
     skipEftposReceiptSignature: boolean;
     askToPrintCustomerReceipt: boolean;
     orderNumberSuffix: string;

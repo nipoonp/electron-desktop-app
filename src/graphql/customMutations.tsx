@@ -293,3 +293,12 @@ export const UPDATE_FEEDBACK = gql`
         }
     }
 `;
+
+export const UPDATE_REGISTER_TYRO_INTEGRATION_KEY = gql`
+    mutation UpdateRegister($id: ID!, $tyroIntegrationKey: String!) {
+        updateRegister(input: { id: $id, tyroIntegrationKey: $tyroIntegrationKey }) {
+            id
+            tyroIntegrationKey
+        }
+    }
+`;
