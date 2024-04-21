@@ -22,8 +22,6 @@ import {
   IGET_RESTAURANT_CATEGORY,
   IS3Object,
   EOrderType,
-  IGET_RESTAURANT,
-  IGET_RESTAURANT_PRODUCT_LINK,
 } from "../../graphql/customQueries";
 import { useCart } from "../../context/cart-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -116,12 +114,9 @@ const Restaurant = () => {
   const shakeButtonDurationSeconds = 5;
   const userOnPageDuration: React.MutableRefObject<number> = useRef(1);
   const [isScrollable, setIsScrollable] = useState(false);
-  const [hideMostPopularCategory,setHideMostPopularCategory]=useState(false);
 
   useEffect(()=>{
-    if(register){
-      setHideMostPopularCategory(register.hideMostPopularCategory)
-      if(restaurant && register.hideMostPopularCategory){
+      if(restaurant && register && register.hideMostPopularCategory){
         for (let i = 0; i < restaurant.categories.items.length; i++) {
           const element = restaurant.categories.items[i];
           const isSoldOut = isItemSoldOut(element.soldOut, element.soldOutDate);
@@ -135,7 +130,6 @@ const Restaurant = () => {
           }
         }
       }
-    }    
   },[]);
 
   
@@ -201,20 +195,6 @@ const Restaurant = () => {
       };
     }
   }, [isScrollable]);
-
-  // const inputRef = useRef<HTMLInputElement | null>(null);
-
-  // useEffect(() => {
-  //     const focusTimer = setInterval(() => {
-  //         if (inputRef.current && document.activeElement !== inputRef.current) {
-  //             inputRef.current.focus();
-  //         }
-  //     }, 1000);
-
-  //     return () => {
-  //         clearInterval(focusTimer);
-  //     };
-  // }, []);
 
   useEffect(() => {
     const ticker = setInterval(() => {
@@ -898,7 +878,7 @@ const Restaurant = () => {
                 {menuSearchProduct}
                 {register.enableSkuScanner && menuSkuSearchProduct}
                 {
-                  hideMostPopularCategory===false ? 
+                  register.hideMostPopularCategory===false ? 
                     menuMostPopularCategory : 
                     null
                 }

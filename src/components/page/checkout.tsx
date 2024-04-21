@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { convertBase64ToFile, convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
-import { useGetRestaurantOrdersByBeginWithPlacedAt } from "../../hooks/useGetRestaurantOrdersByBeginWithPlacedAt";
+import { useGetRestaurantOrdersByBeginWithPlacedAtLazyQuery } from "../../hooks/useGetRestaurantOrdersByBeginWithPlacedAtLazyQuery";
 import { FiArrowDownCircle } from "react-icons/fi";
 import { isCurrentTimeWithinOperatingHours ,getTotalOrdersAllow} from "../../util/util";
 import {StoreNotAvailableModal} from '../modals/StoreNotAvailableModal';
@@ -266,17 +266,9 @@ export const Checkout = () => {
         } else {
             setShowModal("");
         }
-
-        // if(restaurant){
-        //     const isBetween=isCurrentTimeWithinOperatingHours(restaurant.operatingHours);
-        //     setIsBetweenOperatingHours(!isBetween)
-        //     setIsBetweenOperatingHoursOpen(!isBetween)
-        //     setStoreMessage("Store is not open for this time.")
-        // }
-       
     }, []);
 
-    const { getRestaurantOrdersByBeginWithPlacedAt } = useGetRestaurantOrdersByBeginWithPlacedAt(); //Skip the first iteration. Get new orders from refetch.
+    const { getRestaurantOrdersByBeginWithPlacedAt } = useGetRestaurantOrdersByBeginWithPlacedAtLazyQuery(); //Skip the first iteration. Get new orders from refetch.
     
     useEffect(()=>{
         if(register?.checkConditionsBeforeCreateOrder){
