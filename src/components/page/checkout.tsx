@@ -193,8 +193,8 @@ export const Checkout = () => {
 
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
     const [showModal, setShowModal] = useState<string>("");
-    const [isBetweenOperatingHours,setIsBetweenOperatingHours]=useState<Boolean>(true);
-    const [isBetweenOperatingHoursOpen,setIsBetweenOperatingHoursOpen]=useState<Boolean>(true);
+    const [isBetweenOperatingHours,setIsBetweenOperatingHours]=useState<Boolean>(false);
+    const [isBetweenOperatingHoursOpen,setIsBetweenOperatingHoursOpen]=useState<Boolean>(false);
     const [storeMessage,setStoreMessage]=useState("");
     const date =format(new Date(), "yyyy-MM-dd");
     
@@ -308,7 +308,7 @@ export const Checkout = () => {
 
         const data=orders?.data?.getOrdersByRestaurantByPlacedAt?.items;
         const currentOperation=getTodayOperation(restaurant?.operatingHours || [])
-        if(data.length){
+        if(data?.length){
             const now = new Date();
     
             const currentPlacedAt = toLocalISOString(now);
@@ -323,8 +323,7 @@ export const Checkout = () => {
             });
     
             console.log('lastMinuteData',lastMinuteData);
-            console.log('currentOperation.orderLimit < lastMinuteData.length',currentOperation.orderLimit , lastMinuteData.length)
-            if(currentOperation.orderLimit <= lastMinuteData.length){
+            if(currentOperation?.orderLimit && currentOperation.orderLimit <= lastMinuteData?.length){
                 setIsBetweenOperatingHours(true)
                 setIsBetweenOperatingHoursOpen(true)
                 setStoreMessage(`You can place ${currentOperation.orderLimit} Orders in ${currentOperation?.time} minutes`);
