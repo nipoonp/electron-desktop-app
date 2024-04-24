@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useNavigate } from "react-router-dom";
-import { convertBase64ToFile, convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
+import { convertBase64ToFile, convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber,getTodayOperation } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
 import { useGetRestaurantOrdersByBeginWithPlacedAtLazyQuery } from "../../hooks/useGetRestaurantOrdersByBeginWithPlacedAtLazyQuery";
@@ -288,8 +288,11 @@ export const Checkout = () => {
             },
         });
 
+        
+
         if(restaurant){
             const isBetween=isCurrentTimeWithinOperatingHours(restaurant.operatingHours);
+            console.log('restaurant.operatingHours',restaurant)
             if(isBetween){
                 const isOrderAllow=getTotalOrdersAllow(restaurant.operatingHours, orders?.data?.getOrdersByRestaurantByPlacedAt?.items?.length || 0)
                 setIsBetweenOperatingHours(!isOrderAllow)
@@ -300,6 +303,31 @@ export const Checkout = () => {
                 setIsBetweenOperatingHours(!isBetween)
                 setIsBetweenOperatingHoursOpen(!isBetween)
                 setStoreMessage("Store is not open for this time.")
+            }
+        }
+
+        const data=orders?.data?.getOrdersByRestaurantByPlacedAt?.items;
+        const currentOperation=getTodayOperation(restaurant?.operatingHours || [])
+        if(data.length){
+            const now = new Date();
+    
+            const currentPlacedAt = toLocalISOString(now);
+            const lastMinute = parseInt(currentOperation?.time);
+            const currentPlacedAtDate = new Date(currentPlacedAt);
+
+            const lastMinuteData = data.filter(order => {
+                const placedAt = new Date(order.placedAt);
+                const timeDifference = currentPlacedAtDate.getTime() - placedAt.getTime();
+                const minutesDifference = timeDifference / (1000 * 60); // Convert milliseconds to minutes
+                return minutesDifference <= lastMinute;
+            });
+    
+            console.log('lastMinuteData',lastMinuteData);
+            console.log('currentOperation.orderLimit < lastMinuteData.length',currentOperation.orderLimit , lastMinuteData.length)
+            if(currentOperation.orderLimit <= lastMinuteData.length){
+                setIsBetweenOperatingHours(true)
+                setIsBetweenOperatingHoursOpen(true)
+                setStoreMessage(`You can place ${currentOperation.orderLimit} Orders in ${currentOperation?.time} minutes`);
             }
         }
     }

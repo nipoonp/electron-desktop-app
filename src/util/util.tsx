@@ -974,6 +974,17 @@ const checkIsCurrentTimeBetween=(operatingHours:IGET_RESTAURANT_OPERATING_HOURS)
 
 }
 
+export function getTodayOperation(operatingHours){
+    const today = new Date();
+    const currentDay = today.getDay();
+
+    const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const currentDayString = daysOfWeek[currentDay].toLowerCase(); 
+    console.log('currentDayString',currentDayString);
+    console.log('operatingHours',operatingHours[currentDayString])
+    return operatingHours[currentDayString][0];
+}
+
 function isTimeBetween(startTime, endTime, checkTime) {
     const [startHour, startMinute] = startTime.split(':').map(Number);
     const [endHour, endMinute] = endTime.split(':').map(Number);

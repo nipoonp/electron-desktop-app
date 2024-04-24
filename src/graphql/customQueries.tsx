@@ -225,36 +225,50 @@ export const GET_RESTAURANT = gql`
                     openingTime
                     closingTime
                     operatingTimeThreshold
+                    time
+                    orderLimit
                 }
                 tuesday {
                     openingTime
                     closingTime
                     operatingTimeThreshold
+                    time
+                    orderLimit
                 }
                 wednesday {
                     openingTime
                     closingTime
                     operatingTimeThreshold
+                    time
+                    orderLimit
                 }
                 thursday {
                     openingTime
                     closingTime
                     operatingTimeThreshold
+                    time
+                    orderLimit
                 }
                 friday {
                     openingTime
                     closingTime
                     operatingTimeThreshold
+                    time
+                    orderLimit
                 }
                 saturday {
                     openingTime
                     closingTime
                     operatingTimeThreshold
+                    time
+                    orderLimit
                 }
                 sunday {
                     openingTime
                     closingTime
                     operatingTimeThreshold
+                    time
+                    orderLimit
                 }
             }
             logo {
