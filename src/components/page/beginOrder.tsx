@@ -6,7 +6,7 @@ import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../pr
 import { IGET_RESTAURANT_ADVERTISEMENT, IGET_RESTAURANT_PING_DATA } from "../../graphql/customQueries";
 import { useRestaurant } from "../../context/restaurant-context";
 import { CachedImage } from "../../tabin/components/cachedImage";
-import { isItemAvailable, isVideoFile } from "../../util/util";
+import { isItemAvailable, isVideoFile, isCurrentTimeWithinOperatingHours } from "../../util/util";
 import { useRegister } from "../../context/register-context";
 import { useGetRestaurantPingDataLazyQuery } from "../../hooks/useGetRestaurantPingDataLazyQuery";
 
@@ -73,10 +73,21 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
     const [availableAds, setAvailableAds] = useState<IGET_RESTAURANT_ADVERTISEMENT[]>([]);
     const [currentAdIndex, setCurrentAdIndex] = useState(0);
     const { restaurant } = useRestaurant();
+    const [isBetweenOperatingHoursOpen,setIsBetweenOperatingHoursOpen]=useState<Boolean>(false);
+    
 
     useEffect(() => {
         setCurrentAdIndex((oldAdIndex) => processAds(oldAdIndex));
-    }, []);
+        if(restaurant){
+            const isBetween=isCurrentTimeWithinOperatingHours(restaurant.operatingHours);
+            if(!isBetween){
+                setIsBetweenOperatingHoursOpen(!isBetween)
+            }
+            else{
+                setIsBetweenOperatingHoursOpen(false)
+            }
+        }
+    }, [restaurant]);
 
     const processAds = (oldAdIndex) => {
         let newIndex = 0;
@@ -112,47 +123,53 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
 
     return (
         <PageWrapper>
-            <div className="begin-order">
-                <div
-                    className="wrapper"
-                    onClick={() => {
-                        navigate(restaurantPath + "/" + restaurant.id);
-                    }}
-                >
-                    <div className="touch-to-begin-wrapper">
-                        <CachedImage className="icon" url={`${getPublicCloudFrontDomainName()}/images/touch-here-dark.png`} alt="hand-icon" />
-                        <div className="h3">TOUCH TO BEGIN</div>
+            {isBetweenOperatingHoursOpen ? 
+             <div className="unavailable-center">
+                Kiosk is unavailable
+             </div>
+            : 
+                <div className="begin-order">
+                    <div
+                        className="wrapper"
+                        onClick={() => {
+                            navigate(restaurantPath + "/" + restaurant.id);
+                        }}
+                    >
+                        <div className="touch-to-begin-wrapper">
+                            <CachedImage className="icon" url={`${getPublicCloudFrontDomainName()}/images/touch-here-dark.png`} alt="hand-icon" />
+                            <div className="h3">TOUCH TO BEGIN</div>
+                        </div>
                     </div>
-                </div>
-                <div className="advertisements-wrapper">
-                    {availableAds.map((advertisement, index) => (
-                        <div
-                            key={advertisement.id}
-                            className={`image-wrapper ${availableAds.length > 1 ? "slide-animation" : ""} ${
-                                currentAdIndex == index ? "active" : "inactive"
-                            }`}
-                        >
-                            {isVideoFile(advertisement.content.key) ? (
-                                <video className="splash-screen-video" autoPlay loop muted>
-                                    <source
-                                        src={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${
+                    <div className="advertisements-wrapper">
+                        {availableAds.map((advertisement, index) => (
+                            <div
+                                key={advertisement.id}
+                                className={`image-wrapper ${availableAds.length > 1 ? "slide-animation" : ""} ${
+                                    currentAdIndex == index ? "active" : "inactive"
+                                }`}
+                            >
+                                {isVideoFile(advertisement.content.key) ? (
+                                    <video className="splash-screen-video" autoPlay loop muted>
+                                        <source
+                                            src={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${
+                                                advertisement.content.key
+                                            }`}
+                                        />
+                                    </video>
+                                ) : (
+                                    <CachedImage
+                                        className="image"
+                                        url={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${
                                             advertisement.content.key
                                         }`}
+                                        alt="advertisement-image"
                                     />
-                                </video>
-                            ) : (
-                                <CachedImage
-                                    className="image"
-                                    url={`${getCloudFrontDomainName()}/protected/${advertisement.content.identityPoolId}/${
-                                        advertisement.content.key
-                                    }`}
-                                    alt="advertisement-image"
-                                />
-                            )}
-                        </div>
-                    ))}
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </div>
+            }
         </PageWrapper>
     );
 };

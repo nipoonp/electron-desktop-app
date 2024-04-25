@@ -10,10 +10,11 @@ import {
     ILIST_RESTAURANTS,
 } from "../graphql/customQueries";
 import { useGetRestaurantQuery } from "../hooks/useGetRestaurantQuery";
+import { useListRestaurantsLazyQuery } from '../hooks/useListRestaurantsLazyQuery';
 import { getCloudFrontDomainName } from "../private/aws-custom";
 import { useListRestaurantsQuery } from "../hooks/useListRestaurantsQuery";
 import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
-import { getBase64FromUrlImage } from "../util/util";
+import { getBase64FromUrlImage, isCurrentTimeWithinOperatingHours } from "../util/util";
 
 interface IMENU_CATEGORIES {
     [index: string]: IGET_RESTAURANT_CATEGORY;
@@ -76,6 +77,7 @@ const C = (props: {
     const [restaurantLoading, setRestaurantLoading] = useState<boolean>(false);
     const [restaurantError, setRestaurantError] = useState<boolean>(false);
     const { data: getRestaurantData, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(props.restaurantId);
+    const { restaurantDetail } = useListRestaurantsLazyQuery();
     const restaurantProductImages = {};
 
     useEffect(() => {
@@ -137,6 +139,24 @@ const C = (props: {
             setMenuModifiers(modifiers);
         }
     }, [getRestaurantData, getRestaurantLoading, getRestaurantError]);
+
+
+    useEffect(()=>{
+        async function fetchRestorant(){
+            const res = await restaurantDetail({variables: {
+                restaurantId: restaurant?.id,
+            }});
+            setRestaurant(res.data.getRestaurant)
+        }
+        if(restaurant){
+            const isBetween=isCurrentTimeWithinOperatingHours(restaurant?.operatingHours);
+            if(!isBetween){
+                fetchRestorant();
+                const intervalId = setInterval(fetchRestorant, 5 * 10 * 1000);
+                return () => clearInterval(intervalId);
+            }
+        }
+    },[restaurant])
 
     const _setRestaurant = (newRestaurant: IGET_RESTAURANT | null) => {
         setRestaurant(newRestaurant);
