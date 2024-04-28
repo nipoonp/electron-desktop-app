@@ -83,7 +83,7 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
     const products = (
         <div className="products pt-2">
             {upSellCrossSaleProductItems.map((item, index) => {
-                if (index == randomItemIndex) return;
+                if (index === randomItemIndex) return;
 
                 return productDisplay(item.category, item.product);
             })}

@@ -3,7 +3,10 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
-import { EEftposTransactionOutcome, ESmartpayTransactionOutcome, IEftposTransactionOutcome } from "../model/model";
+import { EEftposTransactionOutcome, ESmartpayTransactionOutcome, IEftposTransactionOutcome, IEftposTransactionOutcomeCardType } from "../model/model";
+import { format } from "date-fns";
+import { toLocalISOString } from "../util/util";
+import { useErrorLogging } from "./errorLogging-context";
 // ******************************************************************************
 // The code below will handle the SmartConnect API endpoint communication.
 // SmartConnect API endpoints are CORS-enabled, so the calls can be made from the front-end.
@@ -46,6 +49,8 @@ import { EEftposTransactionOutcome, ESmartpayTransactionOutcome, IEftposTransact
 //
 // The scenarios below capture the outcomes we'd want to handle on the interface.
 
+const initialLogs = "";
+
 type ContextProps = {
     sendParingRequest: (pairingCode: string) => Promise<void>;
     createTransaction: (amount: number, transactionType: string) => Promise<string>;
@@ -74,6 +79,8 @@ const SmartpayContext = createContext<ContextProps>({
 });
 
 const SmartpayProvider = (props: { children: React.ReactNode }) => {
+    const { addEftposLog } = useErrorLogging();
+
     const { register } = useRegister();
     const { restaurant } = useRestaurant();
 
@@ -82,6 +89,8 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
     const [posRegisterName, setPosRegisterName] = useState<string | null>(null);
     let [posBusinessName, setPosBusinessName] = useState<string | null>(null);
     const [posVendorName, setPosVendorName] = useState<string>("Tabin");
+
+    const logs = useRef<string>(initialLogs);
 
     useEffect(() => {
         if (restaurant) setPosBusinessName(restaurant.name);
@@ -93,6 +102,41 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
             setPosRegisterName(register.name);
         }
     }, [register]);
+
+    const getCardType = (cardType: string) => {
+        let type = IEftposTransactionOutcomeCardType.EFTPOS;
+
+        if (cardType.toLowerCase() === "visa") {
+            type = IEftposTransactionOutcomeCardType.VISA;
+        } else if (cardType.toLowerCase() === "mcard") {
+            type = IEftposTransactionOutcomeCardType.MASTERCARD;
+        } else if (cardType.toLowerCase() === "amex") {
+            type = IEftposTransactionOutcomeCardType.AMEX;
+        }
+
+        return type;
+    };
+
+    const addToLogs = (log) => {
+        const newLog = format(new Date(), "dd/MM/yy HH:mm:ss.SSS ") + log;
+
+        console.log(log);
+        logs.current += newLog + "\n";
+    };
+
+    const createEftposTransactionLog = async (restaurantId: string, transactionType: string, amount: number) => {
+        const now = new Date();
+
+        await addEftposLog({
+            eftposProvider: "SMARTPAY",
+            amount: amount,
+            type: transactionType,
+            payload: logs.current,
+            restaurantId: restaurantId,
+            timestamp: toLocalISOString(now),
+            expiry: Number(Math.floor(Number(now) / 1000) + 2592000), // Add 30 days to timeStamp for DynamoDB TTL
+        });
+    };
 
     // ======================================================
     // PAIRING REQUEST
@@ -334,13 +378,17 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
 
         const endTime = Number(new Date()) + timeout;
 
+        let transactionType = "";
+        let amount = "0";
+
         var checkCondition = async (resolve: any, reject: any) => {
             if (!pollingUrl) {
                 reject("Polling URL needs to be submitted");
+                addToLogs("Polling URL needs to be submitted");
                 return;
             }
 
-            console.log("Polling for outcome: " + pollingUrl);
+            addToLogs("Polling for outcome: " + pollingUrl);
 
             try {
                 // Note that a GET is required. Any other method will return with a 404 Not Found.
@@ -352,7 +400,8 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
 
                 // Gets called after *either* success or error are called
                 try {
-                    console.log(`Transaction GET response received (${response.status}) ${response.data.result}`);
+                    addToLogs(`Transaction GET response received (${response.status}) ${response.data.result}`);
+                    addToLogs(`Transaction GET response received ${JSON.stringify(response)}`);
 
                     let transactionComplete = false;
                     let transactionOutcome: IEftposTransactionOutcome | null = null;
@@ -364,6 +413,11 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
                             let transactionStatus = res.transactionStatus;
                             let transactionResult = res.data.TransactionResult;
                             let result = res.data.Result;
+                            transactionType = res.data.Function;
+                            amount = res.data.AmountTotal;
+                            let eftposCardType = res.data.CardType; //TODO Double check this field
+                            let eftposSurcharge = res.data.AmountSurcharge;
+                            let eftposTip = res.data.AmountTip; //TODO Double check this field
 
                             if (transactionStatus == "COMPLETED") {
                                 // Transaction is concluded, no need to continue polling
@@ -376,6 +430,9 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
                                         transactionOutcome: EEftposTransactionOutcome.Success,
                                         message: "Transaction Accepted!",
                                         eftposReceipt: null,
+                                        eftposCardType: getCardType(eftposCardType),
+                                        eftposSurcharge: parseInt(eftposSurcharge || "0"),
+                                        eftposTip: parseInt(eftposTip || "0"),
                                     };
                                 } else if (transactionResult == "OK-DECLINED") {
                                     transactionOutcome = {
@@ -432,7 +489,7 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
                         // (e.g. Internet down on client or server offline/unreachable)
 
                         // We will silently ignore this and continue polling
-                        console.log("Ignoring failed request...");
+                        addToLogs("Ignoring failed request...");
                     }
 
                     console.log(transactionComplete, transactionOutcome);
@@ -459,6 +516,8 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
             } catch (error) {
                 // Catch code errors (parsing failure, etc.)
                 reject(error);
+            } finally {
+                await createEftposTransactionLog(restaurant ? restaurant.id : "", transactionType, parseInt(amount));
             }
         };
 

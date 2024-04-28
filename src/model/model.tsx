@@ -71,11 +71,36 @@ export enum EVerifoneTransactionOutcome {
     TerminalBusy, // BB
 }
 
+export enum ETyroTransactionOutcome {
+    APPROVED,
+    CANCELLED,
+    REVERSED,
+    DECLINED,
+    SYSTEMERROR,
+    NOTSTARTED,
+    UNKNOWN,
+}
+
 export interface IEftposTransactionOutcome {
-    platformTransactionOutcome: ESmartpayTransactionOutcome | EWindcaveTransactionOutcome | EVerifoneTransactionOutcome | null;
+    platformTransactionOutcome:
+        | ESmartpayTransactionOutcome
+        | EWindcaveTransactionOutcome
+        | EVerifoneTransactionOutcome
+        | ETyroTransactionOutcome
+        | null;
     transactionOutcome: EEftposTransactionOutcome;
     message: string;
     eftposReceipt: string | null;
+    eftposCardType?: IEftposTransactionOutcomeCardType;
+    eftposSurcharge?: number;
+    eftposTip?: number;
+}
+
+export enum IEftposTransactionOutcomeCardType {
+    VISA,
+    MASTERCARD,
+    AMEX,
+    EFTPOS,
 }
 
 export enum EPaymentModalState {
@@ -89,6 +114,94 @@ export enum EPaymentModalState {
     Park,
     ThirdPartyIntegrationAwaitingResponse,
     None,
+}
+
+export interface ITyroPairTerminalResponseReceivedCallback {
+    status: "inProgress" | "success" | "failure"; //If inProgress more responses will follow.
+    message: string; //Text to show the merchant.
+    integrationKey: string; //Integration key to be used when transacting.
+}
+
+export interface ITyroInitiatePurchaseInput {
+    amount: string; // The purchase amount in cents.
+    cashout?: string; // Optional cash out amount in cents.
+    integratedReceipt: boolean; // Indicate where receipts will be printed.
+    mid?: number; // Optional MID for overriding configured MID.
+    tid?: number; // Optional TID for overriding configured TID.
+    integrationKey?: string; // Optional integration key.
+    transactionId?: string; // Optional transaction Id.
+    healthpointTransactionId?: string; // Optional HealthPoint Claim transaction ID.
+    enableSurcharge?: boolean; // Optional flag to apply surcharge.
+    requestCardToken?: boolean; // Optional flag to request card token.
+}
+
+export interface ITyroInitiateRefundInput {
+    amount: string; // The purchase amount in cents.
+    integratedReceipt: boolean; // Indicate where receipts will be printed.
+    mid?: number; // Optional MID for overriding configured MID.
+    tid?: number; // Optional TID for overriding configured TID.
+    integrationKey?: string; // Optional integration key.
+    transactionId?: string; // Optional transaction Id.
+}
+
+export interface ITyroTransactionCallback {
+    questionCallback: (question: ITyroTransactionQuestionCallbackQuestion, answerCallback: (answer: string) => void) => void; // Invoked for merchant questions.
+    statusMessageCallback: (statusMessage: string) => void; // Invoked for terminal status messages.
+    receiptCallback?: (receipt: ITyroTransactionReceiptCallback) => void; // Invoked for merchant copy of the receipt.
+    transactionCompleteCallback: (transactionData: ITyroTransactionCompleteCallback) => void; // Invoked upon transaction completion.
+}
+
+interface ITyroTransactionQuestionCallbackQuestion {
+    text: string; // The message to present to the merchant.
+    optionsArray: string[]; // The set of button labels to present for the merchant to choose from.
+    isError?: boolean;
+}
+
+interface ITyroTransactionReceiptCallback {
+    signatureRequired: boolean; // Indicates if a signature line should be printed.
+    merchantReceipt: string; // Text representation of the Tyro receipt for the merchant.
+}
+
+interface ITyroTransactionCompleteCallback {
+    result: "APPROVED" | "CANCELLED" | "REVERSED" | "DECLINED" | "SYSTEM ERROR" | "NOT STARTED" | "UNKNOWN"; //The merchant will only receive money if this value is APPROVED. UNKNOWN means the merchant should look at the terminal to determine what happened. Typically this would indicate a network error.
+    cardType?: string; // The scheme displayed on the card.
+    transactionReference?: string; // Tyro's reference to this transaction.
+    authorisationCode?: string; // The Scheme's reference to the transaction.
+    issuerActionCode?: string; // The raw result code returned by the card issuer.
+    elidedPan?: string; // The (elided) credit card number used for this transaction.
+    rrn?: string; // The Retrieval Reference Number, unique for a 7-day period.
+    tipAmount?: string; // The tip component, in cents, for Tip Completion transactions.
+    tipCompletionReference?: string; // Tyro's reference to the Tip Completion.
+    tabCompletionReference?: string; // Tyro's reference to a Tab Completion.
+    preAuthCompletionReference?: string; // Tyro's reference to a PreAuth Completion.
+    cardToken?: string; // The Card Token, if requested.
+    cardTokenExpiryDate?: string; // The expiry of the Card Token, if requested.
+    cardTokenStatusCode?: string; // The status code of the Card Token request.
+    cardTokenErrorMessage?: string; // The error message, if the Card Token request fails.
+    customerReceipt?: string; // Text representation of the Tyro receipt for the customer.
+    //For Healthpoint Claims, Rebate Estimates and Cancellations
+    healthpointRefTag: string; // The reference tag identifying a transaction per terminal.
+    healthpointTotalBenefitAmount: string; // Total benefit amount for all claim items, in cents.
+    healthpointSettlementDateTime: string; // Settlement date and time as decided by the iCS system/health fund.
+    healthpointTerminalDateTime: string; // The transaction date and time of the claim/s.
+    healthpointMemberNumber: string; // Private health fund member number of the cardholder.
+    healthpointProviderId: string; // Provider ID matching the original request.
+    healthpointServiceType: string; // Service type matching the original request.
+    healthpointGapAmount: string; // The gap amount, present only on successful claims and voids.
+    healthpointPhfResponseCode: string; // The response code from the private health fund.
+    healthpointPhfResponseCodeDescription: string; // The description of the response code from the private health fund.
+    healthpointHealthFundName: string; // The name of the private health fund.
+    healthpointHealthFundIdentifyingDigits: string; // The identifying digits of the private health fund.
+    healthpointClaimItems?: {
+        claimAmount: string; // Claim Item amount in cents
+        rebateAmount: string; // Rebate amount for the claim made
+        serviceCode: string; // Item Service Code
+        description: string; // Item description
+        serviceReference: string; // Item Service Ref
+        patientId: string; // Patient id as on card
+        serviceDate: string; // Date of claim in format "yyyyMMddhhmmss"
+        responseCode: string; // Individual response code for this item
+    }[];
 }
 
 export enum EOrderType {
@@ -107,6 +220,7 @@ export enum EEftposProvider {
     SMARTPAY = "SMARTPAY",
     VERIFONE = "VERIFONE",
     WINDCAVE = "WINDCAVE",
+    TYRO = "TYRO",
 }
 
 export interface ICustomerInformation {
@@ -131,25 +245,25 @@ export interface ICartItemQuantitiesByIdValue {
 
 //ICartProduct is used to pass into the DB. So its good to have it as ? undefined rather than null. Null is a type in dynamoDB so it will create a field with type Null.
 export interface ICartProduct {
-  index?: number; //index is for promos
-  id: string;
-  name: string;
-  kitchenName: string | null;
-  price: number;
-  totalPrice: number;
-  discount: number;
-  isAgeRescricted: boolean;
-  image: IS3Object | null;
-  quantity: number;
-  notes: string | null;
-  category: ICartCategory | null; //Product modifier do not have category
-  modifierGroups: ICartModifierGroup[];
+    index?: number; //index is for promos
+    id: string;
+    name: string;
+    kitchenName: string | null;
+    price: number;
+    totalPrice: number;
+    discount: number;
+    isAgeRescricted: boolean;
+    image: IS3Object | null;
+    quantity: number;
+    notes: string | null;
+    category: ICartCategory | null; //Product modifier do not have category
+    modifierGroups: ICartModifierGroup[];
 }
 
 export enum ERegisterType {
-  KIOSK = "KIOSK",
-  POS = "POS",
-  ONLINE = "ONLINE",
+    KIOSK = "KIOSK",
+    POS = "POS",
+    ONLINE = "ONLINE",
 }
 
 export interface ICartCategory {
@@ -250,6 +364,10 @@ export interface IOrderReceipt {
     discount: number | null;
     subTotal: number;
     paid: boolean;
+    surcharge: number | null;
+    orderTypeSurcharge: number | null;
+    eftposSurcharge: number | null;
+    eftposTip: number | null;
     displayPaymentRequiredMessage: boolean;
     type: EOrderType;
     number: string;

@@ -2,7 +2,13 @@ import { useEffect, createContext, useContext, useRef } from "react";
 import { Logger } from "aws-amplify";
 import { delay, getVerifoneSocketErrorMessage, getVerifoneTimeBasedTransactionId } from "../model/util";
 import { toLocalISOString } from "../util/util";
-import { EEftposTransactionOutcome, IEftposTransactionOutcome, EVerifoneTransactionOutcome, EEftposProvider } from "../model/model";
+import {
+    EEftposTransactionOutcome,
+    IEftposTransactionOutcome,
+    EVerifoneTransactionOutcome,
+    EEftposProvider,
+    IEftposTransactionOutcomeCardType,
+} from "../model/model";
 import { useErrorLogging } from "./errorLogging-context";
 import { useRegister } from "./register-context";
 import { format } from "date-fns";
@@ -101,8 +107,6 @@ const VerifoneContext = createContext<ContextProps>({
 
 const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const { addEftposLog } = useErrorLogging();
-    const { restaurant } = useRestaurant();
-    const { register, isPOS } = useRegister();
 
     const interval = 1 * 1500; // 1.5 seconds
     const interval2 = 1 * 100; // 150 miliseconds
@@ -198,6 +202,20 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         eftposData.current = initialEftposData;
         eftposReceipt.current = initialEftposReceipt;
         logs.current = initialLogs;
+    };
+
+    const getCardType = (cardType: string) => {
+        let type = IEftposTransactionOutcomeCardType.EFTPOS;
+
+        if (cardType.toLowerCase() === "visa") {
+            type = IEftposTransactionOutcomeCardType.VISA;
+        } else if (cardType.toLowerCase() === "mcard") {
+            type = IEftposTransactionOutcomeCardType.MASTERCARD;
+        } else if (cardType.toLowerCase() === "amex") {
+            type = IEftposTransactionOutcomeCardType.AMEX;
+        }
+
+        return type;
     };
 
     const addToLogs = (log: string) => {
@@ -345,9 +363,10 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         const endTime = Number(new Date()) + timeout;
         const transactionId = unresolvedVerifoneTransactionId ? unresolvedVerifoneTransactionId : getVerifoneTimeBasedTransactionId();
         const merchantId = 0;
-        let iSO8583ResponseCode;
-
-        let transactionApprovedWithSignature = false;
+        let iSO8583ResponseCode: string | undefined = undefined;
+        let eftposCardType: string | undefined = undefined;
+        let eftposTip: string | undefined = undefined;
+        let eftposSurcharge: string | undefined = undefined;
 
         readyToPrintRequestReplySent.current = false;
         printRequestReplySent.current = false;
@@ -390,6 +409,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 if (eftposData.current.type === VMT.ResultAndExtrasResponse) {
                     const verifonePurchaseResultArray = eftposData.current.payload.split(",");
                     iSO8583ResponseCode = verifonePurchaseResultArray[2];
+                    eftposCardType = verifonePurchaseResultArray[4];
+                    eftposTip = verifonePurchaseResultArray[7];
+                    eftposSurcharge = verifonePurchaseResultArray[8];
 
                     if (iSO8583ResponseCode != "??") {
                         localStorage.removeItem("unresolvedVerifoneTransactionId");
@@ -449,13 +471,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             // Return Transaction Outcome -------------------------------------------------------------------------------------------------------------------------------- //
             let transactionOutcome: IEftposTransactionOutcome | null = null;
 
-            if (iSO8583ResponseCode === "09") {
-                // We should not come in here if its on kiosk mode, unattended mode for Verifone
-                console.log("Transaction Approved With Signature");
-                addToLogs("Transaction Approved With Signature");
-                transactionApprovedWithSignature = true;
-            }
-
             switch (iSO8583ResponseCode) {
                 case "00":
                     transactionOutcome = {
@@ -463,26 +478,32 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                         transactionOutcome: EEftposTransactionOutcome.Success,
                         message: "Transaction Approved!",
                         eftposReceipt: eftposReceipt.current,
+                        eftposCardType: getCardType(eftposCardType),
+                        eftposSurcharge: parseInt(eftposSurcharge || "0"),
+                        eftposTip: parseInt(eftposTip || "0"),
                     };
                     break;
-                // case "09":
-                //     // We should not come in here if its on kiosk mode, unattended mode for Verifone
-                //     // if ((register && register.skipEftposReceiptSignature) || isPOS) {
-                //     // transactionOutcome = {
-                //     //     platformTransactionOutcome: EVerifoneTransactionOutcome.Approved,
-                //     //     transactionOutcome: EEftposTransactionOutcome.Success,
-                //     //     message: "Transaction Approved With Signature!",
-                //     //     eftposReceipt: eftposReceipt.current,
-                //     // };
-                //     // } else {
-                //     //     transactionOutcome = {
-                //     //         platformTransactionOutcome: EVerifoneTransactionOutcome.ApprovedWithSignature,
-                //     //         transactionOutcome: EEftposTransactionOutcome.Fail,
-                //     //         message: "Transaction Approved With Signature Not Allowed In Kiosk Mode!",
-                //     //         eftposReceipt: eftposReceipt.current,
-                //     //     };
-                //     // }
-                //     break;
+                case "09":
+                    // We should not come in here if its on kiosk mode, unattended mode for Verifone
+                    // if ((register && register.skipEftposReceiptSignature) || isPOS) {
+                    transactionOutcome = {
+                        platformTransactionOutcome: EVerifoneTransactionOutcome.Approved,
+                        transactionOutcome: EEftposTransactionOutcome.Success,
+                        message: "Transaction Approved With Signature!",
+                        eftposReceipt: eftposReceipt.current,
+                        eftposCardType: getCardType(eftposCardType),
+                        eftposSurcharge: parseInt(eftposSurcharge || "0"),
+                        eftposTip: parseInt(eftposTip || "0"),
+                    };
+                    // } else {
+                    //     transactionOutcome = {
+                    //         platformTransactionOutcome: EVerifoneTransactionOutcome.ApprovedWithSignature,
+                    //         transactionOutcome: EEftposTransactionOutcome.Fail,
+                    //         message: "Transaction Approved With Signature Not Allowed In Kiosk Mode!",
+                    //         eftposReceipt: eftposReceipt.current,
+                    //     };
+                    // }
+                    break;
                 case "CC":
                     transactionOutcome = {
                         platformTransactionOutcome: EVerifoneTransactionOutcome.Cancelled,
@@ -492,22 +513,12 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     };
                     break;
                 case "55":
-                    //Accept the transaction if it was accepted with signature. Cannot end with "09" condition as it shows that transaction is still not completed.
-                    if (transactionApprovedWithSignature) {
-                        transactionOutcome = {
-                            platformTransactionOutcome: EVerifoneTransactionOutcome.Approved,
-                            transactionOutcome: EEftposTransactionOutcome.Success,
-                            message: "Transaction Approved With Signature!",
-                            eftposReceipt: eftposReceipt.current,
-                        };
-                    } else {
-                        transactionOutcome = {
-                            platformTransactionOutcome: EVerifoneTransactionOutcome.Declined,
-                            transactionOutcome: EEftposTransactionOutcome.Fail,
-                            message: "Transaction Declined! Please try again.",
-                            eftposReceipt: eftposReceipt.current,
-                        };
-                    }
+                    transactionOutcome = {
+                        platformTransactionOutcome: EVerifoneTransactionOutcome.Declined,
+                        transactionOutcome: EEftposTransactionOutcome.Fail,
+                        message: "Transaction Declined! Please try again.",
+                        eftposReceipt: eftposReceipt.current,
+                    };
                     break;
                 case "90":
                     // You should never come in this state. Don't even know what settledOk is. Cannot find any references in docs as well.
