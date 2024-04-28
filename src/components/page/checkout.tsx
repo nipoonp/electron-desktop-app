@@ -41,6 +41,7 @@ import {
     EVerifoneTransactionOutcome,
     ERegisterType,
     IEftposTransactionOutcomeCardType,
+    EOrderType,
 } from "../../model/model";
 import { useUser } from "../../context/user-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -422,9 +423,14 @@ export const Checkout = () => {
             return;
         }
 
-        if (register && register.enableBuzzerNumbers && buzzerNumber === null) {
-            navigate(buzzerNumberPath);
-            return;
+        if (register && buzzerNumber === null && orderType) {
+            if (
+                (register.enableBuzzerNumbersForTakeaway && orderType === EOrderType.TAKEAWAY) ||
+                (register.enableBuzzerNumbersForDineIn && orderType === EOrderType.DINEIN)
+            ) {
+                navigate(buzzerNumberPath);
+                return;
+            }
         }
 
         if (register && register.requestCustomerInformation) {
