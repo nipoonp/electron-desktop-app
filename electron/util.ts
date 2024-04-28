@@ -121,6 +121,18 @@ export const printCustomerReceipt = async (
     // console.log("Printer connected:", isConnected);
     if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
+    if (order.displayPaymentRequiredMessage) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Payment Required");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
     printer.alignCenter();
 
     if (order.restaurantLogoBase64) {
@@ -209,15 +221,6 @@ export const printCustomerReceipt = async (
         printer.setTextSize(1, 1);
         printer.println(`Ready in ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "mins" : "min"}`);
         printer.setTextNormal();
-        printer.bold(false);
-    }
-
-    if (order.displayPaymentRequiredMessage) {
-        printer.newLine();
-        printer.bold(true);
-        printer.underlineThick(true);
-        printer.println("Payment Required");
-        printer.underlineThick(false);
         printer.bold(false);
     }
 
