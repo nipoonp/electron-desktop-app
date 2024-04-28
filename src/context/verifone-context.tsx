@@ -2,7 +2,13 @@ import { useEffect, createContext, useContext, useRef } from "react";
 import { Logger } from "aws-amplify";
 import { delay, getVerifoneSocketErrorMessage, getVerifoneTimeBasedTransactionId } from "../model/util";
 import { toLocalISOString } from "../util/util";
-import { EEftposTransactionOutcome, IEftposTransactionOutcome, EVerifoneTransactionOutcome, EEftposProvider } from "../model/model";
+import {
+    EEftposTransactionOutcome,
+    IEftposTransactionOutcome,
+    EVerifoneTransactionOutcome,
+    EEftposProvider,
+    IEftposTransactionOutcomeCardType,
+} from "../model/model";
 import { useErrorLogging } from "./errorLogging-context";
 import { useRegister } from "./register-context";
 import { format } from "date-fns";
@@ -198,6 +204,20 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         logs.current = initialLogs;
     };
 
+    const getCardType = (cardType: string) => {
+        let type = IEftposTransactionOutcomeCardType.EFTPOS;
+
+        if (cardType.toLowerCase() === "visa") {
+            type = IEftposTransactionOutcomeCardType.VISA;
+        } else if (cardType.toLowerCase() === "mcard") {
+            type = IEftposTransactionOutcomeCardType.MASTERCARD;
+        } else if (cardType.toLowerCase() === "amex") {
+            type = IEftposTransactionOutcomeCardType.AMEX;
+        }
+
+        return type;
+    };
+
     const addToLogs = (log: string) => {
         logs.current += format(new Date(), "dd/MM/yy HH:mm:ss.SSS ") + log + "\n";
     };
@@ -343,7 +363,10 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         const endTime = Number(new Date()) + timeout;
         const transactionId = unresolvedVerifoneTransactionId ? unresolvedVerifoneTransactionId : getVerifoneTimeBasedTransactionId();
         const merchantId = 0;
-        let iSO8583ResponseCode;
+        let iSO8583ResponseCode: string | undefined = undefined;
+        let eftposCardType: string | undefined = undefined;
+        let eftposTip: string | undefined = undefined;
+        let eftposSurcharge: string | undefined = undefined;
 
         readyToPrintRequestReplySent.current = false;
         printRequestReplySent.current = false;
@@ -386,6 +409,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 if (eftposData.current.type === VMT.ResultAndExtrasResponse) {
                     const verifonePurchaseResultArray = eftposData.current.payload.split(",");
                     iSO8583ResponseCode = verifonePurchaseResultArray[2];
+                    eftposCardType = verifonePurchaseResultArray[4];
+                    eftposTip = verifonePurchaseResultArray[7];
+                    eftposSurcharge = verifonePurchaseResultArray[8];
 
                     if (iSO8583ResponseCode != "??") {
                         localStorage.removeItem("unresolvedVerifoneTransactionId");
@@ -452,6 +478,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                         transactionOutcome: EEftposTransactionOutcome.Success,
                         message: "Transaction Approved!",
                         eftposReceipt: eftposReceipt.current,
+                        eftposCardType: getCardType(eftposCardType),
+                        eftposSurcharge: parseInt(eftposSurcharge || "0"),
+                        eftposTip: parseInt(eftposTip || "0"),
                     };
                     break;
                 case "09":
@@ -462,6 +491,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                         transactionOutcome: EEftposTransactionOutcome.Success,
                         message: "Transaction Approved With Signature!",
                         eftposReceipt: eftposReceipt.current,
+                        eftposCardType: getCardType(eftposCardType),
+                        eftposSurcharge: parseInt(eftposSurcharge || "0"),
+                        eftposTip: parseInt(eftposTip || "0"),
                     };
                     // } else {
                     //     transactionOutcome = {
