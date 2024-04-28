@@ -94,7 +94,8 @@ export const GET_USER = gql`
                             active
                             name
                             enableTableFlags
-                            enableBuzzerNumbers
+                            enableBuzzerNumbersForTakeaway
+                            enableBuzzerNumbersForDineIn
                             enableSkuScanner
                             enablePayLater
                             enableCashPayments
@@ -114,6 +115,7 @@ export const GET_USER = gql`
                             windcaveStationId
                             windcaveStationUser
                             windcaveStationKey
+                            tyroIntegrationKey
                             skipEftposReceiptSignature
                             askToPrintCustomerReceipt
                             orderNumberSuffix
@@ -360,7 +362,8 @@ export const GET_RESTAURANT = gql`
                     active
                     name
                     enableTableFlags
-                    enableBuzzerNumbers
+                    enableBuzzerNumbersForTakeaway
+                    enableBuzzerNumbersForDineIn
                     enableSkuScanner
                     enableFeedback
                     enablePayLater
@@ -386,6 +389,7 @@ export const GET_RESTAURANT = gql`
                     windcaveStationId
                     windcaveStationUser
                     windcaveStationKey
+                    tyroIntegrationKey
                     skipEftposReceiptSignature
                     askToPrintCustomerReceipt
                     orderNumberSuffix
@@ -1003,7 +1007,8 @@ export interface IGET_RESTAURANT_REGISTER {
     active: boolean;
     name: string;
     enableTableFlags: boolean;
-    enableBuzzerNumbers: boolean;
+    enableBuzzerNumbersForTakeaway: boolean;
+    enableBuzzerNumbersForDineIn: boolean;
     enableSkuScanner: boolean;
     enableFeedback: boolean;
     enablePayLater: boolean;
@@ -1021,6 +1026,7 @@ export interface IGET_RESTAURANT_REGISTER {
     windcaveStationId: string;
     windcaveStationUser: string;
     windcaveStationKey: string;
+    tyroIntegrationKey: string;
     skipEftposReceiptSignature: boolean;
     askToPrintCustomerReceipt: boolean;
     orderNumberSuffix: string;

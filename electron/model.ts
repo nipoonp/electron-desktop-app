@@ -107,6 +107,10 @@ export interface IOrderReceipt {
     discount: number | null;
     subTotal: number;
     paid: boolean;
+    surcharge: number | null;
+    orderTypeSurcharge: number | null;
+    eftposSurcharge: number | null;
+    eftposTip: number | null;
     displayPaymentRequiredMessage: boolean;
     type: EOrderType;
     number: string;
@@ -114,7 +118,7 @@ export interface IOrderReceipt {
     buzzer: string | null;
     placedAt: string;
     orderScheduledAt: string | null;
-    preparationTimeInMinutes: null | null;
+    preparationTimeInMinutes: number | null;
 }
 
 export interface IPrintSalesDataInputDailySales {

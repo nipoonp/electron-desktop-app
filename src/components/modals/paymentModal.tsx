@@ -95,8 +95,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         const eftposAmountFloat = parseFloat(eftposAmount);
         const eftposAmountCents = convertDollarsToCentsReturnInt(eftposAmountFloat);
         const totalRemaining = subTotal - paidSoFar;
-
-        if (eftposAmountCents == 0) {
+        if (subTotal !== 0 && eftposAmountCents == 0) {
             setAmountError("Value cannot be 0.00");
             return;
         } else if (eftposAmountCents <= 0) {
@@ -113,8 +112,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
     const onClickCash = (cashAmount: string) => {
         const cashAmountFloat = parseFloat(cashAmount);
         const cashAmountCents = convertDollarsToCentsReturnInt(cashAmountFloat);
-
-        if (cashAmountCents == 0) {
+        if (subTotal !== 0 && cashAmountCents == 0) {
             setAmountError("Value cannot be 0.00");
             return;
         }
@@ -126,7 +124,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         const uberEatsAmountFloat = parseFloat(uberEatsAmount);
         const uberEatsAmountCents = convertDollarsToCentsReturnInt(uberEatsAmountFloat);
 
-        if (uberEatsAmountCents == 0) {
+        if (subTotal !== 0 && uberEatsAmountCents == 0) {
             setAmountError("Value cannot be 0.00");
             return;
         }
@@ -138,7 +136,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         const menuLogAmountFloat = parseFloat(menuLogAmount);
         const menuLogAmountCents = convertDollarsToCentsReturnInt(menuLogAmountFloat);
 
-        if (menuLogAmountCents == 0) {
+        if (subTotal !== 0 && menuLogAmountCents == 0) {
             setAmountError("Value cannot be 0.00");
             return;
         }
@@ -781,7 +779,7 @@ const POSPaymentScreen = (props: {
                                     <Link onClick={() => onRemoveMenulogTransaction(index)}>(Remove)</Link>
                                 </div>
                             ) : (
-                                //For all Eftpos types Verifone, Smartpay, Windcave
+                                //For all Eftpos types Verifone, Smartpay, Windcave and Tyro
                                 <div className="mb-2">Eftpos: ${convertCentsToDollars(payment.amount)}</div>
                             )}
                         </>
@@ -848,7 +846,7 @@ const FeedbackSection = (props: { paymentOutcomeApprovedRedirectTimeLeft: number
 
                 totalRating = totalRating + newRating;
                 totalNumberOfRatings = totalNumberOfRatings + 1;
-                const modifiedResponse = JSON.parse(JSON.stringify(getFeedbackData[0], (key, value) => key === '__typename' ? undefined : value));
+                const modifiedResponse = JSON.parse(JSON.stringify(getFeedbackData[0], (key, value) => (key === "__typename" ? undefined : value)));
                 await updateFeedback({
                     variables: {
                         id: oldFeedback.id,
@@ -907,23 +905,43 @@ const FeedbackSection = (props: { paymentOutcomeApprovedRedirectTimeLeft: number
                             <div className="feedback-content">
                                 <div className="feedback">
                                     <div onClick={() => feedbackSubmit(1)} className={newRating === 1 ? "active" : ""}>
-                                        <CachedImage className="feedback-card-image" url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-5.png`} alt="awaiting-card-gif" />
+                                        <CachedImage
+                                            className="feedback-card-image"
+                                            url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-5.png`}
+                                            alt="awaiting-card-gif"
+                                        />
                                         <p>Horrible</p>
                                     </div>
                                     <div onClick={() => feedbackSubmit(2)} className={newRating === 2 ? "active" : ""}>
-                                        <CachedImage className="feedback-card-image" url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-4.png`} alt="awaiting-card-gif" />
+                                        <CachedImage
+                                            className="feedback-card-image"
+                                            url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-4.png`}
+                                            alt="awaiting-card-gif"
+                                        />
                                         <p>Bad</p>
                                     </div>
                                     <div onClick={() => feedbackSubmit(3)} className={newRating === 3 ? "active" : ""}>
-                                        <CachedImage className="feedback-card-image" url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-3.png`} alt="awaiting-card-gif" />
+                                        <CachedImage
+                                            className="feedback-card-image"
+                                            url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-3.png`}
+                                            alt="awaiting-card-gif"
+                                        />
                                         <p>Okay</p>
                                     </div>
                                     <div onClick={() => feedbackSubmit(4)} className={newRating === 4 ? "active" : ""}>
-                                        <CachedImage className="feedback-card-image" url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-2.png`} alt="awaiting-card-gif" />
+                                        <CachedImage
+                                            className="feedback-card-image"
+                                            url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-2.png`}
+                                            alt="awaiting-card-gif"
+                                        />
                                         <p>Good</p>
                                     </div>
                                     <div onClick={() => feedbackSubmit(5)} className={newRating === 5 ? "active" : ""}>
-                                        <CachedImage className={"feedback-card-image"} url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-1.png`} alt="awaiting-card-gif" />
+                                        <CachedImage
+                                            className={"feedback-card-image"}
+                                            url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-1.png`}
+                                            alt="awaiting-card-gif"
+                                        />
                                         <p>Excellent</p>
                                     </div>
                                 </div>

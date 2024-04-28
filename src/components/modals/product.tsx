@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ICartModifier,
   IPreSelectedModifiers,
@@ -16,6 +16,7 @@ import {
   isModifierQuantityAvailable,
   isProductQuantityAvailable,
 } from "../../util/util";
+import { FiArrowDownCircle } from "react-icons/fi";
 import { convertCentsToDollars } from "../../util/util";
 import { PlusIcon } from "../../tabin/components/icons/plusIcon";
 import {
@@ -130,6 +131,73 @@ export const ProductModal = (props: {
   const [error, setError] = useState<{ [modifierGroupId: string]: string }>({});
 
   const [selectedProductModifier, setSelectedProductModifier] = useState<ISelectedProductModifier | null>(null);
+  const [isScrollable, setIsScrollable] = useState(false);
+  const [tryToCheckModel,setTryToCheckModel]=useState(0)
+
+  useEffect(() => {
+    const checkDivScrollable = () => {
+      const scrollableDiv = document.getElementById("productsWrapperScrollModel");
+      const arrowContainer = document.querySelector('.arrow-containerModel');
+
+      if (scrollableDiv) {
+        const isDivScrollable =
+          scrollableDiv.scrollHeight > scrollableDiv.clientHeight;
+        setIsScrollable(isDivScrollable);
+        if (isDivScrollable) {
+          arrowContainer?.classList.remove('fade-out');
+          arrowContainer?.classList.add('fade-in');
+        } else {
+          arrowContainer?.classList.remove('fade-in');
+          arrowContainer?.classList.add('fade-out');
+        }
+      }
+      else{
+        setTimeout(() => {
+          if(tryToCheckModel<10){
+            checkDivScrollable()
+            setTryToCheckModel(tryToCheckModel+1)
+          }
+        }, 100);
+      }
+    };
+
+    window.addEventListener("resize", checkDivScrollable);
+
+    checkDivScrollable();
+
+    return () => {
+      window.removeEventListener("resize", checkDivScrollable);
+    };
+  }, [product.modifierGroups]);
+
+  const [productsWrapperElement, setProductsWrapperElement] = useState<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollableDiv = document.getElementById("productsWrapperScrollModel");
+      const arrowContainer = document.querySelector('.arrow-containerModel');
+  
+      if (scrollableDiv) {
+        const isAtBottom = scrollableDiv.scrollTop + scrollableDiv.clientHeight === scrollableDiv.scrollHeight;
+        if (!isAtBottom) {
+          arrowContainer?.classList.remove('fade-out');
+          arrowContainer?.classList.add('fade-in');
+        } else {
+          arrowContainer?.classList.remove('fade-in');
+          arrowContainer?.classList.add('fade-out');
+        }
+      }
+    };
+
+    const productsWrapperScroll = document.getElementById("productsWrapperScrollModel");
+    if(productsWrapperScroll){
+      productsWrapperScroll.addEventListener('scroll', handleScroll);
+      return () => {
+        productsWrapperScroll.removeEventListener('scroll', handleScroll);
+      };
+    }
+   
+  }, [productsWrapperElement]);
 
   // useEffect(() => {
   //     console.log("xxx...orderedModifiers", orderedModifiers);
@@ -250,7 +318,6 @@ export const ProductModal = (props: {
                         price: selectedModifier.productModifier.price,
                         totalPrice: selectedModifier.productModifier.price,
                         discount: 0,
-                        availablePlatforms: selectedModifier.availablePlatforms,
                         isAgeRescricted: selectedModifier.isAgeRescricted,
                         image: selectedModifier.productModifier.image
                             ? {
@@ -389,7 +456,6 @@ export const ProductModal = (props: {
                         price: selectedModifier.productModifier.price,
                         totalPrice: selectedModifier.productModifier.price,
                         discount: 0,
-                        availablePlatforms: selectedModifier.availablePlatforms,
                         isAgeRescricted: selectedModifier.isAgeRescricted,
                         image: selectedModifier.productModifier.image
                             ? {
@@ -504,7 +570,6 @@ export const ProductModal = (props: {
                       price: selectedModifier.productModifier.price,
                       totalPrice: selectedModifier.productModifier.price,
                       discount: 0,
-                      availablePlatforms: selectedModifier.availablePlatforms,
                       isAgeRescricted: selectedModifier.isAgeRescricted,
                       image: selectedModifier.productModifier.image
                           ? {
@@ -695,7 +760,6 @@ export const ProductModal = (props: {
         price: product.price,
         totalPrice: totalDisplayPrice / quantity,
         discount: 0,
-        availablePlatforms: product.availablePlatforms,
         isAgeRescricted: product.isAgeRescricted,
         image: product.image
             ? {
@@ -751,6 +815,7 @@ export const ProductModal = (props: {
       });
     }
   };
+  
   const modifierGroups = (
     <>
       {product.modifierGroups &&
@@ -894,10 +959,17 @@ export const ProductModal = (props: {
       </div>
     </>
   );
+  
+  const scrollDown = () => {
+        const scrollableDiv = document.getElementById("productsWrapperScrollModel");
+        if (scrollableDiv) {
+          scrollableDiv.scrollTop += 100;
+        }
+  };
 
   const content = (
     <>
-      <div className="product">
+      <div ref={(ref) => setProductsWrapperElement(ref)} className="product" id="productsWrapperScrollModel">
         <div className="mt-11" />
         <div className="h1 mb-4 name">
           {currentSelectedProductModifier
@@ -912,6 +984,13 @@ export const ProductModal = (props: {
         <div className="product-notes-wrapper">
           {!currentSelectedProductModifier && productNotes}
         </div>
+        {isScrollable ? (
+          <div className={register?.type==="POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
+              <div className={`arrow-containerModel ${isScrollable ? 'fade-in' : 'fade-out'}`}>
+                  <FiArrowDownCircle size="46" />
+              </div>
+          </div>
+        ):null}
       </div>
       <div className="footer">{footer}</div>
     </>
@@ -971,7 +1050,7 @@ export const ProductModal = (props: {
 
   return (
     <>
-      <Modal isOpen={isOpen} onRequestClose={onModalClose}>
+      <Modal isOpen={isOpen} onRequestClose={onModalClose} >
         <div className="product-modal">{content}</div>
       </Modal>
 

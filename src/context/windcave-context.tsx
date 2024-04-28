@@ -2,7 +2,7 @@ import { createContext, useContext, useRef } from "react";
 import axios from "axios";
 import { convertCentsToDollars, toLocalISOString } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
-import { EEftposTransactionOutcome, EWindcaveTransactionOutcome, IEftposTransactionOutcome } from "../model/model";
+import { EEftposTransactionOutcome, EWindcaveTransactionOutcome, IEftposTransactionOutcome, IEftposTransactionOutcomeCardType } from "../model/model";
 import { useRegister } from "./register-context";
 import { format } from "date-fns";
 import { useErrorLogging } from "./errorLogging-context";
@@ -105,6 +105,15 @@ interface IWindcaveStatusResponse {
             RT?: {
                 _text?: string;
             };
+            CT?: {
+                _text?: string;
+            };
+            AmtS?: {
+                _text?: string;
+            };
+            AmtT?: {
+                _text?: string;
+            };
         };
     };
 }
@@ -175,6 +184,20 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
     const { logError } = useErrorLogging();
 
     const logs = useRef<string>(initialLogs);
+
+    const getCardType = (cardType: string) => {
+        let type = IEftposTransactionOutcomeCardType.EFTPOS;
+
+        if (cardType.toLowerCase() === "visa") {
+            type = IEftposTransactionOutcomeCardType.VISA;
+        } else if (cardType.toLowerCase() === "mastercard") {
+            type = IEftposTransactionOutcomeCardType.MASTERCARD;
+        } else if (cardType.toLowerCase() === "amex") {
+            type = IEftposTransactionOutcomeCardType.AMEX;
+        }
+
+        return type;
+    };
 
     const formatReceipt = (receipt: string, width: number) => {
         let result = "";
@@ -454,6 +477,9 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                                     transactionOutcome: EEftposTransactionOutcome.Success,
                                     message: "Transaction Accepted!",
                                     eftposReceipt: eftposReceipt,
+                                    eftposCardType: getCardType(res.Scr.Result.CT?._text || ""),
+                                    eftposSurcharge: res.Scr.Result.AmtS ? parseInt(res.Scr.Result.AmtS._text || "0") : 0,
+                                    eftposTip: res.Scr.Result.AmtT ? parseInt(res.Scr.Result.AmtT._text || "0") : 0,
                                 };
                             } else if (res.Scr.Result.AP._text === "0") {
                                 //Declined or some other issue

@@ -58,6 +58,9 @@ export const CREATE_ORDER = gql`
         $total: Int!
         $surcharge: Int
         $orderTypeSurcharge: Int
+        $eftposCardType: EftposCardType
+        $eftposSurcharge: Int
+        $eftposTip: Int
         $discount: Int
         $promotionId: ID
         $promotionType: PromotionType
@@ -91,6 +94,9 @@ export const CREATE_ORDER = gql`
                 total: $total
                 surcharge: $surcharge
                 orderTypeSurcharge: $orderTypeSurcharge
+                eftposCardType: $eftposCardType
+                eftposSurcharge: $eftposSurcharge
+                eftposTip: $eftposTip
                 discount: $discount
                 promotionId: $promotionId
                 promotionType: $promotionType
@@ -290,6 +296,15 @@ export const UPDATE_FEEDBACK = gql`
                 rating
                 orderId
             }
+        }
+    }
+`;
+
+export const UPDATE_REGISTER_TYRO_INTEGRATION_KEY = gql`
+    mutation UpdateRegister($id: ID!, $tyroIntegrationKey: String!) {
+        updateRegister(input: { id: $id, tyroIntegrationKey: $tyroIntegrationKey }) {
+            id
+            tyroIntegrationKey
         }
     }
 `;
