@@ -40,6 +40,7 @@ import {
     EPaymentMethod,
     EVerifoneTransactionOutcome,
     ERegisterType,
+    IEftposTransactionOutcomeCardType,
 } from "../../model/model";
 import { useUser } from "../../context/user-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -560,6 +561,10 @@ export const Checkout = () => {
                 eftposReceipt: order.eftposReceipt,
                 paymentAmounts: order.paymentAmounts,
                 total: order.total,
+                surcharge: order.surcharge,
+                orderTypeSurcharge: order.orderTypeSurcharge,
+                eftposSurcharge: order.eftposSurcharge,
+                eftposTip: order.eftposTip,
                 discount: order.promotionId && order.discount ? order.discount : null,
                 subTotal: order.subTotal,
                 paid: order.paid,
@@ -602,7 +607,15 @@ export const Checkout = () => {
             });
     };
 
-    const onSubmitOrder = async (paid: boolean, parkOrder: boolean, newPaymentAmounts: ICartPaymentAmounts, newPayments: ICartPayment[]) => {
+    const onSubmitOrder = async (
+        paid: boolean,
+        parkOrder: boolean,
+        newPaymentAmounts: ICartPaymentAmounts,
+        newPayments: ICartPayment[],
+        eftposCardType?: IEftposTransactionOutcomeCardType,
+        eftposSurcharge?: number,
+        eftposTip?: number
+    ) => {
         //If parked order do not generate order number
         let orderNumber =
             parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
@@ -641,11 +654,15 @@ export const Checkout = () => {
                 parkOrder,
                 newPaymentAmounts,
                 newPayments,
-                signatureS3Object
+                signatureS3Object,
+                eftposCardType,
+                eftposSurcharge,
+                eftposTip
             );
 
             createdOrder.current = newOrder;
             updateOrderDetail(newOrder);
+
             if (register.printers && register.printers.items.length > 0 && !parkedOrderId) {
                 await printReceipts(newOrder);
             }
@@ -711,7 +728,10 @@ export const Checkout = () => {
         parkOrder: boolean,
         newPaymentAmounts: ICartPaymentAmounts,
         newPayments: ICartPayment[],
-        signatureS3Object: IS3Object | null
+        signatureS3Object: IS3Object | null,
+        eftposCardType?: IEftposTransactionOutcomeCardType,
+        eftposSurcharge?: number,
+        eftposTip?: number
     ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
         const now = new Date();
         if (!user) {
@@ -760,10 +780,13 @@ export const Checkout = () => {
                 total: total,
                 surcharge: surcharge || undefined,
                 orderTypeSurcharge: orderTypeSurcharge || undefined,
+                eftposCardType: eftposCardType || undefined,
+                eftposSurcharge: eftposSurcharge || undefined,
+                eftposTip: eftposTip || undefined,
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
                 promotionType: promotion ? promotion.promotion.type : undefined,
-                subTotal: subTotal,
+                subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0),
                 preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                 registerId: register.id,
                 products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
@@ -792,7 +815,7 @@ export const Checkout = () => {
                 JSON.stringify({
                     status: "NEW",
                     paid: paid,
-                    type: orderType,
+                    type: orderType ? orderType : register.availableOrderTypes[0],
                     number: orderNumber,
                     table: tableNumber,
                     buzzer: buzzerNumber,
@@ -807,19 +830,23 @@ export const Checkout = () => {
                         : null,
                     notes: notes,
                     eftposReceipt: transactionEftposReceipts,
-                    payments: payments,
-                    paymentAmounts: paymentAmounts,
+                    paymentAmounts: newPaymentAmounts,
+                    payments: newPayments,
                     total: total,
                     surcharge: surcharge || undefined,
+                    orderTypeSurcharge: orderTypeSurcharge || undefined,
+                    eftposCardType: eftposCardType,
+                    eftposSurcharge: eftposSurcharge,
+                    eftposTip: eftposTip,
                     discount: promotion ? promotion.discountedAmount : undefined,
                     promotionId: promotion ? promotion.promotion.id : undefined,
                     promotionType: promotion ? promotion.promotion.type : undefined,
-                    subTotal: subTotal,
+                    subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0),
                     preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                     registerId: register.id,
                     products: JSON.stringify(products), // copy obj so we can mutate it later
-                    placedAt: now,
-                    placedAtUtc: now,
+                    placedAt: toLocalISOString(now),
+                    placedAtUtc: now.toISOString(),
                     orderUserId: user.id,
                     orderRestaurantId: restaurant.id,
                 })
@@ -972,6 +999,9 @@ export const Checkout = () => {
                 transactionOutcome: EEftposTransactionOutcome.Fail,
                 message: errorMessage,
                 eftposReceipt: null,
+                eftposCardType: IEftposTransactionOutcomeCardType.EFTPOS,
+                eftposSurcharge: 0,
+                eftposTip: 0,
             };
         } finally {
             setEftposTransactionProcessMessage(null);
@@ -991,7 +1021,7 @@ export const Checkout = () => {
     const onConfirmTotalOrRetryEftposTransaction = async (amount: number) => {
         setPaymentModalState(EPaymentModalState.AwaitingCard);
 
-        let outcome;
+        let outcome: IEftposTransactionOutcome | null = null;
 
         if (amount === 0) {
             //If amount is 0 then bypass the eftpos transaction
@@ -1000,6 +1030,9 @@ export const Checkout = () => {
                 transactionOutcome: EEftposTransactionOutcome.Success,
                 message: "Transaction Approved!",
                 eftposReceipt: null,
+                eftposCardType: IEftposTransactionOutcomeCardType.EFTPOS,
+                eftposSurcharge: 0,
+                eftposTip: 0,
             };
         } else {
             outcome = await performEftposTransaction(amount);
@@ -1028,7 +1061,15 @@ export const Checkout = () => {
 
                 if (newTotalPaymentAmounts >= subTotal) {
                     //Passing paymentAmounts, payments via params so we send the most updated values
-                    await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+                    await onSubmitOrder(
+                        true,
+                        false,
+                        newPaymentAmounts,
+                        newPayments,
+                        outcome.eftposCardType,
+                        outcome.eftposSurcharge,
+                        outcome.eftposTip
+                    );
 
                     setPaymentModalState(EPaymentModalState.EftposResult);
                 } else {

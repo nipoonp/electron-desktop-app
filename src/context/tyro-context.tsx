@@ -77,7 +77,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
     const addToLogs = (log) => {
         const newLog = format(new Date(), "dd/MM/yy HH:mm:ss.SSS ") + log;
 
-        console.log(newLog);
+        console.log(log);
         logs.current += newLog + "\n";
     };
 

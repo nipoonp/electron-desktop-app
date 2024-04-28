@@ -91,6 +91,16 @@ export interface IEftposTransactionOutcome {
     transactionOutcome: EEftposTransactionOutcome;
     message: string;
     eftposReceipt: string | null;
+    eftposCardType?: IEftposTransactionOutcomeCardType;
+    eftposSurcharge?: number;
+    eftposTip?: number;
+}
+
+export enum IEftposTransactionOutcomeCardType {
+    VISA,
+    MASTERCARD,
+    AMEX,
+    EFTPOS,
 }
 
 export enum EPaymentModalState {
@@ -354,6 +364,10 @@ export interface IOrderReceipt {
     discount: number | null;
     subTotal: number;
     paid: boolean;
+    surcharge: number | null;
+    orderTypeSurcharge: number | null;
+    eftposSurcharge: number | null;
+    eftposTip: number | null;
     displayPaymentRequiredMessage: boolean;
     type: EOrderType;
     number: string;
