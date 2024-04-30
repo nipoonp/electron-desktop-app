@@ -82,7 +82,6 @@ export const ProductModal = (props: {
   const getPreSelectedModifiers = () => {
       //Set preselected modifiers logic
       let newOrderedModifiers: IPreSelectedModifiers = {};
-
       product.modifierGroups &&
           product.modifierGroups.items.forEach((modifierGroupLink) => {
             const choiceMin=modifierGroupLink.modifierGroup.choiceMin;
@@ -103,7 +102,8 @@ export const ProductModal = (props: {
                                       name: modifierLink.modifier.name,
                                       kitchenName: modifierLink.modifier.kitchenName,
                                       price: modifierLink.modifier.price,
-                                      preSelectedQuantity:choiceMax > modifierLink.modifier.preSelectedQuantity ? modifierLink.modifier.preSelectedQuantity: choiceMax,
+                                      // preSelectedQuantity:choiceMax > modifierLink.modifier.preSelectedQuantity ? modifierLink.modifier.preSelectedQuantity: choiceMax,
+                                      preSelectedQuantity: modifierLink.modifier.preSelectedQuantity,
                                       quantity: choiceMax > modifierLink.modifier.preSelectedQuantity ? modifierLink.modifier.preSelectedQuantity: choiceMax,
                                       productModifiers: null,
                                       image: modifierLink.modifier.image
@@ -210,7 +210,7 @@ export const ProductModal = (props: {
 
       Object.values(orderedModifiers).forEach((orderedModifier) => {
           orderedModifier.forEach((m) => {
-              const changedQuantity = m.quantity - m.preSelectedQuantity;
+              const changedQuantity = m.quantity - (m.preSelectedQuantity == undefined ? 0 : m.preSelectedQuantity);
 
               if (changedQuantity > 0) {
                   price += m.price * changedQuantity;
