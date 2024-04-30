@@ -899,13 +899,8 @@ export const getRestaurantTimings = (operatingHours: IGET_RESTAURANT_OPERATING_H
 
 export const isCurrentTimeWithinOperatingHours=(operatingHours:IGET_RESTAURANT_OPERATING_HOURS) =>{
     const setifyHour=checkIsCurrentTimeBetween(operatingHours);
-    console.log('setifyHour',setifyHour)
-    if(setifyHour){
-        return true
-    }
-    else{
-        return false
-    }
+      
+    return setifyHour
 }
 
 export const getTotalOrdersAllow=(operatingHours:IGET_RESTAURANT_OPERATING_HOURS,allow:Number)=>{
@@ -945,23 +940,6 @@ const checkIsCurrentTimeBetween=(operatingHours:IGET_RESTAURANT_OPERATING_HOURS)
     const daysOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const currentDayString = daysOfWeek[currentDay].toLowerCase(); 
 
-    // for (let i = 0; i < operatingHours[currentDayString].length; i++) {
-    //     const element = operatingHours[currentDayString][i];
-        
-    //     const openingHour = parseInt(element.openingTime.split(":")[0], 10);
-    //     const openingMinute = parseInt(element.openingTime.split(":")[1], 10);
-
-    //     const closingHour = parseInt(element.closingTime.split(":")[0], 10);
-    //     const closingMinute = parseInt(element.closingTime.split(":")[1], 10);
-    //     console.log(`${openingHour}:${openingMinute} - ${closingHour}:${closingMinute}`)
-    //     console.log(`${currentHour}:${currentMinute}`)
-    //     const isAfterOpeningTime = currentHour > openingHour || (currentHour === openingHour && currentMinute >= openingMinute);
-    //     const isBeforeClosingTime = currentHour < closingHour || (currentHour === closingHour && currentMinute <= closingMinute);
-    //     console.log('isAfterOpeningTime &&  isBeforeClosingTime',isAfterOpeningTime ,  isBeforeClosingTime)
-    //     if(isAfterOpeningTime &&  isBeforeClosingTime){
-    //         return element
-    //     }
-    // }
     for (let i = 0; i < operatingHours[currentDayString]?.length; i++) {
         const element = operatingHours[currentDayString][i];
         

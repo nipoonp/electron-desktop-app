@@ -48,7 +48,7 @@ const PaymentMethod= () => {
     }
 
     
-    const removeSoldoutProduct = () => {
+    const removeSoldOutProduct = () => {
         return new Promise(async (resolve, reject) => {
             try {
                 const res = await fetchProducts(restaurant.id, null);
@@ -88,7 +88,7 @@ const PaymentMethod= () => {
         try {
             let res : ICartProduct[] | unknown = [];
             if(register?.checkConditionsBeforeCreateOrder){
-                res=await removeSoldoutProduct();
+                res=await removeSoldOutProduct();
             }
             if(Array.isArray(res) && res?.length===0){
                 setPaymentMethod(paymentMethod);

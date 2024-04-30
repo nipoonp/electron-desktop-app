@@ -8,7 +8,6 @@ import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
 import { useGetRestaurantOrdersByBeginWithPlacedAtLazyQuery } from "../../hooks/useGetRestaurantOrdersByBeginWithPlacedAtLazyQuery";
 import { FiArrowDownCircle } from "react-icons/fi";
 import { isCurrentTimeWithinOperatingHours ,getTotalOrdersAllow} from "../../util/util";
-import {StoreNotAvailableModal} from '../modals/StoreNotAvailableModal';
 import {
     IGET_RESTAURANT_CATEGORY,
     IGET_RESTAURANT_PRODUCT,
@@ -198,7 +197,6 @@ export const Checkout = () => {
     const [storeMessage,setStoreMessage]=useState("");
     const date =format(new Date(), "yyyy-MM-dd");
     
-    // const { data: orders, error, loading } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant ? restaurant.id : "", date);
 
     useEffect(() => {
         const checkDivScrollable = () => {
@@ -499,8 +497,6 @@ export const Checkout = () => {
     };
 
     const onClickOrderButton = async () => {
-        // await removeSoldoutProduct()
-        // if(soldOutProduct && soldOutProduct?.length==0){
             if (restaurant.orderThresholds?.enable && restaurant.orderThresholdMessage && !isShownOrderThresholdMessageModal) {
                 setShowOrderThresholdMessageModal(true);
                 return;
@@ -694,7 +690,7 @@ export const Checkout = () => {
             parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
 
         setPaymentOutcomeOrderNumber(orderNumber);
-        // await removeSoldoutProduct();
+
         try {
             let signatureS3Object: IS3Object | null = null;
 
@@ -1457,7 +1453,7 @@ export const Checkout = () => {
         );
     };
 
-    const onCloseEvent=()=>{
+    const onCloseProductSoldOutModal=()=>{
         console.log('Close click from checkout')
         setSoldOutProduct([])
     
@@ -1470,8 +1466,8 @@ export const Checkout = () => {
                     <ProductSoldOutModal
                         isOpen={soldOutProduct.length ? true:false}
                         soldOutProduct={soldOutProduct}
-                        onClose={()=>onCloseEvent()}
-                        onContinue={() => onCloseEvent()}
+                        onClose={()=>onCloseProductSoldOutModal()}
+                        onContinue={() => onCloseProductSoldOutModal()}
                     />
                 )}
             </>
@@ -1702,7 +1698,7 @@ export const Checkout = () => {
                             Order More
                         </Button>
                     )}
-                    <Button onClick={onClickOrderButton} className="button large complete-order-button" disabled={isBetweenOperatingHours ? true : false}>
+                    <Button onClick={onClickOrderButton} className="button large complete-order-button">
                         Complete Order
                     </Button>
                 </div>
@@ -1720,11 +1716,6 @@ export const Checkout = () => {
                     Cancel Order
                 </Button>
             )}
-            <StoreNotAvailableModal
-                        isOpen={isBetweenOperatingHoursOpen ? true : false}  
-                        onClose={()=>setIsBetweenOperatingHoursOpen(false)}  
-                        storeMessage={storeMessage}                
-                />
         </div>
     );
 
