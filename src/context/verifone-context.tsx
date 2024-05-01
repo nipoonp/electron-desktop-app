@@ -410,8 +410,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     const verifonePurchaseResultArray = eftposData.current.payload.split(",");
                     iSO8583ResponseCode = verifonePurchaseResultArray[2];
                     eftposCardType = verifonePurchaseResultArray[4];
-                    eftposTip = verifonePurchaseResultArray[7];
-                    eftposSurcharge = verifonePurchaseResultArray[8];
+                    eftposTip = verifonePurchaseResultArray[6];
+                    eftposSurcharge = verifonePurchaseResultArray[7];
 
                     if (iSO8583ResponseCode != "??") {
                         localStorage.removeItem("unresolvedVerifoneTransactionId");
