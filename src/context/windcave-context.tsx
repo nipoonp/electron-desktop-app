@@ -185,15 +185,19 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
 
     const logs = useRef<string>(initialLogs);
 
-    const getCardType = (cardType: string) => {
+    const getCardType = (cardType?: string) => {
         let type = IEftposTransactionOutcomeCardType.EFTPOS;
 
-        if (cardType.toLowerCase() === "visa") {
-            type = IEftposTransactionOutcomeCardType.VISA;
-        } else if (cardType.toLowerCase() === "mastercard") {
-            type = IEftposTransactionOutcomeCardType.MASTERCARD;
-        } else if (cardType.toLowerCase() === "amex") {
-            type = IEftposTransactionOutcomeCardType.AMEX;
+        console.log("xxx...cardType", cardType);
+
+        if (cardType) {
+            if (cardType.toLowerCase() === "visa") {
+                type = IEftposTransactionOutcomeCardType.VISA;
+            } else if (cardType.toLowerCase() === "mastercard") {
+                type = IEftposTransactionOutcomeCardType.MASTERCARD;
+            } else if (cardType.toLowerCase() === "amex") {
+                type = IEftposTransactionOutcomeCardType.AMEX;
+            }
         }
 
         return type;
@@ -469,6 +473,8 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                     if (res.Scr.Complete && res.Scr.Complete._text === "1") {
                         transactionComplete = res.Scr.Complete._text === "1"; //If transaction is completed this field will be set to 1.
 
+                        console.log("xxx...res.Scr.Result.CT._text", res.Scr.Result?.CT?._text);
+
                         if (res.Scr.Result && res.Scr.Result.AP) {
                             if (res.Scr.Result.AP._text === "1") {
                                 //Accepted
@@ -477,7 +483,9 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                                     transactionOutcome: EEftposTransactionOutcome.Success,
                                     message: "Transaction Accepted!",
                                     eftposReceipt: eftposReceipt,
-                                    eftposCardType: getCardType(res.Scr.Result.CT?._text || ""),
+                                    eftposCardType: res.Scr.Result.CT
+                                        ? getCardType(res.Scr.Result.CT._text)
+                                        : IEftposTransactionOutcomeCardType.EFTPOS,
                                     eftposSurcharge: res.Scr.Result.AmtS ? parseInt(res.Scr.Result.AmtS._text || "0") : 0,
                                     eftposTip: res.Scr.Result.AmtT ? parseInt(res.Scr.Result.AmtT._text || "0") : 0,
                                 };
