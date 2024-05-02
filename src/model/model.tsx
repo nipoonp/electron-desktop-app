@@ -97,10 +97,10 @@ export interface IEftposTransactionOutcome {
 }
 
 export enum IEftposTransactionOutcomeCardType {
-    VISA,
-    MASTERCARD,
-    AMEX,
-    EFTPOS,
+    VISA = "VISA",
+    MASTERCARD = "MASTERCARD",
+    AMEX = "AMEX",
+    EFTPOS = "EFTPOS",
 }
 
 export enum EPaymentModalState {
