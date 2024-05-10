@@ -382,7 +382,7 @@ export const printCustomerReceipt = async (
         ]);
     order.eftposSurcharge &&
         printer.tableCustom([
-            { text: "Eftpos Surcharge", align: "LEFT", width: 0.75, bold: true },
+            { text: "Card Surcharge", align: "LEFT", width: 0.75, bold: true },
             {
                 text: `\$${convertCentsToDollars(order.eftposSurcharge)}`,
                 align: "RIGHT",
@@ -777,7 +777,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
         ]);
     order.eftposSurcharge &&
         printer.tableCustom([
-            { text: "Eftpos Surcharge", align: "LEFT", width: 0.75, bold: true },
+            { text: "Card Surcharge", align: "LEFT", width: 0.75, bold: true },
             {
                 text: `\$${convertCentsToDollars(order.eftposSurcharge)}`,
                 align: "RIGHT",
@@ -1120,7 +1120,7 @@ export const printKitchenReceiptSmall = async (
         ]);
     order.eftposSurcharge &&
         printer.tableCustom([
-            { text: "Eftpos Surcharge", align: "LEFT", width: 0.75, bold: true },
+            { text: "Card Surcharge", align: "LEFT", width: 0.75, bold: true },
             {
                 text: `\$${convertCentsToDollars(order.eftposSurcharge)}`,
                 align: "RIGHT",
@@ -1495,7 +1495,7 @@ export const printKitchenReceiptLarge = async (
         ]);
     order.eftposSurcharge &&
         printer.tableCustom([
-            { text: "Eftpos Surcharge", align: "LEFT", width: 0.75, bold: true },
+            { text: "Card Surcharge", align: "LEFT", width: 0.75, bold: true },
             {
                 text: `\$${convertCentsToDollars(order.eftposSurcharge)}`,
                 align: "RIGHT",
