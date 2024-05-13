@@ -40,7 +40,7 @@ import {
     EPaymentMethod,
     EVerifoneTransactionOutcome,
     ERegisterType,
-    IEftposTransactionOutcomeCardType,
+    EEftposTransactionOutcomeCardType,
     EOrderType,
 } from "../../model/model";
 import { useUser } from "../../context/user-context";
@@ -618,7 +618,7 @@ export const Checkout = () => {
         parkOrder: boolean,
         newPaymentAmounts: ICartPaymentAmounts,
         newPayments: ICartPayment[],
-        eftposCardType?: IEftposTransactionOutcomeCardType,
+        eftposCardType?: EEftposTransactionOutcomeCardType,
         eftposSurcharge?: number,
         eftposTip?: number
     ) => {
@@ -735,7 +735,7 @@ export const Checkout = () => {
         newPaymentAmounts: ICartPaymentAmounts,
         newPayments: ICartPayment[],
         signatureS3Object: IS3Object | null,
-        eftposCardType?: IEftposTransactionOutcomeCardType,
+        eftposCardType?: EEftposTransactionOutcomeCardType,
         eftposSurcharge?: number,
         eftposTip?: number
     ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
@@ -1005,7 +1005,7 @@ export const Checkout = () => {
                 transactionOutcome: EEftposTransactionOutcome.Fail,
                 message: errorMessage,
                 eftposReceipt: null,
-                eftposCardType: IEftposTransactionOutcomeCardType.EFTPOS,
+                eftposCardType: EEftposTransactionOutcomeCardType.EFTPOS,
                 eftposSurcharge: 0,
                 eftposTip: 0,
             };
@@ -1036,7 +1036,7 @@ export const Checkout = () => {
                 transactionOutcome: EEftposTransactionOutcome.Success,
                 message: "Transaction Approved!",
                 eftposReceipt: null,
-                eftposCardType: IEftposTransactionOutcomeCardType.EFTPOS,
+                eftposCardType: EEftposTransactionOutcomeCardType.EFTPOS,
                 eftposSurcharge: 0,
                 eftposTip: 0,
             };

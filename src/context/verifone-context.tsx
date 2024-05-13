@@ -7,7 +7,7 @@ import {
     IEftposTransactionOutcome,
     EVerifoneTransactionOutcome,
     EEftposProvider,
-    IEftposTransactionOutcomeCardType,
+    EEftposTransactionOutcomeCardType,
 } from "../model/model";
 import { useErrorLogging } from "./errorLogging-context";
 import { useRegister } from "./register-context";
@@ -205,14 +205,14 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     };
 
     const getCardType = (cardType: string) => {
-        let type = IEftposTransactionOutcomeCardType.EFTPOS;
+        let type = EEftposTransactionOutcomeCardType.EFTPOS;
 
         if (cardType.toLowerCase() === "visa") {
-            type = IEftposTransactionOutcomeCardType.VISA;
+            type = EEftposTransactionOutcomeCardType.VISA;
         } else if (cardType.toLowerCase() === "mcard") {
-            type = IEftposTransactionOutcomeCardType.MASTERCARD;
+            type = EEftposTransactionOutcomeCardType.MASTERCARD;
         } else if (cardType.toLowerCase() === "amex") {
-            type = IEftposTransactionOutcomeCardType.AMEX;
+            type = EEftposTransactionOutcomeCardType.AMEX;
         }
 
         return type;

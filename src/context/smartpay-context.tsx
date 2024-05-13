@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
-import { EEftposTransactionOutcome, ESmartpayTransactionOutcome, IEftposTransactionOutcome, IEftposTransactionOutcomeCardType } from "../model/model";
+import { EEftposTransactionOutcome, ESmartpayTransactionOutcome, IEftposTransactionOutcome, EEftposTransactionOutcomeCardType } from "../model/model";
 import { format } from "date-fns";
 import { toLocalISOString } from "../util/util";
 import { useErrorLogging } from "./errorLogging-context";
@@ -104,14 +104,14 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
     }, [register]);
 
     const getCardType = (cardType: string) => {
-        let type = IEftposTransactionOutcomeCardType.EFTPOS;
+        let type = EEftposTransactionOutcomeCardType.EFTPOS;
 
         if (cardType.toLowerCase() === "visa") {
-            type = IEftposTransactionOutcomeCardType.VISA;
+            type = EEftposTransactionOutcomeCardType.VISA;
         } else if (cardType.toLowerCase() === "mcard") {
-            type = IEftposTransactionOutcomeCardType.MASTERCARD;
+            type = EEftposTransactionOutcomeCardType.MASTERCARD;
         } else if (cardType.toLowerCase() === "amex") {
-            type = IEftposTransactionOutcomeCardType.AMEX;
+            type = EEftposTransactionOutcomeCardType.AMEX;
         }
 
         return type;

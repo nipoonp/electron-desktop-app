@@ -18,6 +18,7 @@ export const Tyro = () => {
 
     const [pairingMessage, setPairingMessage] = useState("");
     const [tansactionMessage, setTansactionMessage] = useState("");
+    const [showSpinner, setShowSpinner] = useState(false);
 
     const { sendParingRequest, createTransaction, cancelTransaction, createRefund } = useTyro();
 
@@ -29,6 +30,7 @@ export const Tyro = () => {
         if (!register) return;
 
         try {
+            setShowSpinner(true);
             const integrationKey = await sendParingRequest(merchantId, terminalId, (eftposMessage) => {
                 setPairingMessage(eftposMessage);
             });
@@ -45,6 +47,8 @@ export const Tyro = () => {
             alert("Pairing complete! Your device should now show it is paired.");
         } catch (errorMessage) {
             alert("Error! Message: " + errorMessage);
+        } finally {
+            setShowSpinner(false);
         }
     };
 
@@ -52,6 +56,7 @@ export const Tyro = () => {
         if (!register) return;
 
         try {
+            // setShowSpinner(true);
             const res: IEftposTransactionOutcome = await createTransaction(amount.toString(), register.tyroIntegrationKey, (eftposMessage) => {
                 setTansactionMessage(eftposMessage);
             });
@@ -60,6 +65,8 @@ export const Tyro = () => {
             alert(res.message);
         } catch (errorMessage) {
             alert("Error! Message: " + errorMessage);
+        } finally {
+            // setShowSpinner(false);
         }
     };
 
@@ -88,7 +95,7 @@ export const Tyro = () => {
 
     return (
         <>
-            {/* <FullScreenSpinner show={showSpinner} /> */}
+            <FullScreenSpinner show={showSpinner} />
             <div>
                 <div className="h3 mb-4">Pair to a device</div>
 

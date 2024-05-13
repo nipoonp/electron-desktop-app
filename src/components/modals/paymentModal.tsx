@@ -145,6 +145,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
     };
 
     const getActivePaymentModalComponent = () => {
+        console.log("xxx...paymentModalState", paymentModalState);
         if (createOrderError) {
             return <CreateOrderFailed createOrderError={createOrderError} onCancelOrder={onCancelOrder} />;
         }
@@ -265,11 +266,28 @@ export const PaymentModal = (props: IPaymentModalProps) => {
 };
 
 const AwaitingCard = () => {
+    const [cancelState, setCancelState] = useState(false);
+
     return (
         <>
-            <div className="h2 mb-6 awaiting-card-text">Swipe or insert your card on the terminal to complete your payment.</div>
-            <CachedImage className="awaiting-card-image" url={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} alt="awaiting-card-gif" />
-            <div className="awaiting-card-image-override"></div>
+            {cancelState ? (
+                <>
+                    <div className="h2 mb-6 awaiting-card-text">Are are you sure want to cancel this transaction?</div>
+                    <Button onClick={() => setCancelState(false)}>No</Button>
+                    <Button>Yes</Button>
+                </>
+            ) : (
+                <>
+                    <div className="h2 mb-6 awaiting-card-text">Swipe or insert your card on the terminal to complete your payment.</div>
+                    <CachedImage
+                        className="awaiting-card-image"
+                        url={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`}
+                        alt="awaiting-card-gif"
+                    />
+                    <div className="awaiting-card-image-override"></div>
+                    <Button onClick={() => setCancelState(true)}>Cancel</Button>
+                </>
+            )}
         </>
     );
 };
