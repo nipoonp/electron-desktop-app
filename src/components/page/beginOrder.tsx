@@ -27,29 +27,34 @@ export default () => {
 
     const onClickStore1 = async () => {
         const now = new Date();
+        const dayOfWeek = now.getDay(); // Sunday - 0, Monday - 1, ..., Saturday - 6
         const hours = now.getHours();
         const minutes = now.getMinutes();
         const currentTimeInMinutes = hours * 60 + minutes; // Convert current time to minutes
-        const startTimeInMinutes = 12 * 60; // 12pm in minutes
-        const endTimeInMinutes = 21 * 60 + 15; // 9:15pm in minutes
 
-        // Check if the current time is between 12pm and 9:15pm
+        let startTimeInMinutes, endTimeInMinutes;
+
+        // Set the start and end times based on the day of the week
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            // Weekend timing (Saturday, Sunday): 12pm to 9:15pm
+            startTimeInMinutes = 12 * 60; // 12pm in minutes
+        } else {
+            // Weekday timing (Monday to Friday): 5pm to 9:15pm
+            startTimeInMinutes = 17 * 60; // 5pm in minutes
+        }
+        endTimeInMinutes = 21 * 60 + 15; // 9:15pm in minutes
+
+        // Check if the current time is within the operating hours
         if (currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes) {
-            // ABC Buzz A
+            // Actions to perform if within operating hours
             await disconnectRegister(restaurantRegister2);
-
-            // await delay(1000);
-
             selectRestaurant(restaurant1);
-
             await delay(1000);
-
             await connectRegister(restaurantRegister1);
-
             navigate(restaurantPath + "/" + restaurant1);
         } else {
-            // If not between 12pm and 9:15pm, display an alert to the user
-            toast.error("This store is only open between 12pm and 9:15pm.");
+            // If not within operating hours, display an alert to the user
+            toast.error(`This store is only open between ${startTimeInMinutes / 60}pm and 9:15pm.`);
         }
     };
 
@@ -59,11 +64,11 @@ export default () => {
         const hours = now.getHours();
         const minutes = now.getMinutes();
         const currentTimeInMinutes = hours * 60 + minutes; // Convert current time to minutes
-    
+
         let isOpen = false;
         let startTimeInMinutes;
         let endTimeInMinutes = 14 * 60 + 30; // 2:30pm in minutes, common closing time for all open days
-    
+
         switch (dayOfWeek) {
             case 0: // Sunday
             case 6: // Saturday
@@ -81,26 +86,25 @@ export default () => {
                 isOpen = currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
                 break;
         }
-    
+
         if (isOpen) {
             // Business Logic for Open Hours
             await disconnectRegister(restaurantRegister1);
-    
+
             // await delay(1000);
-    
+
             selectRestaurant(restaurant2);
-    
+
             await delay(1000);
-    
+
             await connectRegister(restaurantRegister2);
-    
+
             navigate(restaurantPath + "/" + restaurant2);
         } else {
             // If not within the specified operating hours, display an error message
             toast.error("This store is currently closed. Please check our operating hours.");
         }
     };
-    
 
     return (
         <>
