@@ -20,7 +20,7 @@ export const Tyro = () => {
     const [tansactionMessage, setTansactionMessage] = useState("");
     const [showSpinner, setShowSpinner] = useState(false);
 
-    const { sendParingRequest, createTransaction, cancelTransaction, createRefund } = useTyro();
+    const { sendParingRequest, createTransaction, cancelTransaction } = useTyro();
 
     const [updateRegisterTyroIntegrationKey, { data, loading, error }] = useMutation(UPDATE_REGISTER_TYRO_INTEGRATION_KEY, {
         update: (proxy, mutationResult) => {},
@@ -67,21 +67,6 @@ export const Tyro = () => {
             alert("Error! Message: " + errorMessage);
         } finally {
             // setShowSpinner(false);
-        }
-    };
-
-    const performEftposRefund = async () => {
-        if (!register) return;
-
-        try {
-            await createRefund(amount.toString(), register.tyroIntegrationKey, (eftposMessage) => {
-                setTansactionMessage(eftposMessage);
-            });
-
-            // console.log("xxx...res", res);
-            // alert(res.message);
-        } catch (errorMessage) {
-            alert("Error! Message: " + errorMessage);
         }
     };
 
@@ -136,9 +121,6 @@ export const Tyro = () => {
                 <div className="mb-4">{tansactionMessage && <div>Transaction Message: {tansactionMessage}</div>}</div>
                 <Button className="mb-1" onClick={performEftposTransaction}>
                     Send Transaction
-                </Button>
-                <Button className="mb-1" onClick={performEftposRefund}>
-                    Send Refund
                 </Button>
                 <Button onClick={cancelEftposTransaction}>Cancel Transaction</Button>
             </div>

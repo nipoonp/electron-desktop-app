@@ -138,7 +138,7 @@ export const Checkout = () => {
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
     const { createTransaction: windcaveCreateTransaction } = useWindcave();
-    const { createTransaction: tyroCreateTransaction } = useTyro();
+    const { createTransaction: tyroCreateTransaction, cancelTransaction: tyroCancelTransaction } = useTyro();
     const [isScrollable, setIsScrollable] = useState(false);
     const [createOrderMutation] = useMutation(CREATE_ORDER, {
         update: (proxy, mutationResult) => {
@@ -963,7 +963,7 @@ export const Checkout = () => {
             if (register.eftposProvider == EEftposProvider.SMARTPAY) {
                 let delayedShown = false;
 
-                const delayed = (outcome: IEftposTransactionOutcome) => {
+                const delayed = () => {
                     if (!delayedShown) {
                         delayedShown = true;
                         setEftposTransactionProcessMessage("This transaction is delayed. Please wait...");
@@ -1022,6 +1022,17 @@ export const Checkout = () => {
 
     const onClickApplyPromotionCode = async () => {
         setShowPromotionCodeModal(true);
+    };
+
+    const onCancelEftposTransaction = () => {
+        if (register.eftposProvider == EEftposProvider.SMARTPAY) {
+            //Not implemented
+        } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
+        } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
+            //Not implemented
+        } else if (register.eftposProvider == EEftposProvider.TYRO) {
+            tyroCancelTransaction();
+        }
     };
 
     const onConfirmTotalOrRetryEftposTransaction = async (amount: number) => {
@@ -1086,8 +1097,8 @@ export const Checkout = () => {
                 setCreateOrderError(e);
             }
         } else if (
-            outcome.transactionOutcome === EEftposTransactionOutcome.Fail ||
-            outcome.transactionOutcome === EEftposTransactionOutcome.ProcessMessage
+            outcome.transactionOutcome === EEftposTransactionOutcome.Fail
+            // outcome.transactionOutcome === EEftposTransactionOutcome.ProcessMessage
         ) {
             setPaymentModalState(EPaymentModalState.EftposResult);
         }
@@ -1442,6 +1453,7 @@ export const Checkout = () => {
                         onContinueToNextOrder={onContinueToNextOrder}
                         createOrderError={createOrderError}
                         onConfirmTotalOrRetryEftposTransaction={onConfirmTotalOrRetryEftposTransaction}
+                        onCancelEftposTransaction={onCancelEftposTransaction}
                         onConfirmCashTransaction={onConfirmCashTransaction}
                         onConfirmUberEatsTransaction={onConfirmUberEatsTransaction}
                         onConfirmMenulogTransaction={onConfirmMenulogTransaction}

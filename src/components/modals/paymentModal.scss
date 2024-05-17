@@ -105,6 +105,17 @@
         padding: 12px 24px;
     }
 
+    .awaiting-card-cancel-button-wrapper {
+        display: flex;
+        gap: 12px;
+    }
+
+    .awaiting-card-cancel-no-button {
+        background-color: #ffffff;
+        color: #484848;
+        border: 1px solid #e0e0e0;
+    }
+
     .awaiting-card-text {
         line-height: 42px;
     }
@@ -214,9 +225,9 @@
             border: 1px solid #e0e0e0;
         }
     }
-    .feedback--body{
+    .feedback--body {
         padding-top: 1rem;
-        .feedback-content{
+        .feedback-content {
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -230,32 +241,32 @@
                 margin: 10px auto;
                 cursor: pointer;
                 div {
-                  flex: 1; // Make each feedback card take equal space
-                  text-align: center; // Center the content
-              
-                  .feedback-card-image {
-                    height: 60px;
-                    width: 60px; // Set a specific width for consistency
-                    border-radius: 50%; // Make the image round
-                    object-fit: cover; // Ensure the image covers the entire container
-                    margin: 0 auto 5px; // Add margin at the bottom for spacing
-        
-                    &:hover {
-                        transform: scale(1.2); // Scale up on hover for a subtle effect
+                    flex: 1; // Make each feedback card take equal space
+                    text-align: center; // Center the content
+
+                    .feedback-card-image {
+                        height: 60px;
+                        width: 60px; // Set a specific width for consistency
+                        border-radius: 50%; // Make the image round
+                        object-fit: cover; // Ensure the image covers the entire container
+                        margin: 0 auto 5px; // Add margin at the bottom for spacing
+
+                        &:hover {
+                            transform: scale(1.2); // Scale up on hover for a subtle effect
+                        }
+
+                        &.clicked {
+                            border: 2px solid #4caf50; // Add a border to indicate the clicked state
+                            box-shadow: 0 0 10px rgba(0, 128, 0, 0.5); // Add a box shadow for emphasis
+                        }
                     }
-        
-                    &.clicked {
-                        border: 2px solid #4CAF50; // Add a border to indicate the clicked state
-                        box-shadow: 0 0 10px rgba(0, 128, 0, 0.5); // Add a box shadow for emphasis
+                    p {
+                        font-size: 16px; // Adjust the font size as needed
+                        font-weight: bold; // Make the text bold
                     }
-                  }
-                  p {
-                    font-size: 16px; // Adjust the font size as needed
-                    font-weight: bold; // Make the text bold
-                  }
                 }
             }
-            .active{
+            .active {
                 color: #2b318c;
                 .feedback-card-image {
                     transform: scale(1.2);

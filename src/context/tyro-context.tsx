@@ -35,7 +35,6 @@ type ContextProps = {
         customerMessageCallback: (message: string) => void
     ) => Promise<IEftposTransactionOutcome>;
     cancelTransaction: () => void;
-    createRefund: (amount: string, integrationKey: string, customerMessageCallback: (message: string) => void) => Promise<IEftposTransactionOutcome>;
 };
 
 const TyroContext = createContext<ContextProps>({
@@ -50,11 +49,6 @@ const TyroContext = createContext<ContextProps>({
         });
     },
     cancelTransaction: () => {
-        return new Promise(() => {
-            console.log("");
-        });
-    },
-    createRefund: (amount: string, integrationKey: string, customerMessageCallback: (message: string) => void) => {
         return new Promise(() => {
             console.log("");
         });
@@ -383,30 +377,12 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
         }
     };
 
-    const createRefund = (
-        amount: string,
-        integrationKey: string,
-        customerMessageCallback: (message: string) => void
-    ): Promise<IEftposTransactionOutcome> => {
-        const interval = 2 * 1000; // 2 seconds
-        const timeout = 10 * 60 * 1000; // 10 minutes
-
-        const endTime = Number(new Date()) + timeout;
-
-        const checkCondition = async (resolve: any, reject: any) => {
-            reject("TODO: Still need to be implemented");
-        };
-
-        return new Promise(checkCondition);
-    };
-
     return (
         <TyroContext.Provider
             value={{
                 sendParingRequest: sendParingRequest,
                 createTransaction: createTransaction,
                 cancelTransaction: cancelTransaction,
-                createRefund: createRefund,
             }}
             children={props.children}
         />
