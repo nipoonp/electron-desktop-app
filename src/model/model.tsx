@@ -39,7 +39,7 @@ export interface ICognitoUser {
 
 export enum EEftposTransactionOutcome {
     Success,
-    ProcessMessage,
+    // ProcessMessage,
     Fail,
 }
 
@@ -91,12 +91,12 @@ export interface IEftposTransactionOutcome {
     transactionOutcome: EEftposTransactionOutcome;
     message: string;
     eftposReceipt: string | null;
-    eftposCardType?: IEftposTransactionOutcomeCardType;
+    eftposCardType?: EEftposTransactionOutcomeCardType;
     eftposSurcharge?: number;
     eftposTip?: number;
 }
 
-export enum IEftposTransactionOutcomeCardType {
+export enum EEftposTransactionOutcomeCardType {
     VISA = "VISA",
     MASTERCARD = "MASTERCARD",
     AMEX = "AMEX",
@@ -170,6 +170,7 @@ interface ITyroTransactionCompleteCallback {
     issuerActionCode?: string; // The raw result code returned by the card issuer.
     elidedPan?: string; // The (elided) credit card number used for this transaction.
     rrn?: string; // The Retrieval Reference Number, unique for a 7-day period.
+    surchargeAmount?: string;
     tipAmount?: string; // The tip component, in cents, for Tip Completion transactions.
     tipCompletionReference?: string; // Tyro's reference to the Tip Completion.
     tabCompletionReference?: string; // Tyro's reference to a Tab Completion.
