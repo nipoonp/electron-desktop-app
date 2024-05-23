@@ -478,9 +478,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                         transactionOutcome: EEftposTransactionOutcome.Success,
                         message: "Transaction Approved!",
                         eftposReceipt: eftposReceipt.current,
-                        // eftposCardType: getCardType(eftposCardType),
-                        // eftposSurcharge: parseInt(eftposSurcharge || "0"),
-                        // eftposTip: parseInt(eftposTip || "0"),
+                        eftposCardType: getCardType(eftposCardType),
+                        eftposSurcharge: parseInt(eftposSurcharge || "0"),
+                        eftposTip: parseInt(eftposTip || "0"),
                     };
                     break;
                 case "09":
@@ -491,9 +491,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                         transactionOutcome: EEftposTransactionOutcome.Success,
                         message: "Transaction Approved With Signature!",
                         eftposReceipt: eftposReceipt.current,
-                        // eftposCardType: getCardType(eftposCardType),
-                        // eftposSurcharge: parseInt(eftposSurcharge || "0"),
-                        // eftposTip: parseInt(eftposTip || "0"),
+                        eftposCardType: getCardType(eftposCardType),
+                        eftposSurcharge: parseInt(eftposSurcharge || "0"),
+                        eftposTip: parseInt(eftposTip || "0"),
                     };
                     // } else {
                     //     transactionOutcome = {
