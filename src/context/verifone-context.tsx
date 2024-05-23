@@ -7,7 +7,7 @@ import {
     IEftposTransactionOutcome,
     EVerifoneTransactionOutcome,
     EEftposProvider,
-    IEftposTransactionOutcomeCardType,
+    EEftposTransactionOutcomeCardType,
 } from "../model/model";
 import { useErrorLogging } from "./errorLogging-context";
 import { useRegister } from "./register-context";
@@ -205,14 +205,14 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     };
 
     const getCardType = (cardType: string) => {
-        let type = IEftposTransactionOutcomeCardType.EFTPOS;
+        let type = EEftposTransactionOutcomeCardType.EFTPOS;
 
         if (cardType.toLowerCase() === "visa") {
-            type = IEftposTransactionOutcomeCardType.VISA;
+            type = EEftposTransactionOutcomeCardType.VISA;
         } else if (cardType.toLowerCase() === "mcard") {
-            type = IEftposTransactionOutcomeCardType.MASTERCARD;
+            type = EEftposTransactionOutcomeCardType.MASTERCARD;
         } else if (cardType.toLowerCase() === "amex") {
-            type = IEftposTransactionOutcomeCardType.AMEX;
+            type = EEftposTransactionOutcomeCardType.AMEX;
         }
 
         return type;
@@ -478,9 +478,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                         transactionOutcome: EEftposTransactionOutcome.Success,
                         message: "Transaction Approved!",
                         eftposReceipt: eftposReceipt.current,
-                        eftposCardType: getCardType(eftposCardType),
-                        eftposSurcharge: parseInt(eftposSurcharge || "0"),
-                        eftposTip: parseInt(eftposTip || "0"),
+                        // eftposCardType: getCardType(eftposCardType),
+                        // eftposSurcharge: parseInt(eftposSurcharge || "0"),
+                        // eftposTip: parseInt(eftposTip || "0"),
                     };
                     break;
                 case "09":
@@ -491,9 +491,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                         transactionOutcome: EEftposTransactionOutcome.Success,
                         message: "Transaction Approved With Signature!",
                         eftposReceipt: eftposReceipt.current,
-                        eftposCardType: getCardType(eftposCardType),
-                        eftposSurcharge: parseInt(eftposSurcharge || "0"),
-                        eftposTip: parseInt(eftposTip || "0"),
+                        // eftposCardType: getCardType(eftposCardType),
+                        // eftposSurcharge: parseInt(eftposSurcharge || "0"),
+                        // eftposTip: parseInt(eftposTip || "0"),
                     };
                     // } else {
                     //     transactionOutcome = {

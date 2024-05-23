@@ -4,7 +4,7 @@ import { useCart } from "../../context/cart-context";
 import { useMutation, useQuery } from "@apollo/client";
 import { useRegister } from "../../context/register-context";
 import { useRestaurant } from "../../context/restaurant-context";
-import { EEftposTransactionOutcome, EPaymentModalState, IEftposTransactionOutcome } from "../../model/model";
+import { EEftposProvider, EEftposTransactionOutcome, EPaymentModalState, IEftposTransactionOutcome } from "../../model/model";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { Button } from "../../tabin/components/button";
 import { CachedImage } from "../../tabin/components/cachedImage";
@@ -40,6 +40,7 @@ interface IPaymentModalProps {
     cashTransactionChangeAmount: number | null;
     createOrderError: string | null;
     onConfirmTotalOrRetryEftposTransaction: (amount: number) => void;
+    onCancelEftposTransaction: () => void;
     onConfirmCashTransaction: (amount: number) => void;
     onConfirmUberEatsTransaction: (amount: number) => void;
     onConfirmMenulogTransaction: (amount: number) => void;
@@ -149,10 +150,6 @@ export const PaymentModal = (props: IPaymentModalProps) => {
             return <CreateOrderFailed createOrderError={createOrderError} onCancelOrder={onCancelOrder} />;
         }
 
-        if (eftposTransactionProcessMessage) {
-            return <PaymentProgressMessage message={eftposTransactionProcessMessage} />;
-        }
-
         if (paymentModalState == EPaymentModalState.POSScreen) {
             return (
                 <POSPaymentScreen
@@ -168,7 +165,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                 />
             );
         } else if (paymentModalState == EPaymentModalState.AwaitingCard) {
-            return <AwaitingCard />;
+            return <AwaitingCard message={eftposTransactionProcessMessage} onCancelEftposTransaction={props.onCancelEftposTransaction} />;
         } else if (paymentModalState == EPaymentModalState.EftposResult && eftposTransactionOutcome) {
             if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.Success) {
                 return (
@@ -182,9 +179,10 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                 );
             } else if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.Fail) {
                 return <PaymentFailed errorMessage={eftposTransactionOutcome.message} onRetry={onRetry} onCancelPayment={onCancelPayment} />;
-            } else if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.ProcessMessage) {
-                return <PaymentProgressMessage message={eftposTransactionOutcome.message} />;
             }
+            // else if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.ProcessMessage) {
+            //     return <PaymentProgressMessage message={eftposTransactionOutcome.message} />;
+            // }
         } else if (paymentModalState === EPaymentModalState.CashResult) {
             if (isPOS) {
                 return (
@@ -264,12 +262,42 @@ export const PaymentModal = (props: IPaymentModalProps) => {
     );
 };
 
-const AwaitingCard = () => {
+const AwaitingCard = (props: { message: string | null; onCancelEftposTransaction: () => void }) => {
+    const { register } = useRegister();
+    const [cancelState, setCancelState] = useState(false);
+
+    const onCancelTransaction = () => {
+        props.onCancelEftposTransaction();
+        setCancelState(false);
+    };
+
     return (
         <>
-            <div className="h2 mb-6 awaiting-card-text">Swipe or insert your card on the terminal to complete your payment.</div>
-            <CachedImage className="awaiting-card-image" url={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} alt="awaiting-card-gif" />
-            <div className="awaiting-card-image-override"></div>
+            {cancelState ? (
+                <>
+                    <div className="h2 mb-6 awaiting-card-text">Are are you sure want to cancel this transaction?</div>
+                    <div className="awaiting-card-cancel-button-wrapper">
+                        <Button className="button large awaiting-card-cancel-yes-button" onClick={onCancelTransaction}>
+                            Yes
+                        </Button>
+                        <Button className="button large awaiting-card-cancel-no-button" onClick={() => setCancelState(false)}>
+                            No
+                        </Button>
+                    </div>
+                </>
+            ) : (
+                <>
+                    <div className="h2 mb-6 awaiting-card-text">Swipe or insert your card on the terminal to complete your payment.</div>
+                    <CachedImage
+                        className="awaiting-card-image"
+                        url={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`}
+                        alt="awaiting-card-gif"
+                    />
+                    <div className="awaiting-card-image-override"></div>
+                    {props.message && <div className="h2 mt-4 mb-6">{props.message}</div>}
+                    {register?.eftposProvider === EEftposProvider.TYRO && <Button onClick={() => setCancelState(true)}>Cancel Transaction</Button>}
+                </>
+            )}
         </>
     );
 };
@@ -329,18 +357,6 @@ const PaymentAccepted = (props: {
                     </div>
                 </>
             )}
-        </>
-    );
-};
-
-const PaymentProgressMessage = (props: { message: string }) => {
-    const { message } = props;
-
-    return (
-        <>
-            <div className="h2 mb-6 awaiting-card-text">Swipe or insert your card on the terminal to complete your payment.</div>
-            <CachedImage className="awaiting-card-image" url={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} alt="awaiting-card-gif" />
-            {message && <div className="h2 mt-4 mb-6">{message}</div>}
         </>
     );
 };

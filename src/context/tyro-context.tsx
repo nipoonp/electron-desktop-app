@@ -7,14 +7,14 @@ import {
     IEftposTransactionOutcome,
     ITyroTransactionCallback,
     ITyroInitiatePurchaseInput,
-    ITyroInitiateRefundInput,
     ITyroPairTerminalResponseReceivedCallback,
+    EEftposTransactionOutcomeCardType,
 } from "../model/model";
 import config from "./../../package.json";
 import { delay } from "../model/util";
 import { format } from "date-fns";
 import { useErrorLogging } from "./errorLogging-context";
-import { toLocalISOString } from "../util/util";
+import { convertDollarsToCentsReturnInt, toLocalISOString } from "../util/util";
 
 const apiKey = "Test API Key"; // API Key not validated test environments
 const posProductInfo = {
@@ -35,7 +35,6 @@ type ContextProps = {
         customerMessageCallback: (message: string) => void
     ) => Promise<IEftposTransactionOutcome>;
     cancelTransaction: () => void;
-    createRefund: (amount: string, integrationKey: string, customerMessageCallback: (message: string) => void) => Promise<IEftposTransactionOutcome>;
 };
 
 const TyroContext = createContext<ContextProps>({
@@ -50,11 +49,6 @@ const TyroContext = createContext<ContextProps>({
         });
     },
     cancelTransaction: () => {
-        return new Promise(() => {
-            console.log("");
-        });
-    },
-    createRefund: (amount: string, integrationKey: string, customerMessageCallback: (message: string) => void) => {
         return new Promise(() => {
             console.log("");
         });
@@ -79,6 +73,24 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
 
         console.log(log);
         logs.current += newLog + "\n";
+    };
+
+    const getCardType = (cardType?: string) => {
+        let type = EEftposTransactionOutcomeCardType.EFTPOS;
+
+        console.log("xxx...cardType", cardType);
+
+        if (cardType) {
+            if (cardType.toLowerCase() === "visa") {
+                type = EEftposTransactionOutcomeCardType.VISA;
+            } else if (cardType.toLowerCase() === "mastercard") {
+                type = EEftposTransactionOutcomeCardType.MASTERCARD;
+            } else if (cardType.toLowerCase() === "amex") {
+                type = EEftposTransactionOutcomeCardType.AMEX;
+            }
+        }
+
+        return type;
     };
 
     const createEftposTransactionLog = async (restaurantId: string, transactionType: string, amount: number) => {
@@ -207,6 +219,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                     },
                     //Invoked when the transaction has been completed on the terminal. Called with a subset of the following parameters:
                     transactionCompleteCallback: (response) => {
+                        console.log(response);
                         addToLogs(`transactionCompleteCallback Response: ${JSON.stringify(response)}`);
 
                         let transactionOutcome: IEftposTransactionOutcome | null = null;
@@ -218,6 +231,11 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                                     transactionOutcome: EEftposTransactionOutcome.Success,
                                     message: "Transaction Approved!",
                                     eftposReceipt: response.customerReceipt || "",
+                                    eftposCardType: getCardType(response.cardType),
+                                    eftposSurcharge: response.surchargeAmount
+                                        ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
+                                        : 0,
+                                    eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
                                 };
                                 break;
                             case "CANCELLED":
@@ -226,6 +244,11 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                                     transactionOutcome: EEftposTransactionOutcome.Fail,
                                     message: "Transaction Cancelled!",
                                     eftposReceipt: response.customerReceipt || "",
+                                    eftposCardType: getCardType(response.cardType),
+                                    eftposSurcharge: response.surchargeAmount
+                                        ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
+                                        : 0,
+                                    eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
                                 };
                                 break;
                             case "REVERSED":
@@ -241,6 +264,11 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                                     transactionOutcome: EEftposTransactionOutcome.Fail,
                                     message: message,
                                     eftposReceipt: response.customerReceipt || "",
+                                    eftposCardType: getCardType(response.cardType),
+                                    eftposSurcharge: response.surchargeAmount
+                                        ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
+                                        : 0,
+                                    eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
                                 };
 
                                 break;
@@ -250,6 +278,11 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                                     transactionOutcome: EEftposTransactionOutcome.Fail,
                                     message: "Transaction Declined! Please try again.",
                                     eftposReceipt: response.customerReceipt || "",
+                                    eftposCardType: getCardType(response.cardType),
+                                    eftposSurcharge: response.surchargeAmount
+                                        ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
+                                        : 0,
+                                    eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
                                 };
                                 break;
                             case "SYSTEM ERROR":
@@ -259,6 +292,11 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                                     transactionOutcome: EEftposTransactionOutcome.Fail,
                                     message: "System Error.",
                                     eftposReceipt: response.customerReceipt || "",
+                                    eftposCardType: getCardType(response.cardType),
+                                    eftposSurcharge: response.surchargeAmount
+                                        ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
+                                        : 0,
+                                    eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
                                 };
                                 break;
                             case "NOT STARTED":
@@ -267,6 +305,11 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                                     transactionOutcome: EEftposTransactionOutcome.Fail,
                                     message: "Transaction Not Started",
                                     eftposReceipt: response.customerReceipt || "",
+                                    eftposCardType: getCardType(response.cardType),
+                                    eftposSurcharge: response.surchargeAmount
+                                        ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
+                                        : 0,
+                                    eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
                                 };
                                 break;
                             case "UNKNOWN":
@@ -275,6 +318,11 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                                     transactionOutcome: EEftposTransactionOutcome.Fail,
                                     message: "Please look at the terminal to determine what happened. Typically indicates a network error.",
                                     eftposReceipt: response.customerReceipt || "",
+                                    eftposCardType: getCardType(response.cardType),
+                                    eftposSurcharge: response.surchargeAmount
+                                        ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
+                                        : 0,
+                                    eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
                                 };
                                 break;
                             default:
@@ -283,6 +331,11 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                                     transactionOutcome: EEftposTransactionOutcome.Fail,
                                     message: "Unknown. Invalid State...",
                                     eftposReceipt: response.customerReceipt || "",
+                                    eftposCardType: getCardType(response.cardType),
+                                    eftposSurcharge: response.surchargeAmount
+                                        ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
+                                        : 0,
+                                    eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
                                 };
                                 break;
                         }
@@ -324,30 +377,12 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
         }
     };
 
-    const createRefund = (
-        amount: string,
-        integrationKey: string,
-        customerMessageCallback: (message: string) => void
-    ): Promise<IEftposTransactionOutcome> => {
-        const interval = 2 * 1000; // 2 seconds
-        const timeout = 10 * 60 * 1000; // 10 minutes
-
-        const endTime = Number(new Date()) + timeout;
-
-        const checkCondition = async (resolve: any, reject: any) => {
-            reject("TODO: Still need to be implemented");
-        };
-
-        return new Promise(checkCondition);
-    };
-
     return (
         <TyroContext.Provider
             value={{
                 sendParingRequest: sendParingRequest,
                 createTransaction: createTransaction,
                 cancelTransaction: cancelTransaction,
-                createRefund: createRefund,
             }}
             children={props.children}
         />

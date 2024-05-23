@@ -40,7 +40,7 @@ import {
     EPaymentMethod,
     EVerifoneTransactionOutcome,
     ERegisterType,
-    IEftposTransactionOutcomeCardType,
+    EEftposTransactionOutcomeCardType,
     EOrderType,
 } from "../../model/model";
 import { useUser } from "../../context/user-context";
@@ -138,7 +138,7 @@ export const Checkout = () => {
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
     const { createTransaction: windcaveCreateTransaction } = useWindcave();
-    const { createTransaction: tyroCreateTransaction } = useTyro();
+    const { createTransaction: tyroCreateTransaction, cancelTransaction: tyroCancelTransaction } = useTyro();
     const [isScrollable, setIsScrollable] = useState(false);
     const [createOrderMutation] = useMutation(CREATE_ORDER, {
         update: (proxy, mutationResult) => {
@@ -618,7 +618,7 @@ export const Checkout = () => {
         parkOrder: boolean,
         newPaymentAmounts: ICartPaymentAmounts,
         newPayments: ICartPayment[],
-        eftposCardType?: IEftposTransactionOutcomeCardType,
+        eftposCardType?: EEftposTransactionOutcomeCardType,
         eftposSurcharge?: number,
         eftposTip?: number
     ) => {
@@ -735,7 +735,7 @@ export const Checkout = () => {
         newPaymentAmounts: ICartPaymentAmounts,
         newPayments: ICartPayment[],
         signatureS3Object: IS3Object | null,
-        eftposCardType?: IEftposTransactionOutcomeCardType,
+        eftposCardType?: EEftposTransactionOutcomeCardType,
         eftposSurcharge?: number,
         eftposTip?: number
     ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
@@ -963,7 +963,7 @@ export const Checkout = () => {
             if (register.eftposProvider == EEftposProvider.SMARTPAY) {
                 let delayedShown = false;
 
-                const delayed = (outcome: IEftposTransactionOutcome) => {
+                const delayed = () => {
                     if (!delayedShown) {
                         delayedShown = true;
                         setEftposTransactionProcessMessage("This transaction is delayed. Please wait...");
@@ -1005,7 +1005,7 @@ export const Checkout = () => {
                 transactionOutcome: EEftposTransactionOutcome.Fail,
                 message: errorMessage,
                 eftposReceipt: null,
-                eftposCardType: IEftposTransactionOutcomeCardType.EFTPOS,
+                eftposCardType: EEftposTransactionOutcomeCardType.EFTPOS,
                 eftposSurcharge: 0,
                 eftposTip: 0,
             };
@@ -1024,6 +1024,17 @@ export const Checkout = () => {
         setShowPromotionCodeModal(true);
     };
 
+    const onCancelEftposTransaction = () => {
+        if (register.eftposProvider == EEftposProvider.SMARTPAY) {
+            //Not implemented
+        } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
+        } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
+            //Not implemented
+        } else if (register.eftposProvider == EEftposProvider.TYRO) {
+            tyroCancelTransaction();
+        }
+    };
+
     const onConfirmTotalOrRetryEftposTransaction = async (amount: number) => {
         setPaymentModalState(EPaymentModalState.AwaitingCard);
 
@@ -1036,7 +1047,7 @@ export const Checkout = () => {
                 transactionOutcome: EEftposTransactionOutcome.Success,
                 message: "Transaction Approved!",
                 eftposReceipt: null,
-                eftposCardType: IEftposTransactionOutcomeCardType.EFTPOS,
+                eftposCardType: EEftposTransactionOutcomeCardType.EFTPOS,
                 eftposSurcharge: 0,
                 eftposTip: 0,
             };
@@ -1086,8 +1097,8 @@ export const Checkout = () => {
                 setCreateOrderError(e);
             }
         } else if (
-            outcome.transactionOutcome === EEftposTransactionOutcome.Fail ||
-            outcome.transactionOutcome === EEftposTransactionOutcome.ProcessMessage
+            outcome.transactionOutcome === EEftposTransactionOutcome.Fail
+            // outcome.transactionOutcome === EEftposTransactionOutcome.ProcessMessage
         ) {
             setPaymentModalState(EPaymentModalState.EftposResult);
         }
@@ -1442,6 +1453,7 @@ export const Checkout = () => {
                         onContinueToNextOrder={onContinueToNextOrder}
                         createOrderError={createOrderError}
                         onConfirmTotalOrRetryEftposTransaction={onConfirmTotalOrRetryEftposTransaction}
+                        onCancelEftposTransaction={onCancelEftposTransaction}
                         onConfirmCashTransaction={onConfirmCashTransaction}
                         onConfirmUberEatsTransaction={onConfirmUberEatsTransaction}
                         onConfirmMenulogTransaction={onConfirmMenulogTransaction}
