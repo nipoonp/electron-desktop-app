@@ -176,52 +176,60 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                 const transactionCallbacks: ITyroTransactionCallback = {
                     //Invoked when the terminal requires the merchant to answer a question in order to proceed with the transaction. Called with the following parameters:
                     questionCallback: (question, answerCallback) => {
-                        addToLogs(`questionCallback Question: ${JSON.stringify(question)}`);
+                        answerCallback("YES");
+                        // addToLogs(`questionCallback Question: ${JSON.stringify(question)}`);
 
-                        if (question.text.includes("APPROVED W/ SIGNATURE. Signature OK?")) {
-                            approvedWithSignature = true;
-                            addToLogs("Answer back with NO");
-                            answerCallback("NO");
-                        } else if (question.text.includes("Are you sure you want to cancel?")) {
-                            addToLogs("Answer back with YES");
-                            answerCallback("YES");
-                        } else if (question.text.includes("Cancel this transaction?")) {
-                            addToLogs("Answer back with YES");
-                            answerCallback("YES");
-                        } else if (question.text.includes("POS is not paired with a terminal.")) {
-                            addToLogs("Answer back with OK");
-                            answerCallback("OK");
-                        } else if (question.text.includes("Invalid transaction details (400).")) {
-                            addToLogs("Answer back with OK");
-                            answerCallback("OK");
-                        }
+                        // if (question.text.includes("APPROVED W/ SIGNATURE. Signature OK?")) {
+                        //     approvedWithSignature = true;
+                        //     addToLogs("Answer back with NO");
+                        //     answerCallback("NO");
+                        // } else if (question.text.includes("Are you sure you want to cancel?")) {
+                        //     addToLogs("Answer back with YES");
+                        //     answerCallback("YES");
+                        // } else if (question.text.includes("Cancel this transaction?")) {
+                        //     addToLogs("Answer back with YES");
+                        //     answerCallback("YES");
+                        // } else if (question.text.includes("POS is not paired with a terminal.")) {
+                        //     addToLogs("Answer back with OK");
+                        //     answerCallback("OK");
+                        // } else if (question.text.includes("Invalid transaction details (400).")) {
+                        //     addToLogs("Answer back with OK");
+                        //     answerCallback("OK");
+                        // }
 
-                        if (question.isError) {
-                            addToLogs("Returning with error");
+                        // if (question.isError) {
+                        //     addToLogs("Returning with error");
 
-                            resolve({
-                                platformTransactionOutcome: ETyroTransactionOutcome.UNKNOWN,
-                                transactionOutcome: EEftposTransactionOutcome.Fail,
-                                message: question.text,
-                                eftposReceipt: "",
-                            });
-                        }
+                        //     resolve({
+                        //         platformTransactionOutcome: ETyroTransactionOutcome.UNKNOWN,
+                        //         transactionOutcome: EEftposTransactionOutcome.Fail,
+                        //         message: question.text,
+                        //         eftposReceipt: "",
+                        //     });
+                        // }
                     },
                     //Invoked to advertise what is happening on terminal, which is typically facing the customer rather than the merchant. Called with a single String argument. For example "Select account".
                     statusMessageCallback: (message: string) => {
-                        addToLogs(`statusMessageCallback Message: ${JSON.stringify(message)}`);
+                        console.log("xxx...", message);
+                        // addToLogs(`statusMessageCallback Message: ${JSON.stringify(message)}`);
 
-                        customerMessageCallback(message);
+                        // customerMessageCallback(message);
                     },
                     //Invoked when integrated receipts are enabled and a merchant copy of the receipt is available. Ignored if integrated receipt printing is disabled. Called with the following parameters:
                     receiptCallback: (receipt) => {
-                        addToLogs(`receiptCallback Receipt: ${JSON.stringify(receipt)}`);
+                        // addToLogs(`receiptCallback Receipt: ${JSON.stringify(receipt)}`);
+
+                        if (receipt.signatureRequired == true) {
+                            approvedWithSignature = true;
+                            cancelTransaction();
+                        }
                     },
                     //Invoked when the transaction has been completed on the terminal. Called with a subset of the following parameters:
                     transactionCompleteCallback: (response) => {
                         console.log(response);
-                        addToLogs(`transactionCompleteCallback Response: ${JSON.stringify(response)}`);
+                        addToLogs(`xxx...transactionCompleteCallback Response: ${JSON.stringify(response)}`);
 
+                        console.log(response.customerReceipt);
                         let transactionOutcome: IEftposTransactionOutcome | null = null;
 
                         switch (response.result) {
