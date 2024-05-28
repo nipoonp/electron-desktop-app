@@ -466,12 +466,12 @@ export const printCustomerReceipt = async (
     ]);
 
     printer.newLine();
-    printer.alignCenter();
 
     if (order.eftposReceipt) printer.println(order.eftposReceipt);
 
     printer.newLine();
-    printer.alignCenter();
+
+    if (order.eftposReceipt) printer.print(order.eftposReceipt);
 
     if (order.receiptFooterText) {
         printer.bold(true);
