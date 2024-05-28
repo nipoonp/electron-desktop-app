@@ -295,7 +295,11 @@ const AwaitingCard = (props: { message: string | null; onCancelEftposTransaction
                     />
                     <div className="awaiting-card-image-override"></div>
                     {props.message && <div className="h2 mt-4 mb-6">{props.message}</div>}
-                    {register?.eftposProvider === EEftposProvider.TYRO && <Button onClick={() => setCancelState(true)}>Cancel Transaction</Button>}
+                    {register?.eftposProvider === EEftposProvider.TYRO && (
+                        <Button className="mt-4" onClick={() => setCancelState(true)}>
+                            Cancel Transaction
+                        </Button>
+                    )}
                 </>
             )}
         </>

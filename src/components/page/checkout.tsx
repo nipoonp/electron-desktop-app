@@ -107,8 +107,6 @@ export const Checkout = () => {
         subTotal,
         paidSoFar,
         orderTypeSurcharge,
-        transactionEftposReceipts,
-        setTransactionEftposReceipts,
         paymentAmounts,
         setPaymentAmounts,
         payments,
@@ -134,6 +132,8 @@ export const Checkout = () => {
     const { printReceipt, printLabel } = useReceiptPrinter();
     const { user } = useUser();
     const { logError } = useErrorLogging();
+
+    const transactionEftposReceipts = useRef<string>("");
 
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
@@ -780,7 +780,7 @@ export const Checkout = () => {
                       }
                     : null,
                 notes: notes,
-                eftposReceipt: transactionEftposReceipts,
+                eftposReceipt: transactionEftposReceipts.current,
                 paymentAmounts: newPaymentAmounts,
                 payments: newPayments,
                 total: total,
@@ -835,7 +835,7 @@ export const Checkout = () => {
                           }
                         : null,
                     notes: notes,
-                    eftposReceipt: transactionEftposReceipts,
+                    eftposReceipt: transactionEftposReceipts.current,
                     paymentAmounts: newPaymentAmounts,
                     payments: newPayments,
                     total: total,
@@ -1058,7 +1058,7 @@ export const Checkout = () => {
         setEftposTransactionOutcome(outcome);
 
         if (outcome.eftposReceipt) {
-            setTransactionEftposReceipts(`${transactionEftposReceipts}\n${outcome.eftposReceipt}`);
+            transactionEftposReceipts.current = `${transactionEftposReceipts.current}\n${outcome.eftposReceipt}`;
         }
 
         //If paid for everything
