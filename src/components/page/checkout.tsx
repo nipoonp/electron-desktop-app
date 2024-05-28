@@ -532,7 +532,6 @@ export const Checkout = () => {
                 placedAt: format(new Date(order.placedAt), "dd/MM HH:mm"),
             });
         } else {
-            console.log(order.eftposReceipt);
             //Not checking if its printerType receipt
             await printReceipt({
                 orderId: order.id,
