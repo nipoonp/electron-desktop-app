@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { checkoutPath } from "../main";
+import { checkoutPath, restaurantPath } from "../main";
 import { useCart } from "../../context/cart-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { Button } from "../../tabin/components/button";
@@ -17,6 +17,8 @@ export default () => {
     const navigate = useNavigate();
     const { register } = useRegister();
     const { restaurant } = useRestaurant();
+    const { isPOS } = useRegister();
+
     const { customerInformation, setCustomerInformation } = useCart();
 
     const [firstName, setFirstName] = useState(customerInformation ? customerInformation.firstName : "");
@@ -41,7 +43,11 @@ export default () => {
     if (restaurant == null) throw "Restaurant is invalid!";
 
     const onClose = () => {
-        navigate(`${checkoutPath}`);
+        if (isPOS) {
+            navigate(`${restaurantPath}/${restaurant.id}`);
+        } else {
+            navigate(`${checkoutPath}`);
+        }
     };
 
     const onNext = async () => {

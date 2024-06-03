@@ -469,7 +469,11 @@ export const Checkout = () => {
     };
 
     const onClosePaymentModal = () => {
-        setShowPaymentModal(false);
+        if (isPOS) {
+            navigate(`${restaurantPath}/${restaurant.id}`);
+        } else {
+            setShowPaymentModal(false);
+        }
     };
 
     const onCancelPayment = () => {
@@ -1609,9 +1613,9 @@ export const Checkout = () => {
             {title}
             {register && register.availableOrderTypes.length > 1 && restaurantOrderType}
             {promotionInformation}
-            {tableNumber && <div className="mb-4">{restaurantTableNumber}</div>}
-            {buzzerNumber && <div className="mb-4">{restaurantBuzzerNumber}</div>}
-            {customerInformation && <div className="mb-4">{restaurantCustomerInformation}</div>}
+            {tableNumber && <div className="mb-2">{restaurantTableNumber}</div>}
+            {buzzerNumber && <div className="mb-2">{restaurantBuzzerNumber}</div>}
+            {customerInformation && <div className="mb-2">{restaurantCustomerInformation}</div>}
             <div className="separator-6"></div>
             {orderSummary}
             <div className="restaurant-notes-wrapper">{restaurantNotes}</div>
