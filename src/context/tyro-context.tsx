@@ -78,8 +78,6 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
     const getCardType = (cardType?: string) => {
         let type = EEftposTransactionOutcomeCardType.EFTPOS;
 
-        console.log("xxx...cardType", cardType);
-
         if (cardType) {
             if (cardType.toLowerCase() === "visa") {
                 type = EEftposTransactionOutcomeCardType.VISA;
@@ -213,7 +211,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                         console.log("xxx...", message);
                         // addToLogs(`statusMessageCallback Message: ${JSON.stringify(message)}`);
 
-                        // customerMessageCallback(message);
+                        customerMessageCallback(message);
                     },
                     //Invoked when integrated receipts are enabled and a merchant copy of the receipt is available. Ignored if integrated receipt printing is disabled. Called with the following parameters:
                     receiptCallback: (receipt) => {
@@ -264,7 +262,8 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
 
                                 // Approved with signature not allowed in kiosk mode
                                 if (approvedWithSignature && (register?.skipEftposReceiptSignature || isPOS)) {
-                                    message = "Transaction Reversed! Approved with signature not allowed in kiosk mode";
+                                    message =
+                                        "Signature transactions are not allowed on the Kiosk, please go to the counter or use another card to make the payment";
                                 }
 
                                 transactionOutcome = {
