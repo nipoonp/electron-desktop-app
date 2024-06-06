@@ -17,6 +17,8 @@ export const Tyro = () => {
     const [amount, setAmount] = useState(10208);
 
     const [pairingMessage, setPairingMessage] = useState("");
+    const [displayTyroLogs, setDisplayTyroLogs] = useState(false);
+
     const [tansactionMessage, setTansactionMessage] = useState("");
     const [showSpinner, setShowSpinner] = useState(false);
 
@@ -30,7 +32,7 @@ export const Tyro = () => {
         if (!register) return;
 
         try {
-            setShowSpinner(true);
+            // setShowSpinner(true);
             const integrationKey = await sendParingRequest(merchantId, terminalId, (eftposMessage) => {
                 setPairingMessage(eftposMessage);
             });
@@ -48,7 +50,7 @@ export const Tyro = () => {
         } catch (errorMessage) {
             alert("Error! Message: " + errorMessage);
         } finally {
-            setShowSpinner(false);
+            // setShowSpinner(false);
         }
     };
 
@@ -102,10 +104,24 @@ export const Tyro = () => {
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setTerminalId(event.target.value)}
                     placeholder="123456"
                 />
-                <div className="mb-4">{pairingMessage && <div>Pairing Message: {pairingMessage}</div>}</div>
+                <div className="mb-4">{pairingMessage && <div>{pairingMessage}</div>}</div>
                 <Button className="mb-6" onClick={doPairing}>
                     Pair to Device
                 </Button>
+
+                <Button className="mb-6" onClick={() => setDisplayTyroLogs(!displayTyroLogs)}>
+                    Display Tyro Logs
+                </Button>
+
+                {displayTyroLogs && (
+                    <iframe
+                        className="mb-4"
+                        src="https://iclientsimulator.test.tyro.com/logs.html"
+                        width="100%"
+                        height="600px"
+                        title="Tyro Client Simulator Logs"
+                    />
+                )}
 
                 <div className="h3 mb-4">Send a Transaction</div>
 
@@ -118,7 +134,7 @@ export const Tyro = () => {
                     placeholder="199"
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAmount(Number(event.target.value))}
                 />
-                <div className="mb-4">{tansactionMessage && <div>Transaction Message: {tansactionMessage}</div>}</div>
+                <div className="mb-4">{tansactionMessage && <div>{tansactionMessage}</div>}</div>
                 <Button className="mb-1" onClick={performEftposTransaction}>
                     Send Transaction
                 </Button>

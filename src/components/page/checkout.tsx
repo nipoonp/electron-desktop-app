@@ -469,7 +469,11 @@ export const Checkout = () => {
     };
 
     const onClosePaymentModal = () => {
-        setShowPaymentModal(false);
+        if (isPOS) {
+            navigate(`${restaurantPath}/${restaurant.id}`);
+        } else {
+            setShowPaymentModal(false);
+        }
     };
 
     const onCancelPayment = () => {
@@ -532,7 +536,6 @@ export const Checkout = () => {
                 placedAt: format(new Date(order.placedAt), "dd/MM HH:mm"),
             });
         } else {
-            console.log(order.eftposReceipt);
             //Not checking if its printerType receipt
             await printReceipt({
                 orderId: order.id,
@@ -1294,11 +1297,11 @@ export const Checkout = () => {
             const upSellCrossSellProducts = restaurant.upSellCrossSell.customProducts.items;
 
             menuCategories.forEach((category) => {
-                if (!category.availablePlatforms.includes(register.type)) return;
+                if (!category.availablePlatforms?.includes(register.type)) return;
 
                 category.products &&
                     category.products.items.forEach((p) => {
-                        if (!p.product.availablePlatforms.includes(register.type)) return;
+                        if (!p.product.availablePlatforms?.includes(register.type)) return;
 
                         upSellCrossSellProducts.forEach((upSellProduct) => {
                             if (p.product.id === upSellProduct.id) {
@@ -1610,9 +1613,9 @@ export const Checkout = () => {
             {title}
             {register && register.availableOrderTypes.length > 1 && restaurantOrderType}
             {promotionInformation}
-            {tableNumber && <div className="mb-4">{restaurantTableNumber}</div>}
-            {buzzerNumber && <div className="mb-4">{restaurantBuzzerNumber}</div>}
-            {customerInformation && <div className="mb-4">{restaurantCustomerInformation}</div>}
+            {tableNumber && <div className="mb-2">{restaurantTableNumber}</div>}
+            {buzzerNumber && <div className="mb-2">{restaurantBuzzerNumber}</div>}
+            {customerInformation && <div className="mb-2">{restaurantCustomerInformation}</div>}
             <div className="separator-6"></div>
             {orderSummary}
             <div className="restaurant-notes-wrapper">{restaurantNotes}</div>

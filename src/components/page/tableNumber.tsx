@@ -14,7 +14,7 @@ import { useRegister } from "../../context/register-context";
 export default () => {
     const navigate = useNavigate();
     const { restaurant } = useRestaurant();
-    const { tableNumber, setTableNumber } = useCart();
+    const { setTableNumber } = useCart();
     const { isPOS } = useRegister();
 
     const numpadRef = useRef(null);
