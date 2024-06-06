@@ -468,7 +468,13 @@ export const printCustomerReceipt = async (
     printer.newLine();
     printer.alignCenter();
 
-    if (order.eftposReceipt) printer.println(order.eftposReceipt);
+    if (order.eftposReceipt) {
+        const eftposReceiptArray = order.eftposReceipt.split("\n");
+
+        eftposReceiptArray.forEach((line) => {
+            printer.println(line);
+        });
+    }
 
     printer.newLine();
     printer.alignCenter();

@@ -107,8 +107,6 @@ export const Checkout = () => {
         subTotal,
         paidSoFar,
         orderTypeSurcharge,
-        transactionEftposReceipts,
-        setTransactionEftposReceipts,
         paymentAmounts,
         setPaymentAmounts,
         payments,
@@ -134,6 +132,8 @@ export const Checkout = () => {
     const { printReceipt, printLabel } = useReceiptPrinter();
     const { user } = useUser();
     const { logError } = useErrorLogging();
+
+    const transactionEftposReceipts = useRef<string>("");
 
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
@@ -469,7 +469,11 @@ export const Checkout = () => {
     };
 
     const onClosePaymentModal = () => {
-        setShowPaymentModal(false);
+        if (isPOS) {
+            navigate(`${restaurantPath}/${restaurant.id}`);
+        } else {
+            setShowPaymentModal(false);
+        }
     };
 
     const onCancelPayment = () => {
@@ -780,7 +784,7 @@ export const Checkout = () => {
                       }
                     : null,
                 notes: notes,
-                eftposReceipt: transactionEftposReceipts,
+                eftposReceipt: transactionEftposReceipts.current,
                 paymentAmounts: newPaymentAmounts,
                 payments: newPayments,
                 total: total,
@@ -835,7 +839,7 @@ export const Checkout = () => {
                           }
                         : null,
                     notes: notes,
-                    eftposReceipt: transactionEftposReceipts,
+                    eftposReceipt: transactionEftposReceipts.current,
                     paymentAmounts: newPaymentAmounts,
                     payments: newPayments,
                     total: total,
@@ -1058,7 +1062,7 @@ export const Checkout = () => {
         setEftposTransactionOutcome(outcome);
 
         if (outcome.eftposReceipt) {
-            setTransactionEftposReceipts(`${transactionEftposReceipts}\n${outcome.eftposReceipt}`);
+            transactionEftposReceipts.current = `${transactionEftposReceipts.current}\n${outcome.eftposReceipt}`;
         }
 
         //If paid for everything
@@ -1293,11 +1297,11 @@ export const Checkout = () => {
             const upSellCrossSellProducts = restaurant.upSellCrossSell.customProducts.items;
 
             menuCategories.forEach((category) => {
-                if (!category.availablePlatforms.includes(register.type)) return;
+                if (!category.availablePlatforms?.includes(register.type)) return;
 
                 category.products &&
                     category.products.items.forEach((p) => {
-                        if (!p.product.availablePlatforms.includes(register.type)) return;
+                        if (!p.product.availablePlatforms?.includes(register.type)) return;
 
                         upSellCrossSellProducts.forEach((upSellProduct) => {
                             if (p.product.id === upSellProduct.id) {
@@ -1609,9 +1613,9 @@ export const Checkout = () => {
             {title}
             {register && register.availableOrderTypes.length > 1 && restaurantOrderType}
             {promotionInformation}
-            {tableNumber && <div className="mb-4">{restaurantTableNumber}</div>}
-            {buzzerNumber && <div className="mb-4">{restaurantBuzzerNumber}</div>}
-            {customerInformation && <div className="mb-4">{restaurantCustomerInformation}</div>}
+            {tableNumber && <div className="mb-2">{restaurantTableNumber}</div>}
+            {buzzerNumber && <div className="mb-2">{restaurantBuzzerNumber}</div>}
+            {customerInformation && <div className="mb-2">{restaurantCustomerInformation}</div>}
             <div className="separator-6"></div>
             {orderSummary}
             <div className="restaurant-notes-wrapper">{restaurantNotes}</div>

@@ -87,8 +87,6 @@ type ContextProps = {
     setPayments: (payment: ICartPayment[]) => void;
     paymentAmounts: ICartPaymentAmounts;
     setPaymentAmounts: (paymentAmounts: ICartPaymentAmounts) => void;
-    transactionEftposReceipts: string;
-    setTransactionEftposReceipts: (receipt: string) => void;
     isShownUpSellCrossSellModal: boolean;
     setIsShownUpSellCrossSellModal: (isShownUpSellCrossSellModal: boolean) => void;
     isShownOrderThresholdMessageModal: boolean;
@@ -141,8 +139,6 @@ const CartContext = createContext<ContextProps>({
     setPayments: () => {},
     paymentAmounts: initialPaymentAmounts,
     setPaymentAmounts: () => {},
-    transactionEftposReceipts: initialTransactionEftposReceipts,
-    setTransactionEftposReceipts: () => {},
     isShownUpSellCrossSellModal: initialIsShownUpSellCrossSellModal,
     isShownOrderThresholdMessageModal: initialIsShownOrderThresholdMessageModal,
     setIsShownUpSellCrossSellModal: () => {},
@@ -172,7 +168,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
     const [payments, _setPayments] = useState<ICartPayment[]>(initialPayments);
     const [orderTypeSurcharge, _setOrderTypeSurcharge] = useState<number>(0);
-    const [transactionEftposReceipts, _setTransactionEftposReceipts] = useState<string>(initialTransactionEftposReceipts);
     const [isShownUpSellCrossSellModal, _setIsShownUpSellCrossSellModal] = useState<boolean>(initialIsShownUpSellCrossSellModal);
     const [isShownOrderThresholdMessageModal, _setIsShownOrderThresholdMessageModal] = useState(initialIsShownOrderThresholdMessageModal);
 
@@ -580,10 +575,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setPayments(payments);
     };
 
-    const setTransactionEftposReceipts = (receipt: string) => {
-        _setTransactionEftposReceipts(receipt);
-    };
-
     const setIsShownUpSellCrossSellModal = (isShownUpSellCrossSellModal: boolean) => {
         _setIsShownUpSellCrossSellModal(isShownUpSellCrossSellModal);
     };
@@ -621,7 +612,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setPaymentAmounts(initialPaymentAmounts);
         _setSubTotal(initialSubTotal);
         _setPayments(initialPayments);
-        _setTransactionEftposReceipts(initialTransactionEftposReceipts);
         _setIsShownUpSellCrossSellModal(initialIsShownUpSellCrossSellModal);
         _setIsShownOrderThresholdMessageModal(initialIsShownOrderThresholdMessageModal);
         _setOrderScheduledAt(initialOrderScheduledAt);
@@ -671,8 +661,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setPaymentAmounts: setPaymentAmounts,
                 payments: payments,
                 setPayments: setPayments,
-                transactionEftposReceipts: transactionEftposReceipts,
-                setTransactionEftposReceipts: setTransactionEftposReceipts,
                 isShownUpSellCrossSellModal: isShownUpSellCrossSellModal,
                 isShownOrderThresholdMessageModal: isShownOrderThresholdMessageModal,
                 setIsShownUpSellCrossSellModal: setIsShownUpSellCrossSellModal,

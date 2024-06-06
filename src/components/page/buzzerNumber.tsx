@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { checkoutPath } from "../main";
+import { checkoutPath, restaurantPath } from "../main";
 import { useCart } from "../../context/cart-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { Button } from "../../tabin/components/button";
@@ -10,11 +10,13 @@ import KioskBoard from "kioskboard";
 import { FiX } from "react-icons/fi";
 
 import "./buzzerNumber.scss";
+import { useRegister } from "../../context/register-context";
 
 export default () => {
     const navigate = useNavigate();
     const { restaurant } = useRestaurant();
-    const { buzzerNumber, setBuzzerNumber } = useCart();
+    const { setBuzzerNumber } = useCart();
+    const { isPOS } = useRegister();
 
     const numpadRef = useRef(null);
 
@@ -53,7 +55,11 @@ export default () => {
     if (restaurant == null) throw "Restaurant is invalid!";
 
     const onClose = () => {
-        navigate(`${checkoutPath}`);
+        if (isPOS) {
+            navigate(`${restaurantPath}/${restaurant.id}`);
+        } else {
+            navigate(`${checkoutPath}`);
+        }
     };
 
     const onNext = () => {
