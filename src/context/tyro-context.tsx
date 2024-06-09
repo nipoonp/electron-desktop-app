@@ -28,22 +28,23 @@ const iclient = new window.TYRO.IClient(apiKey, posProductInfo);
 const initialLogs = "";
 
 type ContextProps = {
-    sendParingRequest: (merchantId: string, terminalId: string, customerMessageCallback: (message: string) => void) => Promise<string>;
+    sendParingRequest: (merchantId: number, terminalId: number, customerMessageCallback: (message: string) => void) => Promise<string>;
     createTransaction: (
         amount: string,
-        integrationKey: string,
+        merchantId: number,
+        terminalId: number,
         customerMessageCallback: (message: string) => void
     ) => Promise<IEftposTransactionOutcome>;
     cancelTransaction: () => void;
 };
 
 const TyroContext = createContext<ContextProps>({
-    sendParingRequest: (merchantId: string, terminalId: string, customerMessageCallback: (message: string) => void) => {
+    sendParingRequest: (merchantId: number, terminalId: number, customerMessageCallback: (message: string) => void) => {
         return new Promise(() => {
             console.log("");
         });
     },
-    createTransaction: (amount: string, integrationKey: string, customerMessageCallback: (message: string) => void) => {
+    createTransaction: (amount: string, merchantId: number, terminalId: number, customerMessageCallback: (message: string) => void) => {
         return new Promise(() => {
             console.log("");
         });
@@ -105,7 +106,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
         });
     };
 
-    const sendParingRequest = (merchantId: string, terminalId: string, customerMessageCallback: (message: string) => void): Promise<string> => {
+    const sendParingRequest = (merchantId: number, terminalId: number, customerMessageCallback: (message: string) => void): Promise<string> => {
         return new Promise(async (resolve, reject) => {
             if (!merchantId) {
                 reject("A merchantId has to be supplied.");
@@ -139,7 +140,8 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
 
     const createTransaction = (
         amount: string,
-        integrationKey: string,
+        merchantId: number,
+        terminalId: number,
         customerMessageCallback: (message: string) => void
     ): Promise<IEftposTransactionOutcome> => {
         resetVariables();
@@ -152,8 +154,13 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
         let approvedWithSignature = false;
 
         const checkCondition = async (resolve: any, reject: any) => {
-            if (!integrationKey) {
-                reject("integrationKey needs to be submitted");
+            if (!merchantId) {
+                reject("A merchantId has to be supplied.");
+                return;
+            }
+
+            if (!terminalId) {
+                reject("A terminalId has to be supplied.");
                 return;
             }
 
@@ -162,9 +169,9 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                     amount: amount, //The purchase amount (amount to charge the customer) in cents.
                     // cashout: "0", //Cash out amount in cents.
                     integratedReceipt: true, //indicate whether receipts will be printed on the POS (true) or on the terminal (false).
-                    // mid: 1, //Override the configured mid for multi-merchant terminals or if your browser does not support local storage.
-                    // tid: 123, //Override the configured tid for multi-merchant terminals or if your browser does not support local storage.
-                    integrationKey: integrationKey, //Supply the integration key if your browser does not support local storage.
+                    mid: merchantId, //Override the configured mid for multi-merchant terminals or if your browser does not support local storage.
+                    tid: terminalId, //Override the configured tid for multi-merchant terminals or if your browser does not support local storage.
+                    // integrationKey: integrationKey, //Supply the integration key if your browser does not support local storage.
                     // transactionId: "", //Supply a transaction Id to be used for the transaction.
                     // healthpointTransactionId: "", //The integrated transaction ID of the original HealthPoint Claim (used for gap payments).
                     enableSurcharge: true, //Apply a surcharge to this transaction (if the card used attracts a surcharge).

@@ -7,13 +7,13 @@ import { Button } from "../../../tabin/components/button";
 import { IEftposTransactionOutcome } from "../../../model/model";
 import { useRegister } from "../../../context/register-context";
 import { useMutation } from "@apollo/client";
-import { UPDATE_REGISTER_TYRO_INTEGRATION_KEY } from "../../../graphql/customMutations";
+import { UPDATE_REGISTER_TYRO } from "../../../graphql/customMutations";
 
 export const Tyro = () => {
     const { register } = useRegister();
 
-    const [merchantId, setMerchantId] = useState("1");
-    const [terminalId, setTerminalId] = useState("123");
+    const [merchantId, setMerchantId] = useState(register?.tyroMerchantId || undefined);
+    const [terminalId, setTerminalId] = useState(register?.tyroTerminalId || undefined);
     const [amount, setAmount] = useState(10208);
 
     const [pairingMessage, setPairingMessage] = useState("");
@@ -24,12 +24,12 @@ export const Tyro = () => {
 
     const { sendParingRequest, createTransaction, cancelTransaction } = useTyro();
 
-    const [updateRegisterTyroIntegrationKey, { data, loading, error }] = useMutation(UPDATE_REGISTER_TYRO_INTEGRATION_KEY, {
+    const [updateRegisterTyro, { data, loading, error }] = useMutation(UPDATE_REGISTER_TYRO, {
         update: (proxy, mutationResult) => {},
     });
 
     const doPairing = async () => {
-        if (!register) return;
+        if (!register || !merchantId || !terminalId) return;
 
         try {
             // setShowSpinner(true);
@@ -39,10 +39,11 @@ export const Tyro = () => {
 
             console.log("Tyro Integration Key", integrationKey);
 
-            await updateRegisterTyroIntegrationKey({
+            await updateRegisterTyro({
                 variables: {
                     id: register.id,
-                    tyroIntegrationKey: integrationKey,
+                    tyroMerchantId: merchantId,
+                    tyroTerminalId: terminalId,
                 },
             });
 
@@ -55,11 +56,11 @@ export const Tyro = () => {
     };
 
     const performEftposTransaction = async () => {
-        if (!register) return;
+        if (!register || !merchantId || !terminalId) return;
 
         try {
             // setShowSpinner(true);
-            const res: IEftposTransactionOutcome = await createTransaction(amount.toString(), register.tyroIntegrationKey, (eftposMessage) => {
+            const res: IEftposTransactionOutcome = await createTransaction(amount.toString(), terminalId, merchantId, (eftposMessage) => {
                 setTansactionMessage(eftposMessage);
             });
 
@@ -80,6 +81,28 @@ export const Tyro = () => {
         }
     };
 
+    const onChangeMerchantId = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = event.target.value;
+        const numericValue = value ? parseInt(value) : undefined;
+
+        if (numericValue && !isNaN(numericValue)) {
+            setMerchantId(numericValue);
+        } else {
+            setMerchantId(undefined);
+        }
+    };
+
+    const onChangeTerminalId = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = event.target.value;
+        const numericValue = value ? parseInt(value) : undefined;
+
+        if (numericValue && !isNaN(numericValue)) {
+            setTerminalId(numericValue);
+        } else {
+            setTerminalId(undefined);
+        }
+    };
+
     return (
         <>
             <FullScreenSpinner show={showSpinner} />
@@ -88,20 +111,20 @@ export const Tyro = () => {
 
                 <Input
                     className="mb-2"
-                    type="text"
+                    type="number"
                     label="MerchantId"
                     name="merchantId"
-                    value={merchantId}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setMerchantId(event.target.value)}
+                    value={merchantId ?? ""}
+                    onChange={onChangeMerchantId}
                     placeholder="123456"
                 />
                 <Input
                     className="mb-4"
-                    type="text"
+                    type="number"
                     label="TerminalId"
                     name="terminalId"
-                    value={terminalId}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => setTerminalId(event.target.value)}
+                    value={terminalId ?? ""}
+                    onChange={onChangeTerminalId}
                     placeholder="123456"
                 />
                 <div className="mb-4">{pairingMessage && <div>{pairingMessage}</div>}</div>
