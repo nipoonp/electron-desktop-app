@@ -32,7 +32,7 @@ export const Tyro = () => {
         if (!register || !merchantId || !terminalId) return;
 
         try {
-            // setShowSpinner(true);
+            setShowSpinner(true);
             const integrationKey = await sendParingRequest(merchantId, terminalId, (eftposMessage) => {
                 setPairingMessage(eftposMessage);
             });
@@ -47,11 +47,12 @@ export const Tyro = () => {
                 },
             });
 
-            alert("Pairing complete! Your device should now show it is paired.");
+            // alert("Pairing complete! Your device should now show it is paired.");
         } catch (errorMessage) {
-            alert("Error! Message: " + errorMessage);
+            console.error("Error! Message: " + errorMessage);
+            setPairingMessage(errorMessage + " Please try again");
         } finally {
-            // setShowSpinner(false);
+            setShowSpinner(false);
         }
     };
 
@@ -105,7 +106,7 @@ export const Tyro = () => {
 
     return (
         <>
-            <FullScreenSpinner show={showSpinner} />
+            <FullScreenSpinner show={showSpinner} text={pairingMessage} />
             <div>
                 <div className="h3 mb-4">Pair to a device</div>
 

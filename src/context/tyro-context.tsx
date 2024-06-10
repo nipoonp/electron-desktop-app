@@ -16,10 +16,11 @@ import { format } from "date-fns";
 import { useErrorLogging } from "./errorLogging-context";
 import { convertDollarsToCentsReturnInt, toLocalISOString } from "../util/util";
 
+//Todo: change this so we are getting it from AWS Secret Manager
 const apiKey = "Test API Key"; // API Key not validated test environments
 const posProductInfo = {
     posProductVendor: "Tabin",
-    posProductName: "Tabin Kiosk",
+    posProductName: "Kiosk",
     posProductVersion: config.version,
 };
 //@ts-ignore
@@ -86,6 +87,8 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                 type = EEftposTransactionOutcomeCardType.MASTERCARD;
             } else if (cardType.toLowerCase() === "amex") {
                 type = EEftposTransactionOutcomeCardType.AMEX;
+            } else if (cardType.toLowerCase() === "alipay") {
+                type = EEftposTransactionOutcomeCardType.ALIPAY;
             }
         }
 
@@ -127,6 +130,8 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                     if (response.status === "success") {
                         resolve(response.integrationKey);
                         return;
+                    } else if (response.status === "inProgress") {
+                        //Do nothing
                     } else if (response.status === "failure") {
                         reject(response.message);
                     }
