@@ -300,11 +300,12 @@ export const UPDATE_FEEDBACK = gql`
     }
 `;
 
-export const UPDATE_REGISTER_TYRO_INTEGRATION_KEY = gql`
-    mutation UpdateRegister($id: ID!, $tyroIntegrationKey: String!) {
-        updateRegister(input: { id: $id, tyroIntegrationKey: $tyroIntegrationKey }) {
+export const UPDATE_REGISTER_TYRO = gql`
+    mutation UpdateRegister($id: ID!, $tyroMerchantId: Int!, $tyroTerminalId: Int!) {
+        updateRegister(input: { id: $id, tyroMerchantId: $tyroMerchantId, tyroTerminalId: $tyroTerminalId }) {
             id
-            tyroIntegrationKey
+            tyroMerchantId
+            tyroTerminalId
         }
     }
 `;
