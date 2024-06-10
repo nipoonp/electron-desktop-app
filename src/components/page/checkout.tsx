@@ -1297,11 +1297,11 @@ export const Checkout = () => {
             const upSellCrossSellProducts = restaurant.upSellCrossSell.customProducts.items;
 
             menuCategories.forEach((category) => {
-                if (!category.availablePlatforms?.includes(register.type)) return;
+                if (category.availablePlatforms && !category.availablePlatforms.includes(register.type)) return;
 
                 category.products &&
                     category.products.items.forEach((p) => {
-                        if (!p.product.availablePlatforms?.includes(register.type)) return;
+                        if (p.product.availablePlatforms && !p.product.availablePlatforms.includes(register.type)) return;
 
                         upSellCrossSellProducts.forEach((upSellProduct) => {
                             if (p.product.id === upSellProduct.id) {
@@ -1317,6 +1317,8 @@ export const Checkout = () => {
                         });
                     });
             });
+
+            if (upSellCrossSaleProductItems.length === 0) return <></>;
 
             return (
                 <UpSellProductModal
