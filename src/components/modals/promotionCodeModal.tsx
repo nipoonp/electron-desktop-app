@@ -98,7 +98,7 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
 
     const onChangePromotionCode = (event: React.ChangeEvent<HTMLInputElement>) => {
         setError("");
-        setPromotionCode(event.target.value);
+        setPromotionCode(event.target.value.toUpperCase());
     };
 
     return (
