@@ -101,6 +101,7 @@ export enum EEftposTransactionOutcomeCardType {
     MASTERCARD = "MASTERCARD",
     AMEX = "AMEX",
     EFTPOS = "EFTPOS",
+    ALIPAY = "ALIPAY",
 }
 
 export enum EPaymentModalState {
