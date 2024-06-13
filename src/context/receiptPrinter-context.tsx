@@ -4,12 +4,13 @@ import { useEffect, createContext, useContext } from "react";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
 import { useGetRestaurantOnlineOrdersByBeginWithPlacedAtLazyQuery } from "../hooks/useGetRestaurantOnlineOrdersByBeginWithPlacedAtLazyQuery";
 import { useGetRestaurantOrdersByBetweenPlacedAtLazyQuery } from "../hooks/useGetRestaurantOrdersByBetweenPlacedAtLazyQuery";
-import { IPrintReceiptDataOutput, IOrderReceipt, IPrintSalesDataInput, IOrderLabel } from "../model/model";
+import { IPrintReceiptDataOutput, IOrderReceipt, IPrintSalesDataInput, IOrderLabel, IPrintReceiptDataInput } from "../model/model";
 import { toast } from "../tabin/components/toast";
 import { convertProductTypesForPrint, filterPrintProducts, toLocalISOString } from "../util/util";
 import { useErrorLogging } from "./errorLogging-context";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
+import { IEftposReceiptOutput } from "../../electron/model";
 
 let electron: any;
 let ipcRenderer: any;
@@ -20,12 +21,16 @@ try {
 
 type ContextProps = {
     printReceipt: (payload: IOrderReceipt) => Promise<any>;
+    printEftposReceipt: (receipt: IPrintReceiptDataInput) => Promise<any>;
     printLabel: (payload: IOrderLabel) => Promise<any>;
     printSalesData: (printSalesDataInput: IPrintSalesDataInput) => Promise<any>;
 };
 
 const ReceiptPrinterContext = createContext<ContextProps>({
     printReceipt: (payload: IOrderReceipt) => {
+        return new Promise(() => {});
+    },
+    printEftposReceipt: (receipt: IPrintReceiptDataInput) => {
         return new Promise(() => {});
     },
     printLabel: (payload: IOrderLabel) => {
@@ -152,52 +157,6 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         return () => clearInterval(ordersFetchTimer);
     }, [restaurant, register]);
 
-    // useEffect(() => {
-    //     if (!restaurant) return;
-    //     if (!register) return;
-
-    //     let matchingPrinter = false;
-
-    //     register.printers.items.forEach((printer) => {
-    //         if (printer.printAllOrderReceipts || printer.printOnlineOrderReceipts) {
-    //             matchingPrinter = true;
-    //         }
-    //     });
-
-    //     if (!matchingPrinter) return;
-
-    //     const ordersFetchTimer = setInterval(async () => {
-    //         try {
-    //             const ordersLastFetched = localStorage.getItem("ordersLastFetched");
-    //             const now = toLocalISOString(new Date());
-
-    //             if (!ordersLastFetched) {
-    //                 localStorage.setItem("ordersLastFetched", now);
-    //                 return;
-    //             }
-
-    //             const res = await getRestaurantOrdersByBetweenPlacedAt({
-    //                 variables: {
-    //                     orderRestaurantId: restaurant ? restaurant.id : "",
-    //                     placedAtStartDate: ordersLastFetched,
-    //                     placedAtEndDate: now,
-    //                 },
-    //             });
-
-    //             const orders: IGET_RESTAURANT_ORDER_FRAGMENT[] = res.data.getOrdersByRestaurantByPlacedAt.items;
-
-    //             await printNewOrderReceipts(orders);
-
-    //             localStorage.setItem("ordersLastFetched", now);
-    //         } catch (e) {
-    //             console.error("Error", e);
-    //             await logError("Error polling for new orders", JSON.stringify({ error: e, restaurant: restaurant }));
-    //         }
-    //     }, fetchOrdersLoopTime);
-
-    //     return () => clearInterval(ordersFetchTimer);
-    // }, [restaurant, register]);
-
     useEffect(() => {
         if (!restaurant) return;
         if (!register) return;
@@ -248,6 +207,20 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                     //We are retrying and the retry was successful, remove order from failedPrintQueue
                     removeSuccessPrintFromFailedPrintQueue(result);
                 }
+            } catch (e) {
+                console.error(e);
+                toast.error("There was an error printing your order");
+                // await logError("There was an error printing your order", JSON.stringify({ error: e, order: order }));
+            }
+        }
+    };
+
+    const printEftposReceipt = async (receipt: IPrintReceiptDataInput) => {
+        if (ipcRenderer) {
+            try {
+                const result: IEftposReceiptOutput = await ipcRenderer.invoke("RECEIPT_PRINTER_EFTPOS_DATA", receipt);
+
+                console.log("result", result);
             } catch (e) {
                 console.error(e);
                 toast.error("There was an error printing your order");
@@ -441,76 +414,11 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         localStorage.setItem("failedPrintQueue", JSON.stringify(updatedFailedPrintQueue));
     };
 
-    // const printNewOrderReceipts = async (orders: IGET_RESTAURANT_ORDER_FRAGMENT[]) => {
-    //     if (!restaurant) return;
-    //     if (!register || register.printers.items.length == 0) return;
-
-    //     for (var i = 0; i < register.printers.items.length; i++) {
-    //         const printer = register.printers.items[i];
-
-    //         if (!printer.printOnlineOrderReceipts && !printer.printAllOrderReceipts) continue;
-
-    //         for (var j = 0; j < orders.length; j++) {
-    //             const order = orders[j];
-
-    //             //If new order placed is from the current register do not print
-    //             if (register.id === order.registerId) continue;
-
-    //             //If print online orders is selected but current order is not online, return
-    //             if (printer.printOnlineOrderReceipts && !order.onlineOrder) continue;
-
-    //             const productsToPrint = filterPrintProducts(order.products, printer);
-
-    //             if (productsToPrint.length > 0) {
-    //                 await printReceipt({
-    //                     orderId: order.id,
-    //                     status: order.status,
-    //                     printerType: printer.type,
-    //                     printerAddress: printer.address,
-    //                     receiptFooterText: printer.receiptFooterText,
-    //                     customerPrinter: printer.customerPrinter,
-    //                     kitchenPrinter: printer.kitchenPrinter,
-    //                     kitchenPrinterSmall: printer.kitchenPrinterSmall,
-    //                     kitchenPrinterLarge: printer.kitchenPrinterLarge,
-    //                     eftposReceipt: order.eftposReceipt || null,
-    //                     hideModifierGroupsForCustomer: false,
-    //                     restaurant: {
-    //                         name: restaurant.name,
-    //                         address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
-    //                         gstNumber: restaurant.gstNumber,
-    //                     },
-    //                     customerInformation: order.customerInformation
-    //                         ? {
-    //                               firstName: order.customerInformation.firstName,
-    //                               email: order.customerInformation.email,
-    //                               phoneNumber: order.customerInformation.phoneNumber,
-    //                               signature: order.customerInformation.signature,
-    //                           }
-    //                         : null,
-    //                     notes: order.notes,
-    //                     products: convertProductTypesForPrint(productsToPrint),
-    //                     paymentAmounts: order.paymentAmounts,
-    //                     total: order.total,
-    //                     discount: order.promotionId && order.discount ? order.discount : null,
-    //                     subTotal: order.subTotal,
-    //                     paid: order.paid,
-    //                     displayPaymentRequiredMessage: !order.paid,
-    //                     type: order.type,
-    //                     number: order.number,
-    //                     table: order.table,
-    //                     buzzer: order.buzzer,
-    //                     placedAt: order.placedAt,
-    //                     orderScheduledAt: order.orderScheduledAt,
-    //                 });
-    //             }
-    //         }
-    //     }
-    // };
-
     return (
         <ReceiptPrinterContext.Provider
             value={{
                 printReceipt: printReceipt,
+                printEftposReceipt: printEftposReceipt,
                 printLabel: printLabel,
                 printSalesData: printSalesData,
             }}
