@@ -8,6 +8,9 @@ import {
     IPrintReceiptOutput,
     IPrintSalesDataInput,
     EOrderStatus,
+    IEftposReceiptOutput,
+    IPrintReceiptDataInput,
+    IEftposReceipt,
 } from "./model";
 import usbPrinter from "@thiagoelg/node-printer";
 import { format } from "date-fns";
@@ -1543,6 +1546,44 @@ export const printKitchenReceiptLarge = async (
             await printer.execute();
         } else if (order.printerType == ERegisterPrinterType.USB) {
             await usbPrinterExecute(order.printerAddress, printer.getBuffer());
+            printer.clear();
+        } else {
+            //Bluetooth
+        }
+
+        return { error: null };
+    } catch (e) {
+        return { error: e };
+    }
+};
+
+export const printEftposReceipt = async (receiptDataInput: IEftposReceipt) => {
+    let printer;
+
+    if (receiptDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            interface: `tcp://${receiptDataInput.printer.printerAddress}`,
+        });
+    } else if (receiptDataInput.printer.printerType == ERegisterPrinterType.USB) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+        });
+    } else {
+        //Bluetooth
+    }
+
+    printer.println(receiptDataInput.receipt);
+
+    printer.partialCut();
+
+    try {
+        if (receiptDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
+            await printer.execute();
+        } else if (receiptDataInput.printer.printerType == ERegisterPrinterType.USB) {
+            await usbPrinterExecute(receiptDataInput.printer.printerAddress, printer.getBuffer());
             printer.clear();
         } else {
             //Bluetooth

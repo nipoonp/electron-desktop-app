@@ -26,6 +26,14 @@ export interface IPrintReceiptDataOutput {
     order: IOrderReceipt;
 }
 
+export interface IPrintReceiptDataInput {
+    printer: {
+        printerType: ERegisterPrinterType;
+        printerAddress: string;
+    };
+    receipt: string;
+}
+
 export interface ICognitoUser {
     attributes: {
         email: string;

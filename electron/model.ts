@@ -121,6 +121,14 @@ export interface IOrderReceipt {
     preparationTimeInMinutes: number | null;
 }
 
+export interface IEftposReceipt {
+    printer: {
+        printerType: ERegisterPrinterType;
+        printerAddress: string;
+    };
+    receipt: string;
+}
+
 export interface IPrintSalesDataInputDailySales {
     [date: string]: {
         totalAmount: number;
@@ -182,4 +190,17 @@ export interface IPrintReceiptDataOutput {
 
 export interface IPrintReceiptOutput {
     error: any;
+}
+
+export interface IPrintReceiptDataInput {
+    printer: {
+        printerType: ERegisterPrinterType;
+        printerAddress: string;
+    };
+    receipt: string;
+}
+
+export interface IEftposReceiptOutput {
+    error: any;
+    receipt: IEftposReceipt;
 }

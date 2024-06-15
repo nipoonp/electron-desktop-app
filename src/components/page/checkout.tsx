@@ -129,7 +129,7 @@ export const Checkout = () => {
     } = useCart();
     const { restaurant, restaurantBase64Logo } = useRestaurant();
     const { register, isPOS } = useRegister();
-    const { printReceipt, printLabel } = useReceiptPrinter();
+    const { printReceipt, printEftposReceipt, printLabel } = useReceiptPrinter();
     const { user } = useUser();
     const { logError } = useErrorLogging();
 
@@ -225,6 +225,7 @@ export const Checkout = () => {
 
             if (scrollableDiv) {
                 const isAtBottom = scrollableDiv.scrollTop + scrollableDiv.clientHeight === scrollableDiv.scrollHeight;
+
                 if (!isAtBottom) {
                     arrowContainer?.classList.remove("fade-out");
                     arrowContainer?.classList.add("fade-in");
@@ -246,7 +247,9 @@ export const Checkout = () => {
 
     useEffect(() => {
         if (autoClickCompleteOrderOnLoad) onClickOrderButton();
+
         const ageRestrictedProducts = products && products.filter((product) => product.isAgeRescricted).map((product) => product.name);
+
         if (ageRestrictedProducts && ageRestrictedProducts.length > 0) {
             setShowModal(ageRestrictedProducts.toString());
         } else {
@@ -266,6 +269,7 @@ export const Checkout = () => {
     if (!register) throw "Register is not valid";
     if (!restaurant) navigate(beginOrderPath);
     if (!restaurant) throw "Restaurant is invalid";
+
     const incrementRedirectTimer = (time: number) => {
         setPaymentOutcomeApprovedRedirectTimeLeft(time);
         transactionCompleteRedirectTime = time;
@@ -598,6 +602,15 @@ export const Checkout = () => {
                 if (printer.customerPrinter === true && register.askToPrintCustomerReceipt === true) return;
 
                 sendReceiptPrint(order, printer);
+            });
+    };
+
+    const printEftposReceipts = (receipt: string) => {
+        register.printers &&
+            register.printers.items.forEach((printer) => {
+                if (printer.customerPrinter !== true) return;
+
+                printEftposReceipt({ receipt: receipt, printer: { printerType: printer.type, printerAddress: printer.address } });
             });
     };
 
@@ -1061,9 +1074,7 @@ export const Checkout = () => {
 
         setEftposTransactionOutcome(outcome);
 
-        if (outcome.eftposReceipt) {
-            transactionEftposReceipts.current = `${transactionEftposReceipts.current}\n${outcome.eftposReceipt}`;
-        }
+        if (outcome.eftposReceipt) transactionEftposReceipts.current = outcome.eftposReceipt;
 
         //If paid for everything
         if (outcome.transactionOutcome === EEftposTransactionOutcome.Success) {
@@ -1100,11 +1111,10 @@ export const Checkout = () => {
             } catch (e) {
                 setCreateOrderError(e);
             }
-        } else if (
-            outcome.transactionOutcome === EEftposTransactionOutcome.Fail
-            // outcome.transactionOutcome === EEftposTransactionOutcome.ProcessMessage
-        ) {
+        } else if (outcome.transactionOutcome === EEftposTransactionOutcome.Fail) {
             setPaymentModalState(EPaymentModalState.EftposResult);
+
+            if (outcome.eftposReceipt) printEftposReceipts(outcome.eftposReceipt);
         }
     };
 
