@@ -605,12 +605,12 @@ export const Checkout = () => {
             });
     };
 
-    const printEftposReceipts = (receipt: string) => {
+    const printEftposReceipts = (eftposReceipt: string) => {
         register.printers &&
             register.printers.items.forEach((printer) => {
                 if (printer.customerPrinter !== true) return;
 
-                printEftposReceipt({ receipt: receipt, printer: { printerType: printer.type, printerAddress: printer.address } });
+                printEftposReceipt({ eftposReceipt: eftposReceipt, printer: { printerType: printer.type, printerAddress: printer.address } });
             });
     };
 

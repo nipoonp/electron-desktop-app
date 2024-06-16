@@ -1575,7 +1575,16 @@ export const printEftposReceipt = async (receiptDataInput: IEftposReceipt) => {
         //Bluetooth
     }
 
-    printer.println(receiptDataInput.receipt);
+    printer.newLine();
+    printer.alignCenter();
+
+    if (receiptDataInput.eftposReceipt) {
+        const eftposReceiptArray = receiptDataInput.eftposReceipt.split("\n");
+
+        eftposReceiptArray.forEach((line) => {
+            printer.println(line);
+        });
+    }
 
     printer.partialCut();
 

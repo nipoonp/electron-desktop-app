@@ -126,7 +126,7 @@ export interface IEftposReceipt {
         printerType: ERegisterPrinterType;
         printerAddress: string;
     };
-    receipt: string;
+    eftposReceipt: string;
 }
 
 export interface IPrintSalesDataInputDailySales {

@@ -186,6 +186,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                 const transactionCallbacks: ITyroTransactionCallback = {
                     //Invoked when the terminal requires the merchant to answer a question in order to proceed with the transaction. Called with the following parameters:
                     questionCallback: (question, answerCallback) => {
+                        console.log("xxx...", question, answerCallback);
                         answerCallback("YES");
                         // addToLogs(`questionCallback Question: ${JSON.stringify(question)}`);
 
@@ -227,7 +228,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                     },
                     //Invoked when integrated receipts are enabled and a merchant copy of the receipt is available. Ignored if integrated receipt printing is disabled. Called with the following parameters:
                     receiptCallback: (receipt) => {
-                        // addToLogs(`receiptCallback Receipt: ${JSON.stringify(receipt)}`);
+                        addToLogs(`receiptCallback Receipt: ${JSON.stringify(receipt)}`);
 
                         if (receipt.signatureRequired == true) {
                             approvedWithSignature = true;
