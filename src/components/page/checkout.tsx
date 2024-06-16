@@ -42,6 +42,7 @@ import {
     ERegisterType,
     EEftposTransactionOutcomeCardType,
     EOrderType,
+    IEftposQuestion,
 } from "../../model/model";
 import { useUser } from "../../context/user-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -169,6 +170,7 @@ export const Checkout = () => {
     const [paymentModalState, setPaymentModalState] = useState<EPaymentModalState>(EPaymentModalState.None);
 
     const [eftposTransactionProcessMessage, setEftposTransactionProcessMessage] = useState<string | null>(null);
+    const [eftposTransactionProcessQuestion, setEftposTransactionProcessQuestion] = useState<IEftposQuestion | null>(null);
     const [eftposTransactionOutcome, setEftposTransactionOutcome] = useState<IEftposTransactionOutcome | null>(null);
     const [cashTransactionChangeAmount, setCashTransactionChangeAmount] = useState<number | null>(null);
 
@@ -1009,8 +1011,15 @@ export const Checkout = () => {
                 );
             } else if (register.eftposProvider == EEftposProvider.TYRO) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
+                const setEftposQuestion = (question: IEftposQuestion) => setEftposTransactionProcessQuestion(question);
 
-                outcome = await tyroCreateTransaction(amount.toString(), register.tyroMerchantId, register.tyroTerminalId, setEftposMessage);
+                outcome = await tyroCreateTransaction(
+                    amount.toString(),
+                    register.tyroMerchantId,
+                    register.tyroTerminalId,
+                    setEftposMessage,
+                    setEftposQuestion
+                );
             }
 
             if (!outcome) throw "Invalid Eftpos Transaction outcome.";
@@ -1459,6 +1468,7 @@ export const Checkout = () => {
                         onClose={onClosePaymentModal}
                         paymentModalState={paymentModalState}
                         eftposTransactionProcessMessage={eftposTransactionProcessMessage}
+                        eftposTransactionProcessQuestion={eftposTransactionProcessQuestion}
                         eftposTransactionOutcome={eftposTransactionOutcome}
                         cashTransactionChangeAmount={cashTransactionChangeAmount}
                         onPrintCustomerReceipt={() => createdOrder.current && onPrintCustomerReceipt(createdOrder.current)}

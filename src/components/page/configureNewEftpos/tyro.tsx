@@ -56,31 +56,37 @@ export const Tyro = () => {
         }
     };
 
-    const performEftposTransaction = async () => {
-        if (!register || !merchantId || !terminalId) return;
+    // const performEftposTransaction = async () => {
+    //     if (!register || !merchantId || !terminalId) return;
 
-        try {
-            // setShowSpinner(true);
-            const res: IEftposTransactionOutcome = await createTransaction(amount.toString(), terminalId, merchantId, (eftposMessage) => {
-                setTansactionMessage(eftposMessage);
-            });
+    //     try {
+    //         // setShowSpinner(true);
+    //         const res: IEftposTransactionOutcome = await createTransaction(
+    //             amount.toString(),
+    //             terminalId,
+    //             merchantId,
+    //             (eftposMessage) => {
+    //                 setTansactionMessage(eftposMessage);
+    //             },
+    //             () => {}
+    //         );
 
-            console.log("xxx...res", res);
-            alert(res.message);
-        } catch (errorMessage) {
-            alert("Error! Message: " + errorMessage);
-        } finally {
-            // setShowSpinner(false);
-        }
-    };
+    //         console.log("xxx...res", res);
+    //         alert(res.message);
+    //     } catch (errorMessage) {
+    //         alert("Error! Message: " + errorMessage);
+    //     } finally {
+    //         // setShowSpinner(false);
+    //     }
+    // };
 
-    const cancelEftposTransaction = () => {
-        try {
-            cancelTransaction();
-        } catch (errorMessage) {
-            alert("Error! Message: " + errorMessage);
-        }
-    };
+    // const cancelEftposTransaction = () => {
+    //     try {
+    //         cancelTransaction();
+    //     } catch (errorMessage) {
+    //         alert("Error! Message: " + errorMessage);
+    //     }
+    // };
 
     const onChangeMerchantId = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = event.target.value;
@@ -162,7 +168,7 @@ export const Tyro = () => {
                 <Button className="mb-1" onClick={performEftposTransaction}>
                     Send Transaction
                 </Button> */}
-                <Button onClick={cancelEftposTransaction}>Cancel Transaction</Button>
+                {/* <Button onClick={cancelEftposTransaction}>Cancel Transaction</Button> */}
             </div>
         </>
     );

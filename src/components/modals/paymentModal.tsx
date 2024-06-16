@@ -4,7 +4,7 @@ import { useCart } from "../../context/cart-context";
 import { useMutation, useQuery } from "@apollo/client";
 import { useRegister } from "../../context/register-context";
 import { useRestaurant } from "../../context/restaurant-context";
-import { EEftposProvider, EEftposTransactionOutcome, EPaymentModalState, IEftposTransactionOutcome } from "../../model/model";
+import { EEftposProvider, EEftposTransactionOutcome, EPaymentModalState, IEftposQuestion, IEftposTransactionOutcome } from "../../model/model";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { Button } from "../../tabin/components/button";
 import { CachedImage } from "../../tabin/components/cachedImage";
@@ -30,6 +30,7 @@ interface IPaymentModalProps {
     onClose: () => void;
     paymentModalState: EPaymentModalState;
     eftposTransactionProcessMessage: string | null;
+    eftposTransactionProcessQuestion: IEftposQuestion | null;
     eftposTransactionOutcome: IEftposTransactionOutcome | null;
     onPrintCustomerReceipt: () => void;
     onPrintParkedOrderReceipts: () => void;
@@ -63,6 +64,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         onPrintCustomerReceipt,
         onPrintParkedOrderReceipts,
         eftposTransactionProcessMessage,
+        eftposTransactionProcessQuestion,
         eftposTransactionOutcome,
         cashTransactionChangeAmount,
         createOrderError,
@@ -165,7 +167,13 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                 />
             );
         } else if (paymentModalState == EPaymentModalState.AwaitingCard) {
-            return <AwaitingCard message={eftposTransactionProcessMessage} onCancelEftposTransaction={props.onCancelEftposTransaction} />;
+            return (
+                <AwaitingCard
+                    message={eftposTransactionProcessMessage}
+                    question={eftposTransactionProcessQuestion}
+                    onCancelEftposTransaction={props.onCancelEftposTransaction}
+                />
+            );
         } else if (paymentModalState == EPaymentModalState.EftposResult && eftposTransactionOutcome) {
             if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.Success) {
                 return (
@@ -262,9 +270,12 @@ export const PaymentModal = (props: IPaymentModalProps) => {
     );
 };
 
-const AwaitingCard = (props: { message: string | null; onCancelEftposTransaction: () => void }) => {
+const AwaitingCard = (props: { message: string | null; question: IEftposQuestion | null; onCancelEftposTransaction: () => void }) => {
+    const { message, question } = props;
     const { register } = useRegister();
     const [cancelState, setCancelState] = useState(false);
+
+    console.log("xxx...props", props);
 
     const onCancelTransaction = () => {
         props.onCancelEftposTransaction();
@@ -273,7 +284,18 @@ const AwaitingCard = (props: { message: string | null; onCancelEftposTransaction
 
     return (
         <>
-            {cancelState ? (
+            {question ? (
+                <>
+                    <div className="h2 mb-6 awaiting-card-text">{question.text}</div>
+                    <div className="awaiting-card-cancel-button-wrapper">
+                        {question.options.map((option) => (
+                            <Button className="button large awaiting-card-cancel-yes-button" onClick={() => question.answerCallback(option)}>
+                                {option}
+                            </Button>
+                        ))}
+                    </div>
+                </>
+            ) : cancelState ? (
                 <>
                     <div className="h2 mb-6 awaiting-card-text">Are are you sure want to cancel this transaction?</div>
                     <div className="awaiting-card-cancel-button-wrapper">
@@ -294,7 +316,7 @@ const AwaitingCard = (props: { message: string | null; onCancelEftposTransaction
                         alt="awaiting-card-gif"
                     />
                     <div className="awaiting-card-image-override"></div>
-                    {props.message && <div className="h2 mt-4 mb-6">{props.message}</div>}
+                    {message && <div className="h2 mt-4 mb-6">{message}</div>}
                     {register?.eftposProvider === EEftposProvider.TYRO && (
                         <Button className="mt-4" onClick={() => setCancelState(true)}>
                             Cancel Transaction
