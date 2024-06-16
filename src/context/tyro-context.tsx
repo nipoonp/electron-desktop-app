@@ -197,11 +197,16 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                     questionCallback: (question, answerCallback) => {
                         addToLogs(`xxx...questionCallback Question: ${JSON.stringify(question)}`);
 
-                        // if (question.isError) {
-                        customerQuestionCallback({ text: question.text, options: question.options, answerCallback: answerCallback });
-                        // } else {
-                        //     answerCallback("YES");
-                        // }
+                        if (question.text.includes("APPROVED W/ SIGNATURE. Signature OK?")) {
+                            approvedWithSignature = true;
+                            addToLogs("Answer back with YES");
+                            answerCallback("YES");
+                        } else if (question.text.includes("Are you sure you want to cancel?")) {
+                            addToLogs("Answer back with YES");
+                            answerCallback("YES");
+                        } else {
+                            customerQuestionCallback({ text: question.text, options: question.options, answerCallback: answerCallback });
+                        }
 
                         // if (question.text.includes("APPROVED W/ SIGNATURE. Signature OK?")) {
                         //     approvedWithSignature = true;
