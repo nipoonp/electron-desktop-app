@@ -9,6 +9,7 @@ import {
     ITyroInitiatePurchaseInput,
     ITyroPairTerminalResponseReceivedCallback,
     EEftposTransactionOutcomeCardType,
+    IEftposQuestion,
 } from "../model/model";
 import config from "./../../package.json";
 import { delay } from "../model/util";
@@ -34,7 +35,8 @@ type ContextProps = {
         amount: string,
         merchantId: number,
         terminalId: number,
-        customerMessageCallback: (message: string) => void
+        customerMessageCallback: (message: string) => void,
+        customerQuestionCallback: (question: IEftposQuestion) => void
     ) => Promise<IEftposTransactionOutcome>;
     cancelTransaction: () => void;
 };
@@ -45,7 +47,13 @@ const TyroContext = createContext<ContextProps>({
             console.log("");
         });
     },
-    createTransaction: (amount: string, merchantId: number, terminalId: number, customerMessageCallback: (message: string) => void) => {
+    createTransaction: (
+        amount: string,
+        merchantId: number,
+        terminalId: number,
+        customerMessageCallback: (message: string) => void,
+        customerQuestionCallback: (question: IEftposQuestion) => void
+    ) => {
         return new Promise(() => {
             console.log("");
         });
@@ -147,7 +155,8 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
         amount: string,
         merchantId: number,
         terminalId: number,
-        customerMessageCallback: (message: string) => void
+        customerMessageCallback: (message: string) => void,
+        customerQuestionCallback: (question: IEftposQuestion) => void
     ): Promise<IEftposTransactionOutcome> => {
         resetVariables();
 
@@ -186,9 +195,13 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                 const transactionCallbacks: ITyroTransactionCallback = {
                     //Invoked when the terminal requires the merchant to answer a question in order to proceed with the transaction. Called with the following parameters:
                     questionCallback: (question, answerCallback) => {
-                        console.log("xxx...", question, answerCallback);
-                        answerCallback("YES");
-                        // addToLogs(`questionCallback Question: ${JSON.stringify(question)}`);
+                        addToLogs(`xxx...questionCallback Question: ${JSON.stringify(question)}`);
+
+                        // if (question.isError) {
+                        customerQuestionCallback({ text: question.text, options: question.options, answerCallback: answerCallback });
+                        // } else {
+                        //     answerCallback("YES");
+                        // }
 
                         // if (question.text.includes("APPROVED W/ SIGNATURE. Signature OK?")) {
                         //     approvedWithSignature = true;
@@ -221,14 +234,13 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                     },
                     //Invoked to advertise what is happening on terminal, which is typically facing the customer rather than the merchant. Called with a single String argument. For example "Select account".
                     statusMessageCallback: (message: string) => {
-                        console.log("xxx...", message);
-                        // addToLogs(`statusMessageCallback Message: ${JSON.stringify(message)}`);
+                        addToLogs(`xxx...statusMessageCallback Message: ${JSON.stringify(message)}`);
 
                         customerMessageCallback(message);
                     },
                     //Invoked when integrated receipts are enabled and a merchant copy of the receipt is available. Ignored if integrated receipt printing is disabled. Called with the following parameters:
                     receiptCallback: (receipt) => {
-                        addToLogs(`receiptCallback Receipt: ${JSON.stringify(receipt)}`);
+                        addToLogs(`xxx...receiptCallback Receipt: ${JSON.stringify(receipt)}`);
 
                         if (receipt.signatureRequired == true) {
                             approvedWithSignature = true;
@@ -237,7 +249,6 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                     },
                     //Invoked when the transaction has been completed on the terminal. Called with a subset of the following parameters:
                     transactionCompleteCallback: (response) => {
-                        console.log(response);
                         addToLogs(`xxx...transactionCompleteCallback Response: ${JSON.stringify(response)}`);
 
                         console.log(response.customerReceipt);
