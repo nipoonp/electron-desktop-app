@@ -146,7 +146,7 @@ export const Tyro = () => {
                         title="Tyro Client Simulator Logs"
                     />
                 )}
-
+                {/* 
                 <div className="h3 mb-4">Send a Transaction</div>
 
                 <Input
@@ -161,7 +161,7 @@ export const Tyro = () => {
                 <div className="mb-4">{tansactionMessage && <div>{tansactionMessage}</div>}</div>
                 <Button className="mb-1" onClick={performEftposTransaction}>
                     Send Transaction
-                </Button>
+                </Button> */}
                 <Button onClick={cancelEftposTransaction}>Cancel Transaction</Button>
             </div>
         </>

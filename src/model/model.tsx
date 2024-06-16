@@ -31,7 +31,7 @@ export interface IPrintReceiptDataInput {
         printerType: ERegisterPrinterType;
         printerAddress: string;
     };
-    receipt: string;
+    eftposReceipt: string;
 }
 
 export interface ICognitoUser {

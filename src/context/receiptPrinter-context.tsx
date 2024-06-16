@@ -21,7 +21,7 @@ try {
 
 type ContextProps = {
     printReceipt: (payload: IOrderReceipt) => Promise<any>;
-    printEftposReceipt: (receipt: IPrintReceiptDataInput) => Promise<any>;
+    printEftposReceipt: (eftposReceipt: IPrintReceiptDataInput) => Promise<any>;
     printLabel: (payload: IOrderLabel) => Promise<any>;
     printSalesData: (printSalesDataInput: IPrintSalesDataInput) => Promise<any>;
 };
@@ -30,7 +30,7 @@ const ReceiptPrinterContext = createContext<ContextProps>({
     printReceipt: (payload: IOrderReceipt) => {
         return new Promise(() => {});
     },
-    printEftposReceipt: (receipt: IPrintReceiptDataInput) => {
+    printEftposReceipt: (eftposReceipt: IPrintReceiptDataInput) => {
         return new Promise(() => {});
     },
     printLabel: (payload: IOrderLabel) => {
@@ -215,10 +215,10 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         }
     };
 
-    const printEftposReceipt = async (receipt: IPrintReceiptDataInput) => {
+    const printEftposReceipt = async (eftposReceipt: IPrintReceiptDataInput) => {
         if (ipcRenderer) {
             try {
-                const result: IEftposReceiptOutput = await ipcRenderer.invoke("RECEIPT_PRINTER_EFTPOS_DATA", receipt);
+                const result: IEftposReceiptOutput = await ipcRenderer.invoke("RECEIPT_PRINTER_EFTPOS_DATA", eftposReceipt);
 
                 console.log("result", result);
             } catch (e) {
