@@ -395,9 +395,9 @@ const PaymentFailed = (props: { errorMessage: string; onRetry: () => void; onCan
             <div className="h4">Oops! Something went wrong.</div>
             <div className="h2 mt-4 mb-6">{errorMessage || ""}</div>
             <div className="retry-buttons">
-                <Button className="large mr-3" onClick={onRetry}>
+                {/* <Button className="large mr-3" onClick={onRetry}>
                     Retry
-                </Button>
+                </Button> */}
                 <Button className="large retry-cancel-button" onClick={onCancelPayment}>
                     Cancel
                 </Button>
