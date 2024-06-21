@@ -146,7 +146,8 @@ export const Tyro = () => {
                 {displayTyroLogs && (
                     <iframe
                         className="mb-4"
-                        src="https://iclientsimulator.test.tyro.com/logs.html"
+                        // src="https://iclientsimulator.test.tyro.com/logs.html" //Test
+                        src="https://iclient.tyro.com/logs.html#landing"
                         width="100%"
                         height="600px"
                         title="Tyro Client Simulator Logs"
