@@ -18,7 +18,8 @@ import { useErrorLogging } from "./errorLogging-context";
 import { convertDollarsToCentsReturnInt, toLocalISOString } from "../util/util";
 
 //Todo: change this so we are getting it from AWS Secret Manager
-const apiKey = "Test API Key"; // API Key not validated test environments
+// const apiKey = "Test API Key"; // API Key not validated test environments
+const apiKey = "DbBkMAxieoBVAh2fAO7ht6cXjNzyA2f";
 const posProductInfo = {
     posProductVendor: "Tabin",
     posProductName: "Kiosk",
