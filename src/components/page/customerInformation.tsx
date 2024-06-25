@@ -84,7 +84,8 @@ export default () => {
 
             setCustomerInformation({ firstName: firstName, email: email, phoneNumber: phoneNumber, signatureBase64: resizedSignatureBase64 });
 
-            navigate(`${checkoutPath}/true`);
+            // navigate(`${checkoutPath}/true`);
+            navigate(restaurantPath + "/" + restaurant.id);
         }
     };
 

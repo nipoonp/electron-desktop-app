@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { restaurantPath } from "../main";
+import { customerInformationPath, restaurantPath } from "../main";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { IGET_RESTAURANT_ADVERTISEMENT, IGET_RESTAURANT_PING_DATA } from "../../graphql/customQueries";
@@ -120,7 +120,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
                 <div
                     className="wrapper"
                     onClick={() => {
-                        navigate(restaurantPath + "/" + restaurant.id);
+                        navigate(customerInformationPath);
                     }}
                 >
                     {/* <div className="touch-to-begin-wrapper">
