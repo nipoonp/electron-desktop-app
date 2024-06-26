@@ -342,7 +342,7 @@ export const Checkout = () => {
     };
 
     const onUpdateCustomerInformation = () => {
-        // navigate(customerInformationPath);
+        navigate(customerInformationPath);
     };
 
     const onUpdateOrderType = () => {
@@ -448,10 +448,10 @@ export const Checkout = () => {
             if (register.requestCustomerInformation.signature && (!customerInformation || !customerInformation.signatureBase64)) invalid = true;
             //    if(register.) orderScheduledAt
 
-            // if (invalid) {
-            //     navigate(customerInformationPath);
-            //     return;
-            // }
+            if (invalid) {
+                navigate(customerInformationPath);
+                return;
+            }
         }
 
         if (!isPOS && register.enableEftposPayments && register.enableCashPayments && paymentMethod === null) {
@@ -1123,7 +1123,7 @@ export const Checkout = () => {
         } else if (outcome.transactionOutcome === EEftposTransactionOutcome.Fail) {
             setPaymentModalState(EPaymentModalState.EftposResult);
 
-            if (outcome.eftposReceipt) printEftposReceipts(outcome.eftposReceipt);
+            // if (outcome.eftposReceipt) printEftposReceipts(outcome.eftposReceipt);
         }
     };
 
