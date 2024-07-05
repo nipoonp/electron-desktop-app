@@ -109,10 +109,7 @@ export default () => {
     return (
         <>
             <div className="ad-wrapper">
-                <img
-                    className="ad-image"
-                    src="https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/2023-10-14_01-17-16.819-rect17052-6.webp"
-                />
+                <img className="ad-image" src="https://d1hfsnuz4i23pd.cloudfront.net/public/2024-06-05_00:41:31.111-ABC KIOSK SCREEN-1.webp" />
                 <div className="store-1" onClick={onClickStore1}></div>
                 <div className="store-2" onClick={onClickStore2}></div>
             </div>
