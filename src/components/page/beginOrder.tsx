@@ -20,10 +20,10 @@ export default () => {
 
     if (!restaurant) return <div>This user has not selected any restaurant</div>;
 
-    const restaurant2 = "00f05bb8-baca-46e7-b6e1-5c81e4fd1d3f"; //Boss Don
-    const restaurantRegister2 = "c60d89f7-7177-4331-924e-339956dc84c1";
-    const restaurant1 = "97f47fc8-462d-4d33-b530-0fe900048b01"; //Auckland Bagel Club
-    const restaurantRegister1 = "aaefa4b7-f1e4-4000-b6cc-7045d95501a3";
+    const restaurant1 = "00f05bb8-baca-46e7-b6e1-5c81e4fd1d3f"; //Boss Don
+    const restaurantRegister1 = "c60d89f7-7177-4331-924e-339956dc84c1";
+    const restaurant2 = "97f47fc8-462d-4d33-b530-0fe900048b01"; //Auckland Bagel Club
+    const restaurantRegister2 = "aaefa4b7-f1e4-4000-b6cc-7045d95501a3";
 
     const onClickStore1 = async () => {
         const now = new Date();
