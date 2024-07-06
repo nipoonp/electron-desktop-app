@@ -173,7 +173,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [paymentAmounts, _setPaymentAmounts] = useState<ICartPaymentAmounts>(initialPaymentAmounts);
     const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
     const [payments, _setPayments] = useState<ICartPayment[]>(initialPayments);
-    const [orderTypeSurcharge, _setOrderTypeSurcharge] = useState<number>(0);
+    const [orderTypeSurcharge, _setOrderTypeSurcharge] = useState<number>(initialOrderTypeSurcharge);
     const [isShownUpSellCrossSellModal, _setIsShownUpSellCrossSellModal] = useState<boolean>(initialIsShownUpSellCrossSellModal);
     const [isShownOrderThresholdMessageModal, _setIsShownOrderThresholdMessageModal] = useState(initialIsShownOrderThresholdMessageModal);
 
