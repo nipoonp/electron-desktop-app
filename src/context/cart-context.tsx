@@ -21,6 +21,7 @@ const initialParkedOrderId = null;
 const initialParkedOrderNumber = null;
 const initialOrderType = null;
 const initialPaymentMethod = null;
+const initialCovers = null;
 const initialTableNumber = null;
 const initialBuzzerNumber = null;
 const initialCustomerInformation = null;
@@ -56,6 +57,8 @@ type ContextProps = {
     setOrderType: (orderType: EOrderType) => void;
     paymentMethod: EPaymentMethod | null;
     setPaymentMethod: (paymentMethod: EPaymentMethod | null) => void;
+    covers: number | null;
+    setCovers: (covers: number | null) => void;
     tableNumber: string | null;
     setTableNumber: (tableNumber: string | null) => void;
     buzzerNumber: string | null;
@@ -110,6 +113,8 @@ const CartContext = createContext<ContextProps>({
     setPaymentMethod: () => {},
     tableNumber: initialTableNumber,
     setTableNumber: () => {},
+    covers: initialCovers,
+    setCovers: () => {},
     buzzerNumber: initialBuzzerNumber,
     setBuzzerNumber: () => {},
     customerInformation: initialCustomerInformation,
@@ -157,6 +162,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [parkedOrderNumber, _setParkedOrderNumber] = useState<string | null>(initialParkedOrderNumber);
     const [orderType, _setOrderType] = useState<EOrderType | null>(initialOrderType);
     const [paymentMethod, _setPaymentMethod] = useState<EPaymentMethod | null>(initialPaymentMethod);
+    const [covers, _setCovers] = useState<number | null>(initialCovers);
     const [tableNumber, _setTableNumber] = useState<string | null>(initialTableNumber);
     const [buzzerNumber, _setBuzzerNumber] = useState<string | null>(initialBuzzerNumber);
     const [customerInformation, _setCustomerInformation] = useState<ICustomerInformation | null>(initialCustomerInformation);
@@ -451,6 +457,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setPaymentMethod(paymentMethod);
     };
 
+    const setCovers = (covers: number | null) => {
+        _setCovers(covers);
+    };
+
     const setTableNumber = (tableNumber: string | null) => {
         _setTableNumber(tableNumber);
     };
@@ -596,6 +606,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setParkedOrderNumber(initialParkedOrderNumber);
         _setOrderType(initialOrderType);
         _setPaymentMethod(initialPaymentMethod);
+        _setCovers(initialCovers);
         _setTableNumber(initialTableNumber);
         _setBuzzerNumber(initialBuzzerNumber);
         _setCustomerInformation(initialCustomerInformation);
@@ -630,6 +641,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setOrderType: setOrderType,
                 paymentMethod: paymentMethod,
                 setPaymentMethod: setPaymentMethod,
+                covers: covers,
+                setCovers: setCovers,
                 tableNumber: tableNumber,
                 setTableNumber: setTableNumber,
                 buzzerNumber: buzzerNumber,

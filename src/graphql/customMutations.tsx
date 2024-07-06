@@ -49,6 +49,7 @@ export const CREATE_ORDER = gql`
         $number: String!
         $table: String
         $buzzer: String
+        $covers: Int
         $orderScheduledAt: String
         $customerInformation: OrderCustomerInformationInput
         $notes: String
@@ -85,6 +86,7 @@ export const CREATE_ORDER = gql`
                 number: $number
                 table: $table
                 buzzer: $buzzer
+                covers: $covers
                 orderScheduledAt: $orderScheduledAt
                 customerInformation: $customerInformation
                 notes: $notes

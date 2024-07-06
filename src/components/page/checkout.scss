@@ -60,6 +60,12 @@
                 justify-content: space-between;
             }
 
+            .checkout-covers {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                align-items: center;
+            }
+
             .checkout-table-number {
                 display: grid;
                 grid-template-columns: 1fr auto;
@@ -93,55 +99,55 @@
 
                 @keyframes fadeIn {
                     from {
-                      opacity: 0;
+                        opacity: 0;
                     }
                     to {
-                      opacity: 1;
+                        opacity: 1;
                     }
                 }
-                  
+
                 @keyframes fadeIn {
-                  from {
-                    opacity: 0;
-                    transform: translateY(20px); /* Start slightly below */
-                  }
-                  to {
-                    opacity: 1;
-                    transform: translateY(0);
-                  }
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px); /* Start slightly below */
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
                 }
-                  
+
                 @keyframes fadeOut {
-                  from {
-                    opacity: 1;
-                    transform: translateY(0);
-                  }
-                  to {
-                    opacity: 0;
-                    transform: translateY(20px); /* End slightly below */
-                  }
+                    from {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                    to {
+                        opacity: 0;
+                        transform: translateY(20px); /* End slightly below */
+                    }
                 }
-                  
+
                 .arrow-container {
-                  animation-duration: 0.5s;
-                  animation-timing-function: ease-in-out;
-                  opacity: 0; /* Start with arrow hidden */
-                  pointer-events: none; /* Make the arrow not clickable while hidden */
+                    animation-duration: 0.5s;
+                    animation-timing-function: ease-in-out;
+                    opacity: 0; /* Start with arrow hidden */
+                    pointer-events: none; /* Make the arrow not clickable while hidden */
                 }
-                  
+
                 .fade-in {
-                  animation-name: fadeIn;
-                  opacity: 1;
-                  pointer-events: auto; /* Enable pointer events when visible */
+                    animation-name: fadeIn;
+                    opacity: 1;
+                    pointer-events: auto; /* Enable pointer events when visible */
                 }
-                  
+
                 .fade-out {
-                  animation-name: fadeOut;
-                  pointer-events: none; /* Disable pointer events when hidden */
+                    animation-name: fadeOut;
+                    pointer-events: none; /* Disable pointer events when hidden */
                 }
             }
-        
-            .mr-btm{
+
+            .mr-btm {
                 display: none;
             }
         }
