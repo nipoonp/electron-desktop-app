@@ -26,6 +26,14 @@ export interface IPrintReceiptDataOutput {
     order: IOrderReceipt;
 }
 
+export interface IPrintReceiptDataInput {
+    printer: {
+        printerType: ERegisterPrinterType;
+        printerAddress: string;
+    };
+    eftposReceipt: string;
+}
+
 export interface ICognitoUser {
     attributes: {
         email: string;
@@ -154,7 +162,7 @@ export interface ITyroTransactionCallback {
 
 interface ITyroTransactionQuestionCallbackQuestion {
     text: string; // The message to present to the merchant.
-    optionsArray: string[]; // The set of button labels to present for the merchant to choose from.
+    options: string[]; // The set of button labels to present for the merchant to choose from.
     isError?: boolean;
 }
 
@@ -204,6 +212,12 @@ interface ITyroTransactionCompleteCallback {
         serviceDate: string; // Date of claim in format "yyyyMMddhhmmss"
         responseCode: string; // Individual response code for this item
     }[];
+}
+
+export interface IEftposQuestion {
+    text: string;
+    options: string[];
+    answerCallback: (answer: string) => void;
 }
 
 export enum EOrderType {

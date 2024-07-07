@@ -9,8 +9,17 @@ import {
     delay,
     printKitchenReceiptSmall,
     printKitchenReceiptLarge,
+    printEftposReceipt,
 } from "./util";
-import { IOrderReceipt, IPrintReceiptDataOutput, IPrintReceiptOutput, IPrintSalesDataInput, IPrintSalesDataOutput } from "./model";
+import {
+    IEftposReceipt,
+    IEftposReceiptOutput,
+    IOrderReceipt,
+    IPrintReceiptDataOutput,
+    IPrintReceiptOutput,
+    IPrintSalesDataInput,
+    IPrintSalesDataOutput,
+} from "./model";
 import path from "path";
 import net from "net";
 import * as Sentry from "@sentry/electron";
@@ -274,6 +283,19 @@ ipcMain.handle("RECEIPT_PRINTER_DATA", async (event: any, order: IOrderReceipt):
         return { error: null, order: order };
     } catch (e) {
         return { error: e, order: order };
+    }
+});
+
+// Webapp Receipt Printer Side
+ipcMain.handle("RECEIPT_PRINTER_EFTPOS_DATA", async (event: any, receipt: IEftposReceipt): Promise<IEftposReceiptOutput> => {
+    try {
+        const result: IPrintReceiptOutput = await printEftposReceipt(receipt);
+
+        if (result.error) return { error: result.error, receipt: receipt };
+
+        return { error: null, receipt: receipt };
+    } catch (e) {
+        return { error: e, receipt: receipt };
     }
 });
 

@@ -25,7 +25,7 @@ const OrderType = () => {
     const onSelectOrderType = (orderType: EOrderType) => {
         setOrderType(orderType);
 
-        if (register.enableTableFlags && orderType == EOrderType.DINEIN) {
+        if ((register.enableTableFlags || register.enableCovers) && orderType === EOrderType.DINEIN) {
             navigate(tableNumberPath);
         } else {
             if (isPOS) {

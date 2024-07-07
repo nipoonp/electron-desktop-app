@@ -42,6 +42,7 @@ import {
     ERegisterType,
     EEftposTransactionOutcomeCardType,
     EOrderType,
+    IEftposQuestion,
 } from "../../model/model";
 import { useUser } from "../../context/user-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -99,6 +100,7 @@ export const Checkout = () => {
         paymentMethod,
         setPaymentMethod,
         setNotes,
+        covers,
         tableNumber,
         clearCart,
         promotion,
@@ -129,7 +131,7 @@ export const Checkout = () => {
     } = useCart();
     const { restaurant, restaurantBase64Logo } = useRestaurant();
     const { register, isPOS } = useRegister();
-    const { printReceipt, printLabel } = useReceiptPrinter();
+    const { printReceipt, printEftposReceipt, printLabel } = useReceiptPrinter();
     const { user } = useUser();
     const { logError } = useErrorLogging();
 
@@ -169,6 +171,7 @@ export const Checkout = () => {
     const [paymentModalState, setPaymentModalState] = useState<EPaymentModalState>(EPaymentModalState.None);
 
     const [eftposTransactionProcessMessage, setEftposTransactionProcessMessage] = useState<string | null>(null);
+    const [eftposTransactionProcessQuestion, setEftposTransactionProcessQuestion] = useState<IEftposQuestion | null>(null);
     const [eftposTransactionOutcome, setEftposTransactionOutcome] = useState<IEftposTransactionOutcome | null>(null);
     const [cashTransactionChangeAmount, setCashTransactionChangeAmount] = useState<number | null>(null);
 
@@ -225,6 +228,7 @@ export const Checkout = () => {
 
             if (scrollableDiv) {
                 const isAtBottom = scrollableDiv.scrollTop + scrollableDiv.clientHeight === scrollableDiv.scrollHeight;
+
                 if (!isAtBottom) {
                     arrowContainer?.classList.remove("fade-out");
                     arrowContainer?.classList.add("fade-in");
@@ -246,7 +250,9 @@ export const Checkout = () => {
 
     useEffect(() => {
         if (autoClickCompleteOrderOnLoad) onClickOrderButton();
+
         const ageRestrictedProducts = products && products.filter((product) => product.isAgeRescricted).map((product) => product.name);
+
         if (ageRestrictedProducts && ageRestrictedProducts.length > 0) {
             setShowModal(ageRestrictedProducts.toString());
         } else {
@@ -266,6 +272,7 @@ export const Checkout = () => {
     if (!register) throw "Register is not valid";
     if (!restaurant) navigate(beginOrderPath);
     if (!restaurant) throw "Restaurant is invalid";
+
     const incrementRedirectTimer = (time: number) => {
         setPaymentOutcomeApprovedRedirectTimeLeft(time);
         transactionCompleteRedirectTime = time;
@@ -328,6 +335,10 @@ export const Checkout = () => {
 
     // Callbacks
     const onUpdateTableNumber = () => {
+        navigate(tableNumberPath);
+    };
+
+    const onUpdateCovers = () => {
         navigate(tableNumberPath);
     };
 
@@ -601,6 +612,15 @@ export const Checkout = () => {
             });
     };
 
+    const printEftposReceipts = (eftposReceipt: string) => {
+        register.printers &&
+            register.printers.items.forEach((printer) => {
+                if (printer.customerPrinter !== true) return;
+
+                printEftposReceipt({ eftposReceipt: eftposReceipt, printer: { printerType: printer.type, printerAddress: printer.address } });
+            });
+    };
+
     const onPrintCustomerReceipt = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         register.printers &&
             register.printers.items.forEach((printer) => {
@@ -772,6 +792,7 @@ export const Checkout = () => {
                 paid: paid,
                 type: orderType ? orderType : register.availableOrderTypes[0],
                 number: orderNumber,
+                covers: orderType === EOrderType.DINEIN ? covers : undefined,
                 table: tableNumber,
                 buzzer: buzzerNumber,
                 orderScheduledAt: orderScheduledAt,
@@ -996,8 +1017,15 @@ export const Checkout = () => {
                 );
             } else if (register.eftposProvider == EEftposProvider.TYRO) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
+                const setEftposQuestion = (question: IEftposQuestion) => setEftposTransactionProcessQuestion(question);
 
-                outcome = await tyroCreateTransaction(amount.toString(), register.tyroMerchantId, register.tyroTerminalId, setEftposMessage);
+                outcome = await tyroCreateTransaction(
+                    amount.toString(),
+                    register.tyroMerchantId,
+                    register.tyroTerminalId,
+                    setEftposMessage,
+                    setEftposQuestion
+                );
             }
 
             if (!outcome) throw "Invalid Eftpos Transaction outcome.";
@@ -1061,9 +1089,7 @@ export const Checkout = () => {
 
         setEftposTransactionOutcome(outcome);
 
-        if (outcome.eftposReceipt) {
-            transactionEftposReceipts.current = `${transactionEftposReceipts.current}\n${outcome.eftposReceipt}`;
-        }
+        if (outcome.eftposReceipt) transactionEftposReceipts.current = outcome.eftposReceipt;
 
         //If paid for everything
         if (outcome.transactionOutcome === EEftposTransactionOutcome.Success) {
@@ -1100,11 +1126,10 @@ export const Checkout = () => {
             } catch (e) {
                 setCreateOrderError(e);
             }
-        } else if (
-            outcome.transactionOutcome === EEftposTransactionOutcome.Fail
-            // outcome.transactionOutcome === EEftposTransactionOutcome.ProcessMessage
-        ) {
+        } else if (outcome.transactionOutcome === EEftposTransactionOutcome.Fail) {
             setPaymentModalState(EPaymentModalState.EftposResult);
+
+            // if (outcome.eftposReceipt) printEftposReceipts(outcome.eftposReceipt);
         }
     };
 
@@ -1449,6 +1474,7 @@ export const Checkout = () => {
                         onClose={onClosePaymentModal}
                         paymentModalState={paymentModalState}
                         eftposTransactionProcessMessage={eftposTransactionProcessMessage}
+                        eftposTransactionProcessQuestion={eftposTransactionProcessQuestion}
                         eftposTransactionOutcome={eftposTransactionOutcome}
                         cashTransactionChangeAmount={cashTransactionChangeAmount}
                         onPrintCustomerReceipt={() => createdOrder.current && onPrintCustomerReceipt(createdOrder.current)}
@@ -1566,6 +1592,13 @@ export const Checkout = () => {
         </div>
     );
 
+    const restaurantCovers = (
+        <div className="checkout-covers">
+            <div className="h3">Number Of Diners: {covers}</div>
+            <Link onClick={onUpdateCovers}>Change</Link>
+        </div>
+    );
+
     const restaurantCustomerInformation = (
         <div className="checkout-customer-details">
             <div className="h3">
@@ -1614,10 +1647,11 @@ export const Checkout = () => {
             <div className={isPOS ? "mt-4" : "mt-10"}></div>
             {title}
             {register && register.availableOrderTypes.length > 1 && restaurantOrderType}
-            {promotionInformation}
-            {tableNumber && <div className="mb-2">{restaurantTableNumber}</div>}
             {buzzerNumber && <div className="mb-2">{restaurantBuzzerNumber}</div>}
+            {tableNumber && <div className="mb-2">{restaurantTableNumber}</div>}
+            {covers && <div className="mb-2">{restaurantCovers}</div>}
             {customerInformation && <div className="mb-2">{restaurantCustomerInformation}</div>}
+            {promotionInformation}
             <div className="separator-6"></div>
             {orderSummary}
             <div className="restaurant-notes-wrapper">{restaurantNotes}</div>

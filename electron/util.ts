@@ -8,6 +8,9 @@ import {
     IPrintReceiptOutput,
     IPrintSalesDataInput,
     EOrderStatus,
+    IEftposReceiptOutput,
+    IPrintReceiptDataInput,
+    IEftposReceipt,
 } from "./model";
 import usbPrinter from "@thiagoelg/node-printer";
 import { format } from "date-fns";
@@ -465,16 +468,16 @@ export const printCustomerReceipt = async (
         },
     ]);
 
-    printer.newLine();
-    printer.alignCenter();
+    // printer.newLine();
+    // printer.alignCenter();
 
-    if (order.eftposReceipt) {
-        const eftposReceiptArray = order.eftposReceipt.split("\n");
+    // if (order.eftposReceipt) {
+    //     const eftposReceiptArray = order.eftposReceipt.split("\n");
 
-        eftposReceiptArray.forEach((line) => {
-            printer.println(line);
-        });
-    }
+    //     eftposReceiptArray.forEach((line) => {
+    //         printer.println(line);
+    //     });
+    // }
 
     printer.newLine();
     printer.alignCenter();
@@ -1543,6 +1546,53 @@ export const printKitchenReceiptLarge = async (
             await printer.execute();
         } else if (order.printerType == ERegisterPrinterType.USB) {
             await usbPrinterExecute(order.printerAddress, printer.getBuffer());
+            printer.clear();
+        } else {
+            //Bluetooth
+        }
+
+        return { error: null };
+    } catch (e) {
+        return { error: e };
+    }
+};
+
+export const printEftposReceipt = async (receiptDataInput: IEftposReceipt) => {
+    let printer;
+
+    if (receiptDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            interface: `tcp://${receiptDataInput.printer.printerAddress}`,
+        });
+    } else if (receiptDataInput.printer.printerType == ERegisterPrinterType.USB) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+        });
+    } else {
+        //Bluetooth
+    }
+
+    printer.newLine();
+    printer.alignCenter();
+
+    if (receiptDataInput.eftposReceipt) {
+        const eftposReceiptArray = receiptDataInput.eftposReceipt.split("\n");
+
+        eftposReceiptArray.forEach((line) => {
+            printer.println(line);
+        });
+    }
+
+    printer.partialCut();
+
+    try {
+        if (receiptDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
+            await printer.execute();
+        } else if (receiptDataInput.printer.printerType == ERegisterPrinterType.USB) {
+            await usbPrinterExecute(receiptDataInput.printer.printerAddress, printer.getBuffer());
             printer.clear();
         } else {
             //Bluetooth
