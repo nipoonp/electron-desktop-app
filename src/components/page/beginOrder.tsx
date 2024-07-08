@@ -25,6 +25,27 @@ export default () => {
     const restaurant2 = "97f47fc8-462d-4d33-b530-0fe900048b01"; //Auckland Bagel Club
     const restaurantRegister2 = "aaefa4b7-f1e4-4000-b6cc-7045d95501a3";
 
+    // Auckland Bagel Club
+    // Monday: 8:30am - 2:30pm
+    // Tuesday: 8:30am - 2:30pm
+    // Wednesday: 8:30am - 2:30pm
+    // Thursday: 8:30am - 2:30pm
+    // Friday: 8:30am - 2:30pm
+    // Saturday: 8:00am - 2:30pm
+    // Sunday: 8:00am - 2:30pm
+
+    // Boss Don
+    // Monday to Friday: 5:00pm - 9:15pm
+    // Saturday and Sunday: 12:00pm - 9:15pm
+
+    const convertTo12HourFormat = (minutes) => {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        const period = hours >= 12 ? "pm" : "am";
+        const adjustedHours = hours % 12 || 12; // Convert to 12-hour format, adjusting for midnight and noon
+        return `${adjustedHours}:${mins.toString().padStart(2, "0")}${period}`;
+    };
+
     const onClickStore1 = async () => {
         const now = new Date();
         const dayOfWeek = now.getDay(); // Sunday - 0, Monday - 1, ..., Saturday - 6
@@ -54,7 +75,7 @@ export default () => {
             navigate(restaurantPath + "/" + restaurant1);
         } else {
             // If not within operating hours, display an alert to the user
-            toast.error(`This store is only open between ${startTimeInMinutes / 60}pm and 9:15pm.`);
+            toast.error(`This store is only open between ${convertTo12HourFormat(startTimeInMinutes)} and 9:15pm.`);
         }
     };
 
@@ -77,7 +98,8 @@ export default () => {
                 break;
             case 1: // Monday
             case 2: // Tuesday
-                isOpen = false; // Closed all day
+                startTimeInMinutes = 8 * 60 + 30; // 8:30am in minutes
+                isOpen = currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
                 break;
             case 3: // Wednesday
             case 4: // Thursday
@@ -90,15 +112,9 @@ export default () => {
         if (isOpen) {
             // Business Logic for Open Hours
             await disconnectRegister(restaurantRegister1);
-
-            // await delay(1000);
-
             selectRestaurant(restaurant2);
-
             await delay(1000);
-
             await connectRegister(restaurantRegister2);
-
             navigate(restaurantPath + "/" + restaurant2);
         } else {
             // If not within the specified operating hours, display an error message
