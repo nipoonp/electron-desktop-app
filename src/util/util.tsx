@@ -151,12 +151,12 @@ export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY
 
     const dayTimes: IGET_RESTAURANT_ITEM_AVAILABILITY_TIMES[] = getDayData(availability);
 
-    if (dayTimes.length == 0) return true;
+    if (dayTimes?.length == 0) return true;
 
     const currentDateTime = new Date();
     let isWithinTimeSlot = false;
 
-    dayTimes.forEach((timeSlot) => {
+    dayTimes?.forEach((timeSlot) => {
         let startDateTime = new Date(
             currentDateTime.getFullYear(),
             currentDateTime.getMonth(),
