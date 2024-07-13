@@ -31,8 +31,8 @@ export default () => {
     // Wednesday: 8:30am - 2:30pm
     // Thursday: 8:30am - 2:30pm
     // Friday: 8:30am - 2:30pm
-    // Saturday: 8:00am - 2:30pm
-    // Sunday: 8:00am - 2:30pm
+    // Saturday: 8:00am - 3:30pm
+    // Sunday: 8:00am - 3:30pm
 
     // Boss Don
     // Monday to Friday: 5:00pm - 9:15pm
@@ -46,6 +46,7 @@ export default () => {
         return `${adjustedHours}:${mins.toString().padStart(2, "0")}${period}`;
     };
 
+    // Boss Don
     const onClickStore1 = async () => {
         const now = new Date();
         const dayOfWeek = now.getDay(); // Sunday - 0, Monday - 1, ..., Saturday - 6
@@ -79,6 +80,7 @@ export default () => {
         }
     };
 
+    // Auckland Bagel Club
     const onClickStore2 = async () => {
         const now = new Date();
         const dayOfWeek = now.getDay(); // Sunday - 0, Monday - 1, ..., Saturday - 6
@@ -88,23 +90,26 @@ export default () => {
 
         let isOpen = false;
         let startTimeInMinutes;
-        let endTimeInMinutes = 14 * 60 + 30; // 2:30pm in minutes, common closing time for all open days
+        let endTimeInMinutes;
 
         switch (dayOfWeek) {
             case 0: // Sunday
             case 6: // Saturday
                 startTimeInMinutes = 8 * 60; // 8am in minutes
+                endTimeInMinutes = 15 * 60 + 30; // 3:30pm in minutes
                 isOpen = currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
                 break;
             case 1: // Monday
             case 2: // Tuesday
                 startTimeInMinutes = 8 * 60 + 30; // 8:30am in minutes
+                endTimeInMinutes = 14 * 60 + 30; // 2:30pm in minutes
                 isOpen = currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
                 break;
             case 3: // Wednesday
             case 4: // Thursday
             case 5: // Friday
                 startTimeInMinutes = 8 * 60 + 30; // 8:30am in minutes
+                endTimeInMinutes = 14 * 60 + 30; // 2:30pm in minutes
                 isOpen = currentTimeInMinutes >= startTimeInMinutes && currentTimeInMinutes <= endTimeInMinutes;
                 break;
         }
