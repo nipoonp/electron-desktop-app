@@ -18,7 +18,7 @@ enum EftposProvider {
     MX51,
 }
 export default () => {
-    const [eftposProvider, setEftposProvider] = useState(EftposProvider.VERIFONE);
+    const [eftposProvider, setEftposProvider] = useState(EftposProvider.MX51);
 
     return (
         <>

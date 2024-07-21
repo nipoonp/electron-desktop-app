@@ -104,6 +104,33 @@ export interface IEftposTransactionOutcome {
     eftposTip?: number;
 }
 
+export interface IMX51GetPaymentProviders {
+    paymnetProivderList: {
+        code: string;
+        name: string;
+    }[];
+    paymentProvider: string;
+}
+
+export interface IMX51PairingInput {
+    posId: string;
+    tenantCode: string;
+    serialNumber: string;
+    eftposAddress: string;
+    autoAddressResolution: boolean;
+    testMode: boolean;
+}
+
+export enum EMX51PairingStatus {
+    Unpaired = "Unpaired",
+    PairingProgress = "PairingProgress",
+    PairingConfirmation = "PairingConfirmation",
+    PairingSuccessful = "PairingSuccessful",
+    PairingFailed = "PairingFailed",
+    Paired = "Paired",
+    PairedAndDisconnected = "PairedAndDisconnected",
+}
+
 export enum EEftposTransactionOutcomeCardType {
     VISA = "VISA",
     MASTERCARD = "MASTERCARD",

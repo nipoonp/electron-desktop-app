@@ -22,7 +22,7 @@ export const Tyro = () => {
     const [tansactionMessage, setTansactionMessage] = useState("");
     const [showSpinner, setShowSpinner] = useState(false);
 
-    const { sendParingRequest, createTransaction, cancelTransaction } = useTyro();
+    const { sendPairingRequest, createTransaction, cancelTransaction } = useTyro();
 
     const [updateRegisterTyro, { data, loading, error }] = useMutation(UPDATE_REGISTER_TYRO, {
         update: (proxy, mutationResult) => {},
@@ -33,7 +33,7 @@ export const Tyro = () => {
 
         try {
             setShowSpinner(true);
-            const integrationKey = await sendParingRequest(merchantId, terminalId, (eftposMessage) => {
+            const integrationKey = await sendPairingRequest(merchantId, terminalId, (eftposMessage) => {
                 setPairingMessage(eftposMessage);
             });
 

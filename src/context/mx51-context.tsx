@@ -1,19 +1,43 @@
-import { createContext, useContext, useRef } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
-import { EEftposTransactionOutcome, IEftposTransactionOutcome, EEftposTransactionOutcomeCardType, IEftposQuestion } from "../model/model";
+import {
+    EEftposTransactionOutcome,
+    IEftposTransactionOutcome,
+    EEftposTransactionOutcomeCardType,
+    IEftposQuestion,
+    IMX51GetPaymentProviders,
+    IMX51PairingInput,
+    EMX51PairingStatus,
+} from "../model/model";
 import config from "./../../package.json";
 import { delay } from "../model/util";
 import { format } from "date-fns";
 import { useErrorLogging } from "./errorLogging-context";
 import { convertDollarsToCentsReturnInt, toLocalISOString } from "../util/util";
-import { getAvailableTenants } from "../util/mx51";
+import { Spi as SpiClient, SuccessState, TransactionOptions, TransactionType } from "@mx51/spi-client-js";
 
 const initialLogs = "";
 
+const initialPairingInput = {
+    posId: window.localStorage.getItem("registerKey")?.replace(/-/g, "").substring(0, 16) || "R1",
+    tenantCode: window.localStorage.getItem("tenantCode") || "gko",
+    serialNumber: "500-079-001",
+    eftposAddress: window.localStorage.getItem("eftposAddress") || "192.168.1.234",
+    autoAddressResolution: true,
+    testMode: true,
+};
+
 type ContextProps = {
-    getPaymentProviders: () => Promise<string>;
-    sendParingRequest: (merchantId: number, terminalId: number, customerMessageCallback: (message: string) => void) => Promise<string>;
+    pairingStatus: EMX51PairingStatus;
+    setPairingStatus: (pairingStatus: EMX51PairingStatus) => void;
+    pairingMessage: string;
+    pairingInput: IMX51PairingInput;
+    setPairingInput: (pairingInput: IMX51PairingInput) => void;
+    getPaymentProviders: () => Promise<IMX51GetPaymentProviders>;
+    sendPairingRequest: (pairingInput: IMX51PairingInput) => Promise<string>;
+    sendPairingCancelRequest: () => Promise<string>;
+    sendUnpairRequest: () => Promise<string>;
     createTransaction: (
         amount: string,
         merchantId: number,
@@ -25,12 +49,31 @@ type ContextProps = {
 };
 
 const MX51Context = createContext<ContextProps>({
+    pairingStatus: EMX51PairingStatus.Unpaired,
+    setPairingStatus: (pairingStatus: EMX51PairingStatus) => {
+        return new Promise(() => {
+            console.log("");
+        });
+    },
+    pairingMessage: "",
+    pairingInput: initialPairingInput,
+    setPairingInput: () => {},
     getPaymentProviders: () => {
         return new Promise(() => {
             console.log("");
         });
     },
-    sendParingRequest: (merchantId: number, terminalId: number, customerMessageCallback: (message: string) => void) => {
+    sendPairingRequest: (pairingInput: IMX51PairingInput) => {
+        return new Promise(() => {
+            console.log("");
+        });
+    },
+    sendPairingCancelRequest: () => {
+        return new Promise(() => {
+            console.log("");
+        });
+    },
+    sendUnpairRequest: () => {
         return new Promise(() => {
             console.log("");
         });
@@ -55,11 +98,175 @@ const MX51Context = createContext<ContextProps>({
 
 const MX51Provider = (props: { children: React.ReactNode }) => {
     const { addEftposLog } = useErrorLogging();
-
     const { restaurant } = useRestaurant();
-    const { register, isPOS } = useRegister();
+
+    const [pairingInput, _setPairingInput] = useState<IMX51PairingInput>(initialPairingInput);
+    const [pairingStatus, _setPairingStatus] = useState(EMX51PairingStatus.Unpaired);
+    const [pairingMessage, setPairingMessage] = useState("");
 
     const logs = useRef<string>(initialLogs);
+
+    const spiSettings = {
+        posVendorId: "Tabin", // your POS company name/id
+        posVersion: config.version, // your POS version
+        deviceApiKey: process.env.REACT_APP_MX51_API_KEY || "", // ask the integration support team for your API key
+        countryCode: "AU", // if unsure check with integration support team
+        secureWebSockets: window.location.protocol === "https:" ? true : false, // checks for HTTPs
+        printMerchantCopyOnEftpos: false, // prints merchant receipt from terminal instead of POS
+        promptForCustomerCopyOnEftpos: false, // prints customer receipt from terminal instead of POS
+        signatureFlowOnEftpos: false, // signature flow and receipts on terminal instead of POS
+        merchantReceiptHeader: "", // custom text to be added to merchant receipt header
+        merchantReceiptFooter: "", // custom text to be added to merchant receipt footer
+        customerReceiptHeader: "", // custom text to be added to customer receipt header
+        customerReceiptFooter: "", // custom text to be added to customer receipt footer
+    };
+    const spi = useRef<SpiClient>();
+
+    const configureAndStartSpi = (newPairingInput: IMX51PairingInput) => {
+        spi.current = new SpiClient(newPairingInput.posId, newPairingInput.serialNumber, newPairingInput.eftposAddress, null);
+        // JSON.parse(window.localStorage.getItem("secrets") || "")
+
+        spi.current.SetPosInfo(spiSettings.posVendorId, spiSettings.posVersion);
+        spi.current.SetTenantCode(newPairingInput.tenantCode);
+        spi.current.SetDeviceApiKey(spiSettings.deviceApiKey);
+        spi.current.SetAutoAddressResolution(newPairingInput.autoAddressResolution);
+        spi.current.SetSecureWebSockets(spiSettings.secureWebSockets);
+        spi.current.SetTestMode(newPairingInput.testMode);
+        spi.current.Config.PrintMerchantCopy = spiSettings.printMerchantCopyOnEftpos;
+        spi.current.Config.PromptForCustomerCopyOnEftpos = spiSettings.promptForCustomerCopyOnEftpos;
+        spi.current.Config.SignatureFlowOnEftpos = spiSettings.signatureFlowOnEftpos;
+
+        const receiptOptions = new TransactionOptions();
+
+        receiptOptions.SetMerchantReceiptHeader(spiSettings.merchantReceiptHeader);
+        receiptOptions.SetMerchantReceiptFooter(spiSettings.merchantReceiptFooter);
+        receiptOptions.SetCustomerReceiptHeader(spiSettings.customerReceiptHeader);
+        receiptOptions.SetCustomerReceiptFooter(spiSettings.customerReceiptFooter);
+
+        spi.current.Start();
+    };
+
+    const log = (message: string, event?: Event) => {
+        if (event) {
+            spi.current?._log.info(`xxx...SPI LOG: ${message} -> `, event);
+        } else {
+            spi.current?._log.info(`xxx...SPI LOG: ${message}`);
+        }
+    };
+
+    const handleStatusChanged = (e) => {
+        log("Status changed", e);
+        if (e?.detail === "PairedConnected") {
+            setPairingStatus(EMX51PairingStatus.Paired);
+        } else if (e?.detail === "PairedConnecting") {
+            setPairingStatus(EMX51PairingStatus.PairingProgress);
+        } else {
+        }
+    };
+
+    const handleSecretsChanged = (e) => {
+        log("Secrets changed", e);
+        if (e?.detail) {
+            window.localStorage.setItem("secrets", JSON.stringify(e.detail));
+        }
+    };
+
+    const handlePairingFlowStateChanged = (e) => {
+        const message =
+            e?.detail?.AwaitingCheckFromEftpos && e?.detail?.AwaitingCheckFromPos
+                ? `${e?.detail?.Message}: ${e?.detail?.ConfirmationCode}`
+                : e?.detail?.Message;
+        // log("Pairing flow state changed", e);
+        log(message);
+        setPairingMessage(message);
+
+        if (e?.detail?.AwaitingCheckFromPos) {
+            setPairingStatus(EMX51PairingStatus.PairingConfirmation);
+        }
+
+        if (e?.detail?.Successful && e?.detail?.Finished) {
+            spi.current?.AckFlowEndedAndBackToIdle();
+            setPairingStatus(EMX51PairingStatus.PairingSuccessful);
+        }
+
+        if (e?.detail?.Finished && !e?.detail?.Successful) {
+            setPairingStatus(EMX51PairingStatus.PairingFailed);
+        }
+    };
+
+    const handleTxFlowStateChanged = (e) => {
+        log("Transaction flow state changed", e);
+        if (e.detail.AwaitingSignatureCheck) {
+        } else if (e.detail.AwaitingPhoneForAuth) {
+        } else if (e.detail.Finished) {
+            if (e.detail.Response.Data.merchant_receipt && !e.detail.Response.Data.merchant_receipt_printed) {
+            }
+            if (e.detail.Response.Data.customer_receipt && !e.detail.Response.Data.customer_receipt_printed) {
+            }
+            switch (e.detail.Success) {
+                case SuccessState.Success:
+                    switch (e.detail.Type) {
+                        case TransactionType.Purchase:
+                            break;
+                        case TransactionType.Refund:
+                            break;
+                        default:
+                    }
+                    break;
+                case SuccessState.Failed:
+                    break;
+                case SuccessState.Unknown:
+                    break;
+                default:
+            }
+        }
+    };
+
+    const handleDeviceAddressChanged = (e) => {
+        log("Device address changed", e);
+        if (e?.detail.ip) {
+            window.localStorage.setItem("eftposAddress", JSON.stringify(e.detail.ip));
+        } else if (e?.detail.fqdn) {
+            window.localStorage.setItem("eftposAddress", JSON.stringify(e.detail.fqdn));
+        }
+    };
+
+    const addSpiEventListeners = () => {
+        document.addEventListener("StatusChanged", handleStatusChanged);
+        document.addEventListener("SecretsChanged", handleSecretsChanged);
+        document.addEventListener("PairingFlowStateChanged", handlePairingFlowStateChanged);
+        document.addEventListener("TxFlowStateChanged", handleTxFlowStateChanged);
+        document.addEventListener("DeviceAddressChanged", handleDeviceAddressChanged);
+
+        if (!spi.current) return;
+
+        spi.current.TerminalConfigurationResponse = (e) => {
+            log("Terminal configuration response", e);
+            spi.current?.GetTerminalStatus();
+        };
+
+        spi.current.TerminalStatusResponse = (e) => {
+            log("Terminal status response", e);
+        };
+
+        spi.current.TransactionUpdateMessage = (e) => {
+            log("Transaction update", e);
+        };
+
+        spi.current.BatteryLevelChanged = (e) => {
+            log("Battery level changed", e);
+        };
+    };
+
+    useEffect(() => {
+        return () => {
+            document.removeEventListener("StatusChanged", handleStatusChanged);
+            document.removeEventListener("SecretsChanged", handleSecretsChanged);
+            document.removeEventListener("PairingFlowStateChanged", handlePairingFlowStateChanged);
+            document.removeEventListener("TxFlowStateChanged", handleTxFlowStateChanged);
+            document.removeEventListener("DeviceAddressChanged", handleDeviceAddressChanged);
+        };
+    }, []);
 
     const resetVariables = () => {
         //Add new reset if new variables are added above.
@@ -105,10 +312,47 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
         });
     };
 
-    const getPaymentProviders = async (): Promise<string> => {
+    const setPairingInput = (pairingInput: IMX51PairingInput) => {
+        _setPairingInput(pairingInput);
+    };
+
+    const setPairingStatus = (pairingStatus: EMX51PairingStatus) => {
+        _setPairingStatus(pairingStatus);
+    };
+
+    const getPaymentProviders = async (): Promise<IMX51GetPaymentProviders> => {
         return new Promise(async (resolve, reject) => {
             try {
-                await getAvailableTenants();
+                const { Data: tenants } = await SpiClient.GetAvailableTenants(
+                    spiSettings.countryCode,
+                    spiSettings.posVendorId,
+                    spiSettings.deviceApiKey
+                );
+                // store the list of tenants
+                localStorage.setItem("tenants", JSON.stringify(tenants));
+                // store the desired tenant code
+                localStorage.setItem("tenantCode", tenants[0].code);
+
+                const paymentProviders: IMX51GetPaymentProviders = {
+                    paymnetProivderList: tenants,
+                    paymentProvider: tenants[0].code,
+                };
+
+                resolve(paymentProviders);
+            } catch (error) {
+                console.error(error);
+                reject(error);
+            }
+        });
+    };
+
+    const sendPairingRequest = (newpairingInput: IMX51PairingInput): Promise<string> => {
+        return new Promise(async (resolve, reject) => {
+            try {
+                configureAndStartSpi(newpairingInput);
+                addSpiEventListeners();
+
+                spi.current?.Pair();
 
                 resolve("");
             } catch (error) {
@@ -118,31 +362,27 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
         });
     };
 
-    const sendParingRequest = (merchantId: number, terminalId: number, customerMessageCallback: (message: string) => void): Promise<string> => {
+    const sendPairingCancelRequest = (): Promise<string> => {
         return new Promise(async (resolve, reject) => {
-            if (!merchantId) {
-                reject("A merchantId has to be supplied.");
-                return;
-            }
-
-            if (!terminalId) {
-                reject("A terminalId has to be supplied.");
-                return;
-            }
-
             try {
-                // iclient.pairTerminal(merchantId, terminalId, (response: IMX51PairTerminalResponseReceivedCallback) => {
-                //     console.log("Pairing response", response);
-                //     customerMessageCallback(response.message);
-                //     if (response.status === "success") {
-                //         resolve(response.integrationKey);
-                //         return;
-                //     } else if (response.status === "inProgress") {
-                //         //Do nothing
-                //     } else if (response.status === "failure") {
-                //         reject(response.message);
-                //     }
-                // });
+                spi.current?.PairingCancel();
+
+                resolve("");
+            } catch (error) {
+                console.error(error);
+                reject(error);
+            }
+        });
+    };
+
+    const sendUnpairRequest = (): Promise<string> => {
+        return new Promise(async (resolve, reject) => {
+            try {
+                spi.current?.Unpair();
+
+                setPairingStatus(EMX51PairingStatus.Unpaired);
+
+                resolve("");
             } catch (error) {
                 console.error(error);
                 reject(error);
@@ -409,8 +649,15 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
     return (
         <MX51Context.Provider
             value={{
+                pairingStatus: pairingStatus,
+                setPairingStatus: setPairingStatus,
+                pairingMessage: pairingMessage,
+                pairingInput: pairingInput,
+                setPairingInput: setPairingInput,
                 getPaymentProviders: getPaymentProviders,
-                sendParingRequest: sendParingRequest,
+                sendPairingRequest: sendPairingRequest,
+                sendPairingCancelRequest: sendPairingCancelRequest,
+                sendUnpairRequest: sendUnpairRequest,
                 createTransaction: createTransaction,
                 cancelTransaction: cancelTransaction,
             }}

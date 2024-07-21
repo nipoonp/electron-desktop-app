@@ -52,13 +52,13 @@ import { useErrorLogging } from "./errorLogging-context";
 const initialLogs = "";
 
 type ContextProps = {
-    sendParingRequest: (pairingCode: string) => Promise<void>;
+    sendPairingRequest: (pairingCode: string) => Promise<void>;
     createTransaction: (amount: number, transactionType: string) => Promise<string>;
     pollForOutcome: (pollingUrl: string, delayed: () => void) => Promise<IEftposTransactionOutcome>;
 };
 
 const SmartpayContext = createContext<ContextProps>({
-    sendParingRequest: (pairingCode: string) => {
+    sendPairingRequest: (pairingCode: string) => {
         return new Promise(() => {
             console.log("");
         });
@@ -144,7 +144,7 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
     // Returns:
     // - a JS Promise with the outcome (resolve, no object passed back / reject, error message passed back)
     // ======================================================
-    const sendParingRequest = (pairingCode: string): Promise<void> => {
+    const sendPairingRequest = (pairingCode: string): Promise<void> => {
         return new Promise(async (resolve, reject) => {
             if (!pairingCode) {
                 reject("A pairing code has to be supplied.");
@@ -521,7 +521,7 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
     return (
         <SmartpayContext.Provider
             value={{
-                sendParingRequest: sendParingRequest,
+                sendPairingRequest: sendPairingRequest,
                 createTransaction: createTransaction,
                 pollForOutcome: pollForOutcome,
             }}
