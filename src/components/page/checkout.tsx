@@ -848,6 +848,7 @@ export const Checkout = () => {
                     paid: paid,
                     type: orderType ? orderType : register.availableOrderTypes[0],
                     number: orderNumber,
+                    covers: orderType === EOrderType.DINEIN ? covers : undefined,
                     table: tableNumber,
                     buzzer: buzzerNumber,
                     orderScheduledAt: orderScheduledAt,
