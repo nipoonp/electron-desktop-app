@@ -4,7 +4,14 @@ import { useCart } from "../../context/cart-context";
 import { useMutation, useQuery } from "@apollo/client";
 import { useRegister } from "../../context/register-context";
 import { useRestaurant } from "../../context/restaurant-context";
-import { EEftposProvider, EEftposTransactionOutcome, EPaymentModalState, IEftposQuestion, IEftposTransactionOutcome } from "../../model/model";
+import {
+    EEftposProvider,
+    EEftposTransactionOutcome,
+    EPaymentModalState,
+    ITyroEftposQuestion,
+    IEftposTransactionOutcome,
+    IMX51EftposQuestion,
+} from "../../model/model";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { Button } from "../../tabin/components/button";
 import { CachedImage } from "../../tabin/components/cachedImage";
@@ -30,7 +37,8 @@ interface IPaymentModalProps {
     onClose: () => void;
     paymentModalState: EPaymentModalState;
     eftposTransactionProcessMessage: string | null;
-    eftposTransactionProcessQuestion: IEftposQuestion | null;
+    eftposTransactionProcessQuestion: ITyroEftposQuestion | null;
+    eftposSignatureRequiredQuestion: IMX51EftposQuestion | null;
     eftposTransactionOutcome: IEftposTransactionOutcome | null;
     onPrintCustomerReceipt: () => void;
     onPrintParkedOrderReceipts: () => void;
@@ -65,6 +73,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         onPrintParkedOrderReceipts,
         eftposTransactionProcessMessage,
         eftposTransactionProcessQuestion,
+        eftposSignatureRequiredQuestion,
         eftposTransactionOutcome,
         cashTransactionChangeAmount,
         createOrderError,
@@ -171,6 +180,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                 <AwaitingCard
                     message={eftposTransactionProcessMessage}
                     question={eftposTransactionProcessQuestion}
+                    signatureRequiredQuestion={eftposSignatureRequiredQuestion}
                     onCancelEftposTransaction={props.onCancelEftposTransaction}
                 />
             );
@@ -270,12 +280,15 @@ export const PaymentModal = (props: IPaymentModalProps) => {
     );
 };
 
-const AwaitingCard = (props: { message: string | null; question: IEftposQuestion | null; onCancelEftposTransaction: () => void }) => {
-    const { message, question } = props;
+const AwaitingCard = (props: {
+    message: string | null;
+    question: ITyroEftposQuestion | null;
+    signatureRequiredQuestion: IMX51EftposQuestion | null;
+    onCancelEftposTransaction: () => void;
+}) => {
+    const { message, question, signatureRequiredQuestion } = props;
     const { register } = useRegister();
     const [cancelState, setCancelState] = useState(false);
-
-    console.log("xxx...props", props);
 
     const onCancelTransaction = () => {
         props.onCancelEftposTransaction();
@@ -303,6 +316,24 @@ const AwaitingCard = (props: { message: string | null; question: IEftposQuestion
                             Yes
                         </Button>
                         <Button className="button large awaiting-card-cancel-no-button" onClick={() => setCancelState(false)}>
+                            No
+                        </Button>
+                    </div>
+                </>
+            ) : signatureRequiredQuestion ? (
+                <>
+                    <div className="h2 mb-6 awaiting-card-text">Confirm the customer's signature</div>
+                    <div className="awaiting-card-cancel-button-wrapper">
+                        <Button
+                            className="button large awaiting-card-cancel-yes-button"
+                            onClick={() => signatureRequiredQuestion.answerCallback(true)}
+                        >
+                            Yes
+                        </Button>
+                        <Button
+                            className="button large awaiting-card-cancel-no-button"
+                            onClick={() => signatureRequiredQuestion.answerCallback(false)}
+                        >
                             No
                         </Button>
                     </div>

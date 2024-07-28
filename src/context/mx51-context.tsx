@@ -1,22 +1,29 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
 import {
     EEftposTransactionOutcome,
     IEftposTransactionOutcome,
     EEftposTransactionOutcomeCardType,
-    IEftposQuestion,
     IMX51GetPaymentProviders,
     IMX51PairingInput,
     EMX51PairingStatus,
+    EMX51TransactionOutcome,
+    IMX51EftposQuestion,
 } from "../model/model";
 import config from "./../../package.json";
 import { delay } from "../model/util";
 import { format } from "date-fns";
 import { useErrorLogging } from "./errorLogging-context";
-import { convertDollarsToCentsReturnInt, toLocalISOString } from "../util/util";
+import { toLocalISOString } from "../util/util";
 import { Spi as SpiClient, SuccessState, TransactionOptions, TransactionType } from "@mx51/spi-client-js";
+import { v4 as uuid } from "uuid";
 
+const initialCustomerMessage = "";
+const initialReceiptToSign = "";
+const initialReceiptToSignCallbackDisplayed = false;
+const initialOutcome = null;
+const initialOutcomeFailedErrorDetail = "";
+const initialEftposReceipt = "";
 const initialLogs = "";
 
 const initialPairingInput = {
@@ -39,11 +46,9 @@ type ContextProps = {
     sendPairingCancelRequest: () => Promise<string>;
     sendUnpairRequest: () => Promise<string>;
     createTransaction: (
-        amount: string,
-        merchantId: number,
-        terminalId: number,
+        amount: number,
         customerMessageCallback: (message: string) => void,
-        customerQuestionCallback: (question: IEftposQuestion) => void
+        customerSignatureRequiredCallback: (answerCallback: IMX51EftposQuestion | null) => void
     ) => Promise<IEftposTransactionOutcome>;
     cancelTransaction: () => void;
 };
@@ -79,11 +84,9 @@ const MX51Context = createContext<ContextProps>({
         });
     },
     createTransaction: (
-        amount: string,
-        merchantId: number,
-        terminalId: number,
+        amount: number,
         customerMessageCallback: (message: string) => void,
-        customerQuestionCallback: (question: IEftposQuestion) => void
+        customerSignatureRequiredCallback: (answerCallback: IMX51EftposQuestion | null) => void
     ) => {
         return new Promise(() => {
             console.log("");
@@ -104,7 +107,15 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
     const [pairingStatus, _setPairingStatus] = useState(EMX51PairingStatus.Unpaired);
     const [pairingMessage, setPairingMessage] = useState("");
 
+    const customerMessage = useRef<string>(initialCustomerMessage);
+    const receiptToSign = useRef<string>(initialReceiptToSign);
+    const receiptToSignCallbackDisplayed = useRef<boolean>(initialReceiptToSignCallbackDisplayed);
+    const outcome = useRef<EMX51TransactionOutcome | null>(initialOutcome);
+    const outcomeFailedErrorDetail = useRef<string>(initialOutcomeFailedErrorDetail);
+    const eftposReceipt = useRef<string>(initialEftposReceipt);
     const logs = useRef<string>(initialLogs);
+
+    const eventListenersConfigured = useRef<boolean>(false);
 
     const spiSettings = {
         posVendorId: "Tabin", // your POS company name/id
@@ -121,10 +132,10 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
         customerReceiptFooter: "", // custom text to be added to customer receipt footer
     };
     const spi = useRef<SpiClient>();
+    const receiptOptions = new TransactionOptions();
 
-    const configureAndStartSpi = (newPairingInput: IMX51PairingInput) => {
-        spi.current = new SpiClient(newPairingInput.posId, newPairingInput.serialNumber, newPairingInput.eftposAddress, null);
-        // JSON.parse(window.localStorage.getItem("secrets") || "")
+    const configureAndStartSpi = (spiSecrets, newPairingInput: IMX51PairingInput = pairingInput) => {
+        spi.current = new SpiClient(newPairingInput.posId, newPairingInput.serialNumber, newPairingInput.eftposAddress, spiSecrets);
 
         spi.current.SetPosInfo(spiSettings.posVendorId, spiSettings.posVersion);
         spi.current.SetTenantCode(newPairingInput.tenantCode);
@@ -136,14 +147,14 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
         spi.current.Config.PromptForCustomerCopyOnEftpos = spiSettings.promptForCustomerCopyOnEftpos;
         spi.current.Config.SignatureFlowOnEftpos = spiSettings.signatureFlowOnEftpos;
 
-        const receiptOptions = new TransactionOptions();
-
         receiptOptions.SetMerchantReceiptHeader(spiSettings.merchantReceiptHeader);
         receiptOptions.SetMerchantReceiptFooter(spiSettings.merchantReceiptFooter);
         receiptOptions.SetCustomerReceiptHeader(spiSettings.customerReceiptHeader);
         receiptOptions.SetCustomerReceiptFooter(spiSettings.customerReceiptFooter);
 
         spi.current.Start();
+
+        addSpiEventListeners();
     };
 
     const log = (message: string, event?: Event) => {
@@ -160,6 +171,8 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
             setPairingStatus(EMX51PairingStatus.Paired);
         } else if (e?.detail === "PairedConnecting") {
             setPairingStatus(EMX51PairingStatus.PairingProgress);
+        } else if (e?.detail === "Unpaired") {
+            setPairingStatus(EMX51PairingStatus.Unpaired);
         } else {
         }
     };
@@ -196,28 +209,58 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
 
     const handleTxFlowStateChanged = (e) => {
         log("Transaction flow state changed", e);
+
         if (e.detail.AwaitingSignatureCheck) {
+            // Display the signature confirmation UI
+            receiptToSign.current = e.detail.SignatureRequiredMessage._receiptToSign;
         } else if (e.detail.AwaitingPhoneForAuth) {
+            // Display the MOTO phone authentication UI
         } else if (e.detail.Finished) {
             if (e.detail.Response.Data.merchant_receipt && !e.detail.Response.Data.merchant_receipt_printed) {
+                // Print and/or store the merchant_receipt
             }
+
             if (e.detail.Response.Data.customer_receipt && !e.detail.Response.Data.customer_receipt_printed) {
+                // Print and/or store the customer_receipt
+                eftposReceipt.current = e.detail.Response.Data.customer_receipt;
             }
+
             switch (e.detail.Success) {
                 case SuccessState.Success:
+                    // Display the successful transaction UI adding detail for user (e.detail.Response.Data.host_response_text)
+                    // Close the sale on the POS
                     switch (e.detail.Type) {
                         case TransactionType.Purchase:
+                            outcome.current = EMX51TransactionOutcome.Success;
+                            // Perform actions after purchases only
                             break;
                         case TransactionType.Refund:
+                            // Perform actions after refunds only
+                            // Not used right now
                             break;
                         default:
+                        // Perform actions after other transaction types
                     }
                     break;
                 case SuccessState.Failed:
+                    outcome.current = EMX51TransactionOutcome.Failed;
+
+                    // Display the failed transaction UI adding detail for user:
+                    // e.detail.Response.Data.error_detail
+                    // e.detail.Response.Data.error_reason
+                    // if (e.detail.Response.Data.host_response_text) {
+                    //     e.detail.Response.Data.host_response_text
+                    // }
+                    if (e.detail.Response.Data.error_reason) outcomeFailedErrorDetail.current = e.detail.Response.Data.error_detail;
+
                     break;
                 case SuccessState.Unknown:
+                    outcome.current = EMX51TransactionOutcome.Unknown;
+
+                    // Display the manual transaction recovery UI
                     break;
                 default:
+                // Throw error: invalid success state
             }
         }
     };
@@ -232,6 +275,8 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
     };
 
     const addSpiEventListeners = () => {
+        if (eventListenersConfigured.current) return;
+
         document.addEventListener("StatusChanged", handleStatusChanged);
         document.addEventListener("SecretsChanged", handleSecretsChanged);
         document.addEventListener("PairingFlowStateChanged", handlePairingFlowStateChanged);
@@ -251,11 +296,15 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
 
         spi.current.TransactionUpdateMessage = (e) => {
             log("Transaction update", e);
+
+            if (e.Data.display_message_text) customerMessage.current = e.Data.display_message_text;
         };
 
         spi.current.BatteryLevelChanged = (e) => {
             log("Battery level changed", e);
         };
+
+        eventListenersConfigured.current = true;
     };
 
     useEffect(() => {
@@ -270,6 +319,12 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
 
     const resetVariables = () => {
         //Add new reset if new variables are added above.
+        customerMessage.current = initialCustomerMessage;
+        receiptToSign.current = initialReceiptToSign;
+        receiptToSignCallbackDisplayed.current = initialReceiptToSignCallbackDisplayed;
+        outcome.current = initialOutcome;
+        outcomeFailedErrorDetail.current = initialOutcomeFailedErrorDetail;
+        eftposReceipt.current = initialEftposReceipt;
         logs.current = initialLogs;
     };
 
@@ -349,10 +404,12 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
     const sendPairingRequest = (newpairingInput: IMX51PairingInput): Promise<string> => {
         return new Promise(async (resolve, reject) => {
             try {
-                configureAndStartSpi(newpairingInput);
-                addSpiEventListeners();
+                const storedSecrets = window.localStorage.getItem("secrets");
+                const spiSecrets = storedSecrets ? JSON.parse(storedSecrets) : null;
 
-                spi.current?.Pair();
+                configureAndStartSpi(spiSecrets, newpairingInput);
+
+                if (!spiSecrets) spi.current?.Pair();
 
                 resolve("");
             } catch (error) {
@@ -379,6 +436,7 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
         return new Promise(async (resolve, reject) => {
             try {
                 spi.current?.Unpair();
+                window.localStorage.removeItem("secrets");
 
                 setPairingStatus(EMX51PairingStatus.Unpaired);
 
@@ -390,241 +448,111 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
         });
     };
 
+    const posRefIdGenerator = (type: string) => {
+        return new Date().toISOString() + "-" + type + uuid();
+    };
+
     const createTransaction = (
-        amount: string,
-        merchantId: number,
-        terminalId: number,
+        amount: number,
         customerMessageCallback: (message: string) => void,
-        customerQuestionCallback: (question: IEftposQuestion) => void
+        customerSignatureRequiredCallback: (answerCallback: IMX51EftposQuestion | null) => void
     ): Promise<IEftposTransactionOutcome> => {
-        resetVariables();
+        return new Promise(async (resolve, reject) => {
+            console.log("yyy...pairingStatus", pairingStatus);
+            if (pairingStatus === EMX51PairingStatus.Unpaired) {
+                const storedSecrets = window.localStorage.getItem("secrets");
+                const spiSecrets = storedSecrets ? JSON.parse(storedSecrets) : null;
 
-        const interval = 10 * 1000; // 10 seconds
-        const timeout = 10 * 60 * 1000; // 10 minutes
+                if (!spiSecrets) {
+                    reject("This register is not paired to a device, please pair it first.");
+                    return;
+                }
 
-        const endTime = Number(new Date()) + timeout;
-
-        let approvedWithSignature = false;
-
-        const checkCondition = async (resolve: any, reject: any) => {
-            if (!merchantId) {
-                reject("A merchantId has to be supplied.");
-                return;
+                configureAndStartSpi(spiSecrets);
             }
 
-            if (!terminalId) {
-                reject("A terminalId has to be supplied.");
-                return;
-            }
+            resetVariables();
+
+            const interval = 100; // 0.1 seconds
+            const timeout = 10 * 60 * 1000; // 10 minutes
+
+            const endTime = Number(new Date()) + timeout;
+
+            spi.current?.AckFlowEndedAndBackToIdle();
+
+            spi.current?.InitiatePurchaseTxV2(
+                posRefIdGenerator("purchase"), // posRefId
+                amount,
+                0,
+                0,
+                false,
+                receiptOptions,
+                0
+            );
 
             try {
-                // const requestParams: IMX51InitiatePurchaseInput = {
-                //     amount: amount, //The purchase amount (amount to charge the customer) in cents.
-                //     // cashout: "0", //Cash out amount in cents.
-                //     integratedReceipt: true, //indicate whether receipts will be printed on the POS (true) or on the terminal (false).
-                //     mid: merchantId, //Override the configured mid for multi-merchant terminals or if your browser does not support local storage.
-                //     tid: terminalId, //Override the configured tid for multi-merchant terminals or if your browser does not support local storage.
-                //     // integrationKey: integrationKey, //Supply the integration key if your browser does not support local storage.
-                //     // transactionId: "", //Supply a transaction Id to be used for the transaction.
-                //     // healthpointTransactionId: "", //The integrated transaction ID of the original HealthPoint Claim (used for gap payments).
-                //     enableSurcharge: true, //Apply a surcharge to this transaction (if the card used attracts a surcharge).
-                //     // requestCardToken: true, //Request a token representing the card used for the current purchase.
-                // };
-
-                const transactionCallbacks = {
-                    //Invoked when the terminal requires the merchant to answer a question in order to proceed with the transaction. Called with the following parameters:
-                    questionCallback: (question, answerCallback) => {
-                        addToLogs(`xxx...questionCallback Question: ${JSON.stringify(question)}`);
-
-                        if (question.text.includes("APPROVED W/ SIGNATURE. Signature OK?")) {
-                            approvedWithSignature = true;
-                            addToLogs("Answer back with YES");
-                            answerCallback("YES");
-                        } else if (question.text.includes("Are you sure you want to cancel?")) {
-                            addToLogs("Answer back with YES");
-                            answerCallback("YES");
-                        } else {
-                            customerQuestionCallback({ text: question.text, options: question.options, answerCallback: answerCallback });
-                        }
-
-                        // if (question.text.includes("APPROVED W/ SIGNATURE. Signature OK?")) {
-                        //     approvedWithSignature = true;
-                        //     addToLogs("Answer back with NO");
-                        //     answerCallback("NO");
-                        // } else if (question.text.includes("Are you sure you want to cancel?")) {
-                        //     addToLogs("Answer back with YES");
-                        //     answerCallback("YES");
-                        // } else if (question.text.includes("Cancel this transaction?")) {
-                        //     addToLogs("Answer back with YES");
-                        //     answerCallback("YES");
-                        // } else if (question.text.includes("POS is not paired with a terminal.")) {
-                        //     addToLogs("Answer back with OK");
-                        //     answerCallback("OK");
-                        // } else if (question.text.includes("Invalid transaction details (400).")) {
-                        //     addToLogs("Answer back with OK");
-                        //     answerCallback("OK");
-                        // }
-
-                        // if (question.isError) {
-                        //     addToLogs("Returning with error");
-
-                        //     resolve({
-                        //         platformTransactionOutcome: EMX51TransactionOutcome.UNKNOWN,
-                        //         transactionOutcome: EEftposTransactionOutcome.Fail,
-                        //         message: question.text,
-                        //         eftposReceipt: "",
-                        //     });
-                        // }
-                    },
-                    //Invoked to advertise what is happening on terminal, which is typically facing the customer rather than the merchant. Called with a single String argument. For example "Select account".
-                    statusMessageCallback: (message: string) => {
-                        addToLogs(`xxx...statusMessageCallback Message: ${JSON.stringify(message)}`);
-
-                        customerMessageCallback(message);
-                    },
-                    //Invoked when integrated receipts are enabled and a merchant copy of the receipt is available. Ignored if integrated receipt printing is disabled. Called with the following parameters:
-                    receiptCallback: (receipt) => {
-                        addToLogs(`xxx...receiptCallback Receipt: ${JSON.stringify(receipt)}`);
-
-                        if (receipt.signatureRequired == true) {
-                            approvedWithSignature = true;
-                            cancelTransaction();
-                        }
-                    },
-                    //Invoked when the transaction has been completed on the terminal. Called with a subset of the following parameters:
-                    transactionCompleteCallback: (response) => {
-                        addToLogs(`xxx...transactionCompleteCallback Response: ${JSON.stringify(response)}`);
-
-                        console.log(response.customerReceipt);
-                        let transactionOutcome: IEftposTransactionOutcome | null = null;
-
-                        // switch (response.result) {
-                        //     case "APPROVED":
-                        //         transactionOutcome = {
-                        //             platformTransactionOutcome: EMX51TransactionOutcome.APPROVED,
-                        //             transactionOutcome: EEftposTransactionOutcome.Success,
-                        //             message: "Transaction Approved!",
-                        //             eftposReceipt: response.customerReceipt || "",
-                        //             eftposCardType: getCardType(response.cardType),
-                        //             eftposSurcharge: response.surchargeAmount
-                        //                 ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
-                        //                 : 0,
-                        //             eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
-                        //         };
-                        //         break;
-                        //     case "CANCELLED":
-                        //         transactionOutcome = {
-                        //             platformTransactionOutcome: EMX51TransactionOutcome.CANCELLED,
-                        //             transactionOutcome: EEftposTransactionOutcome.Fail,
-                        //             message: "Transaction Cancelled!",
-                        //             eftposReceipt: response.customerReceipt || "",
-                        //             eftposCardType: getCardType(response.cardType),
-                        //             eftposSurcharge: response.surchargeAmount
-                        //                 ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
-                        //                 : 0,
-                        //             eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
-                        //         };
-                        //         break;
-                        //     case "REVERSED":
-                        //         let message = "Transaction Reversed!";
-
-                        //         // Approved with signature not allowed in kiosk mode
-                        //         if (approvedWithSignature && (register?.skipEftposReceiptSignature || isPOS)) {
-                        //             message =
-                        //                 "Signature transactions are not allowed on the Kiosk, please go to the counter or use another card to make the payment";
-                        //         }
-
-                        //         transactionOutcome = {
-                        //             platformTransactionOutcome: EMX51TransactionOutcome.REVERSED,
-                        //             transactionOutcome: EEftposTransactionOutcome.Fail,
-                        //             message: message,
-                        //             eftposReceipt: response.customerReceipt || "",
-                        //             eftposCardType: getCardType(response.cardType),
-                        //             eftposSurcharge: response.surchargeAmount
-                        //                 ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
-                        //                 : 0,
-                        //             eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
-                        //         };
-
-                        //         break;
-                        //     case "DECLINED":
-                        //         transactionOutcome = {
-                        //             platformTransactionOutcome: EMX51TransactionOutcome.DECLINED,
-                        //             transactionOutcome: EEftposTransactionOutcome.Fail,
-                        //             message: "Transaction Declined! Please try again.",
-                        //             eftposReceipt: response.customerReceipt || "",
-                        //             eftposCardType: getCardType(response.cardType),
-                        //             eftposSurcharge: response.surchargeAmount
-                        //                 ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
-                        //                 : 0,
-                        //             eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
-                        //         };
-                        //         break;
-                        //     case "SYSTEM ERROR":
-                        //         // You should never come in this state. Don't even know what settledOk is. Cannot find any references in docs as well.
-                        //         transactionOutcome = {
-                        //             platformTransactionOutcome: EMX51TransactionOutcome.SYSTEMERROR,
-                        //             transactionOutcome: EEftposTransactionOutcome.Fail,
-                        //             message: "System Error.",
-                        //             eftposReceipt: response.customerReceipt || "",
-                        //             eftposCardType: getCardType(response.cardType),
-                        //             eftposSurcharge: response.surchargeAmount
-                        //                 ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
-                        //                 : 0,
-                        //             eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
-                        //         };
-                        //         break;
-                        //     case "NOT STARTED":
-                        //         transactionOutcome = {
-                        //             platformTransactionOutcome: EMX51TransactionOutcome.NOTSTARTED,
-                        //             transactionOutcome: EEftposTransactionOutcome.Fail,
-                        //             message: "Transaction Not Started",
-                        //             eftposReceipt: response.customerReceipt || "",
-                        //             eftposCardType: getCardType(response.cardType),
-                        //             eftposSurcharge: response.surchargeAmount
-                        //                 ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
-                        //                 : 0,
-                        //             eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
-                        //         };
-                        //         break;
-                        //     case "UNKNOWN":
-                        //         transactionOutcome = {
-                        //             platformTransactionOutcome: EMX51TransactionOutcome.UNKNOWN,
-                        //             transactionOutcome: EEftposTransactionOutcome.Fail,
-                        //             message: "Please look at the terminal to determine what happened. Typically indicates a network error.",
-                        //             eftposReceipt: response.customerReceipt || "",
-                        //             eftposCardType: getCardType(response.cardType),
-                        //             eftposSurcharge: response.surchargeAmount
-                        //                 ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
-                        //                 : 0,
-                        //             eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
-                        //         };
-                        //         break;
-                        //     default:
-                        //         transactionOutcome = {
-                        //             platformTransactionOutcome: EMX51TransactionOutcome.UNKNOWN,
-                        //             transactionOutcome: EEftposTransactionOutcome.Fail,
-                        //             message: "Unknown. Invalid State...",
-                        //             eftposReceipt: response.customerReceipt || "",
-                        //             eftposCardType: getCardType(response.cardType),
-                        //             eftposSurcharge: response.surchargeAmount
-                        //                 ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
-                        //                 : 0,
-                        //             eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
-                        //         };
-                        //         break;
-                        // }
-
-                        resolve(transactionOutcome);
-                    },
-                };
-
-                // addToLogs(`RequestParams: ${JSON.stringify(requestParams)}`);
-                // iclient.initiatePurchase(requestParams, transactionCallbacks);
+                let transactionOutcome: IEftposTransactionOutcome | null = null;
 
                 while (true) {
                     if (Number(new Date()) < endTime) {
+                        addToLogs(`Checking for transactionOutcome: ${outcome.current}`);
+
                         await delay(interval);
+
+                        customerMessageCallback(customerMessage.current);
+
+                        if (receiptToSign.current && !receiptToSignCallbackDisplayed.current) {
+                            customerSignatureRequiredCallback({
+                                receipt: receiptToSign.current,
+                                answerCallback: (accepted: boolean) => {
+                                    spi.current?.AcceptSignature(accepted);
+
+                                    customerSignatureRequiredCallback(null);
+                                },
+                            });
+                            receiptToSignCallbackDisplayed.current = true;
+                        }
+
+                        if (outcome.current === EMX51TransactionOutcome.Success) {
+                            transactionOutcome = {
+                                platformTransactionOutcome: EMX51TransactionOutcome.Success,
+                                transactionOutcome: EEftposTransactionOutcome.Success,
+                                message: "Transaction Approved!",
+                                eftposReceipt: eftposReceipt.current,
+                                // eftposCardType: getCardType(eftposCardType),
+                                // eftposSurcharge: parseInt(eftposSurcharge || "0"),
+                                // eftposTip: parseInt(eftposTip || "0"),
+                            };
+
+                            addToLogs("Success: Transaction Completed.");
+                            break;
+                        } else if (outcome.current === EMX51TransactionOutcome.Failed) {
+                            transactionOutcome = {
+                                platformTransactionOutcome: EMX51TransactionOutcome.Failed,
+                                transactionOutcome: EEftposTransactionOutcome.Fail,
+                                message: outcomeFailedErrorDetail.current || "Transaction Failed!",
+                                eftposReceipt: eftposReceipt.current,
+                                // eftposCardType: getCardType(response.cardType),
+                                // eftposSurcharge: response.surchargeAmount
+                                //     ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
+                                //     : 0,
+                                // eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
+                            };
+                            break;
+                        } else if (outcome.current === EMX51TransactionOutcome.Unknown) {
+                            transactionOutcome = {
+                                platformTransactionOutcome: EMX51TransactionOutcome.Unknown,
+                                transactionOutcome: EEftposTransactionOutcome.Fail,
+                                message: "Please look at the terminal to determine what happened. Typically indicates a network error.",
+                                eftposReceipt: eftposReceipt.current,
+                                // eftposCardType: getCardType(response.cardType),
+                                // eftposSurcharge: response.surchargeAmount
+                                //     ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
+                                //     : 0,
+                                // eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
+                            };
+                            break;
+                        }
                     } else {
                         addToLogs("Cancelling transaction due to timeout");
                         cancelTransaction();
@@ -632,19 +560,24 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
                         return;
                     }
                 }
+
+                if (transactionOutcome) {
+                    console.log("TransactionOutcome", transactionOutcome);
+                    resolve(transactionOutcome);
+                }
             } catch (error) {
                 addToLogs(`error.message: ${error.message}`);
 
                 reject(error);
             } finally {
-                await createEftposTransactionLog(restaurant ? restaurant.id : "", "Create Transaction", parseInt(amount));
+                await createEftposTransactionLog(restaurant ? restaurant.id : "", "Create Transaction", amount);
             }
-        };
-
-        return new Promise(checkCondition);
+        });
     };
 
-    const cancelTransaction = () => {};
+    const cancelTransaction = () => {
+        spi.current?.CancelTransaction();
+    };
 
     return (
         <MX51Context.Provider

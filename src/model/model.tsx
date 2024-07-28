@@ -89,12 +89,19 @@ export enum ETyroTransactionOutcome {
     UNKNOWN,
 }
 
+export enum EMX51TransactionOutcome {
+    Success,
+    Failed,
+    Unknown,
+}
+
 export interface IEftposTransactionOutcome {
     platformTransactionOutcome:
         | ESmartpayTransactionOutcome
         | EWindcaveTransactionOutcome
         | EVerifoneTransactionOutcome
         | ETyroTransactionOutcome
+        | EMX51TransactionOutcome
         | null;
     transactionOutcome: EEftposTransactionOutcome;
     message: string;
@@ -241,10 +248,15 @@ interface ITyroTransactionCompleteCallback {
     }[];
 }
 
-export interface IEftposQuestion {
+export interface ITyroEftposQuestion {
     text: string;
     options: string[];
     answerCallback: (answer: string) => void;
+}
+
+export interface IMX51EftposQuestion {
+    receipt: string;
+    answerCallback: (accepted: boolean) => void;
 }
 
 export enum EOrderType {
@@ -264,6 +276,7 @@ export enum EEftposProvider {
     VERIFONE = "VERIFONE",
     WINDCAVE = "WINDCAVE",
     TYRO = "TYRO",
+    MX51 = "MX51",
 }
 
 export interface ICustomerInformation {

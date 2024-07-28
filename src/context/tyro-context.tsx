@@ -9,7 +9,7 @@ import {
     ITyroInitiatePurchaseInput,
     ITyroPairTerminalResponseReceivedCallback,
     EEftposTransactionOutcomeCardType,
-    IEftposQuestion,
+    ITyroEftposQuestion,
 } from "../model/model";
 import config from "./../../package.json";
 import { delay } from "../model/util";
@@ -37,7 +37,7 @@ type ContextProps = {
         merchantId: number,
         terminalId: number,
         customerMessageCallback: (message: string) => void,
-        customerQuestionCallback: (question: IEftposQuestion) => void
+        customerQuestionCallback: (question: ITyroEftposQuestion) => void
     ) => Promise<IEftposTransactionOutcome>;
     cancelTransaction: () => void;
 };
@@ -53,7 +53,7 @@ const TyroContext = createContext<ContextProps>({
         merchantId: number,
         terminalId: number,
         customerMessageCallback: (message: string) => void,
-        customerQuestionCallback: (question: IEftposQuestion) => void
+        customerQuestionCallback: (question: ITyroEftposQuestion) => void
     ) => {
         return new Promise(() => {
             console.log("");
@@ -157,7 +157,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
         merchantId: number,
         terminalId: number,
         customerMessageCallback: (message: string) => void,
-        customerQuestionCallback: (question: IEftposQuestion) => void
+        customerQuestionCallback: (question: ITyroEftposQuestion) => void
     ): Promise<IEftposTransactionOutcome> => {
         resetVariables();
 

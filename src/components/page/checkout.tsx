@@ -42,7 +42,8 @@ import {
     ERegisterType,
     EEftposTransactionOutcomeCardType,
     EOrderType,
-    IEftposQuestion,
+    ITyroEftposQuestion,
+    IMX51EftposQuestion,
 } from "../../model/model";
 import { useUser } from "../../context/user-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -80,6 +81,7 @@ import "./checkout.scss";
 import axios from "axios";
 import { R18MessageModal } from "../modals/r18MessageModal";
 import { useTyro } from "../../context/tyro-context";
+import { useMX51 } from "../../context/mx51-context";
 
 const logger = new Logger("checkout");
 
@@ -140,6 +142,7 @@ export const Checkout = () => {
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
     const { createTransaction: windcaveCreateTransaction } = useWindcave();
     const { createTransaction: tyroCreateTransaction, cancelTransaction: tyroCancelTransaction } = useTyro();
+    const { createTransaction: mx51CreateTransaction, cancelTransaction: mx51CancelTransaction } = useMX51();
     const [isScrollable, setIsScrollable] = useState(false);
     const [createOrderMutation] = useMutation(CREATE_ORDER, {
         update: (proxy, mutationResult) => {
@@ -170,7 +173,8 @@ export const Checkout = () => {
     const [paymentModalState, setPaymentModalState] = useState<EPaymentModalState>(EPaymentModalState.None);
 
     const [eftposTransactionProcessMessage, setEftposTransactionProcessMessage] = useState<string | null>(null);
-    const [eftposTransactionProcessQuestion, setEftposTransactionProcessQuestion] = useState<IEftposQuestion | null>(null);
+    const [eftposTransactionProcessQuestion, setEftposTransactionProcessQuestion] = useState<ITyroEftposQuestion | null>(null);
+    const [eftposSignatureRequiredQuestion, setEftposSignatureRequiredQuestion] = useState<IMX51EftposQuestion | null>(null);
     const [eftposTransactionOutcome, setEftposTransactionOutcome] = useState<IEftposTransactionOutcome | null>(null);
     const [cashTransactionChangeAmount, setCashTransactionChangeAmount] = useState<number | null>(null);
 
@@ -1011,7 +1015,7 @@ export const Checkout = () => {
                 );
             } else if (register.eftposProvider == EEftposProvider.TYRO) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
-                const setEftposQuestion = (question: IEftposQuestion) => setEftposTransactionProcessQuestion(question);
+                const setEftposQuestion = (question: ITyroEftposQuestion) => setEftposTransactionProcessQuestion(question);
 
                 outcome = await tyroCreateTransaction(
                     amount.toString(),
@@ -1020,6 +1024,17 @@ export const Checkout = () => {
                     setEftposMessage,
                     setEftposQuestion
                 );
+            } else if (register.eftposProvider == EEftposProvider.MX51) {
+                const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
+                const setCustomerSignature = (question: IMX51EftposQuestion | null) => {
+                    if (isPOS) {
+                        setEftposSignatureRequiredQuestion(question);
+                    } else {
+                        question?.answerCallback(false);
+                    }
+                };
+
+                outcome = await mx51CreateTransaction(amount, setEftposMessage, setCustomerSignature);
             }
 
             if (!outcome) throw "Invalid Eftpos Transaction outcome.";
@@ -1054,10 +1069,13 @@ export const Checkout = () => {
         if (register.eftposProvider == EEftposProvider.SMARTPAY) {
             //Not implemented
         } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
+            //Not implemented
         } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
             //Not implemented
         } else if (register.eftposProvider == EEftposProvider.TYRO) {
             tyroCancelTransaction();
+        } else if (register.eftposProvider == EEftposProvider.MX51) {
+            //Not implemented
         }
     };
 
@@ -1469,6 +1487,7 @@ export const Checkout = () => {
                         paymentModalState={paymentModalState}
                         eftposTransactionProcessMessage={eftposTransactionProcessMessage}
                         eftposTransactionProcessQuestion={eftposTransactionProcessQuestion}
+                        eftposSignatureRequiredQuestion={eftposSignatureRequiredQuestion}
                         eftposTransactionOutcome={eftposTransactionOutcome}
                         cashTransactionChangeAmount={cashTransactionChangeAmount}
                         onPrintCustomerReceipt={() => createdOrder.current && onPrintCustomerReceipt(createdOrder.current)}
