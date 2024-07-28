@@ -94,6 +94,7 @@ export const GET_USER = gql`
                             active
                             name
                             enableTableFlags
+                            enableCovers
                             enableBuzzerNumbersForTakeaway
                             enableBuzzerNumbersForDineIn
                             enableSkuScanner
@@ -363,6 +364,7 @@ export const GET_RESTAURANT = gql`
                     active
                     name
                     enableTableFlags
+                    enableCovers
                     enableBuzzerNumbersForTakeaway
                     enableBuzzerNumbersForDineIn
                     enableSkuScanner
@@ -1009,6 +1011,7 @@ export interface IGET_RESTAURANT_REGISTER {
     active: boolean;
     name: string;
     enableTableFlags: boolean;
+    enableCovers: boolean;
     enableBuzzerNumbersForTakeaway: boolean;
     enableBuzzerNumbersForDineIn: boolean;
     enableSkuScanner: boolean;

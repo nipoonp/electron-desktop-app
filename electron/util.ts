@@ -468,16 +468,16 @@ export const printCustomerReceipt = async (
         },
     ]);
 
-    printer.newLine();
-    printer.alignCenter();
+    // printer.newLine();
+    // printer.alignCenter();
 
-    if (order.eftposReceipt) {
-        const eftposReceiptArray = order.eftposReceipt.split("\n");
+    // if (order.eftposReceipt) {
+    //     const eftposReceiptArray = order.eftposReceipt.split("\n");
 
-        eftposReceiptArray.forEach((line) => {
-            printer.println(line);
-        });
-    }
+    //     eftposReceiptArray.forEach((line) => {
+    //         printer.println(line);
+    //     });
+    // }
 
     printer.newLine();
     printer.alignCenter();

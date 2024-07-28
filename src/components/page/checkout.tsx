@@ -102,6 +102,7 @@ export const Checkout = () => {
         paymentMethod,
         setPaymentMethod,
         setNotes,
+        covers,
         tableNumber,
         clearCart,
         promotion,
@@ -338,6 +339,10 @@ export const Checkout = () => {
 
     // Callbacks
     const onUpdateTableNumber = () => {
+        navigate(tableNumberPath);
+    };
+
+    const onUpdateCovers = () => {
         navigate(tableNumberPath);
     };
 
@@ -791,6 +796,7 @@ export const Checkout = () => {
                 paid: paid,
                 type: orderType ? orderType : register.availableOrderTypes[0],
                 number: orderNumber,
+                covers: orderType === EOrderType.DINEIN ? covers : undefined,
                 table: tableNumber,
                 buzzer: buzzerNumber,
                 orderScheduledAt: orderScheduledAt,
@@ -846,6 +852,7 @@ export const Checkout = () => {
                     paid: paid,
                     type: orderType ? orderType : register.availableOrderTypes[0],
                     number: orderNumber,
+                    covers: orderType === EOrderType.DINEIN ? covers : undefined,
                     table: tableNumber,
                     buzzer: buzzerNumber,
                     orderScheduledAt: orderScheduledAt,
@@ -1141,7 +1148,7 @@ export const Checkout = () => {
         } else if (outcome.transactionOutcome === EEftposTransactionOutcome.Fail) {
             setPaymentModalState(EPaymentModalState.EftposResult);
 
-            if (outcome.eftposReceipt) printEftposReceipts(outcome.eftposReceipt);
+            // if (outcome.eftposReceipt) printEftposReceipts(outcome.eftposReceipt);
         }
     };
 
@@ -1605,6 +1612,13 @@ export const Checkout = () => {
         </div>
     );
 
+    const restaurantCovers = (
+        <div className="checkout-covers">
+            <div className="h3">Number Of Diners: {covers}</div>
+            <Link onClick={onUpdateCovers}>Change</Link>
+        </div>
+    );
+
     const restaurantCustomerInformation = (
         <div className="checkout-customer-details">
             <div className="h3">
@@ -1653,10 +1667,11 @@ export const Checkout = () => {
             <div className={isPOS ? "mt-4" : "mt-10"}></div>
             {title}
             {register && register.availableOrderTypes.length > 1 && restaurantOrderType}
-            {promotionInformation}
-            {tableNumber && <div className="mb-2">{restaurantTableNumber}</div>}
             {buzzerNumber && <div className="mb-2">{restaurantBuzzerNumber}</div>}
+            {tableNumber && <div className="mb-2">{restaurantTableNumber}</div>}
+            {covers && <div className="mb-2">{restaurantCovers}</div>}
             {customerInformation && <div className="mb-2">{restaurantCustomerInformation}</div>}
+            {promotionInformation}
             <div className="separator-6"></div>
             {orderSummary}
             <div className="restaurant-notes-wrapper">{restaurantNotes}</div>
