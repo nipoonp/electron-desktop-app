@@ -1034,7 +1034,7 @@ export const Checkout = () => {
                     }
                 };
 
-                outcome = await mx51CreateTransaction(amount, setEftposMessage, setCustomerSignature);
+                outcome = await mx51CreateTransaction(amount, 0, 0, setEftposMessage, setCustomerSignature);
             }
 
             if (!outcome) throw "Invalid Eftpos Transaction outcome.";
@@ -1075,7 +1075,7 @@ export const Checkout = () => {
         } else if (register.eftposProvider == EEftposProvider.TYRO) {
             tyroCancelTransaction();
         } else if (register.eftposProvider == EEftposProvider.MX51) {
-            //Not implemented
+            mx51CancelTransaction();
         }
     };
 

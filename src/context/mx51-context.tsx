@@ -47,6 +47,8 @@ type ContextProps = {
     sendUnpairRequest: () => Promise<string>;
     createTransaction: (
         amount: number,
+        eftposTip: number,
+        eftposSurcharge: number,
         customerMessageCallback: (message: string) => void,
         customerSignatureRequiredCallback: (answerCallback: IMX51EftposQuestion | null) => void
     ) => Promise<IEftposTransactionOutcome>;
@@ -85,6 +87,8 @@ const MX51Context = createContext<ContextProps>({
     },
     createTransaction: (
         amount: number,
+        eftposTip: number,
+        eftposSurcharge: number,
         customerMessageCallback: (message: string) => void,
         customerSignatureRequiredCallback: (answerCallback: IMX51EftposQuestion | null) => void
     ) => {
@@ -110,7 +114,10 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
     const customerMessage = useRef<string>(initialCustomerMessage);
     const receiptToSign = useRef<string>(initialReceiptToSign);
     const receiptToSignCallbackDisplayed = useRef<boolean>(initialReceiptToSignCallbackDisplayed);
-    const outcome = useRef<EMX51TransactionOutcome | null>(initialOutcome);
+    const outcome = useRef<{
+        cardType: string;
+        outcome: EMX51TransactionOutcome;
+    } | null>(initialOutcome);
     const outcomeFailedErrorDetail = useRef<string>(initialOutcomeFailedErrorDetail);
     const eftposReceipt = useRef<string>(initialEftposReceipt);
     const logs = useRef<string>(initialLogs);
@@ -231,7 +238,10 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
                     // Close the sale on the POS
                     switch (e.detail.Type) {
                         case TransactionType.Purchase:
-                            outcome.current = EMX51TransactionOutcome.Success;
+                            outcome.current = {
+                                cardType: e.detail.Response.Data.scheme_app_name,
+                                outcome: EMX51TransactionOutcome.Success,
+                            };
                             // Perform actions after purchases only
                             break;
                         case TransactionType.Refund:
@@ -243,7 +253,10 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
                     }
                     break;
                 case SuccessState.Failed:
-                    outcome.current = EMX51TransactionOutcome.Failed;
+                    outcome.current = {
+                        cardType: e.detail.Response.Data.scheme_app_name,
+                        outcome: EMX51TransactionOutcome.Failed,
+                    };
 
                     // Display the failed transaction UI adding detail for user:
                     // e.detail.Response.Data.error_detail
@@ -255,7 +268,10 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
 
                     break;
                 case SuccessState.Unknown:
-                    outcome.current = EMX51TransactionOutcome.Unknown;
+                    outcome.current = {
+                        cardType: e.detail.Response.Data.scheme_app_name,
+                        outcome: EMX51TransactionOutcome.Unknown,
+                    };
 
                     // Display the manual transaction recovery UI
                     break;
@@ -454,11 +470,14 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
 
     const createTransaction = (
         amount: number,
+        eftposTip: number,
+        eftposSurcharge: number,
         customerMessageCallback: (message: string) => void,
         customerSignatureRequiredCallback: (answerCallback: IMX51EftposQuestion | null) => void
     ): Promise<IEftposTransactionOutcome> => {
         return new Promise(async (resolve, reject) => {
-            console.log("yyy...pairingStatus", pairingStatus);
+            console.log("xxx...pairingStatus", pairingStatus);
+
             if (pairingStatus === EMX51PairingStatus.Unpaired) {
                 const storedSecrets = window.localStorage.getItem("secrets");
                 const spiSecrets = storedSecrets ? JSON.parse(storedSecrets) : null;
@@ -483,11 +502,11 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
             spi.current?.InitiatePurchaseTxV2(
                 posRefIdGenerator("purchase"), // posRefId
                 amount,
-                0,
-                0,
+                eftposTip, //tip amount
+                0, //cashout amount
                 false,
                 receiptOptions,
-                0
+                eftposSurcharge //surcharge amount
             );
 
             try {
@@ -513,43 +532,39 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
                             receiptToSignCallbackDisplayed.current = true;
                         }
 
-                        if (outcome.current === EMX51TransactionOutcome.Success) {
+                        if (outcome.current?.outcome === EMX51TransactionOutcome.Success) {
                             transactionOutcome = {
                                 platformTransactionOutcome: EMX51TransactionOutcome.Success,
                                 transactionOutcome: EEftposTransactionOutcome.Success,
                                 message: "Transaction Approved!",
                                 eftposReceipt: eftposReceipt.current,
-                                // eftposCardType: getCardType(eftposCardType),
-                                // eftposSurcharge: parseInt(eftposSurcharge || "0"),
-                                // eftposTip: parseInt(eftposTip || "0"),
+                                eftposCardType: getCardType(outcome.current.cardType),
+                                eftposSurcharge: eftposSurcharge,
+                                eftposTip: eftposTip,
                             };
 
                             addToLogs("Success: Transaction Completed.");
                             break;
-                        } else if (outcome.current === EMX51TransactionOutcome.Failed) {
+                        } else if (outcome.current?.outcome === EMX51TransactionOutcome.Failed) {
                             transactionOutcome = {
                                 platformTransactionOutcome: EMX51TransactionOutcome.Failed,
                                 transactionOutcome: EEftposTransactionOutcome.Fail,
                                 message: outcomeFailedErrorDetail.current || "Transaction Failed!",
                                 eftposReceipt: eftposReceipt.current,
-                                // eftposCardType: getCardType(response.cardType),
-                                // eftposSurcharge: response.surchargeAmount
-                                //     ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
-                                //     : 0,
-                                // eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
+                                eftposCardType: getCardType(outcome.current.cardType),
+                                eftposSurcharge: eftposSurcharge,
+                                eftposTip: eftposTip,
                             };
                             break;
-                        } else if (outcome.current === EMX51TransactionOutcome.Unknown) {
+                        } else if (outcome.current?.outcome === EMX51TransactionOutcome.Unknown) {
                             transactionOutcome = {
                                 platformTransactionOutcome: EMX51TransactionOutcome.Unknown,
                                 transactionOutcome: EEftposTransactionOutcome.Fail,
                                 message: "Please look at the terminal to determine what happened. Typically indicates a network error.",
                                 eftposReceipt: eftposReceipt.current,
-                                // eftposCardType: getCardType(response.cardType),
-                                // eftposSurcharge: response.surchargeAmount
-                                //     ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
-                                //     : 0,
-                                // eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
+                                eftposCardType: getCardType(outcome.current.cardType),
+                                eftposSurcharge: eftposSurcharge,
+                                eftposTip: eftposTip,
                             };
                             break;
                         }
