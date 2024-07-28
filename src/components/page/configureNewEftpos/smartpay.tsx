@@ -12,12 +12,12 @@ export const SmartPay = () => {
     const [amount, setAmount] = useState(0);
     const [transactionType, setTransactionType] = useState("Card.Purchase");
     const [showSpinner, setShowSpinner] = useState(false);
-    const { sendParingRequest, createTransaction, pollForOutcome } = useSmartpay();
+    const { sendPairingRequest, createTransaction, pollForOutcome } = useSmartpay();
 
     const doPairing = async () => {
         try {
             setShowSpinner(true);
-            await sendParingRequest(pairingCode);
+            await sendPairingRequest(pairingCode);
             setPairingCode("");
             alert("Pairing complete! Your device should now show it is paired.");
         } catch (errorMessage) {
