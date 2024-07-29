@@ -1715,7 +1715,7 @@ export const Checkout = () => {
             ) : (
                 <></>
             )}
-            <div className={`h1 text-center ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
+            <div className={`h1 text-center checkout-total-price ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
             <div className={`${isPOS ? "mb-0" : "mb-4"}`}>
                 <div className="checkout-buttons-container">
                     {!isPOS && (
