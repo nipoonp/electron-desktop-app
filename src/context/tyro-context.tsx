@@ -9,7 +9,7 @@ import {
     ITyroInitiatePurchaseInput,
     ITyroPairTerminalResponseReceivedCallback,
     EEftposTransactionOutcomeCardType,
-    IEftposQuestion,
+    ITyroEftposQuestion,
 } from "../model/model";
 import config from "./../../package.json";
 import { delay } from "../model/util";
@@ -19,7 +19,7 @@ import { convertDollarsToCentsReturnInt, toLocalISOString } from "../util/util";
 
 //Todo: change this so we are getting it from AWS Secret Manager
 // const apiKey = "Test API Key"; // API Key not validated test environments
-const apiKey = "DbBkMAxieoBVAh2fAO7ht6cXjNzyA2f";
+const apiKey = process.env.REACT_APP_TYRO_API_KEY;
 const posProductInfo = {
     posProductVendor: "Tabin",
     posProductName: "Kiosk",
@@ -31,19 +31,19 @@ const iclient = new window.TYRO.IClient(apiKey, posProductInfo);
 const initialLogs = "";
 
 type ContextProps = {
-    sendParingRequest: (merchantId: number, terminalId: number, customerMessageCallback: (message: string) => void) => Promise<string>;
+    sendPairingRequest: (merchantId: number, terminalId: number, customerMessageCallback: (message: string) => void) => Promise<string>;
     createTransaction: (
         amount: string,
         merchantId: number,
         terminalId: number,
         customerMessageCallback: (message: string) => void,
-        customerQuestionCallback: (question: IEftposQuestion) => void
+        customerQuestionCallback: (question: ITyroEftposQuestion) => void
     ) => Promise<IEftposTransactionOutcome>;
     cancelTransaction: () => void;
 };
 
 const TyroContext = createContext<ContextProps>({
-    sendParingRequest: (merchantId: number, terminalId: number, customerMessageCallback: (message: string) => void) => {
+    sendPairingRequest: (merchantId: number, terminalId: number, customerMessageCallback: (message: string) => void) => {
         return new Promise(() => {
             console.log("");
         });
@@ -53,7 +53,7 @@ const TyroContext = createContext<ContextProps>({
         merchantId: number,
         terminalId: number,
         customerMessageCallback: (message: string) => void,
-        customerQuestionCallback: (question: IEftposQuestion) => void
+        customerQuestionCallback: (question: ITyroEftposQuestion) => void
     ) => {
         return new Promise(() => {
             console.log("");
@@ -118,7 +118,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
         });
     };
 
-    const sendParingRequest = (merchantId: number, terminalId: number, customerMessageCallback: (message: string) => void): Promise<string> => {
+    const sendPairingRequest = (merchantId: number, terminalId: number, customerMessageCallback: (message: string) => void): Promise<string> => {
         return new Promise(async (resolve, reject) => {
             if (!merchantId) {
                 reject("A merchantId has to be supplied.");
@@ -157,7 +157,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
         merchantId: number,
         terminalId: number,
         customerMessageCallback: (message: string) => void,
-        customerQuestionCallback: (question: IEftposQuestion) => void
+        customerQuestionCallback: (question: ITyroEftposQuestion) => void
     ): Promise<IEftposTransactionOutcome> => {
         resetVariables();
 
@@ -417,7 +417,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
     return (
         <TyroContext.Provider
             value={{
-                sendParingRequest: sendParingRequest,
+                sendPairingRequest: sendPairingRequest,
                 createTransaction: createTransaction,
                 cancelTransaction: cancelTransaction,
             }}

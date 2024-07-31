@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Verifone } from "./configureNewEftpos/verifone";
 import { SmartPay } from "./configureNewEftpos/smartpay";
 import { Tyro } from "./configureNewEftpos/tyro";
+import { MX51 } from "./configureNewEftpos/mx51";
 import { ReceiptPrinter } from "./configureNewEftpos/receiptPrinter";
 import { Radio } from "../../tabin/components/radio";
 
@@ -14,9 +15,10 @@ enum EftposProvider {
     VERIFONE,
     WINDCAVE,
     TYRO,
+    MX51,
 }
 export default () => {
-    const [eftposProvider, setEftposProvider] = useState(EftposProvider.WINDCAVE);
+    const [eftposProvider, setEftposProvider] = useState(EftposProvider.MX51);
 
     return (
         <>
@@ -50,8 +52,12 @@ export default () => {
                         Windcave
                     </Radio>
 
-                    <Radio className="mb-6" selected={eftposProvider == EftposProvider.TYRO} onSelect={() => setEftposProvider(EftposProvider.TYRO)}>
+                    <Radio className="mb-2" selected={eftposProvider == EftposProvider.TYRO} onSelect={() => setEftposProvider(EftposProvider.TYRO)}>
                         Tyro
+                    </Radio>
+
+                    <Radio className="mb-6" selected={eftposProvider == EftposProvider.MX51} onSelect={() => setEftposProvider(EftposProvider.MX51)}>
+                        MX51
                     </Radio>
 
                     {eftposProvider == EftposProvider.VERIFONE ? (
@@ -62,6 +68,8 @@ export default () => {
                         <Windcave />
                     ) : eftposProvider == EftposProvider.TYRO ? (
                         <Tyro />
+                    ) : eftposProvider == EftposProvider.MX51 ? (
+                        <MX51 />
                     ) : (
                         <></>
                     )}

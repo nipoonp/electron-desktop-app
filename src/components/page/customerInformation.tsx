@@ -115,7 +115,7 @@ export default () => {
                     <div className="close-button-wrapper">
                         <FiX className="close-button" size={36} onClick={onClose} />
                     </div>
-                    <div className="h2 mb-6">Enter enter customer details</div>
+                    <div className="h2 mb-6">Enter customer details</div>
                     <div className="mb-10" style={{ width: "400px" }}>
                         {register.requestCustomerInformation && register.requestCustomerInformation.firstName && (
                             <>

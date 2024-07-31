@@ -9,6 +9,8 @@ import { useEffect, useState } from "react";
 import { Input } from "../../../tabin/components/input";
 
 import "./orderSummary.scss";
+import { CachedImage } from "../../../tabin/components/cachedImage";
+import { getCloudFrontDomainName } from "../../../private/aws-custom";
 
 export const OrderSummary = (props: {
     products: ICartProduct[];
@@ -159,6 +161,20 @@ const OrderItem = (props: {
     return (
         <>
             <div className="order-item">
+                <div className="image-wrapper">
+                    {/* {product.imageUrl ? (
+                            <CachedImage url={`${product.imageUrl}`} className="image" alt="product-image" />
+                        ) : product.image ? ( */}
+                    {product.image ? (
+                        <>
+                            <CachedImage
+                                className="image"
+                                url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                                alt="product-image"
+                            />
+                        </>
+                    ) : null}
+                </div>
                 {isPOS ? expandOptionsArrow : quantityStepper}
                 <OrderItemDetails
                     name={product.name}

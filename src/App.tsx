@@ -23,6 +23,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import { sendFailureNotification } from "./util/errorHandling";
 import { ErrorBoundaryFallback } from "./tabin/components/errorBoundryFallback";
 import { ErrorInfo } from "react";
+import { MX51Provider } from "./context/mx51-context";
 
 Amplify.configure(awsconfig);
 Amplify.Logger.LOG_LEVEL = process.env.REACT_APP_LOG_LEVEL;
@@ -145,9 +146,14 @@ const App = () => {
                                                 <SmartpayProvider>
                                                     <WindcaveProvider>
                                                         <TyroProvider>
-                                                            <ErrorBoundary FallbackComponent={ErrorBoundaryFallback} onError={logFailureNotification}>
-                                                                <Main />
-                                                            </ErrorBoundary>
+                                                            <MX51Provider>
+                                                                <ErrorBoundary
+                                                                    FallbackComponent={ErrorBoundaryFallback}
+                                                                    onError={logFailureNotification}
+                                                                >
+                                                                    <Main />
+                                                                </ErrorBoundary>
+                                                            </MX51Provider>
                                                         </TyroProvider>
                                                     </WindcaveProvider>
                                                 </SmartpayProvider>
