@@ -889,11 +889,27 @@ export const ProductModal = (props: {
         <>
             <div ref={(ref) => setProductsWrapperElement(ref)} className="product" id="productsWrapperScrollModel">
                 <div className="mt-11" />
-                <div className="h1 mb-4 name">
-                    {currentSelectedProductModifier ? currentSelectedProductModifier.selectedModifier.name : product.name}
+                <div className="product-header">
+                    <div className="image-wrapper">
+                        {product.imageUrl ? (
+                            <CachedImage url={`${product.imageUrl}`} className="image" alt="product-image" />
+                        ) : product.image ? (
+                            <>
+                                <CachedImage
+                                    className="image"
+                                    url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                                    alt="product-image"
+                                />
+                            </>
+                        ) : null}
+                    </div>
+                    <div>
+                        <div className="h1 mb-4 name">
+                            {currentSelectedProductModifier ? currentSelectedProductModifier.selectedModifier.name : product.name}
+                        </div>
+                        {product.description && <div className="description">{product.description}</div>}
+                    </div>
                 </div>
-                {product.description && <div className="description">{product.description}</div>}
-                <div className="separator-6"></div>
                 {modifierGroups}
                 <div className="product-notes-wrapper">{!currentSelectedProductModifier && productNotes}</div>
                 {isScrollable ? (
