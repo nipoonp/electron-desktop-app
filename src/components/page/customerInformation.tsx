@@ -131,13 +131,13 @@ export default () => {
                         )}
                         {register.requestCustomerInformation && register.requestCustomerInformation.email && (
                             <>
-                                <div className="h2 mt-2 mb-2">Email</div>
+                                <div className="h2 mt-2 mb-2">Order Number / Site</div>
                                 <Input type="email" onChange={onChangeEmail} value={email} error={emailError ? "Required" : ""} />
                             </>
                         )}
                         {register.requestCustomerInformation && register.requestCustomerInformation.phoneNumber && (
                             <>
-                                <div className="h2 mt-2 mb-2">Phone Number</div>
+                                <div className="h2 mt-2 mb-2">Mobile Number</div>
                                 <Input type="number" onChange={onChangePhoneNumber} value={phoneNumber} error={phoneNumberError ? "Required" : ""} />
                             </>
                         )}
