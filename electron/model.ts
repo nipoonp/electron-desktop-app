@@ -181,6 +181,8 @@ export interface IOrderPaymentAmounts {
     online: number;
     uberEats: number;
     menulog: number;
+    doordash: number;
+    delivereasy: number;
 }
 
 export interface IPrintReceiptDataOutput {

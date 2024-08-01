@@ -153,6 +153,8 @@ export enum EPaymentModalState {
     CashResult,
     UberEatsResult,
     MenulogResult,
+    DoordashResult,
+    DelivereasyResult,
     PayLater,
     Park,
     ThirdPartyIntegrationAwaitingResponse,
@@ -367,6 +369,8 @@ export interface ICartPaymentAmounts {
     online: number;
     uberEats: number;
     menulog: number;
+    doordash: number;
+    delivereasy: number;
 }
 
 export interface ICartPayment {

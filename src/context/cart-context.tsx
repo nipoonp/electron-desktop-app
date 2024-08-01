@@ -37,7 +37,7 @@ const initialTotal = 0;
 const initialSurcharge = 0;
 const initialPaidSoFar = 0;
 const initialOrderTypeSurcharge = 0;
-const initialPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0 };
+const initialPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0, doordash: 0, delivereasy: 0 };
 const initialSubTotal = 0;
 const initialPayments = [];
 const initialTransactionEftposReceipts = "";
@@ -668,7 +668,14 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 total: total,
                 surcharge: surcharge,
                 subTotal: subTotal,
-                paidSoFar: paymentAmounts.cash + paymentAmounts.eftpos + paymentAmounts.online + paymentAmounts.uberEats + paymentAmounts.menulog,
+                paidSoFar:
+                    paymentAmounts.cash +
+                    paymentAmounts.eftpos +
+                    paymentAmounts.online +
+                    paymentAmounts.uberEats +
+                    paymentAmounts.menulog +
+                    paymentAmounts.doordash +
+                    paymentAmounts.delivereasy,
                 orderTypeSurcharge: orderTypeSurcharge,
                 paymentAmounts: paymentAmounts,
                 setPaymentAmounts: setPaymentAmounts,

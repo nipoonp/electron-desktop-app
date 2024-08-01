@@ -25,6 +25,8 @@ export const ORDER_FIELDS_FRAGMENT = gql`
             online
             uberEats
             menulog
+            doordash
+            delivereasy
         }
         onlineOrder
         guestCheckout
@@ -287,4 +289,6 @@ export interface IOrderPaymentAmounts {
     online: number;
     uberEats: number;
     menulog: number;
+    doordash: number;
+    delivereasy: number;
 }

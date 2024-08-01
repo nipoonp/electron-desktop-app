@@ -458,6 +458,28 @@ export const printCustomerReceipt = async (
                 bold: true,
             },
         ]);
+    order.paymentAmounts &&
+        order.paymentAmounts.doordash &&
+        printer.tableCustom([
+            { text: "Doordash", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.paymentAmounts.doordash)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.paymentAmounts &&
+        order.paymentAmounts.delivereasy &&
+        printer.tableCustom([
+            { text: "Delivereasy", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.paymentAmounts.delivereasy)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
     printer.tableCustom([
         { text: "Total", align: "LEFT", width: 0.75, bold: true },
         {
@@ -1632,6 +1654,8 @@ const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
         printer.println(`Online: $${convertCentsToDollars(data.totalPaymentAmounts.online)}`);
         printer.println(`Uber Eats: $${convertCentsToDollars(data.totalPaymentAmounts.uberEats)}`);
         printer.println(`Menu Log: $${convertCentsToDollars(data.totalPaymentAmounts.menulog)}`);
+        printer.println(`Doordash: $${convertCentsToDollars(data.totalPaymentAmounts.doordash)}`);
+        printer.println(`Delivereasy: $${convertCentsToDollars(data.totalPaymentAmounts.delivereasy)}`);
 
         printer.bold(true);
         printer.println(`Total: $${convertCentsToDollars(data.totalAmount)}`);

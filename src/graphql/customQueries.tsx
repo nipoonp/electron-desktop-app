@@ -103,6 +103,8 @@ export const GET_USER = gql`
                             enableEftposPayments
                             enableUberEatsPayments
                             enableMenulogPayments
+                            enableDoordashPayments
+                            enableDelivereasyPayments
                             availableOrderTypes
                             type
                             requestCustomerInformation {
@@ -374,6 +376,8 @@ export const GET_RESTAURANT = gql`
                     enableEftposPayments
                     enableUberEatsPayments
                     enableMenulogPayments
+                    enableDoordashPayments
+                    enableDelivereasyPayments
                     availableOrderTypes
                     orderTypeSurcharge {
                         dinein
@@ -1021,6 +1025,8 @@ export interface IGET_RESTAURANT_REGISTER {
     enableEftposPayments: boolean;
     enableUberEatsPayments: boolean;
     enableMenulogPayments: boolean;
+    enableDoordashPayments: boolean;
+    enableDelivereasyPayments: boolean;
     availableOrderTypes: EOrderType[];
     orderTypeSurcharge: OrderTypeSurchargeType;
     type: ERegisterType;
