@@ -161,20 +161,22 @@ const OrderItem = (props: {
     return (
         <>
             <div className="order-item">
-                <div className="image-wrapper">
-                    {/* {product.imageUrl ? (
+                {!isPOS && (
+                    <div className="image-wrapper">
+                        {/* {product.imageUrl ? (
                             <CachedImage url={`${product.imageUrl}`} className="image" alt="product-image" />
                         ) : product.image ? ( */}
-                    {product.image ? (
-                        <>
-                            <CachedImage
-                                className="image"
-                                url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
-                                alt="product-image"
-                            />
-                        </>
-                    ) : null}
-                </div>
+                        {product.image ? (
+                            <>
+                                <CachedImage
+                                    className="image"
+                                    url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                                    alt="product-image"
+                                />
+                            </>
+                        ) : null}
+                    </div>
+                )}
                 {isPOS ? expandOptionsArrow : quantityStepper}
                 <OrderItemDetails
                     name={product.name}
