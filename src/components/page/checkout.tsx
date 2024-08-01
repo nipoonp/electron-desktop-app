@@ -484,11 +484,11 @@ export const Checkout = () => {
     };
 
     const onClosePaymentModal = () => {
-        if (isPOS) {
-            navigate(`${restaurantPath}/${restaurant.id}`);
-        } else {
-            setShowPaymentModal(false);
-        }
+        // if (isPOS) {
+        //     navigate(`${restaurantPath}/${restaurant.id}`);
+        // } else {
+        setShowPaymentModal(false);
+        // }
     };
 
     const onCancelPayment = () => {
@@ -1244,6 +1244,60 @@ export const Checkout = () => {
         }
     };
 
+    const onConfirmDoordashTransaction = async (amount: number) => {
+        try {
+            const nonDoordashPayments = paidSoFar - paymentAmounts.doordash;
+            const newDoordashPaymentAmounts = paymentAmounts.doordash + amount;
+            const newTotalPaymentAmounts = nonDoordashPayments + newDoordashPaymentAmounts;
+
+            const newPaymentAmounts: ICartPaymentAmounts = {
+                ...paymentAmounts,
+                doordash: newTotalPaymentAmounts >= subTotal ? subTotal - nonDoordashPayments : newDoordashPaymentAmounts, //Cannot pay more than subTotal amount
+            };
+            const newPayments: ICartPayment[] = [...payments, { type: "DOORDASH", amount: amount }];
+
+            setPaymentAmounts(newPaymentAmounts);
+            setPayments(newPayments);
+
+            //If paid for everything
+            if (newTotalPaymentAmounts >= subTotal) {
+                //Passing paymentAmounts, payments via params so we send the most updated values
+                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.DoordashResult);
+            }
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
+    const onConfirmDelivereasyTransaction = async (amount: number) => {
+        try {
+            const nonDelivereasyPayments = paidSoFar - paymentAmounts.delivereasy;
+            const newDelivereasyPaymentAmounts = paymentAmounts.delivereasy + amount;
+            const newTotalPaymentAmounts = nonDelivereasyPayments + newDelivereasyPaymentAmounts;
+
+            const newPaymentAmounts: ICartPaymentAmounts = {
+                ...paymentAmounts,
+                delivereasy: newTotalPaymentAmounts >= subTotal ? subTotal - nonDelivereasyPayments : newDelivereasyPaymentAmounts, //Cannot pay more than subTotal amount
+            };
+            const newPayments: ICartPayment[] = [...payments, { type: "DELIVEREASY", amount: amount }];
+
+            setPaymentAmounts(newPaymentAmounts);
+            setPayments(newPayments);
+
+            //If paid for everything
+            if (newTotalPaymentAmounts >= subTotal) {
+                //Passing paymentAmounts, payments via params so we send the most updated values
+                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.DelivereasyResult);
+            }
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
     const onContinueToNextOrder = () => {
         clearTransactionCompleteTimeout();
     };
@@ -1261,6 +1315,8 @@ export const Checkout = () => {
             online: 0,
             uberEats: 0,
             menulog: 0,
+            doordash: 0,
+            delivereasy: 0,
         };
         const newPayments: ICartPayment[] = [];
 
@@ -1282,6 +1338,8 @@ export const Checkout = () => {
             online: 0,
             uberEats: 0,
             menulog: 0,
+            doordash: 0,
+            delivereasy: 0,
         };
         const newPayments: ICartPayment[] = [];
 
@@ -1509,6 +1567,8 @@ export const Checkout = () => {
                         onConfirmCashTransaction={onConfirmCashTransaction}
                         onConfirmUberEatsTransaction={onConfirmUberEatsTransaction}
                         onConfirmMenulogTransaction={onConfirmMenulogTransaction}
+                        onConfirmDoordashTransaction={onConfirmDoordashTransaction}
+                        onConfirmDelivereasyTransaction={onConfirmDelivereasyTransaction}
                         onContinueToNextPayment={onContinueToNextPayment}
                         onCancelPayment={onCancelPayment}
                         onCancelOrder={onCancelOrder}
