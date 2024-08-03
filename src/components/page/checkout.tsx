@@ -13,15 +13,7 @@ import {
     IGET_THIRD_PARTY_ORDER_RESPONSE,
     IGET_RESTAURANT_REGISTER_PRINTER,
 } from "../../graphql/customQueries";
-import {
-    restaurantPath,
-    beginOrderPath,
-    tableNumberPath,
-    orderTypePath,
-    buzzerNumberPath,
-    paymentMethodPath,
-    customerInformationPath,
-} from "../main";
+import { restaurantPath, tableNumberPath, orderTypePath, buzzerNumberPath, paymentMethodPath, customerInformationPath } from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
 import {
@@ -192,13 +184,13 @@ export const Checkout = () => {
     }, []);
 
     if (!register) throw "Register is not valid";
-    if (!restaurant) navigate(beginOrderPath);
+    if (!restaurant) navigate(restaurantPath);
     if (!restaurant) throw "Restaurant is invalid";
 
     const onCancelOrder = () => {
         const cancelOrder = () => {
             clearCart();
-            navigate(beginOrderPath);
+            navigate(restaurantPath);
         };
 
         if (payments.length > 0) {
@@ -405,11 +397,11 @@ export const Checkout = () => {
                 //@ts-ignore
                 transactionCompleteTimeoutIntervalId.current && clearInterval(transactionCompleteTimeoutIntervalId.current);
 
-                navigate(beginOrderPath);
+                navigate(restaurantPath + "/" + restaurant.id);
                 //     if (isPOS) {
                 //     navigate(restaurantPath + "/" + restaurant.id);
                 // } else {
-                //     navigate(beginOrderPath);
+                //     navigate(restaurantPath + "/" + restaurant.id);
                 // }
                 clearCart();
             }
@@ -419,11 +411,11 @@ export const Checkout = () => {
     const clearTransactionCompleteTimeout = () => {
         //@ts-ignore
         transactionCompleteTimeoutIntervalId.current && clearInterval(transactionCompleteTimeoutIntervalId.current);
-        navigate(beginOrderPath);
+        navigate(restaurantPath + "/" + restaurant.id);
         //     if (isPOS) {
         //     navigate(restaurantPath + "/" + restaurant.id);
         // } else {
-        //     navigate(beginOrderPath);
+        //     navigate(restaurantPath + "/" + restaurant.id);
         // }
         clearCart();
     };
