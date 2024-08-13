@@ -455,6 +455,7 @@ export const Checkout = () => {
             if (register.requestCustomerInformation.email && (!customerInformation || !customerInformation.email)) invalid = true;
             if (register.requestCustomerInformation.phoneNumber && (!customerInformation || !customerInformation.phoneNumber)) invalid = true;
             if (register.requestCustomerInformation.signature && (!customerInformation || !customerInformation.signatureBase64)) invalid = true;
+            if (register.requestCustomerInformation.customFields && (!customerInformation || !customerInformation.customFields)) invalid = true;
             //    if(register.) orderScheduledAt
 
             if (invalid) {
@@ -579,6 +580,11 @@ export const Checkout = () => {
                           email: customerInformation.email,
                           phoneNumber: customerInformation.phoneNumber,
                           signatureBase64: customerInformation.signatureBase64,
+                          customFields: customerInformation.customFields.map((field) => ({
+                              label: field.label,
+                              value: field.value,
+                              type: field.type,
+                          })),
                       }
                     : null,
                 notes: order.notes,
@@ -806,6 +812,11 @@ export const Checkout = () => {
                           email: customerInformation.email,
                           phoneNumber: customerInformation.phoneNumber,
                           signature: signatureS3Object,
+                          customFields: customerInformation.customFields.map((field) => ({
+                              label: field.label,
+                              value: field.value,
+                              type: field.type,
+                          })),
                       }
                     : null,
                 notes: notes,
@@ -862,6 +873,11 @@ export const Checkout = () => {
                               email: customerInformation.email,
                               phoneNumber: customerInformation.phoneNumber,
                               signature: signatureS3Object,
+                              customFields: customerInformation.customFields.map((field) => ({
+                                  label: field.label,
+                                  value: field.value,
+                                  type: field.type,
+                              })),
                           }
                         : null,
                     notes: notes,
@@ -1683,6 +1699,11 @@ export const Checkout = () => {
         <div className="checkout-customer-details">
             <div className="h3">
                 Customer Details: {`${customerInformation?.firstName} ${customerInformation?.email} ${customerInformation?.phoneNumber}`}
+                {customerInformation?.customFields.map((customField) => (
+                    <div>
+                        {customField.label}: {customField.value}
+                    </div>
+                ))}
             </div>
             <Link onClick={onUpdateCustomerInformation}>Change</Link>
         </div>

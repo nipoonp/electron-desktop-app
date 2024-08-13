@@ -28,6 +28,12 @@ export enum ERegisterPrinterType {
     USB = "USB",
 }
 
+export enum ECustomCustomerFieldType {
+    STRING = "STRING",
+    NUMBER = "NUMBER",
+    DROPDOWN = "DROPDOWN",
+}
+
 export const LIST_RESTAURANTS = gql`
     query ListRestaurants {
         listRestaurants(limit: 1000) {
@@ -111,6 +117,12 @@ export const GET_USER = gql`
                                 firstName
                                 email
                                 phoneNumber
+                                signature
+                                customFields {
+                                    label
+                                    value
+                                    type
+                                }
                             }
                             eftposProvider
                             eftposIpAddress
@@ -389,6 +401,11 @@ export const GET_RESTAURANT = gql`
                         email
                         phoneNumber
                         signature
+                        customFields {
+                            label
+                            value
+                            type
+                        }
                     }
                     eftposProvider
                     eftposIpAddress
@@ -1056,6 +1073,11 @@ export interface RequestCustomerInformationType {
     email: boolean;
     phoneNumber: boolean;
     signature: boolean;
+    customFields?: {
+        label: string;
+        value: string;
+        type: ECustomCustomerFieldType;
+    }[];
 }
 
 export interface OrderTypeSurchargeType {

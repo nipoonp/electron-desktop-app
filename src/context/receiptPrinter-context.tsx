@@ -120,6 +120,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                                       email: order.customerInformation.email,
                                       phoneNumber: order.customerInformation.phoneNumber,
                                       signatureBase64: null,
+                                      customFields: order.customerInformation.customFields,
                                   }
                                 : null,
                             notes: order.notes,

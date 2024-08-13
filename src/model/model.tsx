@@ -281,11 +281,22 @@ export enum EEftposProvider {
     MX51 = "MX51",
 }
 
+export enum ECustomCustomerFieldType {
+    STRING = "STRING",
+    NUMBER = "NUMBER",
+    DROPDOWN = "DROPDOWN",
+}
+
 export interface ICustomerInformation {
     firstName: string;
     email: string;
     phoneNumber: string;
     signatureBase64: string;
+    customFields: {
+        label: string;
+        value: string;
+        type: ECustomCustomerFieldType;
+    }[];
 }
 
 export interface ICartItemQuantitiesById {
@@ -415,6 +426,13 @@ export interface IOrderReceipt {
         email: string | null;
         phoneNumber: string | null;
         signatureBase64: string | null;
+        customFields:
+            | {
+                  label: string | null;
+                  value: string | null;
+                  type: ECustomCustomerFieldType | null;
+              }[]
+            | null;
     } | null;
     notes: string | null;
     products: ICartProduct[];
