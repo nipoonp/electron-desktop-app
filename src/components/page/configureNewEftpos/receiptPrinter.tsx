@@ -223,6 +223,7 @@ export const ReceiptPrinter = () => {
                     phoneNumber: "123-456-789",
                     email: "test@test.com",
                     signatureBase64: "",
+                    customFields: [],
                 },
                 notes: "Order notes",
                 products: TEST_PRODUCT,

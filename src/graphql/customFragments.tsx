@@ -1,5 +1,5 @@
 import { gql } from "@apollo/client";
-import { EOrderStatus, EOrderType, IS3Object } from "./customQueries";
+import { ECustomCustomerFieldType, EOrderStatus, EOrderType, IS3Object } from "./customQueries";
 
 export const ORDER_FIELDS_FRAGMENT = gql`
     fragment OrderFieldsFragment on Order {
@@ -223,6 +223,11 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
         email: string | null;
         phoneNumber: string | null;
         signature: IS3Object | null;
+        customFields: {
+            label: string;
+            value: string;
+            type: ECustomCustomerFieldType;
+        }[];
     } | null;
     status: EOrderStatus;
     type: EOrderType;
