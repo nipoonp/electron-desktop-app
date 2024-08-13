@@ -28,6 +28,12 @@ export enum ERegisterPrinterType {
     USB = "USB",
 }
 
+export enum ECustomCustomerFieldType {
+    STRING = "STRING",
+    NUMBER = "NUMBER",
+    DROPDOWN = "DROPDOWN",
+}
+
 export const LIST_RESTAURANTS = gql`
     query ListRestaurants {
         listRestaurants(limit: 1000) {
@@ -103,12 +109,20 @@ export const GET_USER = gql`
                             enableEftposPayments
                             enableUberEatsPayments
                             enableMenulogPayments
+                            enableDoordashPayments
+                            enableDelivereasyPayments
                             availableOrderTypes
                             type
                             requestCustomerInformation {
                                 firstName
                                 email
                                 phoneNumber
+                                signature
+                                customFields {
+                                    label
+                                    value
+                                    type
+                                }
                             }
                             eftposProvider
                             eftposIpAddress
@@ -374,6 +388,8 @@ export const GET_RESTAURANT = gql`
                     enableEftposPayments
                     enableUberEatsPayments
                     enableMenulogPayments
+                    enableDoordashPayments
+                    enableDelivereasyPayments
                     availableOrderTypes
                     orderTypeSurcharge {
                         dinein
@@ -385,6 +401,11 @@ export const GET_RESTAURANT = gql`
                         email
                         phoneNumber
                         signature
+                        customFields {
+                            label
+                            value
+                            type
+                        }
                     }
                     eftposProvider
                     eftposIpAddress
@@ -1021,6 +1042,8 @@ export interface IGET_RESTAURANT_REGISTER {
     enableEftposPayments: boolean;
     enableUberEatsPayments: boolean;
     enableMenulogPayments: boolean;
+    enableDoordashPayments: boolean;
+    enableDelivereasyPayments: boolean;
     availableOrderTypes: EOrderType[];
     orderTypeSurcharge: OrderTypeSurchargeType;
     type: ERegisterType;
@@ -1050,6 +1073,11 @@ export interface RequestCustomerInformationType {
     email: boolean;
     phoneNumber: boolean;
     signature: boolean;
+    customFields?: {
+        label: string;
+        value: string;
+        type: ECustomCustomerFieldType;
+    }[];
 }
 
 export interface OrderTypeSurchargeType {
