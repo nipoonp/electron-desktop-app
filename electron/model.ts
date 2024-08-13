@@ -17,6 +17,12 @@ export enum ERegisterPrinterType {
     USB = "USB",
 }
 
+export enum ECustomCustomerFieldType {
+    STRING = "STRING",
+    NUMBER = "NUMBER",
+    DROPDOWN = "DROPDOWN",
+}
+
 export interface IS3Object {
     key: string;
     bucket: string;
@@ -98,6 +104,13 @@ export interface IOrderReceipt {
         email: string | null;
         phoneNumber: string | null;
         signatureBase64: string | null;
+        customFields:
+            | {
+                  label: string | null;
+                  value: string | null;
+                  type: ECustomCustomerFieldType | null;
+              }[]
+            | null;
     } | null;
     notes: string | null;
     products: ICartProduct[];
@@ -181,6 +194,8 @@ export interface IOrderPaymentAmounts {
     online: number;
     uberEats: number;
     menulog: number;
+    doordash: number;
+    delivereasy: number;
 }
 
 export interface IPrintReceiptDataOutput {

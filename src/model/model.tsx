@@ -89,12 +89,19 @@ export enum ETyroTransactionOutcome {
     UNKNOWN,
 }
 
+export enum EMX51TransactionOutcome {
+    Success,
+    Failed,
+    Unknown,
+}
+
 export interface IEftposTransactionOutcome {
     platformTransactionOutcome:
         | ESmartpayTransactionOutcome
         | EWindcaveTransactionOutcome
         | EVerifoneTransactionOutcome
         | ETyroTransactionOutcome
+        | EMX51TransactionOutcome
         | null;
     transactionOutcome: EEftposTransactionOutcome;
     message: string;
@@ -102,6 +109,33 @@ export interface IEftposTransactionOutcome {
     eftposCardType?: EEftposTransactionOutcomeCardType;
     eftposSurcharge?: number;
     eftposTip?: number;
+}
+
+export interface IMX51GetPaymentProviders {
+    paymnetProivderList: {
+        code: string;
+        name: string;
+    }[];
+    paymentProvider: string;
+}
+
+export interface IMX51PairingInput {
+    posId: string;
+    tenantCode: string;
+    serialNumber: string;
+    eftposAddress: string;
+    autoAddressResolution: boolean;
+    testMode: boolean;
+}
+
+export enum EMX51PairingStatus {
+    Unpaired = "Unpaired",
+    PairingProgress = "PairingProgress",
+    PairingConfirmation = "PairingConfirmation",
+    PairingSuccessful = "PairingSuccessful",
+    PairingFailed = "PairingFailed",
+    Paired = "Paired",
+    PairedAndDisconnected = "PairedAndDisconnected",
 }
 
 export enum EEftposTransactionOutcomeCardType {
@@ -119,6 +153,8 @@ export enum EPaymentModalState {
     CashResult,
     UberEatsResult,
     MenulogResult,
+    DoordashResult,
+    DelivereasyResult,
     PayLater,
     Park,
     ThirdPartyIntegrationAwaitingResponse,
@@ -214,10 +250,15 @@ interface ITyroTransactionCompleteCallback {
     }[];
 }
 
-export interface IEftposQuestion {
+export interface ITyroEftposQuestion {
     text: string;
     options: string[];
     answerCallback: (answer: string) => void;
+}
+
+export interface IMX51EftposQuestion {
+    receipt: string;
+    answerCallback: (accepted: boolean) => void;
 }
 
 export enum EOrderType {
@@ -237,6 +278,13 @@ export enum EEftposProvider {
     VERIFONE = "VERIFONE",
     WINDCAVE = "WINDCAVE",
     TYRO = "TYRO",
+    MX51 = "MX51",
+}
+
+export enum ECustomCustomerFieldType {
+    STRING = "STRING",
+    NUMBER = "NUMBER",
+    DROPDOWN = "DROPDOWN",
 }
 
 export interface ICustomerInformation {
@@ -244,6 +292,11 @@ export interface ICustomerInformation {
     email: string;
     phoneNumber: string;
     signatureBase64: string;
+    customFields: {
+        label: string;
+        value: string;
+        type: ECustomCustomerFieldType;
+    }[];
 }
 
 export interface ICartItemQuantitiesById {
@@ -327,6 +380,8 @@ export interface ICartPaymentAmounts {
     online: number;
     uberEats: number;
     menulog: number;
+    doordash: number;
+    delivereasy: number;
 }
 
 export interface ICartPayment {
@@ -371,6 +426,13 @@ export interface IOrderReceipt {
         email: string | null;
         phoneNumber: string | null;
         signatureBase64: string | null;
+        customFields:
+            | {
+                  label: string | null;
+                  value: string | null;
+                  type: ECustomCustomerFieldType | null;
+              }[]
+            | null;
     } | null;
     notes: string | null;
     products: ICartProduct[];

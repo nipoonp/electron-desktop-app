@@ -42,7 +42,8 @@ import {
     ERegisterType,
     EEftposTransactionOutcomeCardType,
     EOrderType,
-    IEftposQuestion,
+    ITyroEftposQuestion,
+    IMX51EftposQuestion,
 } from "../../model/model";
 import { useUser } from "../../context/user-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -80,6 +81,7 @@ import "./checkout.scss";
 import axios from "axios";
 import { R18MessageModal } from "../modals/r18MessageModal";
 import { useTyro } from "../../context/tyro-context";
+import { useMX51 } from "../../context/mx51-context";
 
 const logger = new Logger("checkout");
 
@@ -141,6 +143,7 @@ export const Checkout = () => {
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
     const { createTransaction: windcaveCreateTransaction } = useWindcave();
     const { createTransaction: tyroCreateTransaction, cancelTransaction: tyroCancelTransaction } = useTyro();
+    const { createTransaction: mx51CreateTransaction, cancelTransaction: mx51CancelTransaction } = useMX51();
     const [isScrollable, setIsScrollable] = useState(false);
     const [createOrderMutation] = useMutation(CREATE_ORDER, {
         update: (proxy, mutationResult) => {
@@ -171,7 +174,8 @@ export const Checkout = () => {
     const [paymentModalState, setPaymentModalState] = useState<EPaymentModalState>(EPaymentModalState.None);
 
     const [eftposTransactionProcessMessage, setEftposTransactionProcessMessage] = useState<string | null>(null);
-    const [eftposTransactionProcessQuestion, setEftposTransactionProcessQuestion] = useState<IEftposQuestion | null>(null);
+    const [eftposTransactionProcessQuestion, setEftposTransactionProcessQuestion] = useState<ITyroEftposQuestion | null>(null);
+    const [eftposSignatureRequiredQuestion, setEftposSignatureRequiredQuestion] = useState<IMX51EftposQuestion | null>(null);
     const [eftposTransactionOutcome, setEftposTransactionOutcome] = useState<IEftposTransactionOutcome | null>(null);
     const [cashTransactionChangeAmount, setCashTransactionChangeAmount] = useState<number | null>(null);
 
@@ -451,6 +455,7 @@ export const Checkout = () => {
             if (register.requestCustomerInformation.email && (!customerInformation || !customerInformation.email)) invalid = true;
             if (register.requestCustomerInformation.phoneNumber && (!customerInformation || !customerInformation.phoneNumber)) invalid = true;
             if (register.requestCustomerInformation.signature && (!customerInformation || !customerInformation.signatureBase64)) invalid = true;
+            if (register.requestCustomerInformation.customFields && (!customerInformation || !customerInformation.customFields)) invalid = true;
             //    if(register.) orderScheduledAt
 
             if (invalid) {
@@ -480,11 +485,11 @@ export const Checkout = () => {
     };
 
     const onClosePaymentModal = () => {
-        if (isPOS) {
-            navigate(`${restaurantPath}/${restaurant.id}`);
-        } else {
-            setShowPaymentModal(false);
-        }
+        // if (isPOS) {
+        //     navigate(`${restaurantPath}/${restaurant.id}`);
+        // } else {
+        setShowPaymentModal(false);
+        // }
     };
 
     const onCancelPayment = () => {
@@ -575,6 +580,11 @@ export const Checkout = () => {
                           email: customerInformation.email,
                           phoneNumber: customerInformation.phoneNumber,
                           signatureBase64: customerInformation.signatureBase64,
+                          customFields: customerInformation.customFields.map((field) => ({
+                              label: field.label,
+                              value: field.value,
+                              type: field.type,
+                          })),
                       }
                     : null,
                 notes: order.notes,
@@ -802,6 +812,11 @@ export const Checkout = () => {
                           email: customerInformation.email,
                           phoneNumber: customerInformation.phoneNumber,
                           signature: signatureS3Object,
+                          customFields: customerInformation.customFields.map((field) => ({
+                              label: field.label,
+                              value: field.value,
+                              type: field.type,
+                          })),
                       }
                     : null,
                 notes: notes,
@@ -848,6 +863,7 @@ export const Checkout = () => {
                     paid: paid,
                     type: orderType ? orderType : register.availableOrderTypes[0],
                     number: orderNumber,
+                    covers: orderType === EOrderType.DINEIN ? covers : undefined,
                     table: tableNumber,
                     buzzer: buzzerNumber,
                     orderScheduledAt: orderScheduledAt,
@@ -857,6 +873,11 @@ export const Checkout = () => {
                               email: customerInformation.email,
                               phoneNumber: customerInformation.phoneNumber,
                               signature: signatureS3Object,
+                              customFields: customerInformation.customFields.map((field) => ({
+                                  label: field.label,
+                                  value: field.value,
+                                  type: field.type,
+                              })),
                           }
                         : null,
                     notes: notes,
@@ -1017,7 +1038,7 @@ export const Checkout = () => {
                 );
             } else if (register.eftposProvider == EEftposProvider.TYRO) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
-                const setEftposQuestion = (question: IEftposQuestion) => setEftposTransactionProcessQuestion(question);
+                const setEftposQuestion = (question: ITyroEftposQuestion) => setEftposTransactionProcessQuestion(question);
 
                 outcome = await tyroCreateTransaction(
                     amount.toString(),
@@ -1026,6 +1047,17 @@ export const Checkout = () => {
                     setEftposMessage,
                     setEftposQuestion
                 );
+            } else if (register.eftposProvider == EEftposProvider.MX51) {
+                const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
+                const setCustomerSignature = (question: IMX51EftposQuestion | null) => {
+                    if (isPOS) {
+                        setEftposSignatureRequiredQuestion(question);
+                    } else {
+                        question?.answerCallback(false);
+                    }
+                };
+
+                outcome = await mx51CreateTransaction(amount, 0, 0, setEftposMessage, setCustomerSignature);
             }
 
             if (!outcome) throw "Invalid Eftpos Transaction outcome.";
@@ -1060,10 +1092,13 @@ export const Checkout = () => {
         if (register.eftposProvider == EEftposProvider.SMARTPAY) {
             //Not implemented
         } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
+            //Not implemented
         } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
             //Not implemented
         } else if (register.eftposProvider == EEftposProvider.TYRO) {
             tyroCancelTransaction();
+        } else if (register.eftposProvider == EEftposProvider.MX51) {
+            mx51CancelTransaction();
         }
     };
 
@@ -1225,6 +1260,60 @@ export const Checkout = () => {
         }
     };
 
+    const onConfirmDoordashTransaction = async (amount: number) => {
+        try {
+            const nonDoordashPayments = paidSoFar - paymentAmounts.doordash;
+            const newDoordashPaymentAmounts = paymentAmounts.doordash + amount;
+            const newTotalPaymentAmounts = nonDoordashPayments + newDoordashPaymentAmounts;
+
+            const newPaymentAmounts: ICartPaymentAmounts = {
+                ...paymentAmounts,
+                doordash: newTotalPaymentAmounts >= subTotal ? subTotal - nonDoordashPayments : newDoordashPaymentAmounts, //Cannot pay more than subTotal amount
+            };
+            const newPayments: ICartPayment[] = [...payments, { type: "DOORDASH", amount: amount }];
+
+            setPaymentAmounts(newPaymentAmounts);
+            setPayments(newPayments);
+
+            //If paid for everything
+            if (newTotalPaymentAmounts >= subTotal) {
+                //Passing paymentAmounts, payments via params so we send the most updated values
+                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.DoordashResult);
+            }
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
+    const onConfirmDelivereasyTransaction = async (amount: number) => {
+        try {
+            const nonDelivereasyPayments = paidSoFar - paymentAmounts.delivereasy;
+            const newDelivereasyPaymentAmounts = paymentAmounts.delivereasy + amount;
+            const newTotalPaymentAmounts = nonDelivereasyPayments + newDelivereasyPaymentAmounts;
+
+            const newPaymentAmounts: ICartPaymentAmounts = {
+                ...paymentAmounts,
+                delivereasy: newTotalPaymentAmounts >= subTotal ? subTotal - nonDelivereasyPayments : newDelivereasyPaymentAmounts, //Cannot pay more than subTotal amount
+            };
+            const newPayments: ICartPayment[] = [...payments, { type: "DELIVEREASY", amount: amount }];
+
+            setPaymentAmounts(newPaymentAmounts);
+            setPayments(newPayments);
+
+            //If paid for everything
+            if (newTotalPaymentAmounts >= subTotal) {
+                //Passing paymentAmounts, payments via params so we send the most updated values
+                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.DelivereasyResult);
+            }
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
     const onContinueToNextOrder = () => {
         clearTransactionCompleteTimeout();
     };
@@ -1242,6 +1331,8 @@ export const Checkout = () => {
             online: 0,
             uberEats: 0,
             menulog: 0,
+            doordash: 0,
+            delivereasy: 0,
         };
         const newPayments: ICartPayment[] = [];
 
@@ -1263,6 +1354,8 @@ export const Checkout = () => {
             online: 0,
             uberEats: 0,
             menulog: 0,
+            doordash: 0,
+            delivereasy: 0,
         };
         const newPayments: ICartPayment[] = [];
 
@@ -1475,6 +1568,7 @@ export const Checkout = () => {
                         paymentModalState={paymentModalState}
                         eftposTransactionProcessMessage={eftposTransactionProcessMessage}
                         eftposTransactionProcessQuestion={eftposTransactionProcessQuestion}
+                        eftposSignatureRequiredQuestion={eftposSignatureRequiredQuestion}
                         eftposTransactionOutcome={eftposTransactionOutcome}
                         cashTransactionChangeAmount={cashTransactionChangeAmount}
                         onPrintCustomerReceipt={() => createdOrder.current && onPrintCustomerReceipt(createdOrder.current)}
@@ -1489,6 +1583,8 @@ export const Checkout = () => {
                         onConfirmCashTransaction={onConfirmCashTransaction}
                         onConfirmUberEatsTransaction={onConfirmUberEatsTransaction}
                         onConfirmMenulogTransaction={onConfirmMenulogTransaction}
+                        onConfirmDoordashTransaction={onConfirmDoordashTransaction}
+                        onConfirmDelivereasyTransaction={onConfirmDelivereasyTransaction}
                         onContinueToNextPayment={onContinueToNextPayment}
                         onCancelPayment={onCancelPayment}
                         onCancelOrder={onCancelOrder}
@@ -1603,6 +1699,11 @@ export const Checkout = () => {
         <div className="checkout-customer-details">
             <div className="h3">
                 Customer Details: {`${customerInformation?.firstName} ${customerInformation?.email} ${customerInformation?.phoneNumber}`}
+                {customerInformation?.customFields.map((customField) => (
+                    <div>
+                        {customField.label}: {customField.value}
+                    </div>
+                ))}
             </div>
             <Link onClick={onUpdateCustomerInformation}>Change</Link>
         </div>
@@ -1695,7 +1796,7 @@ export const Checkout = () => {
             ) : (
                 <></>
             )}
-            <div className={`h1 text-center ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
+            <div className={`h1 text-center checkout-total-price ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
             <div className={`${isPOS ? "mb-0" : "mb-4"}`}>
                 <div className="checkout-buttons-container">
                     {!isPOS && (
