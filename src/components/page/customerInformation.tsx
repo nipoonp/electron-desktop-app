@@ -160,19 +160,6 @@ export default () => {
                                 <Input type="number" onChange={onChangePhoneNumber} value={phoneNumber} error={phoneNumberError ? "Required" : ""} />
                             </>
                         )}
-                        {register.requestCustomerInformation && register.requestCustomerInformation.signature && (
-                            <>
-                                <div className="h2 mt-2 mb-2">Signature</div>
-                                <SignatureCanvas
-                                    ref={signatureCanvasRef}
-                                    canvasProps={{ className: `customer-signature-canvas ${signatureError ? "error" : ""}` }}
-                                />
-                                {signatureError && <div className="text-error mt-2 mb-2">{signatureError ? "Required" : ""}</div>}
-                                <Button className="customer-signature-clear-button" onClick={onClearSignature}>
-                                    Clear
-                                </Button>
-                            </>
-                        )}
                         {register.requestCustomerInformation &&
                             register.requestCustomerInformation.customFields?.map((field, index) => (
                                 <>
@@ -199,6 +186,19 @@ export default () => {
                                     )}
                                 </>
                             ))}
+                        {register.requestCustomerInformation && register.requestCustomerInformation.signature && (
+                            <>
+                                <div className="h2 mt-2 mb-2">Signature</div>
+                                <SignatureCanvas
+                                    ref={signatureCanvasRef}
+                                    canvasProps={{ className: `customer-signature-canvas ${signatureError ? "error" : ""}` }}
+                                />
+                                {signatureError && <div className="text-error mt-2 mb-2">{signatureError ? "Required" : ""}</div>}
+                                <Button className="customer-signature-clear-button" onClick={onClearSignature}>
+                                    Clear
+                                </Button>
+                            </>
+                        )}
                     </div>
                     <Button onClick={onNext}>Next</Button>
                 </div>
