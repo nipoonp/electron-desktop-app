@@ -73,6 +73,8 @@ const Restaurant = () => {
     const userOnPageDuration: React.MutableRefObject<number> = useRef(1);
     const [isScrollable, setIsScrollable] = useState(false);
 
+    const [categoryViewDisplay, setCategoryViewDisplay] = useState(true);
+
     useEffect(() => {
         const checkDivScrollable = () => {
             const scrollableDiv = document.getElementById("productsWrapperScroll");
@@ -495,6 +497,7 @@ const Restaurant = () => {
                 className={`category ${isSelected ? "selected" : ""} ${isValid ? "" : "sold-out"}`}
                 onClick={() => {
                     isValid && onCategorySelected(category);
+                    isValid && setCategoryViewDisplay(false);
                 }}
             >
                 {!isValid ? (
@@ -704,22 +707,47 @@ const Restaurant = () => {
 
     const restaurantFooter = (
         <>
-            <div className="total-container">
-                <div className="total-wrapper mb-2">
-                    <CachedImage
-                        className="shopping-bag-icon mr-2"
-                        url={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.png`}
-                        alt="shopping-bag-icon"
-                    />
-                    <div className="h2">Total: ${convertCentsToDollars(subTotal)}</div>
-                </div>
-                <Button className="large" disabled={!products || products.length == 0} onClick={onClickCart}>
-                    View My Order
-                </Button>
-            </div>
-            <Button className="cancel-button" onClick={onCancelOrder}>
-                Cancel Order
-            </Button>
+            {categoryViewDisplay ? (
+                <>
+                    <div className="total-container">
+                        <div className="total-wrapper mb-2">
+                            <CachedImage
+                                className="shopping-bag-icon mr-2"
+                                url={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.png`}
+                                alt="shopping-bag-icon"
+                            />
+                            <div className="h2">Total: ${convertCentsToDollars(subTotal)}</div>
+                        </div>
+                        <Button className="large" disabled={!products || products.length == 0} onClick={onClickCart}>
+                            View My Order
+                        </Button>
+                    </div>
+                    <Button className="cancel-button" onClick={onCancelOrder}>
+                        Cancel Order
+                    </Button>
+                </>
+            ) : (
+                <>
+                    {/* <div className="total-container"> */}
+                    {/* <div className="total-wrapper mb-2">
+                            <CachedImage
+                                className="shopping-bag-icon mr-2"
+                                url={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.png`}
+                                alt="shopping-bag-icon"
+                            />
+                            <div className="h2">Total: ${convertCentsToDollars(subTotal)}</div>
+                        </div> */}
+                    {/* <Button className="large" disabled={!products || products.length == 0} onClick={onClickCart}>
+                            Go Back
+                        </Button> */}
+                    {/* </div> */}
+                    {/* <Button className="cancel-button" onClick={onCancelOrder}>
+                        Cancel Order
+                    </Button> */}
+                    <div></div>
+                    <Button onClick={() => setCategoryViewDisplay(true)}>GO BACK</Button>
+                </>
+            )}
         </>
     );
 
@@ -729,30 +757,34 @@ const Restaurant = () => {
             scrollableDiv.scrollTop += 100; // You can adjust the value as needed
         }
     };
+
     return (
         <>
             <PageWrapper>
                 <div className="restaurant-wrapper">
                     <div className="restaurant">
                         <div className="restaurant-container">
-                            <div className="categories-wrapper">
-                                {restaurant.logo && <RestaurantLogo image={restaurant.logo} />}
-                                {menuSearchProduct}
-                                {register.enableSkuScanner && menuSkuSearchProduct}
-                                {menuMostPopularCategory}
-                                {menuCategories}
-                            </div>
-                            <div className="products-wrapper" id="productsWrapperScroll">
-                                {menuMostPopularProducts}
-                                {menuProducts}
-                                {isScrollable ? (
-                                    <div className={register.type === "POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
-                                        <div className={`arrow-container`}>
-                                            <FiArrowDownCircle size="46" />
+                            {categoryViewDisplay ? (
+                                <div className="categories-wrapper">
+                                    {restaurant.logo && <RestaurantLogo image={restaurant.logo} />}
+                                    {/* {menuSearchProduct} */}
+                                    {/* {register.enableSkuScanner && menuSkuSearchProduct} */}
+                                    {/* {menuMostPopularCategory} */}
+                                    {menuCategories}
+                                </div>
+                            ) : (
+                                <div className="products-wrapper" id="productsWrapperScroll">
+                                    {menuMostPopularProducts}
+                                    {menuProducts}
+                                    {isScrollable ? (
+                                        <div className={register.type === "POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
+                                            <div className={`arrow-container`}>
+                                                <FiArrowDownCircle size="46" />
+                                            </div>
                                         </div>
-                                    </div>
-                                ) : null}
-                            </div>
+                                    ) : null}
+                                </div>
+                            )}
                         </div>
                         {!isPOS && <div className="footer-wrapper">{restaurantFooter}</div>}
                     </div>
