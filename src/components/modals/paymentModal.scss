@@ -47,7 +47,8 @@
 
     .payment-modal-payment-buttons-wrapper {
         .payment-modal-payment-button-wrapper {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
             gap: 16px;
 
             .payment-modal-cash-button {
@@ -60,7 +61,6 @@
 
             .payment-modal-uber-eats-button {
                 width: 300px;
-                margin-top: 16px;
                 border: 1px solid #000000;
                 color: #000000;
                 background-color: #ffffff;
@@ -68,7 +68,20 @@
 
             .payment-modal-menulog-button {
                 width: 300px;
-                margin-top: 16px;
+                border: 1px solid #000000;
+                color: #000000;
+                background-color: #ffffff;
+            }
+
+            .payment-modal-doordash-button {
+                width: 300px;
+                border: 1px solid #000000;
+                color: #000000;
+                background-color: #ffffff;
+            }
+
+            .payment-modal-delivereasy-button {
+                width: 300px;
                 border: 1px solid #000000;
                 color: #000000;
                 background-color: #ffffff;
