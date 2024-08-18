@@ -32,8 +32,8 @@ export const ItemAddedUpdatedModal = (props: { isOpen: boolean; onClose: () => v
                 />
                 <div className="item-added-updated-image-override"></div>
                 <div className="h2 mb-3 item-added-updated-text">Item {props.isProductUpdate ? "Updated" : "Added"}</div>
-                <div className="mb-3">Your total has been updated</div>
-                <div className="h2">${convertCentsToDollars(subTotal)}</div>
+                {/* <div className="mb-3">Your total has been updated</div>
+                <div className="h2">${convertCentsToDollars(subTotal)}</div> */}
             </div>
         </>
     );
