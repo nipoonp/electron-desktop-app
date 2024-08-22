@@ -59,8 +59,10 @@ const logout = () => {
     logger.info("Logging out...");
     // window.analytics.reset();
     return Auth.signOut().then((data) => {
+        // const mx51Secrets = window.localStorage.getItem("secrets");
         // need to clear cognitoIdentityId in localstorage after signing out
         localStorage.clear();
+        // if (mx51Secrets) window.localStorage.setItem("secrets", mx51Secrets);
     });
 };
 

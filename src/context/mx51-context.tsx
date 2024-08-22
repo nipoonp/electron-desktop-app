@@ -222,7 +222,7 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
             receiptToSign.current = e.detail.SignatureRequiredMessage._receiptToSign;
         } else if (e.detail.AwaitingPhoneForAuth) {
             // Display the MOTO phone authentication UI
-        } else if (e.detail.Finished) {
+        } else if (e.detail.Finished && e.detail.Response) {
             if (e.detail.Response.Data.merchant_receipt && !e.detail.Response.Data.merchant_receipt_printed) {
                 // Print and/or store the merchant_receipt
             }

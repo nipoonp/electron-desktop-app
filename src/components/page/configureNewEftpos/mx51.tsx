@@ -10,6 +10,23 @@ import { useMutation } from "@apollo/client";
 import { UPDATE_REGISTER_TYRO } from "../../../graphql/customMutations";
 import { Select } from "../../../tabin/components/select";
 import { Checkbox } from "../../../tabin/components/checkbox";
+import * as yup from "yup";
+
+const posIdSchema = yup
+    .string()
+    .matches(/^[a-zA-Z0-9]*$/, "POS ID can only contain alphanumeric characters")
+    .max(16, "POS ID cannot be longer than 16 characters")
+    .required("POS ID is required");
+
+const serialNumberSchema = yup
+    .string()
+    .matches(/^[a-zA-Z0-9-]*$/, "Serial Number can only contain alphanumeric characters and hyphens")
+    .required("Serial Number is required");
+
+const eftposAddressSchema = yup
+    .string()
+    .matches(/^[a-zA-Z0-9.]*$/, "Eftpos Address can only contain alphanumeric characters and periods")
+    .required("Eftpos Address is required");
 
 export const MX51 = () => {
     const { register } = useRegister();
@@ -21,6 +38,9 @@ export const MX51 = () => {
         }[]
     >([]);
     const [showSpinner, setShowSpinner] = useState(false);
+    const [posIdError, setPOSIdError] = useState("");
+    const [serialNumberError, setSerialNumberError] = useState("");
+    const [eftposAddressError, setEftposAddressError] = useState("");
 
     const {
         pairingStatus,
@@ -37,7 +57,36 @@ export const MX51 = () => {
     const doPairing = async () => {
         try {
             setShowSpinner(true);
-            await sendPairingRequest({ ...pairingInput, posId: register ? register.id.replace(/-/g, "").substring(0, 16) : "" });
+
+            let fieldsValid = true;
+
+            try {
+                await posIdSchema.validate(pairingInput.posId);
+                setPOSIdError("");
+            } catch (e) {
+                setPOSIdError(e.errors[0]);
+                fieldsValid = false;
+            }
+
+            try {
+                await serialNumberSchema.validate(pairingInput.serialNumber);
+                setSerialNumberError("");
+            } catch (e) {
+                setSerialNumberError(e.errors[0]);
+                fieldsValid = false;
+            }
+
+            try {
+                await eftposAddressSchema.validate(pairingInput.eftposAddress);
+                setEftposAddressError("");
+            } catch (e) {
+                setEftposAddressError(e.errors[0]);
+                fieldsValid = false;
+            }
+
+            if (fieldsValid) {
+                await sendPairingRequest({ ...pairingInput, posId: register ? register.id.replace(/-/g, "").substring(0, 16) : "" });
+            }
 
             // alert("Pairing complete! Your device should now show it is paired.");
         } catch (errorMessage) {
@@ -144,40 +193,44 @@ export const MX51 = () => {
                             Get Payment Providers
                         </Button>
                         <Input
-                            className="mb-2"
                             label="POS ID"
                             name="posId"
                             value={pairingInput.posId ?? ""}
                             onChange={onChangePOSId}
                             placeholder="123456789"
+                            error={posIdError}
                         />
+                        <div className="mb-2"></div>
                         <Input
-                            className="mb-2"
                             label="Eftpos Serial Number"
                             name="eftposSerialNumber"
                             value={pairingInput.serialNumber ?? ""}
                             onChange={onChangeEftposSerialNumber}
                             placeholder="123-456-789"
+                            error={serialNumberError}
                         />
+                        <div className="mb-2"></div>
                         <Input
-                            className="mb-2"
                             label="Eftpos Address"
                             name="eftposAddress"
                             value={pairingInput.eftposAddress ?? ""}
                             onChange={onChangeEftposAddress}
                             placeholder="192.168.0.1"
+                            error={eftposAddressError}
                         />
-                        <Checkbox className="mb-2" onCheck={onCheckTestMode} onUnCheck={onUnCheckTestMode} checked={pairingInput.testMode}>
+                        <div className="mb-2"></div>
+                        <Checkbox onCheck={onCheckTestMode} onUnCheck={onUnCheckTestMode} checked={pairingInput.testMode}>
                             Test mode
                         </Checkbox>
+                        <div className="mb-2"></div>
                         <Checkbox
-                            className="mb-2"
                             onCheck={onCheckAutoAddressResolution}
                             onUnCheck={onUnCheckAutoAddressResolution}
                             checked={pairingInput.autoAddressResolution}
                         >
                             Auto address mode
                         </Checkbox>
+                        <div className="mb-2"></div>
                         <div className="mb-4">{pairingStatus && <div>{pairingStatus}</div>}</div>
                         <div className="mb-4">{pairingMessage && <div>{pairingMessage}</div>}</div>
                         {pairingStatus === EMX51PairingStatus.Unpaired ? (
