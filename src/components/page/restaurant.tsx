@@ -45,7 +45,7 @@ const Restaurant = () => {
     const navigate = useNavigate();
     const { showAlert } = useAlert();
 
-    const { payments, clearCart, orderType, subTotal, products, cartProductQuantitiesById, addProduct, setOrderType } = useCart();
+    const { payments, clearCart, orderType, subTotal, products, cartProductQuantitiesById, addProduct, setProducts, setOrderType } = useCart();
     const { setRestaurant, menuCategories: restaurantCategories, menuProducts: restaurantProducts } = useRestaurant();
     const { register, isPOS } = useRegister();
     // query
@@ -174,6 +174,55 @@ const Restaurant = () => {
                 const selectedCategoryItem = restaurantCategories[register.defaultCategoryView];
 
                 if (selectedCategoryItem) setSelectedCategory(selectedCategoryItem);
+            }
+
+            if (restaurantProducts && register && register.preSelectedProducts) {
+                const cartProducts: ICartProduct[] = [];
+
+                register.preSelectedProducts.forEach((preSelectedProduct) => {
+                    const product = restaurantProducts[preSelectedProduct];
+
+                    if (product) {
+                        const productToOrder: ICartProduct = {
+                            preSelectedProduct: true,
+                            id: product.id,
+                            name: product.name,
+                            kitchenName: product.kitchenName,
+                            price: product.price,
+                            totalPrice: product.price,
+                            discount: 0,
+                            isAgeRescricted: false,
+                            image: product.image
+                                ? {
+                                      key: product.image.key,
+                                      region: product.image.region,
+                                      bucket: product.image.bucket,
+                                      identityPoolId: product.image.identityPoolId,
+                                  }
+                                : null,
+                            quantity: 1,
+                            notes: null,
+                            category: {
+                                id: product.categories.items[0].category.id,
+                                name: product.categories.items[0].category.name,
+                                kitchenName: product.categories.items[0].category.kitchenName,
+                                image: product.categories.items[0].category.image
+                                    ? {
+                                          key: product.categories.items[0].category.image.key,
+                                          region: product.categories.items[0].category.image.region,
+                                          bucket: product.categories.items[0].category.image.bucket,
+                                          identityPoolId: product.categories.items[0].category.image.identityPoolId,
+                                      }
+                                    : null,
+                            },
+                            modifierGroups: [],
+                        };
+
+                        cartProducts.push(productToOrder);
+                    }
+                });
+
+                if (cartProducts) setProducts(cartProducts);
             }
 
             if (selectedProductId) {
