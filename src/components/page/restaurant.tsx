@@ -184,7 +184,7 @@ const Restaurant = () => {
 
                     if (product) {
                         const productToOrder: ICartProduct = {
-                            preSelectedProduct: true,
+                            isPreSelectedProduct: true,
                             id: product.id,
                             name: product.name,
                             kitchenName: product.kitchenName,

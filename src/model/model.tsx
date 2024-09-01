@@ -315,7 +315,7 @@ export interface ICartItemQuantitiesByIdValue {
 //ICartProduct is used to pass into the DB. So its good to have it as ? undefined rather than null. Null is a type in dynamoDB so it will create a field with type Null.
 export interface ICartProduct {
     index?: number; //index is for promos
-    preSelectedProduct?: boolean; //this is so that we cannot remove this product if preSelected
+    isPreSelectedProduct?: boolean; //this is so that we cannot remove this product if preSelected
     id: string;
     name: string;
     kitchenName: string | null;
