@@ -32,6 +32,7 @@ export interface IS3Object {
 
 export interface ICartProduct {
     index?: number; //index is for promos
+    isPreSelectedProduct?: boolean; //this is so that we cannot remove this product if preSelected
     id: string;
     name: string;
     kitchenName: string | null;

@@ -156,7 +156,11 @@ const OrderItem = (props: {
         </div>
     );
 
-    const quantityStepper = <Stepper count={parseInt(quantity)} min={1} onUpdate={(count: number) => onChangeStepperQuantity(count)} size={32} />;
+    const quantityStepper = !product.isPreSelectedProduct ? (
+        <Stepper count={parseInt(quantity, 10)} min={1} onUpdate={(count: number) => onChangeStepperQuantity(count)} size={32} />
+    ) : (
+        <div></div>
+    );
 
     return (
         <>
@@ -182,15 +186,18 @@ const OrderItem = (props: {
                     name={product.name}
                     quantity={product.quantity}
                     notes={product.notes}
+                    isPreSelectedProduct={product.isPreSelectedProduct}
                     modifierGroups={product.modifierGroups}
                     onEditProduct={() => onEditProduct(product, displayOrder)}
                 />
                 <div className="text-center">
                     <div className="h2 text-primary mb-2">${displayPrice}</div>
                     {product.discount ? <div className="h3 text-primary mb-2 original-price">${originalPrice}</div> : <></>}
-                    <Button className="remove-button" onClick={() => onRemoveProduct(displayOrder)}>
-                        Remove
-                    </Button>
+                    {!props.product.isPreSelectedProduct && (
+                        <Button className="remove-button" onClick={() => onRemoveProduct(displayOrder)}>
+                            Remove
+                        </Button>
+                    )}
                 </div>
             </div>
             {isPOS && isOptionsExpanded && expandOptions}
@@ -202,6 +209,7 @@ const OrderItemDetails = (props: {
     name: string;
     quantity: number;
     notes: string | null;
+    isPreSelectedProduct?: boolean;
     modifierGroups: ICartModifierGroup[];
     onEditProduct: () => void;
 }) => {
@@ -227,9 +235,11 @@ const OrderItemDetails = (props: {
 
     const editButton = (
         <>
-            <Button className="edit-button" onClick={() => onEditProduct()}>
-                Edit
-            </Button>
+            {!props.isPreSelectedProduct && (
+                <Button className="edit-button" onClick={() => onEditProduct()}>
+                    Edit
+                </Button>
+            )}
         </>
     );
 

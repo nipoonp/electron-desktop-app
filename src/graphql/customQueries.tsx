@@ -138,6 +138,7 @@ export const GET_USER = gql`
                             orderNumberStart
                             surchargePercentage
                             defaultCategoryView
+                            preSelectedProducts
                             customStyleSheet {
                                 key
                                 bucket
@@ -421,6 +422,7 @@ export const GET_RESTAURANT = gql`
                     orderNumberStart
                     surchargePercentage
                     defaultCategoryView
+                    preSelectedProducts
                     customStyleSheet {
                         key
                         bucket
@@ -1062,6 +1064,7 @@ export interface IGET_RESTAURANT_REGISTER {
     orderNumberStart: number;
     surchargePercentage: number;
     defaultCategoryView: string;
+    preSelectedProducts: string[];
     customStyleSheet?: IS3Object;
     printers: {
         items: IGET_RESTAURANT_REGISTER_PRINTER[];
