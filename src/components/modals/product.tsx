@@ -1411,13 +1411,23 @@ const Modifier = (props: {
 
     const getModifierStepperMax = () => {
         if (modifierQuantityAvailable) {
-            let maxSelectable = Math.min(choiceDuplicate - modifiersSelectedCount, modifierQuantityAvailable);
-
-            if (maxSelectable < modifierQuantityAvailable) {
-                maxSelectable = modifierQuantityAvailable;
-            }
+            let maxSelectable = Math.min(choiceDuplicate, modifierQuantityAvailable);
 
             return Math.floor(maxSelectable / productQuantity);
+
+            // let maxSelectable = Math.min(choiceDuplicate - modifiersSelectedCount, modifierQuantityAvailable);
+            // console.log("xxx...", { choiceDuplicate, modifiersSelectedCount, modifierQuantityAvailable, maxSelectable });
+
+            // console.log("xxx...maxSelectable before", maxSelectable);
+
+            // if (maxSelectable < modifierQuantityAvailable) {
+            //     maxSelectable = modifierQuantityAvailable;
+            // }
+
+            // console.log("xxx...maxSelectable after", maxSelectable);
+            // console.log("xxx...Math.floor(maxSelectable / productQuantity)", Math.floor(maxSelectable / productQuantity));
+
+            // return Math.floor(maxSelectable / productQuantity);
         } else {
             return maxReached ? stepperCount : choiceDuplicate;
         }
@@ -1432,6 +1442,9 @@ const Modifier = (props: {
             return stepperCount;
         }
     };
+
+    console.log("yyy...getStepperCount()", getStepperCount());
+    console.log("yyy...getModifierStepperMax()", getModifierStepperMax());
 
     const stepper = (
         <Stepper
