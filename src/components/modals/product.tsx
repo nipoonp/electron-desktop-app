@@ -1411,13 +1411,17 @@ const Modifier = (props: {
 
     const getModifierStepperMax = () => {
         if (modifierQuantityAvailable) {
-            let maxSelectable = Math.min(choiceDuplicate - modifiersSelectedCount, modifierQuantityAvailable);
-
-            if (maxSelectable < modifierQuantityAvailable) {
-                maxSelectable = modifierQuantityAvailable;
-            }
+            let maxSelectable = Math.min(choiceDuplicate, modifierQuantityAvailable);
 
             return Math.floor(maxSelectable / productQuantity);
+
+            // let maxSelectable = Math.min(choiceDuplicate - modifiersSelectedCount, modifierQuantityAvailable);
+
+            // if (maxSelectable < modifierQuantityAvailable) {
+            //     maxSelectable = modifierQuantityAvailable;
+            // }
+
+            // return Math.floor(maxSelectable / productQuantity);
         } else {
             return maxReached ? stepperCount : choiceDuplicate;
         }
