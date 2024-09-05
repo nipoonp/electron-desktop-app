@@ -455,7 +455,8 @@ export const Checkout = () => {
             if (register.requestCustomerInformation.email && (!customerInformation || !customerInformation.email)) invalid = true;
             if (register.requestCustomerInformation.phoneNumber && (!customerInformation || !customerInformation.phoneNumber)) invalid = true;
             if (register.requestCustomerInformation.signature && (!customerInformation || !customerInformation.signatureBase64)) invalid = true;
-            if (register.requestCustomerInformation.customFields && (!customerInformation || !customerInformation.customFields)) invalid = true;
+            if (register.requestCustomerInformation.customFields?.length && (!customerInformation || !customerInformation.customFields.length))
+                invalid = true;
             //    if(register.) orderScheduledAt
 
             if (invalid) {
