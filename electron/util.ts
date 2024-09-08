@@ -15,7 +15,7 @@ import {
 import usbPrinter from "@thiagoelg/node-printer";
 import { format } from "date-fns";
 
-export const taxRate = 0.15;
+export const taxRate = 0.1;
 
 export const calculateTaxAmount = (total: number) => {
     const diff = total / (1 + taxRate);
@@ -350,7 +350,7 @@ export const printCustomerReceipt = async (
     }
 
     printer.tableCustom([
-        { text: "GST (15.00%)", align: "LEFT", width: 0.75 },
+        { text: "GST", align: "LEFT", width: 0.75 },
         { text: `\$${convertCentsToDollars(calculateTaxAmount(order.total))}`, align: "RIGHT", width: 0.25 },
     ]);
     order.discount &&
