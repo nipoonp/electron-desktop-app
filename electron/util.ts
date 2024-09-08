@@ -15,7 +15,7 @@ import {
 import usbPrinter from "@thiagoelg/node-printer";
 import { format } from "date-fns";
 
-export const taxRate = 0.1;
+export const taxRate = 0.15;
 
 export const calculateTaxAmount = (total: number) => {
     const diff = total / (1 + taxRate);
