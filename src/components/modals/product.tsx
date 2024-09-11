@@ -892,7 +892,7 @@ export const ProductModal = (props: {
                 <div className="mt-11" />
                 <div className="product-header">
                     <div className="image-wrapper">
-                        {product.imageUrl ? (
+                        {/* {product.imageUrl ? (
                             <CachedImage url={`${product.imageUrl}`} className="image" alt="product-image" />
                         ) : product.image ? (
                             <>
@@ -902,7 +902,7 @@ export const ProductModal = (props: {
                                     alt="product-image"
                                 />
                             </>
-                        ) : null}
+                        ) : null} */}
                     </div>
                     <div>
                         <div className="h1 mb-4 name">
@@ -1370,13 +1370,13 @@ const Modifier = (props: {
     const modifierChildren = (
         <>
             <div className="modifier-item">
-                {modifier.image && (
+                {/* {modifier.image && (
                     <CachedImage
                         url={`${getCloudFrontDomainName()}/protected/${modifier.image.identityPoolId}/${modifier.image.key}`}
                         className="image mr-3"
                         alt="product-image"
                     />
-                )}
+                )} */}
 
                 {isValid ? (
                     <div>

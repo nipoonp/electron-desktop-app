@@ -40,7 +40,7 @@ export const PageWrapper = (props: IProps) => {
         (state) => {
             // console.log("xxx...state", state.touches, state.elapsedTime);
 
-            if (state.touches === 5 && state.elapsedTime > 500) setShowMenu(true);
+            if (state.touches === 5 && state.elapsedTime > 300) setShowMenu(true);
         },
         { eventOptions: { passive: false } }
     );

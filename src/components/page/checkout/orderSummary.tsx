@@ -11,6 +11,7 @@ import { Input } from "../../../tabin/components/input";
 import "./orderSummary.scss";
 import { CachedImage } from "../../../tabin/components/cachedImage";
 import { getCloudFrontDomainName } from "../../../private/aws-custom";
+import { Link } from "../../../tabin/components/link";
 
 export const OrderSummary = (props: {
     products: ICartProduct[];
@@ -39,7 +40,7 @@ export const OrderSummary = (props: {
                                     onApplyProductDiscount={onApplyProductDiscount}
                                     onRemoveProduct={onRemoveProduct}
                                 />
-                                <div className="separator-6"></div>
+                                <div className="separator-2"></div>
                             </div>
                         );
                     }
@@ -170,7 +171,7 @@ const OrderItem = (props: {
                         {/* {product.imageUrl ? (
                             <CachedImage url={`${product.imageUrl}`} className="image" alt="product-image" />
                         ) : product.image ? ( */}
-                        {product.image ? (
+                        {/* {product.image ? (
                             <>
                                 <CachedImage
                                     className="image"
@@ -178,10 +179,10 @@ const OrderItem = (props: {
                                     alt="product-image"
                                 />
                             </>
-                        ) : null}
+                        ) : null} */}
                     </div>
                 )}
-                {isPOS ? expandOptionsArrow : quantityStepper}
+                {/* {isPOS ? expandOptionsArrow : quantityStepper} */}
                 <OrderItemDetails
                     name={product.name}
                     quantity={product.quantity}
@@ -191,13 +192,9 @@ const OrderItem = (props: {
                     onEditProduct={() => onEditProduct(product, displayOrder)}
                 />
                 <div className="text-center">
-                    <div className="h2 text-primary mb-2">${displayPrice}</div>
+                    <div className="text-bold mb-2">${displayPrice}</div>
                     {product.discount ? <div className="h3 text-primary mb-2 original-price">${originalPrice}</div> : <></>}
-                    {!props.product.isPreSelectedProduct && (
-                        <Button className="remove-button" onClick={() => onRemoveProduct(displayOrder)}>
-                            Remove
-                        </Button>
-                    )}
+                    {!props.product.isPreSelectedProduct && <Link onClick={() => onRemoveProduct(displayOrder)}>Remove</Link>}
                 </div>
             </div>
             {isPOS && isOptionsExpanded && expandOptions}
@@ -247,7 +244,8 @@ const OrderItemDetails = (props: {
 
     const nameDisplay = (
         <div className="name-edit-button">
-            <div className="h2 mr-2">{nameDisplayString}</div> {editButton}
+            {/* <div className="h4 mr-2">{nameDisplayString}</div> {editButton} */}
+            <div className="text-bold">{nameDisplayString}</div>
         </div>
     );
 
@@ -257,9 +255,9 @@ const OrderItemDetails = (props: {
                 <>
                     {!mg.hideForCustomer && (
                         <>
-                            <div className="text-bold mt-3" key={mg.id}>
+                            {/* <div className="text-bold mt-3" key={mg.id}>
                                 {mg.name}
-                            </div>
+                            </div> */}
                             {mg.modifiers.map((m) => (
                                 <>
                                     <div key={m.id} className="mt-1">
@@ -290,7 +288,7 @@ const OrderItemDetails = (props: {
     const notesDisplay = <>{notes && <div className="text-grey">Notes: {notes}</div>}</>;
 
     return (
-        <div className="detail">
+        <div className="detail" onClick={() => onEditProduct()}>
             {nameDisplay}
             {modifiersDisplay}
             {notesDisplay}

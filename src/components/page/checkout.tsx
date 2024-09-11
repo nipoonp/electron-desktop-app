@@ -1616,14 +1616,14 @@ export const Checkout = () => {
                     <ShoppingBasketIcon height={"72px"}></ShoppingBasketIcon>
                 </div>
                 <div className="h1 center mb-3">Empty cart</div>
-                <div className="h3 center mb-6">Show some love and start ordering!</div>
+                {/* <div className="h3 center mb-6">Show some love and start ordering!</div>
                 <Button
                     onClick={() => {
                         navigate(restaurantPath + "/" + restaurant!.id);
                     }}
                 >
                     Back To Menu
-                </Button>
+                </Button> */}
             </div>
         </>
     );
@@ -1641,7 +1641,7 @@ export const Checkout = () => {
 
     const restaurantOrderType = (
         <div className="checkout-order-type mb-2">
-            <div className="h3">Order Type: {orderType}</div>
+            <div className="h4">Order Type: {orderType}</div>
             <Link onClick={onUpdateOrderType}>Change</Link>
         </div>
     );
@@ -1746,16 +1746,16 @@ export const Checkout = () => {
     const order = (
         <>
             <div className={isPOS ? "mt-4" : "mt-10"}></div>
-            {title}
+            {/* {title} */}
             {register && register.availableOrderTypes.length > 1 && restaurantOrderType}
             {buzzerNumber && <div className="mb-2">{restaurantBuzzerNumber}</div>}
             {tableNumber && <div className="mb-2">{restaurantTableNumber}</div>}
             {covers && <div className="mb-2">{restaurantCovers}</div>}
             {customerInformation && <div className="mb-2">{restaurantCustomerInformation}</div>}
             {promotionInformation}
-            <div className="separator-6"></div>
+            {/* <div className="separator-6"></div> */}
             {orderSummary}
-            <div className="restaurant-notes-wrapper">{restaurantNotes}</div>
+            {/* <div className="restaurant-notes-wrapper">{restaurantNotes}</div> */}
             <div className={isPOS ? "mb-4" : "mb-10"}></div>
         </>
     );
@@ -1796,7 +1796,7 @@ export const Checkout = () => {
             ) : (
                 <></>
             )}
-            <div className={`h1 text-center checkout-total-price ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
+            <div className={`h3 text-center checkout-total-price ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
             <div className={`${isPOS ? "mb-0" : "mb-4"}`}>
                 <div className="checkout-buttons-container">
                     {!isPOS && (
@@ -1804,7 +1804,7 @@ export const Checkout = () => {
                             Order More
                         </Button>
                     )}
-                    <Button onClick={onClickOrderButton} className="button large complete-order-button">
+                    <Button onClick={onClickOrderButton} className="button complete-order-button">
                         Complete Order
                     </Button>
                 </div>
@@ -1848,7 +1848,7 @@ export const Checkout = () => {
                     </div>
                     {isPOS && payments.length === 0 && <div>{parkOrderFooter}</div>}
                     {products && products.length > 0 && (
-                        <div className="footer p-4" id="footer">
+                        <div className="footer p-2" id="footer">
                             {checkoutFooter}
                         </div>
                     )}

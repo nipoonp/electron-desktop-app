@@ -495,7 +495,7 @@ const Restaurant = () => {
                         <></>
                     )}
 
-                    {product.imageUrl ? (
+                    {/* {product.imageUrl ? (
                         <CachedImage url={`${product.imageUrl}`} className="image mb-2" alt="product-image" />
                     ) : product.image ? (
                         <>
@@ -505,7 +505,7 @@ const Restaurant = () => {
                                 alt="product-image"
                             />
                         </>
-                    ) : null}
+                    ) : null} */}
 
                     <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
 
@@ -805,11 +805,11 @@ const Restaurant = () => {
                         </div>
                         {!isPOS && <div className="footer-wrapper">{restaurantFooter}</div>}
                     </div>
-                    {products && products.length > 0 && isPOS && (
-                        <div className="restaurant-checkout">
-                            <Checkout />
-                        </div>
-                    )}
+                    {/* {products && products.length > 0 && isPOS && ( */}
+                    <div className="restaurant-checkout">
+                        <Checkout />
+                    </div>
+                    {/* )} */}
                 </div>
                 {modals}
             </PageWrapper>
