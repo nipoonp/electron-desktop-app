@@ -49,6 +49,7 @@ export const CREATE_ORDER = gql`
         $number: String!
         $table: String
         $buzzer: String
+        $covers: Int
         $orderScheduledAt: String
         $customerInformation: OrderCustomerInformationInput
         $notes: String
@@ -58,6 +59,9 @@ export const CREATE_ORDER = gql`
         $total: Int!
         $surcharge: Int
         $orderTypeSurcharge: Int
+        $eftposCardType: EftposCardType
+        $eftposSurcharge: Int
+        $eftposTip: Int
         $discount: Int
         $promotionId: ID
         $promotionType: PromotionType
@@ -82,6 +86,7 @@ export const CREATE_ORDER = gql`
                 number: $number
                 table: $table
                 buzzer: $buzzer
+                covers: $covers
                 orderScheduledAt: $orderScheduledAt
                 customerInformation: $customerInformation
                 notes: $notes
@@ -91,6 +96,9 @@ export const CREATE_ORDER = gql`
                 total: $total
                 surcharge: $surcharge
                 orderTypeSurcharge: $orderTypeSurcharge
+                eftposCardType: $eftposCardType
+                eftposSurcharge: $eftposSurcharge
+                eftposTip: $eftposTip
                 discount: $discount
                 promotionId: $promotionId
                 promotionType: $promotionType
@@ -290,6 +298,16 @@ export const UPDATE_FEEDBACK = gql`
                 rating
                 orderId
             }
+        }
+    }
+`;
+
+export const UPDATE_REGISTER_TYRO = gql`
+    mutation UpdateRegister($id: ID!, $tyroMerchantId: Int!, $tyroTerminalId: Int!) {
+        updateRegister(input: { id: $id, tyroMerchantId: $tyroMerchantId, tyroTerminalId: $tyroTerminalId }) {
+            id
+            tyroMerchantId
+            tyroTerminalId
         }
     }
 `;

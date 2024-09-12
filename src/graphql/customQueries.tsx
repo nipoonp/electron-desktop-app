@@ -28,6 +28,12 @@ export enum ERegisterPrinterType {
     USB = "USB",
 }
 
+export enum ECustomCustomerFieldType {
+    STRING = "STRING",
+    NUMBER = "NUMBER",
+    DROPDOWN = "DROPDOWN",
+}
+
 export const LIST_RESTAURANTS = gql`
     query ListRestaurants {
         listRestaurants(limit: 1000) {
@@ -94,19 +100,29 @@ export const GET_USER = gql`
                             active
                             name
                             enableTableFlags
-                            enableBuzzerNumbers
+                            enableCovers
+                            enableBuzzerNumbersForTakeaway
+                            enableBuzzerNumbersForDineIn
                             enableSkuScanner
                             enablePayLater
                             enableCashPayments
                             enableEftposPayments
                             enableUberEatsPayments
                             enableMenulogPayments
+                            enableDoordashPayments
+                            enableDelivereasyPayments
                             availableOrderTypes
                             type
                             requestCustomerInformation {
                                 firstName
                                 email
                                 phoneNumber
+                                signature
+                                customFields {
+                                    label
+                                    value
+                                    type
+                                }
                             }
                             eftposProvider
                             eftposIpAddress
@@ -114,12 +130,15 @@ export const GET_USER = gql`
                             windcaveStationId
                             windcaveStationUser
                             windcaveStationKey
+                            tyroMerchantId
+                            tyroTerminalId
                             skipEftposReceiptSignature
                             askToPrintCustomerReceipt
                             orderNumberSuffix
                             orderNumberStart
                             surchargePercentage
                             defaultCategoryView
+                            preSelectedProducts
                             customStyleSheet {
                                 key
                                 bucket
@@ -360,7 +379,9 @@ export const GET_RESTAURANT = gql`
                     active
                     name
                     enableTableFlags
-                    enableBuzzerNumbers
+                    enableCovers
+                    enableBuzzerNumbersForTakeaway
+                    enableBuzzerNumbersForDineIn
                     enableSkuScanner
                     enableFeedback
                     enablePayLater
@@ -368,6 +389,8 @@ export const GET_RESTAURANT = gql`
                     enableEftposPayments
                     enableUberEatsPayments
                     enableMenulogPayments
+                    enableDoordashPayments
+                    enableDelivereasyPayments
                     availableOrderTypes
                     orderTypeSurcharge {
                         dinein
@@ -379,6 +402,11 @@ export const GET_RESTAURANT = gql`
                         email
                         phoneNumber
                         signature
+                        customFields {
+                            label
+                            value
+                            type
+                        }
                     }
                     eftposProvider
                     eftposIpAddress
@@ -386,12 +414,15 @@ export const GET_RESTAURANT = gql`
                     windcaveStationId
                     windcaveStationUser
                     windcaveStationKey
+                    tyroMerchantId
+                    tyroTerminalId
                     skipEftposReceiptSignature
                     askToPrintCustomerReceipt
                     orderNumberSuffix
                     orderNumberStart
                     surchargePercentage
                     defaultCategoryView
+                    preSelectedProducts
                     customStyleSheet {
                         key
                         bucket
@@ -1003,7 +1034,9 @@ export interface IGET_RESTAURANT_REGISTER {
     active: boolean;
     name: string;
     enableTableFlags: boolean;
-    enableBuzzerNumbers: boolean;
+    enableCovers: boolean;
+    enableBuzzerNumbersForTakeaway: boolean;
+    enableBuzzerNumbersForDineIn: boolean;
     enableSkuScanner: boolean;
     enableFeedback: boolean;
     enablePayLater: boolean;
@@ -1011,6 +1044,8 @@ export interface IGET_RESTAURANT_REGISTER {
     enableEftposPayments: boolean;
     enableUberEatsPayments: boolean;
     enableMenulogPayments: boolean;
+    enableDoordashPayments: boolean;
+    enableDelivereasyPayments: boolean;
     availableOrderTypes: EOrderType[];
     orderTypeSurcharge: OrderTypeSurchargeType;
     type: ERegisterType;
@@ -1021,12 +1056,15 @@ export interface IGET_RESTAURANT_REGISTER {
     windcaveStationId: string;
     windcaveStationUser: string;
     windcaveStationKey: string;
+    tyroMerchantId: number;
+    tyroTerminalId: number;
     skipEftposReceiptSignature: boolean;
     askToPrintCustomerReceipt: boolean;
     orderNumberSuffix: string;
     orderNumberStart: number;
     surchargePercentage: number;
     defaultCategoryView: string;
+    preSelectedProducts: string[];
     customStyleSheet?: IS3Object;
     printers: {
         items: IGET_RESTAURANT_REGISTER_PRINTER[];
@@ -1038,6 +1076,11 @@ export interface RequestCustomerInformationType {
     email: boolean;
     phoneNumber: boolean;
     signature: boolean;
+    customFields?: {
+        label: string;
+        value: string;
+        type: ECustomCustomerFieldType;
+    }[];
 }
 
 export interface OrderTypeSurchargeType {

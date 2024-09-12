@@ -7,6 +7,7 @@ import { AuthProvider, useAuth, AuthenticationStatus } from "./context/auth-cont
 import { UserProvider } from "./context/user-context";
 import { SmartpayProvider } from "./context/smartpay-context";
 import { VerifoneProvider } from "./context/verifone-context";
+import { TyroProvider } from "./context/tyro-context";
 import { ReceiptPrinterProvider } from "./context/receiptPrinter-context";
 import { RegisterProvider } from "./context/register-context";
 import { ElectronProvider } from "./context/electron-context";
@@ -22,6 +23,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import { sendFailureNotification } from "./util/errorHandling";
 import { ErrorBoundaryFallback } from "./tabin/components/errorBoundryFallback";
 import { ErrorInfo } from "react";
+import { MX51Provider } from "./context/mx51-context";
 
 Amplify.configure(awsconfig);
 Amplify.Logger.LOG_LEVEL = process.env.REACT_APP_LOG_LEVEL;
@@ -143,9 +145,16 @@ const App = () => {
                                             <CartProvider>
                                                 <SmartpayProvider>
                                                     <WindcaveProvider>
-                                                        <ErrorBoundary FallbackComponent={ErrorBoundaryFallback} onError={logFailureNotification}>
-                                                            <Main />
-                                                        </ErrorBoundary>
+                                                        <TyroProvider>
+                                                            <MX51Provider>
+                                                                <ErrorBoundary
+                                                                    FallbackComponent={ErrorBoundaryFallback}
+                                                                    onError={logFailureNotification}
+                                                                >
+                                                                    <Main />
+                                                                </ErrorBoundary>
+                                                            </MX51Provider>
+                                                        </TyroProvider>
                                                     </WindcaveProvider>
                                                 </SmartpayProvider>
                                             </CartProvider>

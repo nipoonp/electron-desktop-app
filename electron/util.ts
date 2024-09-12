@@ -8,6 +8,9 @@ import {
     IPrintReceiptOutput,
     IPrintSalesDataInput,
     EOrderStatus,
+    IEftposReceiptOutput,
+    IPrintReceiptDataInput,
+    IEftposReceipt,
 } from "./model";
 import usbPrinter from "@thiagoelg/node-printer";
 import { format } from "date-fns";
@@ -121,6 +124,18 @@ export const printCustomerReceipt = async (
     // console.log("Printer connected:", isConnected);
     if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
+    if (order.displayPaymentRequiredMessage) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Payment Required");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
     printer.alignCenter();
 
     if (order.restaurantLogoBase64) {
@@ -209,15 +224,6 @@ export const printCustomerReceipt = async (
         printer.setTextSize(1, 1);
         printer.println(`Ready in ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "mins" : "min"}`);
         printer.setTextNormal();
-        printer.bold(false);
-    }
-
-    if (order.displayPaymentRequiredMessage) {
-        printer.newLine();
-        printer.bold(true);
-        printer.underlineThick(true);
-        printer.println("Payment Required");
-        printer.underlineThick(false);
         printer.bold(false);
     }
 
@@ -344,7 +350,7 @@ export const printCustomerReceipt = async (
     }
 
     printer.tableCustom([
-        { text: "GST (15.00%)", align: "LEFT", width: 0.75 },
+        { text: "GST", align: "LEFT", width: 0.75 },
         { text: `\$${convertCentsToDollars(calculateTaxAmount(order.total))}`, align: "RIGHT", width: 0.25 },
     ]);
     order.discount &&
@@ -352,6 +358,46 @@ export const printCustomerReceipt = async (
             { text: "Discount", align: "LEFT", width: 0.75, bold: true },
             {
                 text: `-\$${convertCentsToDollars(order.discount)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.surcharge &&
+        printer.tableCustom([
+            { text: "Surcharge", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.surcharge)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.orderTypeSurcharge &&
+        printer.tableCustom([
+            { text: "Order Type Surcharge", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.orderTypeSurcharge)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.eftposSurcharge &&
+        printer.tableCustom([
+            { text: "Card Surcharge", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.eftposSurcharge)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.eftposTip &&
+        printer.tableCustom([
+            { text: "Eftpos Tip", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.eftposTip)}`,
                 align: "RIGHT",
                 width: 0.25,
                 bold: true,
@@ -412,6 +458,28 @@ export const printCustomerReceipt = async (
                 bold: true,
             },
         ]);
+    order.paymentAmounts &&
+        order.paymentAmounts.doordash &&
+        printer.tableCustom([
+            { text: "Doordash", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.paymentAmounts.doordash)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.paymentAmounts &&
+        order.paymentAmounts.delivereasy &&
+        printer.tableCustom([
+            { text: "Delivereasy", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.paymentAmounts.delivereasy)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
     printer.tableCustom([
         { text: "Total", align: "LEFT", width: 0.75, bold: true },
         {
@@ -422,10 +490,16 @@ export const printCustomerReceipt = async (
         },
     ]);
 
-    printer.newLine();
-    printer.alignCenter();
+    // printer.newLine();
+    // printer.alignCenter();
 
-    // if (order.eftposReceipt) printer.println(order.eftposReceipt);
+    // if (order.eftposReceipt) {
+    //     const eftposReceiptArray = order.eftposReceipt.split("\n");
+
+    //     eftposReceiptArray.forEach((line) => {
+    //         printer.println(line);
+    //     });
+    // }
 
     printer.newLine();
     printer.alignCenter();
@@ -701,6 +775,57 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
         printer.println(`Notes: ${order.notes}`);
         printer.newLine();
     }
+
+    order.discount &&
+        printer.tableCustom([
+            { text: "Discount", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `-\$${convertCentsToDollars(order.discount)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.surcharge &&
+        printer.tableCustom([
+            { text: "Surcharge", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.surcharge)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.orderTypeSurcharge &&
+        printer.tableCustom([
+            { text: "Order Type Surcharge", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.orderTypeSurcharge)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.eftposSurcharge &&
+        printer.tableCustom([
+            { text: "Card Surcharge", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.eftposSurcharge)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.eftposTip &&
+        printer.tableCustom([
+            { text: "Eftpos Tip", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.eftposTip)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
 
     if (order.displayPaymentRequiredMessage) {
         printer.newLine();
@@ -992,6 +1117,68 @@ export const printKitchenReceiptSmall = async (
     if (order.notes) {
         printer.println(`Notes: ${order.notes}`);
         printer.newLine();
+    }
+
+    order.discount &&
+        printer.tableCustom([
+            { text: "Discount", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `-\$${convertCentsToDollars(order.discount)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.surcharge &&
+        printer.tableCustom([
+            { text: "Surcharge", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.surcharge)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.orderTypeSurcharge &&
+        printer.tableCustom([
+            { text: "Order Type Surcharge", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.orderTypeSurcharge)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.eftposSurcharge &&
+        printer.tableCustom([
+            { text: "Card Surcharge", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.eftposSurcharge)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.eftposTip &&
+        printer.tableCustom([
+            { text: "Eftpos Tip", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.eftposTip)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+
+    if (order.displayPaymentRequiredMessage) {
+        printer.newLine();
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.bold(true);
+        printer.println(`Total: $${convertCentsToDollars(order.subTotal)}`);
+        printer.bold(false);
+        printer.setTextNormal();
+        printer.alignLeft();
     }
 
     if (order.displayPaymentRequiredMessage) {
@@ -1307,6 +1494,57 @@ export const printKitchenReceiptLarge = async (
         printer.newLine();
     }
 
+    order.discount &&
+        printer.tableCustom([
+            { text: "Discount", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `-\$${convertCentsToDollars(order.discount)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.surcharge &&
+        printer.tableCustom([
+            { text: "Surcharge", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.surcharge)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.orderTypeSurcharge &&
+        printer.tableCustom([
+            { text: "Order Type Surcharge", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.orderTypeSurcharge)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.eftposSurcharge &&
+        printer.tableCustom([
+            { text: "Card Surcharge", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.eftposSurcharge)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.eftposTip &&
+        printer.tableCustom([
+            { text: "Eftpos Tip", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.eftposTip)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+
     if (order.displayPaymentRequiredMessage) {
         printer.newLine();
         printer.alignCenter();
@@ -1330,6 +1568,53 @@ export const printKitchenReceiptLarge = async (
             await printer.execute();
         } else if (order.printerType == ERegisterPrinterType.USB) {
             await usbPrinterExecute(order.printerAddress, printer.getBuffer());
+            printer.clear();
+        } else {
+            //Bluetooth
+        }
+
+        return { error: null };
+    } catch (e) {
+        return { error: e };
+    }
+};
+
+export const printEftposReceipt = async (receiptDataInput: IEftposReceipt) => {
+    let printer;
+
+    if (receiptDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            interface: `tcp://${receiptDataInput.printer.printerAddress}`,
+        });
+    } else if (receiptDataInput.printer.printerType == ERegisterPrinterType.USB) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+        });
+    } else {
+        //Bluetooth
+    }
+
+    printer.newLine();
+    printer.alignCenter();
+
+    if (receiptDataInput.eftposReceipt) {
+        const eftposReceiptArray = receiptDataInput.eftposReceipt.split("\n");
+
+        eftposReceiptArray.forEach((line) => {
+            printer.println(line);
+        });
+    }
+
+    printer.partialCut();
+
+    try {
+        if (receiptDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
+            await printer.execute();
+        } else if (receiptDataInput.printer.printerType == ERegisterPrinterType.USB) {
+            await usbPrinterExecute(receiptDataInput.printer.printerAddress, printer.getBuffer());
             printer.clear();
         } else {
             //Bluetooth
@@ -1369,6 +1654,8 @@ const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
         printer.println(`Online: $${convertCentsToDollars(data.totalPaymentAmounts.online)}`);
         printer.println(`Uber Eats: $${convertCentsToDollars(data.totalPaymentAmounts.uberEats)}`);
         printer.println(`Menu Log: $${convertCentsToDollars(data.totalPaymentAmounts.menulog)}`);
+        printer.println(`Doordash: $${convertCentsToDollars(data.totalPaymentAmounts.doordash)}`);
+        printer.println(`Delivereasy: $${convertCentsToDollars(data.totalPaymentAmounts.delivereasy)}`);
 
         printer.bold(true);
         printer.println(`Total: $${convertCentsToDollars(data.totalAmount)}`);

@@ -17,6 +17,12 @@ export enum ERegisterPrinterType {
     USB = "USB",
 }
 
+export enum ECustomCustomerFieldType {
+    STRING = "STRING",
+    NUMBER = "NUMBER",
+    DROPDOWN = "DROPDOWN",
+}
+
 export interface IS3Object {
     key: string;
     bucket: string;
@@ -26,6 +32,7 @@ export interface IS3Object {
 
 export interface ICartProduct {
     index?: number; //index is for promos
+    isPreSelectedProduct?: boolean; //this is so that we cannot remove this product if preSelected
     id: string;
     name: string;
     kitchenName: string | null;
@@ -98,6 +105,13 @@ export interface IOrderReceipt {
         email: string | null;
         phoneNumber: string | null;
         signatureBase64: string | null;
+        customFields:
+            | {
+                  label: string | null;
+                  value: string | null;
+                  type: ECustomCustomerFieldType | null;
+              }[]
+            | null;
     } | null;
     notes: string | null;
     products: ICartProduct[];
@@ -107,6 +121,10 @@ export interface IOrderReceipt {
     discount: number | null;
     subTotal: number;
     paid: boolean;
+    surcharge: number | null;
+    orderTypeSurcharge: number | null;
+    eftposSurcharge: number | null;
+    eftposTip: number | null;
     displayPaymentRequiredMessage: boolean;
     type: EOrderType;
     number: string;
@@ -114,7 +132,15 @@ export interface IOrderReceipt {
     buzzer: string | null;
     placedAt: string;
     orderScheduledAt: string | null;
-    preparationTimeInMinutes: null | null;
+    preparationTimeInMinutes: number | null;
+}
+
+export interface IEftposReceipt {
+    printer: {
+        printerType: ERegisterPrinterType;
+        printerAddress: string;
+    };
+    eftposReceipt: string;
 }
 
 export interface IPrintSalesDataInputDailySales {
@@ -169,6 +195,8 @@ export interface IOrderPaymentAmounts {
     online: number;
     uberEats: number;
     menulog: number;
+    doordash: number;
+    delivereasy: number;
 }
 
 export interface IPrintReceiptDataOutput {
@@ -178,4 +206,17 @@ export interface IPrintReceiptDataOutput {
 
 export interface IPrintReceiptOutput {
     error: any;
+}
+
+export interface IPrintReceiptDataInput {
+    printer: {
+        printerType: ERegisterPrinterType;
+        printerAddress: string;
+    };
+    receipt: string;
+}
+
+export interface IEftposReceiptOutput {
+    error: any;
+    receipt: IEftposReceipt;
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { checkoutPath } from "../main";
+import { checkoutPath, restaurantPath } from "../main";
 import { useCart } from "../../context/cart-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { Button } from "../../tabin/components/button";
@@ -12,16 +12,20 @@ import SignatureCanvas from "react-signature-canvas";
 import "./customerInformation.scss";
 import { FiX } from "react-icons/fi";
 import { resizeBase64ImageToWidth } from "../../util/util";
+import { ECustomCustomerFieldType } from "../../graphql/customQueries";
 
 export default () => {
     const navigate = useNavigate();
     const { register } = useRegister();
     const { restaurant } = useRestaurant();
+    const { isPOS } = useRegister();
+
     const { customerInformation, setCustomerInformation } = useCart();
 
     const [firstName, setFirstName] = useState(customerInformation ? customerInformation.firstName : "");
     const [email, setEmail] = useState(customerInformation ? customerInformation.email : "");
     const [phoneNumber, setPhoneNumber] = useState(customerInformation ? customerInformation.phoneNumber : "");
+    const [customFields, setCustomFields] = useState(customerInformation ? customerInformation.customFields : []);
 
     const [firstNameError, setFirstNameError] = useState(false);
     const [emailError, setEmailError] = useState(false);
@@ -41,7 +45,11 @@ export default () => {
     if (restaurant == null) throw "Restaurant is invalid!";
 
     const onClose = () => {
-        navigate(`${checkoutPath}`);
+        if (isPOS) {
+            navigate(`${restaurantPath}/${restaurant.id}`);
+        } else {
+            navigate(`${checkoutPath}`);
+        }
     };
 
     const onNext = async () => {
@@ -76,7 +84,13 @@ export default () => {
                 resizedSignatureBase64 = await resizeBase64ImageToWidth(signatureBase64, 200, signatureMimeType);
             }
 
-            setCustomerInformation({ firstName: firstName, email: email, phoneNumber: phoneNumber, signatureBase64: resizedSignatureBase64 });
+            setCustomerInformation({
+                firstName: firstName,
+                email: email,
+                phoneNumber: phoneNumber,
+                signatureBase64: resizedSignatureBase64,
+                customFields: customFields,
+            });
 
             navigate(`${checkoutPath}/true`);
         }
@@ -97,6 +111,17 @@ export default () => {
         setPhoneNumberError(false);
     };
 
+    const onChangeCustomField = (e: React.ChangeEvent<HTMLInputElement>, field, index: number) => {
+        const customFieldsCpy = [...customFields];
+
+        if (customFieldsCpy[index]) {
+            customFieldsCpy[index].value = e.target.value;
+        } else {
+            customFieldsCpy[index] = { ...field, value: e.target.value };
+        }
+        setCustomFields(customFieldsCpy);
+    };
+
     const onClearSignature = () => {
         //@ts-ignore
         signatureCanvasRef.current.clear();
@@ -109,7 +134,7 @@ export default () => {
                     <div className="close-button-wrapper">
                         <FiX className="close-button" size={36} onClick={onClose} />
                     </div>
-                    <div className="h2 mb-6">Enter enter customer details</div>
+                    <div className="h2 mb-6">Enter customer details</div>
                     <div className="mb-10" style={{ width: "400px" }}>
                         {register.requestCustomerInformation && register.requestCustomerInformation.firstName && (
                             <>
@@ -148,6 +173,32 @@ export default () => {
                                 </Button>
                             </>
                         )}
+                        {register.requestCustomerInformation &&
+                            register.requestCustomerInformation.customFields?.map((field, index) => (
+                                <>
+                                    {field.type === ECustomCustomerFieldType.STRING && (
+                                        <>
+                                            <div className="h2 mt-2 mb-2">{field.label}</div>
+                                            <Input
+                                                name={field.label}
+                                                onChange={(e) => onChangeCustomField(e, field, index)}
+                                                value={customFields[index]?.value}
+                                            />
+                                        </>
+                                    )}
+                                    {field.type === ECustomCustomerFieldType.NUMBER && (
+                                        <>
+                                            <div className="h2 mt-2 mb-2">{field.label}</div>
+                                            <Input
+                                                type="number"
+                                                name={field.label}
+                                                onChange={(e) => onChangeCustomField(e, field, index)}
+                                                value={customFields[index]?.value}
+                                            />
+                                        </>
+                                    )}
+                                </>
+                            ))}
                     </div>
                     <Button onClick={onNext}>Next</Button>
                 </div>

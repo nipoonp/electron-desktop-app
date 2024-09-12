@@ -4,7 +4,14 @@ import { useCart } from "../../context/cart-context";
 import { useMutation, useQuery } from "@apollo/client";
 import { useRegister } from "../../context/register-context";
 import { useRestaurant } from "../../context/restaurant-context";
-import { EEftposTransactionOutcome, EPaymentModalState, IEftposTransactionOutcome } from "../../model/model";
+import {
+    EEftposProvider,
+    EEftposTransactionOutcome,
+    EPaymentModalState,
+    ITyroEftposQuestion,
+    IEftposTransactionOutcome,
+    IMX51EftposQuestion,
+} from "../../model/model";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { Button } from "../../tabin/components/button";
 import { CachedImage } from "../../tabin/components/cachedImage";
@@ -30,6 +37,8 @@ interface IPaymentModalProps {
     onClose: () => void;
     paymentModalState: EPaymentModalState;
     eftposTransactionProcessMessage: string | null;
+    eftposTransactionProcessQuestion: ITyroEftposQuestion | null;
+    eftposSignatureRequiredQuestion: IMX51EftposQuestion | null;
     eftposTransactionOutcome: IEftposTransactionOutcome | null;
     onPrintCustomerReceipt: () => void;
     onPrintParkedOrderReceipts: () => void;
@@ -40,9 +49,12 @@ interface IPaymentModalProps {
     cashTransactionChangeAmount: number | null;
     createOrderError: string | null;
     onConfirmTotalOrRetryEftposTransaction: (amount: number) => void;
+    onCancelEftposTransaction: () => void;
     onConfirmCashTransaction: (amount: number) => void;
     onConfirmUberEatsTransaction: (amount: number) => void;
     onConfirmMenulogTransaction: (amount: number) => void;
+    onConfirmDoordashTransaction: (amount: number) => void;
+    onConfirmDelivereasyTransaction: (amount: number) => void;
     onContinueToNextPayment: () => void;
     onCancelPayment: () => void;
     onCancelOrder: () => void;
@@ -62,6 +74,8 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         onPrintCustomerReceipt,
         onPrintParkedOrderReceipts,
         eftposTransactionProcessMessage,
+        eftposTransactionProcessQuestion,
+        eftposSignatureRequiredQuestion,
         eftposTransactionOutcome,
         cashTransactionChangeAmount,
         createOrderError,
@@ -69,6 +83,8 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         onConfirmCashTransaction,
         onConfirmUberEatsTransaction,
         onConfirmMenulogTransaction,
+        onConfirmDoordashTransaction,
+        onConfirmDelivereasyTransaction,
         onContinueToNextPayment,
         onCancelPayment,
         onCancelOrder,
@@ -95,7 +111,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         const eftposAmountFloat = parseFloat(eftposAmount);
         const eftposAmountCents = convertDollarsToCentsReturnInt(eftposAmountFloat);
         const totalRemaining = subTotal - paidSoFar;
-        if (subTotal!==0 && eftposAmountCents == 0) {
+        if (subTotal !== 0 && eftposAmountCents == 0) {
             setAmountError("Value cannot be 0.00");
             return;
         } else if (eftposAmountCents <= 0) {
@@ -112,11 +128,10 @@ export const PaymentModal = (props: IPaymentModalProps) => {
     const onClickCash = (cashAmount: string) => {
         const cashAmountFloat = parseFloat(cashAmount);
         const cashAmountCents = convertDollarsToCentsReturnInt(cashAmountFloat);
-        if (subTotal!==0 && cashAmountCents == 0) {
+        if (subTotal !== 0 && cashAmountCents == 0) {
             setAmountError("Value cannot be 0.00");
             return;
         }
-        
 
         onConfirmCashTransaction(cashAmountCents);
     };
@@ -125,7 +140,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         const uberEatsAmountFloat = parseFloat(uberEatsAmount);
         const uberEatsAmountCents = convertDollarsToCentsReturnInt(uberEatsAmountFloat);
 
-        if (subTotal!==0 && uberEatsAmountCents == 0) {
+        if (subTotal !== 0 && uberEatsAmountCents == 0) {
             setAmountError("Value cannot be 0.00");
             return;
         }
@@ -137,7 +152,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         const menuLogAmountFloat = parseFloat(menuLogAmount);
         const menuLogAmountCents = convertDollarsToCentsReturnInt(menuLogAmountFloat);
 
-        if (subTotal!==0 && menuLogAmountCents == 0) {
+        if (subTotal !== 0 && menuLogAmountCents == 0) {
             setAmountError("Value cannot be 0.00");
             return;
         }
@@ -145,13 +160,33 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         onConfirmMenulogTransaction(menuLogAmountCents);
     };
 
+    const onClickDoordash = (doordashAmount: string) => {
+        const doordashAmountFloat = parseFloat(doordashAmount);
+        const doordashAmountCents = convertDollarsToCentsReturnInt(doordashAmountFloat);
+
+        if (subTotal !== 0 && doordashAmountCents == 0) {
+            setAmountError("Value cannot be 0.00");
+            return;
+        }
+
+        onConfirmDoordashTransaction(doordashAmountCents);
+    };
+
+    const onClickDelivereasy = (delivereasyAmount: string) => {
+        const delivereasyAmountFloat = parseFloat(delivereasyAmount);
+        const delivereasyAmountCents = convertDollarsToCentsReturnInt(delivereasyAmountFloat);
+
+        if (subTotal !== 0 && delivereasyAmountCents == 0) {
+            setAmountError("Value cannot be 0.00");
+            return;
+        }
+
+        onConfirmDelivereasyTransaction(delivereasyAmountCents);
+    };
+
     const getActivePaymentModalComponent = () => {
         if (createOrderError) {
             return <CreateOrderFailed createOrderError={createOrderError} onCancelOrder={onCancelOrder} />;
-        }
-
-        if (eftposTransactionProcessMessage) {
-            return <PaymentProgressMessage message={eftposTransactionProcessMessage} />;
         }
 
         if (paymentModalState == EPaymentModalState.POSScreen) {
@@ -165,11 +200,20 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     onClickEftpos={onClickEftpos}
                     onClickUberEats={onClickUberEats}
                     onClickMenulog={onClickMenulog}
+                    onClickDoordash={onClickDoordash}
+                    onClickDelivereasy={onClickDelivereasy}
                     onClose={onClose}
                 />
             );
         } else if (paymentModalState == EPaymentModalState.AwaitingCard) {
-            return <AwaitingCard />;
+            return (
+                <AwaitingCard
+                    message={eftposTransactionProcessMessage}
+                    question={eftposTransactionProcessQuestion}
+                    signatureRequiredQuestion={eftposSignatureRequiredQuestion}
+                    onCancelEftposTransaction={props.onCancelEftposTransaction}
+                />
+            );
         } else if (paymentModalState == EPaymentModalState.EftposResult && eftposTransactionOutcome) {
             if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.Success) {
                 return (
@@ -183,9 +227,10 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                 );
             } else if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.Fail) {
                 return <PaymentFailed errorMessage={eftposTransactionOutcome.message} onRetry={onRetry} onCancelPayment={onCancelPayment} />;
-            } else if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.ProcessMessage) {
-                return <PaymentProgressMessage message={eftposTransactionOutcome.message} />;
             }
+            // else if (eftposTransactionOutcome.transactionOutcome === EEftposTransactionOutcome.ProcessMessage) {
+            //     return <PaymentProgressMessage message={eftposTransactionOutcome.message} />;
+            // }
         } else if (paymentModalState === EPaymentModalState.CashResult) {
             if (isPOS) {
                 return (
@@ -230,6 +275,26 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     incrementRedirectTimer={incrementRedirectTimer}
                 />
             );
+        } else if (paymentModalState === EPaymentModalState.DoordashResult) {
+            return (
+                <PaymentDoordashPayment
+                    onPrintCustomerReceipt={onPrintCustomerReceipt}
+                    paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
+                    paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                    onContinueToNextOrder={onContinueToNextOrder}
+                    incrementRedirectTimer={incrementRedirectTimer}
+                />
+            );
+        } else if (paymentModalState === EPaymentModalState.DelivereasyResult) {
+            return (
+                <PaymentDelivereasyPayment
+                    onPrintCustomerReceipt={onPrintCustomerReceipt}
+                    paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
+                    paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                    onContinueToNextOrder={onContinueToNextOrder}
+                    incrementRedirectTimer={incrementRedirectTimer}
+                />
+            );
         } else if (paymentModalState === EPaymentModalState.PayLater) {
             return (
                 <PaymentPayLater
@@ -265,12 +330,82 @@ export const PaymentModal = (props: IPaymentModalProps) => {
     );
 };
 
-const AwaitingCard = () => {
+const AwaitingCard = (props: {
+    message: string | null;
+    question: ITyroEftposQuestion | null;
+    signatureRequiredQuestion: IMX51EftposQuestion | null;
+    onCancelEftposTransaction: () => void;
+}) => {
+    const { message, question, signatureRequiredQuestion } = props;
+    const { register } = useRegister();
+    const [cancelState, setCancelState] = useState(false);
+
+    const onCancelTransaction = () => {
+        props.onCancelEftposTransaction();
+        setCancelState(false);
+    };
+
     return (
         <>
-            <div className="h2 mb-6 awaiting-card-text">Swipe or insert your card on the terminal to complete your payment.</div>
-            <CachedImage className="awaiting-card-image" url={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} alt="awaiting-card-gif" />
-            <div className="awaiting-card-image-override"></div>
+            {question ? (
+                <>
+                    <div className="h2 mb-6 awaiting-card-text">{question.text}</div>
+                    <div className="awaiting-card-cancel-button-wrapper">
+                        {question.options.map((option) => (
+                            <Button className="button large awaiting-card-cancel-yes-button" onClick={() => question.answerCallback(option)}>
+                                {option}
+                            </Button>
+                        ))}
+                    </div>
+                </>
+            ) : cancelState ? (
+                <>
+                    <div className="h2 mb-6 awaiting-card-text">Are are you sure want to cancel this transaction?</div>
+                    <div className="awaiting-card-cancel-button-wrapper">
+                        <Button className="button large awaiting-card-cancel-yes-button" onClick={onCancelTransaction}>
+                            Yes
+                        </Button>
+                        <Button className="button large awaiting-card-cancel-no-button" onClick={() => setCancelState(false)}>
+                            No
+                        </Button>
+                    </div>
+                </>
+            ) : signatureRequiredQuestion ? (
+                <>
+                    <div className="h2 mb-6 awaiting-card-text">Confirm the customer's signature</div>
+                    <div className="awaiting-card-cancel-button-wrapper">
+                        <Button
+                            className="button large awaiting-card-cancel-yes-button"
+                            onClick={() => signatureRequiredQuestion.answerCallback(true)}
+                        >
+                            Yes
+                        </Button>
+                        <Button
+                            className="button large awaiting-card-cancel-no-button"
+                            onClick={() => signatureRequiredQuestion.answerCallback(false)}
+                        >
+                            No
+                        </Button>
+                    </div>
+                </>
+            ) : (
+                <>
+                    <div className="h2 mb-6 awaiting-card-text">Swipe or insert your card on the terminal to complete your payment.</div>
+                    <CachedImage
+                        className="awaiting-card-image"
+                        url={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`}
+                        alt="awaiting-card-gif"
+                    />
+                    <div className="awaiting-card-image-override"></div>
+                    {message && <div className="h2 mt-4 mb-6">{message}</div>}
+                    {register?.eftposProvider === EEftposProvider.TYRO ||
+                        (register?.eftposProvider === EEftposProvider.MX51 && (
+                            <Button className="mt-4" onClick={() => setCancelState(true)}>
+                                Cancel Transaction
+                            </Button>
+                        ))}
+                </>
+            )}
         </>
     );
 };
@@ -330,18 +465,6 @@ const PaymentAccepted = (props: {
                     </div>
                 </>
             )}
-        </>
-    );
-};
-
-const PaymentProgressMessage = (props: { message: string }) => {
-    const { message } = props;
-
-    return (
-        <>
-            <div className="h2 mb-6 awaiting-card-text">Swipe or insert your card on the terminal to complete your payment.</div>
-            <CachedImage className="awaiting-card-image" url={`${getPublicCloudFrontDomainName()}/images/awaitingCard.gif`} alt="awaiting-card-gif" />
-            {message && <div className="h2 mt-4 mb-6">{message}</div>}
         </>
     );
 };
@@ -621,6 +744,96 @@ const PaymentMenulogPayment = (props: {
     );
 };
 
+const PaymentDoordashPayment = (props: {
+    onPrintCustomerReceipt: () => void;
+    paymentOutcomeOrderNumber: string | null;
+    paymentOutcomeApprovedRedirectTimeLeft: number;
+    onContinueToNextOrder: () => void;
+    incrementRedirectTimer: (time: number) => void;
+}) => {
+    const {
+        onPrintCustomerReceipt,
+        paymentOutcomeOrderNumber,
+        paymentOutcomeApprovedRedirectTimeLeft,
+        onContinueToNextOrder,
+        incrementRedirectTimer,
+    } = props;
+    const { buzzerNumber } = useCart();
+
+    return (
+        <>
+            <div className="all-done h1 mb-4">All Done!</div>
+            {buzzerNumber !== null ? (
+                <>
+                    <div className="mb-1">Your buzzer number is</div>
+                    <div className="order-number h1">{buzzerNumber}</div>
+                </>
+            ) : (
+                <>
+                    <div className="mb-1">Your order number is</div>
+                    <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+                </>
+            )}
+            <FeedbackSection
+                paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                incrementRedirectTimer={incrementRedirectTimer}
+            />
+            <PreparationTime />
+            <div className="separator-6 mb-6"></div>
+            <PaymentModalFooter
+                onPrintCustomerReceipt={onPrintCustomerReceipt}
+                paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                onContinueToNextOrder={onContinueToNextOrder}
+            />
+        </>
+    );
+};
+
+const PaymentDelivereasyPayment = (props: {
+    onPrintCustomerReceipt: () => void;
+    paymentOutcomeOrderNumber: string | null;
+    paymentOutcomeApprovedRedirectTimeLeft: number;
+    onContinueToNextOrder: () => void;
+    incrementRedirectTimer: (time: number) => void;
+}) => {
+    const {
+        onPrintCustomerReceipt,
+        paymentOutcomeOrderNumber,
+        paymentOutcomeApprovedRedirectTimeLeft,
+        onContinueToNextOrder,
+        incrementRedirectTimer,
+    } = props;
+    const { buzzerNumber } = useCart();
+
+    return (
+        <>
+            <div className="all-done h1 mb-4">All Done!</div>
+            {buzzerNumber !== null ? (
+                <>
+                    <div className="mb-1">Your buzzer number is</div>
+                    <div className="order-number h1">{buzzerNumber}</div>
+                </>
+            ) : (
+                <>
+                    <div className="mb-1">Your order number is</div>
+                    <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+                </>
+            )}
+            <FeedbackSection
+                paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                incrementRedirectTimer={incrementRedirectTimer}
+            />
+            <PreparationTime />
+            <div className="separator-6 mb-6"></div>
+            <PaymentModalFooter
+                onPrintCustomerReceipt={onPrintCustomerReceipt}
+                paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                onContinueToNextOrder={onContinueToNextOrder}
+            />
+        </>
+    );
+};
+
 const POSPaymentScreen = (props: {
     amount: string;
     onAmountChange: (amount: string) => void;
@@ -630,9 +843,23 @@ const POSPaymentScreen = (props: {
     onClickEftpos: (amount: string) => void;
     onClickUberEats: (amount: string) => void;
     onClickMenulog: (amount: string) => void;
+    onClickDoordash: (amount: string) => void;
+    onClickDelivereasy: (amount: string) => void;
     onClose: () => void;
 }) => {
-    const { amount, onAmountChange, amountError, onAmountErrorChange, onClickCash, onClickEftpos, onClickUberEats, onClickMenulog, onClose } = props;
+    const {
+        amount,
+        onAmountChange,
+        amountError,
+        onAmountErrorChange,
+        onClickCash,
+        onClickEftpos,
+        onClickUberEats,
+        onClickMenulog,
+        onClickDoordash,
+        onClickDelivereasy,
+        onClose,
+    } = props;
     const { subTotal, payments, setPayments, paymentAmounts, setPaymentAmounts, paidSoFar } = useCart();
     const { register } = useRegister();
 
@@ -670,6 +897,28 @@ const POSPaymentScreen = (props: {
 
         setPayments(newPayments);
         setPaymentAmounts({ ...paymentAmounts, menulog: newPaymentAmounts });
+    };
+
+    const onRemoveDoordashTransaction = (index: number) => {
+        const payment = payments[index];
+        const newPayments = [...payments];
+        const newPaymentAmounts = paymentAmounts.doordash - payment.amount;
+
+        newPayments.splice(index, 1);
+
+        setPayments(newPayments);
+        setPaymentAmounts({ ...paymentAmounts, doordash: newPaymentAmounts });
+    };
+
+    const onRemoveDelivereasyTransaction = (index: number) => {
+        const payment = payments[index];
+        const newPayments = [...payments];
+        const newPaymentAmounts = paymentAmounts.delivereasy - payment.amount;
+
+        newPayments.splice(index, 1);
+
+        setPayments(newPayments);
+        setPaymentAmounts({ ...paymentAmounts, delivereasy: newPaymentAmounts });
     };
 
     const onBlurAmount = () => {
@@ -720,24 +969,30 @@ const POSPaymentScreen = (props: {
                     <Button className="large payment-modal-cash-button" onClick={() => onClickCash(amount)}>
                         Cash
                     </Button>
-                    <Button className="large payment-modal-eftpos-button ml-2" onClick={() => onClickEftpos(amount)}>
+                    <Button className="large payment-modal-eftpos-button" onClick={() => onClickEftpos(amount)}>
                         Eftpos
                     </Button>
+                    {register && register.enableUberEatsPayments && (
+                        <Button className="large payment-modal-uber-eats-button" onClick={() => onClickUberEats(amount)}>
+                            Uber Eats
+                        </Button>
+                    )}
+                    {register && register.enableDoordashPayments && (
+                        <Button className="large payment-modal-menulog-button" onClick={() => onClickMenulog(amount)}>
+                            Menulog
+                        </Button>
+                    )}
+                    {register && register.enableDoordashPayments && (
+                        <Button className="large payment-modal-doordash-button" onClick={() => onClickDoordash(amount)}>
+                            Doordash
+                        </Button>
+                    )}
+                    {register && register.enableDelivereasyPayments && (
+                        <Button className="large payment-modal-delivereasy-button" onClick={() => onClickDelivereasy(amount)}>
+                            Delivereasy
+                        </Button>
+                    )}
                 </div>
-                {register && register.enableUberEatsPayments && (
-                    <div className="payment-modal-payment-button-wrapper">
-                        {register && register.enableUberEatsPayments && (
-                            <Button className="large payment-modal-uber-eats-button" onClick={() => onClickUberEats(amount)}>
-                                Uber Eats
-                            </Button>
-                        )}
-                        {register && register.enableMenulogPayments && (
-                            <Button className="large payment-modal-menulog-button ml-2" onClick={() => onClickMenulog(amount)}>
-                                Menulog
-                            </Button>
-                        )}
-                    </div>
-                )}
             </div>
 
             <div className="h3 mb-4">Quick Cash Options</div>
@@ -779,8 +1034,18 @@ const POSPaymentScreen = (props: {
                                     Menulog: ${convertCentsToDollars(payment.amount)}{" "}
                                     <Link onClick={() => onRemoveMenulogTransaction(index)}>(Remove)</Link>
                                 </div>
+                            ) : payment.type === "DOORDASH" ? (
+                                <div className="mb-2">
+                                    Doordash: ${convertCentsToDollars(payment.amount)}{" "}
+                                    <Link onClick={() => onRemoveDoordashTransaction(index)}>(Remove)</Link>
+                                </div>
+                            ) : payment.type === "DELIVEREASY" ? (
+                                <div className="mb-2">
+                                    Delivereasy: ${convertCentsToDollars(payment.amount)}{" "}
+                                    <Link onClick={() => onRemoveDelivereasyTransaction(index)}>(Remove)</Link>
+                                </div>
                             ) : (
-                                //For all Eftpos types Verifone, Smartpay, Windcave
+                                //For all Eftpos types Verifone, Smartpay, Windcave and Tyro
                                 <div className="mb-2">Eftpos: ${convertCentsToDollars(payment.amount)}</div>
                             )}
                         </>
@@ -847,7 +1112,7 @@ const FeedbackSection = (props: { paymentOutcomeApprovedRedirectTimeLeft: number
 
                 totalRating = totalRating + newRating;
                 totalNumberOfRatings = totalNumberOfRatings + 1;
-                const modifiedResponse = JSON.parse(JSON.stringify(getFeedbackData[0], (key, value) => key === '__typename' ? undefined : value));
+                const modifiedResponse = JSON.parse(JSON.stringify(getFeedbackData[0], (key, value) => (key === "__typename" ? undefined : value)));
                 await updateFeedback({
                     variables: {
                         id: oldFeedback.id,
@@ -906,23 +1171,43 @@ const FeedbackSection = (props: { paymentOutcomeApprovedRedirectTimeLeft: number
                             <div className="feedback-content">
                                 <div className="feedback">
                                     <div onClick={() => feedbackSubmit(1)} className={newRating === 1 ? "active" : ""}>
-                                        <CachedImage className="feedback-card-image" url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-5.png`} alt="awaiting-card-gif" />
+                                        <CachedImage
+                                            className="feedback-card-image"
+                                            url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-5.png`}
+                                            alt="awaiting-card-gif"
+                                        />
                                         <p>Horrible</p>
                                     </div>
                                     <div onClick={() => feedbackSubmit(2)} className={newRating === 2 ? "active" : ""}>
-                                        <CachedImage className="feedback-card-image" url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-4.png`} alt="awaiting-card-gif" />
+                                        <CachedImage
+                                            className="feedback-card-image"
+                                            url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-4.png`}
+                                            alt="awaiting-card-gif"
+                                        />
                                         <p>Bad</p>
                                     </div>
                                     <div onClick={() => feedbackSubmit(3)} className={newRating === 3 ? "active" : ""}>
-                                        <CachedImage className="feedback-card-image" url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-3.png`} alt="awaiting-card-gif" />
+                                        <CachedImage
+                                            className="feedback-card-image"
+                                            url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-3.png`}
+                                            alt="awaiting-card-gif"
+                                        />
                                         <p>Okay</p>
                                     </div>
                                     <div onClick={() => feedbackSubmit(4)} className={newRating === 4 ? "active" : ""}>
-                                        <CachedImage className="feedback-card-image" url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-2.png`} alt="awaiting-card-gif" />
+                                        <CachedImage
+                                            className="feedback-card-image"
+                                            url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-2.png`}
+                                            alt="awaiting-card-gif"
+                                        />
                                         <p>Good</p>
                                     </div>
                                     <div onClick={() => feedbackSubmit(5)} className={newRating === 5 ? "active" : ""}>
-                                        <CachedImage className={"feedback-card-image"} url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-1.png`} alt="awaiting-card-gif" />
+                                        <CachedImage
+                                            className={"feedback-card-image"}
+                                            url={`https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/rating-emoji-1.png`}
+                                            alt="awaiting-card-gif"
+                                        />
                                         <p>Excellent</p>
                                     </div>
                                 </div>

@@ -2,7 +2,13 @@ import { useEffect, createContext, useContext, useRef } from "react";
 import { Logger } from "aws-amplify";
 import { delay, getVerifoneSocketErrorMessage, getVerifoneTimeBasedTransactionId } from "../model/util";
 import { toLocalISOString } from "../util/util";
-import { EEftposTransactionOutcome, IEftposTransactionOutcome, EVerifoneTransactionOutcome, EEftposProvider } from "../model/model";
+import {
+    EEftposTransactionOutcome,
+    IEftposTransactionOutcome,
+    EVerifoneTransactionOutcome,
+    EEftposProvider,
+    EEftposTransactionOutcomeCardType,
+} from "../model/model";
 import { useErrorLogging } from "./errorLogging-context";
 import { useRegister } from "./register-context";
 import { format } from "date-fns";
@@ -101,8 +107,6 @@ const VerifoneContext = createContext<ContextProps>({
 
 const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const { addEftposLog } = useErrorLogging();
-    const { restaurant } = useRestaurant();
-    const { register, isPOS } = useRegister();
 
     const interval = 1 * 1500; // 1.5 seconds
     const interval2 = 1 * 100; // 150 miliseconds
@@ -198,6 +202,20 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         eftposData.current = initialEftposData;
         eftposReceipt.current = initialEftposReceipt;
         logs.current = initialLogs;
+    };
+
+    const getCardType = (cardType: string) => {
+        let type = EEftposTransactionOutcomeCardType.EFTPOS;
+
+        if (cardType.toLowerCase() === "visa") {
+            type = EEftposTransactionOutcomeCardType.VISA;
+        } else if (cardType.toLowerCase() === "mcard") {
+            type = EEftposTransactionOutcomeCardType.MASTERCARD;
+        } else if (cardType.toLowerCase() === "amex") {
+            type = EEftposTransactionOutcomeCardType.AMEX;
+        }
+
+        return type;
     };
 
     const addToLogs = (log: string) => {
@@ -345,7 +363,10 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
         const endTime = Number(new Date()) + timeout;
         const transactionId = unresolvedVerifoneTransactionId ? unresolvedVerifoneTransactionId : getVerifoneTimeBasedTransactionId();
         const merchantId = 0;
-        let iSO8583ResponseCode;
+        let iSO8583ResponseCode: string | undefined = undefined;
+        let eftposCardType: string | undefined = undefined;
+        let eftposTip: string | undefined = undefined;
+        let eftposSurcharge: string | undefined = undefined;
 
         readyToPrintRequestReplySent.current = false;
         printRequestReplySent.current = false;
@@ -388,6 +409,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 if (eftposData.current.type === VMT.ResultAndExtrasResponse) {
                     const verifonePurchaseResultArray = eftposData.current.payload.split(",");
                     iSO8583ResponseCode = verifonePurchaseResultArray[2];
+                    eftposCardType = verifonePurchaseResultArray[4];
+                    eftposTip = verifonePurchaseResultArray[6];
+                    eftposSurcharge = verifonePurchaseResultArray[7];
 
                     if (iSO8583ResponseCode != "??") {
                         localStorage.removeItem("unresolvedVerifoneTransactionId");
@@ -454,6 +478,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                         transactionOutcome: EEftposTransactionOutcome.Success,
                         message: "Transaction Approved!",
                         eftposReceipt: eftposReceipt.current,
+                        eftposCardType: getCardType(eftposCardType),
+                        eftposSurcharge: parseInt(eftposSurcharge || "0"),
+                        eftposTip: parseInt(eftposTip || "0"),
                     };
                     break;
                 case "09":
@@ -464,6 +491,9 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                         transactionOutcome: EEftposTransactionOutcome.Success,
                         message: "Transaction Approved With Signature!",
                         eftposReceipt: eftposReceipt.current,
+                        eftposCardType: getCardType(eftposCardType),
+                        eftposSurcharge: parseInt(eftposSurcharge || "0"),
+                        eftposTip: parseInt(eftposTip || "0"),
                     };
                     // } else {
                     //     transactionOutcome = {
