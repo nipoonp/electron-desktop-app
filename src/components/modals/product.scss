@@ -6,7 +6,7 @@
     .product {
         position: relative;
         flex: 1;
-        padding: 0 84px 84px 84px;
+        padding: 0 48px 48px 48px;
         overflow: scroll;
 
         -ms-overflow-style: none; /* IE and Edge */
@@ -68,7 +68,7 @@
 
         .modifiers {
             display: grid;
-            grid-gap: 12px;
+            grid-gap: 6px;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
 
             .modifier {
@@ -106,7 +106,7 @@
                     .modifier-item {
                         display: flex;
                         align-items: center;
-                        font-size: 18px;
+                        // font-size: 18px;
 
                         .description {
                             font-size: 16px;

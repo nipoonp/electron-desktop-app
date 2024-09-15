@@ -1847,11 +1847,11 @@ export const Checkout = () => {
                         </div>
                     </div>
                     {isPOS && payments.length === 0 && <div>{parkOrderFooter}</div>}
-                    {products && products.length > 0 && (
-                        <div className="footer p-2" id="footer">
-                            {checkoutFooter}
-                        </div>
-                    )}
+                    {/* {products && products.length > 0 && ( */}
+                    <div className="footer p-2" id="footer">
+                        {checkoutFooter}
+                    </div>
+                    {/* )} */}
                 </div>
                 {r18MessageModal()}
                 {modalsAndSpinners}

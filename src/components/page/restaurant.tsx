@@ -509,18 +509,18 @@ const Restaurant = () => {
 
                     <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
 
-                    {product.description && <div className="description mt-2">{product.description}</div>}
+                    {/* {product.description && <div className="description mt-2">{product.description}</div>} */}
 
-                    {product.tags && (
+                    {/* {product.tags && (
                         <div className="tags mt-2">
                             {product.tags.split(";").map((tag) => (
                                 <div className="tag">{tag}</div>
                             ))}
                         </div>
-                    )}
+                    )} */}
 
-                    <div className={`display-price mt-4 ${product.displayPrice ? "" : "display-none"}`}>{product.displayPrice}</div>
-                    <div className={`price mt-4 ${product.displayPrice ? "display-none" : ""}`}>${convertCentsToDollars(product.price)}</div>
+                    {/* <div className={`display-price mt-4 ${product.displayPrice ? "" : "display-none"}`}>{product.displayPrice}</div> */}
+                    {/* <div className={`price mt-4 ${product.displayPrice ? "display-none" : ""}`}>${convertCentsToDollars(product.price)}</div> */}
                 </div>
             </>
         );
@@ -681,14 +681,14 @@ const Restaurant = () => {
 
     const menuMostPopularProducts = (
         <div>
-            {!selectedCategory && (
+            {/* {!selectedCategory && (
                 <>
                     <div className="product-category-name h1 text-center mb-6">Most Popular</div>
                     <div className="products">
                         {mostPopularProducts.map((mostPopularProduct) => ProductDisplay(mostPopularProduct.category, mostPopularProduct.product))}
                     </div>
                 </>
-            )}
+            )} */}
         </div>
     );
 
@@ -701,8 +701,8 @@ const Restaurant = () => {
 
                     return (
                         <>
-                            <div className="product-category-name h1 text-center mb-6">{c.name}</div>
-                            {c.description && <div className="product-category-description text-bold text-center mb-6 h3">{c.description}</div>}
+                            {/* <div className="product-category-name h1 text-center mb-6">{c.name}</div> */}
+                            {/* {c.description && <div className="product-category-description text-bold text-center mb-6 h3">{c.description}</div>} */}
                             {subCategories.length > 0 && (
                                 <div className="product-sub-category-wrapper mb-6">
                                     {subCategories.map((subCategory) => (
@@ -785,7 +785,7 @@ const Restaurant = () => {
                     <div className="restaurant">
                         <div className="restaurant-container">
                             <div className="categories-wrapper">
-                                {restaurant.logo && <RestaurantLogo image={restaurant.logo} />}
+                                {/* {restaurant.logo && <RestaurantLogo image={restaurant.logo} />} */}
                                 {menuSearchProduct}
                                 {register.enableSkuScanner && menuSkuSearchProduct}
                                 {menuMostPopularCategory}

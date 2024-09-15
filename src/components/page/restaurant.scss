@@ -57,7 +57,7 @@
             /* Firefox */
 
             overflow: scroll;
-            padding: 48px 32px 32px 32px;
+            padding: 16px;
             width: 100%;
 
             .product-sub-category-wrapper {
@@ -100,14 +100,18 @@
             .products {
                 display: grid;
                 grid-gap: 8px;
-                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 
                 .product {
                     position: relative;
                     border: 1px solid #e0e0e0;
-                    padding: 16px;
+                    padding: 8px;
                     border-radius: 10px;
                     opacity: 1;
+                    height: 150px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
 
                     &.sold-out {
                         opacity: 0.5;

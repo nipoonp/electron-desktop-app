@@ -784,7 +784,7 @@ export const ProductModal = (props: {
 
     const modifierGroups = (
         <>
-            <div className="separator-6"></div>
+            {/* <div className="separator-6"></div> */}
             {product.modifierGroups &&
                 product.modifierGroups.items.map((mg) => {
                     if (mg.hideForCustomer) return;
@@ -831,7 +831,8 @@ export const ProductModal = (props: {
                                 disabled={false}
                                 scrollToDiv={scrollToDiv}
                             />
-                            <div className="separator-6"></div>
+                            {/* <div className="separator-6"></div> */}
+                            <div className="mt-4"></div>
                         </>
                     );
                 })}
@@ -889,10 +890,10 @@ export const ProductModal = (props: {
     const content = (
         <>
             <div ref={(ref) => setProductsWrapperElement(ref)} className="product" id="productsWrapperScrollModel">
-                <div className="mt-11" />
+                <div className="mt-4" />
                 <div className="product-header">
-                    <div className="image-wrapper">
-                        {/* {product.imageUrl ? (
+                    {/* <div className="image-wrapper">
+                        {product.imageUrl ? (
                             <CachedImage url={`${product.imageUrl}`} className="image" alt="product-image" />
                         ) : product.image ? (
                             <>
@@ -902,10 +903,10 @@ export const ProductModal = (props: {
                                     alt="product-image"
                                 />
                             </>
-                        ) : null} */}
-                    </div>
+                        ) : null}
+                    </div> */}
                     <div>
-                        <div className="h1 mb-4 name">
+                        <div className="h3 mb-4 name">
                             {currentSelectedProductModifier ? currentSelectedProductModifier.selectedModifier.name : product.name}
                         </div>
                         {product.description && <div className="description">{product.description}</div>}
@@ -1136,10 +1137,10 @@ export const ModifierGroup = (props: {
         <>
             <div className="modifier-group-header-wrapper" onClick={onToggleCollapsed} id={error ? "scroll-here" : ""}>
                 <div className="modifier-group-header">
-                    <div className="h2 mb-2">{modifierGroup.name}</div>
+                    <div className="text-bold mb-1">{modifierGroup.name}</div>
                     {error && <div className="text-error mb-2">{error}</div>}
                     {/* //Dont show select instructoins for unlmited choice */}
-                    {modifierGroup.choiceMin !== 0 && modifierGroup.choiceMax !== 0 && <div className="mb-2">({getSelectInstructions()})</div>}
+                    {/* {modifierGroup.choiceMin !== 0 && modifierGroup.choiceMax !== 0 && <div className="mb-2">({getSelectInstructions()})</div>} */}
                 </div>
                 {collapsed ? (
                     <div>
@@ -1382,7 +1383,7 @@ const Modifier = (props: {
                     <div>
                         <div>
                             {modifier.name}
-                            {modifier.price > 0
+                            {/* {modifier.price > 0
                                 ? ` (+$${convertCentsToDollars(modifier.price)})`
                                 : modifier.price < 0
                                 ? ` (-$${convertCentsToDollars(Math.abs(modifier.price))})`
@@ -1391,14 +1392,15 @@ const Modifier = (props: {
                                 <span className="quantity-remaining ml-2">{getQuantityRemainingText(modifierQuantityAvailable)}</span>
                             ) : (
                                 <></>
-                            )}
+                            )} */}
                         </div>
-                        <div className="description text-grey">{modifier.description}</div>
+                        {/* <div className="description text-grey">{modifier.description}</div> */}
                     </div>
                 ) : (
                     <div>
-                        {modifier.name} {modifier.price > 0 && `(+$${convertCentsToDollars(modifier.price)})`} (SOLD OUT)
-                        <div className="description text-grey">{modifier.description}</div>
+                        {modifier.name}
+                        {/* {modifier.price > 0 && `(+$${convertCentsToDollars(modifier.price)})`} (SOLD OUT) */}
+                        {/* <div className="description text-grey">{modifier.description}</div> */}
                     </div>
                 )}
 
@@ -1439,7 +1441,7 @@ const Modifier = (props: {
 
     const stepper = (
         <Stepper
-            className="modifier-item-wrapper pt-2 pb-2"
+            className="modifier-item-wrapper pt-1 pb-1"
             count={getStepperCount()}
             min={0}
             max={getModifierStepperMax()}
@@ -1453,7 +1455,7 @@ const Modifier = (props: {
     );
 
     const collapsedStepper = (
-        <div className="modifier-item-wrapper collapsed-stepper-container pt-2 pb-2" onClick={_onDisplayModifierStepper}>
+        <div className="modifier-item-wrapper collapsed-stepper-container pt-1 pb-1" onClick={_onDisplayModifierStepper}>
             <div
                 className={`collapsed-stepper ${disabled ? "disabled" : ""}  `}
                 style={{
@@ -1471,7 +1473,7 @@ const Modifier = (props: {
 
     const checkbox = (
         <Checkbox
-            className="modifier-item-wrapper pt-2 pb-2"
+            className="modifier-item-wrapper pt-1 pb-1"
             onCheck={_onCheckingModifier}
             onUnCheck={_onUnCheckingModifier}
             checked={checked}
@@ -1482,7 +1484,7 @@ const Modifier = (props: {
     );
 
     const _radio = (
-        <Radio className="modifier-item-wrapper pt-2 pb-2" selected={checked} onSelect={_onSelectRadioModifier} disabled={disabled}>
+        <Radio className="modifier-item-wrapper pt-1 pb-1" selected={checked} onSelect={_onSelectRadioModifier} disabled={disabled}>
             {modifierChildren}
         </Radio>
     );
@@ -1523,7 +1525,7 @@ const Modifier = (props: {
 
                 {showCheckbox && checkbox}
 
-                {selectedModifier && selectedModifier.productModifiers && !currentSelectedProductModifier && productModifiers}
+                {/* {selectedModifier && selectedModifier.productModifiers && !currentSelectedProductModifier && productModifiers} */}
             </div>
         </>
     );

@@ -263,7 +263,7 @@ const OrderItemDetails = (props: {
                                     <div key={m.id} className="mt-1">
                                         {modifierString(m.preSelectedQuantity, m.quantity, m.name, m.price)}
                                     </div>
-                                    {m.productModifiers && (
+                                    {/* {m.productModifiers && (
                                         <div className="mb-2">
                                             {m.productModifiers.map((productModifier, index) => (
                                                 <div>
@@ -275,7 +275,7 @@ const OrderItemDetails = (props: {
                                                 </div>
                                             ))}
                                         </div>
-                                    )}
+                                    )} */}
                                 </>
                             ))}
                         </>
