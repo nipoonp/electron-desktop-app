@@ -955,7 +955,7 @@ const POSPaymentScreen = (props: {
             <div className="payment-modal-close-button-wrapper">
                 <FiX className="payment-modal-close-button" size={36} onClick={onClose} />
             </div>
-            <div className="payment-modal-amount-input-wrapper mb-4">
+            <div className="payment-modal-amount-input-wrapper mb-8">
                 <div className="h2">Enter Amount To Pay</div>
                 <div className="payment-modal-input-wrapper">
                     <Input
@@ -974,11 +974,6 @@ const POSPaymentScreen = (props: {
                         <div className="payment-modal-partial-payment-label ml-10 text-left">Remaining: ${totalRemainingInDollars}</div>
                     )}
                 </div>
-            </div>
-
-            <div>
-                <Button>Dollar Discount</Button>
-                <Button>Percentage Discount</Button>
             </div>
 
             <div className="h3 mb-4">Payment Methods</div>

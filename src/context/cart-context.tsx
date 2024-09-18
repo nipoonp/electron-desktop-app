@@ -232,8 +232,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         }
 
         _setSurcharge(newSurcharge);
-        _setSubTotal(newSubTotal + newSurcharge + orderTypeSurcharge);
-    }, [total, promotion, restaurant, orderTypeSurcharge]);
+        _setSubTotal(newSubTotal + newSurcharge + orderTypeSurcharge - staticDiscount);
+    }, [total, promotion, restaurant, orderTypeSurcharge, staticDiscount, percentageDiscount]);
 
     useEffect(() => {
         if (userAppliedPromotionCode) return; //Only apply restaurant promos if user has not applied one themselves
@@ -306,8 +306,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setPromotion(bestPromotion);
 
         if (bestPromotion) {
-            setStaticDiscount(0);
-            setPercentageDiscount(0);
+            _setStaticDiscount(0);
+            _setPercentageDiscount(0);
         }
     };
 
@@ -321,8 +321,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setAvailablePromotions([promotion]);
         _setUserAppliedPromotionCode(promotion.code);
 
-        setStaticDiscount(0);
-        setPercentageDiscount(0);
+        _setStaticDiscount(0);
+        _setPercentageDiscount(0);
 
         return CheckIfPromotionValidResponse.VALID;
     };

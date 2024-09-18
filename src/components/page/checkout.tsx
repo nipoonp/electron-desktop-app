@@ -82,6 +82,7 @@ import axios from "axios";
 import { R18MessageModal } from "../modals/r18MessageModal";
 import { useTyro } from "../../context/tyro-context";
 import { useMX51 } from "../../context/mx51-context";
+import { DiscountModal } from "../modals/discountModal";
 
 const logger = new Logger("checkout");
 
@@ -109,6 +110,9 @@ export const Checkout = () => {
         clearCart,
         promotion,
         total,
+        staticDiscount,
+        setStaticDiscount,
+        percentageDiscount,
         surcharge,
         subTotal,
         paidSoFar,
@@ -194,6 +198,7 @@ export const Checkout = () => {
     const [showUpSellCategoryModal, setShowUpSellCategoryModal] = useState(false);
     const [showUpSellProductModal, setShowUpSellProductModal] = useState(false);
     const [showOrderThresholdMessageModal, setShowOrderThresholdMessageModal] = useState(false);
+    const [showDiscountModal, setShowDiscountModal] = useState(false);
 
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
     const [showModal, setShowModal] = useState<string>("");
@@ -312,6 +317,10 @@ export const Checkout = () => {
 
     const onClosePromotionCodeModal = () => {
         setShowPromotionCodeModal(false);
+    };
+
+    const onCloseDiscountModal = () => {
+        setShowDiscountModal(false);
     };
 
     const onCloseOrderThresholdMessageModal = () => {
@@ -832,10 +841,10 @@ export const Checkout = () => {
                 eftposCardType: eftposCardType || undefined,
                 eftposSurcharge: eftposSurcharge || undefined,
                 eftposTip: eftposTip || undefined,
-                discount: promotion ? promotion.discountedAmount : undefined,
+                discount: promotion ? promotion.discountedAmount : staticDiscount + percentageDiscount,
                 promotionId: promotion ? promotion.promotion.id : undefined,
                 promotionType: promotion ? promotion.promotion.type : undefined,
-                subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0),
+                subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0) - staticDiscount - percentageDiscount,
                 preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                 registerId: register.id,
                 products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
@@ -893,10 +902,10 @@ export const Checkout = () => {
                     eftposCardType: eftposCardType,
                     eftposSurcharge: eftposSurcharge,
                     eftposTip: eftposTip,
-                    discount: promotion ? promotion.discountedAmount : undefined,
+                    discount: promotion ? promotion.discountedAmount : staticDiscount + percentageDiscount,
                     promotionId: promotion ? promotion.promotion.id : undefined,
                     promotionType: promotion ? promotion.promotion.type : undefined,
-                    subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0),
+                    subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0) - staticDiscount - percentageDiscount,
                     preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                     registerId: register.id,
                     products: JSON.stringify(products), // copy obj so we can mutate it later
@@ -1538,6 +1547,10 @@ export const Checkout = () => {
         return <>{showPromotionCodeModal && <PromotionCodeModal isOpen={showPromotionCodeModal} onClose={onClosePromotionCodeModal} />}</>;
     };
 
+    const discountModal = () => {
+        return <>{showDiscountModal && <DiscountModal isOpen={showDiscountModal} onClose={onCloseDiscountModal} />}</>;
+    };
+
     const thresholdMessageModal = () => {
         return (
             <>
@@ -1615,6 +1628,7 @@ export const Checkout = () => {
             {editProductModal()}
             {itemUpdatedModal()}
             {promotionCodeModal()}
+            {discountModal()}
             {thresholdMessageModal()}
             {paymentModal()}
         </>
@@ -1771,45 +1785,55 @@ export const Checkout = () => {
         </>
     );
 
+    const onDiscount = () => {
+        setShowDiscountModal(true);
+    };
+
     const promoCodeFooter = (
-        <div className="park-order-link p-2" onClick={onClickApplyPromotionCode}>
+        <div className="checkout-feature-button p-2" onClick={onClickApplyPromotionCode}>
             Apply Promo
         </div>
     );
 
     const parkOrderFooter = (
-        <div className="park-order-link p-2" onClick={() => products && products.length > 0 && onParkOrder()}>
+        <div className="checkout-feature-button p-2" onClick={() => products && products.length > 0 && onParkOrder()}>
             Park Order
         </div>
     );
 
     const buzzerNumberFooter = (
-        <div className="park-order-link p-2" onClick={() => navigate(buzzerNumberPath)}>
+        <div className="checkout-feature-button p-2" onClick={() => navigate(buzzerNumberPath)}>
             {buzzerNumber ? `Buzzer (${buzzerNumber})` : "Buzzer"}
         </div>
     );
 
     const tableFlagFooter = (
-        <div className="park-order-link p-2" onClick={() => navigate(tableNumberPath)}>
+        <div className="checkout-feature-button p-2" onClick={() => navigate(tableNumberPath)}>
             {tableNumber ? `Table (${tableNumber})` : "Table"}
         </div>
     );
 
     const customerInformationFooter = (
-        <div className="park-order-link p-2" onClick={() => navigate(customerInformationPath)}>
-            {customerInformation ? `Customer Info (Edit)` : "Customer Info"}
+        <div className="checkout-feature-button p-2" onClick={() => navigate(customerInformationPath)}>
+            {customerInformation ? `Customer (Edit)` : "Customer"}
         </div>
     );
 
     const noSaleFooter = (
-        <div className="no-sale-link p-2" onClick={onNoSale}>
+        <div className="checkout-feature-button p-2" onClick={onNoSale}>
             No Sale
         </div>
     );
 
     const clearSaleFooter = (
-        <div className="no-sale-link p-2" onClick={() => setProducts([])}>
+        <div className="checkout-feature-button p-2" onClick={() => setProducts([])}>
             Clear
+        </div>
+    );
+
+    const discountSaleFooter = (
+        <div className="checkout-feature-button p-2" onClick={() => products && products.length > 0 && onDiscount()}>
+            Discount
         </div>
     );
 
@@ -1841,6 +1865,14 @@ export const Checkout = () => {
             ) : (
                 <></>
             )}
+
+            {staticDiscount ? (
+                <div className={`text-center c${isPOS ? "mb-2" : "mb-4"}`}>
+                    Fixed Discount: ${convertCentsToDollars(staticDiscount)} <Link onClick={() => setStaticDiscount(0)}>Remove</Link>
+                </div>
+            ) : (
+                <></>
+            )}
             <div className={`h3 text-center checkout-total-price ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
             <div className={`${isPOS ? "mb-0" : "mb-4"}`}>
                 <div className="checkout-buttons-container">
@@ -1849,7 +1881,11 @@ export const Checkout = () => {
                             Order More
                         </Button>
                     )}
-                    <Button onClick={onClickOrderButton} className="button complete-order-button">
+                    <Button
+                        onClick={onClickOrderButton}
+                        className="button complete-order-button"
+                        disabled={products && products.length ? false : true}
+                    >
                         Complete Order
                     </Button>
                 </div>
@@ -1896,6 +1932,7 @@ export const Checkout = () => {
                         {isPOS && <>{buzzerNumberFooter}</>}
                         {isPOS && <>{tableFlagFooter}</>}
                         {isPOS && <>{customerInformationFooter}</>}
+                        {isPOS && <>{clearSaleFooter}</>}
                     </div>
                     <div className="order-wrapper">
                         <div
@@ -1918,7 +1955,7 @@ export const Checkout = () => {
                         {isPOS && payments.length === 0 && <>{promoCodeFooter}</>}
                         {isPOS && payments.length === 0 && <>{parkOrderFooter}</>}
                         {isPOS && <>{noSaleFooter}</>}
-                        {isPOS && <>{clearSaleFooter}</>}
+                        {isPOS && <>{discountSaleFooter}</>}
                     </div>
                     {/* {products && products.length > 0 && ( */}
                     <div className="footer p-2" id="footer">
