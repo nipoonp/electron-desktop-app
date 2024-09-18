@@ -34,6 +34,13 @@ export interface IPrintReceiptDataInput {
     eftposReceipt: string;
 }
 
+export interface IPrintNoSaleReceiptDataInput {
+    printer: {
+        printerType: ERegisterPrinterType;
+        printerAddress: string;
+    };
+}
+
 export interface ICognitoUser {
     attributes: {
         email: string;

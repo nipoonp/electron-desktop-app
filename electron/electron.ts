@@ -10,11 +10,15 @@ import {
     printKitchenReceiptSmall,
     printKitchenReceiptLarge,
     printEftposReceipt,
+    printNoSaleDataReceipt,
 } from "./util";
 import {
     IEftposReceipt,
     IEftposReceiptOutput,
     IOrderReceipt,
+    IPrintNoSaleDataOutput,
+    IPrintNoSaleOutput,
+    IPrintNoSaleReceiptDataInput,
     IPrintReceiptDataOutput,
     IPrintReceiptOutput,
     IPrintSalesDataInput,
@@ -337,6 +341,21 @@ ipcMain.handle("RECEIPT_SALES_DATA", async (event: any, printSalesDataInput: IPr
         return { error: e, printSalesDataInput: printSalesDataInput };
     }
 });
+
+ipcMain.handle(
+    "RECEIPT_NO_SALE_DATA",
+    async (event: any, printNoSaleSalesDataInput: IPrintNoSaleReceiptDataInput): Promise<IPrintNoSaleDataOutput> => {
+        try {
+            const result: IPrintNoSaleOutput = await printNoSaleDataReceipt(printNoSaleSalesDataInput);
+
+            if (result.error) return { error: result.error };
+
+            return { error: null };
+        } catch (e) {
+            return { error: e };
+        }
+    }
+);
 
 ipcMain.on("SENTRY_CURRENT_USER", (event: any, data: any) => {
     Sentry.setUser({ email: `${data.email} ${data.register}` });

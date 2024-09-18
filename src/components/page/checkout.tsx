@@ -133,7 +133,7 @@ export const Checkout = () => {
     } = useCart();
     const { restaurant, restaurantBase64Logo } = useRestaurant();
     const { register, isPOS } = useRegister();
-    const { printReceipt, printEftposReceipt, printLabel } = useReceiptPrinter();
+    const { printReceipt, printEftposReceipt, printLabel, printNoSaleReceipt } = useReceiptPrinter();
     const { user } = useUser();
     const { logError } = useErrorLogging();
 
@@ -1369,6 +1369,15 @@ export const Checkout = () => {
         }
     };
 
+    const onNoSale = () => {
+        register.printers &&
+            register.printers.items.forEach((printer) => {
+                if (printer.customerPrinter !== true) return;
+
+                printNoSaleReceipt({ printer: { printerType: printer.type, printerAddress: printer.address } });
+            });
+    };
+
     // Modals
     const upSellCategoryModal = () => {
         if (
@@ -1768,6 +1777,14 @@ export const Checkout = () => {
         </div>
     );
 
+    const noSaleFooter = (
+        <div className="no-sale-footer">
+            <div className="no-sale-link p-2">
+                <Link onClick={onNoSale}>No Sale</Link>
+            </div>
+        </div>
+    );
+
     const checkoutFooter = (
         <div>
             {/* <div className="order-schedule-date-time-wrapper">
@@ -1846,7 +1863,10 @@ export const Checkout = () => {
                             ) : null}
                         </div>
                     </div>
-                    {isPOS && payments.length === 0 && <div>{parkOrderFooter}</div>}
+                    <div className="extra-footer-button">
+                        {isPOS && payments.length === 0 && <div>{parkOrderFooter}</div>}
+                        {isPOS && <div>{noSaleFooter}</div>}
+                    </div>
                     {/* {products && products.length > 0 && ( */}
                     <div className="footer p-2" id="footer">
                         {checkoutFooter}

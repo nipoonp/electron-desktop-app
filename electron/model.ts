@@ -184,9 +184,20 @@ export interface IPrintSalesDataInput {
     mostSoldProducts: IPrintSalesDataInputMostSoldProducts;
 }
 
+export interface IPrintNoSaleReceiptDataInput {
+    printer: {
+        printerType: ERegisterPrinterType;
+        printerAddress: string;
+    };
+}
+
 export interface IPrintSalesDataOutput {
     error: any;
     printSalesDataInput: IPrintSalesDataInput;
+}
+
+export interface IPrintNoSaleDataOutput {
+    error: any;
 }
 
 export interface IOrderPaymentAmounts {
@@ -205,6 +216,10 @@ export interface IPrintReceiptDataOutput {
 }
 
 export interface IPrintReceiptOutput {
+    error: any;
+}
+
+export interface IPrintNoSaleOutput {
     error: any;
 }
 

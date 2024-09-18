@@ -163,11 +163,25 @@
         }
     }
 
+    .no-sale-footer {
+        border-top: 1px solid #e0e0e0;
+
+        .no-sale-link {
+            display: flex;
+            justify-content: center;
+            border-right: 1px solid #e0e0e0;
+        }
+    }
+
     .order-schedule-date-time-wrapper {
         margin: 0 auto;
         max-width: 400px;
         text-align: center;
         margin-bottom: 36px;
+    }
+
+    .extra-footer-button {
+        display: flex;
     }
 
     .footer {

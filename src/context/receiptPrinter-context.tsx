@@ -4,7 +4,14 @@ import { useEffect, createContext, useContext } from "react";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
 import { useGetRestaurantOnlineOrdersByBeginWithPlacedAtLazyQuery } from "../hooks/useGetRestaurantOnlineOrdersByBeginWithPlacedAtLazyQuery";
 import { useGetRestaurantOrdersByBetweenPlacedAtLazyQuery } from "../hooks/useGetRestaurantOrdersByBetweenPlacedAtLazyQuery";
-import { IPrintReceiptDataOutput, IOrderReceipt, IPrintSalesDataInput, IOrderLabel, IPrintReceiptDataInput } from "../model/model";
+import {
+    IPrintReceiptDataOutput,
+    IOrderReceipt,
+    IPrintSalesDataInput,
+    IOrderLabel,
+    IPrintReceiptDataInput,
+    IPrintNoSaleReceiptDataInput,
+} from "../model/model";
 import { toast } from "../tabin/components/toast";
 import { convertProductTypesForPrint, filterPrintProducts, toLocalISOString } from "../util/util";
 import { useErrorLogging } from "./errorLogging-context";
@@ -23,6 +30,7 @@ type ContextProps = {
     printReceipt: (payload: IOrderReceipt) => Promise<any>;
     printEftposReceipt: (eftposReceipt: IPrintReceiptDataInput) => Promise<any>;
     printLabel: (payload: IOrderLabel) => Promise<any>;
+    printNoSaleReceipt: (noSaleReceipt: IPrintNoSaleReceiptDataInput) => Promise<any>;
     printSalesData: (printSalesDataInput: IPrintSalesDataInput) => Promise<any>;
 };
 
@@ -34,6 +42,9 @@ const ReceiptPrinterContext = createContext<ContextProps>({
         return new Promise(() => {});
     },
     printLabel: (payload: IOrderLabel) => {
+        return new Promise(() => {});
+    },
+    printNoSaleReceipt: (eftposReceipt: IPrintNoSaleReceiptDataInput) => {
         return new Promise(() => {});
     },
     printSalesData: (printSalesDataInput: IPrintSalesDataInput) => {
@@ -220,6 +231,20 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         if (ipcRenderer) {
             try {
                 const result: IEftposReceiptOutput = await ipcRenderer.invoke("RECEIPT_PRINTER_EFTPOS_DATA", eftposReceipt);
+
+                console.log("result", result);
+            } catch (e) {
+                console.error(e);
+                toast.error("There was an error printing your order");
+                // await logError("There was an error printing your order", JSON.stringify({ error: e, order: order }));
+            }
+        }
+    };
+
+    const printNoSaleReceipt = async (noSaleReceipt: IPrintNoSaleReceiptDataInput) => {
+        if (ipcRenderer) {
+            try {
+                const result = await ipcRenderer.invoke("RECEIPT_NO_SALE_DATA", noSaleReceipt);
 
                 console.log("result", result);
             } catch (e) {
@@ -421,6 +446,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 printReceipt: printReceipt,
                 printEftposReceipt: printEftposReceipt,
                 printLabel: printLabel,
+                printNoSaleReceipt: printNoSaleReceipt,
                 printSalesData: printSalesData,
             }}
             children={props.children}
