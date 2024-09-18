@@ -177,22 +177,14 @@
         width: 100%;
     }
 
-    .park-order-link {
+    .checkout-feature-button {
         display: flex;
         justify-content: center;
         border: 1px solid #e0e0e0;
         flex-grow: 1;
         text-align: center;
         cursor: pointer;
-    }
-
-    .no-sale-link {
-        display: flex;
-        justify-content: center;
-        border: 1px solid #e0e0e0;
-        flex-grow: 1;
-        text-align: center;
-        cursor: pointer;
+        font-size: 14px;
     }
 
     .order-schedule-date-time-wrapper {

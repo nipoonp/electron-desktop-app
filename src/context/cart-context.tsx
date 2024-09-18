@@ -34,6 +34,8 @@ const initialUserAppliedPromotionCode = null;
 const initialPromotion = null;
 const initialAvailablePromotions = [];
 const initialTotal = 0;
+const initialStaticDiscount = 0;
+const initialPercentageDiscount = 0;
 const initialSurcharge = 0;
 const initialPaidSoFar = 0;
 const initialOrderTypeSurcharge = 0;
@@ -82,6 +84,10 @@ type ContextProps = {
     setUserAppliedPromotion: (promotion: IGET_RESTAURANT_PROMOTION) => CheckIfPromotionValidResponse;
     removeUserAppliedPromotion: () => void;
     total: number;
+    staticDiscount: number;
+    setStaticDiscount: (staticDiscount: number) => void;
+    percentageDiscount: number;
+    setPercentageDiscount: (percentageDiscount: number) => void;
     surcharge: number;
     subTotal: number;
     paidSoFar: number;
@@ -136,6 +142,10 @@ const CartContext = createContext<ContextProps>({
     setUserAppliedPromotion: () => CheckIfPromotionValidResponse.VALID,
     removeUserAppliedPromotion: () => {},
     total: initialTotal,
+    staticDiscount: initialStaticDiscount,
+    setStaticDiscount: () => {},
+    percentageDiscount: initialPercentageDiscount,
+    setPercentageDiscount: () => {},
     surcharge: initialSurcharge,
     subTotal: initialSubTotal,
     paidSoFar: initialPaidSoFar,
@@ -169,6 +179,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
     const [notes, _setNotes] = useState<string>(initialNotes);
     const [total, _setTotal] = useState<number>(initialTotal);
+    const [staticDiscount, _setStaticDiscount] = useState<number>(initialStaticDiscount);
+    const [percentageDiscount, _setPercentageDiscount] = useState<number>(initialPercentageDiscount);
     const [surcharge, _setSurcharge] = useState<number>(initialSurcharge);
     const [paymentAmounts, _setPaymentAmounts] = useState<ICartPaymentAmounts>(initialPaymentAmounts);
     const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
@@ -292,6 +304,11 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         console.log("bestPromotion", bestPromotion);
         _setProducts(discountedProducts);
         _setPromotion(bestPromotion);
+
+        if (bestPromotion) {
+            setStaticDiscount(0);
+            setPercentageDiscount(0);
+        }
     };
 
     const setUserAppliedPromotion = (promotion: IGET_RESTAURANT_PROMOTION): CheckIfPromotionValidResponse => {
@@ -303,6 +320,9 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         _setAvailablePromotions([promotion]);
         _setUserAppliedPromotionCode(promotion.code);
+
+        setStaticDiscount(0);
+        setPercentageDiscount(0);
 
         return CheckIfPromotionValidResponse.VALID;
     };
@@ -564,6 +584,16 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         processPromotions(newProducts, newTotal);
     };
 
+    const setStaticDiscount = (staticDiscount: number) => {
+        _setStaticDiscount(staticDiscount);
+        _setPercentageDiscount(0);
+    };
+
+    const setPercentageDiscount = (percentageDiscount: number) => {
+        _setPercentageDiscount(percentageDiscount);
+        _setStaticDiscount(0);
+    };
+
     const deleteProduct = (index: number) => {
         // should never really end up here
         if (products == null) return;
@@ -672,6 +702,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setUserAppliedPromotion: setUserAppliedPromotion,
                 removeUserAppliedPromotion: removeUserAppliedPromotion,
                 total: total,
+                staticDiscount: staticDiscount,
+                setStaticDiscount: setStaticDiscount,
+                percentageDiscount: percentageDiscount,
+                setPercentageDiscount: setPercentageDiscount,
                 surcharge: surcharge,
                 subTotal: subTotal,
                 paidSoFar:

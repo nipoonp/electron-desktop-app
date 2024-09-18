@@ -976,27 +976,9 @@ const POSPaymentScreen = (props: {
                 </div>
             </div>
 
-            {promotion ? (
-                <div className="text-bold text-center mb-3">
-                    {`Applied Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
-                        promotion.discountedAmount
-                    )}`}{" "}
-                    {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
-                </div>
-            ) : (
-                <></>
-            )}
-
-            <div className="payment-modal-promotion-wrapper mb-8">
-                {restaurant?.promotions.items.map((promotion) => {
-                    return (
-                        promotion.type === EPromotionType.ENTIREORDER && (
-                            <div className="payment-modal-promotion" onClick={() => setUserAppliedPromotion(promotion)}>
-                                {promotion.name}
-                            </div>
-                        )
-                    );
-                })}
+            <div>
+                <Button>Dollar Discount</Button>
+                <Button>Percentage Discount</Button>
             </div>
 
             <div className="h3 mb-4">Payment Methods</div>
