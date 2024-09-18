@@ -95,6 +95,7 @@ export const Checkout = () => {
         parkedOrderId,
         parkedOrderNumber,
         orderType,
+        setOrderType,
         products,
         notes,
         buzzerNumber,
@@ -1754,9 +1755,9 @@ export const Checkout = () => {
 
     const order = (
         <>
-            <div className={isPOS ? "mt-4" : "mt-10"}></div>
+            <div className={isPOS ? "mt-2" : "mt-10"}></div>
             {/* {title} */}
-            {register && register.availableOrderTypes.length > 1 && restaurantOrderType}
+            {/* {register && register.availableOrderTypes.length > 1 && restaurantOrderType} */}
             {buzzerNumber && <div className="mb-2">{restaurantBuzzerNumber}</div>}
             {tableNumber && <div className="mb-2">{restaurantTableNumber}</div>}
             {covers && <div className="mb-2">{restaurantCovers}</div>}
@@ -1770,18 +1771,14 @@ export const Checkout = () => {
     );
 
     const parkOrderFooter = (
-        <div className="park-order-footer">
-            <div className="park-order-link p-2">
-                <Link onClick={onParkOrder}>Park Order</Link>
-            </div>
+        <div className="park-order-link p-2" onClick={() => products && products.length > 0 && onParkOrder()}>
+            <Link>Park Order</Link>
         </div>
     );
 
     const noSaleFooter = (
-        <div className="no-sale-footer">
-            <div className="no-sale-link p-2">
-                <Link onClick={onNoSale}>No Sale</Link>
-            </div>
+        <div className="no-sale-link p-2" onClick={onNoSale}>
+            <Link>No Sale</Link>
         </div>
     );
 
@@ -1846,6 +1843,24 @@ export const Checkout = () => {
         <>
             <PageWrapper>
                 <div className="checkout">
+                    <div className="pos-order-type-button-wrapper">
+                        {isPOS && (
+                            <>
+                                <div
+                                    className={`pos-order-type p-2 ${orderType === EOrderType.DINEIN ? "selected" : ""}`}
+                                    onClick={() => setOrderType(EOrderType.DINEIN)}
+                                >
+                                    Dine In
+                                </div>
+                                <div
+                                    className={`pos-order-type p-2 ${orderType === EOrderType.TAKEAWAY ? "selected" : ""}`}
+                                    onClick={() => setOrderType(EOrderType.TAKEAWAY)}
+                                >
+                                    Takeaway
+                                </div>
+                            </>
+                        )}
+                    </div>
                     <div className="order-wrapper">
                         <div
                             ref={(ref) => setProductsWrapperElement(ref)}
@@ -1864,8 +1879,8 @@ export const Checkout = () => {
                         </div>
                     </div>
                     <div className="extra-footer-button">
-                        {isPOS && payments.length === 0 && <div>{parkOrderFooter}</div>}
-                        {isPOS && <div>{noSaleFooter}</div>}
+                        {isPOS && payments.length === 0 && <>{parkOrderFooter}</>}
+                        {isPOS && <>{noSaleFooter}</>}
                     </div>
                     {/* {products && products.length > 0 && ( */}
                     <div className="footer p-2" id="footer">

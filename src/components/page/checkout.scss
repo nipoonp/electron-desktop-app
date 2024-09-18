@@ -3,6 +3,25 @@
     display: flex;
     flex-direction: column;
 
+    .pos-order-type-button-wrapper {
+        display: flex;
+        width: 100%;
+
+        .pos-order-type {
+            display: flex;
+            justify-content: center;
+            border: 1px solid #e0e0e0;
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .selected {
+            background-color: var(--primary-color);
+            color: var(--background-color);
+            border: 1px solid var(--primary-color);
+        }
+    }
+
     .order-wrapper {
         display: flex;
         flex: 1;
@@ -153,24 +172,27 @@
         }
     }
 
-    .park-order-footer {
-        border-top: 1px solid #e0e0e0;
-
-        .park-order-link {
-            display: flex;
-            justify-content: center;
-            border-right: 1px solid #e0e0e0;
-        }
+    .extra-footer-button {
+        display: flex;
+        width: 100%;
     }
 
-    .no-sale-footer {
-        border-top: 1px solid #e0e0e0;
+    .park-order-link {
+        display: flex;
+        justify-content: center;
+        border: 1px solid #e0e0e0;
+        flex-grow: 1;
+        text-align: center;
+        cursor: pointer;
+    }
 
-        .no-sale-link {
-            display: flex;
-            justify-content: center;
-            border-right: 1px solid #e0e0e0;
-        }
+    .no-sale-link {
+        display: flex;
+        justify-content: center;
+        border: 1px solid #e0e0e0;
+        flex-grow: 1;
+        text-align: center;
+        cursor: pointer;
     }
 
     .order-schedule-date-time-wrapper {
@@ -178,10 +200,6 @@
         max-width: 400px;
         text-align: center;
         margin-bottom: 36px;
-    }
-
-    .extra-footer-button {
-        display: flex;
     }
 
     .footer {

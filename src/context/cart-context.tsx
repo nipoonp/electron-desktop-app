@@ -193,6 +193,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     // }, [products]);
 
     useEffect(() => {
+        if (!register) return;
+
+        setOrderType(register.availableOrderTypes[0]);
+    }, [register]);
+
+    useEffect(() => {
         if (!products) return;
 
         let newSubTotal = total;
