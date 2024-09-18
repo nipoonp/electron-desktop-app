@@ -104,15 +104,15 @@ export default () => {
                         <FiX className="close-button" size={36} onClick={onClose} />
                     </div>
 
-                    <div className="h2 mb-6">Provide your dine-in details</div>
-                    <div className="mb-6 table-image-container">
+                    {/* <div className="h2 mb-6">Provide your dine-in details</div> */}
+                    {/* <div className="mb-6 table-image-container">
                         <img
                             alt="Table Image"
                             className="table-image"
                             src="https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/table-flag.webp"
                         />
                         <div className="table-image-override"></div>
-                    </div>
+                    </div> */}
                     {register?.enableTableFlags && (
                         <>
                             <div className="mb-4 text-center" style={{ width: "300px" }}>

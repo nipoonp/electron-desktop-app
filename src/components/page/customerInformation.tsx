@@ -92,7 +92,9 @@ export default () => {
                 customFields: customFields,
             });
 
-            navigate(`${checkoutPath}/true`);
+            navigate(`${restaurantPath}/${restaurant.id}`);
+
+            // navigate(`${checkoutPath}/true`);
         }
     };
 

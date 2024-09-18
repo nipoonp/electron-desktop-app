@@ -906,12 +906,13 @@ export const ProductModal = (props: {
                         ) : null}
                     </div> */}
                     <div>
-                        <div className="h3 mb-4 name">
+                        <div className="h3 mb-2 name">
                             {currentSelectedProductModifier ? currentSelectedProductModifier.selectedModifier.name : product.name}
                         </div>
-                        {product.description && <div className="description">{product.description}</div>}
+                        {product.description && <div className="description mb-2">{product.description}</div>}
                     </div>
                 </div>
+                <div className="mb-2"></div>
                 {modifierGroups}
                 <div className="product-notes-wrapper">{!currentSelectedProductModifier && productNotes}</div>
                 {isScrollable ? (

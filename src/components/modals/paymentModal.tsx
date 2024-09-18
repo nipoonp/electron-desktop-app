@@ -24,7 +24,8 @@ import { CREATE_FEEDBACK, UPDATE_FEEDBACK } from "../../graphql/customMutations"
 import { useListFeedbackLazyQuery } from "../../hooks/useGetFeeddbackByRestaurant";
 
 import "./paymentModal.scss";
-import { IGET_FEEDBACK_BY_RESTAURANT } from "../../graphql/customQueries";
+import { EPromotionType, IGET_FEEDBACK_BY_RESTAURANT } from "../../graphql/customQueries";
+import Restaurant from "../page/restaurant";
 
 const AMOUNT_5 = "5.00";
 const AMOUNT_10 = "10.00";
@@ -860,8 +861,20 @@ const POSPaymentScreen = (props: {
         onClickDelivereasy,
         onClose,
     } = props;
-    const { subTotal, payments, setPayments, paymentAmounts, setPaymentAmounts, paidSoFar } = useCart();
+    const {
+        subTotal,
+        payments,
+        setPayments,
+        paymentAmounts,
+        setPaymentAmounts,
+        paidSoFar,
+        setUserAppliedPromotion,
+        promotion,
+        userAppliedPromotionCode,
+        removeUserAppliedPromotion,
+    } = useCart();
     const { register } = useRegister();
+    const { restaurant } = useRestaurant();
 
     const totalRemaining = subTotal - paidSoFar;
     const totalRemainingInDollars = convertCentsToDollars(totalRemaining);
@@ -942,7 +955,7 @@ const POSPaymentScreen = (props: {
             <div className="payment-modal-close-button-wrapper">
                 <FiX className="payment-modal-close-button" size={36} onClick={onClose} />
             </div>
-            <div className="payment-modal-amount-input-wrapper mb-8">
+            <div className="payment-modal-amount-input-wrapper mb-4">
                 <div className="h2">Enter Amount To Pay</div>
                 <div className="payment-modal-input-wrapper">
                     <Input
@@ -961,6 +974,29 @@ const POSPaymentScreen = (props: {
                         <div className="payment-modal-partial-payment-label ml-10 text-left">Remaining: ${totalRemainingInDollars}</div>
                     )}
                 </div>
+            </div>
+
+            {promotion ? (
+                <div className="text-bold text-center mb-3">
+                    {`Applied Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
+                        promotion.discountedAmount
+                    )}`}{" "}
+                    {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
+                </div>
+            ) : (
+                <></>
+            )}
+
+            <div className="payment-modal-promotion-wrapper mb-8">
+                {restaurant?.promotions.items.map((promotion) => {
+                    return (
+                        promotion.type === EPromotionType.ENTIREORDER && (
+                            <div className="payment-modal-promotion" onClick={() => setUserAppliedPromotion(promotion)}>
+                                {promotion.name}
+                            </div>
+                        )
+                    );
+                })}
             </div>
 
             <div className="h3 mb-4">Payment Methods</div>

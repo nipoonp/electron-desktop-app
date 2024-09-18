@@ -68,7 +68,9 @@ export default () => {
 
         if (buzzer) {
             setBuzzerNumber(buzzer);
-            navigate(`${checkoutPath}/true`);
+            navigate(`${restaurantPath}/${restaurant.id}`);
+
+            // navigate(`${checkoutPath}/true`);
         } else {
             setBuzzerError(true);
         }
@@ -86,15 +88,15 @@ export default () => {
                     <div className="close-button-wrapper">
                         <FiX className="close-button" size={36} onClick={onClose} />
                     </div>
-                    <div className="h2 mb-6">Enter your buzzer number</div>
-                    <div className="mb-6 buzzer-image-container">
+                    {/* <div className="h2 mb-6">Enter your buzzer number</div> */}
+                    {/* <div className="mb-6 buzzer-image-container">
                         <img
                             alt="Buzzer Image"
                             className="buzzer-image"
                             src="https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/buzzer-image.png"
                         />
                         <div className="buzzer-image-override"></div>
-                    </div>
+                    </div> */}
                     <div className="mb-12" style={{ width: "300px" }}>
                         <div className="h3 mb-2">Buzzer Number</div>
                         {/* <Input

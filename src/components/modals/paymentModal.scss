@@ -45,6 +45,20 @@
         }
     }
 
+    .payment-modal-promotion-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .payment-modal-promotion {
+            border: 1px solid #484848;
+            padding: 8px;
+            border-radius: 50px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    }
+
     .payment-modal-payment-buttons-wrapper {
         .payment-modal-payment-button-wrapper {
             display: grid;

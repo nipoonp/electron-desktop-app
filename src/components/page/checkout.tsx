@@ -97,6 +97,7 @@ export const Checkout = () => {
         orderType,
         setOrderType,
         products,
+        setProducts,
         notes,
         buzzerNumber,
         customerInformation,
@@ -434,37 +435,37 @@ export const Checkout = () => {
     };
 
     const onClickOrderButton = async () => {
-        if (restaurant.orderThresholds?.enable && restaurant.orderThresholdMessage && !isShownOrderThresholdMessageModal) {
-            setShowOrderThresholdMessageModal(true);
-            return;
-        }
+        // if (restaurant.orderThresholds?.enable && restaurant.orderThresholdMessage && !isShownOrderThresholdMessageModal) {
+        //     setShowOrderThresholdMessageModal(true);
+        //     return;
+        // }
 
-        if (register && buzzerNumber === null && orderType) {
-            if (
-                (register.enableBuzzerNumbersForTakeaway && orderType === EOrderType.TAKEAWAY) ||
-                (register.enableBuzzerNumbersForDineIn && orderType === EOrderType.DINEIN)
-            ) {
-                navigate(buzzerNumberPath);
-                return;
-            }
-        }
+        // if (register && buzzerNumber === null && orderType) {
+        //     if (
+        //         (register.enableBuzzerNumbersForTakeaway && orderType === EOrderType.TAKEAWAY) ||
+        //         (register.enableBuzzerNumbersForDineIn && orderType === EOrderType.DINEIN)
+        //     ) {
+        //         navigate(buzzerNumberPath);
+        //         return;
+        //     }
+        // }
 
-        if (register && register.requestCustomerInformation) {
-            let invalid = false;
+        // if (register && register.requestCustomerInformation) {
+        //     let invalid = false;
 
-            if (register.requestCustomerInformation.firstName && (!customerInformation || !customerInformation.firstName)) invalid = true;
-            if (register.requestCustomerInformation.email && (!customerInformation || !customerInformation.email)) invalid = true;
-            if (register.requestCustomerInformation.phoneNumber && (!customerInformation || !customerInformation.phoneNumber)) invalid = true;
-            if (register.requestCustomerInformation.signature && (!customerInformation || !customerInformation.signatureBase64)) invalid = true;
-            if (register.requestCustomerInformation.customFields?.length && (!customerInformation || !customerInformation.customFields.length))
-                invalid = true;
-            //    if(register.) orderScheduledAt
+        //     if (register.requestCustomerInformation.firstName && (!customerInformation || !customerInformation.firstName)) invalid = true;
+        //     if (register.requestCustomerInformation.email && (!customerInformation || !customerInformation.email)) invalid = true;
+        //     if (register.requestCustomerInformation.phoneNumber && (!customerInformation || !customerInformation.phoneNumber)) invalid = true;
+        //     if (register.requestCustomerInformation.signature && (!customerInformation || !customerInformation.signatureBase64)) invalid = true;
+        //     if (register.requestCustomerInformation.customFields?.length && (!customerInformation || !customerInformation.customFields.length))
+        //         invalid = true;
+        //     //    if(register.) orderScheduledAt
 
-            if (invalid) {
-                navigate(customerInformationPath);
-                return;
-            }
-        }
+        //     if (invalid) {
+        //         navigate(customerInformationPath);
+        //         return;
+        //     }
+        // }
 
         if (!isPOS && register.enableEftposPayments && register.enableCashPayments && paymentMethod === null) {
             navigate(paymentMethodPath);
@@ -1623,9 +1624,9 @@ export const Checkout = () => {
         <>
             <div className="cart-empty">
                 <div className="icon mb-3">
-                    <ShoppingBasketIcon height={"72px"}></ShoppingBasketIcon>
+                    <ShoppingBasketIcon height="64px"></ShoppingBasketIcon>
                 </div>
-                <div className="h1 center mb-3">Empty cart</div>
+                <div className="text-bold center mb-3">Empty cart</div>
                 {/* <div className="h3 center mb-6">Show some love and start ordering!</div>
                 <Button
                     onClick={() => {
@@ -1758,11 +1759,11 @@ export const Checkout = () => {
             <div className={isPOS ? "mt-2" : "mt-10"}></div>
             {/* {title} */}
             {/* {register && register.availableOrderTypes.length > 1 && restaurantOrderType} */}
-            {buzzerNumber && <div className="mb-2">{restaurantBuzzerNumber}</div>}
-            {tableNumber && <div className="mb-2">{restaurantTableNumber}</div>}
-            {covers && <div className="mb-2">{restaurantCovers}</div>}
-            {customerInformation && <div className="mb-2">{restaurantCustomerInformation}</div>}
-            {promotionInformation}
+            {/* {buzzerNumber && <div className="mb-2">{restaurantBuzzerNumber}</div>} */}
+            {/* {tableNumber && <div className="mb-2">{restaurantTableNumber}</div>} */}
+            {/* {covers && <div className="mb-2">{restaurantCovers}</div>} */}
+            {/* {customerInformation && <div className="mb-2">{restaurantCustomerInformation}</div>} */}
+            {/* {promotionInformation} */}
             {/* <div className="separator-6"></div> */}
             {orderSummary}
             {/* <div className="restaurant-notes-wrapper">{restaurantNotes}</div> */}
@@ -1770,15 +1771,45 @@ export const Checkout = () => {
         </>
     );
 
+    const promoCodeFooter = (
+        <div className="park-order-link p-2" onClick={onClickApplyPromotionCode}>
+            Apply Promo
+        </div>
+    );
+
     const parkOrderFooter = (
         <div className="park-order-link p-2" onClick={() => products && products.length > 0 && onParkOrder()}>
-            <Link>Park Order</Link>
+            Park Order
+        </div>
+    );
+
+    const buzzerNumberFooter = (
+        <div className="park-order-link p-2" onClick={() => navigate(buzzerNumberPath)}>
+            {buzzerNumber ? `Buzzer (${buzzerNumber})` : "Buzzer"}
+        </div>
+    );
+
+    const tableFlagFooter = (
+        <div className="park-order-link p-2" onClick={() => navigate(tableNumberPath)}>
+            {tableNumber ? `Table (${tableNumber})` : "Table"}
+        </div>
+    );
+
+    const customerInformationFooter = (
+        <div className="park-order-link p-2" onClick={() => navigate(customerInformationPath)}>
+            {customerInformation ? `Customer Info (Edit)` : "Customer Info"}
         </div>
     );
 
     const noSaleFooter = (
         <div className="no-sale-link p-2" onClick={onNoSale}>
-            <Link>No Sale</Link>
+            No Sale
+        </div>
+    );
+
+    const clearSaleFooter = (
+        <div className="no-sale-link p-2" onClick={() => setProducts([])}>
+            Clear
         </div>
     );
 
@@ -1822,14 +1853,14 @@ export const Checkout = () => {
                         Complete Order
                     </Button>
                 </div>
-                {payments.length === 0 && register.enablePayLater && (
+                {/* {payments.length === 0 && register.enablePayLater && (
                     <div className={`pay-later-link ${isPOS ? "mt-3" : "mt-4"}`}>
                         <Link onClick={onClickPayLater}>Pay later at counter...</Link>
                     </div>
-                )}
-                <div className={`apply-promo-code-link ${isPOS ? "mt-3" : "mt-4"}`}>
+                )} */}
+                {/* <div className={`apply-promo-code-link ${isPOS ? "mt-3" : "mt-4"}`}>
                     <Link onClick={onClickApplyPromotionCode}>Apply promo code</Link>
-                </div>
+                </div> */}
             </div>
             {!isPOS && (
                 <Button className="cancel-button" onClick={onCancelOrder}>
@@ -1861,6 +1892,11 @@ export const Checkout = () => {
                             </>
                         )}
                     </div>
+                    <div className="pos-order-type-button-wrapper">
+                        {isPOS && <>{buzzerNumberFooter}</>}
+                        {isPOS && <>{tableFlagFooter}</>}
+                        {isPOS && <>{customerInformationFooter}</>}
+                    </div>
                     <div className="order-wrapper">
                         <div
                             ref={(ref) => setProductsWrapperElement(ref)}
@@ -1879,8 +1915,10 @@ export const Checkout = () => {
                         </div>
                     </div>
                     <div className="extra-footer-button">
+                        {isPOS && payments.length === 0 && <>{promoCodeFooter}</>}
                         {isPOS && payments.length === 0 && <>{parkOrderFooter}</>}
                         {isPOS && <>{noSaleFooter}</>}
+                        {isPOS && <>{clearSaleFooter}</>}
                     </div>
                     {/* {products && products.length > 0 && ( */}
                     <div className="footer p-2" id="footer">

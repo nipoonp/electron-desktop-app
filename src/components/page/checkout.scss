@@ -33,11 +33,11 @@
         }
 
         .cart-empty {
-            height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-direction: column;
+            margin-top: 48px;
 
             .icon {
                 color: hsl(0, 0%, 80%);
