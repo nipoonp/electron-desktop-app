@@ -655,6 +655,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setPromotion(initialPromotion);
         // _setAvailablePromotions(initialAvailablePromotions); //Don't need this. Otherwise, it will erase availablePromotions when you clear the cart
         _setTotal(initialTotal);
+        _setStaticDiscount(initialStaticDiscount);
+        _setPercentageDiscount(initialPercentageDiscount);
         _setSurcharge(initialSurcharge);
         _setPaymentAmounts(initialPaymentAmounts);
         _setSubTotal(initialSubTotal);
