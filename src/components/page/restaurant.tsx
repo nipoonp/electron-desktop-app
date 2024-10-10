@@ -782,7 +782,7 @@ const Restaurant = () => {
     return (
         <>
             <PageWrapper>
-                <LoyaltyHeader />
+                {/* <LoyaltyHeader /> */}
                 <div className="restaurant-wrapper">
                     <div className="restaurant">
                         <div className="restaurant-container">

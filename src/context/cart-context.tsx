@@ -338,21 +338,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 if (newCartProductQuantitiesById[product.id]) {
                     newCartProductQuantitiesById[product.id].quantity += product.quantity;
                 } else {
-                    const modifiers: {
-                        id: string;
-                        quantity: number;
-                        price: number;
-                    }[] = [];
-
-                    product.modifierGroups.forEach((modifierGroup) => {
-                        modifierGroup.modifiers.forEach((modifier) => {
-                            modifiers.push({
-                                id: modifier.id,
-                                quantity: modifier.quantity,
-                                price: modifier.price,
-                            });
-                        });
-                    });
                     newCartProductQuantitiesById[product.id] = {
                         id: product.id,
                         name: product.name,
@@ -385,10 +370,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                             newCartModifierQuantitiesById[modifier.id].quantity += product.quantity * modifier.quantity;
                         } else {
                             newCartModifierQuantitiesById[modifier.id] = {
-                                id: product.id,
-                                name: product.name,
-                                quantity: product.quantity,
-                                price: product.price,
+                                id: modifier.id,
+                                name: modifier.name,
+                                quantity: product.quantity * modifier.quantity,
+                                price: modifier.price,
                                 discount: 0,
                                 categoryId: null,
                             };
