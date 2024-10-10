@@ -29,6 +29,7 @@ import { toast } from "../../tabin/components/toast";
 import { FiArrowDownCircle } from "react-icons/fi";
 
 import "./restaurant.scss";
+import { LoyaltyHeader } from "../shared/loyaltyHeader";
 
 interface IMostPopularProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -781,6 +782,7 @@ const Restaurant = () => {
     return (
         <>
             <PageWrapper>
+                {/* <LoyaltyHeader /> */}
                 <div className="restaurant-wrapper">
                     <div className="restaurant">
                         <div className="restaurant-container">

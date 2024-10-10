@@ -243,7 +243,7 @@ const OrderItemDetails = (props: {
         </>
     );
 
-    const nameDisplayString = isPOS ? `${quantity > 1 ? `${quantity} x ` : ""}${name}` : `${name}`;
+    const nameDisplayString = isPOS ? `${quantity > 1 ? `${quantity} x ` : ""}${name}` : `${quantity > 1 ? `${quantity} x ` : ""}${name}`;
 
     const nameDisplay = (
         <div className="name-edit-button">

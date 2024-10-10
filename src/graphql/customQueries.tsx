@@ -283,6 +283,7 @@ export const GET_RESTAURANT = gql`
                 identityPoolId
             }
             autoCompleteOrders
+            enableLoyalty
             preparationTimeInMinutes
             delayBetweenOrdersInSeconds
             orderThresholdMessage
@@ -955,6 +956,7 @@ export interface IGET_RESTAURANT {
     gstNumber: string | null;
     customStyleSheet?: IS3Object;
     autoCompleteOrders: boolean | null;
+    enableLoyalty: boolean | null;
     preparationTimeInMinutes: number | null;
     delayBetweenOrdersInSeconds: number | null;
     orderThresholdMessage: string | null;
@@ -1783,4 +1785,64 @@ export interface IGET_FEEDBACK_BY_RESTAURANT_COMMENT {
     comment: string;
     rating: number;
     orderId: string;
+}
+
+export const GET_LOYALTY_USER_BY_PHONE_NUMBER = gql`
+    query listLoyaltyUser($phoneNumber: String, $loyaltyHistoryRestaurantId: ID) {
+        listLoyaltyUser(filter: { phoneNumber: { eq: $phoneNumber } }, limit: 1000000) {
+            items {
+                id
+                firstName
+                lastName
+                phoneNumber
+                email
+                loyaltyHistories(filter: { loyaltyHistoryRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 1000000) {
+                    items {
+                        id
+                        action
+                        points
+                        createdAt
+                    }
+                }
+            }
+        }
+    }
+`;
+
+export const GET_LOYALTY_USER_BY_EMAIL = gql`
+    query listLoyaltyUser($email: String, $loyaltyHistoryRestaurantId: ID) {
+        listLoyaltyUser(filter: { email: { eq: $email } }) {
+            items(limit: 1000000) {
+                id
+                firstName
+                lastName
+                phoneNumber
+                email
+                loyaltyHistories(filter: { loyaltyHistoryRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 1000000) {
+                    items {
+                        id
+                        action
+                        points
+                        createdAt
+                    }
+                }
+            }
+        }
+    }
+`;
+
+export interface IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL {
+    id: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+    email: string;
+    loyaltyHistories: {
+        items: {
+            id: string;
+            action: string;
+            points: number;
+            createdAt: string;
+        }[];
+    };
 }
