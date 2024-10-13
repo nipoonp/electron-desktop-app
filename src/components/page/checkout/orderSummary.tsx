@@ -272,6 +272,9 @@ const OrderItemDetails = (props: {
                                                     <div className="mt-2"></div>
                                                     <ProductModifier
                                                         selectionIndex={m.productModifiers && m.productModifiers.length > 1 ? index + 1 : undefined}
+                                                        showNoExtraSelectionsMade={
+                                                            m.productModifiers?.some((pm) => pm.modifierGroups?.length) || false
+                                                        }
                                                         product={productModifier}
                                                     />
                                                 </div>
