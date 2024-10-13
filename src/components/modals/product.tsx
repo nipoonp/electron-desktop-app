@@ -868,11 +868,7 @@ export const ProductModal = (props: {
                     Cancel
                 </Button>
                 <Button className="button large add-update-order-button" onClick={onSubmit}>
-                    {currentSelectedProductModifier
-                        ? "Save"
-                        : editProduct
-                        ? `Update Item ${convertCentsToDollars(totalDisplayPrice)}`
-                        : `Add To Order ${convertCentsToDollars(totalDisplayPrice)}`}
+                    {currentSelectedProductModifier ? "Save" : editProduct ? `Update Item` : `Add To Order`}
                 </Button>
             </div>
         </>
@@ -1396,7 +1392,7 @@ const Modifier = (props: {
                     </div>
                 ) : (
                     <div>
-                        {modifier.name} {modifier.price > 0 && `(+$${convertCentsToDollars(modifier.price)})`} (SOLD OUT)
+                        {modifier.name} {modifier.price > 0 && `(+$${convertCentsToDollars(modifier.price)})`}
                         <div className="description text-grey">{modifier.description}</div>
                     </div>
                 )}

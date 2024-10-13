@@ -122,7 +122,7 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
                         />
                     ) : null}
 
-                    <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
+                    <div className="name text-bold">{isValid ? `${product.name}` : `${product.name}`}</div>
 
                     {product.description && <div className="description mt-2">{product.description}</div>}
 

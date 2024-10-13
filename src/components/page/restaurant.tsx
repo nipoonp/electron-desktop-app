@@ -369,13 +369,13 @@ const Restaurant = () => {
     };
 
     const onClickProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
-        if (product.modifierGroups && product.modifierGroups.items.length > 0) {
-            setSelectedCategoryForProductModal(category);
-            setSelectedProductForProductModal(product);
-            setShowProductModal(true);
-        } else {
-            onAddProductToCart(category, product);
-        }
+        // if (product.modifierGroups && product.modifierGroups.items.length > 0) {
+        setSelectedCategoryForProductModal(category);
+        setSelectedProductForProductModal(product);
+        setShowProductModal(true);
+        // } else {
+        //     onAddProductToCart(category, product);
+        // }
     };
 
     const onClickSearchProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
@@ -460,7 +460,7 @@ const Restaurant = () => {
                         </>
                     ) : null}
 
-                    <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
+                    <div className="name text-bold">{isValid ? `${product.name}` : `${product.name}`}</div>
 
                     {product.description && <div className="description mt-2">{product.description}</div>}
 
