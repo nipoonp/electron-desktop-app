@@ -17,6 +17,20 @@
     height: 100vh;
     width: 100vw;
 
+    .get-help-button {
+        position: absolute;
+        bottom: 0px;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10000;
+        font-size: 26px;
+        text-transform: uppercase;
+        color: var(--font-color);
+        background-color: #ffffff;
+        border: 3px solid #000000;
+        padding: 24px;
+    }
+
     .wrapper {
         display: flex;
         flex-direction: column;

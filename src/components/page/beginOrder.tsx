@@ -11,6 +11,7 @@ import { useRegister } from "../../context/register-context";
 import { useGetRestaurantPingDataLazyQuery } from "../../hooks/useGetRestaurantPingDataLazyQuery";
 
 import "./beginOrder.scss";
+import { GetHelpModal } from "../modals/getHelpModal";
 
 export default () => {
     const { restaurant } = useRestaurant();
@@ -74,9 +75,15 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
     const [currentAdIndex, setCurrentAdIndex] = useState(0);
     const { restaurant } = useRestaurant();
 
+    const [showRequestItemModal, setShowRequestItemModal] = useState(false);
+
     useEffect(() => {
         setCurrentAdIndex((oldAdIndex) => processAds(oldAdIndex));
     }, []);
+
+    const onCloseRequestItemModal = () => {
+        setShowRequestItemModal(false);
+    };
 
     const processAds = (oldAdIndex: number) => {
         let newIndex = 0;
@@ -114,9 +121,19 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
 
     if (!restaurant) return <div>This user has not selected any restaurant</div>;
 
+    const requestItemModal = <>{showRequestItemModal && <GetHelpModal isOpen={showRequestItemModal} onClose={onCloseRequestItemModal} />}</>;
+
+    const onRequestItem = async () => {
+        setShowRequestItemModal(true);
+    };
+
     return (
         <PageWrapper>
+            {requestItemModal}
             <div className="begin-order">
+                <div className="get-help-button" onClick={() => onRequestItem()}>
+                    Get Help
+                </div>
                 <div
                     className="wrapper"
                     onClick={() => {

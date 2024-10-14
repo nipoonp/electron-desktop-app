@@ -29,6 +29,8 @@ import { toast } from "../../tabin/components/toast";
 import { FiArrowDownCircle } from "react-icons/fi";
 
 import "./restaurant.scss";
+import axios from "axios";
+import { RequestItemModal } from "../modals/requestItemModal";
 
 interface IMostPopularProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -74,6 +76,9 @@ const Restaurant = () => {
     const [isScrollable, setIsScrollable] = useState(false);
 
     const [categoryViewDisplay, setCategoryViewDisplay] = useState(true);
+
+    const [showRequestItemModal, setShowRequestItemModal] = useState(false);
+    const [requestItemName, setRequestItemName] = useState("");
 
     useEffect(() => {
         const checkDivScrollable = () => {
@@ -309,6 +314,10 @@ const Restaurant = () => {
         setShowSearchProductModal(false);
     };
 
+    const onCloseRequestItemModal = () => {
+        setShowRequestItemModal(false);
+    };
+
     // displays THAT SHOULD BE IN CONTEXT
     if (getRestaurantLoading) {
         return <FullScreenSpinner show={true} text="Loading restaurant" />;
@@ -416,13 +425,27 @@ const Restaurant = () => {
         </>
     );
 
+    const requestItemModal = (
+        <>
+            {showRequestItemModal && (
+                <RequestItemModal isOpen={showRequestItemModal} onClose={onCloseRequestItemModal} requestItemName={requestItemName} />
+            )}
+        </>
+    );
+
     const modals = (
         <>
             {productModal}
             {itemAddedModal}
             {searchProductModal}
+            {requestItemModal}
         </>
     );
+
+    const onRequestItem = async (productName: string) => {
+        setRequestItemName(productName);
+        setShowRequestItemModal(true);
+    };
 
     const ProductDisplay = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
@@ -474,6 +497,12 @@ const Restaurant = () => {
 
                     <div className={`display-price mt-4 ${product.displayPrice ? "" : "display-none"}`}>{product.displayPrice}</div>
                     <div className={`price mt-4 ${product.displayPrice ? "display-none" : ""}`}>${convertCentsToDollars(product.price)}</div>
+
+                    {!isValid && (
+                        <Button className="request-item-button" onClick={() => onRequestItem(product.name)}>
+                            Request Item
+                        </Button>
+                    )}
                 </div>
             </>
         );
