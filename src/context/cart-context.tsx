@@ -232,7 +232,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         }
 
         _setSurcharge(newSurcharge);
-        _setSubTotal(newSubTotal + newSurcharge + orderTypeSurcharge - staticDiscount);
+        _setSubTotal(newSubTotal + newSurcharge + orderTypeSurcharge - staticDiscount - percentageDiscount);
     }, [total, promotion, restaurant, orderTypeSurcharge, staticDiscount, percentageDiscount]);
 
     useEffect(() => {

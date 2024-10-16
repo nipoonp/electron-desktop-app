@@ -844,7 +844,7 @@ export const Checkout = () => {
                 discount: promotion ? promotion.discountedAmount : staticDiscount + percentageDiscount,
                 promotionId: promotion ? promotion.promotion.id : undefined,
                 promotionType: promotion ? promotion.promotion.type : undefined,
-                subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0) - staticDiscount - percentageDiscount,
+                subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0),
                 preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                 registerId: register.id,
                 products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
@@ -905,7 +905,7 @@ export const Checkout = () => {
                     discount: promotion ? promotion.discountedAmount : staticDiscount + percentageDiscount,
                     promotionId: promotion ? promotion.promotion.id : undefined,
                     promotionType: promotion ? promotion.promotion.type : undefined,
-                    subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0) - staticDiscount - percentageDiscount,
+                    subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0),
                     preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                     registerId: register.id,
                     products: JSON.stringify(products), // copy obj so we can mutate it later
