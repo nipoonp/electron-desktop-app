@@ -115,238 +115,160 @@ export const tabs: ITab[] = [
 ];
 
 export default () => {
-  const { user, login } = useAuth();
-  const { restaurant } = useRestaurant();
-  const { register } = useRegister();
+    const { user, login } = useAuth();
+    const { restaurant } = useRestaurant();
+    const { register } = useRegister();
 
-  useEffect(() => {
-    const e = user ? user.attributes.email : "invalid email";
-    const r = register
-      ? `${register.name} (${register.id})`
-      : "invalid register";
+    useEffect(() => {
+        const e = user ? user.attributes.email : "invalid email";
+        const r = register ? `${register.name} (${register.id})` : "invalid register";
 
-    ipcRenderer &&
-      ipcRenderer.send("SENTRY_CURRENT_USER", {
-        email: e,
-        register: r,
-      });
-  }, [user, register]);
+        ipcRenderer &&
+            ipcRenderer.send("SENTRY_CURRENT_USER", {
+                email: e,
+                register: r,
+            });
+    }, [user, register]);
 
-  useEffect(() => {
-    if (!restaurant) return;
-    if (!register) return;
+    useEffect(() => {
+        if (!restaurant) return;
+        if (!register) return;
 
-    const timerId = setInterval(async () => {
-      try {
-        //We are having an issue where we get "NotAuthorizedException: Refresh Token has expired".
-        //To avoid the refresh_token from expiring, we will force it to refresh every 10 minutes.
-        //I can see the access_token and id_token get refreshed. But not sure about the refresh_token.
-        //https://github.com/aws-amplify/amplify-js/issues/2560
-        //Also in AWS Dashboard under Cognito User Pools > App Integration > We set the 'Refresh token expiration' to 365 days.
-        //So monitor the next few weeks howmany of those errors we get rearing "NotAuthorizedException: Refresh Token has expired" issue.
-        //If we don't get such errors then we can try remove this code below.
-        const cognitoUser = await Auth.currentAuthenticatedUser();
-        const currentSession = await Auth.currentSession();
+        const timerId = setInterval(async () => {
+            try {
+                //We are having an issue where we get "NotAuthorizedException: Refresh Token has expired".
+                //To avoid the refresh_token from expiring, we will force it to refresh every 10 minutes.
+                //I can see the access_token and id_token get refreshed. But not sure about the refresh_token.
+                //https://github.com/aws-amplify/amplify-js/issues/2560
+                //Also in AWS Dashboard under Cognito User Pools > App Integration > We set the 'Refresh token expiration' to 365 days.
+                //So monitor the next few weeks howmany of those errors we get rearing "NotAuthorizedException: Refresh Token has expired" issue.
+                //If we don't get such errors then we can try remove this code below.
+                const cognitoUser = await Auth.currentAuthenticatedUser();
+                const currentSession = await Auth.currentSession();
 
-        cognitoUser.refreshSession(
-          currentSession.getRefreshToken(),
-          (err, session) => {
-            console.log("New session", err, session);
-            // const { idToken, refreshToken, accessToken } = session;
-          }
-        );
+                cognitoUser.refreshSession(currentSession.getRefreshToken(), (err, session) => {
+                    console.log("New session", err, session);
+                    // const { idToken, refreshToken, accessToken } = session;
+                });
 
-        //If the above code doesn't refresh the refresh_token then uncomment the below lines and get the user to relog in again.
-        // const email = localStorage.getItem("current_e");
-        // const password = localStorage.getItem("current_p");
+                //If the above code doesn't refresh the refresh_token then uncomment the below lines and get the user to relog in again.
+                // const email = localStorage.getItem("current_e");
+                // const password = localStorage.getItem("current_p");
 
-        // if (email && password) login(email, password);
-      } catch (error) {
-        console.error("Error", error);
-        await sendFailureNotification(
-          error,
-          JSON.stringify({ restaurant: restaurant?.id, register: register?.id })
-        );
-      }
-    }, 10 * 60 * 1000); // 10 minutes
+                // if (email && password) login(email, password);
+            } catch (error) {
+                console.error("Error", error);
+                await sendFailureNotification(error, JSON.stringify({ restaurant: restaurant?.id, register: register?.id }));
+            }
+        }, 10 * 60 * 1000); // 10 minutes
 
-    return () => clearInterval(timerId);
-  }, [restaurant, register]);
+        return () => clearInterval(timerId);
+    }, [restaurant, register]);
 
-  return (
-    <>
-      <AlertProvider>
-        {/* Cannot use BrowserRouter in electron. Should use HashRouter: https://github.com/remix-run/react-router/issues/6726 */}
-        <HashRouter>
-          <Suspense
-            fallback={<FullScreenSpinner show={true} text="Loading page..." />}
-          >
-            <AppRoutes />
-          </Suspense>
-        </HashRouter>
-      </AlertProvider>
-      <ToastContainer />
-    </>
-  );
+    return (
+        <>
+            <AlertProvider>
+                {/* Cannot use BrowserRouter in electron. Should use HashRouter: https://github.com/remix-run/react-router/issues/6726 */}
+                <HashRouter>
+                    <Suspense fallback={<FullScreenSpinner show={true} text="Loading page..." />}>
+                        <AppRoutes />
+                    </Suspense>
+                </HashRouter>
+            </AlertProvider>
+            <ToastContainer />
+        </>
+    );
 };
 
 const AppRoutes = () => {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
 
-  // This is for electron, as it doesn't start at '/' route for some reason.
-  useEffect(() => {
-    navigate(beginOrderPath);
-  }, []);
+    // This is for electron, as it doesn't start at '/' route for some reason.
+    useEffect(() => {
+        navigate(beginOrderPath);
+    }, []);
 
-  return (
-    <>
-      <Routes>
-        <Route path={loginPath} element={<Login />} />
-        <Route path={logoutPath} element={<Logout />} />
-        <Route
-          path={restaurantListPath}
-          element={<PrivateRoute element={<RestaurantList />} />}
-        />
-        <Route
-          path={registerListPath}
-          element={<PrivateRoute element={<RegisterList />} />}
-        />
-        <Route
-          path={dashboardPath}
-          element={<RestaurantRegisterPrivateRoute element={<Dashboard />} />}
-        />
-        <Route
-          path={configureNewEftposPath}
-          element={
-            <RestaurantRegisterPrivateRoute element={<ConfigureNewEftpos />} />
-          }
-        />
-        <Route
-          path={beginOrderPath}
-          element={<RestaurantRegisterPrivateRoute element={<BeginOrder />} />}
-        />
-        <Route
-          path={`${restaurantPath}/:restaurantId`}
-          element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />}
-        >
-          <Route
-            path=":selectedCategoryId"
-            element={
-              <RestaurantRegisterPrivateRoute element={<Restaurant />} />
-            }
-          >
-            <Route
-              path=":selectedProductId"
-              element={
-                <RestaurantRegisterPrivateRoute element={<Restaurant />} />
-              }
-            />
-          </Route>
-        </Route>
-        <Route
-          path={orderTypePath}
-          element={<RestaurantRegisterPrivateRoute element={<OrderType />} />}
-        />
-        <Route
-          path={tableNumberPath}
-          element={<RestaurantRegisterPrivateRoute element={<TableNumber />} />}
-        />
-        <Route
-          path={buzzerNumberPath}
-          element={
-            <RestaurantRegisterPrivateRoute element={<BuzzerNumber />} />
-          }
-        />
-        <Route
-          path={customerInformationPath}
-          element={
-            <RestaurantRegisterPrivateRoute
-              element={<RequireCustomerInformation />}
-            />
-          }
-        />
-        <Route
-          path={paymentMethodPath}
-          element={
-            <RestaurantRegisterPrivateRoute element={<PaymentMethod />} />
-          }
-        />
-        <Route
-          path={checkoutPath}
-          element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}
-        >
-          <Route
-            path=":autoClickCompleteOrderOnLoad"
-            element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}
-          ></Route>
-        </Route>
-        <Route path={unauthorizedPath} element={<Unauthorised />} />
-        <Route path="*" element={<NoMatch />} />
-      </Routes>
-    </>
-  );
+    return (
+        <>
+            <Routes>
+                <Route path={loginPath} element={<Login />} />
+                <Route path={logoutPath} element={<Logout />} />
+                <Route path={restaurantListPath} element={<PrivateRoute element={<RestaurantList />} />} />
+                <Route path={registerListPath} element={<PrivateRoute element={<RegisterList />} />} />
+                <Route path={dashboardPath} element={<RestaurantRegisterPrivateRoute element={<Dashboard />} />} />
+                <Route path={configureNewEftposPath} element={<RestaurantRegisterPrivateRoute element={<ConfigureNewEftpos />} />} />
+                <Route path={beginOrderPath} element={<RestaurantRegisterPrivateRoute element={<BeginOrder />} />} />
+                <Route path={`${restaurantPath}/:restaurantId`} element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />}>
+                    <Route path=":selectedCategoryId" element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />}>
+                        <Route path=":selectedProductId" element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />} />
+                    </Route>
+                </Route>
+                <Route path={orderTypePath} element={<RestaurantRegisterPrivateRoute element={<OrderType />} />} />
+                <Route path={tableNumberPath} element={<RestaurantRegisterPrivateRoute element={<TableNumber />} />} />
+                <Route path={buzzerNumberPath} element={<RestaurantRegisterPrivateRoute element={<BuzzerNumber />} />} />
+                <Route path={customerInformationPath} element={<RestaurantRegisterPrivateRoute element={<RequireCustomerInformation />} />} />
+                <Route path={paymentMethodPath} element={<RestaurantRegisterPrivateRoute element={<PaymentMethod />} />} />
+                <Route path={checkoutPath} element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}>
+                    <Route path=":autoClickCompleteOrderOnLoad" element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}></Route>
+                </Route>
+                <Route path={unauthorizedPath} element={<Unauthorised />} />
+                <Route path="*" element={<NoMatch />} />
+            </Routes>
+        </>
+    );
 };
 
 export const AdminOnlyRoute = ({ element }) => {
-  const { isAdmin, status } = useAuth();
-  const { isLoading } = useUser();
+    const { isAdmin, status } = useAuth();
+    const { isLoading } = useUser();
 
-  if (status !== AuthenticationStatus.SignedIn)
-    return <Navigate to={loginPath} />; // Handle other authentication statuses
-  if (isLoading) return <FullScreenSpinner show={true} text="Loading user" />; // Assumed signed in from this point onwards
-  if (!isAdmin) return <Navigate to={unauthorizedPath} replace />; // not authorized
+    if (status !== AuthenticationStatus.SignedIn) return <Navigate to={loginPath} />; // Handle other authentication statuses
+    if (isLoading) return <FullScreenSpinner show={true} text="Loading user" />; // Assumed signed in from this point onwards
+    if (!isAdmin) return <Navigate to={unauthorizedPath} replace />; // not authorized
 
-  return element; // Route to original path
+    return element; // Route to original path
 };
 
 const PrivateRoute = ({ element }) => {
-  const { status } = useAuth();
-  const { user, isLoading, error } = useUser();
+    const { status } = useAuth();
+    const { user, isLoading, error } = useUser();
 
-  if (status !== AuthenticationStatus.SignedIn)
-    return <Navigate to={loginPath} />; // Handle other authentication statuses
-  if (error)
-    return (
-      <div>
-        There was an error loading the user. Please try restart the application.
-      </div>
-    );
-  if (isLoading)
-    return <FullScreenSpinner show={true} text="Loading user..." />; // Assumed signed in from this point onwards
-  if (!user) throw "Signed in but no user found in database";
+    if (status !== AuthenticationStatus.SignedIn) return <Navigate to={loginPath} />; // Handle other authentication statuses
+    if (error) return <div>There was an error loading the user. Please try restart the application.</div>;
+    if (isLoading) return <FullScreenSpinner show={true} text="Loading user..." />; // Assumed signed in from this point onwards
+    if (!user) throw "Signed in but no user found in database";
 
-  return element; // Route to original path
+    return element; // Route to original path
 };
 
 const RestaurantRegisterPrivateRoute = ({ element }) => {
-  const { user } = useUser();
-  const { restaurant, isLoading, isError } = useRestaurant();
+    const { user } = useUser();
+    const { restaurant, isLoading, isError } = useRestaurant();
 
-  if (user && isLoading)
-    return <FullScreenSpinner show={true} text="Loading restaurant..." />;
-  if (isError) return <div>There was an error loading your restaurant.</div>;
-  if (!restaurant) return <Navigate to={restaurantListPath} />;
-  if (restaurant?.isAcceptingOrders === false)
-    return (
-      <div className="unavailable-center">
-        <p>This KIOSK is Unavailable</p>
-      </div>
-    );
-  //----------------------------------------------------------------------------
-  //TODO: Fix this later, should be coming in from the kiosk
-  const storedRegisterKey = localStorage.getItem("registerKey");
-  let matchingRegister: IGET_RESTAURANT_REGISTER | null = null;
+    if (user && isLoading) return <FullScreenSpinner show={true} text="Loading store..." />;
+    if (isError) return <div>There was an error loading your restaurant.</div>;
+    if (!restaurant) return <Navigate to={restaurantListPath} />;
+    if (restaurant?.isAcceptingOrders === false)
+        return (
+            <div className="unavailable-center">
+                <p>This KIOSK is Unavailable</p>
+            </div>
+        );
+    //----------------------------------------------------------------------------
+    //TODO: Fix this later, should be coming in from the kiosk
+    const storedRegisterKey = localStorage.getItem("registerKey");
+    let matchingRegister: IGET_RESTAURANT_REGISTER | null = null;
 
-  restaurant &&
-    restaurant.registers.items.forEach((r) => {
-      if (storedRegisterKey == r.id) {
-        matchingRegister = r;
-      }
-    });
-  //----------------------------------------------------------------------------
+    restaurant &&
+        restaurant.registers.items.forEach((r) => {
+            if (storedRegisterKey == r.id) {
+                matchingRegister = r;
+            }
+        });
+    //----------------------------------------------------------------------------
 
-  if (!matchingRegister) return <Navigate to={registerListPath} />;
+    if (!matchingRegister) return <Navigate to={registerListPath} />;
 
-  // Route to original path
-  return element;
+    // Route to original path
+    return element;
 };

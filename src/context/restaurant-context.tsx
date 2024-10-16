@@ -229,7 +229,7 @@ const RestaurantProvider = (props: { children: React.ReactNode }) => {
             });
     };
 
-    if (restaurantLoading) return <FullScreenSpinner show={true} text="Loading restaurants..." />;
+    if (restaurantLoading) return <FullScreenSpinner show={true} text="Loading store..." />;
     if (restaurantError) return <div>Error! {restaurantError.message}</div>;
 
     if (selectedRestaurantId) {

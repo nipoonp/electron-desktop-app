@@ -16,27 +16,13 @@ interface IRequestItemModalProps {
 export const RequestItemModal = (props: IRequestItemModalProps) => {
     const { restaurant } = useRestaurant();
     const [firstName, setFirstName] = useState("");
-    const [email, setEmail] = useState("");
-    const [phoneNumber, setPhoneNumber] = useState("");
     const [notes, setNotes] = useState("");
 
     const [firstNameError, setFirstNameError] = useState(false);
-    const [emailError, setEmailError] = useState(false);
-    const [phoneNumberError, setPhoneNumberError] = useState(false);
 
     const onChangeFirstName = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFirstName(e.target.value);
         setFirstNameError(false);
-    };
-
-    const onChangeEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setEmail(e.target.value);
-        setEmailError(false);
-    };
-
-    const onChangePhoneNumber = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setPhoneNumber(e.target.value);
-        setPhoneNumberError(false);
     };
 
     const onChangeNotes = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -58,8 +44,8 @@ export const RequestItemModal = (props: IRequestItemModalProps) => {
                         email: "info@tabin.co.nz",
                     },
                     subject: `Tabin - New Item Request`,
-                    text: `<div style="font-family: Arial, sans-serif; color: #333;"><h2>Item Request Form</h2><p><strong>Requested Item:</strong> ${props.requestItemName}</p><p><strong>Site:</strong> ${restaurant?.name}</p><p><strong>Name:</strong> ${firstName}</p><p><strong>Email:</strong> ${email}</p><p><strong>Phone Number:</strong> ${phoneNumber}</p><p><strong>Notes:</strong> ${notes}</p></div>`,
-                    html: `<div style="font-family: Arial, sans-serif; color: #333;"><h2>Item Request Form</h2><p><strong>Requested Item:</strong> ${props.requestItemName}</p><p><strong>Site:</strong> ${restaurant?.name}</p><p><strong>Name:</strong> ${firstName}</p><p><strong>Email:</strong> ${email}</p><p><strong>Phone Number:</strong> ${phoneNumber}</p><p><strong>Notes:</strong> ${notes}</p></div>`,
+                    text: `<div style="font-family: Arial, sans-serif; color: #333;"><h2>Item Request Form</h2><p><strong>Requested Item:</strong> ${props.requestItemName}</p><p><strong>Site:</strong> ${restaurant?.name}</p><p><strong>Name:</strong> ${firstName}</p><p><strong>Notes:</strong> ${notes}</p></div>`,
+                    html: `<div style="font-family: Arial, sans-serif; color: #333;"><h2>Item Request Form</h2><p><strong>Requested Item:</strong> ${props.requestItemName}</p><p><strong>Site:</strong> ${restaurant?.name}</p><p><strong>Name:</strong> ${firstName}</p><p><strong>Notes:</strong> ${notes}</p></div>`,
                 },
             });
 
@@ -79,7 +65,7 @@ export const RequestItemModal = (props: IRequestItemModalProps) => {
                 <div className="promo-code-modal">
                     <div>Requested Item: {props.requestItemName}</div>
                     <div className="mt-2">Site: {restaurant?.name}</div>
-                    <div className="mt-4 mb-2">Customer Name</div>
+                    <div className="mt-4 mb-2">Name</div>
                     <Input
                         type="firstName"
                         autoFocus={true}
@@ -87,11 +73,7 @@ export const RequestItemModal = (props: IRequestItemModalProps) => {
                         value={firstName}
                         error={firstNameError ? "Required" : ""}
                     />
-                    <div className="mt-2 mb-2">Customer Email</div>
-                    <Input type="email" onChange={onChangeEmail} value={email} error={emailError ? "Required" : ""} />
-                    <div className="mt-2 mb-2">Customer Number</div>
-                    <Input type="number" onChange={onChangePhoneNumber} value={phoneNumber} error={phoneNumberError ? "Required" : ""} />
-                    <div className="mt-2 mb-2">Customer Notes</div>
+                    <div className="mt-2 mb-2">Notes</div>
                     <TextArea rows={2} onChange={onChangeNotes} value={notes} />
                     <Button className="mt-4" onClick={onRequestItem}>
                         Request Item

@@ -320,7 +320,7 @@ const Restaurant = () => {
 
     // displays THAT SHOULD BE IN CONTEXT
     if (getRestaurantLoading) {
-        return <FullScreenSpinner show={true} text="Loading restaurant" />;
+        return <FullScreenSpinner show={true} text="Loading store" />;
     }
 
     if (getRestaurantError) {
