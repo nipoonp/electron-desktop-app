@@ -18,6 +18,7 @@ import { useErrorLogging } from "./errorLogging-context";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
 import { IEftposReceiptOutput } from "../../electron/model";
+import { useCart } from "./cart-context";
 
 let electron: any;
 let ipcRenderer: any;
@@ -54,7 +55,7 @@ const ReceiptPrinterContext = createContext<ContextProps>({
 
 const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     const { restaurant, restaurantBase64Logo } = useRestaurant();
-    const { register } = useRegister();
+    const { register, setIsShownNewOnlineOrderReceivedModal } = useRegister();
     const { logError } = useErrorLogging();
 
     const { getRestaurantOnlineOrdersByBeginWithPlacedAt } = useGetRestaurantOnlineOrdersByBeginWithPlacedAtLazyQuery(); //Skip the first iteration. Get new orders from refetch.
@@ -77,6 +78,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
         const ordersFetchTimer = setInterval(async () => {
             try {
+                let showOnlineOrderPromot = false;
                 const storedPrintedOnlineOrders = localStorage.getItem("printedOnlineOrders");
                 const printedOnlineOrders: {
                     [orderId: string]: boolean;
@@ -102,6 +104,8 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                         if (!printer.printOnlineOrderReceipts) continue;
 
                         const productsToPrint = filterPrintProducts(order.products, printer);
+
+                        showOnlineOrderPromot = true;
 
                         await printReceipt({
                             orderId: order.id,
@@ -158,6 +162,8 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
                     printedOnlineOrders[order.id] = true;
                 }
+
+                if (showOnlineOrderPromot) setIsShownNewOnlineOrderReceivedModal(true);
 
                 localStorage.setItem("printedOnlineOrders", JSON.stringify(printedOnlineOrders));
             } catch (e) {

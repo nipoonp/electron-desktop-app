@@ -6,11 +6,15 @@ import { ERegisterType, IGET_RESTAURANT_REGISTER } from "../graphql/customQuerie
 import { getCloudFrontDomainName } from "../private/aws-custom";
 import { useRestaurant } from "./restaurant-context";
 
+const initialIsShownNewOnlineOrderReceivedModal = false;
+
 type ContextProps = {
     register: IGET_RESTAURANT_REGISTER | null;
     isPOS: boolean | null;
     connectRegister: (key: string) => Promise<any>;
     disconnectRegister: (key: string) => Promise<any>;
+    isShownNewOnlineOrderReceivedModal: boolean;
+    setIsShownNewOnlineOrderReceivedModal: (isShownNewOnlineOrderReceivedModal: boolean) => void;
 };
 
 const RegisterContext = createContext<ContextProps>({
@@ -22,11 +26,15 @@ const RegisterContext = createContext<ContextProps>({
     disconnectRegister: (key: string) => {
         return new Promise(() => {});
     },
+    isShownNewOnlineOrderReceivedModal: initialIsShownNewOnlineOrderReceivedModal,
+    setIsShownNewOnlineOrderReceivedModal: () => {},
 });
 
 const RegisterProvider = (props: { children: React.ReactNode }) => {
     const [registerKey, _setRegisterKey] = useState<string | null>(null);
     const [register, setRegister] = useState<IGET_RESTAURANT_REGISTER | null>(null);
+    const [isShownNewOnlineOrderReceivedModal, _setIsShownNewOnlineOrderReceivedModal] = useState(initialIsShownNewOnlineOrderReceivedModal);
+
     const { restaurant } = useRestaurant();
 
     useEffect(() => {
@@ -85,6 +93,10 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
         });
     };
 
+    const setIsShownNewOnlineOrderReceivedModal = (isShownNewOnlineOrderReceivedModal: boolean) => {
+        _setIsShownNewOnlineOrderReceivedModal(isShownNewOnlineOrderReceivedModal);
+    };
+
     return (
         <RegisterContext.Provider
             value={{
@@ -92,6 +104,8 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
                 isPOS: register ? register.type == ERegisterType.POS : null,
                 connectRegister: connectRegister,
                 disconnectRegister: disconnectRegister,
+                isShownNewOnlineOrderReceivedModal: isShownNewOnlineOrderReceivedModal,
+                setIsShownNewOnlineOrderReceivedModal: setIsShownNewOnlineOrderReceivedModal,
             }}
             children={
                 <>

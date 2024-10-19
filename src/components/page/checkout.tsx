@@ -1908,64 +1908,64 @@ export const Checkout = () => {
 
     return (
         <>
-            <PageWrapper>
-                <div className="checkout">
-                    <div className="pos-order-type-button-wrapper">
-                        {isPOS && (
-                            <>
-                                <div
-                                    className={`pos-order-type p-2 ${orderType === EOrderType.DINEIN ? "selected" : ""}`}
-                                    onClick={() => setOrderType(EOrderType.DINEIN)}
-                                >
-                                    Dine In
-                                </div>
-                                <div
-                                    className={`pos-order-type p-2 ${orderType === EOrderType.TAKEAWAY ? "selected" : ""}`}
-                                    onClick={() => setOrderType(EOrderType.TAKEAWAY)}
-                                >
-                                    Takeaway
-                                </div>
-                            </>
-                        )}
-                    </div>
-                    <div className="pos-order-type-button-wrapper">
-                        {isPOS && <>{buzzerNumberFooter}</>}
-                        {isPOS && <>{tableFlagFooter}</>}
-                        {isPOS && <>{customerInformationFooter}</>}
-                        {isPOS && <>{clearSaleFooter}</>}
-                    </div>
-                    <div className="order-wrapper">
-                        <div
-                            ref={(ref) => setProductsWrapperElement(ref)}
-                            className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`}
-                            id="productsWrapperScroll"
-                        >
-                            {(!products || products.length == 0) && cartEmptyDisplay}
-                            {products && products.length > 0 && order}
-                            {isScrollable ? (
-                                <div className={register.type === "POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
-                                    <div className={`arrow-container ${isScrollable ? "fade-in" : "fade-out"}`}>
-                                        <FiArrowDownCircle size="46" />
-                                    </div>
-                                </div>
-                            ) : null}
-                        </div>
-                    </div>
-                    <div className="extra-footer-button">
-                        {isPOS && payments.length === 0 && <>{promoCodeFooter}</>}
-                        {isPOS && payments.length === 0 && <>{parkOrderFooter}</>}
-                        {isPOS && <>{noSaleFooter}</>}
-                        {isPOS && <>{discountSaleFooter}</>}
-                    </div>
-                    {/* {products && products.length > 0 && ( */}
-                    <div className="footer p-2" id="footer">
-                        {checkoutFooter}
-                    </div>
-                    {/* )} */}
+            {/* <PageWrapper> */}
+            <div className="checkout">
+                <div className="pos-order-type-button-wrapper">
+                    {isPOS && (
+                        <>
+                            <div
+                                className={`pos-order-type p-2 ${orderType === EOrderType.DINEIN ? "selected" : ""}`}
+                                onClick={() => setOrderType(EOrderType.DINEIN)}
+                            >
+                                Dine In
+                            </div>
+                            <div
+                                className={`pos-order-type p-2 ${orderType === EOrderType.TAKEAWAY ? "selected" : ""}`}
+                                onClick={() => setOrderType(EOrderType.TAKEAWAY)}
+                            >
+                                Takeaway
+                            </div>
+                        </>
+                    )}
                 </div>
-                {r18MessageModal()}
-                {modalsAndSpinners}
-            </PageWrapper>
+                <div className="pos-order-type-button-wrapper">
+                    {isPOS && <>{buzzerNumberFooter}</>}
+                    {isPOS && <>{tableFlagFooter}</>}
+                    {isPOS && <>{customerInformationFooter}</>}
+                    {isPOS && <>{clearSaleFooter}</>}
+                </div>
+                <div className="order-wrapper">
+                    <div
+                        ref={(ref) => setProductsWrapperElement(ref)}
+                        className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`}
+                        id="productsWrapperScroll"
+                    >
+                        {(!products || products.length == 0) && cartEmptyDisplay}
+                        {products && products.length > 0 && order}
+                        {isScrollable ? (
+                            <div className={register.type === "POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
+                                <div className={`arrow-container ${isScrollable ? "fade-in" : "fade-out"}`}>
+                                    <FiArrowDownCircle size="46" />
+                                </div>
+                            </div>
+                        ) : null}
+                    </div>
+                </div>
+                <div className="extra-footer-button">
+                    {isPOS && payments.length === 0 && <>{promoCodeFooter}</>}
+                    {isPOS && payments.length === 0 && <>{parkOrderFooter}</>}
+                    {isPOS && <>{noSaleFooter}</>}
+                    {isPOS && <>{discountSaleFooter}</>}
+                </div>
+                {/* {products && products.length > 0 && ( */}
+                <div className="footer p-2" id="footer">
+                    {checkoutFooter}
+                </div>
+                {/* )} */}
+            </div>
+            {r18MessageModal()}
+            {modalsAndSpinners}
+            {/* </PageWrapper> */}
         </>
     );
 };

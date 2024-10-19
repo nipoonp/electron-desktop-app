@@ -7,12 +7,15 @@ import { useRegister } from "../../context/register-context";
 import { ERegisterType } from "../../graphql/customQueries";
 import { usePinch } from "@use-gesture/react";
 import { Menu } from "../../components/shared/menu";
+import { ModalV2 } from "./modalv2";
+import { Button } from "./button";
 
 export const PageWrapper = (props: IProps) => {
     const navigate = useNavigate();
     const { clearCart } = useCart();
-    const { register } = useRegister();
+    const { register, isShownNewOnlineOrderReceivedModal } = useRegister();
 
+    const [showOnlineOrderModal, setShowOnlineOrderModal] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
 
     let timerId: NodeJS.Timeout;
@@ -23,6 +26,10 @@ export const PageWrapper = (props: IProps) => {
     const resetUserInactiveSecondsCounter = () => {
         userInactiveSecondsCounter.current = 0;
     };
+
+    useEffect(() => {
+        setShowOnlineOrderModal(isShownNewOnlineOrderReceivedModal);
+    }, [isShownNewOnlineOrderReceivedModal]);
 
     useEffect(() => {
         const ticker = setInterval(() => {
@@ -76,6 +83,8 @@ export const PageWrapper = (props: IProps) => {
         setShowMenu(false);
     };
 
+    console.log("xxx...I am here");
+
     return (
         <>
             <div
@@ -87,6 +96,13 @@ export const PageWrapper = (props: IProps) => {
             >
                 {props.children}
                 {showMenu && <Menu tabs={tabs} onClickMenuRoute={onClickMenuRoute} onHideMenu={onHideMenu} />}
+                <ModalV2 padding="24px" isOpen={showOnlineOrderModal} disableClose={false} onRequestClose={() => setShowOnlineOrderModal(false)}>
+                    <div>
+                        <div className="h3 mb-3">New Online Order Received!</div>
+
+                        <Button onClick={() => setShowOnlineOrderModal(false)}>Close</Button>
+                    </div>
+                </ModalV2>
             </div>
         </>
     );
