@@ -1507,6 +1507,7 @@ const Modifier = (props: {
                             <ProductModifier
                                 key={productModifier.id}
                                 product={productModifier}
+                                showNoExtraSelectionsMade={selectedModifier.productModifiers?.some((pm) => pm.modifierGroups?.length) || false}
                                 onEditSelections={() => onEditSelectionsProductModifier(index)}
                             />
                         </>

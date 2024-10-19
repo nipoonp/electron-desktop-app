@@ -28,6 +28,7 @@ const { autoUpdater } = require("electron-updater");
 Sentry.init({ dsn: "https://43d342efd1534e1b80c9ab4251b385a6@o1087887.ingest.sentry.io/6102047" });
 
 let mainWindow: any;
+let customerDisplayWindow: any;
 let verifoneClient = new net.Socket();
 let isDevToolsOpen = false;
 let updatedStarted = false;
@@ -251,6 +252,19 @@ if (!gotTheLock) {
         }
     });
 }
+
+ipcMain.on("OPEN_CUSTOMER_DISPLAY", (event) => {
+    customerDisplayWindow = new BrowserWindow({
+        width: 400,
+        height: 300,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+        },
+    });
+
+    customerDisplayWindow.loadFile(path.join(__dirname, "index.html"));
+});
 
 ipcMain.on("RESTART_ELECTRON_APP", (event: any) => {
     app.relaunch();

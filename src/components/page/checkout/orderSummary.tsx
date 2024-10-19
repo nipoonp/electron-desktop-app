@@ -243,7 +243,7 @@ const OrderItemDetails = (props: {
         </>
     );
 
-    const nameDisplayString = isPOS ? `${quantity > 1 ? `${quantity} x ` : ""}${name}` : `${quantity > 1 ? `${quantity} x ` : ""}${name}`;
+    const nameDisplayString = isPOS ? `${quantity > 1 ? `${quantity} x ` : ""}${name}` : `${name}`;
 
     const nameDisplay = (
         <div className="name-edit-button">
@@ -272,6 +272,9 @@ const OrderItemDetails = (props: {
                                                     <div className="mt-2"></div>
                                                     <ProductModifier
                                                         selectionIndex={m.productModifiers && m.productModifiers.length > 1 ? index + 1 : undefined}
+                                                        showNoExtraSelectionsMade={
+                                                            m.productModifiers?.some((pm) => pm.modifierGroups?.length) || false
+                                                        }
                                                         product={productModifier}
                                                     />
                                                 </div>
