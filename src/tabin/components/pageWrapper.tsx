@@ -13,7 +13,7 @@ import { Button } from "./button";
 export const PageWrapper = (props: IProps) => {
     const navigate = useNavigate();
     const { clearCart } = useCart();
-    const { register, isShownNewOnlineOrderReceivedModal } = useRegister();
+    const { register, isShownNewOnlineOrderReceivedModal, isPOS } = useRegister();
 
     const [showOnlineOrderModal, setShowOnlineOrderModal] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
@@ -96,13 +96,15 @@ export const PageWrapper = (props: IProps) => {
             >
                 {props.children}
                 {showMenu && <Menu tabs={tabs} onClickMenuRoute={onClickMenuRoute} onHideMenu={onHideMenu} />}
-                <ModalV2 padding="24px" isOpen={showOnlineOrderModal} disableClose={false} onRequestClose={() => setShowOnlineOrderModal(false)}>
-                    <div>
-                        <div className="h3 mb-3">New Online Order Received!</div>
+                {isPOS && (
+                    <ModalV2 padding="24px" isOpen={showOnlineOrderModal} disableClose={false} onRequestClose={() => setShowOnlineOrderModal(false)}>
+                        <div>
+                            <div className="h3 mb-3">New Online Order Received!</div>
 
-                        <Button onClick={() => setShowOnlineOrderModal(false)}>Close</Button>
-                    </div>
-                </ModalV2>
+                            <Button onClick={() => setShowOnlineOrderModal(false)}>Close</Button>
+                        </div>
+                    </ModalV2>
+                )}
             </div>
         </>
     );
