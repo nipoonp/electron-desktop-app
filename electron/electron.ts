@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, globalShortcut } from "electron";
+import { app, BrowserWindow, dialog, globalShortcut, screen } from "electron";
 import { ipcMain, Menu } from "electron";
 import {
     encodeCommandBuffer,
@@ -254,14 +254,29 @@ if (!gotTheLock) {
 }
 
 ipcMain.on("OPEN_CUSTOMER_DISPLAY", (event) => {
-    customerDisplayWindow = new BrowserWindow({
-        width: 400,
-        height: 300,
-        webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
-        },
-    });
+    const displays = screen.getAllDisplays();
+
+    if (displays.length > 1) {
+        const secondDisplay = displays[1];
+
+        customerDisplayWindow = new BrowserWindow({
+            x: secondDisplay.bounds.x, // Use the X position of the second display
+            y: secondDisplay.bounds.y, // Use the Y position of the second display
+            kiosk: true,
+            webPreferences: {
+                nodeIntegration: true,
+                contextIsolation: false,
+            },
+        });
+    } else {
+        customerDisplayWindow = new BrowserWindow({
+            kiosk: true,
+            webPreferences: {
+                nodeIntegration: true,
+                contextIsolation: false,
+            },
+        });
+    }
 
     customerDisplayWindow.loadFile(path.join(__dirname, "index.html"));
 });
