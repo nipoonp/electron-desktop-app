@@ -85,6 +85,14 @@ import { R18MessageModal } from "../modals/r18MessageModal";
 import { useTyro } from "../../context/tyro-context";
 import { useMX51 } from "../../context/mx51-context";
 import { DiscountModal } from "../modals/discountModal";
+import { TbFlag2Filled } from "react-icons/tb";
+import { TbHexagon4Filled } from "react-icons/tb";
+import { MdAccountCircle, MdDiscount, MdFeaturedPlayList, MdSettings } from "react-icons/md";
+import { TiCancel } from "react-icons/ti";
+import { HiCurrencyDollar } from "react-icons/hi2";
+import { RiTimer2Fill } from "react-icons/ri";
+import { FaCashRegister } from "react-icons/fa";
+import { FaRectangleList } from "react-icons/fa6";
 
 const logger = new Logger("checkout");
 
@@ -1793,60 +1801,70 @@ export const Checkout = () => {
 
     const ordersFooter = (
         <div className="checkout-feature-button p-2" onClick={() => navigate(ordersPath)}>
+            <FaRectangleList size="20px" />
             Orders
         </div>
     );
 
     const dashboardFooter = (
         <div className="checkout-feature-button p-2" onClick={() => navigate(dashboardPath)}>
+            <MdSettings size="22px" />
             Dashboard
         </div>
     );
 
     const promoCodeFooter = (
         <div className="checkout-feature-button p-2" onClick={onClickApplyPromotionCode}>
-            Apply Promo
+            {/* <MdDiscount size="20px" /> */}
+            Promo
         </div>
     );
 
     const parkOrderFooter = (
         <div className="checkout-feature-button p-2" onClick={() => products && products.length > 0 && onParkOrder()}>
+            {/* <RiTimer2Fill size="20px" /> */}
             Park Order
         </div>
     );
 
     const buzzerNumberFooter = (
         <div className="checkout-feature-button p-2" onClick={() => navigate(buzzerNumberPath)}>
+            {/* <TbHexagon4Filled size="20px" /> */}
             {buzzerNumber ? `Buzzer (${buzzerNumber})` : "Buzzer"}
         </div>
     );
 
     const tableFlagFooter = (
         <div className="checkout-feature-button p-2" onClick={() => navigate(tableNumberPath)}>
+            {/* <TbFlag2Filled size="20px" /> */}
             {tableNumber ? `Table (${tableNumber})` : "Table"}
         </div>
     );
 
     const customerInformationFooter = (
         <div className="checkout-feature-button p-2" onClick={() => navigate(customerInformationPath)}>
+            {/* <MdAccountCircle size="20px" /> */}
             {customerInformation ? `Customer (Edit)` : "Customer"}
         </div>
     );
 
     const noSaleFooter = (
         <div className="checkout-feature-button p-2" onClick={onNoSale}>
+            {/* <FaCashRegister size="20px" /> */}
             No Sale
         </div>
     );
 
     const clearSaleFooter = (
         <div className="checkout-feature-button p-2" onClick={() => setProducts([])}>
+            {/* <TiCancel size="23px" /> */}
             Clear
         </div>
     );
 
     const discountSaleFooter = (
         <div className="checkout-feature-button p-2" onClick={() => products && products.length > 0 && onDiscount()}>
+            {/* <HiCurrencyDollar size="20px" /> */}
             Discount
         </div>
     );

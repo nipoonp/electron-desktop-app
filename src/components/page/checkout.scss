@@ -180,6 +180,8 @@
     .checkout-feature-button {
         display: flex;
         justify-content: center;
+        align-items: center;
+        gap: 6px;
         border: 1px solid #e0e0e0;
         flex-grow: 1;
         text-align: center;
