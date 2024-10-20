@@ -315,9 +315,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setAvailablePromotions([promotion]);
         _setUserAppliedPromotionCode(promotion.code);
 
-        _setStaticDiscount(0);
-        _setPercentageDiscount(0);
-
         return CheckIfPromotionValidResponse.VALID;
     };
 

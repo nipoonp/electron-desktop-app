@@ -123,6 +123,7 @@ export const Checkout = () => {
         staticDiscount,
         setStaticDiscount,
         percentageDiscount,
+        setPercentageDiscount,
         surcharge,
         subTotal,
         paidSoFar,
@@ -1881,7 +1882,7 @@ export const Checkout = () => {
             </div>
             <div className="mb-2"></div> */}
             {promotion ? (
-                <div className="h3 text-center mb-2">
+                <div className="text-center mb-1">
                     {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
                         promotion.discountedAmount
                     )}`}{" "}
@@ -1890,17 +1891,25 @@ export const Checkout = () => {
             ) : (
                 <></>
             )}
-            {surcharge ? <div className="h3 text-center mb-2">Surcharge: ${convertCentsToDollars(surcharge)}</div> : <></>}
-            {paidSoFar > 0 ? <div className="h3 text-center mb-2">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : <></>}
+            {surcharge ? <div className="text-center mb-1">Surcharge: ${convertCentsToDollars(surcharge)}</div> : <></>}
+            {paidSoFar > 0 ? <div className="text-center mb-1">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : <></>}
             {orderTypeSurcharge > 0 ? (
-                <div className="h3 text-center mb-2">Order Type Surcharge: ${convertCentsToDollars(orderTypeSurcharge)}</div>
+                <div className="text-center mb-1">Order Type Surcharge: ${convertCentsToDollars(orderTypeSurcharge)}</div>
             ) : (
                 <></>
             )}
 
             {staticDiscount ? (
-                <div className={`text-center c${isPOS ? "mb-2" : "mb-4"}`}>
-                    Fixed Discount: ${convertCentsToDollars(staticDiscount)} <Link onClick={() => setStaticDiscount(0)}>Remove</Link>
+                <div className={`text-center ${isPOS ? "mb-1" : "mb-4"}`}>
+                    Fixed Discount: ${convertCentsToDollars(staticDiscount)} <Link onClick={() => setStaticDiscount(0)}>(Remove)</Link>
+                </div>
+            ) : (
+                <></>
+            )}
+
+            {percentageDiscount ? (
+                <div className={`text-center ${isPOS ? "mb-1" : "mb-4"}`}>
+                    Percentage Discount: ${convertCentsToDollars(percentageDiscount)} <Link onClick={() => setPercentageDiscount(0)}>(Remove)</Link>
                 </div>
             ) : (
                 <></>
