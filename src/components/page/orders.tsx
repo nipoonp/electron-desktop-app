@@ -5,6 +5,7 @@ import {
     EOrderStatus,
     ERegisterPrinterType,
     GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT,
+    IGET_RESTAURANT_REGISTER_PRINTER,
     UPDATE_RESTAURANT_PREPARATION_TIME,
 } from "../../graphql/customQueries";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
@@ -14,13 +15,25 @@ import { format } from "date-fns";
 import { Button } from "../../tabin/components/button";
 import { toast } from "../../tabin/components/toast";
 import { ModalV2 } from "../../tabin/components/modalv2";
-import { IGET_RESTAURANT_ORDER_FRAGMENT, IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT } from "../../graphql/customFragments";
+import {
+    IGET_RESTAURANT_ORDER_FRAGMENT,
+    IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT,
+    IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT,
+} from "../../graphql/customFragments";
 // import { useRegister } from "../../context/register-context";
 // import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { ProductModifier } from "../shared/productModifier";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { toLocalISOString } from "../../util/util";
+import {
+    convertProductTypesForPrint,
+    filterPrintProducts,
+    isItemAvailable,
+    isItemSoldOut,
+    isModifierQuantityAvailable,
+    isProductQuantityAvailable,
+    toLocalISOString,
+} from "../../util/util";
 import { convertCentsToDollars } from "../../util/util";
 import { StepperWithQuantityInput } from "../../tabin/components/stepperWithQuantityInput";
 import { BsFillCheckCircleFill, BsFillExclamationCircleFill } from "react-icons/bs";
@@ -35,12 +48,30 @@ import "./orders.scss";
 import { useGetRestaurantLazyQuery } from "../../hooks/useGetRestaurantLazyQuery";
 import { useRegister } from "../../context/register-context";
 import { IoIosArrowBack } from "react-icons/io";
-import { beginOrderPath } from "../main";
+import { beginOrderPath, restaurantPath } from "../main";
+import { useReceiptPrinter } from "../../context/receiptPrinter-context";
+import { ICartModifier, ICartModifierGroup, ICartProduct, IOrderReceipt } from "../../model/model";
+import { SelectReceiptPrinterModal } from "../modals/selectReceiptPrinterModal";
+import { PageWrapper } from "../../tabin/components/pageWrapper";
+import { useCart } from "../../context/cart-context";
 
 const Orders = () => {
     const navigate = useNavigate();
     const { date: queryDate } = useParams();
-    const { restaurant, setRestaurant } = useRestaurant();
+    const { restaurant, setRestaurant, menuCategories, menuProducts, menuModifierGroups, menuModifiers } = useRestaurant();
+    const { register } = useRegister();
+    const { printReceipt } = useReceiptPrinter();
+    const {
+        clearCart,
+        setParkedOrderId,
+        setParkedOrderNumber,
+        setOrderType,
+        setTableNumber,
+        setBuzzerNumber,
+        setNotes,
+        setProducts,
+        cartProductQuantitiesById,
+    } = useCart();
     const [eOrderStatus, setEOrderStatus] = useState(restaurant?.autoCompleteOrders ? EOrderStatus.COMPLETED : EOrderStatus.NEW);
 
     const [showFullScreenSpinner, setShowFullScreenSpinner] = useState(false);
@@ -49,6 +80,9 @@ const Orders = () => {
     const [preparationTimeInMinutes, setPreparationTimeInMinutes] = useState(
         restaurant && restaurant.preparationTimeInMinutes ? restaurant.preparationTimeInMinutes.toString() : ""
     );
+
+    const [showSelectReceiptPrinterModal, setShowSelectReceiptPrinterModal] = useState(false);
+    const [receiptPrinterModalPrintReorderData, setReceiptPrinterModalPrintReorderData] = useState<IOrderReceipt | null>(null);
 
     const { data: orders, error, loading } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant ? restaurant.id : "", date);
 
@@ -148,27 +182,189 @@ const Orders = () => {
         }
     };
 
-    const onOpenParkedOrder = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+    const getParkedOrderProducts = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[], invalidItemsFound: number) => {
+        const newCartProducts: ICartProduct[] = [];
+
+        products.forEach((product) => {
+            const menuProduct = menuProducts[product.id];
+
+            if (!menuProduct) {
+                invalidItemsFound++;
+                return;
+            }
+
+            const menuProductCategory = product.category ? menuCategories[product.category.id] : null;
+
+            if (!menuProductCategory) {
+                invalidItemsFound++;
+                return;
+            }
+
+            const isProductSoldOut = isItemSoldOut(menuProduct.soldOut, menuProduct.soldOutDate);
+            const isProductAvailable = isItemAvailable(menuProduct.availability);
+            const isProductCategoryAvailable = isItemAvailable(menuProductCategory.availability);
+            const isProductQtyAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById);
+
+            const isProductValid = !isProductSoldOut && isProductAvailable && isProductCategoryAvailable && isProductQtyAvailable;
+
+            if (!isProductValid) {
+                invalidItemsFound++;
+                return;
+            }
+
+            const newCartProduct: ICartProduct = {
+                id: product.id,
+                name: product.name,
+                kitchenName: product.kitchenName,
+                price: product.price,
+                totalPrice: product.totalPrice,
+                discount: 0, //Set discount to total because we do not want to add any discount or promotions to parked orders
+                isAgeRescricted: product.isAgeRescricted,
+                image: product.image
+                    ? {
+                          key: product.image.key,
+                          bucket: product.image.bucket,
+                          region: product.image.region,
+                          identityPoolId: product.image.identityPoolId,
+                      }
+                    : null, //To avoid __typename error
+                quantity: product.quantity,
+                notes: product.notes,
+                category: product.category
+                    ? {
+                          id: product.category.id,
+                          name: product.category.name,
+                          kitchenName: product.category.kitchenName,
+                          image: product.category.image
+                              ? {
+                                    key: product.category.image.key,
+                                    bucket: product.category.image.bucket,
+                                    region: product.category.image.region,
+                                    identityPoolId: product.category.image.identityPoolId,
+                                }
+                              : null, //To avoid __typename error
+                      }
+                    : null,
+                modifierGroups: [],
+            };
+
+            const newCartModifierGroups: ICartModifierGroup[] = [];
+
+            product.modifierGroups &&
+                product.modifierGroups.forEach((modifierGroup) => {
+                    const menuModifierGroup = menuModifierGroups[modifierGroup.id];
+
+                    if (!menuModifierGroup) {
+                        invalidItemsFound++;
+                        return;
+                    }
+
+                    const newCartModifierGroup: ICartModifierGroup = {
+                        id: modifierGroup.id,
+                        name: modifierGroup.name,
+                        kitchenName: modifierGroup.kitchenName,
+                        choiceDuplicate: modifierGroup.choiceDuplicate,
+                        choiceMin: modifierGroup.choiceMin,
+                        choiceMax: modifierGroup.choiceMax,
+                        hideForCustomer: modifierGroup.hideForCustomer || false,
+                        modifiers: [],
+                    };
+
+                    const newCartModifiers: ICartModifier[] = [];
+
+                    modifierGroup.modifiers &&
+                        modifierGroup.modifiers.forEach((modifier) => {
+                            const menuModifier = menuModifiers[modifier.id];
+
+                            if (!menuModifier) {
+                                invalidItemsFound++;
+                                return;
+                            }
+
+                            const isModifierSoldOut = isItemSoldOut(menuModifier.soldOut, menuModifier.soldOutDate);
+                            const isModifierQtyAvailable = isModifierQuantityAvailable(product, cartProductQuantitiesById);
+
+                            const isModifierValid = !isModifierSoldOut && isModifierQtyAvailable;
+
+                            if (!isModifierValid) {
+                                invalidItemsFound++;
+                                return;
+                            }
+
+                            const processedProductModifiers = modifier.productModifiers
+                                ? getParkedOrderProducts(modifier.productModifiers, invalidItemsFound)
+                                : null;
+
+                            if (processedProductModifiers && processedProductModifiers.invalidItemsFound) {
+                                invalidItemsFound = invalidItemsFound + processedProductModifiers.invalidItemsFound;
+                                return;
+                            }
+
+                            const newCartModifier: ICartModifier = {
+                                id: modifier.id,
+                                name: modifier.name,
+                                kitchenName: modifier.kitchenName,
+                                price: modifier.price,
+                                preSelectedQuantity: modifier.preSelectedQuantity,
+                                quantity: modifier.quantity,
+                                productModifiers: processedProductModifiers ? processedProductModifiers.newCartProducts : null,
+                                image: modifier.image
+                                    ? {
+                                          key: modifier.image.key,
+                                          bucket: modifier.image.bucket,
+                                          region: modifier.image.region,
+                                          identityPoolId: modifier.image.identityPoolId,
+                                      }
+                                    : null, //To avoid __typename error
+                            };
+
+                            newCartModifiers.push(newCartModifier);
+                        });
+
+                    newCartModifierGroup.modifiers = newCartModifiers;
+                    newCartModifierGroups.push(newCartModifierGroup);
+                });
+
+            newCartProduct.modifierGroups = newCartModifierGroups;
+            newCartProducts.push(newCartProduct);
+        });
+
+        return { newCartProducts, invalidItemsFound };
+    };
+
+    const onOpenParkedOrder = async (parkedOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         try {
-            window.top &&
-                window.top.postMessage(
-                    {
-                        action: "orderOpenParked",
-                        order: {
-                            id: order.id,
-                            notes: order.notes,
-                            products: order.products,
-                            total: order.total,
-                            subTotal: order.subTotal,
-                            type: order.type,
-                            number: order.number,
-                            table: order.table,
-                            buzzer: order.buzzer,
-                            covers: order.covers,
-                        },
-                    },
-                    "*"
-                );
+            const pOrder = {
+                id: parkedOrder.id,
+                notes: parkedOrder.notes,
+                products: parkedOrder.products,
+                total: parkedOrder.total,
+                subTotal: parkedOrder.subTotal,
+                type: parkedOrder.type,
+                number: parkedOrder.number,
+                table: parkedOrder.table,
+                buzzer: parkedOrder.buzzer,
+                covers: parkedOrder.covers,
+            };
+
+            if (!restaurant) return;
+
+            navigate(restaurantPath + "/" + restaurant.id);
+
+            clearCart();
+
+            setParkedOrderId(pOrder.id);
+            setParkedOrderNumber(pOrder.number);
+            setOrderType(pOrder.type);
+            if (pOrder.table) setTableNumber(pOrder.table);
+            if (pOrder.buzzer) setBuzzerNumber(pOrder.buzzer);
+            if (pOrder.notes) setNotes(pOrder.notes);
+
+            const orderedProducts = getParkedOrderProducts(pOrder.products, 0);
+
+            setProducts(orderedProducts.newCartProducts);
+
+            if (orderedProducts.invalidItemsFound > 0) toast.error("One or more items in this parked orders is invalid. Please recheck the order.");
         } catch (e) {
             console.error(e);
             toast.error("There was an error processing your request.");
@@ -177,62 +373,123 @@ const Orders = () => {
 
     const onOrderReprint = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         try {
-            window.top &&
-                window.top.postMessage(
-                    {
-                        action: "orderReprint",
-                        order: {
-                            orderId: order.id,
-                            status: order.status,
-                            printerType: ERegisterPrinterType.WIFI, //Will replace this in app side
-                            printerAddress: "", //Will replace this in app side
-                            customerPrinter: null, //Will replace this in app side
-                            kitchenPrinter: null, //Will replace this in app side
-                            kitchenPrinterSmall: null, //Will replace this in app side
-                            kitchenPrinterLarge: null, //Will replace this in app side
-                            hidePreparationTime: null, //Will replace this in app side
-                            hideModifierGroupName: null, //Will replace this in app side
-                            hideModifierGroupsForCustomer: false,
-                            restaurant: {
-                                name: restaurant.name,
-                                address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
-                                gstNumber: restaurant.gstNumber,
-                            },
-                            customerInformation: order.customerInformation
-                                ? {
-                                      firstName: order.customerInformation.firstName,
-                                      email: order.customerInformation.email,
-                                      phoneNumber: order.customerInformation.phoneNumber,
-                                      signature: order.customerInformation.signature,
-                                  }
-                                : null,
-                            notes: order.notes,
-                            products: order.products,
-                            eftposReceipt: order.eftposReceipt,
-                            paymentAmounts: order.paymentAmounts,
-                            total: order.total,
-                            surcharge: order.surcharge || null,
-                            orderTypeSurcharge: order.orderTypeSurcharge || null,
-                            eftposSurcharge: order.eftposSurcharge || null,
-                            eftposTip: order.eftposTip || null,
-                            discount: order.promotionId && order.discount ? order.discount : null,
-                            subTotal: order.subTotal,
-                            paid: order.paid,
-                            type: order.type,
-                            number: order.number,
-                            table: order.table,
-                            buzzer: order.buzzer,
-                            covers: order.covers,
-                            placedAt: order.placedAt,
-                            orderScheduledAt: order.orderScheduledAt,
-                        },
-                    },
-                    "*"
-                );
+            const reprintOrder: any = {
+                orderId: order.id,
+                status: order.status,
+                printerType: ERegisterPrinterType.WIFI, //Will replace this in app side
+                printerAddress: "", //Will replace this in app side
+                customerPrinter: null, //Will replace this in app side
+                kitchenPrinter: null, //Will replace this in app side
+                kitchenPrinterSmall: null, //Will replace this in app side
+                kitchenPrinterLarge: null, //Will replace this in app side
+                hidePreparationTime: null, //Will replace this in app side
+                hideModifierGroupName: null, //Will replace this in app side
+                hideModifierGroupsForCustomer: false,
+                restaurant: {
+                    name: restaurant.name,
+                    address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
+                    gstNumber: restaurant.gstNumber,
+                },
+                customerInformation: order.customerInformation
+                    ? {
+                          firstName: order.customerInformation.firstName,
+                          email: order.customerInformation.email,
+                          phoneNumber: order.customerInformation.phoneNumber,
+                          signature: order.customerInformation.signature,
+                      }
+                    : null,
+                notes: order.notes,
+                products: order.products,
+                eftposReceipt: order.eftposReceipt,
+                paymentAmounts: order.paymentAmounts,
+                total: order.total,
+                surcharge: order.surcharge || null,
+                orderTypeSurcharge: order.orderTypeSurcharge || null,
+                eftposSurcharge: order.eftposSurcharge || null,
+                eftposTip: order.eftposTip || null,
+                discount: order.promotionId && order.discount ? order.discount : null,
+                subTotal: order.subTotal,
+                paid: order.paid,
+                type: order.type,
+                number: order.number,
+                table: order.table,
+                buzzer: order.buzzer,
+                covers: order.covers,
+                placedAt: order.placedAt,
+                orderScheduledAt: order.orderScheduledAt,
+            };
+
+            if (register) {
+                if (register.printers.items.length > 1) {
+                    setReceiptPrinterModalPrintReorderData(reprintOrder);
+                    setShowSelectReceiptPrinterModal(true);
+                } else if (register.printers.items.length === 1) {
+                    const productsToPrint = filterPrintProducts(order.products, register.printers.items[0]);
+
+                    await printReceipt({
+                        ...reprintOrder,
+                        printerType: register.printers.items[0].type,
+                        printerAddress: register.printers.items[0].address,
+                        customerPrinter: register.printers.items[0].customerPrinter,
+                        receiptFooterText: register.printers.items[0].receiptFooterText,
+                        kitchenPrinter: register.printers.items[0].kitchenPrinter,
+                        kitchenPrinterSmall: register.printers.items[0].kitchenPrinterSmall,
+                        kitchenPrinterLarge: register.printers.items[0].kitchenPrinterLarge,
+                        hidePreparationTime: register.printers.items[0].hidePreparationTime,
+                        hideModifierGroupName: register.printers.items[0].hideModifierGroupName,
+                        printReceiptForEachProduct: register.printers.items[0].printReceiptForEachProduct,
+                        hideOrderType: register.availableOrderTypes.length === 0,
+                        products: convertProductTypesForPrint(productsToPrint),
+                        displayPaymentRequiredMessage: !order.paid,
+                    });
+                } else {
+                    toast.error("No receipt printers configured");
+                }
+            }
         } catch (e) {
             console.error(e);
             toast.error("There was an error processing your request.");
         }
+    };
+
+    const onSelectPrinter = async (printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
+        if (receiptPrinterModalPrintReorderData) {
+            const productsToPrint = filterPrintProducts(receiptPrinterModalPrintReorderData.products, printer);
+
+            await printReceipt({
+                ...receiptPrinterModalPrintReorderData,
+                printerType: printer.type,
+                printerAddress: printer.address,
+                customerPrinter: printer.customerPrinter,
+                kitchenPrinter: printer.kitchenPrinter,
+                kitchenPrinterSmall: printer.kitchenPrinterSmall,
+                kitchenPrinterLarge: printer.kitchenPrinterLarge,
+                hidePreparationTime: printer.hidePreparationTime,
+                hideModifierGroupName: printer.hideModifierGroupName,
+                printReceiptForEachProduct: printer.printReceiptForEachProduct,
+                hideOrderType: register?.availableOrderTypes.length === 0,
+                products: convertProductTypesForPrint(productsToPrint),
+            });
+        }
+    };
+
+    const onCloseSelectReceiptPrinterModal = () => {
+        setShowSelectReceiptPrinterModal(false);
+        setReceiptPrinterModalPrintReorderData(null);
+    };
+
+    const selectReceiptPrinterModal = () => {
+        return (
+            <>
+                {showSelectReceiptPrinterModal && (
+                    <SelectReceiptPrinterModal
+                        isOpen={showSelectReceiptPrinterModal}
+                        onClose={onCloseSelectReceiptPrinterModal}
+                        onSelectPrinter={onSelectPrinter}
+                    />
+                )}
+            </>
+        );
     };
 
     const onClickTab = (tab: EOrderStatus) => {
@@ -279,9 +536,12 @@ const Orders = () => {
         navigate(beginOrderPath);
     };
 
+    const modalsAndSpinners = <>{selectReceiptPrinterModal()}</>;
+
     return (
-        <>
+        <PageWrapper>
             <FullScreenSpinner show={showFullScreenSpinner} />
+            {modalsAndSpinners}
             <div className="orders-container">
                 <div className="orders-header-wrapper mb-2">
                     <div className="orders-header-wrapper-title">
@@ -289,7 +549,7 @@ const Orders = () => {
                             <IoIosArrowBack size="24px" />
                             <div>Back To Sale</div>
                         </div>
-                        <div className="h2">Orders</div>
+                        {/* <div className="h2">Orders</div> */}
                     </div>
                     <div>
                         <Input type="date" name="date" placeholder="Enter a date" value={date} onChange={onChangeDate} />
@@ -367,7 +627,7 @@ const Orders = () => {
                     )}
                 </div>
             </div>
-        </>
+        </PageWrapper>
     );
 };
 

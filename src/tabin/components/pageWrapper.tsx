@@ -83,8 +83,6 @@ export const PageWrapper = (props: IProps) => {
         setShowMenu(false);
     };
 
-    console.log("xxx...I am here");
-
     return (
         <>
             <div
