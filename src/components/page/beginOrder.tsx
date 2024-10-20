@@ -14,6 +14,12 @@ import "./beginOrder.scss";
 
 export default () => {
     const { restaurant } = useRestaurant();
+    const { isPOS } = useRegister();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (isPOS) navigate(restaurantPath + "/" + restaurant?.id);
+    }, []);
 
     if (!restaurant) return <div>This user has not selected any restaurant</div>;
 
