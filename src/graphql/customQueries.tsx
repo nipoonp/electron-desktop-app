@@ -1784,3 +1784,15 @@ export interface IGET_FEEDBACK_BY_RESTAURANT_COMMENT {
     rating: number;
     orderId: string;
 }
+
+export const UPDATE_RESTAURANT_PREPARATION_TIME = gql`
+    mutation UpdateRestaurant($id: ID!, $preparationTimeInMinutes: Int, $delayBetweenOrdersInSeconds: Int) {
+        updateRestaurant(
+            input: { id: $id, preparationTimeInMinutes: $preparationTimeInMinutes, delayBetweenOrdersInSeconds: $delayBetweenOrdersInSeconds }
+        ) {
+            id
+            preparationTimeInMinutes
+            delayBetweenOrdersInSeconds
+        }
+    }
+`;

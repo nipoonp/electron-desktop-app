@@ -7,11 +7,11 @@ import { ProductModifier } from "../../shared/productModifier";
 import { FiChevronDown, FiChevronRight } from "react-icons/fi";
 import { useEffect, useState } from "react";
 import { Input } from "../../../tabin/components/input";
-
-import "./orderSummary.scss";
+import { TiDelete } from "react-icons/ti";
 import { CachedImage } from "../../../tabin/components/cachedImage";
 import { getCloudFrontDomainName } from "../../../private/aws-custom";
 import { Link } from "../../../tabin/components/link";
+import "./orderSummary.scss";
 
 export const OrderSummary = (props: {
     products: ICartProduct[];
@@ -192,10 +192,10 @@ const OrderItem = (props: {
                     onEditProduct={() => onEditProduct(product, displayOrder)}
                 />
                 <div className="text-center">
-                    <div className="text-bold mb-2">${displayPrice}</div>
+                    <div className="text-bold">${displayPrice}</div>
                     {product.discount ? <div className="h3 text-primary mb-2 original-price">${originalPrice}</div> : <></>}
-                    {!props.product.isPreSelectedProduct && <Link onClick={() => onRemoveProduct(displayOrder)}>Remove</Link>}
                 </div>
+                {!props.product.isPreSelectedProduct && <TiDelete size="24px" onClick={() => onRemoveProduct(displayOrder)} />}
             </div>
             {isPOS && isOptionsExpanded && expandOptions}
         </>

@@ -200,6 +200,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
 export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     id: string;
     placedAt: string;
+    parkedAt: string | null;
     completedAt: string | null;
     cancelledAt: string | null;
     refundedAt: string | null;
@@ -208,6 +209,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     total: number;
     surcharge: number | null;
     orderTypeSurcharge: number | null;
+    eftposCardType: EEftposCardType | null;
     eftposSurcharge: number | null;
     eftposTip: number | null;
     discount: number | null;
@@ -234,7 +236,12 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     number: string;
     table: string | null;
     buzzer: string | null;
+    covers: number | null;
     registerId: string;
+    thirdPartyIntegrationResult: {
+        isSuccess: boolean;
+        errorMessage: string;
+    };
     products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[];
 }
 
@@ -257,6 +264,14 @@ export enum ERegisterType {
     KIOSK = "KIOSK",
     POS = "POS",
     ONLINE = "ONLINE",
+}
+
+export enum EEftposCardType {
+    VISA = "VISA",
+    MASTERCARD = "MASTERCARD",
+    AMEX = "AMEX",
+    EFTPOS = "EFTPOS",
+    ALIPAY = "ALIPAY",
 }
 
 export interface IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT {

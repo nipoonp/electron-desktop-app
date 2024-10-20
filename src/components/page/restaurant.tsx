@@ -74,6 +74,12 @@ const Restaurant = () => {
     const [isScrollable, setIsScrollable] = useState(false);
 
     useEffect(() => {
+        if (!register) return;
+
+        setOrderType(register.availableOrderTypes[0]);
+    }, [register]);
+
+    useEffect(() => {
         const checkDivScrollable = () => {
             const scrollableDiv = document.getElementById("productsWrapperScroll");
             const arrowContainer = document.querySelector(".arrow-container");

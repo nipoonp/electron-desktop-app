@@ -22,6 +22,8 @@ import {
     buzzerNumberPath,
     paymentMethodPath,
     customerInformationPath,
+    dashboardPath,
+    ordersPath,
 } from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
@@ -1789,6 +1791,18 @@ export const Checkout = () => {
         setShowDiscountModal(true);
     };
 
+    const ordersFooter = (
+        <div className="checkout-feature-button p-2" onClick={() => navigate(ordersPath)}>
+            Orders
+        </div>
+    );
+
+    const dashboardFooter = (
+        <div className="checkout-feature-button p-2" onClick={() => navigate(dashboardPath)}>
+            Dashboard
+        </div>
+    );
+
     const promoCodeFooter = (
         <div className="checkout-feature-button p-2" onClick={onClickApplyPromotionCode}>
             Apply Promo
@@ -1927,6 +1941,10 @@ export const Checkout = () => {
                             </div>
                         </>
                     )}
+                </div>
+                <div className="pos-order-type-button-wrapper">
+                    {isPOS && <>{ordersFooter}</>}
+                    {isPOS && <>{dashboardFooter}</>}
                 </div>
                 <div className="pos-order-type-button-wrapper">
                     {isPOS && <>{buzzerNumberFooter}</>}
