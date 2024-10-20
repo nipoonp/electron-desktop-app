@@ -279,6 +279,13 @@ ipcMain.on("OPEN_CUSTOMER_DISPLAY", (event) => {
     }
 
     customerDisplayWindow.loadFile(path.join(__dirname, "../build/index.html"));
+
+    customerDisplayWindow.on("closed", () => {
+        customerDisplayWindow = null;
+    });
+
+    // Hide the menu bar
+    customerDisplayWindow.setMenu(null);
 });
 
 ipcMain.on("RESTART_ELECTRON_APP", (event: any) => {
