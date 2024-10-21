@@ -165,8 +165,6 @@ const Restaurant = () => {
 
     useEffect(() => {
         if (restaurant) {
-            setRestaurant(restaurant);
-
             if (selectedCategoryId) {
                 const selectedCategoryItem = restaurantCategories[selectedCategoryId];
 
@@ -175,6 +173,18 @@ const Restaurant = () => {
                 const selectedCategoryItem = restaurantCategories[register.defaultCategoryView];
 
                 if (selectedCategoryItem) setSelectedCategory(selectedCategoryItem);
+            } else {
+                for (const c of Object.values(restaurantCategories)) {
+                    const isSoldOut = isItemSoldOut(c.soldOut, c.soldOutDate);
+                    const isAvailable = isItemAvailable(c.availability);
+
+                    const isValid = !isSoldOut && isAvailable;
+
+                    if (isValid) {
+                        setSelectedCategory(c);
+                        break;
+                    }
+                }
             }
 
             if (restaurantProducts && register && register.preSelectedProducts) {
