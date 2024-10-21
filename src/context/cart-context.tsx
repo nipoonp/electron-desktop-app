@@ -465,7 +465,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setOrderType(orderType);
         _setOrderTypeSurcharge(order_type_surcharge);
 
-        setBuzzerNumber(null); //Reset buzzer number if you change order type
+        // setBuzzerNumber(null); //Reset buzzer number if you change order type
 
         if (products) processPromotions(products, total, orderType);
     };
