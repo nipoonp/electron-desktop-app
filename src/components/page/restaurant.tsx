@@ -168,20 +168,27 @@ const Restaurant = () => {
             if (selectedCategoryId) {
                 const selectedCategoryItem = restaurantCategories[selectedCategoryId];
 
-                if (selectedCategoryItem) setSelectedCategory(selectedCategoryItem);
+                if (selectedCategoryItem) {
+                    setSelectedCategory(selectedCategoryItem);
+                    onProcessSubCategories(selectedCategoryItem);
+                }
             } else if (register && register.defaultCategoryView) {
                 const selectedCategoryItem = restaurantCategories[register.defaultCategoryView];
 
-                if (selectedCategoryItem) setSelectedCategory(selectedCategoryItem);
+                if (selectedCategoryItem) {
+                    setSelectedCategory(selectedCategoryItem);
+                    onProcessSubCategories(selectedCategoryItem);
+                }
             } else {
-                for (const c of Object.values(restaurantCategories)) {
-                    const isSoldOut = isItemSoldOut(c.soldOut, c.soldOutDate);
-                    const isAvailable = isItemAvailable(c.availability);
+                for (const selectedCategoryItem of restaurant.categories.items) {
+                    const isSoldOut = isItemSoldOut(selectedCategoryItem.soldOut, selectedCategoryItem.soldOutDate);
+                    const isAvailable = isItemAvailable(selectedCategoryItem.availability);
 
                     const isValid = !isSoldOut && isAvailable;
 
                     if (isValid) {
-                        setSelectedCategory(c);
+                        setSelectedCategory(selectedCategoryItem);
+                        onProcessSubCategories(selectedCategoryItem);
                         break;
                     }
                 }
