@@ -26,6 +26,7 @@ const RegisterList = lazy(() => import("./page/registerList"));
 const Orders = lazy(() => import("./page/orders"));
 const Dashboard = lazy(() => import("./page/dashboard"));
 const BeginOrder = lazy(() => import("./page/beginOrder"));
+const Loyalty = lazy(() => import("./page/loyalty"));
 const OrderType = lazy(() => import("./page/orderType"));
 const ConfigureNewEftpos = lazy(() => import("./page/configureNewEftpos"));
 const TableNumber = lazy(() => import("./page/tableNumber"));
@@ -62,6 +63,7 @@ export const ordersPath = "/orders";
 export const dashboardPath = "/dashboard";
 export const configureNewEftposPath = "/configure_new_eftpos";
 export const beginOrderPath = "/begin_order";
+export const loyaltyPath = "/loyalty";
 export const orderTypePath = "/order_type";
 export const tableNumberPath = "/table_number";
 export const buzzerNumberPath = "/buzzer_number";
@@ -203,6 +205,7 @@ const AppRoutes = () => {
                 <Route path={dashboardPath} element={<RestaurantRegisterPrivateRoute element={<Dashboard />} />} />
                 <Route path={configureNewEftposPath} element={<RestaurantRegisterPrivateRoute element={<ConfigureNewEftpos />} />} />
                 <Route path={beginOrderPath} element={<RestaurantRegisterPrivateRoute element={<BeginOrder />} />} />
+                <Route path={loyaltyPath} element={<RestaurantRegisterPrivateRoute element={<Loyalty />} />} />
                 <Route path={`${restaurantPath}/:restaurantId`} element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />}>
                     <Route path=":selectedCategoryId" element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />}>
                         <Route path=":selectedProductId" element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />} />

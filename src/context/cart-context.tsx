@@ -25,6 +25,7 @@ const initialCovers = null;
 const initialTableNumber = null;
 const initialBuzzerNumber = null;
 const initialCustomerInformation = null;
+const initialCustomerLoyaltyPoints = 0;
 const initialProducts = null;
 const initialNotes = "";
 const initialCartCategoryQuantitiesById = {};
@@ -67,6 +68,8 @@ type ContextProps = {
     setBuzzerNumber: (buzzerNumber: string | null) => void;
     customerInformation: ICustomerInformation | null;
     setCustomerInformation: (customerInformation: ICustomerInformation | null) => void;
+    customerLoyaltyPoints: number | null;
+    setCustomerLoyaltyPoints: (customerLoyaltyPoints: number | null) => void;
     products: ICartProduct[] | null;
     cartProductQuantitiesById: ICartItemQuantitiesById;
     cartModifierQuantitiesById: ICartItemQuantitiesById;
@@ -125,6 +128,8 @@ const CartContext = createContext<ContextProps>({
     setBuzzerNumber: () => {},
     customerInformation: initialCustomerInformation,
     setCustomerInformation: () => {},
+    customerLoyaltyPoints: initialCustomerLoyaltyPoints,
+    setCustomerLoyaltyPoints: () => {},
     products: initialProducts,
     cartProductQuantitiesById: {},
     cartModifierQuantitiesById: {},
@@ -176,6 +181,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [tableNumber, _setTableNumber] = useState<string | null>(initialTableNumber);
     const [buzzerNumber, _setBuzzerNumber] = useState<string | null>(initialBuzzerNumber);
     const [customerInformation, _setCustomerInformation] = useState<ICustomerInformation | null>(initialCustomerInformation);
+    const [customerLoyaltyPoints, _setCustomerLoyaltyPoints] = useState<number | null>(initialCustomerLoyaltyPoints);
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
     const [notes, _setNotes] = useState<string>(initialNotes);
     const [total, _setTotal] = useState<number>(initialTotal);
@@ -349,21 +355,6 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 if (newCartProductQuantitiesById[product.id]) {
                     newCartProductQuantitiesById[product.id].quantity += product.quantity;
                 } else {
-                    const modifiers: {
-                        id: string;
-                        quantity: number;
-                        price: number;
-                    }[] = [];
-
-                    product.modifierGroups.forEach((modifierGroup) => {
-                        modifierGroup.modifiers.forEach((modifier) => {
-                            modifiers.push({
-                                id: modifier.id,
-                                quantity: modifier.quantity,
-                                price: modifier.price,
-                            });
-                        });
-                    });
                     newCartProductQuantitiesById[product.id] = {
                         id: product.id,
                         name: product.name,
@@ -396,10 +387,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                             newCartModifierQuantitiesById[modifier.id].quantity += product.quantity * modifier.quantity;
                         } else {
                             newCartModifierQuantitiesById[modifier.id] = {
-                                id: product.id,
-                                name: product.name,
-                                quantity: product.quantity,
-                                price: product.price,
+                                id: modifier.id,
+                                name: modifier.name,
+                                quantity: product.quantity * modifier.quantity,
+                                price: modifier.price,
                                 discount: 0,
                                 categoryId: null,
                             };
@@ -488,6 +479,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
     const setCustomerInformation = (customerInformation: ICustomerInformation | null) => {
         _setCustomerInformation(customerInformation);
+    };
+
+    const setCustomerLoyaltyPoints = (customerLoyaltyPoints: number | null) => {
+        _setCustomerLoyaltyPoints(customerLoyaltyPoints);
     };
 
     const setProducts = (newProducts: ICartProduct[]) => {
@@ -637,6 +632,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setTableNumber(initialTableNumber);
         _setBuzzerNumber(initialBuzzerNumber);
         _setCustomerInformation(initialCustomerInformation);
+        _setCustomerLoyaltyPoints(initialCustomerLoyaltyPoints);
         _setProducts(initialProducts);
         _setNotes(initialNotes);
         _setCartCategoryQuantitiesById(initialCartCategoryQuantitiesById);
@@ -678,6 +674,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setBuzzerNumber: setBuzzerNumber,
                 customerInformation: customerInformation,
                 setCustomerInformation: setCustomerInformation,
+                customerLoyaltyPoints: customerLoyaltyPoints,
+                setCustomerLoyaltyPoints: setCustomerLoyaltyPoints,
                 products: products,
                 cartProductQuantitiesById: cartProductQuantitiesById,
                 cartModifierQuantitiesById: cartModifierQuantitiesById,

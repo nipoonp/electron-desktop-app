@@ -1406,7 +1406,7 @@ const Modifier = (props: {
                 )}
 
                 {modifier.productModifier && modifier.productModifier.modifierGroups && modifier.productModifier.modifierGroups.items.length > 0 && (
-                    <FiChevronRight className="product-modifier-chevron-right" size={24} />
+                    <FiChevronRight className="product-modifier-chevron-rigrht" size={24} />
                 )}
             </div>
         </>
@@ -1414,17 +1414,21 @@ const Modifier = (props: {
 
     const getModifierStepperMax = () => {
         if (modifierQuantityAvailable) {
-            let maxSelectable = Math.min(choiceDuplicate, modifierQuantityAvailable);
+            let maxSelectable = 0;
+            const diffSelectable = choiceDuplicate - modifiersSelectedCount;
+
+            if (modifierQuantityAvailable <= diffSelectable) {
+                maxSelectable = Math.min(diffSelectable, modifierQuantityAvailable);
+            } else {
+                maxSelectable = Math.min(diffSelectable, modifierQuantityAvailable);
+                maxSelectable += stepperCount;
+            }
+
+            if (maxSelectable > modifierQuantityAvailable) {
+                maxSelectable = modifierQuantityAvailable;
+            }
 
             return Math.floor(maxSelectable / productQuantity);
-
-            // let maxSelectable = Math.min(choiceDuplicate - modifiersSelectedCount, modifierQuantityAvailable);
-
-            // if (maxSelectable < modifierQuantityAvailable) {
-            //     maxSelectable = modifierQuantityAvailable;
-            // }
-
-            // return Math.floor(maxSelectable / productQuantity);
         } else {
             return maxReached ? stepperCount : choiceDuplicate;
         }

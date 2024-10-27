@@ -990,7 +990,7 @@ const POSPaymentScreen = (props: {
                             Uber Eats
                         </Button>
                     )}
-                    {register && register.enableDoordashPayments && (
+                    {register && register.enableMenulogPayments && (
                         <Button className="large payment-modal-menulog-button" onClick={() => onClickMenulog(amount)}>
                             Menulog
                         </Button>
