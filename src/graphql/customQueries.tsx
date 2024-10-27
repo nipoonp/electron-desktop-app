@@ -275,6 +275,12 @@ export const GET_RESTAURANT = gql`
                 region
                 identityPoolId
             }
+            receiptLogo {
+                key
+                bucket
+                region
+                identityPoolId
+            }
             gstNumber
             customStyleSheet {
                 key
@@ -953,6 +959,7 @@ export interface IGET_RESTAURANT {
     };
     operatingHours: IGET_RESTAURANT_OPERATING_HOURS;
     logo?: IS3Object;
+    receiptLogo?: IS3Object;
     gstNumber: string | null;
     customStyleSheet?: IS3Object;
     autoCompleteOrders: boolean | null;
