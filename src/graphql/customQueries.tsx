@@ -701,7 +701,6 @@ export const GET_RESTAURANT = gql`
                                     items {
                                         id
                                         displaySequence
-                                        hideForCustomer
                                         modifierGroup {
                                             id
                                             name
@@ -709,6 +708,7 @@ export const GET_RESTAURANT = gql`
                                             choiceMin
                                             choiceMax
                                             choiceDuplicate
+                                            hideForCustomer
                                             collapsedByDefault
                                             availablePlatforms
                                             alphabeticalSorting
@@ -716,7 +716,6 @@ export const GET_RESTAURANT = gql`
                                                 items {
                                                     id
                                                     displaySequence
-                                                    preSelectedQuantity
                                                     modifier {
                                                         id
                                                         name
@@ -736,6 +735,7 @@ export const GET_RESTAURANT = gql`
                                                         soldOutDate
                                                         availablePlatforms
                                                         subModifierGroups
+                                                        preSelectedQuantity
                                                         productModifier {
                                                             id
                                                             name
@@ -804,7 +804,6 @@ export const GET_RESTAURANT = gql`
                                                                 items {
                                                                     id
                                                                     displaySequence
-                                                                    hideForCustomer
                                                                     modifierGroup {
                                                                         id
                                                                         name
@@ -812,13 +811,13 @@ export const GET_RESTAURANT = gql`
                                                                         choiceMin
                                                                         choiceMax
                                                                         choiceDuplicate
+                                                                        hideForCustomer
                                                                         collapsedByDefault
                                                                         availablePlatforms
                                                                         modifiers(limit: 50) {
                                                                             items {
                                                                                 id
                                                                                 displaySequence
-                                                                                preSelectedQuantity
                                                                                 modifier {
                                                                                     id
                                                                                     name
@@ -831,6 +830,7 @@ export const GET_RESTAURANT = gql`
                                                                                         region
                                                                                         identityPoolId
                                                                                     }
+                                                                                    preSelectedQuantity
                                                                                     productModifier {
                                                                                         id
                                                                                         name
@@ -1312,7 +1312,6 @@ export interface IGET_RESTAURANT_PRODUCT {
 export interface IGET_RESTAURANT_MODIFIER_GROUP_LINK {
     id: string;
     displaySequence: number;
-    hideForCustomer: boolean | null;
     modifierGroup: IGET_RESTAURANT_MODIFIER_GROUP;
 }
 
@@ -1323,6 +1322,7 @@ export interface IGET_RESTAURANT_MODIFIER_GROUP {
     choiceMin: number;
     choiceMax: number;
     choiceDuplicate: number;
+    hideForCustomer: boolean | null;
     collapsedByDefault?: boolean | null;
     availablePlatforms: ERegisterType[];
     alphabeticalSorting: boolean;
@@ -1334,7 +1334,6 @@ export interface IGET_RESTAURANT_MODIFIER_GROUP {
 export interface IGET_RESTAURANT_MODIFIER_LINK {
     id: string;
     displaySequence: number;
-    preSelectedQuantity: number;
     modifier: IGET_RESTAURANT_MODIFIER;
 }
 
@@ -1353,6 +1352,7 @@ export interface IGET_RESTAURANT_MODIFIER {
     availablePlatforms: ERegisterType[];
     isAgeRescricted: boolean;
     subModifierGroups: string;
+    preSelectedQuantity: number;
     productModifier?: IGET_RESTAURANT_PRODUCT;
 }
 
@@ -1590,20 +1590,19 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                     items {
                         id
                         displaySequence
-                        hideForCustomer
                         modifierGroup {
                             id
                             name
                             choiceMin
                             choiceMax
                             choiceDuplicate
+                            hideForCustomer
                             collapsedByDefault
                             availablePlatforms
                             modifiers(limit: 500) {
                                 items {
                                     id
                                     displaySequence
-                                    preSelectedQuantity
                                     modifier {
                                         id
                                         name
@@ -1619,6 +1618,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                         totalQuantityAvailable
                                         soldOut
                                         soldOutDate
+                                        preSelectedQuantity
                                         availablePlatforms
                                         productModifier {
                                             id
@@ -1686,20 +1686,19 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                 items {
                                                     id
                                                     displaySequence
-                                                    hideForCustomer
                                                     modifierGroup {
                                                         id
                                                         name
                                                         choiceMin
                                                         choiceMax
                                                         choiceDuplicate
+                                                        hideForCustomer
                                                         collapsedByDefault
                                                         availablePlatforms
                                                         modifiers(limit: 500) {
                                                             items {
                                                                 id
                                                                 displaySequence
-                                                                preSelectedQuantity
                                                                 modifier {
                                                                     id
                                                                     name
@@ -1715,6 +1714,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                                     totalQuantityAvailable
                                                                     soldOut
                                                                     soldOutDate
+                                                                    preSelectedQuantity
                                                                     availablePlatforms
                                                                 }
                                                             }

@@ -69,11 +69,15 @@ export const ProductModal = (props: {
         //Set preselected modifiers logic
         let newOrderedModifiers: IPreSelectedModifiers = {};
 
+        const getPreSelectedModifierQuantity = (preSelectedQuantity: number, choiceDuplicate: number, choiceMax: number) => {
+            return Math.min(preSelectedQuantity, choiceDuplicate, choiceMax);
+        };
+
         product.modifierGroups &&
             product.modifierGroups.items.forEach((modifierGroupLink) => {
                 modifierGroupLink.modifierGroup.modifiers &&
                     modifierGroupLink.modifierGroup.modifiers.items.map((modifierLink) => {
-                        if (modifierLink.preSelectedQuantity) {
+                        if (modifierLink.modifier.preSelectedQuantity) {
                             if (newOrderedModifiers[modifierGroupLink.modifierGroup.id] === undefined) {
                                 newOrderedModifiers[modifierGroupLink.modifierGroup.id] = [];
                             }
@@ -87,8 +91,16 @@ export const ProductModal = (props: {
                                         name: modifierLink.modifier.name,
                                         kitchenName: modifierLink.modifier.kitchenName,
                                         price: modifierLink.modifier.price,
-                                        preSelectedQuantity: modifierLink.preSelectedQuantity,
-                                        quantity: modifierLink.preSelectedQuantity,
+                                        preSelectedQuantity: getPreSelectedModifierQuantity(
+                                            modifierLink.modifier.preSelectedQuantity,
+                                            modifierGroupLink.modifierGroup.choiceDuplicate,
+                                            modifierGroupLink.modifierGroup.choiceMax
+                                        ),
+                                        quantity: getPreSelectedModifierQuantity(
+                                            modifierLink.modifier.preSelectedQuantity,
+                                            modifierGroupLink.modifierGroup.choiceDuplicate,
+                                            modifierGroupLink.modifierGroup.choiceMax
+                                        ),
                                         productModifiers: null,
                                         image: modifierLink.modifier.image
                                             ? {
@@ -714,7 +726,7 @@ export const ProductModal = (props: {
                         choiceDuplicate: mg.modifierGroup.choiceDuplicate,
                         choiceMin: mg.modifierGroup.choiceMin,
                         choiceMax: mg.modifierGroup.choiceMax,
-                        hideForCustomer: mg.hideForCustomer,
+                        hideForCustomer: mg.modifierGroup.hideForCustomer,
                         modifiers: orderedModifiers[mg.modifierGroup.id],
                     });
                 }
@@ -787,7 +799,7 @@ export const ProductModal = (props: {
             <div className="separator-6"></div>
             {product.modifierGroups &&
                 product.modifierGroups.items.map((mg) => {
-                    if (mg.hideForCustomer) return;
+                    if (mg.modifierGroup.hideForCustomer) return;
                     if (register && mg.modifierGroup.availablePlatforms && !mg.modifierGroup.availablePlatforms.includes(register.type)) return;
 
                     return (
@@ -1206,20 +1218,20 @@ export const ModifierGroup = (props: {
                                                 productModifier: IGET_RESTAURANT_PRODUCT
                                             ) => props.onEditSelectionsProductModifier(index, selectedModifier, productModifier)}
                                             onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                                onCheckingModifier(selectedModifier, m.preSelectedQuantity);
+                                                onCheckingModifier(selectedModifier, m.modifier.preSelectedQuantity);
                                             }}
                                             onUnCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                                onUnCheckingModifier(selectedModifier, m.preSelectedQuantity);
+                                                onUnCheckingModifier(selectedModifier, m.modifier.preSelectedQuantity);
                                             }}
                                             onChangeModifierQuantity={(
                                                 selectedModifier: IGET_RESTAURANT_MODIFIER,
                                                 isIncremented: boolean,
                                                 quantity: number
                                             ) => {
-                                                onChangeModifierQuantity(selectedModifier, m.preSelectedQuantity, isIncremented, quantity);
+                                                onChangeModifierQuantity(selectedModifier, m.modifier.preSelectedQuantity, isIncremented, quantity);
                                             }}
                                             onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                                onSelectRadioModifier(selectedModifier, m.preSelectedQuantity);
+                                                onSelectRadioModifier(selectedModifier, m.modifier.preSelectedQuantity);
                                             }}
                                             modifierQuantity={modifierQuantity(m.modifier)}
                                             productQuantity={productQuantity}
