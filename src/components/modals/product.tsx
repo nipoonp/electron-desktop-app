@@ -903,19 +903,19 @@ export const ProductModal = (props: {
             <div ref={(ref) => setProductsWrapperElement(ref)} className="product" id="productsWrapperScrollModel">
                 <div className="mt-11" />
                 <div className="product-header">
-                    <div className="image-wrapper">
-                        {product.imageUrl ? (
+                    {product.imageUrl ? (
+                        <div className="image-wrapper">
                             <CachedImage url={`${product.imageUrl}`} className="image" alt="product-image" />
-                        ) : product.image ? (
-                            <>
-                                <CachedImage
-                                    className="image"
-                                    url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
-                                    alt="product-image"
-                                />
-                            </>
-                        ) : null}
-                    </div>
+                        </div>
+                    ) : product.image ? (
+                        <div className="image-wrapper">
+                            <CachedImage
+                                className="image"
+                                url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                                alt="product-image"
+                            />
+                        </div>
+                    ) : null}
                     <div>
                         <div className="h1 mb-4 name">
                             {currentSelectedProductModifier ? currentSelectedProductModifier.selectedModifier.name : product.name}
