@@ -350,7 +350,7 @@ export const printCustomerReceipt = async (
     }
 
     printer.tableCustom([
-        { text: "GST (15.00%)", align: "LEFT", width: 0.75 },
+        { text: "GST", align: "LEFT", width: 0.75 },
         { text: `\$${convertCentsToDollars(calculateTaxAmount(order.total))}`, align: "RIGHT", width: 0.25 },
     ]);
     order.discount &&

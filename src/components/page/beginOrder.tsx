@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { restaurantPath } from "../main";
+import { loyaltyPath, restaurantPath } from "../main";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { IGET_RESTAURANT_ADVERTISEMENT, IGET_RESTAURANT_PING_DATA } from "../../graphql/customQueries";
@@ -57,7 +57,7 @@ const PreparationTime = () => {
     return (
         <>
             {!isPOS && preparationTimeInMinutes ? (
-                <div className="preparation-time h2">
+                <div className="wait-time h2">
                     Current wait time is {preparationTimeInMinutes} {preparationTimeInMinutes > 1 ? "minutes" : "minute"}
                 </div>
             ) : (
@@ -120,7 +120,11 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
                 <div
                     className="wrapper"
                     onClick={() => {
-                        navigate(restaurantPath + "/" + restaurant.id);
+                        if (restaurant.enableLoyalty) {
+                            navigate(loyaltyPath);
+                        } else {
+                            navigate(restaurantPath + "/" + restaurant.id);
+                        }
                     }}
                 >
                     {/* <div className="touch-to-begin-wrapper">
@@ -175,7 +179,11 @@ const BeginOrderDefault = () => {
                         <div
                             className="wrapper"
                             onClick={() => {
-                                navigate(restaurantPath + "/" + restaurant.id);
+                                if (restaurant.enableLoyalty) {
+                                    navigate(loyaltyPath);
+                                } else {
+                                    navigate(restaurantPath + "/" + restaurant.id);
+                                }
                             }}
                         >
                             <div className="order-text">ORDER</div>

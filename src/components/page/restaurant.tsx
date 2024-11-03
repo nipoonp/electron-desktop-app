@@ -29,6 +29,7 @@ import { toast } from "../../tabin/components/toast";
 import { FiArrowDownCircle } from "react-icons/fi";
 
 import "./restaurant.scss";
+import { LoyaltyHeader } from "../shared/loyaltyHeader";
 
 interface IMostPopularProduct {
     category: IGET_RESTAURANT_CATEGORY;
@@ -164,16 +165,33 @@ const Restaurant = () => {
 
     useEffect(() => {
         if (restaurant) {
-            setRestaurant(restaurant);
-
             if (selectedCategoryId) {
                 const selectedCategoryItem = restaurantCategories[selectedCategoryId];
 
-                if (selectedCategoryItem) setSelectedCategory(selectedCategoryItem);
+                if (selectedCategoryItem) {
+                    setSelectedCategory(selectedCategoryItem);
+                    onProcessSubCategories(selectedCategoryItem);
+                }
             } else if (register && register.defaultCategoryView) {
                 const selectedCategoryItem = restaurantCategories[register.defaultCategoryView];
 
-                if (selectedCategoryItem) setSelectedCategory(selectedCategoryItem);
+                if (selectedCategoryItem) {
+                    setSelectedCategory(selectedCategoryItem);
+                    onProcessSubCategories(selectedCategoryItem);
+                }
+            } else {
+                for (const selectedCategoryItem of restaurant.categories.items) {
+                    const isSoldOut = isItemSoldOut(selectedCategoryItem.soldOut, selectedCategoryItem.soldOutDate);
+                    const isAvailable = isItemAvailable(selectedCategoryItem.availability);
+
+                    const isValid = !isSoldOut && isAvailable;
+
+                    if (isValid) {
+                        setSelectedCategory(selectedCategoryItem);
+                        onProcessSubCategories(selectedCategoryItem);
+                        break;
+                    }
+                }
             }
 
             if (restaurantProducts && register && register.preSelectedProducts) {
@@ -475,7 +493,7 @@ const Restaurant = () => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
         const isProductAvailable = isItemAvailable(product.availability);
         const isCategoryAvailable = isItemAvailable(category.availability);
-        const isQuantityAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById);
+        const isQuantityAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById, product.maxQuantityPerOrder);
 
         const isValid = !isSoldOut && isProductAvailable && isCategoryAvailable && isQuantityAvailable;
 
@@ -781,6 +799,7 @@ const Restaurant = () => {
     return (
         <>
             <PageWrapper>
+                {/* <LoyaltyHeader /> */}
                 <div className="restaurant-wrapper">
                     <div className="restaurant">
                         <div className="restaurant-container">

@@ -271,7 +271,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                                     eftposSurcharge: response.surchargeAmount
                                         ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
                                         : 0,
-                                    eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
+                                    eftposTip: response.tipAmount ? parseInt(response.tipAmount) : 0,
                                 };
                                 break;
                             case "CANCELLED":
@@ -284,7 +284,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                                     eftposSurcharge: response.surchargeAmount
                                         ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
                                         : 0,
-                                    eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
+                                    eftposTip: response.tipAmount ? parseInt(response.tipAmount) : 0,
                                 };
                                 break;
                             case "REVERSED":
@@ -305,7 +305,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                                     eftposSurcharge: response.surchargeAmount
                                         ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
                                         : 0,
-                                    eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
+                                    eftposTip: response.tipAmount ? parseInt(response.tipAmount) : 0,
                                 };
 
                                 break;
@@ -319,7 +319,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                                     eftposSurcharge: response.surchargeAmount
                                         ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
                                         : 0,
-                                    eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
+                                    eftposTip: response.tipAmount ? parseInt(response.tipAmount) : 0,
                                 };
                                 break;
                             case "SYSTEM ERROR":
@@ -333,7 +333,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                                     eftposSurcharge: response.surchargeAmount
                                         ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
                                         : 0,
-                                    eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
+                                    eftposTip: response.tipAmount ? parseInt(response.tipAmount) : 0,
                                 };
                                 break;
                             case "NOT STARTED":
@@ -346,7 +346,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                                     eftposSurcharge: response.surchargeAmount
                                         ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
                                         : 0,
-                                    eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
+                                    eftposTip: response.tipAmount ? parseInt(response.tipAmount) : 0,
                                 };
                                 break;
                             case "UNKNOWN":
@@ -359,7 +359,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                                     eftposSurcharge: response.surchargeAmount
                                         ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
                                         : 0,
-                                    eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
+                                    eftposTip: response.tipAmount ? parseInt(response.tipAmount) : 0,
                                 };
                                 break;
                             default:
@@ -372,7 +372,7 @@ const TyroProvider = (props: { children: React.ReactNode }) => {
                                     eftposSurcharge: response.surchargeAmount
                                         ? convertDollarsToCentsReturnInt(parseFloat(response.surchargeAmount))
                                         : 0,
-                                    eftposTip: response.tipAmount ? convertDollarsToCentsReturnInt(parseFloat(response.tipAmount)) : 0,
+                                    eftposTip: response.tipAmount ? parseInt(response.tipAmount) : 0,
                                 };
                                 break;
                         }

@@ -246,6 +246,8 @@ export interface IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT {
     totalPrice: number;
     discount: number;
     isAgeRescricted: boolean;
+    incrementAmount?: number;
+    maxQuantityPerOrder?: number;
     quantity: number;
     notes: string | null;
     image: IS3Object | null;
