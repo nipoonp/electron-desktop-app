@@ -109,7 +109,7 @@ export default () => {
             const isProductSoldOut = isItemSoldOut(menuProduct.soldOut, menuProduct.soldOutDate);
             const isProductAvailable = isItemAvailable(menuProduct.availability);
             const isProductCategoryAvailable = isItemAvailable(menuProductCategory.availability);
-            const isProductQtyAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById);
+            const isProductQtyAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById, product.maxQuantityPerOrder);
 
             const isProductValid = !isProductSoldOut && isProductAvailable && isProductCategoryAvailable && isProductQtyAvailable;
 

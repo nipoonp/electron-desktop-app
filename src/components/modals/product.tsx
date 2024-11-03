@@ -858,15 +858,18 @@ export const ProductModal = (props: {
     );
 
     const getProductFooterMaxQuantity = () => {
-        if (!product.totalQuantityAvailable) return;
-
-        return getProductQuantityAvailable(
-            {
-                id: product.id,
-                totalQuantityAvailable: product.totalQuantityAvailable,
-            },
-            cartProductQuantitiesById
-        );
+        if (product.totalQuantityAvailable) {
+            return getProductQuantityAvailable(
+                {
+                    id: product.id,
+                    totalQuantityAvailable: product.totalQuantityAvailable,
+                },
+                cartProductQuantitiesById,
+                product.maxQuantityPerOrder
+            );
+        } else if (product.maxQuantityPerOrder) {
+            return product.maxQuantityPerOrder;
+        }
     };
 
     const footer = (
@@ -1089,7 +1092,11 @@ export const ModifierGroup = (props: {
         if (modifier.productModifier) {
             const isSoldOut = isItemSoldOut(modifier.productModifier.soldOut, modifier.productModifier.soldOutDate);
             const isAvailable = isItemAvailable(modifier.productModifier.availability);
-            const isQuantityAvailable = isProductQuantityAvailable(modifier.productModifier, cartProductQuantitiesById);
+            const isQuantityAvailable = isProductQuantityAvailable(
+                modifier.productModifier,
+                cartProductQuantitiesById,
+                modifier.productModifier.maxQuantityPerOrder
+            );
 
             return !isSoldOut && isAvailable && isQuantityAvailable;
         } else {
@@ -1322,7 +1329,8 @@ const Modifier = (props: {
                     id: modifier.productModifier.id,
                     totalQuantityAvailable: modifier.productModifier.totalQuantityAvailable,
                 },
-                cartProductQuantitiesById
+                cartProductQuantitiesById,
+                modifier.productModifier.maxQuantityPerOrder
             );
         } else {
             if (!modifier.totalQuantityAvailable) return null;

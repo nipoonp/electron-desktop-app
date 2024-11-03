@@ -202,12 +202,17 @@ export const getProductQuantityAvailable = (
         id: string;
         totalQuantityAvailable: number;
     },
-    cartProducts: ICartItemQuantitiesById
+    cartProducts: ICartItemQuantitiesById,
+    maxQuantityPerOrder: number | undefined
 ) => {
     let quantityAvailable = menuProductItem.totalQuantityAvailable;
 
     if (cartProducts[menuProductItem.id] != undefined) {
         quantityAvailable -= cartProducts[menuProductItem.id].quantity;
+    }
+
+    if (maxQuantityPerOrder && maxQuantityPerOrder < quantityAvailable) {
+        quantityAvailable = maxQuantityPerOrder;
     }
 
     return quantityAvailable;
@@ -218,7 +223,8 @@ export const isProductQuantityAvailable = (
         id: string;
         totalQuantityAvailable?: number;
     },
-    cartProducts: ICartItemQuantitiesById
+    cartProducts: ICartItemQuantitiesById,
+    maxQuantityPerOrder: number | undefined
 ) => {
     if (!menuProductItem.totalQuantityAvailable) return true;
 
@@ -227,7 +233,8 @@ export const isProductQuantityAvailable = (
             id: menuProductItem.id,
             totalQuantityAvailable: menuProductItem.totalQuantityAvailable,
         },
-        cartProducts
+        cartProducts,
+        maxQuantityPerOrder
     );
 
     return productQuantityAvailable > 0;
