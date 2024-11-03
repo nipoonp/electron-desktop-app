@@ -83,10 +83,10 @@ const C = (props: {
         setRestaurantLoading(getRestaurantLoading);
         setRestaurantError(getRestaurantError ? true : false);
 
-        if (getRestaurantData && getRestaurantData.logo) {
+        if (getRestaurantData && getRestaurantData.receiptLogo) {
             //Don't need to do await here. We do not need the base64 logo here instantly.
             getBase64FromUrlImage(
-                `${getCloudFrontDomainName()}/protected/${getRestaurantData.logo.identityPoolId}/${getRestaurantData.logo.key}`,
+                `${getCloudFrontDomainName()}/protected/${getRestaurantData.receiptLogo.identityPoolId}/${getRestaurantData.receiptLogo.key}`,
                 250,
                 "image/png"
             )
