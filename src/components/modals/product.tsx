@@ -873,7 +873,14 @@ export const ProductModal = (props: {
         <>
             {!currentSelectedProductModifier && (
                 <div className="stepper mb-4">
-                    <Stepper count={quantity} min={1} max={getProductFooterMaxQuantity()} onUpdate={onUpdateQuantity} size={48} />
+                    <Stepper
+                        count={quantity}
+                        min={1}
+                        max={getProductFooterMaxQuantity()}
+                        onUpdate={onUpdateQuantity}
+                        size={48}
+                        stepAmount={product.incrementAmount || 1}
+                    />
                 </div>
             )}
             <div className="footer-buttons-container">

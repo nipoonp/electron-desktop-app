@@ -607,6 +607,8 @@ export const GET_RESTAURANT = gql`
                                 tags
                                 totalQuantitySold
                                 totalQuantityAvailable
+                                incrementAmount
+                                maxQuantityPerOrder
                                 soldOut
                                 soldOutDate
                                 imageUrl
@@ -745,6 +747,8 @@ export const GET_RESTAURANT = gql`
                                                             tags
                                                             totalQuantitySold
                                                             totalQuantityAvailable
+                                                            incrementAmount
+                                                            maxQuantityPerOrder
                                                             soldOut
                                                             soldOutDate
                                                             imageUrl
@@ -840,6 +844,8 @@ export const GET_RESTAURANT = gql`
                                                                                         tags
                                                                                         totalQuantitySold
                                                                                         totalQuantityAvailable
+                                                                                        incrementAmount
+                                                                                        maxQuantityPerOrder
                                                                                         soldOut
                                                                                         soldOutDate
                                                                                         imageUrl
@@ -926,6 +932,8 @@ export const GET_RESTAURANT = gql`
                     soldOut
                     soldOutDate
                     totalQuantityAvailable
+                    incrementAmount
+                    maxQuantityPerOrder
                 }
             }
             # Only for stock component
@@ -1295,6 +1303,8 @@ export interface IGET_RESTAURANT_PRODUCT {
     tags: string | null;
     totalQuantitySold?: number;
     totalQuantityAvailable?: number;
+    incrementAmount?: number;
+    maxQuantityPerOrder?: number;
     soldOut?: boolean;
     soldOutDate?: string;
     imageUrl?: string;
@@ -1498,6 +1508,8 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                 tags
                 totalQuantitySold
                 totalQuantityAvailable
+                incrementAmount
+                maxQuantityPerOrder
                 soldOut
                 soldOutDate
                 imageUrl
@@ -1628,6 +1640,8 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                             tags
                                             totalQuantitySold
                                             totalQuantityAvailable
+                                            incrementAmount
+                                            maxQuantityPerOrder
                                             soldOut
                                             soldOutDate
                                             imageUrl
@@ -1712,6 +1726,8 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                                     }
                                                                     totalQuantitySold
                                                                     totalQuantityAvailable
+                                                                    incrementAmount
+                                                                    maxQuantityPerOrder
                                                                     soldOut
                                                                     soldOutDate
                                                                     preSelectedQuantity
