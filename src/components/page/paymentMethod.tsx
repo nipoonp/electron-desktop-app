@@ -12,6 +12,39 @@ import "./paymentMethod.scss";
 import { Button } from "../../tabin/components/button";
 import { Link } from "../../tabin/components/link";
 import { FiX } from "react-icons/fi";
+import CustomerInformation from "./customerInformation";
+import { useState } from "react";
+import { ECustomCustomerFieldType, RequestCustomerInformationType } from "../../graphql/customQueries";
+
+const eftposFields: RequestCustomerInformationType = {
+    email: true,
+    firstName: true,
+    phoneNumber: true,
+    signature: false,
+    customFields: [
+        { label: "Company Name", type: ECustomCustomerFieldType.STRING, value: "New Value", required: true },
+        { label: "Truck/Trailer Rego#", type: ECustomCustomerFieldType.STRING, value: "New Value", required: true },
+    ],
+};
+
+const chargeToAccountFields: RequestCustomerInformationType = {
+    email: false,
+    firstName: false,
+    phoneNumber: false,
+    signature: false,
+    customFields: [
+        { label: "Company Name", type: ECustomCustomerFieldType.STRING, value: "New Value", required: true },
+        { label: "Account Code", type: ECustomCustomerFieldType.STRING, value: "New Value", required: true },
+        { label: "Name Of Driver", type: ECustomCustomerFieldType.STRING, value: "New Value", required: true },
+        {
+            label: "PO Number (Optional)",
+            type: ECustomCustomerFieldType.STRING,
+            value: "New Value",
+            required: false,
+        },
+        { label: "Truck/Trailer Rego#", type: ECustomCustomerFieldType.STRING, value: "New Value", required: true },
+    ],
+};
 
 export default () => {
     const navigate = useNavigate();
@@ -21,6 +54,10 @@ export default () => {
 
     if (!register) throw "Register is not valid";
     if (restaurant == null) throw "Restaurant is invalid!";
+
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(EPaymentMethod.EFTPOS);
+
+    const [requestCustomerInformation, setRequestCustomerInformation] = useState<RequestCustomerInformationType>(eftposFields);
 
     const onClose = () => {
         navigate(`${checkoutPath}`);
@@ -41,22 +78,39 @@ export default () => {
                     </div>
                     <div className="h1 mb-12 select-your-payment-method">Select your payment method</div>
                     <div className="payment-method-payment-button-wrapper">
-                        {register.enableCashPayments && (
-                            <Button className="large payment-method-cash-button" onClick={() => onSelectPaymentMethod(EPaymentMethod.CASH)}>
-                                Cash
-                            </Button>
-                        )}
                         {register.enableEftposPayments && (
-                            <Button className="large payment-method-eftpos-button ml-2" onClick={() => onSelectPaymentMethod(EPaymentMethod.EFTPOS)}>
+                            <Button
+                                className={`large payment-method-cash-button ${selectedPaymentMethod === EPaymentMethod.EFTPOS ? "selected" : ""}`}
+                                onClick={() => {
+                                    setSelectedPaymentMethod(EPaymentMethod.EFTPOS);
+                                    setRequestCustomerInformation(eftposFields);
+                                }}
+                            >
                                 Eftpos
                             </Button>
                         )}
+                        {register.enableCashPayments && (
+                            <Button
+                                className={`large payment-method-cash-button ${selectedPaymentMethod === EPaymentMethod.CASH ? "selected" : ""}`}
+                                onClick={() => {
+                                    setSelectedPaymentMethod(EPaymentMethod.CASH);
+                                    setRequestCustomerInformation(chargeToAccountFields);
+                                }}
+                            >
+                                Charge To Account
+                            </Button>
+                        )}
                     </div>
-                    {register.enablePayLater && (
+                    <CustomerInformation
+                        onNext={() => onSelectPaymentMethod(selectedPaymentMethod)}
+                        requestCustomerInformation={requestCustomerInformation}
+                    />
+
+                    {/* {register.enablePayLater && (
                         <Link className="payment-method-pay-later mt-8" onClick={() => onSelectPaymentMethod(EPaymentMethod.LATER)}>
                             I'm not sure, I will pay later at the counter...
                         </Link>
-                    )}
+                    )} */}
                 </div>
             </PageWrapper>
         </>

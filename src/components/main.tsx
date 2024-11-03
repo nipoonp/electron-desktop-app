@@ -209,7 +209,7 @@ const AppRoutes = () => {
                 <Route path={orderTypePath} element={<RestaurantRegisterPrivateRoute element={<OrderType />} />} />
                 <Route path={tableNumberPath} element={<RestaurantRegisterPrivateRoute element={<TableNumber />} />} />
                 <Route path={buzzerNumberPath} element={<RestaurantRegisterPrivateRoute element={<BuzzerNumber />} />} />
-                <Route path={customerInformationPath} element={<RestaurantRegisterPrivateRoute element={<RequireCustomerInformation />} />} />
+                {/* <Route path={customerInformationPath} element={<RestaurantRegisterPrivateRoute element={<RequireCustomerInformation />} />} /> */}
                 <Route path={paymentMethodPath} element={<RestaurantRegisterPrivateRoute element={<PaymentMethod />} />} />
                 <Route path={checkoutPath} element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}>
                     <Route path=":autoClickCompleteOrderOnLoad" element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}></Route>

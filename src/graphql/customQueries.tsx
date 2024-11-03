@@ -1089,6 +1089,7 @@ export interface RequestCustomerInformationType {
         label: string;
         value: string;
         type: ECustomCustomerFieldType;
+        required: boolean;
     }[];
 }
 

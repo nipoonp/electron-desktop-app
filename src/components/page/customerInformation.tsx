@@ -12,9 +12,10 @@ import SignatureCanvas from "react-signature-canvas";
 import "./customerInformation.scss";
 import { FiX } from "react-icons/fi";
 import { resizeBase64ImageToWidth } from "../../util/util";
-import { ECustomCustomerFieldType } from "../../graphql/customQueries";
+import { ECustomCustomerFieldType, RequestCustomerInformationType } from "../../graphql/customQueries";
+import { toast } from "../../tabin/components/toast";
 
-export default () => {
+export default (props: { onNext: () => void; requestCustomerInformation: RequestCustomerInformationType }) => {
     const navigate = useNavigate();
     const { register } = useRegister();
     const { restaurant } = useRestaurant();
@@ -53,27 +54,49 @@ export default () => {
     };
 
     const onNext = async () => {
-        if (!register.requestCustomerInformation) return;
+        if (!props.requestCustomerInformation) return;
 
         let invalid = false;
 
-        if (register.requestCustomerInformation.firstName && !firstName) {
+        if (props.requestCustomerInformation.firstName && !firstName) {
             setFirstNameError(true);
             invalid = true;
         }
-        if (register.requestCustomerInformation.email && !email) {
+        if (props.requestCustomerInformation.email && !email) {
             setEmailError(true);
             invalid = true;
         }
-        if (register.requestCustomerInformation.phoneNumber && !phoneNumber) {
+        if (props.requestCustomerInformation.phoneNumber && !phoneNumber) {
             setPhoneNumberError(true);
             invalid = true;
         }
         //@ts-ignore
-        if (register.requestCustomerInformation.signature && signatureCanvasRef.current.isEmpty()) {
+        if (props.requestCustomerInformation.signature && signatureCanvasRef.current.isEmpty()) {
             setSignatureError(true);
             invalid = true;
         }
+
+        props.requestCustomerInformation.customFields?.forEach((field) => {
+            // console.log("xxx...field", field.required);
+            if (field.required) {
+                let foundField: any = null;
+                customFields.forEach((customField) => {
+                    if (field.label === customField.label) {
+                        foundField = customField;
+                    }
+                });
+
+                if (!foundField) {
+                    invalid = true;
+                    toast.error(`Please fill in ${field.label}`);
+                }
+
+                if (foundField && !foundField.value) {
+                    invalid = true;
+                    toast.error(`Please fill in ${field.label}`);
+                }
+            }
+        });
 
         if (!invalid) {
             let resizedSignatureBase64: string = "";
@@ -93,6 +116,8 @@ export default () => {
             });
 
             navigate(`${checkoutPath}/true`);
+
+            props.onNext();
         }
     };
 
@@ -136,7 +161,7 @@ export default () => {
                     </div>
                     <div className="h2 mb-6">Enter customer details</div>
                     <div className="mb-10" style={{ width: "400px" }}>
-                        {register.requestCustomerInformation && register.requestCustomerInformation.firstName && (
+                        {props.requestCustomerInformation && props.requestCustomerInformation.firstName && (
                             <>
                                 <div className="h2 mt-2 mb-2">Name</div>
                                 <Input
@@ -148,19 +173,19 @@ export default () => {
                                 />
                             </>
                         )}
-                        {register.requestCustomerInformation && register.requestCustomerInformation.email && (
+                        {props.requestCustomerInformation && props.requestCustomerInformation.email && (
                             <>
                                 <div className="h2 mt-2 mb-2">Email</div>
                                 <Input type="email" onChange={onChangeEmail} value={email} error={emailError ? "Required" : ""} />
                             </>
                         )}
-                        {register.requestCustomerInformation && register.requestCustomerInformation.phoneNumber && (
+                        {props.requestCustomerInformation && props.requestCustomerInformation.phoneNumber && (
                             <>
                                 <div className="h2 mt-2 mb-2">Phone Number</div>
                                 <Input type="number" onChange={onChangePhoneNumber} value={phoneNumber} error={phoneNumberError ? "Required" : ""} />
                             </>
                         )}
-                        {register.requestCustomerInformation && register.requestCustomerInformation.signature && (
+                        {props.requestCustomerInformation && props.requestCustomerInformation.signature && (
                             <>
                                 <div className="h2 mt-2 mb-2">Signature</div>
                                 <SignatureCanvas
@@ -173,8 +198,8 @@ export default () => {
                                 </Button>
                             </>
                         )}
-                        {register.requestCustomerInformation &&
-                            register.requestCustomerInformation.customFields?.map((field, index) => (
+                        {props.requestCustomerInformation &&
+                            props.requestCustomerInformation.customFields?.map((field, index) => (
                                 <>
                                     {field.type === ECustomCustomerFieldType.STRING && (
                                         <>
@@ -200,7 +225,9 @@ export default () => {
                                 </>
                             ))}
                     </div>
-                    <Button onClick={onNext}>Next</Button>
+                    <Button className="large" onClick={onNext}>
+                        Complete Order
+                    </Button>
                 </div>
             </PageWrapper>
         </>

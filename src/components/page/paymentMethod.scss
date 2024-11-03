@@ -20,11 +20,19 @@
         gap: 16px;
 
         .payment-method-cash-button {
-            width: 300px;
+            width: 350px;
+            background-color: var(--background-color);
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
         }
 
         .payment-method-eftpos-button {
-            width: 300px;
+            width: 350px;
+        }
+
+        .payment-method-cash-button.selected {
+            background-color: var(--primary-color);
+            color: var(--background-color);
         }
     }
 }

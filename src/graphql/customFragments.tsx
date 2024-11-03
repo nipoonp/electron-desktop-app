@@ -227,6 +227,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
             label: string;
             value: string;
             type: ECustomCustomerFieldType;
+            required: boolean;
         }[];
     } | null;
     status: EOrderStatus;

@@ -455,14 +455,14 @@ export const Checkout = () => {
             if (register.requestCustomerInformation.email && (!customerInformation || !customerInformation.email)) invalid = true;
             if (register.requestCustomerInformation.phoneNumber && (!customerInformation || !customerInformation.phoneNumber)) invalid = true;
             if (register.requestCustomerInformation.signature && (!customerInformation || !customerInformation.signatureBase64)) invalid = true;
-            if (register.requestCustomerInformation.customFields?.length && (!customerInformation || !customerInformation.customFields.length))
-                invalid = true;
-            //    if(register.) orderScheduledAt
+            // if (register.requestCustomerInformation.customFields?.length && (!customerInformation || !customerInformation.customFields.length))
+            //     invalid = true;
+            // //    if(register.) orderScheduledAt
 
-            if (invalid) {
-                navigate(customerInformationPath);
-                return;
-            }
+            // if (invalid) {
+            //     navigate(customerInformationPath);
+            //     return;
+            // }
         }
 
         if (!isPOS && register.enableEftposPayments && register.enableCashPayments && paymentMethod === null) {
@@ -585,6 +585,7 @@ export const Checkout = () => {
                               label: field.label,
                               value: field.value,
                               type: field.type,
+                              required: field.required,
                           })),
                       }
                     : null,

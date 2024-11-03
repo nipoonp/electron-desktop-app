@@ -296,6 +296,7 @@ export interface ICustomerInformation {
         label: string;
         value: string;
         type: ECustomCustomerFieldType;
+        required: boolean;
     }[];
 }
 
@@ -432,6 +433,7 @@ export interface IOrderReceipt {
                   label: string | null;
                   value: string | null;
                   type: ECustomCustomerFieldType | null;
+                  required: boolean;
               }[]
             | null;
     } | null;
