@@ -325,6 +325,8 @@ export interface ICartProduct {
     isAgeRescricted: boolean;
     image: IS3Object | null;
     quantity: number;
+    incrementAmount?: number;
+    maxQuantityPerOrder?: number;
     notes: string | null;
     category: ICartCategory | null; //Product modifier do not have category
     modifierGroups: ICartModifierGroup[];

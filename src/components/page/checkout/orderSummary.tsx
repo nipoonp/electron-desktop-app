@@ -2,7 +2,7 @@ import { useRegister } from "../../../context/register-context";
 import { ICartModifierGroup, ICartProduct } from "../../../model/model";
 import { Button } from "../../../tabin/components/button";
 import { Stepper } from "../../../tabin/components/stepper";
-import { convertCentsToDollars, convertDollarsToCents, convertDollarsToCentsReturnInt } from "../../../util/util";
+import { convertCentsToDollars, convertDollarsToCents, convertDollarsToCentsReturnInt, getProductQuantityAvailable } from "../../../util/util";
 import { ProductModifier } from "../../shared/productModifier";
 import { FiChevronDown, FiChevronRight } from "react-icons/fi";
 import { useEffect, useState } from "react";
@@ -11,6 +11,8 @@ import { Input } from "../../../tabin/components/input";
 import "./orderSummary.scss";
 import { CachedImage } from "../../../tabin/components/cachedImage";
 import { getCloudFrontDomainName } from "../../../private/aws-custom";
+import { useCart } from "../../../context/cart-context";
+import { useRestaurant } from "../../../context/restaurant-context";
 
 export const OrderSummary = (props: {
     products: ICartProduct[];
@@ -60,6 +62,8 @@ const OrderItem = (props: {
 }) => {
     const { product, displayOrder, onEditProduct, onUpdateProductQuantity, onApplyProductDiscount, onRemoveProduct } = props;
     const { isPOS } = useRegister();
+    const { menuProducts } = useRestaurant();
+    const { cartProductQuantitiesById } = useCart();
 
     const [displayPrice, setDisplayPrice] = useState(convertCentsToDollars(product.totalPrice * product.quantity - product.discount));
     const [originalPrice, setOriginalPrice] = useState(convertCentsToDollars(product.totalPrice * product.quantity));
@@ -156,8 +160,33 @@ const OrderItem = (props: {
         </div>
     );
 
+    const getProductMaxQuantity = (product: ICartProduct) => {
+        const productsTotalQuantityAvailable = menuProducts[product.id].totalQuantityAvailable;
+        const productMaxQuantityPerOrder = menuProducts[product.id].maxQuantityPerOrder;
+
+        if (productsTotalQuantityAvailable) {
+            return getProductQuantityAvailable(
+                {
+                    id: product.id,
+                    totalQuantityAvailable: productsTotalQuantityAvailable,
+                },
+                cartProductQuantitiesById,
+                productMaxQuantityPerOrder
+            );
+        } else if (productMaxQuantityPerOrder) {
+            return productMaxQuantityPerOrder;
+        }
+    };
+
     const quantityStepper = !product.isPreSelectedProduct ? (
-        <Stepper count={parseInt(quantity, 10)} min={1} onUpdate={(count: number) => onChangeStepperQuantity(count)} size={32} />
+        <Stepper
+            count={parseInt(quantity, 10)}
+            min={1}
+            max={getProductMaxQuantity(product)}
+            onUpdate={(count: number) => onChangeStepperQuantity(count)}
+            size={32}
+            stepAmount={product.incrementAmount}
+        />
     ) : (
         <div></div>
     );

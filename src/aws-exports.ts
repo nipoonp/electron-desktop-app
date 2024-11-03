@@ -1,4 +1,4 @@
-const awsenv = process.env.REACT_APP_AWS_ENV || "prod";
+const awsenv = process.env.REACT_APP_AWS_ENV || "dev";
 
 export let awsmobile: any;
 
