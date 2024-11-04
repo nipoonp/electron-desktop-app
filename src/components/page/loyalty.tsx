@@ -72,6 +72,7 @@ const LoyaltyLogin = ({ onBack, restaurantId }: { onBack: () => void; restaurant
     const onSearch = async () => {
         try {
             const loyaltyUser = await searchLoyaltyUser();
+
             if (loyaltyUser) {
                 const totalPoints = calculateTotalPoints(loyaltyUser.loyaltyHistories.items);
                 setCustomerLoyaltyPoints(totalPoints);
@@ -116,7 +117,7 @@ const LoyaltyLogin = ({ onBack, restaurantId }: { onBack: () => void; restaurant
             <Input
                 label="Phone Number / Email"
                 name="Rewards Identifier"
-                placeholder="02102828894 or support@tabin.co.nz"
+                placeholder="02123456789 or support@tabin.co.nz"
                 value={rewardsIdentifier}
                 onChange={onChangeRewardsIdentifier}
             />

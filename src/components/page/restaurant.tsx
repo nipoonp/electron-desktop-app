@@ -799,9 +799,9 @@ const Restaurant = () => {
     return (
         <>
             <PageWrapper>
-                {/* <LoyaltyHeader /> */}
                 <div className="restaurant-wrapper">
                     <div className="restaurant">
+                        <LoyaltyHeader />
                         <div className="restaurant-container">
                             <div className="categories-wrapper">
                                 {restaurant.logo && <RestaurantLogo image={restaurant.logo} />}
