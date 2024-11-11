@@ -1,0 +1,16 @@
+.loyalty-header {
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    gap: 48px;
+    background-color: var(--primary-color);
+    color: var(--background-color);
+
+    .loyalty-header-buttons-wrapper {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: right;
+        gap: 16px;
+    }
+}

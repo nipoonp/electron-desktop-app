@@ -749,6 +749,8 @@ export const ProductModal = (props: {
                   }
                 : null,
             quantity: quantity,
+            incrementAmount: product.incrementAmount,
+            maxQuantityPerOrder: product.maxQuantityPerOrder,
             notes: notes || null,
             category: {
                 id: category.id,

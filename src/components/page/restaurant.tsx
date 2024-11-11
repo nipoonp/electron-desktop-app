@@ -497,16 +497,16 @@ const Restaurant = () => {
 
         const isValid = !isSoldOut && isProductAvailable && isCategoryAvailable && isQuantityAvailable;
 
-        const addToCart = products && products.find((item) => item.id === product.id);
+        const addToCartQuantity = products && products.reduce((sum, p) => (product.id === p.id ? sum + p.quantity : 0), 0);
 
         return (
             <>
                 <div
                     key={product.id}
-                    className={`product ${isValid ? "" : "sold-out"} ${addToCart ? "add-to-cart" : ""}`}
+                    className={`product ${isValid ? "" : "sold-out"} ${addToCartQuantity ? "add-to-cart" : ""}`}
                     onClick={() => isValid && onClickProduct(category, product)}
                 >
-                    <div className="product-quantity">{addToCart && addToCart.quantity}</div>
+                    {addToCartQuantity ? <div className="product-quantity">{addToCartQuantity}</div> : <></>}
                     {product.totalQuantityAvailable && product.totalQuantityAvailable <= 5 ? (
                         <span className="quantity-remaining ml-2">{getQuantityRemainingText(product.totalQuantityAvailable)}</span>
                     ) : (
@@ -799,9 +799,9 @@ const Restaurant = () => {
     return (
         <>
             <PageWrapper>
-                {/* <LoyaltyHeader /> */}
                 <div className="restaurant-wrapper">
                     <div className="restaurant">
+                        {/* <LoyaltyHeader /> */}
                         <div className="restaurant-container">
                             <div className="categories-wrapper">
                                 {restaurant.logo && <RestaurantLogo image={restaurant.logo} />}
