@@ -193,7 +193,7 @@ export const printCustomerReceipt = async (
         printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
     }
 
-    if (order.buzzer !== null || order.buzzer !== undefined) {
+    if (order.buzzer !== null) {
         printer.newLine();
         printer.bold(true);
         printer.setTextSize(1, 1);
@@ -604,7 +604,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
         printer.bold(false);
     }
 
-    if (order.buzzer !== null || order.buzzer !== undefined) {
+    if (order.buzzer !== null) {
         printer.newLine();
         printer.bold(true);
         printer.setTextSize(1, 1);
@@ -951,7 +951,7 @@ export const printKitchenReceiptSmall = async (
         printer.bold(false);
     }
 
-    if (order.buzzer !== null || order.buzzer !== undefined) {
+    if (order.buzzer !== null) {
         printer.newLine();
         printer.bold(true);
         printer.setTextSize(1, 1);
@@ -1306,7 +1306,7 @@ export const printKitchenReceiptLarge = async (
         printer.bold(false);
     }
 
-    if (order.buzzer !== null || order.buzzer !== undefined) {
+    if (order.buzzer !== null) {
         printer.newLine();
         printer.bold(true);
         printer.setTextSize(1, 1);
