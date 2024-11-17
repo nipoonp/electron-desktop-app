@@ -515,6 +515,7 @@ export const printCustomerReceipt = async (
         printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
     }
 
+    delay(1000);
     printer.partialCut();
 
     try {
@@ -843,6 +844,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
+    delay(1000);
     printer.partialCut();
 
     try {
@@ -1197,6 +1199,7 @@ export const printKitchenReceiptSmall = async (
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
+    delay(1000);
     printer.partialCut();
 
     try {
@@ -1561,6 +1564,7 @@ export const printKitchenReceiptLarge = async (
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
+    delay(1000);
     printer.partialCut();
 
     try {
@@ -1608,6 +1612,7 @@ export const printEftposReceipt = async (receiptDataInput: IEftposReceipt) => {
         });
     }
 
+    delay(1000);
     printer.partialCut();
 
     try {
@@ -1780,6 +1785,7 @@ export const printSalesDataReceipt = async (printSalesDataInput: IPrintSalesData
             break;
     }
 
+    delay(1000);
     printer.partialCut();
 
     try {
