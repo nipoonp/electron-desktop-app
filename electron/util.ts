@@ -193,24 +193,24 @@ export const printCustomerReceipt = async (
         printer.println(`${order.type}${order.table ? ` (Table: ${order.table})` : ""}`);
     }
 
-    // if (order.buzzer !== null) {
-    //     printer.newLine();
-    //     printer.bold(true);
-    //     printer.setTextSize(1, 1);
-    //     printer.println(`Buzzer: ${order.buzzer}`);
-    //     printer.setTextNormal();
-    //     printer.bold(false);
+    if (order.buzzer !== null) {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`Buzzer: ${order.buzzer}`);
+        printer.setTextNormal();
+        printer.bold(false);
 
-    //     printer.newLine();
-    //     printer.println(`Order: ${order.number}`);
-    // } else {
-    printer.newLine();
-    printer.bold(true);
-    printer.setTextSize(1, 1);
-    printer.println(`Order: ${order.number}`);
-    printer.setTextNormal();
-    printer.bold(false);
-    // }
+        printer.newLine();
+        printer.println(`Order: ${order.number}`);
+    } else {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`Order: ${order.number}`);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
 
     if (receiptTotalNumber && receiptTotalNumber > 1) {
         printer.newLine();
@@ -515,6 +515,7 @@ export const printCustomerReceipt = async (
         printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
     }
 
+    delay(1000);
     printer.partialCut();
 
     try {
@@ -604,24 +605,24 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
         printer.bold(false);
     }
 
-    // if (order.buzzer !== null) {
-    //     printer.newLine();
-    //     printer.bold(true);
-    //     printer.setTextSize(1, 1);
-    //     printer.println(`Buzzer: ${order.buzzer}`);
-    //     printer.setTextNormal();
-    //     printer.bold(false);
+    if (order.buzzer !== null) {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`Buzzer: ${order.buzzer}`);
+        printer.setTextNormal();
+        printer.bold(false);
 
-    //     printer.newLine();
-    //     printer.println(`Order: ${order.number}`);
-    // } else {
-    printer.newLine();
-    printer.bold(true);
-    printer.setTextSize(1, 1);
-    printer.println(`Order: ${order.number}`);
-    printer.setTextNormal();
-    printer.bold(false);
-    // }
+        printer.newLine();
+        printer.println(`Order: ${order.number}`);
+    } else {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`Order: ${order.number}`);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
 
     if (receiptTotalNumber && receiptTotalNumber > 1) {
         printer.newLine();
@@ -843,6 +844,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
+    delay(1000);
     printer.partialCut();
 
     try {
@@ -951,24 +953,24 @@ export const printKitchenReceiptSmall = async (
         printer.bold(false);
     }
 
-    // if (order.buzzer !== null) {
-    //     printer.newLine();
-    //     printer.bold(true);
-    //     printer.setTextSize(1, 1);
-    //     printer.println(`Buzzer: ${order.buzzer}`);
-    //     printer.setTextNormal();
-    //     printer.bold(false);
+    if (order.buzzer !== null) {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`Buzzer: ${order.buzzer}`);
+        printer.setTextNormal();
+        printer.bold(false);
 
-    //     printer.newLine();
-    //     printer.println(`Order: ${order.number}`);
-    // } else {
-    printer.newLine();
-    printer.bold(true);
-    printer.setTextSize(1, 1);
-    printer.println(`Order: ${order.number}`);
-    printer.setTextNormal();
-    printer.bold(false);
-    // }
+        printer.newLine();
+        printer.println(`Order: ${order.number}`);
+    } else {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`Order: ${order.number}`);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
 
     if (receiptTotalNumber && receiptTotalNumber > 1) {
         printer.newLine();
@@ -1197,6 +1199,7 @@ export const printKitchenReceiptSmall = async (
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
+    delay(1000);
     printer.partialCut();
 
     try {
@@ -1306,24 +1309,24 @@ export const printKitchenReceiptLarge = async (
         printer.bold(false);
     }
 
-    // if (order.buzzer !== null) {
-    //     printer.newLine();
-    //     printer.bold(true);
-    //     printer.setTextSize(1, 1);
-    //     printer.println(`Buzzer: ${order.buzzer}`);
-    //     printer.setTextNormal();
-    //     printer.bold(false);
+    if (order.buzzer !== null) {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`Buzzer: ${order.buzzer}`);
+        printer.setTextNormal();
+        printer.bold(false);
 
-    //     printer.newLine();
-    //     printer.println(`Order: ${order.number}`);
-    // } else {
-    printer.newLine();
-    printer.bold(true);
-    printer.setTextSize(1, 1);
-    printer.println(`Order: ${order.number}`);
-    printer.setTextNormal();
-    printer.bold(false);
-    // }
+        printer.newLine();
+        printer.println(`Order: ${order.number}`);
+    } else {
+        printer.newLine();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println(`Order: ${order.number}`);
+        printer.setTextNormal();
+        printer.bold(false);
+    }
 
     if (receiptTotalNumber && receiptTotalNumber > 1) {
         printer.newLine();
@@ -1561,6 +1564,7 @@ export const printKitchenReceiptLarge = async (
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
+    delay(1000);
     printer.partialCut();
 
     try {
@@ -1608,6 +1612,7 @@ export const printEftposReceipt = async (receiptDataInput: IEftposReceipt) => {
         });
     }
 
+    delay(1000);
     printer.partialCut();
 
     try {
@@ -1780,6 +1785,7 @@ export const printSalesDataReceipt = async (printSalesDataInput: IPrintSalesData
             break;
     }
 
+    delay(1000);
     printer.partialCut();
 
     try {
