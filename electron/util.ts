@@ -843,7 +843,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
-    // printer.partialCut();
+    printer.partialCut();
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -1197,7 +1197,7 @@ export const printKitchenReceiptSmall = async (
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
-    // printer.partialCut();
+    printer.partialCut();
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -1561,7 +1561,7 @@ export const printKitchenReceiptLarge = async (
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
-    // printer.partialCut();
+    printer.partialCut();
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -1608,7 +1608,7 @@ export const printEftposReceipt = async (receiptDataInput: IEftposReceipt) => {
         });
     }
 
-    // printer.partialCut();
+    printer.partialCut();
 
     try {
         if (receiptDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
@@ -1780,7 +1780,7 @@ export const printSalesDataReceipt = async (printSalesDataInput: IPrintSalesData
             break;
     }
 
-    // printer.partialCut();
+    printer.partialCut();
 
     try {
         if (printSalesDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
