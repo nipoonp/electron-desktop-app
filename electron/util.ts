@@ -515,7 +515,7 @@ export const printCustomerReceipt = async (
         printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
     }
 
-    // printer.partialCut();
+    printer.partialCut();
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
