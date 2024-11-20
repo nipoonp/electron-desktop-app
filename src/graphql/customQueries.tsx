@@ -124,6 +124,7 @@ export const GET_USER = gql`
                                     type
                                 }
                             }
+                            hideMostPopularCategory
                             eftposProvider
                             eftposIpAddress
                             eftposPortNumber
@@ -415,6 +416,7 @@ export const GET_RESTAURANT = gql`
                             type
                         }
                     }
+                    hideMostPopularCategory
                     eftposProvider
                     eftposIpAddress
                     eftposPortNumber
@@ -1067,6 +1069,7 @@ export interface IGET_RESTAURANT_REGISTER {
     orderTypeSurcharge: OrderTypeSurchargeType;
     type: ERegisterType;
     requestCustomerInformation?: RequestCustomerInformationType;
+    hideMostPopularCategory?: boolean;
     eftposProvider: string;
     eftposIpAddress: string;
     eftposPortNumber: string;
