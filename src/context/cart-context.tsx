@@ -82,7 +82,7 @@ type ContextProps = {
     setNotes: (notes: string) => void;
     promotion: ICartPromotion | null;
     userAppliedPromotionCode: string | null;
-    setUserAppliedPromotion: (promotion: IGET_RESTAURANT_PROMOTION) => CheckIfPromotionValidResponse;
+    setUserAppliedPromotions: (promotion: IGET_RESTAURANT_PROMOTION[]) => CheckIfPromotionValidResponse;
     removeUserAppliedPromotion: () => void;
     total: number;
     surcharge: number;
@@ -138,7 +138,7 @@ const CartContext = createContext<ContextProps>({
     setNotes: () => {},
     promotion: initialPromotion,
     userAppliedPromotionCode: "",
-    setUserAppliedPromotion: () => CheckIfPromotionValidResponse.VALID,
+    setUserAppliedPromotions: () => CheckIfPromotionValidResponse.VALID,
     removeUserAppliedPromotion: () => {},
     total: initialTotal,
     surcharge: initialSurcharge,
@@ -294,15 +294,35 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setPromotion(bestPromotion);
     };
 
-    const setUserAppliedPromotion = (promotion: IGET_RESTAURANT_PROMOTION): CheckIfPromotionValidResponse => {
+    const setUserAppliedPromotions = (promotions: IGET_RESTAURANT_PROMOTION[]): CheckIfPromotionValidResponse => {
         if (!products) return CheckIfPromotionValidResponse.UNAVAILABLE;
 
-        const status = promotion.startDate == null || promotion.endDate == null ? "VALID" : checkIfPromotionValid(promotion);
+        const promotionStatus: { promotion: IGET_RESTAURANT_PROMOTION; status: CheckIfPromotionValidResponse }[] = [];
 
-        if (status !== CheckIfPromotionValidResponse.VALID) return status;
+        promotions.forEach((promotion) => {
+            const status = promotion.startDate == null || promotion.endDate == null ? "VALID" : checkIfPromotionValid(promotion);
 
-        _setAvailablePromotions([promotion]);
-        _setUserAppliedPromotionCode(promotion.code);
+            if (status !== CheckIfPromotionValidResponse.VALID) {
+                promotionStatus.push({ promotion: promotion, status: status });
+            } else {
+                promotionStatus.push({ promotion: promotion, status: CheckIfPromotionValidResponse.VALID });
+            }
+        });
+
+        const availablePromotions: IGET_RESTAURANT_PROMOTION[] = [];
+
+        promotionStatus.forEach((promotion) => {
+            if (promotion.status === CheckIfPromotionValidResponse.VALID) {
+                availablePromotions.push(promotion.promotion);
+            }
+        });
+
+        if (availablePromotions.length > 0) {
+            _setAvailablePromotions(availablePromotions);
+            _setUserAppliedPromotionCode(availablePromotions[0].code);
+        } else {
+            return promotionStatus[0].status;
+        }
 
         return CheckIfPromotionValidResponse.VALID;
     };
@@ -661,7 +681,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setNotes: setNotes,
                 promotion: promotion,
                 userAppliedPromotionCode: userAppliedPromotionCode,
-                setUserAppliedPromotion: setUserAppliedPromotion,
+                setUserAppliedPromotions: setUserAppliedPromotions,
                 removeUserAppliedPromotion: removeUserAppliedPromotion,
                 total: total,
                 surcharge: surcharge,
