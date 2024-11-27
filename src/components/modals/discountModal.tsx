@@ -39,7 +39,7 @@ export const DiscountModal = (props: IPromotionCodeModalProps) => {
             } else {
                 const calculatedDiscount = total * (floatValue / 100);
 
-                setPercentageDiscount(calculatedDiscount);
+                setPercentageDiscount(Math.floor(calculatedDiscount));
             }
         }
 

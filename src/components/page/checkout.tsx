@@ -283,7 +283,7 @@ export const Checkout = () => {
     }, []);
 
     useEffect(() => {
-        if (isShownUpSellCrossSellModal) return;
+        if (isShownUpSellCrossSellModal || isPOS) return;
 
         setTimeout(() => {
             setShowUpSellProductModal(true);

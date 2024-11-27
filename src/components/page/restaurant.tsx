@@ -745,7 +745,7 @@ const Restaurant = () => {
                                     </div>
                                 </div>
                             )}
-                            {c.image && (
+                            {!isPOS && c.image && (
                                 <div className="product-category-image-wrapper mb-6">
                                     <CachedImage
                                         url={`${getCloudFrontDomainName()}/protected/${c.image.identityPoolId}/${c.image.key}`}

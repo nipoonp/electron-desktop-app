@@ -1026,7 +1026,7 @@ export const ModifierGroup = (props: {
         disabled,
         scrollToDiv,
     } = props;
-    const { register } = useRegister();
+    const { register, isPOS } = useRegister();
     const { cartProductQuantitiesById, cartModifierQuantitiesById } = useCart();
 
     const [collapsed, setCollapsed] = useState<boolean>(modifierGroup.collapsedByDefault ? modifierGroup.collapsedByDefault : false);
@@ -1132,7 +1132,9 @@ export const ModifierGroup = (props: {
     // console.log("xxx...subModifierGroups", subModifierGroups);
 
     const onToggleCollapsed = () => {
-        setCollapsed(!collapsed);
+        if (!isPOS) {
+            setCollapsed(!collapsed);
+        }
     };
     return (
         <>
