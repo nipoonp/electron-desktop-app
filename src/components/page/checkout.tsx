@@ -82,6 +82,7 @@ import axios from "axios";
 import { R18MessageModal } from "../modals/r18MessageModal";
 import { useTyro } from "../../context/tyro-context";
 import { useMX51 } from "../../context/mx51-context";
+import { LoyaltyHeader } from "../shared/loyaltyHeader";
 
 const logger = new Logger("checkout");
 
@@ -130,6 +131,7 @@ export const Checkout = () => {
         updateOrderScheduledAt,
         orderDetail,
         updateOrderDetail,
+        customerLoyaltyPoints,
     } = useCart();
     const { restaurant, restaurantBase64Logo } = useRestaurant();
     const { register, isPOS } = useRegister();
@@ -1829,6 +1831,7 @@ export const Checkout = () => {
         <>
             <PageWrapper>
                 <div className="checkout">
+                    {customerLoyaltyPoints !== null ? <LoyaltyHeader /> : <></>}
                     <div className="order-wrapper">
                         <div
                             ref={(ref) => setProductsWrapperElement(ref)}

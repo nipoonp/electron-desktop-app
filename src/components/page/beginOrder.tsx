@@ -120,11 +120,11 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
                 <div
                     className="wrapper"
                     onClick={() => {
-                        // if (restaurant.enableLoyalty) {
-                        //     navigate(loyaltyPath);
-                        // } else {
-                        navigate(restaurantPath + "/" + restaurant.id);
-                        // }
+                        if (restaurant.enableLoyalty) {
+                            navigate(loyaltyPath);
+                        } else {
+                            navigate(restaurantPath + "/" + restaurant.id);
+                        }
                     }}
                 >
                     {/* <div className="touch-to-begin-wrapper">
