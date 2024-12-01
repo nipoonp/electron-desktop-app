@@ -46,7 +46,18 @@ const Restaurant = () => {
     const navigate = useNavigate();
     const { showAlert } = useAlert();
 
-    const { payments, clearCart, orderType, subTotal, products, cartProductQuantitiesById, addProduct, setProducts, setOrderType } = useCart();
+    const {
+        payments,
+        clearCart,
+        orderType,
+        subTotal,
+        products,
+        cartProductQuantitiesById,
+        addProduct,
+        setProducts,
+        setOrderType,
+        customerLoyaltyPoints,
+    } = useCart();
     const { setRestaurant, menuCategories: restaurantCategories, menuProducts: restaurantProducts } = useRestaurant();
     const { register, isPOS } = useRegister();
     // query
@@ -796,12 +807,14 @@ const Restaurant = () => {
             scrollableDiv.scrollTop += 100; // You can adjust the value as needed
         }
     };
+
+    console.log("xxx...customerLoyaltyPoints", customerLoyaltyPoints);
     return (
         <>
             <PageWrapper>
                 <div className="restaurant-wrapper">
                     <div className="restaurant">
-                        {/* <LoyaltyHeader /> */}
+                        {customerLoyaltyPoints !== null ? <LoyaltyHeader showRedeemButton={false} /> : <></>}
                         <div className="restaurant-container">
                             <div className="categories-wrapper">
                                 {restaurant.logo && <RestaurantLogo image={restaurant.logo} />}

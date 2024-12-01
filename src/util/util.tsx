@@ -17,6 +17,7 @@ import {
     IGET_RESTAURANT_OPERATING_HOURS,
     IGET_RESTAURANT_OPERATING_HOURS_TIME_SLOT,
     EPromotionType,
+    ELOYALTY_ACTION,
 } from "../graphql/customQueries";
 import {
     CheckIfPromotionValidResponse,
@@ -899,3 +900,13 @@ export const getRestaurantTimings = (operatingHours: IGET_RESTAURANT_OPERATING_H
 
     return timings;
 };
+
+export const calculateTotalLoyaltyPoints = (histories: { action: ELOYALTY_ACTION; points: number }[]) =>
+    histories.reduce((acc, history) => {
+        if (history.action === ELOYALTY_ACTION.EARN) {
+            return acc + history.points;
+        } else if (history.action === ELOYALTY_ACTION.REDEEM) {
+            return acc - history.points;
+        }
+        return acc;
+    }, 0);
