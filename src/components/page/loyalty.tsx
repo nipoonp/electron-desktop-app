@@ -11,6 +11,7 @@ import "./loyalty.scss";
 import { restaurantPath } from "../main";
 import { toast } from "../../tabin/components/toast";
 import * as yup from "yup";
+import { calculateTotalLoyaltyPoints } from "../../util/util";
 
 enum LoyaltyPageState {
     Index,
@@ -82,8 +83,6 @@ const LoyaltyLogin = (props: { onBack: () => void; restaurantId: string }) => {
 
     const onChangeRewardsIdentifier = (event: React.ChangeEvent<HTMLInputElement>) => setRewardsIdentifier(event.target.value);
 
-    const calculateTotalPoints = (histories: { points: number }[]) => histories.reduce((acc, history) => acc + history.points, 0);
-
     const onLogin = async () => {
         try {
             if (!rewardsIdentifier) {
@@ -96,7 +95,7 @@ const LoyaltyLogin = (props: { onBack: () => void; restaurantId: string }) => {
             console.log("loyaltyUser", loyaltyUser);
 
             if (loyaltyUser) {
-                const totalPoints = calculateTotalPoints(loyaltyUser.loyaltyHistories.items);
+                const totalPoints = calculateTotalLoyaltyPoints(loyaltyUser.loyaltyHistories.items);
                 setCustomerLoyaltyPoints(totalPoints);
                 setCustomerInformation({
                     firstName: loyaltyUser.firstName,
@@ -184,8 +183,6 @@ const LoyaltyJoinNow = (props: { onBack: () => void; restaurantId: string }) => 
         setPhoneNumberError("");
     };
 
-    const calculateTotalPoints = (histories: { points: number }[]) => histories.reduce((acc, history) => acc + history.points, 0);
-
     const searchLoyaltyUser = async (): Promise<IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL | null> => {
         const resPhoneNumber = await getLoyaltyUsersByPhoneNumberLazyQuery({
             variables: { phoneNumber: phoneNumber },
@@ -208,7 +205,7 @@ const LoyaltyJoinNow = (props: { onBack: () => void; restaurantId: string }) => 
         console.log("loyaltyUser", loyaltyUser);
 
         if (loyaltyUser) {
-            const totalPoints = calculateTotalPoints(loyaltyUser.loyaltyHistories.items);
+            const totalPoints = calculateTotalLoyaltyPoints(loyaltyUser.loyaltyHistories.items);
 
             setCustomerLoyaltyPoints(totalPoints);
             setCustomerInformation({

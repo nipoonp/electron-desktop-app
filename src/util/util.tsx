@@ -899,3 +899,5 @@ export const getRestaurantTimings = (operatingHours: IGET_RESTAURANT_OPERATING_H
 
     return timings;
 };
+
+export const calculateTotalLoyaltyPoints = (histories: { points: number }[]) => histories.reduce((acc, history) => acc + history.points, 0);

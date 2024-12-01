@@ -1884,7 +1884,7 @@ export interface IGET_FEEDBACK_BY_RESTAURANT_COMMENT {
 }
 
 export const GET_LOYALTY_USER_BY_PHONE_NUMBER = gql`
-    query listLoyaltyUser($phoneNumber: String, $loyaltyHistoryRestaurantId: ID) {
+    query listLoyaltyUser($phoneNumber: String!, $loyaltyHistoryRestaurantId: ID!) {
         listLoyaltyUser(filter: { phoneNumber: { eq: $phoneNumber } }, limit: 1000000) {
             items {
                 id
@@ -1906,7 +1906,7 @@ export const GET_LOYALTY_USER_BY_PHONE_NUMBER = gql`
 `;
 
 export const GET_LOYALTY_USER_BY_EMAIL = gql`
-    query listLoyaltyUser($email: String, $loyaltyHistoryRestaurantId: ID) {
+    query listLoyaltyUser($email: String!, $loyaltyHistoryRestaurantId: ID!) {
         listLoyaltyUser(filter: { email: { eq: $email } }, limit: 1000000) {
             items {
                 id
