@@ -129,9 +129,9 @@ export const Checkout = () => {
         setIsShownOrderThresholdMessageModal,
         orderScheduledAt,
         updateOrderScheduledAt,
-        orderDetail,
         updateOrderDetail,
         customerLoyaltyPoints,
+        userAppliedLoyaltyId,
     } = useCart();
     const { restaurant, restaurantBase64Logo } = useRestaurant();
     const { register, isPOS } = useRegister();
@@ -835,6 +835,7 @@ export const Checkout = () => {
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
                 promotionType: promotion ? promotion.promotion.type : undefined,
+                loyaltyId: userAppliedLoyaltyId || undefined,
                 subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0),
                 preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                 registerId: register.id,
@@ -896,6 +897,7 @@ export const Checkout = () => {
                     discount: promotion ? promotion.discountedAmount : undefined,
                     promotionId: promotion ? promotion.promotion.id : undefined,
                     promotionType: promotion ? promotion.promotion.type : undefined,
+                    loyaltyId: userAppliedLoyaltyId || undefined,
                     subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0),
                     preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                     registerId: register.id,
@@ -1781,7 +1783,12 @@ export const Checkout = () => {
                 />
             </div>
             <div className="mb-2"></div> */}
-            {promotion ? (
+            {customerLoyaltyPoints !== null && promotion ? (
+                <div className="h3 text-center mb-2">
+                    {`Loyalty Discount: -$${convertCentsToDollars(promotion.discountedAmount)}`}{" "}
+                    {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
+                </div>
+            ) : promotion ? (
                 <div className="h3 text-center mb-2">
                     {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
                         promotion.discountedAmount
@@ -1831,7 +1838,7 @@ export const Checkout = () => {
         <>
             <PageWrapper>
                 <div className="checkout">
-                    {customerLoyaltyPoints !== null ? <LoyaltyHeader /> : <></>}
+                    {customerLoyaltyPoints !== null ? <LoyaltyHeader showRedeemButton={true} /> : <></>}
                     <div className="order-wrapper">
                         <div
                             ref={(ref) => setProductsWrapperElement(ref)}

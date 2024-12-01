@@ -96,6 +96,7 @@ const LoyaltyLogin = (props: { onBack: () => void; restaurantId: string }) => {
 
             if (loyaltyUser) {
                 const totalPoints = calculateTotalLoyaltyPoints(loyaltyUser.loyaltyHistories.items);
+
                 setCustomerLoyaltyPoints(totalPoints);
                 setCustomerInformation({
                     firstName: loyaltyUser.firstName,

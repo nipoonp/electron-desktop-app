@@ -28,6 +28,11 @@ export enum ERegisterPrinterType {
     USB = "USB",
 }
 
+export enum ELOYALTY_ACTION {
+    EARN = "EARN",
+    REDEEM = "REDEEM",
+}
+
 export enum ECustomCustomerFieldType {
     STRING = "STRING",
     NUMBER = "NUMBER",
@@ -1320,7 +1325,7 @@ export interface IGET_RESTAURANT_LOYALTY_REWARD {
 
 export interface IGET_RESTAURANT_LOYALTY_HISTORY {
     id: string;
-    action: string;
+    action: ELOYALTY_ACTION;
     points: number;
     createdAt: string;
     loyaltyHistoryOrderId: string;
@@ -1936,7 +1941,7 @@ export interface IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL {
     loyaltyHistories: {
         items: {
             id: string;
-            action: string;
+            action: ELOYALTY_ACTION;
             points: number;
             createdAt: string;
         }[];

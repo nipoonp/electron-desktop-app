@@ -807,12 +807,14 @@ const Restaurant = () => {
             scrollableDiv.scrollTop += 100; // You can adjust the value as needed
         }
     };
+
+    console.log("xxx...customerLoyaltyPoints", customerLoyaltyPoints);
     return (
         <>
             <PageWrapper>
                 <div className="restaurant-wrapper">
                     <div className="restaurant">
-                        {customerLoyaltyPoints !== null ? <LoyaltyHeader /> : <></>}
+                        {customerLoyaltyPoints !== null ? <LoyaltyHeader showRedeemButton={false} /> : <></>}
                         <div className="restaurant-container">
                             <div className="categories-wrapper">
                                 {restaurant.logo && <RestaurantLogo image={restaurant.logo} />}
