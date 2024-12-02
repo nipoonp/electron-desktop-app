@@ -159,6 +159,7 @@ export const GET_USER = gql`
                                     kitchenPrinterLarge
                                     hidePreparationTime
                                     hideModifierGroupName
+                                    skipReceiptCutCommand
                                     printReceiptForEachProduct
                                     printAllOrderReceipts
                                     printOnlineOrderReceipts
@@ -202,6 +203,7 @@ export interface IGET_USER_REGISTER_PRINTER {
     kitchenPrinterLarge: boolean;
     hidePreparationTime: boolean;
     hideModifierGroupName: boolean;
+    skipReceiptCutCommand: boolean;
     printReceiptForEachProduct: boolean;
     ignoreCategories: {
         items: IGET_USER_REGISTER_PRINTER_IGNORE_CATEGORY[];
@@ -450,6 +452,7 @@ export const GET_RESTAURANT = gql`
                             kitchenPrinterLarge
                             hidePreparationTime
                             hideModifierGroupName
+                            skipReceiptCutCommand
                             printReceiptForEachProduct
                             printAllOrderReceipts
                             printOnlineOrderReceipts
@@ -1110,6 +1113,7 @@ export interface IGET_RESTAURANT_REGISTER_PRINTER {
     kitchenPrinterLarge: boolean;
     hidePreparationTime: boolean;
     hideModifierGroupName: boolean;
+    skipReceiptCutCommand: boolean;
     printReceiptForEachProduct: boolean;
     printAllOrderReceipts: boolean;
     printOnlineOrderReceipts: boolean;
