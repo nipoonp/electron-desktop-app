@@ -1622,10 +1622,7 @@ export const printEftposReceipt = async (receiptDataInput: IEftposReceipt) => {
         });
     }
 
-    if (order.skipReceiptCutCommand) {
-    } else {
-        printer.partialCut();
-    }
+    printer.partialCut();
 
     try {
         if (receiptDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
@@ -1797,10 +1794,7 @@ export const printSalesDataReceipt = async (printSalesDataInput: IPrintSalesData
             break;
     }
 
-    if (order.skipReceiptCutCommand) {
-    } else {
-        printer.partialCut();
-    }
+    printer.partialCut();
 
     try {
         if (printSalesDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
