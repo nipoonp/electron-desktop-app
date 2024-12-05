@@ -1132,10 +1132,11 @@ export const ModifierGroup = (props: {
     // console.log("xxx...subModifierGroups", subModifierGroups);
 
     const onToggleCollapsed = () => {
-        if (!isPOS) {
+        if (!isPOS || modifierGroup.collapsedByDefault) {
             setCollapsed(!collapsed);
         }
     };
+
     return (
         <>
             <div className="modifier-group-header-wrapper" onClick={onToggleCollapsed} id={error ? "scroll-here" : ""}>
