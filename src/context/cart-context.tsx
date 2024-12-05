@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { EPromotionType, IGET_RESTAURANT_PROMOTION } from "../graphql/customQueries";
+import { EOrderStatus, EPromotionType, IGET_RESTAURANT_PROMOTION } from "../graphql/customQueries";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
 
 import {
@@ -19,6 +19,7 @@ import { useRegister } from "./register-context";
 
 const initialParkedOrderId = null;
 const initialParkedOrderNumber = null;
+const initialParkedOrderStatus = null;
 const initialOrderType = null;
 const initialPaymentMethod = null;
 const initialCovers = null;
@@ -56,6 +57,8 @@ type ContextProps = {
     setParkedOrderId: (parkedOrderId: string | null) => void;
     parkedOrderNumber: string | null;
     setParkedOrderNumber: (parkedOrderNumber: string | null) => void;
+    parkedOrderStatus: EOrderStatus | null;
+    setParkedOrderStatus: (parkedOrderStatus: EOrderStatus | null) => void;
     orderType: EOrderType | null;
     setOrderType: (orderType: EOrderType) => void;
     paymentMethod: EPaymentMethod | null;
@@ -116,6 +119,8 @@ const CartContext = createContext<ContextProps>({
     setParkedOrderId: () => {},
     parkedOrderNumber: initialParkedOrderNumber,
     setParkedOrderNumber: () => {},
+    parkedOrderStatus: initialParkedOrderStatus,
+    setParkedOrderStatus: () => {},
     orderType: initialOrderType,
     setOrderType: () => {},
     paymentMethod: initialPaymentMethod,
@@ -175,6 +180,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
     const [parkedOrderId, _setParkedOrderId] = useState<string | null>(initialParkedOrderId);
     const [parkedOrderNumber, _setParkedOrderNumber] = useState<string | null>(initialParkedOrderNumber);
+    const [parkedOrderStatus, _setParkedOrderStatus] = useState<EOrderStatus | null>(initialParkedOrderStatus);
     const [orderType, _setOrderType] = useState<EOrderType | null>(initialOrderType);
     const [paymentMethod, _setPaymentMethod] = useState<EPaymentMethod | null>(initialPaymentMethod);
     const [covers, _setCovers] = useState<number | null>(initialCovers);
@@ -451,6 +457,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setParkedOrderNumber(parkedOrderNumber);
     };
 
+    const setParkedOrderStatus = (parkedOrderStatus: EOrderStatus | null) => {
+        _setParkedOrderStatus(parkedOrderStatus);
+    };
+
     const setOrderType = (orderType: EOrderType) => {
         const order_type_surcharge = register?.orderTypeSurcharge != null ? register?.orderTypeSurcharge[orderType.toLocaleLowerCase()] : 0;
         _setOrderType(orderType);
@@ -626,6 +636,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const clearCart = () => {
         _setParkedOrderId(initialParkedOrderId);
         _setParkedOrderNumber(initialParkedOrderNumber);
+        _setParkedOrderStatus(initialParkedOrderStatus);
         _setOrderType(initialOrderType);
         _setPaymentMethod(initialPaymentMethod);
         _setCovers(initialCovers);
@@ -662,6 +673,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setParkedOrderId: setParkedOrderId,
                 parkedOrderNumber: parkedOrderNumber,
                 setParkedOrderNumber: setParkedOrderNumber,
+                parkedOrderStatus: parkedOrderStatus,
+                setParkedOrderStatus: setParkedOrderStatus,
                 orderType: orderType,
                 setOrderType: setOrderType,
                 paymentMethod: paymentMethod,

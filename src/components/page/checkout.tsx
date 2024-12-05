@@ -13,6 +13,7 @@ import {
     IS3Object,
     IGET_THIRD_PARTY_ORDER_RESPONSE,
     IGET_RESTAURANT_REGISTER_PRINTER,
+    EOrderStatus,
 } from "../../graphql/customQueries";
 import {
     restaurantPath,
@@ -105,6 +106,7 @@ export const Checkout = () => {
     const {
         parkedOrderId,
         parkedOrderNumber,
+        parkedOrderStatus,
         orderType,
         setOrderType,
         products,
@@ -683,6 +685,7 @@ export const Checkout = () => {
         //If parked order do not generate order number
         let orderNumber =
             parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
+        let orderStatus = parkedOrderId && parkedOrderStatus ? parkedOrderStatus : EOrderStatus.NEW;
 
         setPaymentOutcomeOrderNumber(orderNumber);
 
@@ -714,6 +717,7 @@ export const Checkout = () => {
 
             const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(
                 orderNumber,
+                orderStatus,
                 paid,
                 parkOrder,
                 newPaymentAmounts,
@@ -788,6 +792,7 @@ export const Checkout = () => {
 
     const createOrder = async (
         orderNumber: string,
+        orderStatus: EOrderStatus,
         paid: boolean,
         parkOrder: boolean,
         newPaymentAmounts: ICartPaymentAmounts,
@@ -822,7 +827,7 @@ export const Checkout = () => {
 
         try {
             variables = {
-                status: "NEW",
+                status: orderStatus,
                 paid: paid,
                 type: orderType ? orderType : register.availableOrderTypes[0],
                 number: orderNumber,
@@ -883,7 +888,7 @@ export const Checkout = () => {
             await logError(
                 "Error in createOrderMutation input",
                 JSON.stringify({
-                    status: "NEW",
+                    status: orderStatus,
                     paid: paid,
                     type: orderType ? orderType : register.availableOrderTypes[0],
                     number: orderNumber,
