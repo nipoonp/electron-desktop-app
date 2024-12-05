@@ -322,32 +322,32 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
             if (errorMessage) return errorMessage;
 
             // Configure Printing -------------------------------------------------------------------------------------------------------------------------------- //
-            if (!configurePrintingCommandSent.current) {
-                ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
-                addToLogs(`BROWSER_DATA: ${VMT.ConfigurePrinting},ON`);
+            // if (!configurePrintingCommandSent.current) {
+            //     ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
+            //     addToLogs(`BROWSER_DATA: ${VMT.ConfigurePrinting},ON`);
 
-                const printingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
-                while (
-                    eftposData.current.type != VMT.ConfigurePrintingResponse // What if this is OFF?
-                ) {
-                    const errorMessage = checkForErrors();
-                    if (errorMessage) return errorMessage;
+            //     const printingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
+            //     while (
+            //         eftposData.current.type != VMT.ConfigurePrintingResponse // What if this is OFF?
+            //     ) {
+            //         const errorMessage = checkForErrors();
+            //         if (errorMessage) return errorMessage;
 
-                    console.log("Waiting to receive Configure Printing Response (CP,ON)...");
-                    addToLogs("Waiting to receive Configure Printing Response (CP,ON)...");
+            //         console.log("Waiting to receive Configure Printing Response (CP,ON)...");
+            //         addToLogs("Waiting to receive Configure Printing Response (CP,ON)...");
 
-                    await delay(interval2);
+            //         await delay(interval2);
 
-                    if (!(Number(new Date()) < printingTimeoutEndTime)) {
-                        const disconnectTimedOut = await disconnectEftpos();
-                        if (disconnectTimedOut) return "There was an issue disconnecting to the Eftpos.";
+            //         if (!(Number(new Date()) < printingTimeoutEndTime)) {
+            //             const disconnectTimedOut = await disconnectEftpos();
+            //             if (disconnectTimedOut) return "There was an issue disconnecting to the Eftpos.";
 
-                        return "There was an issue configuring Eftpos Printing.";
-                    }
-                }
+            //             return "There was an issue configuring Eftpos Printing.";
+            //         }
+            //     }
 
-                configurePrintingCommandSent.current = true;
-            }
+            //     configurePrintingCommandSent.current = true;
+            // }
         }
 
         return "";
