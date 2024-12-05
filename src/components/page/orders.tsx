@@ -65,6 +65,7 @@ const Orders = () => {
         clearCart,
         setParkedOrderId,
         setParkedOrderNumber,
+        setParkedOrderStatus,
         setOrderType,
         setTableNumber,
         setBuzzerNumber,
@@ -337,6 +338,7 @@ const Orders = () => {
         try {
             const pOrder = {
                 id: parkedOrder.id,
+                status: parkedOrder.status,
                 notes: parkedOrder.notes,
                 products: parkedOrder.products,
                 total: parkedOrder.total,
@@ -357,6 +359,7 @@ const Orders = () => {
 
             setParkedOrderId(pOrder.id);
             setParkedOrderNumber(pOrder.number);
+            setParkedOrderStatus(pOrder.status);
             setOrderType(pOrder.type);
             if (pOrder.table) setTableNumber(pOrder.table);
             if (pOrder.buzzer) setBuzzerNumber(pOrder.buzzer);
@@ -614,14 +617,33 @@ const Orders = () => {
                         Refunded
                     </div>
                     <div className={`tab ${eOrderStatus == EOrderStatus.PARKED ? "selected" : ""}`} onClick={() => onClickTab(EOrderStatus.PARKED)}>
-                        Parked
+                        Parked/Unpaid
                     </div>
                 </div>
 
                 <div className="orders-wrapper">
                     {orders.map(
                         (order) =>
-                            order.status == eOrderStatus && (
+                            ((order.status === eOrderStatus &&
+                                !(
+                                    order.paymentAmounts &&
+                                    !order.paymentAmounts.cash &&
+                                    !order.paymentAmounts.eftpos &&
+                                    !order.paymentAmounts.online &&
+                                    !order.paymentAmounts.uberEats &&
+                                    !order.paymentAmounts.menulog &&
+                                    !order.paymentAmounts.doordash &&
+                                    !order.paymentAmounts.delivereasy
+                                )) ||
+                                (eOrderStatus === EOrderStatus.PARKED &&
+                                    order.paymentAmounts &&
+                                    !order.paymentAmounts.cash &&
+                                    !order.paymentAmounts.eftpos &&
+                                    !order.paymentAmounts.online &&
+                                    !order.paymentAmounts.uberEats &&
+                                    !order.paymentAmounts.menulog &&
+                                    !order.paymentAmounts.doordash &&
+                                    !order.paymentAmounts.delivereasy)) && (
                                 <Order
                                     key={order.id}
                                     searchTerm={searchTerm}
@@ -865,7 +887,15 @@ const Order = (props: {
                         {order.status !== EOrderStatus.PARKED && order.status !== EOrderStatus.CANCELLED && (
                             <Button onClick={() => onOrderCancel(order)}>Cancel</Button>
                         )}
-                        {order.status === EOrderStatus.PARKED && <Button onClick={() => onOpenParkedOrder(order)}>Open Sale</Button>}
+                        {(order.status === EOrderStatus.PARKED ||
+                            (order.paymentAmounts &&
+                                !order.paymentAmounts.cash &&
+                                !order.paymentAmounts.eftpos &&
+                                !order.paymentAmounts.online &&
+                                !order.paymentAmounts.uberEats &&
+                                !order.paymentAmounts.menulog &&
+                                !order.paymentAmounts.doordash &&
+                                !order.paymentAmounts.delivereasy)) && <Button onClick={() => onOpenParkedOrder(order)}>Open Sale</Button>}
                         {<Button onClick={() => onOrderReprint(order)}>Reprint</Button>}
                     </div>
 

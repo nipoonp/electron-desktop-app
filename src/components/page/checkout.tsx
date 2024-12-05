@@ -682,6 +682,7 @@ export const Checkout = () => {
         eftposSurcharge?: number,
         eftposTip?: number
     ) => {
+        console.log("xxx...parkedOrderStatus", parkedOrderStatus);
         //If parked order do not generate order number
         let orderNumber =
             parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
