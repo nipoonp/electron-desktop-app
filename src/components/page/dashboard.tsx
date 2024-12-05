@@ -33,6 +33,7 @@ export default () => {
         setTableNumber,
         setBuzzerNumber,
         setNotes,
+        setCustomerInformation,
         setProducts,
         cartProductQuantitiesById,
     } = useCart();
@@ -252,6 +253,14 @@ export default () => {
         if (order.table) setTableNumber(order.table);
         if (order.buzzer) setBuzzerNumber(order.buzzer);
         if (order.notes) setNotes(order.notes);
+        if (order.customerInformation)
+            setCustomerInformation({
+                firstName: order.customerInformation.firstName || "",
+                email: order.customerInformation.email || "",
+                phoneNumber: order.customerInformation.phoneNumber || "",
+                signatureBase64: "",
+                customFields: [],
+            });
 
         const orderedProducts = getParkedOrderProducts(order.products, 0);
 

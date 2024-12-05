@@ -71,6 +71,7 @@ const Orders = () => {
         setNotes,
         setProducts,
         cartProductQuantitiesById,
+        setCustomerInformation,
     } = useCart();
     const [eOrderStatus, setEOrderStatus] = useState(restaurant?.autoCompleteOrders ? EOrderStatus.COMPLETED : EOrderStatus.NEW);
 
@@ -345,6 +346,7 @@ const Orders = () => {
                 table: parkedOrder.table,
                 buzzer: parkedOrder.buzzer,
                 covers: parkedOrder.covers,
+                customerInformation: parkedOrder.customerInformation,
             };
 
             if (!restaurant) return;
@@ -359,6 +361,14 @@ const Orders = () => {
             if (pOrder.table) setTableNumber(pOrder.table);
             if (pOrder.buzzer) setBuzzerNumber(pOrder.buzzer);
             if (pOrder.notes) setNotes(pOrder.notes);
+            if (pOrder.customerInformation)
+                setCustomerInformation({
+                    firstName: pOrder.customerInformation.firstName || "",
+                    email: pOrder.customerInformation.email || "",
+                    phoneNumber: pOrder.customerInformation.phoneNumber || "",
+                    signatureBase64: "",
+                    customFields: [],
+                });
 
             const orderedProducts = getParkedOrderProducts(pOrder.products, 0);
 
