@@ -58,7 +58,7 @@ export default () => {
 
 const LoyaltyIndex = (props: { loyalty: IGET_RESTAURANT_LOYALTY; onLogin: () => void; onJoinNow: () => void; onSkip: () => void }) => (
     <div className="loyalty-wrapper">
-        <div className="h2 mb-6">Don't miss out our sweet rewards!</div>
+        <div className="h2 mb-6 text-center">Don't miss out our sweet rewards!</div>
         <div className="h2 mb-6">{props.loyalty.name}</div>
         <Button className="loyalty-button mb-2 large" onClick={props.onLogin}>
             Login
@@ -81,7 +81,7 @@ const LoyaltyLogin = (props: { onBack: () => void; restaurantId: string }) => {
     const { getLoyaltyUsersByPhoneNumberLazyQuery } = useGetLoyaltyUsersByPhoneNumberLazyQuery(rewardsIdentifier, props.restaurantId);
     const { getLoyaltyUsersByEmailLazyQuery } = useGetLoyaltyUsersByEmailLazyQuery(rewardsIdentifier, props.restaurantId);
 
-    const onChangeRewardsIdentifier = (event: React.ChangeEvent<HTMLInputElement>) => setRewardsIdentifier(event.target.value);
+    const onChangeRewardsIdentifier = (event: React.ChangeEvent<HTMLInputElement>) => setRewardsIdentifier(event.target.value.toLocaleLowerCase());
 
     const onLogin = async () => {
         try {
