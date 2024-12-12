@@ -94,7 +94,7 @@ export const PageWrapper = (props: IProps) => {
             >
                 {props.children}
                 {showMenu && <Menu tabs={tabs} onClickMenuRoute={onClickMenuRoute} onHideMenu={onHideMenu} />}
-                {isPOS && (
+                {/* {isPOS && (
                     <ModalV2 padding="24px" isOpen={showOnlineOrderModal} disableClose={false} onRequestClose={() => setShowOnlineOrderModal(false)}>
                         <div>
                             <div className="h3 mb-3">New Online Order Received!</div>
@@ -102,7 +102,7 @@ export const PageWrapper = (props: IProps) => {
                             <Button onClick={() => setShowOnlineOrderModal(false)}>Close</Button>
                         </div>
                     </ModalV2>
-                )}
+                )} */}
             </div>
         </>
     );

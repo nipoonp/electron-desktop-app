@@ -323,18 +323,18 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
             // Configure Printing -------------------------------------------------------------------------------------------------------------------------------- //
             if (!configurePrintingCommandSent.current) {
-                ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},OFF`);
-                addToLogs(`BROWSER_DATA: ${VMT.ConfigurePrinting},OFF`);
+                ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
+                addToLogs(`BROWSER_DATA: ${VMT.ConfigurePrinting},ON`);
 
                 const printingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
                 while (
-                    eftposData.current.type == VMT.ConfigurePrintingResponse // What if this is OFF?
+                    eftposData.current.type != VMT.ConfigurePrintingResponse // What if this is OFF?
                 ) {
                     const errorMessage = checkForErrors();
                     if (errorMessage) return errorMessage;
 
-                    console.log("Waiting to receive Configure Printing Response (CP,OFF)...");
-                    addToLogs("Waiting to receive Configure Printing Response (CP,OFF)...");
+                    console.log("Waiting to receive Configure Printing Response (CP,ON)...");
+                    addToLogs("Waiting to receive Configure Printing Response (CP,ON)...");
 
                     await delay(interval2);
 
