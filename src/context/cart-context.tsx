@@ -416,7 +416,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         products &&
             products.forEach((p) => {
-                let price = p.price;
+                let price = p.price - p.discount;
 
                 p.modifierGroups.forEach((mg) => {
                     mg.modifiers.forEach((m) => {
@@ -577,7 +577,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setProducts(newProducts);
         _setTotal(newTotal);
         updateCartQuantities(newProducts);
-        processPromotions(newProducts, newTotal);
+        // processPromotions(newProducts, newTotal);
     };
 
     const setStaticDiscount = (staticDiscount: number) => {

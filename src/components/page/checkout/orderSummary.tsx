@@ -107,7 +107,7 @@ const OrderItem = (props: {
     };
 
     const onBlurPrice = (newPrice: string) => {
-        let newPriceFloat = parseFloat(newPrice);
+        let newPriceFloat = parseFloat(newPrice) / product.quantity;
 
         if (newPrice === "") {
             setPrice("0.00");
@@ -118,6 +118,8 @@ const OrderItem = (props: {
             setPrice(rounded.toFixed(2));
             onApplyProductDiscount(displayOrder, product.totalPrice - convertDollarsToCentsReturnInt(rounded));
         }
+
+        // setIsOptionsExpanded(false);
     };
 
     const expandOptionsArrow = (
@@ -192,12 +194,31 @@ const OrderItem = (props: {
                     onEditProduct={() => onEditProduct(product, displayOrder)}
                 />
                 <div className="text-center">
-                    <div className="text-bold">${displayPrice}</div>
-                    {product.discount ? <div className="h3 text-primary mb-2 original-price">${originalPrice}</div> : <></>}
+                    {isOptionsExpanded ? (
+                        <Input
+                            key={`price-${product.id}`}
+                            type="number"
+                            // label="Price (each)"
+                            name="price"
+                            value={price}
+                            onChange={(event) => onChangePrice(event.target.value)}
+                            onBlur={(event) => onBlurPrice(event.target.value)}
+                        />
+                    ) : (
+                        <div
+                            className="text-bold"
+                            onClick={() => {
+                                setIsOptionsExpanded(true);
+                            }}
+                        >
+                            ${displayPrice}
+                        </div>
+                    )}
+                    {!isOptionsExpanded && product.discount ? <div className="h3 text-primary mb-2 original-price">${originalPrice}</div> : <></>}
                 </div>
                 {!props.product.isPreSelectedProduct && <TiDelete size="24px" onClick={() => onRemoveProduct(displayOrder)} />}
             </div>
-            {isPOS && isOptionsExpanded && expandOptions}
+            {/* {isPOS && isOptionsExpanded && expandOptions} */}
         </>
     );
 };
