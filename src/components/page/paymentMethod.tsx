@@ -102,6 +102,7 @@ export default () => {
                         )}
                     </div>
                     <CustomerInformation
+                        selectedPaymentMethod={selectedPaymentMethod}
                         onNext={() => onSelectPaymentMethod(selectedPaymentMethod)}
                         requestCustomerInformation={requestCustomerInformation}
                     />

@@ -14,8 +14,10 @@ import { FiX } from "react-icons/fi";
 import { resizeBase64ImageToWidth } from "../../util/util";
 import { ECustomCustomerFieldType, RequestCustomerInformationType } from "../../graphql/customQueries";
 import { toast } from "../../tabin/components/toast";
+import Select from "react-select";
+import { EPaymentMethod } from "../../model/model";
 
-export default (props: { onNext: () => void; requestCustomerInformation: RequestCustomerInformationType }) => {
+export default (props: { selectedPaymentMethod: EPaymentMethod; onNext: () => void; requestCustomerInformation: RequestCustomerInformationType }) => {
     const navigate = useNavigate();
     const { register } = useRegister();
     const { restaurant } = useRestaurant();
@@ -27,11 +29,25 @@ export default (props: { onNext: () => void; requestCustomerInformation: Request
     const [email, setEmail] = useState(customerInformation ? customerInformation.email : "");
     const [phoneNumber, setPhoneNumber] = useState(customerInformation ? customerInformation.phoneNumber : "");
     const [customFields, setCustomFields] = useState(customerInformation ? customerInformation.customFields : []);
+    const [selectedOption, setSelectedOption] = useState<{ value: string; label: string } | null>(null);
 
     const [firstNameError, setFirstNameError] = useState(false);
     const [emailError, setEmailError] = useState(false);
     const [phoneNumberError, setPhoneNumberError] = useState(false);
     const [signatureError, setSignatureError] = useState(false);
+    const [selectError, setSelectError] = useState(false);
+
+    const selectOptions = [
+        { value: "Big Chill Distribution Ltd", label: "Big Chill Distribution Ltd" },
+        { value: "Turners & Growers Ltd", label: "Turners & Growers Ltd" },
+    ];
+
+    const passwords = {
+        "Big Chill Distribution Ltd": "1234",
+        "Turners & Growers Ltd": "5432",
+    };
+
+    console.log("xxx...customFields", customFields);
 
     const signatureCanvasRef = useRef();
     const signatureMimeType = "image/png";
@@ -76,8 +92,30 @@ export default (props: { onNext: () => void; requestCustomerInformation: Request
             invalid = true;
         }
 
-        props.requestCustomerInformation.customFields?.forEach((field) => {
-            // console.log("xxx...field", field.required);
+        if (!selectedOption) {
+            setSelectError(true);
+            invalid = true;
+            toast.error("Please select company name.");
+        }
+
+        for (const field of customFields || []) {
+            if (!field) return;
+
+            if (field.label === "Company Name") {
+                for (const field2 of customFields || []) {
+                    if (field2.label === "Account Code") {
+                        console.log("xxx...field", field);
+                        console.log("xxx...field2", field2);
+                        console.log("xxx...passwords[field.value]", passwords[field.value]);
+
+                        if (selectedOption && field2.value !== passwords[field.value]) {
+                            toast.error("Account Code is invalid");
+                            return; // Exit the entire function here
+                        }
+                    }
+                }
+            }
+
             if (field.required) {
                 let foundField: any = null;
                 customFields.forEach((customField) => {
@@ -96,7 +134,7 @@ export default (props: { onNext: () => void; requestCustomerInformation: Request
                     toast.error(`Please fill in ${field.label}`);
                 }
             }
-        });
+        }
 
         if (!invalid) {
             let resizedSignatureBase64: string = "";
@@ -116,7 +154,6 @@ export default (props: { onNext: () => void; requestCustomerInformation: Request
             });
 
             navigate(`${checkoutPath}/true`);
-
             props.onNext();
         }
     };
@@ -201,14 +238,41 @@ export default (props: { onNext: () => void; requestCustomerInformation: Request
                         {props.requestCustomerInformation &&
                             props.requestCustomerInformation.customFields?.map((field, index) => (
                                 <>
-                                    {field.type === ECustomCustomerFieldType.STRING && (
+                                    {props.selectedPaymentMethod !== "EFTPOS" && field.label === "Company Name" && (
                                         <>
                                             <div className="h2 mt-2 mb-2">{field.label}</div>
-                                            <Input
-                                                name={field.label}
-                                                onChange={(e) => onChangeCustomField(e, field, index)}
-                                                value={customFields[index]?.value}
+                                            <Select
+                                                options={selectOptions}
+                                                // value={}
+                                                onChange={(option) => {
+                                                    setSelectedOption(option);
+                                                    setSelectError(false);
+
+                                                    const customFieldsCpy = [...customFields];
+
+                                                    if (customFieldsCpy[index]) {
+                                                        customFieldsCpy[index].value = option ? option.value : "";
+                                                    } else {
+                                                        customFieldsCpy[index] = { ...field, value: option ? option.value : "" };
+                                                    }
+                                                    setCustomFields(customFieldsCpy);
+                                                }}
+                                                className={selectError ? "select-error" : ""}
                                             />
+                                        </>
+                                    )}
+                                    {!(props.selectedPaymentMethod !== "EFTPOS" && field.label === "Company Name") && (
+                                        <>
+                                            {field.type === ECustomCustomerFieldType.STRING && (
+                                                <>
+                                                    <div className="h2 mt-2 mb-2">{field.label}</div>
+                                                    <Input
+                                                        name={field.label}
+                                                        onChange={(e) => onChangeCustomField(e, field, index)}
+                                                        value={customFields[index]?.value}
+                                                    />
+                                                </>
+                                            )}
                                         </>
                                     )}
                                     {field.type === ECustomCustomerFieldType.NUMBER && (
