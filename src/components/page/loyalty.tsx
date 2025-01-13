@@ -133,7 +133,7 @@ const LoyaltyLogin = (props: { onBack: () => void; restaurantId: string }) => {
     return (
         <div className="loyalty-wrapper">
             {/* <div className="h2 mb-6">Loyalty Login</div> */}
-            <div className="h2 mb-6">Enter your phone number or email</div>
+            <div className="h2 mb-6">Enter your mobile number or email</div>
             <div className="mb-6">
                 <Input
                     className="loyalty-input"
