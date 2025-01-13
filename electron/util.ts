@@ -504,6 +504,8 @@ export const printCustomerReceipt = async (
     printer.newLine();
     printer.alignCenter();
 
+    printer.printQR("QR CODE");
+
     if (order.receiptFooterText) {
         printer.bold(true);
         printer.setTextSize(1, 1);
