@@ -33,7 +33,7 @@ export const LoyaltyHeader = (props: { showRedeemButton: boolean }) => {
             <div className="loyalty-header">
                 <div className="h2">Hi {customerInformation?.firstName}!</div>
                 <div className="h3">
-                    You have {customerLoyaltyPoints} {customerLoyaltyPoints && customerLoyaltyPoints > 2 ? "points" : "point"}
+                    You have {customerLoyaltyPoints} {customerLoyaltyPoints === 1 ? "point" : "points"}
                 </div>
                 <div className="loyalty-header-buttons-wrapper">
                     {props.showRedeemButton ? (
