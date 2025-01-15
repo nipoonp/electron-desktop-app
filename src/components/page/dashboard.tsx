@@ -82,6 +82,7 @@ export default () => {
                     hideOrderType: register.availableOrderTypes.length === 0,
                     products: convertProductTypesForPrint(productsToPrint),
                     displayPaymentRequiredMessage: !order.paid,
+                    enableLoyalty: restaurant ? restaurant.enableLoyalty : false,
                 });
             } else {
                 toast.error("No receipt printers configured");
