@@ -613,6 +613,7 @@ export const Checkout = () => {
                 placedAt: order.placedAt,
                 orderScheduledAt: order.orderScheduledAt,
                 preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
+                enableLoyalty: restaurant.enableLoyalty,
             });
         }
     };

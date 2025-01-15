@@ -505,12 +505,7 @@ export const printCustomerReceipt = async (
     printer.alignCenter();
 
     printer.println("Don't miss out on your reward points!");
-    printer.printQR("http://restaurants.tabin.co.nz/rewards/cdd2356d-9c13-46e9-b3d6-361f8f708ffe");
-
-    printer.setTextSize(1, 1);
-    printer.println("Don't miss out on your reward points!");
-    printer.printQR("http://restaurants.tabin.co.nz/rewards/cdd2356d-9c13-46e9-b3d6-361f8f708ffe");
-    printer.setTextNormal();
+    printer.printQR(`http://rewards.tabin.co.nz/${order.orderId}`);
 
     if (order.receiptFooterText) {
         printer.bold(true);
