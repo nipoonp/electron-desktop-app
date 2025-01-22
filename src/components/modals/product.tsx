@@ -876,7 +876,7 @@ export const ProductModal = (props: {
 
     const footer = (
         <>
-            {!currentSelectedProductModifier && (
+            {/* {!currentSelectedProductModifier && (
                 <div className="stepper mb-4">
                     <Stepper
                         count={quantity}
@@ -887,7 +887,7 @@ export const ProductModal = (props: {
                         stepAmount={product.incrementAmount || 1}
                     />
                 </div>
-            )}
+            )} */}
             <div className="footer-buttons-container">
                 <Button className="button large mr-3 cancel-button" onClick={onModalClose}>
                     Cancel

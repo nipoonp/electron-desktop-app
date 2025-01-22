@@ -514,16 +514,16 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         let newProducts = products || [];
 
-        const matchingProductIndex = newProducts.findIndex((p) => {
-            const { quantity, ...pWithoutQuantiy } = p;
-            return JSON.stringify(pWithoutQuantiy) === serializedProduct;
-        });
+        // const matchingProductIndex = newProducts.findIndex((p) => {
+        //     const { quantity, ...pWithoutQuantiy } = p;
+        //     return JSON.stringify(pWithoutQuantiy) === serializedProduct;
+        // });
 
-        if (matchingProductIndex !== -1) {
-            newProducts[matchingProductIndex].quantity += productQuantity;
-        } else {
-            newProducts.push(product);
-        }
+        // if (matchingProductIndex !== -1) {
+        //     newProducts[matchingProductIndex].quantity += productQuantity;
+        // } else {
+        newProducts.push(product);
+        // }
 
         const newTotal = recalculateTotal(newProducts);
 

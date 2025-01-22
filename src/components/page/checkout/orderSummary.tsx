@@ -210,7 +210,7 @@ const OrderItem = (props: {
                         ) : null}
                     </div>
                 )}
-                {isPOS ? expandOptionsArrow : quantityStepper}
+                {/* {isPOS ? expandOptionsArrow : quantityStepper} */}
                 <OrderItemDetails
                     name={product.name}
                     quantity={product.quantity}
