@@ -34,6 +34,11 @@ export enum ECustomCustomerFieldType {
     DROPDOWN = "DROPDOWN",
 }
 
+export enum ELOYALTY_ACTION {
+    EARN = "EARN",
+    REDEEM = "REDEEM",
+}
+
 export const LIST_RESTAURANTS = gql`
     query ListRestaurants {
         listRestaurants(limit: 1000) {
@@ -946,6 +951,26 @@ export const GET_RESTAURANT = gql`
                     }
                 }
             }
+            loyalties(limit: 100) {
+                items {
+                    id
+                    name
+                    type
+                    pointAmount
+                    categories {
+                        points
+                        categoryId
+                    }
+                    products {
+                        points
+                        productId
+                    }
+                    rewards {
+                        points
+                        promotionId
+                    }
+                }
+            }
         }
     }
 `;
@@ -980,6 +1005,7 @@ export interface IGET_RESTAURANT {
     upSellCrossSell?: IGET_RESTAURANT_UP_SELL_CROSS_SELL;
     registers: { items: IGET_RESTAURANT_REGISTER[] };
     promotions: { items: IGET_RESTAURANT_PROMOTION[] };
+    loyalties: { items: IGET_RESTAURANT_LOYALTY[] };
     categories: {
         items: IGET_RESTAURANT_CATEGORY[];
     };
@@ -1260,6 +1286,55 @@ export enum EDiscountType {
     FIXED = "FIXED",
     PERCENTAGE = "PERCENTAGE",
     SETPRICE = "SETPRICE",
+}
+
+export interface IGET_RESTAURANT_LOYALTY {
+    id: string;
+    name: string;
+    type: ELoyaltyType;
+    pointAmount: number;
+    categories: IGET_RESTAURANT_LOYALTY_CATEGORY[];
+    products: IGET_RESTAURANT_LOYALTY_PRODUCT[];
+    rewards: IGET_RESTAURANT_LOYALTY_REWARD[];
+    loyaltyHistories: {
+        items: IGET_RESTAURANT_LOYALTY_HISTORY[];
+    };
+}
+
+export interface IGET_RESTAURANT_LOYALTY_CATEGORY {
+    points: number;
+    categoryId: string;
+}
+
+export interface IGET_RESTAURANT_LOYALTY_PRODUCT {
+    points: number;
+    productId: string;
+}
+
+export interface IGET_RESTAURANT_LOYALTY_REWARD {
+    points: number;
+    promotionId: string;
+}
+
+export interface IGET_RESTAURANT_LOYALTY_HISTORY {
+    id: string;
+    action: string;
+    points: number;
+    createdAt: string;
+    loyaltyHistoryOrderId: string;
+    loyaltyUser: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        phoneNumber: string;
+    };
+}
+
+export enum ELoyaltyType {
+    AMOUNT = "AMOUNT",
+    PRODUCT = "PRODUCT",
+    CATEGORY = "CATEGORY",
 }
 
 export interface IGET_RESTAURANT_CATEGORY {
@@ -1809,9 +1884,32 @@ export const UPDATE_RESTAURANT_PREPARATION_TIME = gql`
         }
     }
 `;
+
 export const GET_LOYALTY_USER_BY_PHONE_NUMBER = gql`
     query listLoyaltyUser($phoneNumber: String, $loyaltyHistoryRestaurantId: ID) {
         listLoyaltyUser(filter: { phoneNumber: { eq: $phoneNumber } }, limit: 1000000) {
+            items {
+                id
+                firstName
+                lastName
+                phoneNumber
+                email
+                loyaltyHistories(filter: { loyaltyHistoryRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 1000000) {
+                    items {
+                        id
+                        action
+                        points
+                        createdAt
+                    }
+                }
+            }
+        }
+    }
+`;
+
+export const GET_LOYALTY_USER_CONTAINS_PHONE_NUMBER = gql`
+    query listLoyaltyUser($phoneNumber: String, $loyaltyHistoryRestaurantId: ID) {
+        listLoyaltyUser(filter: { phoneNumber: { contains: $phoneNumber } }, limit: 1000000) {
             items {
                 id
                 firstName
@@ -1854,6 +1952,44 @@ export const GET_LOYALTY_USER_BY_EMAIL = gql`
 `;
 
 export interface IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL {
+    id: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+    email: string;
+    loyaltyHistories: {
+        items: {
+            id: string;
+            action: string;
+            points: number;
+            createdAt: string;
+        }[];
+    };
+}
+
+export const GET_LOYALTY_USER_CONTAINS_EMAIL = gql`
+    query listLoyaltyUser($email: String, $loyaltyHistoryRestaurantId: ID) {
+        listLoyaltyUser(filter: { email: { contains: $email } }, limit: 1000000) {
+            items {
+                id
+                firstName
+                lastName
+                phoneNumber
+                email
+                loyaltyHistories(filter: { loyaltyHistoryRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 1000000) {
+                    items {
+                        id
+                        action
+                        points
+                        createdAt
+                    }
+                }
+            }
+        }
+    }
+`;
+
+export interface IGET_LOYALTY_USER_CONTAINS_PHONE_NUMBER_EMAIL {
     id: string;
     firstName: string;
     lastName: string;

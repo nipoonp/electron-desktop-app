@@ -214,7 +214,7 @@ const OrderItem = (props: {
                             ${displayPrice}
                         </div>
                     )}
-                    {!isOptionsExpanded && product.discount ? <div className="h3 text-primary mb-2 original-price">${originalPrice}</div> : <></>}
+                    {!isOptionsExpanded && product.discount ? <div className="mt-1 original-price">${originalPrice}</div> : <></>}
                 </div>
                 {!props.product.isPreSelectedProduct && <TiDelete size="24px" onClick={() => onRemoveProduct(displayOrder)} />}
             </div>

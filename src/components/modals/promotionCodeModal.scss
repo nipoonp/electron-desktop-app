@@ -1,6 +1,4 @@
 .promo-code-modal {
-    padding: 24px;
-
     .j-content-end {
         .cancel-button {
             background-color: #ffffff;
@@ -10,4 +8,16 @@
             font-size: 22px;
         }
     }
+}
+
+.reward-promotion {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+}
+
+.reward-promotion-name {
+    flex: 1;
+    text-align: left;
 }

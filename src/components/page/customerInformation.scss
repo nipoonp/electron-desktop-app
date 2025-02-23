@@ -2,7 +2,32 @@
     display: flex;
     align-items: center;
     flex-direction: column;
-    margin-top: 152px;
+    margin-top: 48px;
+
+    .customer-search-wrapper {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .customer-search-new-customer {
+        width: 210px;
+    }
+
+    .loyalty-users-wrapper {
+        display: grid;
+        grid-gap: 16px;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        width: 100%;
+        margin-top: 24px;
+
+        .loyalty-user-wrapper {
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+        }
+    }
 
     .close-button-wrapper {
         position: absolute;
@@ -13,6 +38,12 @@
         .close-button {
             color: #484848;
         }
+    }
+
+    .customer-information-buttons {
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
 
     .customer-signature-canvas {

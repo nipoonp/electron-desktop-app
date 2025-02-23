@@ -12,15 +12,168 @@ import SignatureCanvas from "react-signature-canvas";
 import "./customerInformation.scss";
 import { FiX } from "react-icons/fi";
 import { resizeBase64ImageToWidth } from "../../util/util";
-import { ECustomCustomerFieldType } from "../../graphql/customQueries";
+import { ECustomCustomerFieldType, ELOYALTY_ACTION, IGET_LOYALTY_USER_CONTAINS_PHONE_NUMBER_EMAIL } from "../../graphql/customQueries";
+import { useGetLoyaltyUsersContainsPhoneNumberLazyQuery } from "../../hooks/useGetLoyaltyUsersContainsPhoneNumberLazyQuery";
+import { useGetLoyaltyUsersContainsEmailLazyQuery } from "../../hooks/useGetLoyaltyUsersContainsEmailLazyQuery";
 
 export default () => {
+    const [searchView, setSearchView] = useState(true);
+    const { customerInformation } = useCart();
+
+    return (
+        <div className="p-4">
+            {searchView && !customerInformation ? <CustomerSearch onDisableSearchView={() => setSearchView(false)} /> : <UserInformationFields />}
+        </div>
+    );
+};
+
+const CustomerSearch = (props: { onDisableSearchView: () => void }) => {
+    const navigate = useNavigate();
+    const { restaurant } = useRestaurant();
+    const { isPOS } = useRegister();
+    const { customerInformation, setCustomerInformation, setCustomerLoyaltyPoints } = useCart();
+
+    const [customerIdentifier, setCustomerIdentifier] = useState("");
+    const [loyaltyUserRes, setLoyaltyUserRes] = useState<
+        { firstName: string; lastName: string; email: string; phoneNumber: string; points: number }[]
+    >([]);
+
+    const { getLoyaltyUsersContainsPhoneNumberLazyQuery } = useGetLoyaltyUsersContainsPhoneNumberLazyQuery(
+        customerIdentifier,
+        restaurant ? restaurant.id : ""
+    );
+    const { getLoyaltyUsersContainsEmailLazyQuery } = useGetLoyaltyUsersContainsEmailLazyQuery(customerIdentifier, restaurant ? restaurant.id : "");
+
+    if (restaurant == null) throw "Restaurant is invalid!";
+
+    const onChangeCustomerIdentifier = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setCustomerIdentifier(event.target.value);
+    };
+
+    const onClose = () => {
+        if (isPOS) {
+            navigate(`${restaurantPath}/${restaurant.id}`);
+        } else {
+            navigate(`${checkoutPath}`);
+        }
+    };
+
+    const onSearch = async () => {
+        let loyaltyUsers: IGET_LOYALTY_USER_CONTAINS_PHONE_NUMBER_EMAIL[] = [];
+
+        const resPhoneNumber = await getLoyaltyUsersContainsPhoneNumberLazyQuery({
+            variables: {
+                phoneNumber: customerIdentifier,
+            },
+        });
+
+        if (resPhoneNumber.data.listLoyaltyUser.items.length > 0) loyaltyUsers = resPhoneNumber.data.listLoyaltyUser.items;
+
+        if (!loyaltyUsers || loyaltyUsers.length === 0) {
+            const resEmail = await getLoyaltyUsersContainsEmailLazyQuery({
+                variables: {
+                    email: customerIdentifier,
+                },
+            });
+
+            if (resEmail.data.listLoyaltyUser.items.length > 0) loyaltyUsers = resEmail.data.listLoyaltyUser.items;
+        }
+
+        let users: { firstName: string; lastName: string; email: string; phoneNumber: string; points: number }[] = [];
+
+        if (loyaltyUsers) {
+            loyaltyUsers.forEach((loyaltyUser) => {
+                let userPoints = 0;
+
+                loyaltyUser.loyaltyHistories.items.forEach((loyaltyUserHistory) => {
+                    if (loyaltyUserHistory.action === ELOYALTY_ACTION.EARN) {
+                        userPoints += loyaltyUserHistory.points;
+                    } else if (loyaltyUserHistory.action === ELOYALTY_ACTION.REDEEM) {
+                        userPoints -= loyaltyUserHistory.points;
+                    }
+                });
+
+                if (loyaltyUser.loyaltyHistories.items.length > 0) {
+                    users.push({
+                        firstName: loyaltyUser.firstName,
+                        lastName: loyaltyUser.lastName,
+                        email: loyaltyUser.email,
+                        phoneNumber: loyaltyUser.phoneNumber,
+                        points: userPoints,
+                    });
+                }
+            });
+        }
+
+        setLoyaltyUserRes(users);
+    };
+
+    const onSelectUser = (loyaltyUser: { firstName: string; lastName: string; email: string; phoneNumber: string; points: number }) => {
+        if (customerInformation) {
+            setCustomerInformation({
+                ...customerInformation,
+                firstName: loyaltyUser.firstName,
+                email: loyaltyUser.email,
+                phoneNumber: loyaltyUser.phoneNumber,
+            });
+        } else {
+            setCustomerInformation({
+                firstName: loyaltyUser.firstName,
+                email: loyaltyUser.email,
+                phoneNumber: loyaltyUser.phoneNumber,
+                signatureBase64: "",
+                customFields: [],
+            });
+        }
+
+        setCustomerLoyaltyPoints(loyaltyUser.points);
+        onClose();
+    };
+
+    return (
+        <div className="customer-information">
+            <div className="close-button-wrapper">
+                <FiX className="close-button" size={36} onClick={onClose} />
+            </div>
+            <div className="customer-search-wrapper">
+                <Input
+                    name="Customer Identifier"
+                    placeholder="Search and connect customer to this order (02123456789 or support@tabin.co.nz)"
+                    value={customerIdentifier}
+                    onChange={onChangeCustomerIdentifier}
+                />
+                <Button onClick={onSearch} disabled={customerIdentifier.length < 5}>
+                    Search
+                </Button>
+                <Button className="customer-search-new-customer" onClick={() => props.onDisableSearchView()}>
+                    New Customer
+                </Button>
+            </div>
+            <div className="loyalty-users-wrapper">
+                {loyaltyUserRes.map((loyaltyUser) => (
+                    <div className="loyalty-user-wrapper" onClick={() => onSelectUser(loyaltyUser)}>
+                        <div className="text-bold">
+                            {loyaltyUser.firstName} {loyaltyUser.lastName}
+                        </div>
+                        <div className="mt-1">{loyaltyUser.phoneNumber}</div>
+                        <div className="mt-1">{loyaltyUser.email}</div>
+                        <div className="mt-1">
+                            {loyaltyUser.points} {loyaltyUser.points > 1 ? "points" : "point"}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const UserInformationFields = () => {
     const navigate = useNavigate();
     const { register } = useRegister();
     const { restaurant } = useRestaurant();
     const { isPOS } = useRegister();
 
-    const { customerInformation, setCustomerInformation } = useCart();
+    const { customerInformation, setCustomerInformation, setCustomerLoyaltyPoints, setUserAppliedLoyaltyId, removeUserAppliedPromotion } = useCart();
 
     const [firstName, setFirstName] = useState(customerInformation ? customerInformation.firstName : "");
     const [email, setEmail] = useState(customerInformation ? customerInformation.email : "");
@@ -98,6 +251,13 @@ export default () => {
         }
     };
 
+    const onUnlink = () => {
+        setCustomerInformation(null);
+        setCustomerLoyaltyPoints(null);
+        setUserAppliedLoyaltyId(null);
+        removeUserAppliedPromotion();
+    };
+
     const onChangeFirstName = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFirstName(e.target.value);
         setFirstNameError(false);
@@ -136,7 +296,7 @@ export default () => {
                     <div className="close-button-wrapper">
                         <FiX className="close-button" size={36} onClick={onClose} />
                     </div>
-                    <div className="h2 mb-6">Enter customer details</div>
+                    <div className="h2 mb-2">Enter customer details</div>
                     <div className="mb-10" style={{ width: "400px" }}>
                         {register.requestCustomerInformation && register.requestCustomerInformation.firstName && (
                             <>
@@ -147,19 +307,32 @@ export default () => {
                                     onChange={onChangeFirstName}
                                     value={firstName}
                                     error={firstNameError ? "Required" : ""}
+                                    disabled={customerInformation ? true : false}
                                 />
                             </>
                         )}
                         {register.requestCustomerInformation && register.requestCustomerInformation.email && (
                             <>
                                 <div className="h2 mt-2 mb-2">Email</div>
-                                <Input type="email" onChange={onChangeEmail} value={email} error={emailError ? "Required" : ""} />
+                                <Input
+                                    type="email"
+                                    onChange={onChangeEmail}
+                                    value={email}
+                                    error={emailError ? "Required" : ""}
+                                    disabled={customerInformation ? true : false}
+                                />
                             </>
                         )}
                         {register.requestCustomerInformation && register.requestCustomerInformation.phoneNumber && (
                             <>
                                 <div className="h2 mt-2 mb-2">Phone Number</div>
-                                <Input type="number" onChange={onChangePhoneNumber} value={phoneNumber} error={phoneNumberError ? "Required" : ""} />
+                                <Input
+                                    type="number"
+                                    onChange={onChangePhoneNumber}
+                                    value={phoneNumber}
+                                    error={phoneNumberError ? "Required" : ""}
+                                    disabled={customerInformation ? true : false}
+                                />
                             </>
                         )}
                         {register.requestCustomerInformation && register.requestCustomerInformation.signature && (
@@ -202,7 +375,10 @@ export default () => {
                                 </>
                             ))}
                     </div>
-                    <Button onClick={onNext}>Next</Button>
+                    <div className="customer-information-buttons">
+                        {customerInformation && <Button onClick={onUnlink}>Unlink</Button>}
+                        <Button onClick={onNext}>Next</Button>
+                    </div>
                 </div>
             </PageWrapper>
         </>

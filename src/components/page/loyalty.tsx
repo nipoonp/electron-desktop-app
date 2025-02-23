@@ -116,7 +116,7 @@ const LoyaltyLogin = ({ onBack, restaurantId }: { onBack: () => void; restaurant
             <Input
                 label="Phone Number / Email"
                 name="Rewards Identifier"
-                placeholder="02102828894 or support@tabin.co.nz"
+                placeholder="02123456789 or support@tabin.co.nz"
                 value={rewardsIdentifier}
                 onChange={onChangeRewardsIdentifier}
             />

@@ -35,6 +35,7 @@ const initialCartModifierQuantitiesById = {};
 const initialUserAppliedPromotionCode = null;
 const initialPromotion = null;
 const initialAvailablePromotions = [];
+const initialUserAppliedLoyaltyId = null;
 const initialTotal = 0;
 const initialStaticDiscount = 0;
 const initialPercentageDiscount = 0;
@@ -89,6 +90,8 @@ type ContextProps = {
     userAppliedPromotionCode: string | null;
     setUserAppliedPromotion: (promotion: IGET_RESTAURANT_PROMOTION) => CheckIfPromotionValidResponse;
     removeUserAppliedPromotion: () => void;
+    userAppliedLoyaltyId: string | null;
+    setUserAppliedLoyaltyId: (userAppliedLoyaltyId) => void;
     total: number;
     staticDiscount: number;
     setStaticDiscount: (staticDiscount: number) => void;
@@ -151,6 +154,8 @@ const CartContext = createContext<ContextProps>({
     userAppliedPromotionCode: "",
     setUserAppliedPromotion: () => CheckIfPromotionValidResponse.VALID,
     removeUserAppliedPromotion: () => {},
+    userAppliedLoyaltyId: initialUserAppliedLoyaltyId,
+    setUserAppliedLoyaltyId: (userAppliedLoyaltyId) => {},
     total: initialTotal,
     staticDiscount: initialStaticDiscount,
     setStaticDiscount: () => {},
@@ -204,6 +209,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [userAppliedPromotionCode, _setUserAppliedPromotionCode] = useState<string | null>(initialUserAppliedPromotionCode);
     const [promotion, _setPromotion] = useState<ICartPromotion | null>(initialPromotion);
     const [availablePromotions, _setAvailablePromotions] = useState<IGET_RESTAURANT_PROMOTION[]>(initialAvailablePromotions);
+
+    const [userAppliedLoyaltyId, _setUserAppliedLoyaltyId] = useState<string | null>(initialUserAppliedLoyaltyId);
 
     const [cartCategoryQuantitiesById, _setCartCategoryQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartCategoryQuantitiesById);
     const [cartProductQuantitiesById, _setCartProductQuantitiesById] = useState<ICartItemQuantitiesById>(initialCartProductQuantitiesById);
@@ -333,6 +340,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const removeUserAppliedPromotion = () => {
         _setUserAppliedPromotionCode(null);
         _setAvailablePromotions([]);
+    };
+
+    const setUserAppliedLoyaltyId = (loyaltyId: string) => {
+        _setUserAppliedLoyaltyId(loyaltyId);
     };
 
     const updateCartQuantities = (products: ICartProduct[] | null) => {
@@ -652,6 +663,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setUserAppliedPromotionCode(initialUserAppliedPromotionCode);
         _setPromotion(initialPromotion);
         // _setAvailablePromotions(initialAvailablePromotions); //Don't need this. Otherwise, it will erase availablePromotions when you clear the cart
+        _setUserAppliedLoyaltyId(initialUserAppliedLoyaltyId);
         _setTotal(initialTotal);
         _setStaticDiscount(initialStaticDiscount);
         _setPercentageDiscount(initialPercentageDiscount);
@@ -705,6 +717,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 userAppliedPromotionCode: userAppliedPromotionCode,
                 setUserAppliedPromotion: setUserAppliedPromotion,
                 removeUserAppliedPromotion: removeUserAppliedPromotion,
+                userAppliedLoyaltyId: userAppliedLoyaltyId,
+                setUserAppliedLoyaltyId: setUserAppliedLoyaltyId,
                 total: total,
                 staticDiscount: staticDiscount,
                 setStaticDiscount: setStaticDiscount,
