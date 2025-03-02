@@ -214,6 +214,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     eftposTip: number | null;
     discount: number | null;
     promotionId: string | null;
+    tax: number;
     subTotal: number;
     paid: boolean;
     paymentAmounts: IOrderPaymentAmounts | null;

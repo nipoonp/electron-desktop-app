@@ -123,6 +123,7 @@ export interface IOrderReceipt {
     paymentAmounts: IOrderPaymentAmounts | null;
     total: number;
     discount: number | null;
+    tax: number;
     subTotal: number;
     paid: boolean;
     surcharge: number | null;

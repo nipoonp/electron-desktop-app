@@ -2,7 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useNavigate } from "react-router-dom";
-import { convertBase64ToFile, convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
+import {
+    calculateTaxAmount,
+    convertBase64ToFile,
+    convertCentsToDollars,
+    convertProductTypesForPrint,
+    filterPrintProducts,
+    getOrderNumber,
+} from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
 import { FiArrowDownCircle } from "react-icons/fi";
@@ -602,6 +609,7 @@ export const Checkout = () => {
                 eftposSurcharge: order.eftposSurcharge,
                 eftposTip: order.eftposTip,
                 discount: order.promotionId && order.discount ? order.discount : null,
+                tax: order.tax,
                 subTotal: order.subTotal,
                 paid: order.paid,
                 //display payment required message if kiosk and paid cash
@@ -840,6 +848,7 @@ export const Checkout = () => {
                 promotionId: promotion ? promotion.promotion.id : undefined,
                 promotionType: promotion ? promotion.promotion.type : undefined,
                 loyaltyId: userAppliedLoyaltyId || undefined,
+                tax: Math.round(calculateTaxAmount(restaurant.country, subTotal + (eftposSurcharge || 0) + (eftposTip || 0))),
                 subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0),
                 preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                 registerId: register.id,
@@ -903,6 +912,7 @@ export const Checkout = () => {
                     promotionId: promotion ? promotion.promotion.id : undefined,
                     promotionType: promotion ? promotion.promotion.type : undefined,
                     loyaltyId: userAppliedLoyaltyId || undefined,
+                    tax: Math.round(calculateTaxAmount(restaurant.country, subTotal + (eftposSurcharge || 0) + (eftposTip || 0))),
                     subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0),
                     preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                     registerId: register.id,

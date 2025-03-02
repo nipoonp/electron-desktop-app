@@ -29,6 +29,16 @@ import {
     ICartPromotion,
 } from "../model/model";
 
+export const taxRates = {
+    nz: 0.15,
+    aus: 0.1,
+};
+
+export const calculateTaxAmount = (country: string, total: number) => {
+    const rate = taxRates[country] ?? taxRates.nz; // Default NZ
+    return total - total / (1 + rate);
+};
+
 export const convertDollarsToCents = (price: number) => (price * 100).toFixed(0);
 
 export const convertDollarsToCentsReturnInt = (price: number) => parseInt((price * 100).toFixed(0));

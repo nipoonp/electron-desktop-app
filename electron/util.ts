@@ -15,16 +15,6 @@ import {
 import usbPrinter from "@thiagoelg/node-printer";
 import { format } from "date-fns";
 
-export const taxRates = {
-    nz: 0.15,
-    aus: 0.1,
-};
-
-export const calculateTaxAmount = (country: string, total: number) => {
-    const rate = taxRates[country] ?? taxRates.nz; // Default NZ
-    return total - total / (1 + rate);
-};
-
 export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 export const calculateLRC = (str: string): string => {
@@ -354,7 +344,7 @@ export const printCustomerReceipt = async (
 
     printer.tableCustom([
         { text: "GST", align: "LEFT", width: 0.75 },
-        { text: `\$${convertCentsToDollars(calculateTaxAmount(order.country, order.total))}`, align: "RIGHT", width: 0.25 },
+        { text: `\$${convertCentsToDollars(order.tax)}`, align: "RIGHT", width: 0.25 },
     ]);
     order.discount &&
         printer.tableCustom([
