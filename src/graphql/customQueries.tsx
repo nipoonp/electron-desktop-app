@@ -241,6 +241,7 @@ export const GET_RESTAURANT = gql`
             id
             name
             description
+            country
             isAcceptingOrders
             verified
             address {
@@ -989,6 +990,7 @@ export interface IGET_RESTAURANT {
     id: string;
     name: string;
     description: string;
+    country: string;
     isAcceptingOrders: boolean;
     verified: boolean;
     address: {
