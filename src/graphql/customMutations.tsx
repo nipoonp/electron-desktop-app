@@ -43,6 +43,7 @@ export const UPDATE_REGISTER_KEY = gql`
 export const CREATE_ORDER = gql`
     ${ORDER_FIELDS_FRAGMENT}
     mutation createOrder(
+        $country: String
         $status: OrderStatus!
         $paid: Boolean!
         $type: OrderType!
@@ -81,6 +82,7 @@ export const CREATE_ORDER = gql`
     ) {
         createOrder(
             input: {
+                country: $country
                 status: $status
                 paid: $paid
                 type: $type

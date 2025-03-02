@@ -185,11 +185,11 @@ const BeginOrderDefault = () => {
                         <div
                             className="wrapper"
                             onClick={() => {
-                                if (restaurant.enableLoyalty) {
-                                    navigate(loyaltyPath);
-                                } else {
-                                    navigate(restaurantPath + "/" + restaurant.id);
-                                }
+                                // if (restaurant.enableLoyalty) {
+                                //     navigate(loyaltyPath);
+                                // } else {
+                                navigate(restaurantPath + "/" + restaurant.id);
+                                // }
                             }}
                         >
                             <div className="order-text">ORDER</div>

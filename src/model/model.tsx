@@ -410,6 +410,7 @@ export enum EReceiptPrinterPrinterType {
 
 export interface IOrderReceipt {
     orderId: string;
+    country: string;
     status: EOrderStatus;
     printerType: ERegisterPrinterType;
     printerAddress: string;
