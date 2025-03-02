@@ -558,6 +558,7 @@ export const Checkout = () => {
             //Not checking if its printerType receipt
             await printReceipt({
                 orderId: order.id,
+                country: order.country,
                 status: order.status,
                 printerType: printer.type,
                 printerAddress: printer.address,
@@ -803,6 +804,7 @@ export const Checkout = () => {
 
         try {
             variables = {
+                country: restaurant.country,
                 status: "NEW",
                 paid: paid,
                 type: orderType ? orderType : register.availableOrderTypes[0],
@@ -865,6 +867,7 @@ export const Checkout = () => {
             await logError(
                 "Error in createOrderMutation input",
                 JSON.stringify({
+                    country: restaurant.country,
                     status: "NEW",
                     paid: paid,
                     type: orderType ? orderType : register.availableOrderTypes[0],

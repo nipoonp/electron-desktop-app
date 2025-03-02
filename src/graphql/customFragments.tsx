@@ -4,6 +4,7 @@ import { ECustomCustomerFieldType, EOrderStatus, EOrderType, IS3Object } from ".
 export const ORDER_FIELDS_FRAGMENT = gql`
     fragment OrderFieldsFragment on Order {
         id
+        country
         placedAt
         completedAt
         cancelledAt
@@ -199,6 +200,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
 
 export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     id: string;
+    country: string;
     placedAt: string;
     completedAt: string | null;
     cancelledAt: string | null;

@@ -94,6 +94,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
                         await printReceipt({
                             orderId: order.id,
+                            country: order.country,
                             status: order.status,
                             printerType: printer.type,
                             printerAddress: printer.address,
