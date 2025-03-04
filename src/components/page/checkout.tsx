@@ -9,6 +9,9 @@ import {
     convertProductTypesForPrint,
     filterPrintProducts,
     getOrderNumber,
+    isItemAvailable,
+    isItemSoldOut,
+    isProductQuantityAvailable,
 } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
@@ -139,7 +142,9 @@ export const Checkout = () => {
         updateOrderDetail,
         customerLoyaltyPoints,
         userAppliedLoyaltyId,
+        cartProductQuantitiesById,
     } = useCart();
+
     const { restaurant, restaurantBase64Logo } = useRestaurant();
     const { register, isPOS } = useRegister();
     const { printReceipt, printEftposReceipt, printLabel } = useReceiptPrinter();
@@ -1436,23 +1441,35 @@ export const Checkout = () => {
 
             menuCategories.forEach((category) => {
                 if (category.availablePlatforms && !category.availablePlatforms.includes(register.type)) return;
+                const isCategoryAvailable = isItemAvailable(category.availability);
+                const isCategorySoldOut = isItemSoldOut(category.soldOut, category.soldOutDate);
 
-                category.products?.items.forEach((p) => {
-                    if (p.product.availablePlatforms && !p.product.availablePlatforms.includes(register.type)) return;
+                const isCateogryValid = !isCategorySoldOut && isCategoryAvailable;
 
-                    const matchingProduct = upSellCrossSellProducts.find((upSellProduct) => p.product.id === upSellProduct.id);
+                isCateogryValid &&
+                    category.products?.items.forEach((p) => {
+                        const isProductSoldOut = isItemSoldOut(p.product.soldOut, p.product.soldOutDate);
+                        const isProductAvailable = isItemAvailable(p.product.availability);
+                        const isQuantityAvailable = isProductQuantityAvailable(p.product, cartProductQuantitiesById, p.product.maxQuantityPerOrder);
 
-                    if (matchingProduct) {
-                        const isAlreadyAdded = upSellCrossSaleProductItems.some((item) => item.product.id === matchingProduct.id);
+                        const isProductValid = !isProductSoldOut && isProductAvailable && isCategoryAvailable && isQuantityAvailable;
 
-                        if (!isAlreadyAdded) {
-                            upSellCrossSaleProductItems.push({
-                                category: category,
-                                product: p.product,
-                            });
+                        if (!isProductValid) return;
+                        if (p.product.availablePlatforms && !p.product.availablePlatforms.includes(register.type)) return;
+
+                        const matchingProduct = upSellCrossSellProducts.find((upSellProduct) => p.product.id === upSellProduct.id);
+
+                        if (matchingProduct) {
+                            const isAlreadyAdded = upSellCrossSaleProductItems.some((item) => item.product.id === matchingProduct.id);
+
+                            if (!isAlreadyAdded) {
+                                upSellCrossSaleProductItems.push({
+                                    category: category,
+                                    product: p.product,
+                                });
+                            }
                         }
-                    }
-                });
+                    });
             });
 
             if (upSellCrossSaleProductItems.length === 0) return <></>;

@@ -185,7 +185,7 @@ const OrderItem = (props: {
             max={getProductMaxQuantity(product)}
             onUpdate={(count: number) => onChangeStepperQuantity(count)}
             size={32}
-            stepAmount={product.incrementAmount}
+            stepAmount={product.incrementAmount || 1}
         />
     ) : (
         <div></div>
