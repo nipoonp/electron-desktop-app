@@ -15,13 +15,6 @@ import {
 import usbPrinter from "@thiagoelg/node-printer";
 import { format } from "date-fns";
 
-export const taxRate = 0.15;
-
-export const calculateTaxAmount = (total: number) => {
-    const diff = total / (1 + taxRate);
-    return total - diff;
-};
-
 export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 export const calculateLRC = (str: string): string => {
@@ -351,7 +344,7 @@ export const printCustomerReceipt = async (
 
     printer.tableCustom([
         { text: "GST", align: "LEFT", width: 0.75 },
-        { text: `\$${convertCentsToDollars(calculateTaxAmount(order.total))}`, align: "RIGHT", width: 0.25 },
+        { text: `\$${convertCentsToDollars(order.tax)}`, align: "RIGHT", width: 0.25 },
     ]);
     order.discount &&
         printer.tableCustom([
@@ -504,6 +497,9 @@ export const printCustomerReceipt = async (
     printer.newLine();
     printer.alignCenter();
 
+    printer.println("Don't miss out on your reward points!");
+    printer.printQR(`http://rewards.tabin.co.nz/${order.orderId}`);
+
     if (order.receiptFooterText) {
         printer.bold(true);
         printer.setTextSize(1, 1);
@@ -515,8 +511,10 @@ export const printCustomerReceipt = async (
         printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
     }
 
-    delay(1000);
-    printer.partialCut();
+    if (order.skipReceiptCutCommand) {
+    } else {
+        printer.partialCut();
+    }
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -844,8 +842,10 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
-    delay(1000);
-    printer.partialCut();
+    if (order.skipReceiptCutCommand) {
+    } else {
+        printer.partialCut();
+    }
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -1199,8 +1199,10 @@ export const printKitchenReceiptSmall = async (
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
-    delay(1000);
-    printer.partialCut();
+    if (order.skipReceiptCutCommand) {
+    } else {
+        printer.partialCut();
+    }
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -1564,8 +1566,10 @@ export const printKitchenReceiptLarge = async (
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
-    delay(1000);
-    printer.partialCut();
+    if (order.skipReceiptCutCommand) {
+    } else {
+        printer.partialCut();
+    }
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -1612,7 +1616,6 @@ export const printEftposReceipt = async (receiptDataInput: IEftposReceipt) => {
         });
     }
 
-    delay(1000);
     printer.partialCut();
 
     try {
@@ -1785,7 +1788,6 @@ export const printSalesDataReceipt = async (printSalesDataInput: IPrintSalesData
             break;
     }
 
-    delay(1000);
     printer.partialCut();
 
     try {

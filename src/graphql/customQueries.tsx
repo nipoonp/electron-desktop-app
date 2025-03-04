@@ -28,6 +28,11 @@ export enum ERegisterPrinterType {
     USB = "USB",
 }
 
+export enum ELOYALTY_ACTION {
+    EARN = "EARN",
+    REDEEM = "REDEEM",
+}
+
 export enum ECustomCustomerFieldType {
     STRING = "STRING",
     NUMBER = "NUMBER",
@@ -124,6 +129,7 @@ export const GET_USER = gql`
                                     type
                                 }
                             }
+                            hideMostPopularCategory
                             eftposProvider
                             eftposIpAddress
                             eftposPortNumber
@@ -159,6 +165,7 @@ export const GET_USER = gql`
                                     kitchenPrinterLarge
                                     hidePreparationTime
                                     hideModifierGroupName
+                                    skipReceiptCutCommand
                                     printReceiptForEachProduct
                                     printAllOrderReceipts
                                     printOnlineOrderReceipts
@@ -202,6 +209,7 @@ export interface IGET_USER_REGISTER_PRINTER {
     kitchenPrinterLarge: boolean;
     hidePreparationTime: boolean;
     hideModifierGroupName: boolean;
+    skipReceiptCutCommand: boolean;
     printReceiptForEachProduct: boolean;
     ignoreCategories: {
         items: IGET_USER_REGISTER_PRINTER_IGNORE_CATEGORY[];
@@ -233,6 +241,7 @@ export const GET_RESTAURANT = gql`
             id
             name
             description
+            country
             isAcceptingOrders
             verified
             address {
@@ -415,6 +424,7 @@ export const GET_RESTAURANT = gql`
                             type
                         }
                     }
+                    hideMostPopularCategory
                     eftposProvider
                     eftposIpAddress
                     eftposPortNumber
@@ -450,6 +460,7 @@ export const GET_RESTAURANT = gql`
                             kitchenPrinterLarge
                             hidePreparationTime
                             hideModifierGroupName
+                            skipReceiptCutCommand
                             printReceiptForEachProduct
                             printAllOrderReceipts
                             printOnlineOrderReceipts
@@ -951,6 +962,26 @@ export const GET_RESTAURANT = gql`
                     }
                 }
             }
+            loyalties(limit: 100) {
+                items {
+                    id
+                    name
+                    type
+                    pointAmount
+                    categories {
+                        points
+                        categoryId
+                    }
+                    products {
+                        points
+                        productId
+                    }
+                    rewards {
+                        points
+                        promotionId
+                    }
+                }
+            }
         }
     }
 `;
@@ -959,6 +990,7 @@ export interface IGET_RESTAURANT {
     id: string;
     name: string;
     description: string;
+    country: string;
     isAcceptingOrders: boolean;
     verified: boolean;
     address: {
@@ -985,6 +1017,7 @@ export interface IGET_RESTAURANT {
     upSellCrossSell?: IGET_RESTAURANT_UP_SELL_CROSS_SELL;
     registers: { items: IGET_RESTAURANT_REGISTER[] };
     promotions: { items: IGET_RESTAURANT_PROMOTION[] };
+    loyalties: { items: IGET_RESTAURANT_LOYALTY[] };
     categories: {
         items: IGET_RESTAURANT_CATEGORY[];
     };
@@ -1067,6 +1100,7 @@ export interface IGET_RESTAURANT_REGISTER {
     orderTypeSurcharge: OrderTypeSurchargeType;
     type: ERegisterType;
     requestCustomerInformation?: RequestCustomerInformationType;
+    hideMostPopularCategory?: boolean;
     eftposProvider: string;
     eftposIpAddress: string;
     eftposPortNumber: string;
@@ -1118,6 +1152,7 @@ export interface IGET_RESTAURANT_REGISTER_PRINTER {
     kitchenPrinterLarge: boolean;
     hidePreparationTime: boolean;
     hideModifierGroupName: boolean;
+    skipReceiptCutCommand: boolean;
     printReceiptForEachProduct: boolean;
     printAllOrderReceipts: boolean;
     printOnlineOrderReceipts: boolean;
@@ -1264,6 +1299,55 @@ export enum EDiscountType {
     FIXED = "FIXED",
     PERCENTAGE = "PERCENTAGE",
     SETPRICE = "SETPRICE",
+}
+
+export interface IGET_RESTAURANT_LOYALTY {
+    id: string;
+    name: string;
+    type: ELoyaltyType;
+    pointAmount: number;
+    categories: IGET_RESTAURANT_LOYALTY_CATEGORY[];
+    products: IGET_RESTAURANT_LOYALTY_PRODUCT[];
+    rewards: IGET_RESTAURANT_LOYALTY_REWARD[];
+    loyaltyHistories: {
+        items: IGET_RESTAURANT_LOYALTY_HISTORY[];
+    };
+}
+
+export interface IGET_RESTAURANT_LOYALTY_CATEGORY {
+    points: number;
+    categoryId: string;
+}
+
+export interface IGET_RESTAURANT_LOYALTY_PRODUCT {
+    points: number;
+    productId: string;
+}
+
+export interface IGET_RESTAURANT_LOYALTY_REWARD {
+    points: number;
+    promotionId: string;
+}
+
+export interface IGET_RESTAURANT_LOYALTY_HISTORY {
+    id: string;
+    action: ELOYALTY_ACTION;
+    points: number;
+    createdAt: string;
+    loyaltyHistoryOrderId: string;
+    loyaltyUser: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        phoneNumber: string;
+    };
+}
+
+export enum ELoyaltyType {
+    AMOUNT = "AMOUNT",
+    PRODUCT = "PRODUCT",
+    CATEGORY = "CATEGORY",
 }
 
 export interface IGET_RESTAURANT_CATEGORY {
@@ -1811,7 +1895,7 @@ export interface IGET_FEEDBACK_BY_RESTAURANT_COMMENT {
 }
 
 export const GET_LOYALTY_USER_BY_PHONE_NUMBER = gql`
-    query listLoyaltyUser($phoneNumber: String, $loyaltyHistoryRestaurantId: ID) {
+    query listLoyaltyUser($phoneNumber: String!, $loyaltyHistoryRestaurantId: ID!) {
         listLoyaltyUser(filter: { phoneNumber: { eq: $phoneNumber } }, limit: 1000000) {
             items {
                 id
@@ -1833,7 +1917,7 @@ export const GET_LOYALTY_USER_BY_PHONE_NUMBER = gql`
 `;
 
 export const GET_LOYALTY_USER_BY_EMAIL = gql`
-    query listLoyaltyUser($email: String, $loyaltyHistoryRestaurantId: ID) {
+    query listLoyaltyUser($email: String!, $loyaltyHistoryRestaurantId: ID!) {
         listLoyaltyUser(filter: { email: { eq: $email } }, limit: 1000000) {
             items {
                 id
@@ -1863,7 +1947,7 @@ export interface IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL {
     loyaltyHistories: {
         items: {
             id: string;
-            action: string;
+            action: ELOYALTY_ACTION;
             points: number;
             createdAt: string;
         }[];

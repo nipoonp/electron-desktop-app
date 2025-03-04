@@ -405,6 +405,7 @@ export enum EReceiptPrinterPrinterType {
 
 export interface IOrderReceipt {
     orderId: string;
+    country: string;
     status: EOrderStatus;
     printerType: ERegisterPrinterType;
     printerAddress: string;
@@ -415,6 +416,7 @@ export interface IOrderReceipt {
     kitchenPrinterLarge: boolean | null;
     hidePreparationTime: boolean | null;
     hideModifierGroupName: boolean | null;
+    skipReceiptCutCommand: boolean | null;
     printReceiptForEachProduct: boolean | null;
     hideOrderType: boolean;
     hideModifierGroupsForCustomer: boolean | null;
@@ -443,6 +445,7 @@ export interface IOrderReceipt {
     paymentAmounts: IOrderPaymentAmounts | null;
     total: number;
     discount: number | null;
+    tax: number;
     subTotal: number;
     paid: boolean;
     surcharge: number | null;
@@ -457,6 +460,7 @@ export interface IOrderReceipt {
     placedAt: string;
     orderScheduledAt: string | null;
     preparationTimeInMinutes: number | null;
+    enableLoyalty: boolean | null;
 }
 
 export interface IOrderLabel {

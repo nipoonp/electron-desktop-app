@@ -198,6 +198,7 @@ export const ReceiptPrinter = () => {
         if (printerAddress1) {
             await printReceipt({
                 orderId: "123",
+                country: "nz",
                 status: EOrderStatus.NEW,
                 printerType: printerType,
                 printerAddress: printerAddress1,
@@ -208,6 +209,7 @@ export const ReceiptPrinter = () => {
                 kitchenPrinterLarge: false,
                 hidePreparationTime: false,
                 hideModifierGroupName: false,
+                skipReceiptCutCommand: false,
                 printReceiptForEachProduct: false,
                 hideOrderType: false,
                 hideModifierGroupsForCustomer: false,
@@ -234,6 +236,7 @@ export const ReceiptPrinter = () => {
                 eftposSurcharge: 100,
                 eftposTip: 100,
                 discount: 10,
+                tax: 5,
                 subTotal: 90,
                 paid: false,
                 displayPaymentRequiredMessage: true,
@@ -244,12 +247,14 @@ export const ReceiptPrinter = () => {
                 placedAt: new Date().toISOString(),
                 orderScheduledAt: new Date().toISOString(),
                 preparationTimeInMinutes: 20,
+                enableLoyalty: false,
             });
         }
 
         if (printerAddress2) {
             await printReceipt({
                 orderId: "456",
+                country: "nz",
                 status: EOrderStatus.NEW,
                 printerType: printerType,
                 printerAddress: printerAddress2,
@@ -260,6 +265,7 @@ export const ReceiptPrinter = () => {
                 kitchenPrinterLarge: false,
                 hidePreparationTime: false,
                 hideModifierGroupName: false,
+                skipReceiptCutCommand: false,
                 printReceiptForEachProduct: false,
                 hideOrderType: false,
                 hideModifierGroupsForCustomer: false,
@@ -280,6 +286,7 @@ export const ReceiptPrinter = () => {
                 eftposSurcharge: 100,
                 eftposTip: 100,
                 discount: 10,
+                tax: 5,
                 subTotal: 90,
                 paid: false,
                 displayPaymentRequiredMessage: true,
@@ -290,12 +297,14 @@ export const ReceiptPrinter = () => {
                 placedAt: new Date().toISOString(),
                 orderScheduledAt: new Date().toISOString(),
                 preparationTimeInMinutes: null,
+                enableLoyalty: false,
             });
         }
 
         if (printerAddress3) {
             await printReceipt({
                 orderId: "789",
+                country: "nz",
                 status: EOrderStatus.NEW,
                 printerType: printerType,
                 printerAddress: printerAddress3,
@@ -306,6 +315,7 @@ export const ReceiptPrinter = () => {
                 kitchenPrinterLarge: false,
                 hidePreparationTime: false,
                 hideModifierGroupName: false,
+                skipReceiptCutCommand: false,
                 printReceiptForEachProduct: false,
                 hideOrderType: false,
                 hideModifierGroupsForCustomer: false,
@@ -326,6 +336,7 @@ export const ReceiptPrinter = () => {
                 eftposSurcharge: 100,
                 eftposTip: 100,
                 discount: 10,
+                tax: 5,
                 subTotal: 90,
                 paid: true,
                 displayPaymentRequiredMessage: false,
@@ -336,6 +347,7 @@ export const ReceiptPrinter = () => {
                 placedAt: new Date().toISOString(),
                 orderScheduledAt: null,
                 preparationTimeInMinutes: null,
+                enableLoyalty: false,
             });
         }
 
