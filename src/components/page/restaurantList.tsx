@@ -9,9 +9,11 @@ import { Button } from "../../tabin/components/button";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 
 import "./restaurantList.scss";
+import { useAuth } from "../../context/auth-context";
 
 export default () => {
     const navigate = useNavigate();
+    const { logout } = useAuth();
     const { restaurant, selectRestaurant, userRestaurants } = useRestaurant();
     const { register, disconnectRegister } = useRegister();
     const storedSelectedRestaurantId = localStorage.getItem("selectedRestaurantId");
@@ -85,6 +87,9 @@ export default () => {
                                     </div>
                                 </div>
                             ))}
+                    <div className="mt-2">
+                        <Button onClick={logout}>Log Out</Button>
+                    </div>
                 </div>
             </PageWrapper>
         </>
