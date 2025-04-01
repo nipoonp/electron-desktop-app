@@ -164,6 +164,8 @@ export const Checkout = () => {
     const { user } = useUser();
     const { logError } = useErrorLogging();
 
+    console.log("xxx...orderType", orderType);
+
     const transactionEftposReceipts = useRef<string>("");
 
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();

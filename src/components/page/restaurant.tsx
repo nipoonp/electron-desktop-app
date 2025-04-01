@@ -74,11 +74,11 @@ const Restaurant = () => {
     const userOnPageDuration: React.MutableRefObject<number> = useRef(1);
     const [isScrollable, setIsScrollable] = useState(false);
 
-    useEffect(() => {
-        if (!register) return;
+    // useEffect(() => {
+    //     if (!register) return;
 
-        setOrderType(register.availableOrderTypes[0]);
-    }, [register]);
+    //     setOrderType(register.availableOrderTypes[0]);
+    // }, [register]);
 
     useEffect(() => {
         const checkDivScrollable = () => {
