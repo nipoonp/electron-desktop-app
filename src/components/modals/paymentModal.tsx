@@ -399,12 +399,11 @@ const AwaitingCard = (props: {
                     />
                     <div className="awaiting-card-image-override"></div>
                     {message && <div className="h2 mt-4 mb-6">{message}</div>}
-                    {register?.eftposProvider === EEftposProvider.TYRO ||
-                        (register?.eftposProvider === EEftposProvider.MX51 && (
-                            <Button className="mt-4" onClick={() => setCancelState(true)}>
-                                Cancel Transaction
-                            </Button>
-                        ))}
+                    {(register?.eftposProvider === EEftposProvider.TYRO || register?.eftposProvider === EEftposProvider.MX51) && (
+                        <Button className="mt-4" onClick={() => setCancelState(true)}>
+                            Cancel Transaction
+                        </Button>
+                    )}
                 </>
             )}
         </>
