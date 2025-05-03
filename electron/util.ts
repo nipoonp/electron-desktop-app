@@ -152,7 +152,13 @@ export const printCustomerReceipt = async (
 
     printer.newLine();
 
-    if (order.restaurant.gstNumber) printer.println(`GST: ${order.restaurant.gstNumber}`);
+    if (order.restaurant.gstNumber) {
+        if (order.country === "au") {
+            printer.println(`ABN: ${order.restaurant.gstNumber}`);
+        } else {
+            printer.println(`GST: ${order.restaurant.gstNumber}`);
+        }
+    }
 
     printer.println(order.restaurant.address);
     printer.newLine();
