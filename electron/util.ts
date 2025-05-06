@@ -8,9 +8,8 @@ import {
     IPrintReceiptOutput,
     IPrintSalesDataInput,
     EOrderStatus,
-    IEftposReceiptOutput,
-    IPrintReceiptDataInput,
     IEftposReceipt,
+    ECountry,
 } from "./model";
 import usbPrinter from "@thiagoelg/node-printer";
 import { format } from "date-fns";
@@ -153,7 +152,7 @@ export const printCustomerReceipt = async (
     printer.newLine();
 
     if (order.restaurant.gstNumber) {
-        if (order.country === "au") {
+        if (order.country === ECountry.au) {
             printer.println(`ABN: ${order.restaurant.gstNumber}`);
         } else {
             printer.println(`GST: ${order.restaurant.gstNumber}`);

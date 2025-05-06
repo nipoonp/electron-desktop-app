@@ -31,7 +31,7 @@ import {
 
 export const taxRates = {
     nz: 0.15,
-    aus: 0.1,
+    au: 0.1,
 };
 
 export const calculateTaxAmount = (country: string, total: number) => {
