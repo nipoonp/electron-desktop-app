@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { Input } from "../../../tabin/components/input";
 import { useReceiptPrinter } from "../../../context/receiptPrinter-context";
-import { EOrderType, ERegisterPrinterType, ICartProduct } from "../../../model/model";
+import { ECountry, EOrderType, ERegisterPrinterType, ICartProduct } from "../../../model/model";
 import { useRegister } from "../../../context/register-context";
 import { Button } from "../../../tabin/components/button";
 import { Select } from "../../../tabin/components/select";
@@ -198,7 +198,7 @@ export const ReceiptPrinter = () => {
         if (printerAddress1) {
             await printReceipt({
                 orderId: "123",
-                country: "nz",
+                country: ECountry.nz,
                 status: EOrderStatus.NEW,
                 printerType: printerType,
                 printerAddress: printerAddress1,
@@ -254,7 +254,7 @@ export const ReceiptPrinter = () => {
         if (printerAddress2) {
             await printReceipt({
                 orderId: "456",
-                country: "nz",
+                country: ECountry.nz,
                 status: EOrderStatus.NEW,
                 printerType: printerType,
                 printerAddress: printerAddress2,
@@ -304,7 +304,7 @@ export const ReceiptPrinter = () => {
         if (printerAddress3) {
             await printReceipt({
                 orderId: "789",
-                country: "nz",
+                country: ECountry.nz,
                 status: EOrderStatus.NEW,
                 printerType: printerType,
                 printerAddress: printerAddress3,
