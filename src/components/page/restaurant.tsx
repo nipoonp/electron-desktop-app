@@ -813,7 +813,7 @@ const Restaurant = () => {
                                 {/* {restaurant.logo && <RestaurantLogo image={restaurant.logo} />} */}
                                 {menuSearchProduct}
                                 {register.enableSkuScanner && menuSkuSearchProduct}
-                                {menuMostPopularCategory}
+                                {register.hideMostPopularCategory ? <></> : menuMostPopularCategory}
                                 {menuCategories}
                             </div>
                             <div className="products-wrapper" id="productsWrapperScroll">

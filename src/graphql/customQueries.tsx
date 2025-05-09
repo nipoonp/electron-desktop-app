@@ -109,6 +109,7 @@ export const GET_USER = gql`
                             enableBuzzerNumbersForTakeaway
                             enableBuzzerNumbersForDineIn
                             enableSkuScanner
+                            hideMostPopularCategory
                             enablePayLater
                             enableCashPayments
                             enableEftposPayments
@@ -398,6 +399,7 @@ export const GET_RESTAURANT = gql`
                     enableBuzzerNumbersForTakeaway
                     enableBuzzerNumbersForDineIn
                     enableSkuScanner
+                    hideMostPopularCategory
                     enableFeedback
                     enablePayLater
                     enableCashPayments
@@ -1078,6 +1080,7 @@ export interface IGET_RESTAURANT_REGISTER {
     enableBuzzerNumbersForTakeaway: boolean;
     enableBuzzerNumbersForDineIn: boolean;
     enableSkuScanner: boolean;
+    hideMostPopularCategory: boolean;
     enableFeedback: boolean;
     enablePayLater: boolean;
     enableCashPayments: boolean;
