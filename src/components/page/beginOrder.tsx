@@ -73,6 +73,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
     const [availableAds, setAvailableAds] = useState<IGET_RESTAURANT_ADVERTISEMENT[]>([]);
     const [currentAdIndex, setCurrentAdIndex] = useState(0);
     const { restaurant } = useRestaurant();
+    const { register } = useRegister();
 
     useEffect(() => {
         setCurrentAdIndex((oldAdIndex) => processAds(oldAdIndex));
@@ -113,6 +114,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
     }, [availableAds]);
 
     if (!restaurant) return <div>This user has not selected any restaurant</div>;
+    if (!register) return <div>This user has not selected any register</div>;
 
     return (
         <PageWrapper>
@@ -120,7 +122,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
                 <div
                     className="wrapper"
                     onClick={() => {
-                        if (restaurant.enableLoyalty) {
+                        if (restaurant.enableLoyalty && !register.disableKioskLoyaltyScreen) {
                             navigate(loyaltyPath);
                         } else {
                             navigate(restaurantPath + "/" + restaurant.id);
@@ -168,8 +170,10 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
 const BeginOrderDefault = () => {
     const navigate = useNavigate();
     const { restaurant } = useRestaurant();
+    const { register } = useRegister();
 
     if (!restaurant) return <div>This user has not selected any restaurant</div>;
+    if (!register) return <div>This user has not selected any register</div>;
 
     return (
         <>
@@ -179,7 +183,7 @@ const BeginOrderDefault = () => {
                         <div
                             className="wrapper"
                             onClick={() => {
-                                if (restaurant.enableLoyalty) {
+                                if (restaurant.enableLoyalty && !register.disableKioskLoyaltyScreen) {
                                     navigate(loyaltyPath);
                                 } else {
                                     navigate(restaurantPath + "/" + restaurant.id);
