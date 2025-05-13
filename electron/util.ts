@@ -8,9 +8,8 @@ import {
     IPrintReceiptOutput,
     IPrintSalesDataInput,
     EOrderStatus,
-    IEftposReceiptOutput,
-    IPrintReceiptDataInput,
     IEftposReceipt,
+    ECountry,
 } from "./model";
 import usbPrinter from "@thiagoelg/node-printer";
 import { format } from "date-fns";
@@ -152,7 +151,13 @@ export const printCustomerReceipt = async (
 
     printer.newLine();
 
-    if (order.restaurant.gstNumber) printer.println(`GST: ${order.restaurant.gstNumber}`);
+    if (order.restaurant.gstNumber) {
+        if (order.country === ECountry.au) {
+            printer.println(`ABN: ${order.restaurant.gstNumber}`);
+        } else {
+            printer.println(`GST: ${order.restaurant.gstNumber}`);
+        }
+    }
 
     printer.println(order.restaurant.address);
     printer.newLine();
@@ -494,11 +499,13 @@ export const printCustomerReceipt = async (
     //     });
     // }
 
-    printer.newLine();
-    printer.alignCenter();
+    if (order.enableLoyalty) {
+        printer.newLine();
+        printer.alignCenter();
 
-    printer.println("Don't miss out on your reward points!");
-    printer.printQR(`http://rewards.tabin.co.nz/${order.orderId}`);
+        printer.println("Don't miss out on your reward points!");
+        printer.printQR(`http://rewards.tabin.co.nz/${order.orderId}`);
+    }
 
     if (order.receiptFooterText) {
         printer.bold(true);

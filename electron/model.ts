@@ -1,3 +1,8 @@
+export enum ECountry {
+    nz = "nz",
+    au = "au",
+}
+
 export enum EOrderStatus {
     NEW = "NEW",
     COMPLETED = "COMPLETED",

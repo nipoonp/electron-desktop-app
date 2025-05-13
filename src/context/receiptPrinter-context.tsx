@@ -317,7 +317,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
                     const orderNumberString = `"func${funcCounter}":{"drawTrueTypeFont":["#${order.number} (${productCounter}/${totalProductCount}) - ${order.placedAt}",0,0,"Arial",20,0,false,false,false,true]}`;
                     funcCounter++;
-                    const productString = `"func${funcCounter}":{"drawTrueTypeFont":["${product.name}",0,${
+                    const productString = `"func${funcCounter}":{"drawTrueTypeFont":["${product.kitchenName || product.name}",0,${
                         (funcCounter - 2) * 30 + 5
                     },"Arial",18,0,false,true,false,false]}`;
                     funcCounter++;
@@ -326,13 +326,13 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                     let mgString = "";
 
                     product.modifierGroups.forEach((modifierGroup, index) => {
-                        mgString = `${modifierGroup.name}: `;
+                        mgString = `${modifierGroup.kitchenName || modifierGroup.name}: `;
 
                         //Show only first 2 on first line
                         modifierGroup.modifiers.slice(0, 1).forEach((modifier, index2) => {
                             if (index2 !== 0) mgString += `, `;
 
-                            mgString += modifier.name;
+                            mgString += modifier.kitchenName || modifier.name;
                         });
 
                         if (index !== 0) modifierGroupString += `,`;
@@ -347,7 +347,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                             modifierGroup.modifiers.slice(1).forEach((modifier, index2) => {
                                 if (index2 !== 0) mgString += `, `;
 
-                                mgString += `${modifier.quantity > 1 ? modifier.quantity + "x " : ""}${modifier.name}`;
+                                mgString += `${modifier.quantity > 1 ? modifier.quantity + "x " : ""}${modifier.kitchenName || modifier.name}`;
                             });
 
                             if (index !== 0) modifierGroupString += `,`;
