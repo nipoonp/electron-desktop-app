@@ -160,6 +160,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                             placedAt: order.placedAt,
                             orderScheduledAt: order.orderScheduledAt,
                             preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
+                            enableLoyalty: restaurant.enableLoyalty,
                         });
                     }
 

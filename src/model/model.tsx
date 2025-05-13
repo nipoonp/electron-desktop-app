@@ -465,6 +465,7 @@ export interface IOrderReceipt {
     placedAt: string;
     orderScheduledAt: string | null;
     preparationTimeInMinutes: number | null;
+    enableLoyalty: boolean | null;
 }
 
 export interface IOrderLabel {

@@ -502,11 +502,13 @@ export const printCustomerReceipt = async (
     //     });
     // }
 
-    printer.newLine();
-    printer.alignCenter();
+    if (order.enableLoyalty) {
+        printer.newLine();
+        printer.alignCenter();
 
-    printer.println("Don't miss out on your reward points!");
-    printer.printQR(`http://rewards.tabin.co.nz/${order.orderId}`);
+        printer.println("Don't miss out on your reward points!");
+        printer.printQR(`http://rewards.tabin.co.nz/${order.orderId}`);
+    }
 
     if (order.receiptFooterText) {
         printer.bold(true);

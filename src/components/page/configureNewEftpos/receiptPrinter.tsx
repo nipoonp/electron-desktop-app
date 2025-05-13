@@ -247,6 +247,7 @@ export const ReceiptPrinter = () => {
                 placedAt: new Date().toISOString(),
                 orderScheduledAt: new Date().toISOString(),
                 preparationTimeInMinutes: 20,
+                enableLoyalty: true,
             });
         }
 
@@ -296,6 +297,7 @@ export const ReceiptPrinter = () => {
                 placedAt: new Date().toISOString(),
                 orderScheduledAt: new Date().toISOString(),
                 preparationTimeInMinutes: null,
+                enableLoyalty: false,
             });
         }
 
@@ -345,6 +347,7 @@ export const ReceiptPrinter = () => {
                 placedAt: new Date().toISOString(),
                 orderScheduledAt: null,
                 preparationTimeInMinutes: null,
+                enableLoyalty: true,
             });
         }
 

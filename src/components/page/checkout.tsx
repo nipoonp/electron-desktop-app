@@ -647,6 +647,7 @@ export const Checkout = () => {
                 placedAt: order.placedAt,
                 orderScheduledAt: order.orderScheduledAt,
                 preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
+                enableLoyalty: restaurant.enableLoyalty,
             });
 
             //Open cash drawer if paid by cash
