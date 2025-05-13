@@ -1,0 +1,28 @@
+.loyalty-header {
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    gap: 48px;
+    background-color: #000000;
+    color: #ffffff;
+
+    .loyalty-header-buttons-wrapper {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: right;
+        gap: 16px;
+
+        .loyalty-header-button-redeem {
+            background-color: #000000;
+            border: 1px solid #ffffff;
+            border-radius: 200px;
+        }
+
+        .loyalty-header-button-logout {
+            background-color: #000000;
+            border: 1px solid #ffffff;
+            border-radius: 200px;
+        }
+    }
+}

@@ -77,10 +77,12 @@ export default () => {
                     kitchenPrinterLarge: register.printers.items[0].kitchenPrinterLarge,
                     hidePreparationTime: register.printers.items[0].hidePreparationTime,
                     hideModifierGroupName: register.printers.items[0].hideModifierGroupName,
+                    skipReceiptCutCommand: register.printers.items[0].skipReceiptCutCommand,
                     printReceiptForEachProduct: register.printers.items[0].printReceiptForEachProduct,
                     hideOrderType: register.availableOrderTypes.length === 0,
                     products: convertProductTypesForPrint(productsToPrint),
                     displayPaymentRequiredMessage: !order.paid,
+                    enableLoyalty: restaurant ? restaurant.enableLoyalty : false,
                 });
             } else {
                 toast.error("No receipt printers configured");
@@ -109,7 +111,7 @@ export default () => {
             const isProductSoldOut = isItemSoldOut(menuProduct.soldOut, menuProduct.soldOutDate);
             const isProductAvailable = isItemAvailable(menuProduct.availability);
             const isProductCategoryAvailable = isItemAvailable(menuProductCategory.availability);
-            const isProductQtyAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById);
+            const isProductQtyAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById, product.maxQuantityPerOrder);
 
             const isProductValid = !isProductSoldOut && isProductAvailable && isProductCategoryAvailable && isProductQtyAvailable;
 
@@ -336,6 +338,7 @@ export default () => {
                 kitchenPrinterLarge: printer.kitchenPrinterLarge,
                 hidePreparationTime: printer.hidePreparationTime,
                 hideModifierGroupName: printer.hideModifierGroupName,
+                skipReceiptCutCommand: printer.skipReceiptCutCommand,
                 printReceiptForEachProduct: printer.printReceiptForEachProduct,
                 hideOrderType: register.availableOrderTypes.length === 0,
                 products: convertProductTypesForPrint(productsToPrint),

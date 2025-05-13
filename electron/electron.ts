@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, globalShortcut } from "electron";
+import { app, BrowserWindow, dialog, globalShortcut, screen } from "electron";
 import { ipcMain, Menu } from "electron";
 import {
     encodeCommandBuffer,
@@ -9,8 +9,17 @@ import {
     delay,
     printKitchenReceiptSmall,
     printKitchenReceiptLarge,
+    printEftposReceipt,
 } from "./util";
-import { IOrderReceipt, IPrintReceiptDataOutput, IPrintReceiptOutput, IPrintSalesDataInput, IPrintSalesDataOutput } from "./model";
+import {
+    IEftposReceipt,
+    IEftposReceiptOutput,
+    IOrderReceipt,
+    IPrintReceiptDataOutput,
+    IPrintReceiptOutput,
+    IPrintSalesDataInput,
+    IPrintSalesDataOutput,
+} from "./model";
 import path from "path";
 import net from "net";
 import * as Sentry from "@sentry/electron";
@@ -19,6 +28,7 @@ const { autoUpdater } = require("electron-updater");
 Sentry.init({ dsn: "https://43d342efd1534e1b80c9ab4251b385a6@o1087887.ingest.sentry.io/6102047" });
 
 let mainWindow: any;
+let customerDisplayWindow: any;
 let verifoneClient = new net.Socket();
 let isDevToolsOpen = false;
 let updatedStarted = false;
@@ -52,7 +62,7 @@ const createWindow = () => {
         },
     });
 
-    mainWindow.loadFile(path.join(__dirname, "index.html"));
+    mainWindow.loadFile(path.join(__dirname, "../build/index.html"));
 
     mainWindow.on("closed", () => {
         mainWindow = null;
@@ -243,6 +253,41 @@ if (!gotTheLock) {
     });
 }
 
+ipcMain.on("OPEN_CUSTOMER_DISPLAY", (event) => {
+    const displays = screen.getAllDisplays();
+
+    if (displays.length > 1) {
+        const secondDisplay = displays[1];
+
+        customerDisplayWindow = new BrowserWindow({
+            x: secondDisplay.bounds.x, // Use the X position of the second display
+            y: secondDisplay.bounds.y, // Use the Y position of the second display
+            kiosk: true,
+            webPreferences: {
+                nodeIntegration: true,
+                contextIsolation: false,
+            },
+        });
+    } else {
+        customerDisplayWindow = new BrowserWindow({
+            kiosk: true,
+            webPreferences: {
+                nodeIntegration: true,
+                contextIsolation: false,
+            },
+        });
+    }
+
+    customerDisplayWindow.loadFile(path.join(__dirname, "../build/index.html"));
+
+    customerDisplayWindow.on("closed", () => {
+        customerDisplayWindow = null;
+    });
+
+    // Hide the menu bar
+    customerDisplayWindow.setMenu(null);
+});
+
 ipcMain.on("RESTART_ELECTRON_APP", (event: any) => {
     app.relaunch();
     app.exit();
@@ -274,6 +319,19 @@ ipcMain.handle("RECEIPT_PRINTER_DATA", async (event: any, order: IOrderReceipt):
         return { error: null, order: order };
     } catch (e) {
         return { error: e, order: order };
+    }
+});
+
+// Webapp Receipt Printer Side
+ipcMain.handle("RECEIPT_PRINTER_EFTPOS_DATA", async (event: any, receipt: IEftposReceipt): Promise<IEftposReceiptOutput> => {
+    try {
+        const result: IPrintReceiptOutput = await printEftposReceipt(receipt);
+
+        if (result.error) return { error: result.error, receipt: receipt };
+
+        return { error: null, receipt: receipt };
+    } catch (e) {
+        return { error: e, receipt: receipt };
     }
 });
 

@@ -28,6 +28,17 @@ export enum ERegisterPrinterType {
     USB = "USB",
 }
 
+export enum ELOYALTY_ACTION {
+    EARN = "EARN",
+    REDEEM = "REDEEM",
+}
+
+export enum ECustomCustomerFieldType {
+    STRING = "STRING",
+    NUMBER = "NUMBER",
+    DROPDOWN = "DROPDOWN",
+}
+
 export const LIST_RESTAURANTS = gql`
     query ListRestaurants {
         listRestaurants(limit: 1000) {
@@ -94,6 +105,7 @@ export const GET_USER = gql`
                             active
                             name
                             enableTableFlags
+                            enableCovers
                             enableBuzzerNumbersForTakeaway
                             enableBuzzerNumbersForDineIn
                             enableSkuScanner
@@ -102,26 +114,38 @@ export const GET_USER = gql`
                             enableEftposPayments
                             enableUberEatsPayments
                             enableMenulogPayments
+                            enableDoordashPayments
+                            enableDelivereasyPayments
                             availableOrderTypes
                             type
                             requestCustomerInformation {
                                 firstName
                                 email
                                 phoneNumber
+                                signature
+                                customFields {
+                                    label
+                                    value
+                                    type
+                                }
                             }
+                            hideMostPopularCategory
+                            disableKioskLoyaltyScreen
                             eftposProvider
                             eftposIpAddress
                             eftposPortNumber
                             windcaveStationId
                             windcaveStationUser
                             windcaveStationKey
-                            tyroIntegrationKey
+                            tyroMerchantId
+                            tyroTerminalId
                             skipEftposReceiptSignature
                             askToPrintCustomerReceipt
                             orderNumberSuffix
                             orderNumberStart
                             surchargePercentage
                             defaultCategoryView
+                            preSelectedProducts
                             customStyleSheet {
                                 key
                                 bucket
@@ -142,6 +166,7 @@ export const GET_USER = gql`
                                     kitchenPrinterLarge
                                     hidePreparationTime
                                     hideModifierGroupName
+                                    skipReceiptCutCommand
                                     printReceiptForEachProduct
                                     printAllOrderReceipts
                                     printOnlineOrderReceipts
@@ -185,6 +210,7 @@ export interface IGET_USER_REGISTER_PRINTER {
     kitchenPrinterLarge: boolean;
     hidePreparationTime: boolean;
     hideModifierGroupName: boolean;
+    skipReceiptCutCommand: boolean;
     printReceiptForEachProduct: boolean;
     ignoreCategories: {
         items: IGET_USER_REGISTER_PRINTER_IGNORE_CATEGORY[];
@@ -216,6 +242,7 @@ export const GET_RESTAURANT = gql`
             id
             name
             description
+            country
             isAcceptingOrders
             verified
             address {
@@ -258,6 +285,12 @@ export const GET_RESTAURANT = gql`
                 region
                 identityPoolId
             }
+            receiptLogo {
+                key
+                bucket
+                region
+                identityPoolId
+            }
             gstNumber
             customStyleSheet {
                 key
@@ -266,6 +299,7 @@ export const GET_RESTAURANT = gql`
                 identityPoolId
             }
             autoCompleteOrders
+            enableLoyalty
             preparationTimeInMinutes
             delayBetweenOrdersInSeconds
             orderThresholdMessage
@@ -362,6 +396,7 @@ export const GET_RESTAURANT = gql`
                     active
                     name
                     enableTableFlags
+                    enableCovers
                     enableBuzzerNumbersForTakeaway
                     enableBuzzerNumbersForDineIn
                     enableSkuScanner
@@ -371,6 +406,8 @@ export const GET_RESTAURANT = gql`
                     enableEftposPayments
                     enableUberEatsPayments
                     enableMenulogPayments
+                    enableDoordashPayments
+                    enableDelivereasyPayments
                     availableOrderTypes
                     orderTypeSurcharge {
                         dinein
@@ -382,20 +419,29 @@ export const GET_RESTAURANT = gql`
                         email
                         phoneNumber
                         signature
+                        customFields {
+                            label
+                            value
+                            type
+                        }
                     }
+                    hideMostPopularCategory
+                    disableKioskLoyaltyScreen
                     eftposProvider
                     eftposIpAddress
                     eftposPortNumber
                     windcaveStationId
                     windcaveStationUser
                     windcaveStationKey
-                    tyroIntegrationKey
+                    tyroMerchantId
+                    tyroTerminalId
                     skipEftposReceiptSignature
                     askToPrintCustomerReceipt
                     orderNumberSuffix
                     orderNumberStart
                     surchargePercentage
                     defaultCategoryView
+                    preSelectedProducts
                     customStyleSheet {
                         key
                         bucket
@@ -416,6 +462,7 @@ export const GET_RESTAURANT = gql`
                             kitchenPrinterLarge
                             hidePreparationTime
                             hideModifierGroupName
+                            skipReceiptCutCommand
                             printReceiptForEachProduct
                             printAllOrderReceipts
                             printOnlineOrderReceipts
@@ -573,6 +620,8 @@ export const GET_RESTAURANT = gql`
                                 tags
                                 totalQuantitySold
                                 totalQuantityAvailable
+                                incrementAmount
+                                maxQuantityPerOrder
                                 soldOut
                                 soldOutDate
                                 imageUrl
@@ -667,7 +716,6 @@ export const GET_RESTAURANT = gql`
                                     items {
                                         id
                                         displaySequence
-                                        hideForCustomer
                                         modifierGroup {
                                             id
                                             name
@@ -675,6 +723,7 @@ export const GET_RESTAURANT = gql`
                                             choiceMin
                                             choiceMax
                                             choiceDuplicate
+                                            hideForCustomer
                                             collapsedByDefault
                                             availablePlatforms
                                             alphabeticalSorting
@@ -682,7 +731,6 @@ export const GET_RESTAURANT = gql`
                                                 items {
                                                     id
                                                     displaySequence
-                                                    preSelectedQuantity
                                                     modifier {
                                                         id
                                                         name
@@ -702,6 +750,7 @@ export const GET_RESTAURANT = gql`
                                                         soldOutDate
                                                         availablePlatforms
                                                         subModifierGroups
+                                                        preSelectedQuantity
                                                         productModifier {
                                                             id
                                                             name
@@ -711,6 +760,8 @@ export const GET_RESTAURANT = gql`
                                                             tags
                                                             totalQuantitySold
                                                             totalQuantityAvailable
+                                                            incrementAmount
+                                                            maxQuantityPerOrder
                                                             soldOut
                                                             soldOutDate
                                                             imageUrl
@@ -770,7 +821,6 @@ export const GET_RESTAURANT = gql`
                                                                 items {
                                                                     id
                                                                     displaySequence
-                                                                    hideForCustomer
                                                                     modifierGroup {
                                                                         id
                                                                         name
@@ -778,13 +828,13 @@ export const GET_RESTAURANT = gql`
                                                                         choiceMin
                                                                         choiceMax
                                                                         choiceDuplicate
+                                                                        hideForCustomer
                                                                         collapsedByDefault
                                                                         availablePlatforms
                                                                         modifiers(limit: 50) {
                                                                             items {
                                                                                 id
                                                                                 displaySequence
-                                                                                preSelectedQuantity
                                                                                 modifier {
                                                                                     id
                                                                                     name
@@ -797,6 +847,7 @@ export const GET_RESTAURANT = gql`
                                                                                         region
                                                                                         identityPoolId
                                                                                     }
+                                                                                    preSelectedQuantity
                                                                                     productModifier {
                                                                                         id
                                                                                         name
@@ -806,6 +857,8 @@ export const GET_RESTAURANT = gql`
                                                                                         tags
                                                                                         totalQuantitySold
                                                                                         totalQuantityAvailable
+                                                                                        incrementAmount
+                                                                                        maxQuantityPerOrder
                                                                                         soldOut
                                                                                         soldOutDate
                                                                                         imageUrl
@@ -892,6 +945,8 @@ export const GET_RESTAURANT = gql`
                     soldOut
                     soldOutDate
                     totalQuantityAvailable
+                    incrementAmount
+                    maxQuantityPerOrder
                 }
             }
             # Only for stock component
@@ -909,6 +964,26 @@ export const GET_RESTAURANT = gql`
                     }
                 }
             }
+            loyalties(limit: 100) {
+                items {
+                    id
+                    name
+                    type
+                    pointAmount
+                    categories {
+                        points
+                        categoryId
+                    }
+                    products {
+                        points
+                        productId
+                    }
+                    rewards {
+                        points
+                        promotionId
+                    }
+                }
+            }
         }
     }
 `;
@@ -917,6 +992,7 @@ export interface IGET_RESTAURANT {
     id: string;
     name: string;
     description: string;
+    country: string;
     isAcceptingOrders: boolean;
     verified: boolean;
     address: {
@@ -925,9 +1001,11 @@ export interface IGET_RESTAURANT {
     };
     operatingHours: IGET_RESTAURANT_OPERATING_HOURS;
     logo?: IS3Object;
+    receiptLogo?: IS3Object;
     gstNumber: string | null;
     customStyleSheet?: IS3Object;
     autoCompleteOrders: boolean | null;
+    enableLoyalty: boolean | null;
     preparationTimeInMinutes: number | null;
     delayBetweenOrdersInSeconds: number | null;
     orderThresholdMessage: string | null;
@@ -941,6 +1019,7 @@ export interface IGET_RESTAURANT {
     upSellCrossSell?: IGET_RESTAURANT_UP_SELL_CROSS_SELL;
     registers: { items: IGET_RESTAURANT_REGISTER[] };
     promotions: { items: IGET_RESTAURANT_PROMOTION[] };
+    loyalties: { items: IGET_RESTAURANT_LOYALTY[] };
     categories: {
         items: IGET_RESTAURANT_CATEGORY[];
     };
@@ -1007,6 +1086,7 @@ export interface IGET_RESTAURANT_REGISTER {
     active: boolean;
     name: string;
     enableTableFlags: boolean;
+    enableCovers: boolean;
     enableBuzzerNumbersForTakeaway: boolean;
     enableBuzzerNumbersForDineIn: boolean;
     enableSkuScanner: boolean;
@@ -1016,23 +1096,29 @@ export interface IGET_RESTAURANT_REGISTER {
     enableEftposPayments: boolean;
     enableUberEatsPayments: boolean;
     enableMenulogPayments: boolean;
+    enableDoordashPayments: boolean;
+    enableDelivereasyPayments: boolean;
     availableOrderTypes: EOrderType[];
     orderTypeSurcharge: OrderTypeSurchargeType;
     type: ERegisterType;
     requestCustomerInformation?: RequestCustomerInformationType;
+    hideMostPopularCategory?: boolean;
+    disableKioskLoyaltyScreen?: boolean;
     eftposProvider: string;
     eftposIpAddress: string;
     eftposPortNumber: string;
     windcaveStationId: string;
     windcaveStationUser: string;
     windcaveStationKey: string;
-    tyroIntegrationKey: string;
+    tyroMerchantId: number;
+    tyroTerminalId: number;
     skipEftposReceiptSignature: boolean;
     askToPrintCustomerReceipt: boolean;
     orderNumberSuffix: string;
     orderNumberStart: number;
     surchargePercentage: number;
     defaultCategoryView: string;
+    preSelectedProducts: string[];
     customStyleSheet?: IS3Object;
     printers: {
         items: IGET_RESTAURANT_REGISTER_PRINTER[];
@@ -1044,6 +1130,11 @@ export interface RequestCustomerInformationType {
     email: boolean;
     phoneNumber: boolean;
     signature: boolean;
+    customFields?: {
+        label: string;
+        value: string;
+        type: ECustomCustomerFieldType;
+    }[];
 }
 
 export interface OrderTypeSurchargeType {
@@ -1064,6 +1155,7 @@ export interface IGET_RESTAURANT_REGISTER_PRINTER {
     kitchenPrinterLarge: boolean;
     hidePreparationTime: boolean;
     hideModifierGroupName: boolean;
+    skipReceiptCutCommand: boolean;
     printReceiptForEachProduct: boolean;
     printAllOrderReceipts: boolean;
     printOnlineOrderReceipts: boolean;
@@ -1212,6 +1304,55 @@ export enum EDiscountType {
     SETPRICE = "SETPRICE",
 }
 
+export interface IGET_RESTAURANT_LOYALTY {
+    id: string;
+    name: string;
+    type: ELoyaltyType;
+    pointAmount: number;
+    categories: IGET_RESTAURANT_LOYALTY_CATEGORY[];
+    products: IGET_RESTAURANT_LOYALTY_PRODUCT[];
+    rewards: IGET_RESTAURANT_LOYALTY_REWARD[];
+    loyaltyHistories: {
+        items: IGET_RESTAURANT_LOYALTY_HISTORY[];
+    };
+}
+
+export interface IGET_RESTAURANT_LOYALTY_CATEGORY {
+    points: number;
+    categoryId: string;
+}
+
+export interface IGET_RESTAURANT_LOYALTY_PRODUCT {
+    points: number;
+    productId: string;
+}
+
+export interface IGET_RESTAURANT_LOYALTY_REWARD {
+    points: number;
+    promotionId: string;
+}
+
+export interface IGET_RESTAURANT_LOYALTY_HISTORY {
+    id: string;
+    action: ELOYALTY_ACTION;
+    points: number;
+    createdAt: string;
+    loyaltyHistoryOrderId: string;
+    loyaltyUser: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        phoneNumber: string;
+    };
+}
+
+export enum ELoyaltyType {
+    AMOUNT = "AMOUNT",
+    PRODUCT = "PRODUCT",
+    CATEGORY = "CATEGORY",
+}
+
 export interface IGET_RESTAURANT_CATEGORY {
     id: string;
     name: string;
@@ -1249,6 +1390,8 @@ export interface IGET_RESTAURANT_PRODUCT {
     tags: string | null;
     totalQuantitySold?: number;
     totalQuantityAvailable?: number;
+    incrementAmount?: number;
+    maxQuantityPerOrder?: number;
     soldOut?: boolean;
     soldOutDate?: string;
     imageUrl?: string;
@@ -1266,7 +1409,6 @@ export interface IGET_RESTAURANT_PRODUCT {
 export interface IGET_RESTAURANT_MODIFIER_GROUP_LINK {
     id: string;
     displaySequence: number;
-    hideForCustomer: boolean | null;
     modifierGroup: IGET_RESTAURANT_MODIFIER_GROUP;
 }
 
@@ -1277,6 +1419,7 @@ export interface IGET_RESTAURANT_MODIFIER_GROUP {
     choiceMin: number;
     choiceMax: number;
     choiceDuplicate: number;
+    hideForCustomer: boolean | null;
     collapsedByDefault?: boolean | null;
     availablePlatforms: ERegisterType[];
     alphabeticalSorting: boolean;
@@ -1288,7 +1431,6 @@ export interface IGET_RESTAURANT_MODIFIER_GROUP {
 export interface IGET_RESTAURANT_MODIFIER_LINK {
     id: string;
     displaySequence: number;
-    preSelectedQuantity: number;
     modifier: IGET_RESTAURANT_MODIFIER;
 }
 
@@ -1307,6 +1449,7 @@ export interface IGET_RESTAURANT_MODIFIER {
     availablePlatforms: ERegisterType[];
     isAgeRescricted: boolean;
     subModifierGroups: string;
+    preSelectedQuantity: number;
     productModifier?: IGET_RESTAURANT_PRODUCT;
 }
 
@@ -1452,6 +1595,8 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                 tags
                 totalQuantitySold
                 totalQuantityAvailable
+                incrementAmount
+                maxQuantityPerOrder
                 soldOut
                 soldOutDate
                 imageUrl
@@ -1544,20 +1689,19 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                     items {
                         id
                         displaySequence
-                        hideForCustomer
                         modifierGroup {
                             id
                             name
                             choiceMin
                             choiceMax
                             choiceDuplicate
+                            hideForCustomer
                             collapsedByDefault
                             availablePlatforms
                             modifiers(limit: 500) {
                                 items {
                                     id
                                     displaySequence
-                                    preSelectedQuantity
                                     modifier {
                                         id
                                         name
@@ -1573,6 +1717,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                         totalQuantityAvailable
                                         soldOut
                                         soldOutDate
+                                        preSelectedQuantity
                                         availablePlatforms
                                         productModifier {
                                             id
@@ -1582,6 +1727,8 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                             tags
                                             totalQuantitySold
                                             totalQuantityAvailable
+                                            incrementAmount
+                                            maxQuantityPerOrder
                                             soldOut
                                             soldOutDate
                                             imageUrl
@@ -1640,20 +1787,19 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                 items {
                                                     id
                                                     displaySequence
-                                                    hideForCustomer
                                                     modifierGroup {
                                                         id
                                                         name
                                                         choiceMin
                                                         choiceMax
                                                         choiceDuplicate
+                                                        hideForCustomer
                                                         collapsedByDefault
                                                         availablePlatforms
                                                         modifiers(limit: 500) {
                                                             items {
                                                                 id
                                                                 displaySequence
-                                                                preSelectedQuantity
                                                                 modifier {
                                                                     id
                                                                     name
@@ -1667,8 +1813,11 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                                     }
                                                                     totalQuantitySold
                                                                     totalQuantityAvailable
+                                                                    incrementAmount
+                                                                    maxQuantityPerOrder
                                                                     soldOut
                                                                     soldOutDate
+                                                                    preSelectedQuantity
                                                                     availablePlatforms
                                                                 }
                                                             }
@@ -1746,4 +1895,64 @@ export interface IGET_FEEDBACK_BY_RESTAURANT_COMMENT {
     comment: string;
     rating: number;
     orderId: string;
+}
+
+export const GET_LOYALTY_USER_BY_PHONE_NUMBER = gql`
+    query listLoyaltyUser($phoneNumber: String!, $loyaltyHistoryRestaurantId: ID!) {
+        listLoyaltyUser(filter: { phoneNumber: { eq: $phoneNumber } }, limit: 1000000) {
+            items {
+                id
+                firstName
+                lastName
+                phoneNumber
+                email
+                loyaltyHistories(filter: { loyaltyHistoryRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 1000000) {
+                    items {
+                        id
+                        action
+                        points
+                        createdAt
+                    }
+                }
+            }
+        }
+    }
+`;
+
+export const GET_LOYALTY_USER_BY_EMAIL = gql`
+    query listLoyaltyUser($email: String!, $loyaltyHistoryRestaurantId: ID!) {
+        listLoyaltyUser(filter: { email: { eq: $email } }, limit: 1000000) {
+            items {
+                id
+                firstName
+                lastName
+                phoneNumber
+                email
+                loyaltyHistories(filter: { loyaltyHistoryRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 1000000) {
+                    items {
+                        id
+                        action
+                        points
+                        createdAt
+                    }
+                }
+            }
+        }
+    }
+`;
+
+export interface IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL {
+    id: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+    email: string;
+    loyaltyHistories: {
+        items: {
+            id: string;
+            action: ELOYALTY_ACTION;
+            points: number;
+            createdAt: string;
+        }[];
+    };
 }

@@ -6,6 +6,11 @@ import {
 } from "../graphql/customFragments";
 import { IGET_RESTAURANT_PROMOTION, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object, EOrderStatus } from "../graphql/customQueries";
 
+export enum ECountry {
+    nz = "nz",
+    au = "au",
+}
+
 export interface ITab {
     id: string;
     name: string;
@@ -26,6 +31,14 @@ export interface IPrintReceiptDataOutput {
     order: IOrderReceipt;
 }
 
+export interface IPrintReceiptDataInput {
+    printer: {
+        printerType: ERegisterPrinterType;
+        printerAddress: string;
+    };
+    eftposReceipt: string;
+}
+
 export interface ICognitoUser {
     attributes: {
         email: string;
@@ -39,7 +52,7 @@ export interface ICognitoUser {
 
 export enum EEftposTransactionOutcome {
     Success,
-    ProcessMessage,
+    // ProcessMessage,
     Fail,
 }
 
@@ -81,26 +94,61 @@ export enum ETyroTransactionOutcome {
     UNKNOWN,
 }
 
+export enum EMX51TransactionOutcome {
+    Success,
+    Failed,
+    Unknown,
+}
+
 export interface IEftposTransactionOutcome {
     platformTransactionOutcome:
         | ESmartpayTransactionOutcome
         | EWindcaveTransactionOutcome
         | EVerifoneTransactionOutcome
         | ETyroTransactionOutcome
+        | EMX51TransactionOutcome
         | null;
     transactionOutcome: EEftposTransactionOutcome;
     message: string;
     eftposReceipt: string | null;
-    eftposCardType?: IEftposTransactionOutcomeCardType;
+    eftposCardType?: EEftposTransactionOutcomeCardType;
     eftposSurcharge?: number;
     eftposTip?: number;
 }
 
-export enum IEftposTransactionOutcomeCardType {
-    VISA,
-    MASTERCARD,
-    AMEX,
-    EFTPOS,
+export interface IMX51GetPaymentProviders {
+    paymnetProivderList: {
+        code: string;
+        name: string;
+    }[];
+    paymentProvider: string;
+}
+
+export interface IMX51PairingInput {
+    posId: string;
+    tenantCode: string;
+    serialNumber: string;
+    eftposAddress: string;
+    autoAddressResolution: boolean;
+    testMode: boolean;
+}
+
+export enum EMX51PairingStatus {
+    Unpaired = "Unpaired",
+    PairingProgress = "PairingProgress",
+    PairingConfirmation = "PairingConfirmation",
+    PairingSuccessful = "PairingSuccessful",
+    PairingFailed = "PairingFailed",
+    Paired = "Paired",
+    PairedAndDisconnected = "PairedAndDisconnected",
+}
+
+export enum EEftposTransactionOutcomeCardType {
+    VISA = "VISA",
+    MASTERCARD = "MASTERCARD",
+    AMEX = "AMEX",
+    EFTPOS = "EFTPOS",
+    ALIPAY = "ALIPAY",
 }
 
 export enum EPaymentModalState {
@@ -110,6 +158,8 @@ export enum EPaymentModalState {
     CashResult,
     UberEatsResult,
     MenulogResult,
+    DoordashResult,
+    DelivereasyResult,
     PayLater,
     Park,
     ThirdPartyIntegrationAwaitingResponse,
@@ -153,7 +203,7 @@ export interface ITyroTransactionCallback {
 
 interface ITyroTransactionQuestionCallbackQuestion {
     text: string; // The message to present to the merchant.
-    optionsArray: string[]; // The set of button labels to present for the merchant to choose from.
+    options: string[]; // The set of button labels to present for the merchant to choose from.
     isError?: boolean;
 }
 
@@ -170,6 +220,7 @@ interface ITyroTransactionCompleteCallback {
     issuerActionCode?: string; // The raw result code returned by the card issuer.
     elidedPan?: string; // The (elided) credit card number used for this transaction.
     rrn?: string; // The Retrieval Reference Number, unique for a 7-day period.
+    surchargeAmount?: string;
     tipAmount?: string; // The tip component, in cents, for Tip Completion transactions.
     tipCompletionReference?: string; // Tyro's reference to the Tip Completion.
     tabCompletionReference?: string; // Tyro's reference to a Tab Completion.
@@ -204,6 +255,17 @@ interface ITyroTransactionCompleteCallback {
     }[];
 }
 
+export interface ITyroEftposQuestion {
+    text: string;
+    options: string[];
+    answerCallback: (answer: string) => void;
+}
+
+export interface IMX51EftposQuestion {
+    receipt: string;
+    answerCallback: (accepted: boolean) => void;
+}
+
 export enum EOrderType {
     DINEIN = "DINEIN",
     TAKEAWAY = "TAKEAWAY",
@@ -221,6 +283,13 @@ export enum EEftposProvider {
     VERIFONE = "VERIFONE",
     WINDCAVE = "WINDCAVE",
     TYRO = "TYRO",
+    MX51 = "MX51",
+}
+
+export enum ECustomCustomerFieldType {
+    STRING = "STRING",
+    NUMBER = "NUMBER",
+    DROPDOWN = "DROPDOWN",
 }
 
 export interface ICustomerInformation {
@@ -228,6 +297,11 @@ export interface ICustomerInformation {
     email: string;
     phoneNumber: string;
     signatureBase64: string;
+    customFields: {
+        label: string;
+        value: string;
+        type: ECustomCustomerFieldType;
+    }[];
 }
 
 export interface ICartItemQuantitiesById {
@@ -246,6 +320,7 @@ export interface ICartItemQuantitiesByIdValue {
 //ICartProduct is used to pass into the DB. So its good to have it as ? undefined rather than null. Null is a type in dynamoDB so it will create a field with type Null.
 export interface ICartProduct {
     index?: number; //index is for promos
+    isPreSelectedProduct?: boolean; //this is so that we cannot remove this product if preSelected
     id: string;
     name: string;
     kitchenName: string | null;
@@ -255,6 +330,8 @@ export interface ICartProduct {
     isAgeRescricted: boolean;
     image: IS3Object | null;
     quantity: number;
+    incrementAmount?: number;
+    maxQuantityPerOrder?: number;
     notes: string | null;
     category: ICartCategory | null; //Product modifier do not have category
     modifierGroups: ICartModifierGroup[];
@@ -311,6 +388,8 @@ export interface ICartPaymentAmounts {
     online: number;
     uberEats: number;
     menulog: number;
+    doordash: number;
+    delivereasy: number;
 }
 
 export interface ICartPayment {
@@ -331,6 +410,7 @@ export enum EReceiptPrinterPrinterType {
 
 export interface IOrderReceipt {
     orderId: string;
+    country: string;
     status: EOrderStatus;
     printerType: ERegisterPrinterType;
     printerAddress: string;
@@ -341,6 +421,7 @@ export interface IOrderReceipt {
     kitchenPrinterLarge: boolean | null;
     hidePreparationTime: boolean | null;
     hideModifierGroupName: boolean | null;
+    skipReceiptCutCommand: boolean | null;
     printReceiptForEachProduct: boolean | null;
     hideOrderType: boolean;
     hideModifierGroupsForCustomer: boolean | null;
@@ -355,6 +436,13 @@ export interface IOrderReceipt {
         email: string | null;
         phoneNumber: string | null;
         signatureBase64: string | null;
+        customFields:
+            | {
+                  label: string | null;
+                  value: string | null;
+                  type: ECustomCustomerFieldType | null;
+              }[]
+            | null;
     } | null;
     notes: string | null;
     products: ICartProduct[];
@@ -362,6 +450,7 @@ export interface IOrderReceipt {
     paymentAmounts: IOrderPaymentAmounts | null;
     total: number;
     discount: number | null;
+    tax: number;
     subTotal: number;
     paid: boolean;
     surcharge: number | null;
@@ -376,6 +465,7 @@ export interface IOrderReceipt {
     placedAt: string;
     orderScheduledAt: string | null;
     preparationTimeInMinutes: number | null;
+    enableLoyalty: boolean | null;
 }
 
 export interface IOrderLabel {

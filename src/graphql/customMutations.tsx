@@ -43,12 +43,14 @@ export const UPDATE_REGISTER_KEY = gql`
 export const CREATE_ORDER = gql`
     ${ORDER_FIELDS_FRAGMENT}
     mutation createOrder(
+        $country: String
         $status: OrderStatus!
         $paid: Boolean!
         $type: OrderType!
         $number: String!
         $table: String
         $buzzer: String
+        $covers: Int
         $orderScheduledAt: String
         $customerInformation: OrderCustomerInformationInput
         $notes: String
@@ -64,6 +66,8 @@ export const CREATE_ORDER = gql`
         $discount: Int
         $promotionId: ID
         $promotionType: PromotionType
+        $loyaltyId: ID
+        $tax: Int
         $subTotal: Int!
         $preparationTimeInMinutes: Int
         $registerId: ID!
@@ -79,12 +83,14 @@ export const CREATE_ORDER = gql`
     ) {
         createOrder(
             input: {
+                country: $country
                 status: $status
                 paid: $paid
                 type: $type
                 number: $number
                 table: $table
                 buzzer: $buzzer
+                covers: $covers
                 orderScheduledAt: $orderScheduledAt
                 customerInformation: $customerInformation
                 notes: $notes
@@ -100,6 +106,8 @@ export const CREATE_ORDER = gql`
                 discount: $discount
                 promotionId: $promotionId
                 promotionType: $promotionType
+                loyaltyId: $loyaltyId
+                tax: $tax
                 subTotal: $subTotal
                 preparationTimeInMinutes: $preparationTimeInMinutes
                 registerId: $registerId
@@ -300,11 +308,12 @@ export const UPDATE_FEEDBACK = gql`
     }
 `;
 
-export const UPDATE_REGISTER_TYRO_INTEGRATION_KEY = gql`
-    mutation UpdateRegister($id: ID!, $tyroIntegrationKey: String!) {
-        updateRegister(input: { id: $id, tyroIntegrationKey: $tyroIntegrationKey }) {
+export const UPDATE_REGISTER_TYRO = gql`
+    mutation UpdateRegister($id: ID!, $tyroMerchantId: Int!, $tyroTerminalId: Int!) {
+        updateRegister(input: { id: $id, tyroMerchantId: $tyroMerchantId, tyroTerminalId: $tyroTerminalId }) {
             id
-            tyroIntegrationKey
+            tyroMerchantId
+            tyroTerminalId
         }
     }
 `;

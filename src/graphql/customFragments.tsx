@@ -1,9 +1,10 @@
 import { gql } from "@apollo/client";
-import { EOrderStatus, EOrderType, IS3Object } from "./customQueries";
+import { ECustomCustomerFieldType, EOrderStatus, EOrderType, IS3Object } from "./customQueries";
 
 export const ORDER_FIELDS_FRAGMENT = gql`
     fragment OrderFieldsFragment on Order {
         id
+        country
         placedAt
         completedAt
         cancelledAt
@@ -18,6 +19,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         discount
         promotionId
         subTotal
+        tax
         paid
         paymentAmounts {
             cash
@@ -25,6 +27,8 @@ export const ORDER_FIELDS_FRAGMENT = gql`
             online
             uberEats
             menulog
+            doordash
+            delivereasy
         }
         onlineOrder
         guestCheckout
@@ -197,6 +201,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
 
 export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     id: string;
+    country: string;
     placedAt: string;
     completedAt: string | null;
     cancelledAt: string | null;
@@ -210,6 +215,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     eftposTip: number | null;
     discount: number | null;
     promotionId: string | null;
+    tax: number;
     subTotal: number;
     paid: boolean;
     paymentAmounts: IOrderPaymentAmounts | null;
@@ -221,6 +227,11 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
         email: string | null;
         phoneNumber: string | null;
         signature: IS3Object | null;
+        customFields: {
+            label: string;
+            value: string;
+            type: ECustomCustomerFieldType;
+        }[];
     } | null;
     status: EOrderStatus;
     type: EOrderType;
@@ -239,6 +250,8 @@ export interface IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT {
     totalPrice: number;
     discount: number;
     isAgeRescricted: boolean;
+    incrementAmount?: number;
+    maxQuantityPerOrder?: number;
     quantity: number;
     notes: string | null;
     image: IS3Object | null;
@@ -287,4 +300,6 @@ export interface IOrderPaymentAmounts {
     online: number;
     uberEats: number;
     menulog: number;
+    doordash: number;
+    delivereasy: number;
 }

@@ -7,19 +7,21 @@ import { Button } from "../../tabin/components/button";
 import { useRestaurant } from "../../context/restaurant-context";
 import KioskBoard from "kioskboard";
 import { FiX } from "react-icons/fi";
+import { useRegister } from "../../context/register-context";
+import { Stepper } from "../../tabin/components/stepper";
 
 import "./tableNumber.scss";
-import { useRegister } from "../../context/register-context";
 
 export default () => {
     const navigate = useNavigate();
     const { restaurant } = useRestaurant();
-    const { tableNumber, setTableNumber } = useCart();
+    const { register } = useRegister();
+    const { setTableNumber, covers, setCovers } = useCart();
     const { isPOS } = useRegister();
 
     const numpadRef = useRef(null);
 
-    // const [table, setTable] = useState(tableNumber);
+    const [coversNumber, setCoversNumber] = useState(covers || 1);
     const [tableError, setTableError] = useState(false);
 
     useEffect(() => {
@@ -62,26 +64,37 @@ export default () => {
     };
 
     const onNext = () => {
-        //@ts-ignore
-        const table = numpadRef.current.value;
+        if (register?.enableCovers) {
+            setCovers(coversNumber);
+        }
 
-        if (table) {
-            setTableNumber(table);
+        if (register?.enableTableFlags) {
+            //@ts-ignore
+            const table = numpadRef.current.value;
 
+            if (table) {
+                setTableNumber(table);
+
+                if (isPOS) {
+                    navigate(`${restaurantPath}/${restaurant.id}`);
+                } else {
+                    navigate(`${checkoutPath}`);
+                }
+            } else {
+                setTableError(true);
+            }
+        } else {
             if (isPOS) {
                 navigate(`${restaurantPath}/${restaurant.id}`);
             } else {
                 navigate(`${checkoutPath}`);
             }
-        } else {
-            setTableError(true);
         }
     };
 
-    // const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    //     setTable(e.target.value);
-    //     setTableError(false);
-    // };
+    const onUpdateCoversNumber = (count: number) => {
+        setCoversNumber(count);
+    };
 
     return (
         <>
@@ -90,7 +103,8 @@ export default () => {
                     <div className="close-button-wrapper">
                         <FiX className="close-button" size={36} onClick={onClose} />
                     </div>
-                    <div className="h2 mb-6">Enter your table number</div>
+
+                    <div className="h2 mb-6">Provide your dine-in details</div>
                     <div className="mb-6 table-image-container">
                         <img
                             alt="Table Image"
@@ -99,26 +113,25 @@ export default () => {
                         />
                         <div className="table-image-override"></div>
                     </div>
-                    <div className="mb-12" style={{ width: "300px" }}>
-                        <div className="h3 mb-2">Table Number</div>
-                        {/* <Input
-                            type="number"
-                            autoFocus={true}
-                            onChange={onChange}
-                            value={table ? table.slice(0, 2) : ""}
-                            error={tableError ? "Required" : ""}
-                        /> */}
-                        <input
-                            className={`inputFromKey input`}
-                            ref={numpadRef}
-                            data-kioskboard-type="numpad"
-                            type="number"
-                            // autoFocus={true}
-                            // onChange={onChange}
-                            // value={table ? table.slice(0, 2) : ""}
-                        />
-                        {tableError && <div className="text-error mt-2">{tableError ? "Required" : ""}</div>}
-                    </div>
+                    {register?.enableTableFlags && (
+                        <>
+                            <div className="mb-4 text-center" style={{ width: "300px" }}>
+                                <div className="h3 mb-2">Table Number</div>
+                                <input className={`inputFromKey input`} ref={numpadRef} data-kioskboard-type="numpad" type="number" />
+                                {tableError && <div className="text-error mt-2">{tableError ? "Required" : ""}</div>}
+                            </div>
+                        </>
+                    )}
+                    {register?.enableCovers && (
+                        <>
+                            <div className="mb-12 text-center" style={{ width: "300px" }}>
+                                <div className="h3 mb-2">Number Of Diners</div>
+                                <div className="covers-wrapper">
+                                    <Stepper count={coversNumber} min={1} max={20} onUpdate={onUpdateCoversNumber} size={48} />
+                                </div>
+                            </div>
+                        </>
+                    )}
                     <Button onClick={onNext}>Next</Button>
                 </div>
             </PageWrapper>

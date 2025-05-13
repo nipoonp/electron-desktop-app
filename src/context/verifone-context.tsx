@@ -7,7 +7,7 @@ import {
     IEftposTransactionOutcome,
     EVerifoneTransactionOutcome,
     EEftposProvider,
-    IEftposTransactionOutcomeCardType,
+    EEftposTransactionOutcomeCardType,
 } from "../model/model";
 import { useErrorLogging } from "./errorLogging-context";
 import { useRegister } from "./register-context";
@@ -205,14 +205,14 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     };
 
     const getCardType = (cardType: string) => {
-        let type = IEftposTransactionOutcomeCardType.EFTPOS;
+        let type = EEftposTransactionOutcomeCardType.EFTPOS;
 
         if (cardType.toLowerCase() === "visa") {
-            type = IEftposTransactionOutcomeCardType.VISA;
+            type = EEftposTransactionOutcomeCardType.VISA;
         } else if (cardType.toLowerCase() === "mcard") {
-            type = IEftposTransactionOutcomeCardType.MASTERCARD;
+            type = EEftposTransactionOutcomeCardType.MASTERCARD;
         } else if (cardType.toLowerCase() === "amex") {
-            type = IEftposTransactionOutcomeCardType.AMEX;
+            type = EEftposTransactionOutcomeCardType.AMEX;
         }
 
         return type;
@@ -410,8 +410,8 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     const verifonePurchaseResultArray = eftposData.current.payload.split(",");
                     iSO8583ResponseCode = verifonePurchaseResultArray[2];
                     eftposCardType = verifonePurchaseResultArray[4];
-                    eftposTip = verifonePurchaseResultArray[7];
-                    eftposSurcharge = verifonePurchaseResultArray[8];
+                    eftposTip = verifonePurchaseResultArray[6];
+                    eftposSurcharge = verifonePurchaseResultArray[7];
 
                     if (iSO8583ResponseCode != "??") {
                         localStorage.removeItem("unresolvedVerifoneTransactionId");

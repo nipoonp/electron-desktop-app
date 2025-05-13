@@ -2,7 +2,17 @@ import { useState, useEffect, useRef } from "react";
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useNavigate } from "react-router-dom";
-import { convertBase64ToFile, convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
+import {
+    calculateTaxAmount,
+    convertBase64ToFile,
+    convertCentsToDollars,
+    convertProductTypesForPrint,
+    filterPrintProducts,
+    getOrderNumber,
+    isItemAvailable,
+    isItemSoldOut,
+    isProductQuantityAvailable,
+} from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
 import { FiArrowDownCircle } from "react-icons/fi";
@@ -40,8 +50,10 @@ import {
     EPaymentMethod,
     EVerifoneTransactionOutcome,
     ERegisterType,
-    IEftposTransactionOutcomeCardType,
+    EEftposTransactionOutcomeCardType,
     EOrderType,
+    ITyroEftposQuestion,
+    IMX51EftposQuestion,
 } from "../../model/model";
 import { useUser } from "../../context/user-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -79,6 +91,8 @@ import "./checkout.scss";
 import axios from "axios";
 import { R18MessageModal } from "../modals/r18MessageModal";
 import { useTyro } from "../../context/tyro-context";
+import { useMX51 } from "../../context/mx51-context";
+import { LoyaltyHeader } from "../shared/loyaltyHeader";
 
 const logger = new Logger("checkout");
 
@@ -99,6 +113,7 @@ export const Checkout = () => {
         paymentMethod,
         setPaymentMethod,
         setNotes,
+        covers,
         tableNumber,
         clearCart,
         promotion,
@@ -107,8 +122,6 @@ export const Checkout = () => {
         subTotal,
         paidSoFar,
         orderTypeSurcharge,
-        transactionEftposReceipts,
-        setTransactionEftposReceipts,
         paymentAmounts,
         setPaymentAmounts,
         payments,
@@ -126,19 +139,25 @@ export const Checkout = () => {
         setIsShownOrderThresholdMessageModal,
         orderScheduledAt,
         updateOrderScheduledAt,
-        orderDetail,
         updateOrderDetail,
+        customerLoyaltyPoints,
+        userAppliedLoyaltyId,
+        cartProductQuantitiesById,
     } = useCart();
+
     const { restaurant, restaurantBase64Logo } = useRestaurant();
     const { register, isPOS } = useRegister();
-    const { printReceipt, printLabel } = useReceiptPrinter();
+    const { printReceipt, printEftposReceipt, printLabel } = useReceiptPrinter();
     const { user } = useUser();
     const { logError } = useErrorLogging();
+
+    const transactionEftposReceipts = useRef<string>("");
 
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
     const { createTransaction: verifoneCreateTransaction } = useVerifone();
     const { createTransaction: windcaveCreateTransaction } = useWindcave();
-    const { createTransaction: tyroCreateTransaction } = useTyro();
+    const { createTransaction: tyroCreateTransaction, cancelTransaction: tyroCancelTransaction } = useTyro();
+    const { createTransaction: mx51CreateTransaction, cancelTransaction: mx51CancelTransaction } = useMX51();
     const [isScrollable, setIsScrollable] = useState(false);
     const [createOrderMutation] = useMutation(CREATE_ORDER, {
         update: (proxy, mutationResult) => {
@@ -169,6 +188,8 @@ export const Checkout = () => {
     const [paymentModalState, setPaymentModalState] = useState<EPaymentModalState>(EPaymentModalState.None);
 
     const [eftposTransactionProcessMessage, setEftposTransactionProcessMessage] = useState<string | null>(null);
+    const [eftposTransactionProcessQuestion, setEftposTransactionProcessQuestion] = useState<ITyroEftposQuestion | null>(null);
+    const [eftposSignatureRequiredQuestion, setEftposSignatureRequiredQuestion] = useState<IMX51EftposQuestion | null>(null);
     const [eftposTransactionOutcome, setEftposTransactionOutcome] = useState<IEftposTransactionOutcome | null>(null);
     const [cashTransactionChangeAmount, setCashTransactionChangeAmount] = useState<number | null>(null);
 
@@ -225,6 +246,7 @@ export const Checkout = () => {
 
             if (scrollableDiv) {
                 const isAtBottom = scrollableDiv.scrollTop + scrollableDiv.clientHeight === scrollableDiv.scrollHeight;
+
                 if (!isAtBottom) {
                     arrowContainer?.classList.remove("fade-out");
                     arrowContainer?.classList.add("fade-in");
@@ -246,7 +268,9 @@ export const Checkout = () => {
 
     useEffect(() => {
         if (autoClickCompleteOrderOnLoad) onClickOrderButton();
+
         const ageRestrictedProducts = products && products.filter((product) => product.isAgeRescricted).map((product) => product.name);
+
         if (ageRestrictedProducts && ageRestrictedProducts.length > 0) {
             setShowModal(ageRestrictedProducts.toString());
         } else {
@@ -266,6 +290,7 @@ export const Checkout = () => {
     if (!register) throw "Register is not valid";
     if (!restaurant) navigate(beginOrderPath);
     if (!restaurant) throw "Restaurant is invalid";
+
     const incrementRedirectTimer = (time: number) => {
         setPaymentOutcomeApprovedRedirectTimeLeft(time);
         transactionCompleteRedirectTime = time;
@@ -328,6 +353,10 @@ export const Checkout = () => {
 
     // Callbacks
     const onUpdateTableNumber = () => {
+        navigate(tableNumberPath);
+    };
+
+    const onUpdateCovers = () => {
         navigate(tableNumberPath);
     };
 
@@ -440,6 +469,8 @@ export const Checkout = () => {
             if (register.requestCustomerInformation.email && (!customerInformation || !customerInformation.email)) invalid = true;
             if (register.requestCustomerInformation.phoneNumber && (!customerInformation || !customerInformation.phoneNumber)) invalid = true;
             if (register.requestCustomerInformation.signature && (!customerInformation || !customerInformation.signatureBase64)) invalid = true;
+            if (register.requestCustomerInformation.customFields?.length && (!customerInformation || !customerInformation.customFields.length))
+                invalid = true;
             //    if(register.) orderScheduledAt
 
             if (invalid) {
@@ -469,7 +500,11 @@ export const Checkout = () => {
     };
 
     const onClosePaymentModal = () => {
+        // if (isPOS) {
+        //     navigate(`${restaurantPath}/${restaurant.id}`);
+        // } else {
         setShowPaymentModal(false);
+        // }
     };
 
     const onCancelPayment = () => {
@@ -535,6 +570,7 @@ export const Checkout = () => {
             //Not checking if its printerType receipt
             await printReceipt({
                 orderId: order.id,
+                country: order.country,
                 status: order.status,
                 printerType: printer.type,
                 printerAddress: printer.address,
@@ -545,6 +581,7 @@ export const Checkout = () => {
                 kitchenPrinterLarge: printer.kitchenPrinterLarge,
                 hidePreparationTime: printer.hidePreparationTime,
                 hideModifierGroupName: printer.hideModifierGroupName,
+                skipReceiptCutCommand: printer.skipReceiptCutCommand,
                 printReceiptForEachProduct: printer.printReceiptForEachProduct,
                 hideOrderType: register.availableOrderTypes.length === 1, //Don't show order type if only 1 is available
                 hideModifierGroupsForCustomer: false,
@@ -560,6 +597,11 @@ export const Checkout = () => {
                           email: customerInformation.email,
                           phoneNumber: customerInformation.phoneNumber,
                           signatureBase64: customerInformation.signatureBase64,
+                          customFields: customerInformation.customFields.map((field) => ({
+                              label: field.label,
+                              value: field.value,
+                              type: field.type,
+                          })),
                       }
                     : null,
                 notes: order.notes,
@@ -572,6 +614,7 @@ export const Checkout = () => {
                 eftposSurcharge: order.eftposSurcharge,
                 eftposTip: order.eftposTip,
                 discount: order.promotionId && order.discount ? order.discount : null,
+                tax: order.tax,
                 subTotal: order.subTotal,
                 paid: order.paid,
                 //display payment required message if kiosk and paid cash
@@ -584,6 +627,7 @@ export const Checkout = () => {
                 placedAt: order.placedAt,
                 orderScheduledAt: order.orderScheduledAt,
                 preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
+                enableLoyalty: restaurant.enableLoyalty,
             });
         }
     };
@@ -594,6 +638,15 @@ export const Checkout = () => {
                 if (printer.customerPrinter === true && register.askToPrintCustomerReceipt === true) return;
 
                 sendReceiptPrint(order, printer);
+            });
+    };
+
+    const printEftposReceipts = (eftposReceipt: string) => {
+        register.printers &&
+            register.printers.items.forEach((printer) => {
+                if (printer.customerPrinter !== true) return;
+
+                printEftposReceipt({ eftposReceipt: eftposReceipt, printer: { printerType: printer.type, printerAddress: printer.address } });
             });
     };
 
@@ -618,7 +671,7 @@ export const Checkout = () => {
         parkOrder: boolean,
         newPaymentAmounts: ICartPaymentAmounts,
         newPayments: ICartPayment[],
-        eftposCardType?: IEftposTransactionOutcomeCardType,
+        eftposCardType?: EEftposTransactionOutcomeCardType,
         eftposSurcharge?: number,
         eftposTip?: number
     ) => {
@@ -735,7 +788,7 @@ export const Checkout = () => {
         newPaymentAmounts: ICartPaymentAmounts,
         newPayments: ICartPayment[],
         signatureS3Object: IS3Object | null,
-        eftposCardType?: IEftposTransactionOutcomeCardType,
+        eftposCardType?: EEftposTransactionOutcomeCardType,
         eftposSurcharge?: number,
         eftposTip?: number
     ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
@@ -764,10 +817,12 @@ export const Checkout = () => {
 
         try {
             variables = {
+                country: restaurant.country,
                 status: "NEW",
                 paid: paid,
                 type: orderType ? orderType : register.availableOrderTypes[0],
                 number: orderNumber,
+                covers: orderType === EOrderType.DINEIN ? covers : undefined,
                 table: tableNumber,
                 buzzer: buzzerNumber,
                 orderScheduledAt: orderScheduledAt,
@@ -777,10 +832,15 @@ export const Checkout = () => {
                           email: customerInformation.email,
                           phoneNumber: customerInformation.phoneNumber,
                           signature: signatureS3Object,
+                          customFields: customerInformation.customFields.map((field) => ({
+                              label: field.label,
+                              value: field.value,
+                              type: field.type,
+                          })),
                       }
                     : null,
                 notes: notes,
-                eftposReceipt: transactionEftposReceipts,
+                eftposReceipt: transactionEftposReceipts.current,
                 paymentAmounts: newPaymentAmounts,
                 payments: newPayments,
                 total: total,
@@ -792,6 +852,8 @@ export const Checkout = () => {
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
                 promotionType: promotion ? promotion.promotion.type : undefined,
+                loyaltyId: userAppliedLoyaltyId || undefined,
+                tax: Math.round(calculateTaxAmount(restaurant.country, subTotal + (eftposSurcharge || 0) + (eftposTip || 0))),
                 subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0),
                 preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                 registerId: register.id,
@@ -819,10 +881,12 @@ export const Checkout = () => {
             await logError(
                 "Error in createOrderMutation input",
                 JSON.stringify({
+                    country: restaurant.country,
                     status: "NEW",
                     paid: paid,
                     type: orderType ? orderType : register.availableOrderTypes[0],
                     number: orderNumber,
+                    covers: orderType === EOrderType.DINEIN ? covers : undefined,
                     table: tableNumber,
                     buzzer: buzzerNumber,
                     orderScheduledAt: orderScheduledAt,
@@ -832,10 +896,15 @@ export const Checkout = () => {
                               email: customerInformation.email,
                               phoneNumber: customerInformation.phoneNumber,
                               signature: signatureS3Object,
+                              customFields: customerInformation.customFields.map((field) => ({
+                                  label: field.label,
+                                  value: field.value,
+                                  type: field.type,
+                              })),
                           }
                         : null,
                     notes: notes,
-                    eftposReceipt: transactionEftposReceipts,
+                    eftposReceipt: transactionEftposReceipts.current,
                     paymentAmounts: newPaymentAmounts,
                     payments: newPayments,
                     total: total,
@@ -847,6 +916,8 @@ export const Checkout = () => {
                     discount: promotion ? promotion.discountedAmount : undefined,
                     promotionId: promotion ? promotion.promotion.id : undefined,
                     promotionType: promotion ? promotion.promotion.type : undefined,
+                    loyaltyId: userAppliedLoyaltyId || undefined,
+                    tax: Math.round(calculateTaxAmount(restaurant.country, subTotal + (eftposSurcharge || 0) + (eftposTip || 0))),
                     subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0),
                     preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                     registerId: register.id,
@@ -963,7 +1034,7 @@ export const Checkout = () => {
             if (register.eftposProvider == EEftposProvider.SMARTPAY) {
                 let delayedShown = false;
 
-                const delayed = (outcome: IEftposTransactionOutcome) => {
+                const delayed = () => {
                     if (!delayedShown) {
                         delayedShown = true;
                         setEftposTransactionProcessMessage("This transaction is delayed. Please wait...");
@@ -992,8 +1063,26 @@ export const Checkout = () => {
                 );
             } else if (register.eftposProvider == EEftposProvider.TYRO) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
+                const setEftposQuestion = (question: ITyroEftposQuestion) => setEftposTransactionProcessQuestion(question);
 
-                outcome = await tyroCreateTransaction(amount.toString(), register.tyroIntegrationKey, setEftposMessage);
+                outcome = await tyroCreateTransaction(
+                    amount.toString(),
+                    register.tyroMerchantId,
+                    register.tyroTerminalId,
+                    setEftposMessage,
+                    setEftposQuestion
+                );
+            } else if (register.eftposProvider == EEftposProvider.MX51) {
+                const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
+                const setCustomerSignature = (question: IMX51EftposQuestion | null) => {
+                    if (isPOS) {
+                        setEftposSignatureRequiredQuestion(question);
+                    } else {
+                        question?.answerCallback(false);
+                    }
+                };
+
+                outcome = await mx51CreateTransaction(amount, 0, 0, setEftposMessage, setCustomerSignature);
             }
 
             if (!outcome) throw "Invalid Eftpos Transaction outcome.";
@@ -1005,7 +1094,7 @@ export const Checkout = () => {
                 transactionOutcome: EEftposTransactionOutcome.Fail,
                 message: errorMessage,
                 eftposReceipt: null,
-                eftposCardType: IEftposTransactionOutcomeCardType.EFTPOS,
+                eftposCardType: EEftposTransactionOutcomeCardType.EFTPOS,
                 eftposSurcharge: 0,
                 eftposTip: 0,
             };
@@ -1024,6 +1113,20 @@ export const Checkout = () => {
         setShowPromotionCodeModal(true);
     };
 
+    const onCancelEftposTransaction = () => {
+        if (register.eftposProvider == EEftposProvider.SMARTPAY) {
+            //Not implemented
+        } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
+            //Not implemented
+        } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
+            //Not implemented
+        } else if (register.eftposProvider == EEftposProvider.TYRO) {
+            tyroCancelTransaction();
+        } else if (register.eftposProvider == EEftposProvider.MX51) {
+            mx51CancelTransaction();
+        }
+    };
+
     const onConfirmTotalOrRetryEftposTransaction = async (amount: number) => {
         setPaymentModalState(EPaymentModalState.AwaitingCard);
 
@@ -1036,7 +1139,7 @@ export const Checkout = () => {
                 transactionOutcome: EEftposTransactionOutcome.Success,
                 message: "Transaction Approved!",
                 eftposReceipt: null,
-                eftposCardType: IEftposTransactionOutcomeCardType.EFTPOS,
+                eftposCardType: EEftposTransactionOutcomeCardType.EFTPOS,
                 eftposSurcharge: 0,
                 eftposTip: 0,
             };
@@ -1046,9 +1149,7 @@ export const Checkout = () => {
 
         setEftposTransactionOutcome(outcome);
 
-        if (outcome.eftposReceipt) {
-            setTransactionEftposReceipts(`${transactionEftposReceipts}\n${outcome.eftposReceipt}`);
-        }
+        if (outcome.eftposReceipt) transactionEftposReceipts.current = outcome.eftposReceipt;
 
         //If paid for everything
         if (outcome.transactionOutcome === EEftposTransactionOutcome.Success) {
@@ -1085,11 +1186,10 @@ export const Checkout = () => {
             } catch (e) {
                 setCreateOrderError(e);
             }
-        } else if (
-            outcome.transactionOutcome === EEftposTransactionOutcome.Fail ||
-            outcome.transactionOutcome === EEftposTransactionOutcome.ProcessMessage
-        ) {
+        } else if (outcome.transactionOutcome === EEftposTransactionOutcome.Fail) {
             setPaymentModalState(EPaymentModalState.EftposResult);
+
+            // if (outcome.eftposReceipt) printEftposReceipts(outcome.eftposReceipt);
         }
     };
 
@@ -1185,6 +1285,60 @@ export const Checkout = () => {
         }
     };
 
+    const onConfirmDoordashTransaction = async (amount: number) => {
+        try {
+            const nonDoordashPayments = paidSoFar - paymentAmounts.doordash;
+            const newDoordashPaymentAmounts = paymentAmounts.doordash + amount;
+            const newTotalPaymentAmounts = nonDoordashPayments + newDoordashPaymentAmounts;
+
+            const newPaymentAmounts: ICartPaymentAmounts = {
+                ...paymentAmounts,
+                doordash: newTotalPaymentAmounts >= subTotal ? subTotal - nonDoordashPayments : newDoordashPaymentAmounts, //Cannot pay more than subTotal amount
+            };
+            const newPayments: ICartPayment[] = [...payments, { type: "DOORDASH", amount: amount }];
+
+            setPaymentAmounts(newPaymentAmounts);
+            setPayments(newPayments);
+
+            //If paid for everything
+            if (newTotalPaymentAmounts >= subTotal) {
+                //Passing paymentAmounts, payments via params so we send the most updated values
+                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.DoordashResult);
+            }
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
+    const onConfirmDelivereasyTransaction = async (amount: number) => {
+        try {
+            const nonDelivereasyPayments = paidSoFar - paymentAmounts.delivereasy;
+            const newDelivereasyPaymentAmounts = paymentAmounts.delivereasy + amount;
+            const newTotalPaymentAmounts = nonDelivereasyPayments + newDelivereasyPaymentAmounts;
+
+            const newPaymentAmounts: ICartPaymentAmounts = {
+                ...paymentAmounts,
+                delivereasy: newTotalPaymentAmounts >= subTotal ? subTotal - nonDelivereasyPayments : newDelivereasyPaymentAmounts, //Cannot pay more than subTotal amount
+            };
+            const newPayments: ICartPayment[] = [...payments, { type: "DELIVEREASY", amount: amount }];
+
+            setPaymentAmounts(newPaymentAmounts);
+            setPayments(newPayments);
+
+            //If paid for everything
+            if (newTotalPaymentAmounts >= subTotal) {
+                //Passing paymentAmounts, payments via params so we send the most updated values
+                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.DelivereasyResult);
+            }
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
     const onContinueToNextOrder = () => {
         clearTransactionCompleteTimeout();
     };
@@ -1202,6 +1356,8 @@ export const Checkout = () => {
             online: 0,
             uberEats: 0,
             menulog: 0,
+            doordash: 0,
+            delivereasy: 0,
         };
         const newPayments: ICartPayment[] = [];
 
@@ -1223,6 +1379,8 @@ export const Checkout = () => {
             online: 0,
             uberEats: 0,
             menulog: 0,
+            doordash: 0,
+            delivereasy: 0,
         };
         const newPayments: ICartPayment[] = [];
 
@@ -1282,26 +1440,39 @@ export const Checkout = () => {
             const upSellCrossSellProducts = restaurant.upSellCrossSell.customProducts.items;
 
             menuCategories.forEach((category) => {
-                if (!category.availablePlatforms.includes(register.type)) return;
+                if (category.availablePlatforms && !category.availablePlatforms.includes(register.type)) return;
+                const isCategoryAvailable = isItemAvailable(category.availability);
+                const isCategorySoldOut = isItemSoldOut(category.soldOut, category.soldOutDate);
 
-                category.products &&
-                    category.products.items.forEach((p) => {
-                        if (!p.product.availablePlatforms.includes(register.type)) return;
+                const isCateogryValid = !isCategorySoldOut && isCategoryAvailable;
 
-                        upSellCrossSellProducts.forEach((upSellProduct) => {
-                            if (p.product.id === upSellProduct.id) {
-                                const isAlreadyAdded = upSellCrossSaleProductItems.some((item) => item.product.id === upSellProduct.id);
+                isCateogryValid &&
+                    category.products?.items.forEach((p) => {
+                        const isProductSoldOut = isItemSoldOut(p.product.soldOut, p.product.soldOutDate);
+                        const isProductAvailable = isItemAvailable(p.product.availability);
+                        const isQuantityAvailable = isProductQuantityAvailable(p.product, cartProductQuantitiesById, p.product.maxQuantityPerOrder);
 
-                                if (!isAlreadyAdded) {
-                                    upSellCrossSaleProductItems.push({
-                                        category: category,
-                                        product: p.product,
-                                    });
-                                }
+                        const isProductValid = !isProductSoldOut && isProductAvailable && isCategoryAvailable && isQuantityAvailable;
+
+                        if (!isProductValid) return;
+                        if (p.product.availablePlatforms && !p.product.availablePlatforms.includes(register.type)) return;
+
+                        const matchingProduct = upSellCrossSellProducts.find((upSellProduct) => p.product.id === upSellProduct.id);
+
+                        if (matchingProduct) {
+                            const isAlreadyAdded = upSellCrossSaleProductItems.some((item) => item.product.id === matchingProduct.id);
+
+                            if (!isAlreadyAdded) {
+                                upSellCrossSaleProductItems.push({
+                                    category: category,
+                                    product: p.product,
+                                });
                             }
-                        });
+                        }
                     });
             });
+
+            if (upSellCrossSaleProductItems.length === 0) return <></>;
 
             return (
                 <UpSellProductModal
@@ -1432,6 +1603,8 @@ export const Checkout = () => {
                         onClose={onClosePaymentModal}
                         paymentModalState={paymentModalState}
                         eftposTransactionProcessMessage={eftposTransactionProcessMessage}
+                        eftposTransactionProcessQuestion={eftposTransactionProcessQuestion}
+                        eftposSignatureRequiredQuestion={eftposSignatureRequiredQuestion}
                         eftposTransactionOutcome={eftposTransactionOutcome}
                         cashTransactionChangeAmount={cashTransactionChangeAmount}
                         onPrintCustomerReceipt={() => createdOrder.current && onPrintCustomerReceipt(createdOrder.current)}
@@ -1442,9 +1615,12 @@ export const Checkout = () => {
                         onContinueToNextOrder={onContinueToNextOrder}
                         createOrderError={createOrderError}
                         onConfirmTotalOrRetryEftposTransaction={onConfirmTotalOrRetryEftposTransaction}
+                        onCancelEftposTransaction={onCancelEftposTransaction}
                         onConfirmCashTransaction={onConfirmCashTransaction}
                         onConfirmUberEatsTransaction={onConfirmUberEatsTransaction}
                         onConfirmMenulogTransaction={onConfirmMenulogTransaction}
+                        onConfirmDoordashTransaction={onConfirmDoordashTransaction}
+                        onConfirmDelivereasyTransaction={onConfirmDelivereasyTransaction}
                         onContinueToNextPayment={onContinueToNextPayment}
                         onCancelPayment={onCancelPayment}
                         onCancelOrder={onCancelOrder}
@@ -1548,10 +1724,22 @@ export const Checkout = () => {
         </div>
     );
 
+    const restaurantCovers = (
+        <div className="checkout-covers">
+            <div className="h3">Number Of Diners: {covers}</div>
+            <Link onClick={onUpdateCovers}>Change</Link>
+        </div>
+    );
+
     const restaurantCustomerInformation = (
         <div className="checkout-customer-details">
             <div className="h3">
                 Customer Details: {`${customerInformation?.firstName} ${customerInformation?.email} ${customerInformation?.phoneNumber}`}
+                {customerInformation?.customFields.map((customField) => (
+                    <div>
+                        {customField.label}: {customField.value}
+                    </div>
+                ))}
             </div>
             <Link onClick={onUpdateCustomerInformation}>Change</Link>
         </div>
@@ -1596,10 +1784,11 @@ export const Checkout = () => {
             <div className={isPOS ? "mt-4" : "mt-10"}></div>
             {title}
             {register && register.availableOrderTypes.length > 1 && restaurantOrderType}
+            {buzzerNumber && <div className="mb-2">{restaurantBuzzerNumber}</div>}
+            {tableNumber && <div className="mb-2">{restaurantTableNumber}</div>}
+            {covers && <div className="mb-2">{restaurantCovers}</div>}
+            {customerInformation && <div className="mb-2">{restaurantCustomerInformation}</div>}
             {promotionInformation}
-            {tableNumber && <div className="mb-4">{restaurantTableNumber}</div>}
-            {buzzerNumber && <div className="mb-4">{restaurantBuzzerNumber}</div>}
-            {customerInformation && <div className="mb-4">{restaurantCustomerInformation}</div>}
             <div className="separator-6"></div>
             {orderSummary}
             <div className="restaurant-notes-wrapper">{restaurantNotes}</div>
@@ -1626,7 +1815,12 @@ export const Checkout = () => {
                 />
             </div>
             <div className="mb-2"></div> */}
-            {promotion ? (
+            {customerLoyaltyPoints !== null && promotion ? (
+                <div className="h3 text-center mb-2">
+                    {`Loyalty Discount: -$${convertCentsToDollars(promotion.discountedAmount)}`}{" "}
+                    {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
+                </div>
+            ) : promotion ? (
                 <div className="h3 text-center mb-2">
                     {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
                         promotion.discountedAmount
@@ -1643,7 +1837,7 @@ export const Checkout = () => {
             ) : (
                 <></>
             )}
-            <div className={`h1 text-center ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
+            <div className={`h1 text-center checkout-total-price ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
             <div className={`${isPOS ? "mb-0" : "mb-4"}`}>
                 <div className="checkout-buttons-container">
                     {!isPOS && (
@@ -1676,6 +1870,7 @@ export const Checkout = () => {
         <>
             <PageWrapper>
                 <div className="checkout">
+                    {customerLoyaltyPoints !== null ? <LoyaltyHeader showRedeemButton={true} /> : <></>}
                     <div className="order-wrapper">
                         <div
                             ref={(ref) => setProductsWrapperElement(ref)}

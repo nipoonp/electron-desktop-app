@@ -1,3 +1,8 @@
+export enum ECountry {
+    nz = "nz",
+    au = "au",
+}
+
 export enum EOrderStatus {
     NEW = "NEW",
     COMPLETED = "COMPLETED",
@@ -17,6 +22,12 @@ export enum ERegisterPrinterType {
     USB = "USB",
 }
 
+export enum ECustomCustomerFieldType {
+    STRING = "STRING",
+    NUMBER = "NUMBER",
+    DROPDOWN = "DROPDOWN",
+}
+
 export interface IS3Object {
     key: string;
     bucket: string;
@@ -26,6 +37,7 @@ export interface IS3Object {
 
 export interface ICartProduct {
     index?: number; //index is for promos
+    isPreSelectedProduct?: boolean; //this is so that we cannot remove this product if preSelected
     id: string;
     name: string;
     kitchenName: string | null;
@@ -34,6 +46,8 @@ export interface ICartProduct {
     discount: number;
     image: IS3Object | null;
     quantity: number;
+    incrementAmount: number;
+    maxQuantityPerOrder: number;
     notes: string | null;
     category: ICartCategory | null; //Product modifier do not have category
     modifierGroups: ICartModifierGroup[];
@@ -74,6 +88,7 @@ export interface IPreSelectedModifiers {
 
 export interface IOrderReceipt {
     orderId: string;
+    country: string;
     status: EOrderStatus;
     printerType: ERegisterPrinterType;
     printerAddress: string;
@@ -84,6 +99,7 @@ export interface IOrderReceipt {
     kitchenPrinterLarge: boolean | null;
     hidePreparationTime: boolean | null;
     hideModifierGroupName: boolean | null;
+    skipReceiptCutCommand: boolean | null;
     printReceiptForEachProduct: boolean | null;
     hideOrderType: boolean;
     hideModifierGroupsForCustomer: boolean | null;
@@ -98,6 +114,13 @@ export interface IOrderReceipt {
         email: string | null;
         phoneNumber: string | null;
         signatureBase64: string | null;
+        customFields:
+            | {
+                  label: string | null;
+                  value: string | null;
+                  type: ECustomCustomerFieldType | null;
+              }[]
+            | null;
     } | null;
     notes: string | null;
     products: ICartProduct[];
@@ -105,6 +128,7 @@ export interface IOrderReceipt {
     paymentAmounts: IOrderPaymentAmounts | null;
     total: number;
     discount: number | null;
+    tax: number;
     subTotal: number;
     paid: boolean;
     surcharge: number | null;
@@ -119,6 +143,15 @@ export interface IOrderReceipt {
     placedAt: string;
     orderScheduledAt: string | null;
     preparationTimeInMinutes: number | null;
+    enableLoyalty: boolean | null;
+}
+
+export interface IEftposReceipt {
+    printer: {
+        printerType: ERegisterPrinterType;
+        printerAddress: string;
+    };
+    eftposReceipt: string;
 }
 
 export interface IPrintSalesDataInputDailySales {
@@ -173,6 +206,8 @@ export interface IOrderPaymentAmounts {
     online: number;
     uberEats: number;
     menulog: number;
+    doordash: number;
+    delivereasy: number;
 }
 
 export interface IPrintReceiptDataOutput {
@@ -182,4 +217,17 @@ export interface IPrintReceiptDataOutput {
 
 export interface IPrintReceiptOutput {
     error: any;
+}
+
+export interface IPrintReceiptDataInput {
+    printer: {
+        printerType: ERegisterPrinterType;
+        printerAddress: string;
+    };
+    receipt: string;
+}
+
+export interface IEftposReceiptOutput {
+    error: any;
+    receipt: IEftposReceipt;
 }

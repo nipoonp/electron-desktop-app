@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { restaurantPath } from "../main";
+import { loyaltyPath, restaurantPath } from "../main";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { IGET_RESTAURANT_ADVERTISEMENT, IGET_RESTAURANT_PING_DATA } from "../../graphql/customQueries";
@@ -57,7 +57,7 @@ const PreparationTime = () => {
     return (
         <>
             {!isPOS && preparationTimeInMinutes ? (
-                <div className="preparation-time h2">
+                <div className="wait-time h2">
                     Current wait time is {preparationTimeInMinutes} {preparationTimeInMinutes > 1 ? "minutes" : "minute"}
                 </div>
             ) : (
@@ -73,6 +73,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
     const [availableAds, setAvailableAds] = useState<IGET_RESTAURANT_ADVERTISEMENT[]>([]);
     const [currentAdIndex, setCurrentAdIndex] = useState(0);
     const { restaurant } = useRestaurant();
+    const { register } = useRegister();
 
     useEffect(() => {
         setCurrentAdIndex((oldAdIndex) => processAds(oldAdIndex));
@@ -113,6 +114,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
     }, [availableAds]);
 
     if (!restaurant) return <div>This user has not selected any restaurant</div>;
+    if (!register) return <div>This user has not selected any register</div>;
 
     return (
         <PageWrapper>
@@ -120,7 +122,11 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
                 <div
                     className="wrapper"
                     onClick={() => {
-                        navigate(restaurantPath + "/" + restaurant.id);
+                        if (restaurant.enableLoyalty && !register.disableKioskLoyaltyScreen) {
+                            navigate(loyaltyPath);
+                        } else {
+                            navigate(restaurantPath + "/" + restaurant.id);
+                        }
                     }}
                 >
                     {/* <div className="touch-to-begin-wrapper">
@@ -164,8 +170,10 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
 const BeginOrderDefault = () => {
     const navigate = useNavigate();
     const { restaurant } = useRestaurant();
+    const { register } = useRegister();
 
     if (!restaurant) return <div>This user has not selected any restaurant</div>;
+    if (!register) return <div>This user has not selected any register</div>;
 
     return (
         <>
@@ -175,7 +183,11 @@ const BeginOrderDefault = () => {
                         <div
                             className="wrapper"
                             onClick={() => {
-                                navigate(restaurantPath + "/" + restaurant.id);
+                                if (restaurant.enableLoyalty && !register.disableKioskLoyaltyScreen) {
+                                    navigate(loyaltyPath);
+                                } else {
+                                    navigate(restaurantPath + "/" + restaurant.id);
+                                }
                             }}
                         >
                             <div className="order-text">ORDER</div>

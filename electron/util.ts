@@ -8,16 +8,11 @@ import {
     IPrintReceiptOutput,
     IPrintSalesDataInput,
     EOrderStatus,
+    IEftposReceipt,
+    ECountry,
 } from "./model";
 import usbPrinter from "@thiagoelg/node-printer";
 import { format } from "date-fns";
-
-export const taxRate = 0.15;
-
-export const calculateTaxAmount = (total: number) => {
-    const diff = total / (1 + taxRate);
-    return total - diff;
-};
 
 export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
@@ -156,7 +151,13 @@ export const printCustomerReceipt = async (
 
     printer.newLine();
 
-    if (order.restaurant.gstNumber) printer.println(`GST: ${order.restaurant.gstNumber}`);
+    if (order.restaurant.gstNumber) {
+        if (order.country === ECountry.au) {
+            printer.println(`ABN: ${order.restaurant.gstNumber}`);
+        } else {
+            printer.println(`GST: ${order.restaurant.gstNumber}`);
+        }
+    }
 
     printer.println(order.restaurant.address);
     printer.newLine();
@@ -347,8 +348,8 @@ export const printCustomerReceipt = async (
     }
 
     printer.tableCustom([
-        { text: "GST (15.00%)", align: "LEFT", width: 0.75 },
-        { text: `\$${convertCentsToDollars(calculateTaxAmount(order.total))}`, align: "RIGHT", width: 0.25 },
+        { text: "GST", align: "LEFT", width: 0.75 },
+        { text: `\$${convertCentsToDollars(order.tax)}`, align: "RIGHT", width: 0.25 },
     ]);
     order.discount &&
         printer.tableCustom([
@@ -382,7 +383,7 @@ export const printCustomerReceipt = async (
         ]);
     order.eftposSurcharge &&
         printer.tableCustom([
-            { text: "Eftpos Surcharge", align: "LEFT", width: 0.75, bold: true },
+            { text: "Card Surcharge", align: "LEFT", width: 0.75, bold: true },
             {
                 text: `\$${convertCentsToDollars(order.eftposSurcharge)}`,
                 align: "RIGHT",
@@ -455,6 +456,28 @@ export const printCustomerReceipt = async (
                 bold: true,
             },
         ]);
+    order.paymentAmounts &&
+        order.paymentAmounts.doordash &&
+        printer.tableCustom([
+            { text: "Doordash", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.paymentAmounts.doordash)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.paymentAmounts &&
+        order.paymentAmounts.delivereasy &&
+        printer.tableCustom([
+            { text: "Delivereasy", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.paymentAmounts.delivereasy)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
     printer.tableCustom([
         { text: "Total", align: "LEFT", width: 0.75, bold: true },
         {
@@ -465,13 +488,24 @@ export const printCustomerReceipt = async (
         },
     ]);
 
-    printer.newLine();
-    printer.alignCenter();
+    // printer.newLine();
+    // printer.alignCenter();
 
-    // if (order.eftposReceipt) printer.println(order.eftposReceipt);
+    // if (order.eftposReceipt) {
+    //     const eftposReceiptArray = order.eftposReceipt.split("\n");
 
-    printer.newLine();
-    printer.alignCenter();
+    //     eftposReceiptArray.forEach((line) => {
+    //         printer.println(line);
+    //     });
+    // }
+
+    if (order.enableLoyalty) {
+        printer.newLine();
+        printer.alignCenter();
+
+        printer.println("Don't miss out on your reward points!");
+        printer.printQR(`http://rewards.tabin.co.nz/${order.orderId}`);
+    }
 
     if (order.receiptFooterText) {
         printer.bold(true);
@@ -484,7 +518,10 @@ export const printCustomerReceipt = async (
         printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
     }
 
-    printer.partialCut();
+    if (order.skipReceiptCutCommand) {
+    } else {
+        printer.partialCut();
+    }
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -777,7 +814,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
         ]);
     order.eftposSurcharge &&
         printer.tableCustom([
-            { text: "Eftpos Surcharge", align: "LEFT", width: 0.75, bold: true },
+            { text: "Card Surcharge", align: "LEFT", width: 0.75, bold: true },
             {
                 text: `\$${convertCentsToDollars(order.eftposSurcharge)}`,
                 align: "RIGHT",
@@ -812,7 +849,10 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
-    printer.partialCut();
+    if (order.skipReceiptCutCommand) {
+    } else {
+        printer.partialCut();
+    }
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -1120,7 +1160,7 @@ export const printKitchenReceiptSmall = async (
         ]);
     order.eftposSurcharge &&
         printer.tableCustom([
-            { text: "Eftpos Surcharge", align: "LEFT", width: 0.75, bold: true },
+            { text: "Card Surcharge", align: "LEFT", width: 0.75, bold: true },
             {
                 text: `\$${convertCentsToDollars(order.eftposSurcharge)}`,
                 align: "RIGHT",
@@ -1166,7 +1206,10 @@ export const printKitchenReceiptSmall = async (
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
-    printer.partialCut();
+    if (order.skipReceiptCutCommand) {
+    } else {
+        printer.partialCut();
+    }
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -1495,7 +1538,7 @@ export const printKitchenReceiptLarge = async (
         ]);
     order.eftposSurcharge &&
         printer.tableCustom([
-            { text: "Eftpos Surcharge", align: "LEFT", width: 0.75, bold: true },
+            { text: "Card Surcharge", align: "LEFT", width: 0.75, bold: true },
             {
                 text: `\$${convertCentsToDollars(order.eftposSurcharge)}`,
                 align: "RIGHT",
@@ -1530,13 +1573,63 @@ export const printKitchenReceiptLarge = async (
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
-    printer.partialCut();
+    if (order.skipReceiptCutCommand) {
+    } else {
+        printer.partialCut();
+    }
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
             await printer.execute();
         } else if (order.printerType == ERegisterPrinterType.USB) {
             await usbPrinterExecute(order.printerAddress, printer.getBuffer());
+            printer.clear();
+        } else {
+            //Bluetooth
+        }
+
+        return { error: null };
+    } catch (e) {
+        return { error: e };
+    }
+};
+
+export const printEftposReceipt = async (receiptDataInput: IEftposReceipt) => {
+    let printer;
+
+    if (receiptDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            interface: `tcp://${receiptDataInput.printer.printerAddress}`,
+        });
+    } else if (receiptDataInput.printer.printerType == ERegisterPrinterType.USB) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+        });
+    } else {
+        //Bluetooth
+    }
+
+    printer.newLine();
+    printer.alignCenter();
+
+    if (receiptDataInput.eftposReceipt) {
+        const eftposReceiptArray = receiptDataInput.eftposReceipt.split("\n");
+
+        eftposReceiptArray.forEach((line) => {
+            printer.println(line);
+        });
+    }
+
+    printer.partialCut();
+
+    try {
+        if (receiptDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
+            await printer.execute();
+        } else if (receiptDataInput.printer.printerType == ERegisterPrinterType.USB) {
+            await usbPrinterExecute(receiptDataInput.printer.printerAddress, printer.getBuffer());
             printer.clear();
         } else {
             //Bluetooth
@@ -1576,6 +1669,8 @@ const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
         printer.println(`Online: $${convertCentsToDollars(data.totalPaymentAmounts.online)}`);
         printer.println(`Uber Eats: $${convertCentsToDollars(data.totalPaymentAmounts.uberEats)}`);
         printer.println(`Menu Log: $${convertCentsToDollars(data.totalPaymentAmounts.menulog)}`);
+        printer.println(`Doordash: $${convertCentsToDollars(data.totalPaymentAmounts.doordash)}`);
+        printer.println(`Delivereasy: $${convertCentsToDollars(data.totalPaymentAmounts.delivereasy)}`);
 
         printer.bold(true);
         printer.println(`Total: $${convertCentsToDollars(data.totalAmount)}`);

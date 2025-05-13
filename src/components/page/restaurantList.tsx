@@ -9,9 +9,11 @@ import { Button } from "../../tabin/components/button";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 
 import "./restaurantList.scss";
+import { useAuth } from "../../context/auth-context";
 
 export default () => {
     const navigate = useNavigate();
+    const { logout } = useAuth();
     const { restaurant, selectRestaurant, userRestaurants } = useRestaurant();
     const { register, disconnectRegister } = useRegister();
     const storedSelectedRestaurantId = localStorage.getItem("selectedRestaurantId");
@@ -52,36 +54,42 @@ export default () => {
                 <div className="restaurant-list">
                     <div className="h2 mb-6">Select a restaurant to access</div>
                     {userRestaurants &&
-                        userRestaurants.map((userRestaurant, index) => (
-                            <div key={userRestaurant.id}>
-                                {index != 0 && <div className="separator-4"></div>}
-                                <div className="restaurant-list-item">
-                                    <div>{userRestaurant.name}</div>
-                                    {storedSelectedRestaurantId == userRestaurant.id ? (
-                                        <>
-                                            <Button
-                                                onClick={() => {
-                                                    onDisconnect();
-                                                }}
-                                            >
-                                                Disconnect
-                                            </Button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Button
-                                                onClick={() => {
-                                                    onConnect(userRestaurant.id);
-                                                }}
-                                                disabled={restaurant ? true : false}
-                                            >
-                                                Use
-                                            </Button>
-                                        </>
-                                    )}
+                        userRestaurants
+                            .filter((r) => r.verified === true)
+                            .sort((a, b) => (a.name > b.name && 1) || -1)
+                            .map((userRestaurant, index) => (
+                                <div key={userRestaurant.id}>
+                                    {index != 0 && <div className="separator-4"></div>}
+                                    <div className="restaurant-list-item">
+                                        <div>{userRestaurant.name}</div>
+                                        {storedSelectedRestaurantId == userRestaurant.id ? (
+                                            <>
+                                                <Button
+                                                    onClick={() => {
+                                                        onDisconnect();
+                                                    }}
+                                                >
+                                                    Disconnect
+                                                </Button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Button
+                                                    onClick={() => {
+                                                        onConnect(userRestaurant.id);
+                                                    }}
+                                                    disabled={restaurant ? true : false}
+                                                >
+                                                    Use
+                                                </Button>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                    <div className="mt-2">
+                        <Button onClick={logout}>Log Out</Button>
+                    </div>
                 </div>
             </PageWrapper>
         </>
