@@ -648,6 +648,11 @@ export const Checkout = () => {
                 orderScheduledAt: order.orderScheduledAt,
                 preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
             });
+
+            //Open cash drawer if paid by cash
+            if (paymentAmounts.cash > 0) {
+                await printNoSaleReceipt({ printer: { printerType: printer.type, printerAddress: printer.address } });
+            }
         }
     };
 

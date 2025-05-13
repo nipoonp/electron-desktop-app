@@ -117,7 +117,7 @@ export const printCustomerReceipt = async (
 
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
-    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
+    // if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
     if (order.displayPaymentRequiredMessage) {
         printer.alignCenter();
@@ -560,7 +560,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
 
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
-    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
+    // if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
     if (order.displayPaymentRequiredMessage) {
         printer.alignCenter();
@@ -895,7 +895,7 @@ export const printKitchenReceiptSmall = async (
 
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
-    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
+    // if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
     if (order.displayPaymentRequiredMessage) {
         printer.alignCenter();
@@ -1253,7 +1253,7 @@ export const printKitchenReceiptLarge = async (
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
 
-    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
+    // if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
     if (order.displayPaymentRequiredMessage) {
         printer.alignCenter();
