@@ -1298,15 +1298,15 @@ const AskToPrintCustomerReceipt = (props: { onPrintCustomerReceipt: () => void }
     return (
         <>
             <div className="ask-to-print-customer-receipt">
-                <div className="h1 mb-6 text-center would-you-like-a-customer-receipt">Would you like a customer receipt?</div>
-                <div className="mb-6 receipt-image-container">
+                <div className="h3 mb-6 text-center would-you-like-a-customer-receipt">Would you like a customer receipt?</div>
+                {/* <div className="mb-6 receipt-image-container">
                     <img
                         alt="Receipt Image"
                         className="receipt-image"
                         src="https://tabin-public.s3.ap-southeast-2.amazonaws.com/images/downlow_receipt_icon.png"
                     />
                     <div className="receipt-image-override"></div>
-                </div>
+                </div> */}
                 <Button
                     className="large print-me-a-copy-button"
                     onClick={() => {
