@@ -651,7 +651,7 @@ export const Checkout = () => {
             });
 
             //Open cash drawer if paid by cash
-            if (paymentAmounts.cash > 0) {
+            if (order.paymentAmounts && order.paymentAmounts.cash > 0) {
                 await printNoSaleReceipt({ printer: { printerType: printer.type, printerAddress: printer.address } });
             }
         }
