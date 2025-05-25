@@ -591,6 +591,8 @@ export const Checkout = () => {
             await printReceipt({
                 orderId: order.id,
                 country: order.country,
+                futureOrder: false,
+                orderReminder: false,
                 status: order.status,
                 printerType: printer.type,
                 printerAddress: printer.address,

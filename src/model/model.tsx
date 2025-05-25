@@ -411,6 +411,8 @@ export enum EReceiptPrinterPrinterType {
 export interface IOrderReceipt {
     orderId: string;
     country: string;
+    futureOrder: boolean;
+    orderReminder: boolean;
     status: EOrderStatus;
     printerType: ERegisterPrinterType;
     printerAddress: string;

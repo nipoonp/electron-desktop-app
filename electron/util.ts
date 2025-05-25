@@ -119,6 +119,32 @@ export const printCustomerReceipt = async (
     // console.log("Printer connected:", isConnected);
     // if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
+    if (order.futureOrder) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Future Order");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
+
+    if (order.orderReminder) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Upcoming Order Reminder");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
+
     if (order.displayPaymentRequiredMessage) {
         printer.alignCenter();
         printer.setTextSize(1, 1);
@@ -564,6 +590,32 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
     // console.log("Printer connected:", isConnected);
     // if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
 
+    if (order.futureOrder) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Future Order");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
+
+    if (order.orderReminder) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Upcoming Order Reminder");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
+
     if (order.displayPaymentRequiredMessage) {
         printer.alignCenter();
         printer.setTextSize(1, 1);
@@ -898,6 +950,32 @@ export const printKitchenReceiptSmall = async (
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
     // if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
+
+    if (order.futureOrder) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Future Order");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
+
+    if (order.orderReminder) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Upcoming Order Reminder");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
 
     if (order.displayPaymentRequiredMessage) {
         printer.alignCenter();
@@ -1256,6 +1334,32 @@ export const printKitchenReceiptLarge = async (
     // console.log("Printer connected:", isConnected);
 
     // if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
+
+    if (order.futureOrder) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Future Order");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
+
+    if (order.orderReminder) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Upcoming Order Reminder");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
 
     if (order.displayPaymentRequiredMessage) {
         printer.alignCenter();

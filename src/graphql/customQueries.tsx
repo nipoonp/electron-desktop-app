@@ -1539,21 +1539,6 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
     }
 `;
 
-export const GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
-    ${ORDER_FIELDS_FRAGMENT}
-    query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAtStartDate: String!, $placedAtEndDate: String!) {
-        getOrdersByRestaurantByPlacedAt(
-            limit: 1000000
-            orderRestaurantId: $orderRestaurantId
-            placedAt: { between: [$placedAtStartDate, $placedAtEndDate] }
-        ) {
-            items {
-                ...OrderFieldsFragment
-            }
-        }
-    }
-`;
-
 export const GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
     ${ORDER_FIELDS_FRAGMENT}
     query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAt: String!) {
@@ -1562,6 +1547,23 @@ export const GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
             sortDirection: DESC
             orderRestaurantId: $orderRestaurantId
             placedAt: { beginsWith: $placedAt }
+            filter: { onlineOrder: { eq: true } }
+        ) {
+            items {
+                ...OrderFieldsFragment
+            }
+        }
+    }
+`;
+
+export const GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_ORDERSCHEDULEDAT = gql`
+    ${ORDER_FIELDS_FRAGMENT}
+    query GetOrdersByRestaurantByOrderScheduledAt($orderRestaurantId: ID!, $orderscheduledAt: String!) {
+        getOrdersByRestaurantByOrderScheduledAt(
+            limit: 1000000
+            sortDirection: DESC
+            orderRestaurantId: $orderRestaurantId
+            orderscheduledAt: { beginsWith: $orderscheduledAt }
             filter: { onlineOrder: { eq: true } }
         ) {
             items {

@@ -198,7 +198,9 @@ export const ReceiptPrinter = () => {
         if (printerAddress1) {
             await printReceipt({
                 orderId: "123",
-                country: "nz",
+                country: ECountry.nz,
+                futureOrder: true,
+                orderReminder: true,
                 status: EOrderStatus.NEW,
                 printerType: printerType,
                 printerAddress: printerAddress1,
@@ -254,7 +256,9 @@ export const ReceiptPrinter = () => {
         if (printerAddress2) {
             await printReceipt({
                 orderId: "456",
-                country: "nz",
+                country: ECountry.nz,
+                futureOrder: false,
+                orderReminder: false,
                 status: EOrderStatus.NEW,
                 printerType: printerType,
                 printerAddress: printerAddress2,
@@ -304,7 +308,9 @@ export const ReceiptPrinter = () => {
         if (printerAddress3) {
             await printReceipt({
                 orderId: "789",
-                country: "nz",
+                country: ECountry.nz,
+                futureOrder: false,
+                orderReminder: false,
                 status: EOrderStatus.NEW,
                 printerType: printerType,
                 printerAddress: printerAddress3,
