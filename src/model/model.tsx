@@ -6,6 +6,10 @@ import {
 } from "../graphql/customFragments";
 import { IGET_RESTAURANT_PROMOTION, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object, EOrderStatus } from "../graphql/customQueries";
 
+export enum ECountry {
+    nz = "nz",
+    au = "au",
+}
 export interface ITab {
     id: string;
     name: string;

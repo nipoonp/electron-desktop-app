@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { Input } from "../../../tabin/components/input";
 import { useReceiptPrinter } from "../../../context/receiptPrinter-context";
-import { EOrderType, ERegisterPrinterType, ICartProduct } from "../../../model/model";
+import { ECountry, EOrderType, ERegisterPrinterType, ICartProduct } from "../../../model/model";
 import { useRegister } from "../../../context/register-context";
 import { Button } from "../../../tabin/components/button";
 import { Select } from "../../../tabin/components/select";
