@@ -654,7 +654,7 @@ export const Checkout = () => {
 
             //Open cash drawer if paid by cash
             if (order.paymentAmounts && order.paymentAmounts.cash > 0) {
-                console.log("xxx...opening cash drawer");
+                console.log("xxx...opening cash drawer", JSON.stringify({ printer: { printerType: printer.type, printerAddress: printer.address } }));
                 await printNoSaleReceipt({ printer: { printerType: printer.type, printerAddress: printer.address } });
             }
         }
