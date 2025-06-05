@@ -195,9 +195,7 @@ export const printCustomerReceipt = async (
 
     if (order.orderScheduledAt) {
         printer.bold(true);
-        printer.underlineThick(true);
         printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
-        printer.underlineThick(false);
         printer.bold(false);
     }
 
