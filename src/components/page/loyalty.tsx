@@ -23,7 +23,7 @@ const nameSchema = yup.string().required("Name is required");
 const emailSchema = yup.string().email("Please enter a valid email address").required("Email is required");
 const mobileNumberSchema = yup
     .string()
-    .matches(/^(0)(21|22|27|28|29)\d{6,8}$/, "Please enter a valid number in 02123456789 format")
+    .matches(/^(0)(20|21|22|27|28|29)\d{6,8}$/, "Please enter a valid number in 02123456789 format")
     .required("Mobile number is required");
 
 export default () => {
