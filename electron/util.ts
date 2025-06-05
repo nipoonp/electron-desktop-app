@@ -16,7 +16,7 @@ import {
     ECountry,
 } from "./model";
 import usbPrinter from "@thiagoelg/node-printer";
-import { format } from "date-fns";
+import { format, isToday } from "date-fns";
 
 export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
@@ -191,12 +191,12 @@ export const printCustomerReceipt = async (
 
     printer.println(order.restaurant.address);
     printer.newLine();
-    printer.println(`Order Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
+    printer.println(`Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
 
     if (order.orderScheduledAt) {
         printer.bold(true);
         printer.underlineThick(true);
-        printer.println(`Order Scheduled: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+        printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
         printer.underlineThick(false);
         printer.bold(false);
     }
@@ -638,14 +638,20 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
     printer.bold(false);
     printer.newLine();
 
-    printer.println(`Order Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
+    printer.println(`Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
 
     if (order.orderScheduledAt) {
-        printer.invert(true);
+        printer.setTextSize(1, 1);
         printer.bold(true);
-        printer.println(`Order Scheduled: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+
+        if (isToday(order.orderScheduledAt)) {
+            printer.println(`Pickup: Today ${format(new Date(order.orderScheduledAt), "HH:mm aa")}`);
+        } else {
+            printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+        }
+
         printer.bold(false);
-        printer.invert(false);
+        printer.setTextNormal();
     }
 
     if (order.status === EOrderStatus.PARKED && order.notes) {
@@ -999,14 +1005,20 @@ export const printKitchenReceiptSmall = async (
     printer.bold(false);
     printer.newLine();
 
-    printer.println(`Order Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
+    printer.println(`Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
 
     if (order.orderScheduledAt) {
-        printer.invert(true);
+        printer.setTextSize(1, 1);
         printer.bold(true);
-        printer.println(`Order Scheduled: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+
+        if (isToday(order.orderScheduledAt)) {
+            printer.println(`Pickup: Today ${format(new Date(order.orderScheduledAt), "HH:mm aa")}`);
+        } else {
+            printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+        }
+
         printer.bold(false);
-        printer.invert(false);
+        printer.setTextNormal();
     }
 
     if (order.customerInformation) {
@@ -1383,14 +1395,20 @@ export const printKitchenReceiptLarge = async (
     printer.bold(false);
     printer.newLine();
 
-    printer.println(`Order Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
+    printer.println(`Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
 
     if (order.orderScheduledAt) {
-        printer.invert(true);
+        printer.setTextSize(1, 1);
         printer.bold(true);
-        printer.println(`Order Scheduled: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+
+        if (isToday(order.orderScheduledAt)) {
+            printer.println(`Pickup: Today ${format(new Date(order.orderScheduledAt), "HH:mm aa")}`);
+        } else {
+            printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+        }
+
         printer.bold(false);
-        printer.invert(false);
+        printer.setTextNormal();
     }
 
     if (order.customerInformation) {
