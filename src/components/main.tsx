@@ -20,6 +20,7 @@ import "react-toastify/dist/ReactToastify.min.css";
 
 const Login = lazy(() => import("./page/auth/login"));
 const Logout = lazy(() => import("./page/auth/logout"));
+const CustomerDisplay = lazy(() => import("./page/customerDisplay"));
 const Restaurant = lazy(() => import("./page/restaurant"));
 const RestaurantList = lazy(() => import("./page/restaurantList"));
 const RegisterList = lazy(() => import("./page/registerList"));
@@ -57,6 +58,7 @@ Modal.setAppElement("#root");
 // Auth routes
 export const loginPath = "/login";
 export const logoutPath = "/log_out";
+export const customerDisplayPath = "/customer_display";
 export const restaurantListPath = "/restaurant_list";
 export const registerListPath = "/register_list";
 export const ordersPath = "/orders";
@@ -197,6 +199,7 @@ const AppRoutes = () => {
             <Routes>
                 <Route path={loginPath} element={<Login />} />
                 <Route path={logoutPath} element={<Logout />} />
+                <Route path={customerDisplayPath} element={<CustomerDisplay />} />
                 <Route path={restaurantListPath} element={<PrivateRoute element={<RestaurantList />} />} />
                 <Route path={registerListPath} element={<PrivateRoute element={<RegisterList />} />} />
                 <Route path={ordersPath} element={<RestaurantRegisterPrivateRoute element={<Orders />} />}>
