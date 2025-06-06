@@ -1,5 +1,5 @@
 import axios from "axios";
-import { format, isAfter, isToday, startOfToday } from "date-fns";
+import { format } from "date-fns";
 import { useEffect, createContext, useContext } from "react";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
 import { useGetRestaurantOnlineOrdersByBeginWithPlacedAtLazyQuery } from "../hooks/useGetRestaurantOnlineOrdersByBeginWithPlacedAtLazyQuery";
@@ -11,7 +11,6 @@ import {
     IPrintReceiptDataInput,
     IPrintNoSaleReceiptDataInput,
 } from "../model/model";
-import { useGetRestaurantOnlineOrdersByBeginWithOrderScheduledAtLazyQuery } from "../hooks/useGetRestaurantOnlineOrdersByBeginWithOrderScheduledAtLazyQuery";
 import { toast } from "../tabin/components/toast";
 import { convertProductTypesForPrint, filterPrintProducts, toLocalISOString } from "../util/util";
 import { useErrorLogging } from "./errorLogging-context";
@@ -59,154 +58,10 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     const { logError } = useErrorLogging();
 
     const { getRestaurantOnlineOrdersByBeginWithPlacedAt } = useGetRestaurantOnlineOrdersByBeginWithPlacedAtLazyQuery(); //Skip the first iteration. Get new orders from refetch.
-    const { getRestaurantOnlineOrdersByBeginWithOrderScheduledAt } = useGetRestaurantOnlineOrdersByBeginWithOrderScheduledAtLazyQuery(); //Skip the first iteration. Get new orders from refetch.
+    // const { getRestaurantOrdersByBetweenPlacedAt } = useGetRestaurantOrdersByBetweenPlacedAtLazyQuery(); //Skip the first iteration. Get new orders from refetch.
 
-    const fetchScheduledOrdersLoopTime = 30 * 1000; //30 seconds
-    const fetchFutureOrdersLoopTime = 15 * 60 * 1000; //15 minutes
+    const fetchOrdersLoopTime = 30 * 1000; //30 seconds
     const retryPrintLoopTime = 20 * 1000; //20 seconds
-
-    useEffect(() => {
-        if (!restaurant) return;
-        if (!register) return;
-
-        let enableOnlineOrderPrinting = false;
-
-        register.printers.items.forEach((printer) => {
-            if (printer.printOnlineOrderReceipts) enableOnlineOrderPrinting = true;
-        });
-
-        if (!enableOnlineOrderPrinting) return;
-
-        const scheduledOrdersFetchTimer = setInterval(async () => {
-            try {
-                const storedPrintedOnlineOrders = localStorage.getItem("printedOnlineOrders");
-                const printedOnlineOrders: {
-                    [orderId: string]: boolean;
-                } = storedPrintedOnlineOrders ? JSON.parse(storedPrintedOnlineOrders) : {};
-
-                const storedPrintedOnlineOrderReminders = localStorage.getItem("printedOnlineOrderReminders");
-                const printedOnlineOrderReminders: {
-                    [orderId: string]: boolean;
-                } = storedPrintedOnlineOrderReminders ? JSON.parse(storedPrintedOnlineOrderReminders) : {};
-
-                const res = await getRestaurantOnlineOrdersByBeginWithOrderScheduledAt({
-                    variables: {
-                        orderRestaurantId: restaurant.id,
-                        orderScheduledAt: format(new Date(), "yyyy-MM-dd"),
-                    },
-                });
-
-                const newOrders: IGET_RESTAURANT_ORDER_FRAGMENT[] = res.data.getOrdersByRestaurantByOrderScheduledAt.items;
-
-                for (var i = 0; i < newOrders.length; i++) {
-                    const order = newOrders[i];
-
-                    // --- Order reminder check ---
-                    let orderReminder = false;
-                    if (
-                        order.orderScheduledAt &&
-                        order.placedAt &&
-                        isToday(new Date(order.orderScheduledAt)) &&
-                        new Date(order.placedAt) < startOfToday()
-                    ) {
-                        const now = new Date();
-                        const scheduledTime = new Date(order.orderScheduledAt);
-                        const timeDifferenceInMinutes = (scheduledTime.getTime() - now.getTime()) / 60000;
-
-                        if (timeDifferenceInMinutes <= 30 && timeDifferenceInMinutes > 0) {
-                            orderReminder = true;
-                        }
-                    }
-
-                    if (orderReminder) {
-                        if (printedOnlineOrderReminders[order.id] !== undefined) continue;
-                    } else {
-                        if (printedOnlineOrders[order.id] !== undefined) continue;
-                    }
-
-                    for (var j = 0; j < register.printers.items.length; j++) {
-                        const printer = register.printers.items[j];
-
-                        if (!printer.printOnlineOrderReceipts) continue;
-
-                        const productsToPrint = filterPrintProducts(order.products, printer);
-
-                        await printReceipt({
-                            orderId: order.id,
-                            country: order.country,
-                            futureOrder: false,
-                            orderReminder: orderReminder,
-                            status: order.status,
-                            printerType: printer.type,
-                            printerAddress: printer.address,
-                            receiptFooterText: printer.receiptFooterText,
-                            customerPrinter: printer.customerPrinter,
-                            kitchenPrinter: printer.kitchenPrinter,
-                            kitchenPrinterSmall: printer.kitchenPrinterSmall,
-                            kitchenPrinterLarge: printer.kitchenPrinterLarge,
-                            hidePreparationTime: printer.hidePreparationTime,
-                            hideModifierGroupName: printer.hideModifierGroupName,
-                            skipReceiptCutCommand: printer.skipReceiptCutCommand,
-                            printReceiptForEachProduct: printer.printReceiptForEachProduct,
-                            hideOrderType: register.availableOrderTypes.length === 0,
-                            eftposReceipt: order.eftposReceipt || null,
-                            hideModifierGroupsForCustomer: false,
-                            restaurant: {
-                                name: restaurant.name,
-                                address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
-                                gstNumber: restaurant.gstNumber,
-                            },
-                            restaurantLogoBase64: restaurantBase64Logo,
-                            customerInformation: order.customerInformation
-                                ? {
-                                      firstName: order.customerInformation.firstName,
-                                      email: order.customerInformation.email,
-                                      phoneNumber: order.customerInformation.phoneNumber,
-                                      signatureBase64: null,
-                                      customFields: order.customerInformation.customFields,
-                                  }
-                                : null,
-                            notes: order.notes,
-                            products: convertProductTypesForPrint(productsToPrint),
-                            paymentAmounts: order.paymentAmounts,
-                            total: order.total,
-                            surcharge: order.surcharge,
-                            orderTypeSurcharge: order.orderTypeSurcharge,
-                            eftposSurcharge: order.eftposSurcharge,
-                            eftposTip: order.eftposTip,
-                            discount: order.promotionId && order.discount ? order.discount : null,
-                            tax: order.tax,
-                            subTotal: order.subTotal,
-                            paid: order.paid,
-                            displayPaymentRequiredMessage: !order.paid,
-                            type: order.type,
-                            number: order.number,
-                            table: order.table,
-                            buzzer: order.buzzer,
-                            placedAt: order.placedAt,
-                            orderScheduledAt: order.orderScheduledAt,
-                            preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
-                            enableLoyalty: restaurant.enableLoyalty,
-                        });
-                    }
-
-                    if (orderReminder) {
-                        printedOnlineOrderReminders[order.id] = true;
-                    } else {
-                        printedOnlineOrders[order.id] = true;
-                    }
-                }
-
-                localStorage.setItem("printedOnlineOrders", JSON.stringify(printedOnlineOrders));
-                localStorage.setItem("printedOnlineOrderReminders", JSON.stringify(printedOnlineOrderReminders));
-            } catch (e) {
-                console.error("Error", e);
-                await toast.error("Error polling for new online orders");
-            }
-        }, fetchScheduledOrdersLoopTime);
-
-        return () => clearInterval(scheduledOrdersFetchTimer);
-    }, [restaurant, register]);
 
     useEffect(() => {
         if (!restaurant) return;
@@ -231,7 +86,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 const res = await getRestaurantOnlineOrdersByBeginWithPlacedAt({
                     variables: {
                         orderRestaurantId: restaurant.id,
-                        orderScheduledAt: format(new Date(), "yyyy-MM-dd"),
+                        placedAt: format(new Date(), "yyyy-MM-dd"),
                     },
                 });
 
@@ -241,16 +96,6 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                     const order = newOrders[i];
 
                     if (printedOnlineOrders[order.id] !== undefined) continue;
-
-                    // --- Future Order check ---
-                    let futureOrder = false;
-                    if (
-                        order.orderScheduledAt &&
-                        isAfter(new Date(order.orderScheduledAt), new Date()) &&
-                        !isToday(new Date(order.orderScheduledAt))
-                    ) {
-                        futureOrder = true;
-                    }
 
                     for (var j = 0; j < register.printers.items.length; j++) {
                         const printer = register.printers.items[j];
@@ -264,7 +109,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                         await printReceipt({
                             orderId: order.id,
                             country: order.country,
-                            futureOrder: futureOrder,
+                            futureOrder: false,
                             orderReminder: false,
                             status: order.status,
                             printerType: printer.type,
@@ -330,7 +175,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 console.error("Error", e);
                 await toast.error("Error polling for new online orders");
             }
-        }, fetchFutureOrdersLoopTime);
+        }, fetchOrdersLoopTime);
 
         return () => clearInterval(ordersFetchTimer);
     }, [restaurant, register]);
