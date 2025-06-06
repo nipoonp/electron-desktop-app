@@ -282,7 +282,7 @@ ipcMain.on("OPEN_CUSTOMER_DISPLAY", (event) => {
         });
     }
 
-    customerDisplayWindow.loadFile(path.join(__dirname, "../build/index.html"), { hash: "/customer" });
+    customerDisplayWindow.loadFile(path.join(__dirname, "../build/index.html"), { hash: "/customer_display" });
 
     customerDisplayWindow.on("closed", () => {
         customerDisplayWindow = null;
