@@ -30,7 +30,7 @@ export default () => {
             {orderTypeSurcharge > 0 ? <div className="mb-1">Order Type Surcharge: ${convertCentsToDollars(orderTypeSurcharge)}</div> : null}
             {staticDiscount ? <div className="mb-1">Fixed Discount: ${convertCentsToDollars(staticDiscount)}</div> : null}
             {percentageDiscount ? <div className="mb-1">Percentage Discount: ${convertCentsToDollars(percentageDiscount)}</div> : null}
-            <div className="h3 mb-2">Total: ${convertCentsToDollars(subTotal)}</div>
+            <div className="h2 mb-2">Total: ${convertCentsToDollars(subTotal)}</div>
         </>
     );
 
@@ -45,7 +45,12 @@ export default () => {
                     onApplyProductDiscount={() => {}}
                 />
             </div>
-            <div className="customer-display-footer p-4">{customerDisplayFooter}</div>
+            <div className="customer-display-footer p-4">
+                {customerDisplayFooter}
+                <div className="powered-by-tabin-wrapper">
+                    <div className="powered-by-tabin">Powered by tabin.co.nz</div>
+                </div>
+            </div>
         </div>
     );
 };

@@ -12,3 +12,22 @@
     border-top: 3px solid #ebebeb;
     background-color: #ffffff;
 }
+
+.powered-by-tabin-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+}
+
+.powered-by-tabin {
+    padding: 10px 24px;
+    background-color: #2b318c10;
+    border: 2px solid #2b318c;
+    border-radius: 999px;
+    font-size: 0.85rem; // Increased from 0.85rem
+    font-weight: 700; // Slightly bolder
+    color: #2b318c;
+    text-transform: uppercase;
+    letter-spacing: 0.75px;
+    text-align: center;
+}
