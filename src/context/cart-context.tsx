@@ -250,6 +250,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                     staticDiscount,
                     percentageDiscount,
                     orderTypeSurcharge,
+                    orderType,
                 })
             );
     }, [products, promotion, surcharge, subTotal, staticDiscount, percentageDiscount, orderTypeSurcharge]);

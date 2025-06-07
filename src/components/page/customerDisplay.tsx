@@ -19,6 +19,7 @@ export default () => {
     const [staticDiscount, setStaticDiscount] = useState(0);
     const [percentageDiscount, setPercentageDiscount] = useState(0);
     const [orderTypeSurcharge, setOrderTypeSurcharge] = useState(0);
+    const [orderType, setOrderType] = useState<string | null>(null);
 
     const orderSummaryRef = useRef<HTMLDivElement>(null);
 
@@ -36,6 +37,7 @@ export default () => {
                 setStaticDiscount(cartData.staticDiscount);
                 setPercentageDiscount(cartData.percentageDiscount);
                 setOrderTypeSurcharge(cartData.orderTypeSurcharge);
+                setOrderType(cartData.orderType);
             });
 
         return () => {
@@ -69,7 +71,10 @@ export default () => {
 
     return (
         <div className="p-4">
-            <div className="h1 mb-4">Your Order</div>
+            <div className="customer-display-order-header">
+                <div className="h1 mb-4">Your Order</div>
+                {orderType && <div className="h2">{orderType}</div>}
+            </div>
             <div className="customer-display-order-summary-wrapper" ref={orderSummaryRef}>
                 <OrderSummary
                     products={products || []}
