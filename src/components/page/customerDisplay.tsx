@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { OrderSummary } from "./checkout/orderSummary";
 import { convertCentsToDollars } from "../../util/util";
+import { ICartPromotion } from "../../model/model";
+import "./customerDisplay.scss";
 
 let electron: any;
 let ipcRenderer: any;
@@ -8,9 +10,6 @@ try {
     electron = window.require("electron");
     ipcRenderer = electron.ipcRenderer;
 } catch (e) {}
-
-import "./customerDisplay.scss";
-import { ICartPromotion } from "../../model/model";
 
 export default () => {
     const [products, setProducts] = useState([]);
