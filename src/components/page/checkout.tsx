@@ -651,18 +651,17 @@ export const Checkout = () => {
                 preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                 enableLoyalty: restaurant.enableLoyalty,
             });
-
-            //Open cash drawer if paid by cash
-            if (order.paymentAmounts && order.paymentAmounts.cash > 0) {
-                console.log("xxx...opening cash drawer", JSON.stringify({ printer: { printerType: printer.type, printerAddress: printer.address } }));
-                await printNoSaleReceipt({ printer: { printerType: printer.type, printerAddress: printer.address } });
-            }
         }
     };
 
     const printReceipts = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         register.printers &&
             register.printers.items.forEach((printer) => {
+                //Open cash drawer if paid by cash, even if we don't print a receipt
+                if (order.paymentAmounts && order.paymentAmounts.cash > 0) {
+                    printNoSaleReceipt({ printer: { printerType: printer.type, printerAddress: printer.address } });
+                }
+
                 if (printer.customerPrinter === true && register.askToPrintCustomerReceipt === true) return;
 
                 sendReceiptPrint(order, printer);
