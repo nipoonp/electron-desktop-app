@@ -429,3 +429,9 @@ verifoneClient.on("error", (error: Error) => {
 verifoneClient.on("close", (had_error: boolean) => {
     mainWindow.webContents.send("EFTPOS_CLOSE", "Connection with Verifone Eftpos ended!");
 });
+
+ipcMain.on("SEND_CUSTOMER_DISPLAY_DATA", (event, customerDisplayData) => {
+    if (customerDisplayWindow && customerDisplayWindow.webContents) {
+        customerDisplayWindow.webContents.send("RECEIVE_CUSTOMER_DISPLAY_DATA", customerDisplayData);
+    }
+});

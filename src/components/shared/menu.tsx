@@ -7,6 +7,7 @@ import { useRegister } from "../../context/register-context";
 import { BsDisplay } from "react-icons/bs";
 
 import "./menu.scss";
+import { useCart } from "../../context/cart-context";
 
 let electron: any;
 let ipcRenderer: any;
@@ -18,6 +19,7 @@ try {
 export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) => void; onHideMenu: () => void }) => {
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
+    const { setIsCustomerDisplayOpen } = useCart();
     const [selectedTabId, setSelectedTabId] = useState<string>("");
     const [subTabs, setSubTabs] = useState<ITab[] | null>(null);
 
@@ -51,6 +53,7 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
     };
 
     const selectOpenCustomerDisplay = () => {
+        setIsCustomerDisplayOpen(true);
         ipcRenderer && ipcRenderer.send("OPEN_CUSTOMER_DISPLAY");
     };
 

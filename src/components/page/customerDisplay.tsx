@@ -1,14 +1,48 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { OrderSummary } from "./checkout/orderSummary";
-import { useCart } from "../../context/cart-context";
 import { convertCentsToDollars } from "../../util/util";
 
+let electron: any;
+let ipcRenderer: any;
+try {
+    electron = window.require("electron");
+    ipcRenderer = electron.ipcRenderer;
+} catch (e) {}
+
 import "./customerDisplay.scss";
+import { ICartPromotion } from "../../model/model";
 
 export default () => {
-    const { products, promotion, paidSoFar, surcharge, subTotal, staticDiscount, percentageDiscount, orderTypeSurcharge } = useCart();
+    const [products, setProducts] = useState([]);
+    const [promotion, setPromotion] = useState<ICartPromotion | null>(null);
+    const [surcharge, setSurcharge] = useState(0);
+    const [subTotal, setSubTotal] = useState(0);
+    const [staticDiscount, setStaticDiscount] = useState(0);
+    const [percentageDiscount, setPercentageDiscount] = useState(0);
+    const [orderTypeSurcharge, setOrderTypeSurcharge] = useState(0);
 
     const orderSummaryRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        ipcRenderer &&
+            ipcRenderer.on("RECEIVE_CUSTOMER_DISPLAY_DATA", (_, data) => {
+                console.log("Recevied Data", data);
+
+                const cartData = JSON.parse(data);
+
+                setProducts(cartData.products);
+                setPromotion(cartData.promotion);
+                setSurcharge(cartData.surcharge);
+                setSubTotal(cartData.subTotal);
+                setStaticDiscount(cartData.staticDiscount);
+                setPercentageDiscount(cartData.percentageDiscount);
+                setOrderTypeSurcharge(cartData.orderTypeSurcharge);
+            });
+
+        return () => {
+            ipcRenderer.removeAllListeners("RECEIVE_CUSTOMER_DISPLAY_DATA");
+        };
+    }, []);
 
     useEffect(() => {
         if (orderSummaryRef.current) {
@@ -26,7 +60,7 @@ export default () => {
                 </div>
             ) : null}
             {surcharge ? <div className="mb-1">Surcharge: ${convertCentsToDollars(surcharge)}</div> : null}
-            {paidSoFar > 0 ? <div className="mb-1">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : null}
+            {/* {paidSoFar > 0 ? <div className="mb-1">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : null} */}
             {orderTypeSurcharge > 0 ? <div className="mb-1">Order Type Surcharge: ${convertCentsToDollars(orderTypeSurcharge)}</div> : null}
             {staticDiscount ? <div className="mb-1">Fixed Discount: ${convertCentsToDollars(staticDiscount)}</div> : null}
             {percentageDiscount ? <div className="mb-1">Percentage Discount: ${convertCentsToDollars(percentageDiscount)}</div> : null}

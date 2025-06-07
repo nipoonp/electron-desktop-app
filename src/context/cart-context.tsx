@@ -17,6 +17,13 @@ import { applyDiscountToCartProducts, checkIfPromotionValid, getOrderDiscountAmo
 import { useRestaurant } from "./restaurant-context";
 import { useRegister } from "./register-context";
 
+let electron: any;
+let ipcRenderer: any;
+try {
+    electron = window.require("electron");
+    ipcRenderer = electron.ipcRenderer;
+} catch (e) {}
+
 const initialParkedOrderId = null;
 const initialParkedOrderNumber = null;
 const initialParkedOrderStatus = null;
@@ -50,6 +57,7 @@ const initialIsShownUpSellCrossSellModal = false;
 const initialIsShownOrderThresholdMessageModal = false;
 const initialOrderScheduledAt = null;
 const initialOrderDetail = null;
+const initialIsCustomerDisplayOpen = false;
 
 type ContextProps = {
     // restaurant: IGET_RESTAURANT | null;
@@ -113,6 +121,8 @@ type ContextProps = {
     updateOrderScheduledAt: (orderScheduledAt: string | null) => void;
     orderDetail: IGET_RESTAURANT_ORDER_FRAGMENT | null;
     updateOrderDetail: (orderDetail: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
+    isCustomerDisplayOpen: boolean;
+    setIsCustomerDisplayOpen: (isCustomerDisplayOpen: boolean) => void;
 };
 
 const CartContext = createContext<ContextProps>({
@@ -177,6 +187,8 @@ const CartContext = createContext<ContextProps>({
     updateOrderScheduledAt: (orderScheduledAt: string | null) => {},
     orderDetail: initialOrderDetail,
     updateOrderDetail: (orderDetail: object) => {},
+    isCustomerDisplayOpen: initialIsCustomerDisplayOpen,
+    setIsCustomerDisplayOpen: () => {},
 });
 
 const CartProvider = (props: { children: React.ReactNode }) => {
@@ -206,6 +218,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [isShownUpSellCrossSellModal, _setIsShownUpSellCrossSellModal] = useState<boolean>(initialIsShownUpSellCrossSellModal);
     const [isShownOrderThresholdMessageModal, _setIsShownOrderThresholdMessageModal] = useState(initialIsShownOrderThresholdMessageModal);
 
+    const [isCustomerDisplayOpen, _setIsCustomerDisplayOpen] = useState(initialIsCustomerDisplayOpen);
+
     const [userAppliedPromotionCode, _setUserAppliedPromotionCode] = useState<string | null>(initialUserAppliedPromotionCode);
     const [promotion, _setPromotion] = useState<ICartPromotion | null>(initialPromotion);
     const [availablePromotions, _setAvailablePromotions] = useState<IGET_RESTAURANT_PROMOTION[]>(initialAvailablePromotions);
@@ -222,6 +236,23 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     // useEffect(() => {
     // console.log("xxx...products", products);
     // }, [products]);
+
+    useEffect(() => {
+        isCustomerDisplayOpen &&
+            ipcRenderer &&
+            ipcRenderer.send(
+                "SEND_CUSTOMER_DISPLAY_DATA",
+                JSON.stringify({
+                    products,
+                    promotion,
+                    surcharge,
+                    subTotal,
+                    staticDiscount,
+                    percentageDiscount,
+                    orderTypeSurcharge,
+                })
+            );
+    }, [products, promotion, surcharge, subTotal, staticDiscount, percentageDiscount, orderTypeSurcharge]);
 
     useEffect(() => {
         if (!products) return;
@@ -747,6 +778,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 updateOrderScheduledAt: updateOrderScheduledAt,
                 orderDetail: orderDetail,
                 updateOrderDetail: updateOrderDetail,
+                isCustomerDisplayOpen: isCustomerDisplayOpen,
+                setIsCustomerDisplayOpen: _setIsCustomerDisplayOpen,
             }}
             children={props.children}
         />
