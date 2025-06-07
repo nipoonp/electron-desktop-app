@@ -16,7 +16,7 @@ import "./orderSummary.scss";
 export const OrderSummary = (props: {
     products: ICartProduct[];
     onEditProduct: (product: ICartProduct, displayOrder: number) => void;
-    onRemoveProduct: (displayOrder: number) => void;
+    onRemoveProduct?: (displayOrder: number) => void;
     onUpdateProductQuantity: (displayOrder: number, productQuantity: number) => void;
     onApplyProductDiscount: (displayOrder: number, discount: number) => void;
 }) => {
@@ -57,7 +57,7 @@ const OrderItem = (props: {
     onEditProduct: (product: ICartProduct, displayOrder: number) => void;
     onUpdateProductQuantity: (displayOrder: number, productQuantity: number) => void;
     onApplyProductDiscount: (displayOrder: number, discount: number) => void;
-    onRemoveProduct: (displayOrder: number) => void;
+    onRemoveProduct?: (displayOrder: number) => void;
 }) => {
     const { product, displayOrder, onEditProduct, onUpdateProductQuantity, onApplyProductDiscount, onRemoveProduct } = props;
     const { isPOS } = useRegister();
@@ -193,7 +193,7 @@ const OrderItem = (props: {
                     modifierGroups={product.modifierGroups}
                     onEditProduct={() => onEditProduct(product, displayOrder)}
                 />
-                <div className="text-center">
+                <div className={`${onRemoveProduct ? "text-center" : "text-right"}`}>
                     {isOptionsExpanded ? (
                         <Input
                             key={`price-${product.id}`}
@@ -216,7 +216,7 @@ const OrderItem = (props: {
                     )}
                     {!isOptionsExpanded && product.discount ? <div className="mt-1 original-price">${originalPrice}</div> : <></>}
                 </div>
-                {!props.product.isPreSelectedProduct && <TiDelete size="24px" onClick={() => onRemoveProduct(displayOrder)} />}
+                {onRemoveProduct && !props.product.isPreSelectedProduct && <TiDelete size="24px" onClick={() => onRemoveProduct(displayOrder)} />}
             </div>
             {/* {isPOS && isOptionsExpanded && expandOptions} */}
         </>

@@ -1,0 +1,14 @@
+.customer-display-order-summary-wrapper {
+    overflow-y: auto;
+    max-height: calc(100vh - 300px); // adjust this value if needed
+    margin-bottom: 150px;
+}
+
+.customer-display-footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    border-top: 3px solid #ebebeb;
+    background-color: #ffffff;
+}
