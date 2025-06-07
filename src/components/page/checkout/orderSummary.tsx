@@ -17,7 +17,7 @@ import { useRestaurant } from "../../../context/restaurant-context";
 export const OrderSummary = (props: {
     products: ICartProduct[];
     onEditProduct: (product: ICartProduct, displayOrder: number) => void;
-    onRemoveProduct: (displayOrder: number) => void;
+    onRemoveProduct?: (displayOrder: number) => void;
     onUpdateProductQuantity: (displayOrder: number, productQuantity: number) => void;
     onApplyProductDiscount: (displayOrder: number, discount: number) => void;
 }) => {
@@ -58,7 +58,7 @@ const OrderItem = (props: {
     onEditProduct: (product: ICartProduct, displayOrder: number) => void;
     onUpdateProductQuantity: (displayOrder: number, productQuantity: number) => void;
     onApplyProductDiscount: (displayOrder: number, discount: number) => void;
-    onRemoveProduct: (displayOrder: number) => void;
+    onRemoveProduct?: (displayOrder: number) => void;
 }) => {
     const { product, displayOrder, onEditProduct, onUpdateProductQuantity, onApplyProductDiscount, onRemoveProduct } = props;
     const { isPOS } = useRegister();
@@ -222,7 +222,7 @@ const OrderItem = (props: {
                 <div className="text-center">
                     <div className="h2 text-primary mb-2">${displayPrice}</div>
                     {product.discount ? <div className="h3 text-primary mb-2 original-price">${originalPrice}</div> : <></>}
-                    {!props.product.isPreSelectedProduct && (
+                    {onRemoveProduct && !props.product.isPreSelectedProduct && (
                         <Button className="remove-button" onClick={() => onRemoveProduct(displayOrder)}>
                             Remove
                         </Button>
