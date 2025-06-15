@@ -246,7 +246,6 @@ export const GET_RESTAURANT = gql`
             isAcceptingOrders
             verified
             address {
-                aptSuite
                 formattedAddress
             }
             operatingHours {
@@ -987,7 +986,6 @@ export interface IGET_RESTAURANT {
     isAcceptingOrders: boolean;
     verified: boolean;
     address: {
-        aptSuite: string;
         formattedAddress: string;
     };
     operatingHours: IGET_RESTAURANT_OPERATING_HOURS;

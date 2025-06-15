@@ -128,7 +128,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                             hideModifierGroupsForCustomer: false,
                             restaurant: {
                                 name: restaurant.name,
-                                address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
+                                address: restaurant.address.formattedAddress,
                                 gstNumber: restaurant.gstNumber,
                             },
                             restaurantLogoBase64: restaurantBase64Logo,

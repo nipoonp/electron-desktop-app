@@ -609,7 +609,7 @@ export const Checkout = () => {
                 hideModifierGroupsForCustomer: false,
                 restaurant: {
                     name: restaurant.name,
-                    address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
+                    address: restaurant.address.formattedAddress,
                     gstNumber: restaurant.gstNumber,
                 },
                 restaurantLogoBase64: restaurantBase64Logo,
