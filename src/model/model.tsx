@@ -269,6 +269,7 @@ export interface IMX51EftposQuestion {
 export enum EOrderType {
     DINEIN = "DINEIN",
     TAKEAWAY = "TAKEAWAY",
+    PICKUP = "PICKUP",
     DELIVERY = "DELIVERY",
 }
 
