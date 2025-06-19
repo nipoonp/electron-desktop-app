@@ -1399,13 +1399,19 @@ const Modifier = (props: {
     const modifierChildren = (
         <>
             <div className="modifier-item">
-                {modifier.image && (
-                    <CachedImage
-                        url={`${getCloudFrontDomainName()}/protected/${modifier.image.identityPoolId}/${modifier.image.key}`}
-                        className="image mr-3"
-                        alt="product-image"
-                    />
-                )}
+                {modifier.imageUrl ? (
+                    <div className="image-wrapper">
+                        <CachedImage url={`${modifier.imageUrl}`} className="image mr-3" alt="modifier-image" />
+                    </div>
+                ) : modifier.image ? (
+                    <div className="image-wrapper">
+                        <CachedImage
+                            className="image"
+                            url={`${getCloudFrontDomainName()}/protected/${modifier.image.identityPoolId}/${modifier.image.key}`}
+                            alt="modifier-image"
+                        />
+                    </div>
+                ) : null}
 
                 {isValid ? (
                     <div>
