@@ -162,6 +162,7 @@ export enum EPaymentModalState {
     AwaitingCard,
     EftposResult,
     CashResult,
+    OnAccountResult,
     UberEatsResult,
     MenulogResult,
     DoordashResult,
@@ -391,6 +392,7 @@ export interface ICartPaymentAmounts {
     cash: number;
     eftpos: number;
     online: number;
+    onAccount: number;
     uberEats: number;
     menulog: number;
     doordash: number;

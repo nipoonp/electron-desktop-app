@@ -1262,6 +1262,33 @@ export const Checkout = () => {
         }
     };
 
+    const onConfirmOnAccountTransaction = async (amount: number) => {
+        try {
+            const nonOnAccountPayments = paidSoFar - paymentAmounts.onAccount;
+            const newOnAccountPaymentAmounts = paymentAmounts.onAccount + amount;
+            const newTotalPaymentAmounts = nonOnAccountPayments + newOnAccountPaymentAmounts;
+
+            const newPaymentAmounts: ICartPaymentAmounts = {
+                ...paymentAmounts,
+                onAccount: newTotalPaymentAmounts >= subTotal ? subTotal - nonOnAccountPayments : newOnAccountPaymentAmounts, //Cannot pay more than subTotal amount
+            };
+            const newPayments: ICartPayment[] = [...payments, { type: "ONACCOUNT", amount: amount }];
+
+            setPaymentAmounts(newPaymentAmounts);
+            setPayments(newPayments);
+
+            //If paid for everything
+            if (newTotalPaymentAmounts >= subTotal) {
+                //Passing paymentAmounts, payments via params so we send the most updated values
+                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.OnAccountResult);
+            }
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
     const onConfirmUberEatsTransaction = async (amount: number) => {
         try {
             const nonUberEatsPayments = paidSoFar - paymentAmounts.uberEats;
@@ -1385,6 +1412,7 @@ export const Checkout = () => {
             cash: 0,
             eftpos: 0,
             online: 0,
+            onAccount: 0,
             uberEats: 0,
             menulog: 0,
             doordash: 0,
@@ -1408,6 +1436,7 @@ export const Checkout = () => {
             cash: 0,
             eftpos: 0,
             online: 0,
+            onAccount: 0,
             uberEats: 0,
             menulog: 0,
             doordash: 0,
@@ -1649,6 +1678,7 @@ export const Checkout = () => {
                         onConfirmTotalOrRetryEftposTransaction={onConfirmTotalOrRetryEftposTransaction}
                         onCancelEftposTransaction={onCancelEftposTransaction}
                         onConfirmCashTransaction={onConfirmCashTransaction}
+                        onConfirmOnAccountTransaction={onConfirmOnAccountTransaction}
                         onConfirmUberEatsTransaction={onConfirmUberEatsTransaction}
                         onConfirmMenulogTransaction={onConfirmMenulogTransaction}
                         onConfirmDoordashTransaction={onConfirmDoordashTransaction}

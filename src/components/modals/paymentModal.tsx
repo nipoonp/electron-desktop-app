@@ -52,6 +52,7 @@ interface IPaymentModalProps {
     onConfirmTotalOrRetryEftposTransaction: (amount: number) => void;
     onCancelEftposTransaction: () => void;
     onConfirmCashTransaction: (amount: number) => void;
+    onConfirmOnAccountTransaction: (acount: number) => void;
     onConfirmUberEatsTransaction: (amount: number) => void;
     onConfirmMenulogTransaction: (amount: number) => void;
     onConfirmDoordashTransaction: (amount: number) => void;
@@ -82,6 +83,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         createOrderError,
         onConfirmTotalOrRetryEftposTransaction,
         onConfirmCashTransaction,
+        onConfirmOnAccountTransaction,
         onConfirmUberEatsTransaction,
         onConfirmMenulogTransaction,
         onConfirmDoordashTransaction,
@@ -135,6 +137,18 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         }
 
         onConfirmCashTransaction(cashAmountCents);
+    };
+
+    const onClickOnAccount = (onAccountAmount: string) => {
+        const onAccountAmountFloat = parseFloat(onAccountAmount);
+        const onAccountAmountCents = convertDollarsToCentsReturnInt(onAccountAmountFloat);
+
+        if (subTotal !== 0 && onAccountAmountCents == 0) {
+            setAmountError("Value cannot be 0.00");
+            return;
+        }
+
+        onConfirmOnAccountTransaction(onAccountAmountCents);
     };
 
     const onClickUberEats = (uberEatsAmount: string) => {
@@ -199,6 +213,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     onAmountErrorChange={setAmountError}
                     onClickCash={onClickCash}
                     onClickEftpos={onClickEftpos}
+                    onClickOnAccount={onClickOnAccount}
                     onClickUberEats={onClickUberEats}
                     onClickMenulog={onClickMenulog}
                     onClickDoordash={onClickDoordash}
@@ -256,6 +271,15 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                     />
                 );
             }
+        } else if (paymentModalState === EPaymentModalState.OnAccountResult) {
+            return (
+                <PaymentOnAccountPayment
+                    onPrintParkedOrderReceipts={onPrintParkedOrderReceipts}
+                    paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
+                    paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                    onContinueToNextOrder={onContinueToNextOrder}
+                />
+            );
         } else if (paymentModalState === EPaymentModalState.UberEatsResult) {
             return (
                 <PaymentUberEatsPayment
@@ -654,6 +678,30 @@ const PaymentCashPaymentPOS = (props: {
     );
 };
 
+const PaymentOnAccountPayment = (props: {
+    onPrintParkedOrderReceipts: () => void;
+    paymentOutcomeOrderNumber: string | null;
+    paymentOutcomeApprovedRedirectTimeLeft: number;
+    onContinueToNextOrder: () => void;
+}) => {
+    const { onPrintParkedOrderReceipts, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+
+    return (
+        <>
+            <div className="h2 mb-6">This order has been added to customer account.</div>
+            <div className="mb-1">Reference order number is</div>
+            <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
+            <div className="separator-2 mb-2"></div>
+            <AskToPrintParkedOrderReceipts onPrinterParkedOrderReceipts={onPrintParkedOrderReceipts} />
+            <div className="separator-2 mb-2"></div>
+            <PaymentModalFooter
+                paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                onContinueToNextOrder={onContinueToNextOrder}
+            />
+        </>
+    );
+};
+
 const PaymentUberEatsPayment = (props: {
     onPrintCustomerReceipt: () => void;
     paymentOutcomeOrderNumber: string | null;
@@ -841,6 +889,7 @@ const POSPaymentScreen = (props: {
     onAmountErrorChange: (error: string) => void;
     onClickCash: (amount: string) => void;
     onClickEftpos: (amount: string) => void;
+    onClickOnAccount: (amount: string) => void;
     onClickUberEats: (amount: string) => void;
     onClickMenulog: (amount: string) => void;
     onClickDoordash: (amount: string) => void;
@@ -854,6 +903,7 @@ const POSPaymentScreen = (props: {
         onAmountErrorChange,
         onClickCash,
         onClickEftpos,
+        onClickOnAccount,
         onClickUberEats,
         onClickMenulog,
         onClickDoordash,
@@ -898,6 +948,17 @@ const POSPaymentScreen = (props: {
 
         setPayments(newPayments);
         setPaymentAmounts({ ...paymentAmounts, uberEats: newPaymentAmounts });
+    };
+
+    const onRemoveOnAccountTransaction = (index: number) => {
+        const payment = payments[index];
+        const newPayments = [...payments];
+        const newPaymentAmounts = paymentAmounts.onAccount - payment.amount;
+
+        newPayments.splice(index, 1);
+
+        setPayments(newPayments);
+        setPaymentAmounts({ ...paymentAmounts, onAccount: newPaymentAmounts });
     };
 
     const onRemoveMenulogTransaction = (index: number) => {
@@ -984,6 +1045,11 @@ const POSPaymentScreen = (props: {
                     <Button className="large payment-modal-eftpos-button" onClick={() => onClickEftpos(amount)}>
                         Eftpos
                     </Button>
+                    {register && register.enableOnAccountPayments && (
+                        <Button className="large payment-modal-on-account-button" onClick={() => onClickOnAccount(amount)}>
+                            On Account
+                        </Button>
+                    )}
                     {register && register.enableUberEatsPayments && (
                         <Button className="large payment-modal-uber-eats-button" onClick={() => onClickUberEats(amount)}>
                             Uber Eats

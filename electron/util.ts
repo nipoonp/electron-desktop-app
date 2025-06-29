@@ -463,6 +463,17 @@ export const printCustomerReceipt = async (
             },
         ]);
     order.paymentAmounts &&
+        order.paymentAmounts.onAccount &&
+        printer.tableCustom([
+            { text: "On Account", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.paymentAmounts.onAccount)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.paymentAmounts &&
         order.paymentAmounts.uberEats &&
         printer.tableCustom([
             { text: "Uber Eats", align: "LEFT", width: 0.75, bold: true },
@@ -1791,6 +1802,7 @@ const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
         printer.println(`Cash: $${convertCentsToDollars(data.totalPaymentAmounts.cash)}`);
         printer.println(`Eftpos: $${convertCentsToDollars(data.totalPaymentAmounts.eftpos)}`);
         printer.println(`Online: $${convertCentsToDollars(data.totalPaymentAmounts.online)}`);
+        printer.println(`On Account: $${convertCentsToDollars(data.totalPaymentAmounts.onAccount)}`);
         printer.println(`Uber Eats: $${convertCentsToDollars(data.totalPaymentAmounts.uberEats)}`);
         printer.println(`Menu Log: $${convertCentsToDollars(data.totalPaymentAmounts.menulog)}`);
         printer.println(`Doordash: $${convertCentsToDollars(data.totalPaymentAmounts.doordash)}`);

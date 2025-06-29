@@ -217,6 +217,7 @@ export interface IOrderPaymentAmounts {
     cash: number;
     eftpos: number;
     online: number;
+    onAccount: number;
     uberEats: number;
     menulog: number;
     doordash: number;

@@ -630,6 +630,7 @@ const Orders = () => {
                                     !order.paymentAmounts.cash &&
                                     !order.paymentAmounts.eftpos &&
                                     !order.paymentAmounts.online &&
+                                    !order.paymentAmounts.onAccount &&
                                     !order.paymentAmounts.uberEats &&
                                     !order.paymentAmounts.menulog &&
                                     !order.paymentAmounts.doordash &&
@@ -640,6 +641,7 @@ const Orders = () => {
                                     !order.paymentAmounts.cash &&
                                     !order.paymentAmounts.eftpos &&
                                     !order.paymentAmounts.online &&
+                                    !order.paymentAmounts.onAccount &&
                                     !order.paymentAmounts.uberEats &&
                                     !order.paymentAmounts.menulog &&
                                     !order.paymentAmounts.doordash &&
@@ -843,6 +845,11 @@ const Order = (props: {
                     ) : (
                         <></>
                     )}
+                    {order.paymentAmounts && order.paymentAmounts.onAccount ? (
+                        <div className="mt-1">Uber Eats: ${convertCentsToDollars(order.paymentAmounts.onAccount)}</div>
+                    ) : (
+                        <></>
+                    )}
                     {order.paymentAmounts && order.paymentAmounts.uberEats ? (
                         <div className="mt-1">Uber Eats: ${convertCentsToDollars(order.paymentAmounts.uberEats)}</div>
                     ) : (
@@ -867,6 +874,7 @@ const Order = (props: {
                     !order.paymentAmounts.cash &&
                     !order.paymentAmounts.eftpos &&
                     !order.paymentAmounts.online &&
+                    !order.paymentAmounts.onAccount &&
                     !order.paymentAmounts.uberEats &&
                     !order.paymentAmounts.menulog &&
                     !order.paymentAmounts.doordash &&
@@ -892,6 +900,7 @@ const Order = (props: {
                                 !order.paymentAmounts.cash &&
                                 !order.paymentAmounts.eftpos &&
                                 !order.paymentAmounts.online &&
+                                !order.paymentAmounts.onAccount &&
                                 !order.paymentAmounts.uberEats &&
                                 !order.paymentAmounts.menulog &&
                                 !order.paymentAmounts.doordash &&

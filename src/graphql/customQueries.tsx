@@ -114,6 +114,7 @@ export const GET_USER = gql`
                             enablePayLater
                             enableCashPayments
                             enableEftposPayments
+                            enableOnAccountPayments
                             enableUberEatsPayments
                             enableMenulogPayments
                             enableDoordashPayments
@@ -404,6 +405,7 @@ export const GET_RESTAURANT = gql`
                     enablePayLater
                     enableCashPayments
                     enableEftposPayments
+                    enableOnAccountPayments
                     enableUberEatsPayments
                     enableMenulogPayments
                     enableDoordashPayments
@@ -1084,6 +1086,7 @@ export interface IGET_RESTAURANT_REGISTER {
     enablePayLater: boolean;
     enableCashPayments: boolean;
     enableEftposPayments: boolean;
+    enableOnAccountPayments: boolean;
     enableUberEatsPayments: boolean;
     enableMenulogPayments: boolean;
     enableDoordashPayments: boolean;

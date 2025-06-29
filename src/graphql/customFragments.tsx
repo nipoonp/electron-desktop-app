@@ -24,6 +24,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
             cash
             eftpos
             online
+            onAccount
             uberEats
             menulog
             doordash
@@ -310,6 +311,7 @@ export interface IOrderPaymentAmounts {
     cash: number;
     eftpos: number;
     online: number;
+    onAccount: number;
     uberEats: number;
     menulog: number;
     doordash: number;
