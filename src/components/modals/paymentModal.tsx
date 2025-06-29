@@ -921,6 +921,7 @@ const POSPaymentScreen = (props: {
         promotion,
         userAppliedPromotionCode,
         removeUserAppliedPromotion,
+        customerInformation,
     } = useCart();
     const { register } = useRegister();
     const { restaurant } = useRestaurant();
@@ -1045,11 +1046,16 @@ const POSPaymentScreen = (props: {
                     <Button className="large payment-modal-eftpos-button" onClick={() => onClickEftpos(amount)}>
                         Eftpos
                     </Button>
-                    {register && register.enableOnAccountPayments && (
-                        <Button className="large payment-modal-on-account-button" onClick={() => onClickOnAccount(amount)}>
-                            On Account
-                        </Button>
-                    )}
+                    {register &&
+                        register.enableOnAccountPayments &&
+                        customerInformation &&
+                        customerInformation.firstName &&
+                        customerInformation.email &&
+                        customerInformation.phoneNumber && (
+                            <Button className="large payment-modal-on-account-button" onClick={() => onClickOnAccount(amount)}>
+                                On Account
+                            </Button>
+                        )}
                     {register && register.enableUberEatsPayments && (
                         <Button className="large payment-modal-uber-eats-button" onClick={() => onClickUberEats(amount)}>
                             Uber Eats

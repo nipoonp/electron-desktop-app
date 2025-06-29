@@ -223,7 +223,7 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
                     </Button>
                 </div>
 
-                {customerInformation && (
+                {customerInformation && customerInformation.firstName && customerInformation.email && customerInformation.phoneNumber && (
                     <>
                         <div className="separator-4"></div>
                         <div className="mt-3">
