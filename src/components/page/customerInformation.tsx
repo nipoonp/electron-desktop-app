@@ -11,10 +11,11 @@ import SignatureCanvas from "react-signature-canvas";
 
 import "./customerInformation.scss";
 import { FiX } from "react-icons/fi";
-import { resizeBase64ImageToWidth } from "../../util/util";
+import { convertCentsToDollars, resizeBase64ImageToWidth } from "../../util/util";
 import { ECustomCustomerFieldType, ELOYALTY_ACTION, IGET_LOYALTY_USER_CONTAINS_PHONE_NUMBER_EMAIL } from "../../graphql/customQueries";
 import { useGetLoyaltyUsersContainsPhoneNumberLazyQuery } from "../../hooks/useGetLoyaltyUsersContainsPhoneNumberLazyQuery";
 import { useGetLoyaltyUsersContainsEmailLazyQuery } from "../../hooks/useGetLoyaltyUsersContainsEmailLazyQuery";
+import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
 
 export default () => {
     const [searchView, setSearchView] = useState(true);
@@ -31,11 +32,19 @@ const CustomerSearch = (props: { onDisableSearchView: () => void }) => {
     const navigate = useNavigate();
     const { restaurant } = useRestaurant();
     const { isPOS } = useRegister();
-    const { customerInformation, setCustomerInformation, setCustomerLoyaltyPoints } = useCart();
+    const { customerInformation, setCustomerInformation, setCustomerLoyaltyPoints, setOnAccountOrders } = useCart();
 
     const [customerIdentifier, setCustomerIdentifier] = useState("");
     const [loyaltyUserRes, setLoyaltyUserRes] = useState<
-        { firstName: string; lastName: string; email: string; phoneNumber: string; points: number }[]
+        {
+            firstName: string;
+            lastName: string;
+            email: string;
+            phoneNumber: string;
+            points: number;
+            onAccountOrders: IGET_RESTAURANT_ORDER_FRAGMENT[];
+            onAccountOrdersBalance: number;
+        }[]
     >([]);
 
     const { getLoyaltyUsersContainsPhoneNumberLazyQuery } = useGetLoyaltyUsersContainsPhoneNumberLazyQuery(
@@ -79,7 +88,15 @@ const CustomerSearch = (props: { onDisableSearchView: () => void }) => {
             if (resEmail.data.listLoyaltyUser.items.length > 0) loyaltyUsers = resEmail.data.listLoyaltyUser.items;
         }
 
-        let users: { firstName: string; lastName: string; email: string; phoneNumber: string; points: number }[] = [];
+        let users: {
+            firstName: string;
+            lastName: string;
+            email: string;
+            phoneNumber: string;
+            points: number;
+            onAccountOrders: IGET_RESTAURANT_ORDER_FRAGMENT[];
+            onAccountOrdersBalance: number;
+        }[] = [];
 
         if (loyaltyUsers) {
             loyaltyUsers.forEach((loyaltyUser) => {
@@ -93,22 +110,33 @@ const CustomerSearch = (props: { onDisableSearchView: () => void }) => {
                     }
                 });
 
-                if (loyaltyUser.loyaltyHistories.items.length > 0) {
-                    users.push({
-                        firstName: loyaltyUser.firstName,
-                        lastName: loyaltyUser.lastName,
-                        email: loyaltyUser.email,
-                        phoneNumber: loyaltyUser.phoneNumber,
-                        points: userPoints,
-                    });
-                }
+                const onAccountOrders = loyaltyUser.onAccountOrders?.items || [];
+
+                const balance = onAccountOrders.reduce((sum, order) => sum + order.subTotal, 0);
+
+                users.push({
+                    firstName: loyaltyUser.firstName,
+                    lastName: loyaltyUser.lastName,
+                    email: loyaltyUser.email,
+                    phoneNumber: loyaltyUser.phoneNumber,
+                    points: userPoints,
+                    onAccountOrders,
+                    onAccountOrdersBalance: balance,
+                });
             });
         }
 
         setLoyaltyUserRes(users);
     };
 
-    const onSelectUser = (loyaltyUser: { firstName: string; lastName: string; email: string; phoneNumber: string; points: number }) => {
+    const onSelectUser = (loyaltyUser: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        phoneNumber: string;
+        points: number;
+        onAccountOrders: IGET_RESTAURANT_ORDER_FRAGMENT[];
+    }) => {
         if (customerInformation) {
             setCustomerInformation({
                 ...customerInformation,
@@ -127,6 +155,7 @@ const CustomerSearch = (props: { onDisableSearchView: () => void }) => {
         }
 
         setCustomerLoyaltyPoints(loyaltyUser.points);
+        setOnAccountOrders(loyaltyUser.onAccountOrders);
         onClose();
     };
 
@@ -160,6 +189,9 @@ const CustomerSearch = (props: { onDisableSearchView: () => void }) => {
                         <div className="mt-1">
                             {loyaltyUser.points} {loyaltyUser.points > 1 ? "points" : "point"}
                         </div>
+                        {loyaltyUser.onAccountOrdersBalance ? (
+                            <div className="mt-1 text-bold">Balance: -${convertCentsToDollars(loyaltyUser.onAccountOrdersBalance)}</div>
+                        ) : null}
                     </div>
                 ))}
             </div>
@@ -173,7 +205,14 @@ const UserInformationFields = () => {
     const { restaurant } = useRestaurant();
     const { isPOS } = useRegister();
 
-    const { customerInformation, setCustomerInformation, setCustomerLoyaltyPoints, setUserAppliedLoyaltyId, removeUserAppliedPromotion } = useCart();
+    const {
+        customerInformation,
+        setCustomerInformation,
+        setCustomerLoyaltyPoints,
+        setUserAppliedLoyaltyId,
+        removeUserAppliedPromotion,
+        setOnAccountOrders,
+    } = useCart();
 
     const [firstName, setFirstName] = useState(customerInformation ? customerInformation.firstName : "");
     const [email, setEmail] = useState(customerInformation ? customerInformation.email : "");
@@ -245,6 +284,8 @@ const UserInformationFields = () => {
                 customFields: customFields,
             });
 
+            setOnAccountOrders([]); //For a new customer there would be no onAccount orders. They have to select from the search bar.
+
             navigate(`${restaurantPath}/${restaurant.id}`);
 
             // navigate(`${checkoutPath}/true`);
@@ -253,6 +294,7 @@ const UserInformationFields = () => {
 
     const onUnlink = () => {
         setCustomerInformation(null);
+        setOnAccountOrders([]);
         setCustomerLoyaltyPoints(null);
         setUserAppliedLoyaltyId(null);
         removeUserAppliedPromotion();

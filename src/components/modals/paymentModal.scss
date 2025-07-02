@@ -59,6 +59,12 @@
         }
     }
 
+    .payment-modal-on-account-payments-wrapper {
+        border: 1px solid #e0e0e0;
+        padding: 24px 36px;
+        border-radius: 10px;
+    }
+
     .payment-modal-payment-buttons-wrapper {
         .payment-modal-payment-button-wrapper {
             display: grid;

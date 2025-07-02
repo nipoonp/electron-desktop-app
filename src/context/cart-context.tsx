@@ -33,6 +33,7 @@ const initialCovers = null;
 const initialTableNumber = null;
 const initialBuzzerNumber = null;
 const initialCustomerInformation = null;
+const initialOnAccountOrders = [];
 const initialCustomerLoyaltyPoints = 0;
 const initialProducts = null;
 const initialNotes = "";
@@ -89,6 +90,8 @@ type ContextProps = {
     setBuzzerNumber: (buzzerNumber: string | null) => void;
     customerInformation: ICustomerInformation | null;
     setCustomerInformation: (customerInformation: ICustomerInformation | null) => void;
+    onAccountOrders: IGET_RESTAURANT_ORDER_FRAGMENT[];
+    setOnAccountOrders: (orders: IGET_RESTAURANT_ORDER_FRAGMENT[]) => void;
     customerLoyaltyPoints: number | null;
     setCustomerLoyaltyPoints: (customerLoyaltyPoints: number | null) => void;
     products: ICartProduct[] | null;
@@ -155,6 +158,8 @@ const CartContext = createContext<ContextProps>({
     setBuzzerNumber: () => {},
     customerInformation: initialCustomerInformation,
     setCustomerInformation: () => {},
+    onAccountOrders: initialOnAccountOrders,
+    setOnAccountOrders: () => {},
     customerLoyaltyPoints: initialCustomerLoyaltyPoints,
     setCustomerLoyaltyPoints: () => {},
     products: initialProducts,
@@ -213,6 +218,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [tableNumber, _setTableNumber] = useState<string | null>(initialTableNumber);
     const [buzzerNumber, _setBuzzerNumber] = useState<string | null>(initialBuzzerNumber);
     const [customerInformation, _setCustomerInformation] = useState<ICustomerInformation | null>(initialCustomerInformation);
+    const [onAccountOrders, _setOnAccountOrders] = useState<IGET_RESTAURANT_ORDER_FRAGMENT[]>(initialOnAccountOrders);
     const [customerLoyaltyPoints, _setCustomerLoyaltyPoints] = useState<number | null>(initialCustomerLoyaltyPoints);
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
     const [notes, _setNotes] = useState<string>(initialNotes);
@@ -543,6 +549,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setCustomerInformation(customerInformation);
     };
 
+    const setOnAccountOrders = (onAccountOrders: IGET_RESTAURANT_ORDER_FRAGMENT[]) => {
+        _setOnAccountOrders(onAccountOrders);
+    };
+
     const setCustomerLoyaltyPoints = (customerLoyaltyPoints: number | null) => {
         _setCustomerLoyaltyPoints(customerLoyaltyPoints);
     };
@@ -740,6 +750,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setBuzzerNumber: setBuzzerNumber,
                 customerInformation: customerInformation,
                 setCustomerInformation: setCustomerInformation,
+                onAccountOrders: onAccountOrders,
+                setOnAccountOrders: setOnAccountOrders,
                 customerLoyaltyPoints: customerLoyaltyPoints,
                 setCustomerLoyaltyPoints: setCustomerLoyaltyPoints,
                 products: products,

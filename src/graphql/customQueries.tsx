@@ -1,6 +1,6 @@
 import { gql } from "@apollo/client";
 import { EReceiptPrinterPrinterType } from "../model/model";
-import { ORDER_FIELDS_FRAGMENT } from "./customFragments";
+import { IGET_RESTAURANT_ORDER_FRAGMENT, ORDER_FIELDS_FRAGMENT } from "./customFragments";
 
 export enum EOrderStatus {
     NEW = "NEW",
@@ -8,6 +8,7 @@ export enum EOrderStatus {
     CANCELLED = "CANCELLED",
     REFUNDED = "REFUNDED",
     PARKED = "PARKED",
+    ONACCOUNT = "ONACCOUNT",
 }
 
 export enum EOrderType {
@@ -1306,6 +1307,9 @@ export interface IGET_RESTAURANT_LOYALTY {
     loyaltyHistories: {
         items: IGET_RESTAURANT_LOYALTY_HISTORY[];
     };
+    onAccountOrders: {
+        items: IGET_RESTAURANT_ORDER_FRAGMENT[];
+    };
 }
 
 export interface IGET_RESTAURANT_LOYALTY_CATEGORY {
@@ -1895,6 +1899,7 @@ export const UPDATE_RESTAURANT_PREPARATION_TIME = gql`
 `;
 
 export const GET_LOYALTY_USER_BY_PHONE_NUMBER = gql`
+    ${ORDER_FIELDS_FRAGMENT}
     query listLoyaltyUser($phoneNumber: String, $loyaltyHistoryRestaurantId: ID) {
         listLoyaltyUser(filter: { phoneNumber: { eq: $phoneNumber } }, limit: 1000000) {
             items {
@@ -1911,12 +1916,18 @@ export const GET_LOYALTY_USER_BY_PHONE_NUMBER = gql`
                         createdAt
                     }
                 }
+                onAccountOrders(filter: { orderRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 1000000) {
+                    items {
+                        ...OrderFieldsFragment
+                    }
+                }
             }
         }
     }
 `;
 
 export const GET_LOYALTY_USER_CONTAINS_PHONE_NUMBER = gql`
+    ${ORDER_FIELDS_FRAGMENT}
     query listLoyaltyUser($phoneNumber: String, $loyaltyHistoryRestaurantId: ID) {
         listLoyaltyUser(filter: { phoneNumber: { contains: $phoneNumber } }, limit: 1000000) {
             items {
@@ -1933,12 +1944,18 @@ export const GET_LOYALTY_USER_CONTAINS_PHONE_NUMBER = gql`
                         createdAt
                     }
                 }
+                onAccountOrders(filter: { orderRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 1000000) {
+                    items {
+                        ...OrderFieldsFragment
+                    }
+                }
             }
         }
     }
 `;
 
 export const GET_LOYALTY_USER_BY_EMAIL = gql`
+    ${ORDER_FIELDS_FRAGMENT}
     query listLoyaltyUser($email: String, $loyaltyHistoryRestaurantId: ID) {
         listLoyaltyUser(filter: { email: { eq: $email } }) {
             items(limit: 1000000) {
@@ -1955,6 +1972,11 @@ export const GET_LOYALTY_USER_BY_EMAIL = gql`
                         createdAt
                     }
                 }
+                onAccountOrders(filter: { orderRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 1000000) {
+                    items {
+                        ...OrderFieldsFragment
+                    }
+                }
             }
         }
     }
@@ -1967,16 +1989,15 @@ export interface IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL {
     phoneNumber: string;
     email: string;
     loyaltyHistories: {
-        items: {
-            id: string;
-            action: string;
-            points: number;
-            createdAt: string;
-        }[];
+        items: IGET_RESTAURANT_LOYALTY_HISTORY[];
+    };
+    onAccountOrders: {
+        items: IGET_RESTAURANT_ORDER_FRAGMENT[];
     };
 }
 
 export const GET_LOYALTY_USER_CONTAINS_EMAIL = gql`
+    ${ORDER_FIELDS_FRAGMENT}
     query listLoyaltyUser($email: String, $loyaltyHistoryRestaurantId: ID) {
         listLoyaltyUser(filter: { email: { contains: $email } }, limit: 1000000) {
             items {
@@ -1993,6 +2014,11 @@ export const GET_LOYALTY_USER_CONTAINS_EMAIL = gql`
                         createdAt
                     }
                 }
+                onAccountOrders(filter: { orderRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 1000000) {
+                    items {
+                        ...OrderFieldsFragment
+                    }
+                }
             }
         }
     }
@@ -2005,11 +2031,9 @@ export interface IGET_LOYALTY_USER_CONTAINS_PHONE_NUMBER_EMAIL {
     phoneNumber: string;
     email: string;
     loyaltyHistories: {
-        items: {
-            id: string;
-            action: string;
-            points: number;
-            createdAt: string;
-        }[];
+        items: IGET_RESTAURANT_LOYALTY_HISTORY[];
+    };
+    onAccountOrders: {
+        items: IGET_RESTAURANT_ORDER_FRAGMENT[];
     };
 }

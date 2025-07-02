@@ -846,7 +846,7 @@ const Order = (props: {
                         <></>
                     )}
                     {order.paymentAmounts && order.paymentAmounts.onAccount ? (
-                        <div className="mt-1">Uber Eats: ${convertCentsToDollars(order.paymentAmounts.onAccount)}</div>
+                        <div className="mt-1">On Account: ${convertCentsToDollars(order.paymentAmounts.onAccount)}</div>
                     ) : (
                         <></>
                     )}

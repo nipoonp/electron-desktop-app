@@ -26,6 +26,7 @@ import { useListFeedbackLazyQuery } from "../../hooks/useGetFeeddbackByRestauran
 import "./paymentModal.scss";
 import { EPromotionType, IGET_FEEDBACK_BY_RESTAURANT } from "../../graphql/customQueries";
 import Restaurant from "../page/restaurant";
+import { format } from "date-fns";
 
 const AMOUNT_5 = "5.00";
 const AMOUNT_10 = "10.00";
@@ -922,6 +923,7 @@ const POSPaymentScreen = (props: {
         userAppliedPromotionCode,
         removeUserAppliedPromotion,
         customerInformation,
+        onAccountOrders,
     } = useCart();
     const { register } = useRegister();
     const { restaurant } = useRestaurant();
@@ -1037,6 +1039,18 @@ const POSPaymentScreen = (props: {
                 </div>
             </div>
 
+            {onAccountOrders.length > 0 && (
+                <div className="payment-modal-on-account-payments-wrapper mb-8">
+                    <div className="text-bold mb-2">This customer has unpaid Account Balance</div>
+                    {onAccountOrders.map((order) => (
+                        <div className="mt-1">
+                            Order: {order.number} - {format(new Date(order.placedAt), "dd MMM h:mm:ss aa")} - {order.products.length}
+                            {order.products.length === 1 ? " item" : " items"} - ${convertCentsToDollars(order.subTotal)}
+                        </div>
+                    ))}
+                </div>
+            )}
+
             <div className="h3 mb-4">Payment Methods</div>
             <div className="payment-modal-payment-buttons-wrapper mb-8">
                 <div className="payment-modal-payment-button-wrapper">
@@ -1078,7 +1092,6 @@ const POSPaymentScreen = (props: {
                     )}
                 </div>
             </div>
-
             <div className="h3 mb-4">Quick Cash Options</div>
             <div className="payment-modal-quick-cash-button-wrapper mb-8">
                 <div className="payment-modal-quick-cash-button" onClick={() => onClickCash(AMOUNT_5)}>
@@ -1097,7 +1110,6 @@ const POSPaymentScreen = (props: {
                     $100
                 </div>
             </div>
-
             {payments && payments.length > 0 && (
                 <>
                     <div className="h3 mb-4">Paid So Far</div>
