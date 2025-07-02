@@ -1048,6 +1048,9 @@ const POSPaymentScreen = (props: {
                             {order.products.length === 1 ? " item" : " items"} - ${convertCentsToDollars(order.subTotal)}
                         </div>
                     ))}
+                    <div className="mt-2 text-bold">
+                        Total: -${convertCentsToDollars(onAccountOrders.reduce((sum, order) => sum + order.subTotal, 0))}
+                    </div>
                 </div>
             )}
 
