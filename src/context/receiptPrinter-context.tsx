@@ -39,7 +39,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     const { restaurant, restaurantBase64Logo } = useRestaurant();
     const { register } = useRegister();
     const { logError } = useErrorLogging();
-    const { checkElectron, sendAsync } = useElectron();
+    const { checkParentView, sendParentAsync } = useElectron();
 
     const { getRestaurantOnlineOrdersByBeginWithPlacedAt } = useGetRestaurantOnlineOrdersByBeginWithPlacedAtLazyQuery(); //Skip the first iteration. Get new orders from refetch.
     // const { getRestaurantOrdersByBetweenPlacedAt } = useGetRestaurantOrdersByBetweenPlacedAtLazyQuery(); //Skip the first iteration. Get new orders from refetch.
@@ -191,9 +191,10 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     }, [restaurant, register]);
 
     const printReceipt = async (order: IOrderReceipt, isRetry?: boolean) => {
-        if (checkElectron()) {
+        console.log("xxx...I AM HERE to check electron", checkParentView());
+        if (checkParentView()) {
             try {
-                const result: IPrintReceiptDataOutput = await sendAsync("RECEIPT_PRINTER_DATA", order);
+                const result: IPrintReceiptDataOutput = await sendParentAsync("RECEIPT_PRINTER_DATA", order);
 
                 console.log("result", result);
 
@@ -216,9 +217,9 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     };
 
     const printEftposReceipt = async (eftposReceipt: IPrintReceiptDataInput) => {
-        if (checkElectron()) {
+        if (checkParentView()) {
             try {
-                const result: IEftposReceiptOutput = await sendAsync("RECEIPT_PRINTER_EFTPOS_DATA", eftposReceipt);
+                const result: IEftposReceiptOutput = await sendParentAsync("RECEIPT_PRINTER_EFTPOS_DATA", eftposReceipt);
 
                 console.log("result", result);
             } catch (e) {
@@ -373,9 +374,9 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     };
 
     const printSalesData = async (printSalesDataInput: IPrintSalesDataInput) => {
-        if (checkElectron()) {
+        if (checkParentView()) {
             try {
-                const result: IPrintReceiptDataOutput = await sendAsync("RECEIPT_SALES_DATA", printSalesDataInput);
+                const result: IPrintReceiptDataOutput = await sendParentAsync("RECEIPT_SALES_DATA", printSalesDataInput);
 
                 console.log("result", result);
 

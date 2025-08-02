@@ -12,7 +12,7 @@ import { useElectron } from "../../context/electron-context";
 export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) => void; onHideMenu: () => void }) => {
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
-    const { send } = useElectron();
+    const { sendParent } = useElectron();
 
     const [selectedTabId, setSelectedTabId] = useState<string>("");
     const [subTabs, setSubTabs] = useState<ITab[] | null>(null);
@@ -47,11 +47,11 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
     };
 
     const selectOpenCustomerDisplay = () => {
-        send("OPEN_CUSTOMER_DISPLAY");
+        sendParent("OPEN_CUSTOMER_DISPLAY");
     };
 
     const selectTabExit = () => {
-        send("EXIT_ELECTRON_APP");
+        sendParent("EXIT_ELECTRON_APP");
     };
 
     return (

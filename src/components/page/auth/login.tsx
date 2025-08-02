@@ -20,7 +20,7 @@ const passwordSchema = yup.string().min(8, "Password must be at least 8 characte
 
 const Login = () => {
     const { login } = useAuth();
-    const { send } = useElectron();
+    const { sendParent } = useElectron();
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
@@ -49,7 +49,7 @@ const Login = () => {
 
                 await logError("Invalid user, rebooting app", JSON.stringify({ user: user }));
 
-                send("RESTART_ELECTRON_APP");
+                sendParent("RESTART_ELECTRON_APP");
             } catch (e) {
                 //Means not logged in
                 console.log("User not logged in");

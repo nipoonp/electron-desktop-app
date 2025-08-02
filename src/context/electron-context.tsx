@@ -8,21 +8,21 @@ try {
 } catch (e) {}
 
 type ContextProps = {
-    checkElectron: () => boolean;
-    getElectron: () => any;
-    sendAsync: (type: string, payload?: any) => Promise<any>;
-    send: (type: string, payload?: any) => void;
+    checkParentView: () => boolean;
+    getParentView: () => any;
+    sendParentAsync: (type: string, payload?: any) => Promise<any>;
+    sendParent: (type: string, payload?: any) => void;
 };
 
 const ElectronContext = createContext<ContextProps>({
-    checkElectron: () => true,
-    getElectron: () => {},
-    sendAsync: (type: string, payload?: any) => {
+    checkParentView: () => true,
+    getParentView: () => {},
+    sendParentAsync: (type: string, payload?: any) => {
         return new Promise(() => {
             console.log("");
         });
     },
-    send: (type: string, payload?: any) => {},
+    sendParent: (type: string, payload?: any) => {},
 });
 
 const ElectronProvider = (props: { children: React.ReactNode }) => {
@@ -80,17 +80,23 @@ const ElectronProvider = (props: { children: React.ReactNode }) => {
         );
     };
 
-    const checkElectron = () => {
+    const checkParentView = () => {
         if (ipcRenderer) return true;
+        // @ts-ignore
+        if (window && window.ReactNativeWebView) return true;
 
         return false;
     };
 
-    const getElectron = () => {
+    const getParentView = () => {
         if (ipcRenderer) return ipcRenderer;
+        // @ts-ignore
+        if (window && window.ReactNativeWebView) return window.ReactNativeWebView;
     };
 
-    const sendAsync = (type: string, payload?: any) => {
+    const sendParentAsync = (type: string, payload?: any) => {
+        console.log("xxx...I AM HERE");
+
         if (ipcRenderer) {
             return ipcRenderer.invoke(type, payload);
         }
@@ -102,9 +108,10 @@ const ElectronProvider = (props: { children: React.ReactNode }) => {
         }
     };
 
-    const send = (type: string, payload?: any) => {
+    const sendParent = (type: string, payload?: any) => {
+        console.log("xxx...I AM HERE");
         if (ipcRenderer) {
-            ipcRenderer.send(type, payload);
+            ipcRenderer.sendParent(type, payload);
         }
 
         // @ts-ignore
@@ -117,10 +124,10 @@ const ElectronProvider = (props: { children: React.ReactNode }) => {
     return (
         <ElectronContext.Provider
             value={{
-                checkElectron: checkElectron,
-                getElectron: getElectron,
-                sendAsync: sendAsync,
-                send: send,
+                checkParentView: checkParentView,
+                getParentView: getParentView,
+                sendParentAsync: sendParentAsync,
+                sendParent: sendParent,
             }}
             children={
                 <>

@@ -114,13 +114,13 @@ export default () => {
     const { user, login } = useAuth();
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
-    const { send } = useElectron();
+    const { sendParent } = useElectron();
 
     useEffect(() => {
         const e = user ? user.attributes.email : "invalid email";
         const r = register ? `${register.name} (${register.id})` : "invalid register";
 
-        send("SENTRY_CURRENT_USER", {
+        sendParent("SENTRY_CURRENT_USER", {
             email: e,
             register: r,
         });
