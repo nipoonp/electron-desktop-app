@@ -196,6 +196,13 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     }, [restaurant, register]);
 
     const printReceipt = async (order: IOrderReceipt, isRetry?: boolean) => {
+        //@ts-ignore
+        if (window && window.ReactNativeWebView) {
+            console.log("xxx...printReceipt", order);
+            //@ts-ignore
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: "RECEIPT_PRINTER_DATA", payload: order }));
+        }
+
         if (ipcRenderer) {
             try {
                 const result: IPrintReceiptDataOutput = await ipcRenderer.invoke("RECEIPT_PRINTER_DATA", order);
