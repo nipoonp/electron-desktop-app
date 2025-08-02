@@ -11,13 +11,7 @@ import { useErrorLogging } from "./errorLogging-context";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
 import { IEftposReceiptOutput } from "../../electron/model";
-
-let electron: any;
-let ipcRenderer: any;
-try {
-    electron = window.require("electron");
-    ipcRenderer = electron.ipcRenderer;
-} catch (e) {}
+import { useElectron } from "./electron-context";
 
 type ContextProps = {
     printReceipt: (payload: IOrderReceipt) => Promise<any>;
@@ -45,6 +39,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     const { restaurant, restaurantBase64Logo } = useRestaurant();
     const { register } = useRegister();
     const { logError } = useErrorLogging();
+    const { checkElectron, sendAsync } = useElectron();
 
     const { getRestaurantOnlineOrdersByBeginWithPlacedAt } = useGetRestaurantOnlineOrdersByBeginWithPlacedAtLazyQuery(); //Skip the first iteration. Get new orders from refetch.
     // const { getRestaurantOrdersByBetweenPlacedAt } = useGetRestaurantOrdersByBetweenPlacedAtLazyQuery(); //Skip the first iteration. Get new orders from refetch.
@@ -196,16 +191,9 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     }, [restaurant, register]);
 
     const printReceipt = async (order: IOrderReceipt, isRetry?: boolean) => {
-        //@ts-ignore
-        if (window && window.ReactNativeWebView) {
-            console.log("xxx...printReceipt", order);
-            //@ts-ignore
-            window.ReactNativeWebView.postMessage(JSON.stringify({ type: "RECEIPT_PRINTER_DATA", payload: order }));
-        }
-
-        if (ipcRenderer) {
+        if (checkElectron()) {
             try {
-                const result: IPrintReceiptDataOutput = await ipcRenderer.invoke("RECEIPT_PRINTER_DATA", order);
+                const result: IPrintReceiptDataOutput = await sendAsync("RECEIPT_PRINTER_DATA", order);
 
                 console.log("result", result);
 
@@ -228,9 +216,9 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     };
 
     const printEftposReceipt = async (eftposReceipt: IPrintReceiptDataInput) => {
-        if (ipcRenderer) {
+        if (checkElectron()) {
             try {
-                const result: IEftposReceiptOutput = await ipcRenderer.invoke("RECEIPT_PRINTER_EFTPOS_DATA", eftposReceipt);
+                const result: IEftposReceiptOutput = await sendAsync("RECEIPT_PRINTER_EFTPOS_DATA", eftposReceipt);
 
                 console.log("result", result);
             } catch (e) {
@@ -385,9 +373,9 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     };
 
     const printSalesData = async (printSalesDataInput: IPrintSalesDataInput) => {
-        if (ipcRenderer) {
+        if (checkElectron()) {
             try {
-                const result: IPrintReceiptDataOutput = await ipcRenderer.invoke("RECEIPT_SALES_DATA", printSalesDataInput);
+                const result: IPrintReceiptDataOutput = await sendAsync("RECEIPT_SALES_DATA", printSalesDataInput);
 
                 console.log("result", result);
 

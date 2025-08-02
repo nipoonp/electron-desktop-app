@@ -7,17 +7,13 @@ import { useRegister } from "../../context/register-context";
 import { BsDisplay } from "react-icons/bs";
 
 import "./menu.scss";
-
-let electron: any;
-let ipcRenderer: any;
-try {
-    electron = window.require("electron");
-    ipcRenderer = electron.ipcRenderer;
-} catch (e) {}
+import { useElectron } from "../../context/electron-context";
 
 export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) => void; onHideMenu: () => void }) => {
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
+    const { send } = useElectron();
+
     const [selectedTabId, setSelectedTabId] = useState<string>("");
     const [subTabs, setSubTabs] = useState<ITab[] | null>(null);
 
@@ -51,11 +47,11 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
     };
 
     const selectOpenCustomerDisplay = () => {
-        ipcRenderer && ipcRenderer.send("OPEN_CUSTOMER_DISPLAY");
+        send("OPEN_CUSTOMER_DISPLAY");
     };
 
     const selectTabExit = () => {
-        ipcRenderer && ipcRenderer.send("EXIT_ELECTRON_APP");
+        send("EXIT_ELECTRON_APP");
     };
 
     return (

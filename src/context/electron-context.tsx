@@ -7,9 +7,23 @@ try {
     ipcRenderer = electron.ipcRenderer;
 } catch (e) {}
 
-type ContextProps = {};
+type ContextProps = {
+    checkElectron: () => boolean;
+    getElectron: () => any;
+    sendAsync: (type: string, payload?: any) => Promise<any>;
+    send: (type: string, payload?: any) => void;
+};
 
-const ElectronContext = createContext<ContextProps>({});
+const ElectronContext = createContext<ContextProps>({
+    checkElectron: () => true,
+    getElectron: () => {},
+    sendAsync: (type: string, payload?: any) => {
+        return new Promise(() => {
+            console.log("");
+        });
+    },
+    send: (type: string, payload?: any) => {},
+});
 
 const ElectronProvider = (props: { children: React.ReactNode }) => {
     const [electronUpdaterMessage, setElectronUpdaterMessage] = useState<string | null>(null);
@@ -66,9 +80,48 @@ const ElectronProvider = (props: { children: React.ReactNode }) => {
         );
     };
 
+    const checkElectron = () => {
+        if (ipcRenderer) return true;
+
+        return false;
+    };
+
+    const getElectron = () => {
+        if (ipcRenderer) return ipcRenderer;
+    };
+
+    const sendAsync = (type: string, payload?: any) => {
+        if (ipcRenderer) {
+            return ipcRenderer.invoke(type, payload);
+        }
+
+        // @ts-ignore
+        if (window && window.ReactNativeWebView) {
+            //@ts-ignore
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: type, payload: payload }));
+        }
+    };
+
+    const send = (type: string, payload?: any) => {
+        if (ipcRenderer) {
+            ipcRenderer.send(type, payload);
+        }
+
+        // @ts-ignore
+        if (window && window.ReactNativeWebView) {
+            //@ts-ignore
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: type, payload: payload }));
+        }
+    };
+
     return (
         <ElectronContext.Provider
-            value={{}}
+            value={{
+                checkElectron: checkElectron,
+                getElectron: getElectron,
+                sendAsync: sendAsync,
+                send: send,
+            }}
             children={
                 <>
                     {!isOnline && <NoInternetConnection />}

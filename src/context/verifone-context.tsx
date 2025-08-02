@@ -14,13 +14,7 @@ import { useRegister } from "./register-context";
 import { format } from "date-fns";
 import { useRestaurant } from "./restaurant-context";
 import { toast } from "../tabin/components/toast";
-
-let electron: any;
-let ipcRenderer: any;
-try {
-    electron = window.require("electron");
-    ipcRenderer = electron.ipcRenderer;
-} catch (e) {}
+import { useElectron } from "./electron-context";
 
 const logger = new Logger("verifoneContext");
 
@@ -107,6 +101,7 @@ const VerifoneContext = createContext<ContextProps>({
 
 const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const { addEftposLog } = useErrorLogging();
+    const { checkElectron, getElectron, send } = useElectron();
 
     const interval = 1 * 1500; // 1.5 seconds
     const interval2 = 1 * 100; // 150 miliseconds
@@ -129,16 +124,16 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const connectedEndpoint = useRef<string | null>(null);
 
     useEffect(() => {
-        ipcRenderer &&
-            ipcRenderer.on("EFTPOS_CONNECT", (event: any, arg: any) => {
+        checkElectron() &&
+            getElectron().on("EFTPOS_CONNECT", (event: any, arg: any) => {
                 console.log("EFTPOS_CONNECT:", arg);
                 addToLogs(`EFTPOS_CONNECT: ${arg}`);
 
                 connectedEndpoint.current = attemptingEndpoint.current;
             });
 
-        ipcRenderer &&
-            ipcRenderer.on("EFTPOS_DATA", (event: any, arg: any) => {
+        checkElectron() &&
+            getElectron().on("EFTPOS_DATA", (event: any, arg: any) => {
                 console.log("EFTPOS_DATA:", arg);
                 addToLogs(`EFTPOS_DATA: ${arg}`);
 
@@ -152,13 +147,13 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 };
 
                 if (type == VMT.ReadyToPrintRequest) {
-                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
+                    send("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
                     addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
 
                     readyToPrintRequestReplySent.current = true;
                 } else if (type == VMT.PrintRequest) {
                     eftposReceipt.current = dataPayload;
-                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
+                    send("BROWSER_DATA", `${VMT.PrintResponse},OK`);
                     addToLogs(`BROWSER_DATA ${VMT.PrintResponse},OK`);
 
                     printRequestReplySent.current = true;
@@ -167,16 +162,16 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 lastMessageReceived.current = Number(new Date());
             });
 
-        ipcRenderer &&
-            ipcRenderer.on("EFTPOS_ERROR", (event: any, arg: any) => {
+        checkElectron() &&
+            getElectron().on("EFTPOS_ERROR", (event: any, arg: any) => {
                 console.error("EFTPOS_ERROR:", arg);
                 addToLogs(`EFTPOS_ERROR: ${arg}`);
 
                 eftposError.current = arg;
             });
 
-        ipcRenderer &&
-            ipcRenderer.on("EFTPOS_CLOSE", (event: any, arg: any) => {
+        checkElectron() &&
+            getElectron().on("EFTPOS_CLOSE", (event: any, arg: any) => {
                 console.log("EFTPOS_CLOSE:", arg);
                 addToLogs(`EFTPOS_CLOSE: ${arg}`);
 
@@ -241,11 +236,10 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
         eftposError.current = "";
 
-        ipcRenderer &&
-            ipcRenderer.send("BROWSER_EFTPOS_CONNECT", {
-                ipAddress: ipAddress,
-                portNumber: portNumber,
-            });
+        send("BROWSER_EFTPOS_CONNECT", {
+            ipAddress: ipAddress,
+            portNumber: portNumber,
+        });
         addToLogs(`BROWSER_EFTPOS_CONNECT: ${ipAddress}:${portNumber}`);
 
         while (!connectedEndpoint.current) {
@@ -270,7 +264,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const disconnectEftpos = async () => {
         const disconnectTimeoutEndTime = Number(new Date()) + noResponseTimeout;
 
-        ipcRenderer && ipcRenderer.send("BROWSER_EFTPOS_DISCONNECT");
+        send("BROWSER_EFTPOS_DISCONNECT");
         addToLogs("BROWSER_EFTPOS_DISCONNECT");
 
         while (connectedEndpoint.current) {
@@ -323,7 +317,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
             // Configure Printing -------------------------------------------------------------------------------------------------------------------------------- //
             if (!configurePrintingCommandSent.current) {
-                ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
+                send("BROWSER_DATA", `${VMT.ConfigurePrinting},ON`);
                 addToLogs(`BROWSER_DATA: ${VMT.ConfigurePrinting},ON`);
 
                 const printingTimeoutEndTime = Number(new Date()) + noResponseTimeout;
@@ -383,14 +377,14 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
 
             // Create A Transaction -------------------------------------------------------------------------------------------------------------------------------- //
             if (!unresolvedVerifoneTransactionId) {
-                ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.Purchase},${transactionId},${merchantId},${amount}`);
+                send("BROWSER_DATA", `${VMT.Purchase},${transactionId},${merchantId},${amount}`);
                 addToLogs(`BROWSER_DATA: ${VMT.Purchase},${transactionId},${merchantId},${amount}`);
                 localStorage.setItem("unresolvedVerifoneTransactionId", transactionId.toString());
                 // localStorage.setItem("verifoneMerchantId", merchantId.toString());
             }
 
             // Poll For Result -------------------------------------------------------------------------------------------------------------------------------- //
-            ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
+            send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
             addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
 
             let lastGetResultLoopTime = Number(new Date());
@@ -461,7 +455,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                     }
 
                     // Poll For Result -------------------------------------------------------------------------------------------------------------------------------- //
-                    ipcRenderer && ipcRenderer.send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
+                    send("BROWSER_DATA", `${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
                     addToLogs(`BROWSER_DATA: ${VMT.ResultAndExtrasRequest},${transactionId},${merchantId}`);
 
                     lastGetResultLoopTime = Number(new Date());

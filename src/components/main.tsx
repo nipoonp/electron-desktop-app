@@ -17,6 +17,7 @@ import RequireCustomerInformation from "./page/customerInformation";
 import { sendFailureNotification } from "../util/errorHandling";
 
 import "react-toastify/dist/ReactToastify.min.css";
+import { useElectron } from "../context/electron-context";
 
 const Login = lazy(() => import("./page/auth/login"));
 const Logout = lazy(() => import("./page/auth/logout"));
@@ -34,13 +35,6 @@ const PaymentMethod = lazy(() => import("./page/paymentMethod"));
 const Checkout = lazy(() => import("./page/checkout"));
 const NoMatch = lazy(() => import("./page/error/404"));
 const Unauthorised = lazy(() => import("./page/error/unauthorised"));
-
-let electron: any;
-let ipcRenderer: any;
-try {
-    electron = window.require("electron");
-    ipcRenderer = electron.ipcRenderer;
-} catch (e) {}
 
 // reset scroll position on change of route
 // https://stackoverflow.com/a/46868707/11460922
@@ -120,16 +114,16 @@ export default () => {
     const { user, login } = useAuth();
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
+    const { send } = useElectron();
 
     useEffect(() => {
         const e = user ? user.attributes.email : "invalid email";
         const r = register ? `${register.name} (${register.id})` : "invalid register";
 
-        ipcRenderer &&
-            ipcRenderer.send("SENTRY_CURRENT_USER", {
-                email: e,
-                register: r,
-            });
+        send("SENTRY_CURRENT_USER", {
+            email: e,
+            register: r,
+        });
     }, [user, register]);
 
     useEffect(() => {
