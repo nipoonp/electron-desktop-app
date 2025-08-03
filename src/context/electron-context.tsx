@@ -108,7 +108,7 @@ const ElectronProvider = (props: { children: React.ReactNode }) => {
 
     const sendParent = (type: string, payload?: any) => {
         if (ipcRenderer) {
-            ipcRenderer.sendParent(type, payload);
+            ipcRenderer.send(type, payload);
         }
 
         // @ts-ignore
