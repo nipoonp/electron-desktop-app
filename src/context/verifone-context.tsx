@@ -1,4 +1,4 @@
-import { useEffect, createContext, useContext, useRef } from "react";
+import { useEffect, createContext, useContext, useRef, useState } from "react";
 import { Logger } from "aws-amplify";
 import { delay, getVerifoneSocketErrorMessage, getVerifoneTimeBasedTransactionId } from "../model/util";
 import { toLocalISOString } from "../util/util";
@@ -124,7 +124,7 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
     const connectedEndpoint = useRef<string | null>(null);
 
     useEffect(() => {
-        checkParentView() &&
+        if (checkParentView().electron) {
             getParentView().on("EFTPOS_CONNECT", (event: any, arg: any) => {
                 console.log("EFTPOS_CONNECT:", arg);
                 addToLogs(`EFTPOS_CONNECT: ${arg}`);
@@ -132,7 +132,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 connectedEndpoint.current = attemptingEndpoint.current;
             });
 
-        checkParentView() &&
             getParentView().on("EFTPOS_DATA", (event: any, arg: any) => {
                 console.log("EFTPOS_DATA:", arg);
                 addToLogs(`EFTPOS_DATA: ${arg}`);
@@ -162,7 +161,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 lastMessageReceived.current = Number(new Date());
             });
 
-        checkParentView() &&
             getParentView().on("EFTPOS_ERROR", (event: any, arg: any) => {
                 console.error("EFTPOS_ERROR:", arg);
                 addToLogs(`EFTPOS_ERROR: ${arg}`);
@@ -170,7 +168,6 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 eftposError.current = arg;
             });
 
-        checkParentView() &&
             getParentView().on("EFTPOS_CLOSE", (event: any, arg: any) => {
                 console.log("EFTPOS_CLOSE:", arg);
                 addToLogs(`EFTPOS_CLOSE: ${arg}`);
@@ -178,16 +175,76 @@ const VerifoneProvider = (props: { children: React.ReactNode }) => {
                 connectedEndpoint.current = null;
             });
 
-        return () => {
-            // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
-            (async () => {
-                const disconnectTimedOut = await disconnectEftpos();
-            })();
-            // if (disconnectTimedOut) {
-            //     reject({ transactionId: transactionId, message: "There was an issue disconnecting to the Eftpos." });
-            //     return;
-            // }
-        };
+            return () => {
+                // Disconnect Eftpos -------------------------------------------------------------------------------------------------------------------------------- //
+                (async () => {
+                    const disconnectTimedOut = await disconnectEftpos();
+                })();
+                // if (disconnectTimedOut) {
+                //     reject({ transactionId: transactionId, message: "There was an issue disconnecting to the Eftpos." });
+                //     return;
+                // }
+            };
+        }
+
+        if (checkParentView().reactNativeWebView) {
+            const reactNativeWebViewHandler = (e: MessageEvent) => {
+                const data = e.data === "string" ? JSON.parse(e.data) : e.data; // Check if data is a string and parse it
+                if (!data || typeof data !== "object") return; //This is important to ensure data is an object before accessing properties
+
+                const type = data.type;
+                const payload = data.payload;
+
+                if (!type) return;
+
+                if (type === "EFTPOS_CONNECT") {
+                    console.log("EFTPOS_CONNECT:", payload);
+                    addToLogs(`EFTPOS_CONNECT: ${payload}`);
+
+                    connectedEndpoint.current = attemptingEndpoint.current;
+                } else if (type === "EFTPOS_DATA") {
+                    console.log("EFTPOS_DATA:", payload);
+                    addToLogs(`EFTPOS_DATA: ${payload}`);
+
+                    const payloadArray = String(payload).split(",");
+                    const eftposType = payloadArray[0];
+                    const dataPayload = payloadArray.slice(1).join(",");
+
+                    eftposData.current = {
+                        type: eftposType as VMT,
+                        payload: dataPayload,
+                    };
+
+                    if (eftposType === VMT.ReadyToPrintRequest) {
+                        sendParent("BROWSER_DATA", `${VMT.ReadyToPrintResponse},OK`);
+                        addToLogs(`BROWSER_DATA: ${VMT.ReadyToPrintResponse},OK`);
+
+                        readyToPrintRequestReplySent.current = true;
+                    } else if (eftposType === VMT.PrintRequest) {
+                        eftposReceipt.current = dataPayload;
+                        sendParent("BROWSER_DATA", `${VMT.PrintResponse},OK`);
+                        addToLogs(`BROWSER_DATA: ${VMT.PrintResponse},OK`);
+
+                        printRequestReplySent.current = true;
+                    }
+
+                    lastMessageReceived.current = Date.now();
+                } else if (type === "EFTPOS_ERROR") {
+                    console.error("EFTPOS_ERROR:", payload);
+                    addToLogs(`EFTPOS_ERROR: ${payload}`);
+
+                    eftposError.current = String(payload);
+                } else if (type === "EFTPOS_CLOSE") {
+                    console.log("EFTPOS_CLOSE:", payload);
+                    addToLogs(`EFTPOS_CLOSE: ${payload}`);
+
+                    connectedEndpoint.current = null;
+                }
+            };
+
+            window.addEventListener("message", reactNativeWebViewHandler);
+            return () => window.removeEventListener("message", reactNativeWebViewHandler);
+        }
     }, []);
 
     const resetVariables = () => {

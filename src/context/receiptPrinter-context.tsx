@@ -191,7 +191,6 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     }, [restaurant, register]);
 
     const printReceipt = async (order: IOrderReceipt, isRetry?: boolean) => {
-        console.log("xxx...I AM HERE to check electron", checkParentView());
         if (checkParentView()) {
             try {
                 const result: IPrintReceiptDataOutput = await sendParentAsync("RECEIPT_PRINTER_DATA", order);

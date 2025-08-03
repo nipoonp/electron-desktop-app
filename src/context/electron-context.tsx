@@ -8,14 +8,14 @@ try {
 } catch (e) {}
 
 type ContextProps = {
-    checkParentView: () => boolean;
+    checkParentView: () => { electron: boolean; reactNativeWebView: boolean };
     getParentView: () => any;
     sendParentAsync: (type: string, payload?: any) => Promise<any>;
     sendParent: (type: string, payload?: any) => void;
 };
 
 const ElectronContext = createContext<ContextProps>({
-    checkParentView: () => true,
+    checkParentView: () => ({ electron: false, reactNativeWebView: false }),
     getParentView: () => {},
     sendParentAsync: (type: string, payload?: any) => {
         return new Promise(() => {
@@ -81,11 +81,11 @@ const ElectronProvider = (props: { children: React.ReactNode }) => {
     };
 
     const checkParentView = () => {
-        if (ipcRenderer) return true;
+        if (ipcRenderer) return { electron: true, reactNativeWebView: false };
         // @ts-ignore
-        if (window && window.ReactNativeWebView) return true;
+        if (window && window.ReactNativeWebView) return { electron: false, reactNativeWebView: true };
 
-        return false;
+        return { electron: false, reactNativeWebView: false };
     };
 
     const getParentView = () => {
@@ -95,8 +95,6 @@ const ElectronProvider = (props: { children: React.ReactNode }) => {
     };
 
     const sendParentAsync = (type: string, payload?: any) => {
-        console.log("xxx...I AM HERE");
-
         if (ipcRenderer) {
             return ipcRenderer.invoke(type, payload);
         }
@@ -109,7 +107,6 @@ const ElectronProvider = (props: { children: React.ReactNode }) => {
     };
 
     const sendParent = (type: string, payload?: any) => {
-        console.log("xxx...I AM HERE");
         if (ipcRenderer) {
             ipcRenderer.sendParent(type, payload);
         }
