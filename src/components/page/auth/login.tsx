@@ -11,21 +11,16 @@ import config from "./../../../../package.json";
 
 import "./login.scss";
 import { useErrorLogging } from "../../../context/errorLogging-context";
-
-let electron: any;
-let ipcRenderer: any;
-try {
-    electron = window.require("electron");
-    ipcRenderer = electron.ipcRenderer;
-} catch (e) {}
+import { useElectron } from "../../../context/electron-context";
 
 const logger = new Logger("Login");
 
 const emailSchema = yup.string().email("Please enter a valid email address").required("Email is required");
 const passwordSchema = yup.string().min(8, "Password must be at least 8 characters long").required("Password is required");
 
-const Login= () => {
+const Login = () => {
     const { login } = useAuth();
+    const { sendParent } = useElectron();
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
@@ -54,7 +49,7 @@ const Login= () => {
 
                 await logError("Invalid user, rebooting app", JSON.stringify({ user: user }));
 
-                ipcRenderer && ipcRenderer.send("RESTART_ELECTRON_APP");
+                sendParent("RESTART_ELECTRON_APP");
             } catch (e) {
                 //Means not logged in
                 console.log("User not logged in");
