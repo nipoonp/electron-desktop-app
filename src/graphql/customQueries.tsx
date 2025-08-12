@@ -84,104 +84,24 @@ export const GET_USER = gql`
             firstName
             lastName
             email
-            restaurants(limit: 50) {
+            restaurants(limit: 1000) {
                 items {
                     id
                     name
-                    advertisements {
-                        items {
-                            id
-                            name
-                            content {
-                                key
-                                bucket
-                                region
-                                identityPoolId
-                            }
-                        }
+                    verified
+                    address {
+                        formattedAddress
                     }
-                    registers(limit: 50) {
-                        items {
-                            id
-                            active
-                            name
-                            enableTableFlags
-                            enableCovers
-                            enableBuzzerNumbersForTakeaway
-                            enableBuzzerNumbersForDineIn
-                            enableSkuScanner
-                            hideMostPopularCategory
-                            enablePayLater
-                            enableCashPayments
-                            enableEftposPayments
-                            enableOnAccountPayments
-                            enableUberEatsPayments
-                            enableMenulogPayments
-                            enableDoordashPayments
-                            enableDelivereasyPayments
-                            availableOrderTypes
-                            type
-                            requestCustomerInformation {
-                                firstName
-                                email
-                                phoneNumber
-                                signature
-                                customFields {
-                                    label
-                                    value
-                                    type
-                                }
-                            }
-                            eftposProvider
-                            eftposIpAddress
-                            eftposPortNumber
-                            windcaveStationId
-                            windcaveStationUser
-                            windcaveStationKey
-                            tyroMerchantId
-                            tyroTerminalId
-                            skipEftposReceiptSignature
-                            askToPrintCustomerReceipt
-                            orderNumberSuffix
-                            orderNumberStart
-                            surchargePercentage
-                            defaultCategoryView
-                            preSelectedProducts
-                            customStyleSheet {
-                                key
-                                bucket
-                                region
-                                identityPoolId
-                            }
-                            printers {
-                                items {
-                                    id
-                                    name
-                                    type
-                                    printerType
-                                    address
-                                    receiptFooterText
-                                    customerPrinter
-                                    kitchenPrinter
-                                    kitchenPrinterSmall
-                                    kitchenPrinterLarge
-                                    hidePreparationTime
-                                    hideModifierGroupName
-                                    skipReceiptCutCommand
-                                    printReceiptForEachProduct
-                                    printAllOrderReceipts
-                                    printOnlineOrderReceipts
-                                    ignoreCategories(limit: 500) {
-                                        items {
-                                            id
-                                            category {
-                                                id
-                                                name
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                }
+            }
+            userRestaurants(limit: 1000) {
+                items {
+                    restaurant {
+                        id
+                        name
+                        verified
+                        address {
+                            formattedAddress
                         }
                     }
                 }
@@ -196,6 +116,23 @@ export interface IGET_USER {
     firstName: string;
     lastName: string;
     email: string;
+    restaurants: {
+        items: IGET_USER_RESTAURANT[];
+    };
+    userRestaurants: {
+        items: {
+            restaurant: IGET_USER_RESTAURANT;
+        }[];
+    };
+}
+
+export interface IGET_USER_RESTAURANT {
+    id: string;
+    name: string;
+    verified: boolean;
+    address: {
+        formattedAddress: string;
+    };
 }
 
 export interface IGET_USER_REGISTER_PRINTER {
