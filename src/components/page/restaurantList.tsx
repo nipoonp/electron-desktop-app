@@ -46,6 +46,8 @@ export default () => {
         navigate(beginOrderPath);
     };
 
+    console.log("userRestaurants", userRestaurants);
+
     return (
         <>
             <PageWrapper>
