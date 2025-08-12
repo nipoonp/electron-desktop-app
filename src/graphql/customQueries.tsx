@@ -1030,7 +1030,7 @@ export interface IGET_RESTAURANT {
     isAcceptingOrders: boolean;
     verified: boolean;
     address: {
-        receiptAddress: string;
+        receiptAddress?: string | null;
         formattedAddress: string;
     };
     operatingHours: IGET_RESTAURANT_OPERATING_HOURS;
