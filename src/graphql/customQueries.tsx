@@ -84,10 +84,26 @@ export const GET_USER = gql`
             firstName
             lastName
             email
-            restaurants(limit: 50) {
+            userRestaurants(limit: 1000) {
+                items {
+                    restaurant {
+                        id
+                        name
+                        verified
+                        address {
+                            formattedAddress
+                        }
+                    }
+                }
+            }
+            restaurants(limit: 1000) {
                 items {
                     id
                     name
+                    verified
+                    address {
+                        formattedAddress
+                    }
                     advertisements {
                         items {
                             id
@@ -196,6 +212,23 @@ export interface IGET_USER {
     firstName: string;
     lastName: string;
     email: string;
+    restaurants: {
+        items: IGET_USER_RESTAURANT[];
+    };
+    userRestaurants: {
+        items: {
+            restaurant: IGET_USER_RESTAURANT;
+        }[];
+    };
+}
+
+export interface IGET_USER_RESTAURANT {
+    id: string;
+    name: string;
+    verified: boolean;
+    address: {
+        formattedAddress: string;
+    };
 }
 
 export interface IGET_USER_REGISTER_PRINTER {
