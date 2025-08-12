@@ -400,7 +400,7 @@ const Orders = () => {
                 hideModifierGroupsForCustomer: false,
                 restaurant: {
                     name: restaurant.name,
-                    address: restaurant.address.formattedAddress,
+                    address: restaurant.address.receiptAddress || restaurant.address.formattedAddress,
                     gstNumber: restaurant.gstNumber,
                 },
                 customerInformation: order.customerInformation
