@@ -280,6 +280,7 @@ export const GET_RESTAURANT = gql`
             isAcceptingOrders
             verified
             address {
+                receiptAddress
                 formattedAddress
             }
             operatingHours {
@@ -1029,6 +1030,7 @@ export interface IGET_RESTAURANT {
     isAcceptingOrders: boolean;
     verified: boolean;
     address: {
+        receiptAddress: string;
         formattedAddress: string;
     };
     operatingHours: IGET_RESTAURANT_OPERATING_HOURS;

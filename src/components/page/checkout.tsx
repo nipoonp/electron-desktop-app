@@ -587,7 +587,7 @@ export const Checkout = () => {
                 hideModifierGroupsForCustomer: false,
                 restaurant: {
                     name: restaurant.name,
-                    address: restaurant.address.formattedAddress,
+                    address: restaurant.address.receiptAddress || restaurant.address.formattedAddress,
                     gstNumber: restaurant.gstNumber,
                 },
                 restaurantLogoBase64: restaurantBase64Logo,
