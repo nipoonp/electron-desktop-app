@@ -764,18 +764,19 @@ const Order = (props: {
                 {order.customerInformation && (
                     <>
                         <div className="mb-1">
-                            Customer:{" "}
-                            {`${order.customerInformation.firstName} ${
-                                order.customerInformation.phoneNumber ? `(${order.customerInformation.phoneNumber})` : ""
-                            }`}
+                            Customer: {order.customerInformation.firstName ? ` ${order.customerInformation.firstName}` : ""}
+                            {order.customerInformation.phoneNumber ? ` ${order.customerInformation.phoneNumber}` : ""}
+                            {order.customerInformation.email ? ` ${order.customerInformation.email}` : ""}
                         </div>
+
                         <div>
-                            {order.customerInformation?.customFields?.map((field) => (
-                                <div className="mb-1">
+                            {order.customerInformation?.customFields?.map((field, index) => (
+                                <div className="mb-1" key={`${field.label}-${index}`}>
                                     {field.label}: {field.value}
                                 </div>
                             ))}
                         </div>
+
                         {order.customerInformation.signature && (
                             <CachedImage
                                 url={`${getCloudFrontDomainName()}/protected/${order.customerInformation.signature.identityPoolId}/${
