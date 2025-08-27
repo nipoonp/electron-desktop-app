@@ -102,7 +102,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                             hideModifierGroupName: printer.hideModifierGroupName,
                             skipReceiptCutCommand: printer.skipReceiptCutCommand,
                             printReceiptForEachProduct: printer.printReceiptForEachProduct,
-                            hideOrderType: register.availableOrderTypes.length === 0,
+                            hideOrderType: false,
                             eftposReceipt: order.eftposReceipt || null,
                             hideModifierGroupsForCustomer: false,
                             restaurant: {

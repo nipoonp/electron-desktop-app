@@ -332,12 +332,18 @@ const Restaurant = () => {
 
     // callbacks
     const onClickCart = () => {
-        if (register && register.availableOrderTypes.length > 1 && orderType == null) {
-            navigate(orderTypePath);
-        } else if (register && register.availableOrderTypes.length == 1) {
-            setOrderType(register.availableOrderTypes[0]);
+        if (!register) return;
 
-            if (register.availableOrderTypes[0] === EOrderType.DINEIN && (register.enableTableFlags || register.enableCovers)) {
+        const dineInAllowed = register.availableOrderTypes.includes(EOrderType.DINEIN);
+        const takeAwayAllowed = register.availableOrderTypes.includes(EOrderType.TAKEAWAY);
+
+        if (orderType == null && dineInAllowed && takeAwayAllowed) {
+            navigate(orderTypePath);
+        } else if (orderType == null && (dineInAllowed || takeAwayAllowed)) {
+            if (dineInAllowed) setOrderType(EOrderType.DINEIN);
+            if (takeAwayAllowed) setOrderType(EOrderType.TAKEAWAY);
+
+            if (dineInAllowed && (register.enableTableFlags || register.enableCovers)) {
                 navigate(tableNumberPath);
             } else {
                 navigate(checkoutPath);
