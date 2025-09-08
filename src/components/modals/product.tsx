@@ -798,7 +798,7 @@ export const ProductModal = (props: {
 
     const modifierGroups = (
         <>
-            <div className="separator-6"></div>
+            {/* <div className="separator-6"></div> */}
             {product.modifierGroups &&
                 product.modifierGroups.items.map((mg) => {
                     if (mg.modifierGroup.hideForCustomer) return;

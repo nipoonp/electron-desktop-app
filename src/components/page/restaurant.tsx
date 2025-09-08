@@ -176,34 +176,34 @@ const Restaurant = () => {
 
     useEffect(() => {
         if (restaurant) {
-            if (selectedCategoryId) {
-                const selectedCategoryItem = restaurantCategories[selectedCategoryId];
+            // if (selectedCategoryId) {
+            //     const selectedCategoryItem = restaurantCategories[selectedCategoryId];
 
-                if (selectedCategoryItem) {
-                    setSelectedCategory(selectedCategoryItem);
-                    onProcessSubCategories(selectedCategoryItem);
-                }
-            } else if (register && register.defaultCategoryView) {
-                const selectedCategoryItem = restaurantCategories[register.defaultCategoryView];
+            //     if (selectedCategoryItem) {
+            //         setSelectedCategory(selectedCategoryItem);
+            //         onProcessSubCategories(selectedCategoryItem);
+            //     }
+            // } else if (register && register.defaultCategoryView) {
+            //     const selectedCategoryItem = restaurantCategories[register.defaultCategoryView];
 
-                if (selectedCategoryItem) {
-                    setSelectedCategory(selectedCategoryItem);
-                    onProcessSubCategories(selectedCategoryItem);
-                }
-            } else {
-                for (const selectedCategoryItem of restaurant.categories.items) {
-                    const isSoldOut = isItemSoldOut(selectedCategoryItem.soldOut, selectedCategoryItem.soldOutDate);
-                    const isAvailable = isItemAvailable(selectedCategoryItem.availability);
+            //     if (selectedCategoryItem) {
+            //         setSelectedCategory(selectedCategoryItem);
+            //         onProcessSubCategories(selectedCategoryItem);
+            //     }
+            // } else {
+            //     for (const selectedCategoryItem of restaurant.categories.items) {
+            //         const isSoldOut = isItemSoldOut(selectedCategoryItem.soldOut, selectedCategoryItem.soldOutDate);
+            //         const isAvailable = isItemAvailable(selectedCategoryItem.availability);
 
-                    const isValid = !isSoldOut && isAvailable;
+            //         const isValid = !isSoldOut && isAvailable;
 
-                    if (isValid) {
-                        setSelectedCategory(selectedCategoryItem);
-                        onProcessSubCategories(selectedCategoryItem);
-                        break;
-                    }
-                }
-            }
+            //         if (isValid) {
+            //             setSelectedCategory(selectedCategoryItem);
+            //             onProcessSubCategories(selectedCategoryItem);
+            //             break;
+            //         }
+            //     }
+            // }
 
             if (restaurantProducts && register && register.preSelectedProducts) {
                 const cartProducts: ICartProduct[] = [];
@@ -561,6 +561,47 @@ const Restaurant = () => {
         );
     };
 
+    const ProductCategory = (props: {
+        isSelected: boolean;
+        category: IGET_RESTAURANT_CATEGORY;
+        onCategorySelected: (category: IGET_RESTAURANT_CATEGORY) => void;
+    }) => {
+        const { isSelected, category, onCategorySelected } = props;
+
+        const isSoldOut = isItemSoldOut(category.soldOut, category.soldOutDate);
+        const isAvailable = isItemAvailable(category.availability);
+
+        const isValid = !isSoldOut && isAvailable;
+
+        return (
+            <div
+                key={category.id}
+                className={`product-category ${isSelected ? "selected" : ""} ${isValid ? "" : "sold-out"}`}
+                onClick={() => {
+                    isValid && onCategorySelected(category);
+                }}
+            >
+                {category.image && (
+                    <div className="product-category-image-wrapper mb-2">
+                        <CachedImage
+                            url={`${getCloudFrontDomainName()}/protected/${category.image.identityPoolId}/${category.image.key}`}
+                            className="product-category-image"
+                            alt="category-image"
+                        />
+                    </div>
+                )}
+                {!isValid ? (
+                    <div className={`name`}>{category.name} (UNAVAILABLE)</div>
+                ) : isSelected ? (
+                    <div className="name text-bold">{category.name}</div>
+                ) : (
+                    <div className="name">{category.name}</div>
+                )}
+                <div className="description">{category.description}</div>
+            </div>
+        );
+    };
+
     const Category = (props: {
         isSelected: boolean;
         category: IGET_RESTAURANT_CATEGORY;
@@ -710,7 +751,7 @@ const Restaurant = () => {
             }}
         >
             <CachedImage className="icon" url={`${getPublicCloudFrontDomainName()}/images/most-popular.png`} alt="most-popular-icon" />
-            <div className="name">Most Popular</div>
+            <div className="name">Home</div>
         </div>
     );
 
@@ -718,9 +759,23 @@ const Restaurant = () => {
         <div>
             {!selectedCategory && (
                 <>
-                    <div className="product-category-name h1 text-center mb-6">Most Popular</div>
-                    <div className="products">
-                        {mostPopularProducts.map((mostPopularProduct) => ProductDisplay(mostPopularProduct.category, mostPopularProduct.product))}
+                    <div className="product-category-name h1 text-center mb-6">Home</div>
+                    <div className="most-popular-category-products">
+                        {restaurant.categories.items.map((c, index) => {
+                            if (c.availablePlatforms && !c.availablePlatforms.includes(register.type)) return;
+
+                            return (
+                                <ProductCategory
+                                    key={c.id}
+                                    isSelected={false}
+                                    category={c}
+                                    onCategorySelected={(category: IGET_RESTAURANT_CATEGORY) => {
+                                        setSelectedCategory(category);
+                                        onProcessSubCategories(category);
+                                    }}
+                                />
+                            );
+                        })}
                     </div>
                 </>
             )}
@@ -756,7 +811,7 @@ const Restaurant = () => {
                                     </div>
                                 </div>
                             )}
-                            {c.image && (
+                            {/* {c.image && (
                                 <div className="product-category-image-wrapper mb-6">
                                     <CachedImage
                                         url={`${getCloudFrontDomainName()}/protected/${c.image.identityPoolId}/${c.image.key}`}
@@ -764,7 +819,7 @@ const Restaurant = () => {
                                         alt="category-image"
                                     />
                                 </div>
-                            )}
+                            )} */}
                             <div className="products">
                                 {c.products &&
                                     c.products.items.map((p) => {
@@ -826,7 +881,7 @@ const Restaurant = () => {
                                 {restaurant.logo && <RestaurantLogo image={restaurant.logo} />}
                                 {menuSearchProduct}
                                 {register.enableSkuScanner && menuSkuSearchProduct}
-                                {register.hideMostPopularCategory ? <></> : menuMostPopularCategory}
+                                {/* {register.hideMostPopularCategory ? <></> : menuMostPopularCategory} */}
                                 {menuCategories}
                             </div>
                             <div className="products-wrapper" id="productsWrapperScroll">
