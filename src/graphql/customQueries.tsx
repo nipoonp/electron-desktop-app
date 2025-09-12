@@ -1895,8 +1895,8 @@ export const GET_LOYALTY_USER_CONTAINS_PHONE_NUMBER = gql`
 export const GET_LOYALTY_USER_BY_EMAIL = gql`
     ${ORDER_FIELDS_FRAGMENT}
     query listLoyaltyUser($email: String, $loyaltyHistoryRestaurantId: ID) {
-        listLoyaltyUser(filter: { email: { eq: $email } }) {
-            items(limit: 1000000) {
+        listLoyaltyUser(filter: { email: { eq: $email } }, limit: 1000000) {
+            items {
                 id
                 firstName
                 lastName
