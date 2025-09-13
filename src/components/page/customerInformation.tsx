@@ -340,43 +340,43 @@ const UserInformationFields = () => {
                     </div>
                     <div className="h2 mb-2">Enter customer details</div>
                     <div className="mb-10" style={{ width: "400px" }}>
-                        {register.requestCustomerInformation && register.requestCustomerInformation.firstName && (
-                            <>
-                                <div className="h2 mt-2 mb-2">Name</div>
-                                <Input
-                                    type="firstName"
-                                    autoFocus={true}
-                                    onChange={onChangeFirstName}
-                                    value={firstName}
-                                    error={firstNameError ? "Required" : ""}
-                                    disabled={customerInformation ? true : false}
-                                />
-                            </>
-                        )}
-                        {register.requestCustomerInformation && register.requestCustomerInformation.email && (
-                            <>
-                                <div className="h2 mt-2 mb-2">Email</div>
-                                <Input
-                                    type="email"
-                                    onChange={onChangeEmail}
-                                    value={email}
-                                    error={emailError ? "Required" : ""}
-                                    disabled={customerInformation ? true : false}
-                                />
-                            </>
-                        )}
-                        {register.requestCustomerInformation && register.requestCustomerInformation.phoneNumber && (
-                            <>
-                                <div className="h2 mt-2 mb-2">Phone Number</div>
-                                <Input
-                                    type="number"
-                                    onChange={onChangePhoneNumber}
-                                    value={phoneNumber}
-                                    error={phoneNumberError ? "Required" : ""}
-                                    disabled={customerInformation ? true : false}
-                                />
-                            </>
-                        )}
+                        {/* {register.requestCustomerInformation && register.requestCustomerInformation.firstName && (
+                            <> */}
+                        <div className="h2 mt-2 mb-2">Name</div>
+                        <Input
+                            type="firstName"
+                            autoFocus={true}
+                            onChange={onChangeFirstName}
+                            value={firstName}
+                            error={firstNameError ? "Required" : ""}
+                            disabled={customerInformation ? true : false}
+                        />
+                        {/* </>
+                        )} */}
+                        {/* {register.requestCustomerInformation && register.requestCustomerInformation.email && (
+                            <> */}
+                        <div className="h2 mt-2 mb-2">Email</div>
+                        <Input
+                            type="email"
+                            onChange={onChangeEmail}
+                            value={email}
+                            error={emailError ? "Required" : ""}
+                            disabled={customerInformation ? true : false}
+                        />
+                        {/* </>
+                        )} */}
+                        {/* {register.requestCustomerInformation && register.requestCustomerInformation.phoneNumber && (
+                            <> */}
+                        <div className="h2 mt-2 mb-2">Phone Number</div>
+                        <Input
+                            type="number"
+                            onChange={onChangePhoneNumber}
+                            value={phoneNumber}
+                            error={phoneNumberError ? "Required" : ""}
+                            disabled={customerInformation ? true : false}
+                        />
+                        {/* </>
+                        )} */}
                         {register.requestCustomerInformation && register.requestCustomerInformation.signature && (
                             <>
                                 <div className="h2 mt-2 mb-2">Signature</div>

@@ -113,15 +113,15 @@ export default () => {
                         />
                         <div className="table-image-override"></div>
                     </div> */}
-                    {register?.enableTableFlags && (
-                        <>
-                            <div className="mb-4 text-center" style={{ width: "300px" }}>
-                                <div className="h3 mb-2">Table Number</div>
-                                <input className={`inputFromKey input`} ref={numpadRef} data-kioskboard-type="numpad" type="number" />
-                                {tableError && <div className="text-error mt-2">{tableError ? "Required" : ""}</div>}
-                            </div>
-                        </>
-                    )}
+                    {/* {register?.enableTableFlags && (
+                        <> */}
+                    <div className="mb-4 text-center" style={{ width: "300px" }}>
+                        <div className="h3 mb-2">Table Number</div>
+                        <input className={`inputFromKey input`} ref={numpadRef} data-kioskboard-type="numpad" type="number" />
+                        {tableError && <div className="text-error mt-2">{tableError ? "Required" : ""}</div>}
+                    </div>
+                    {/* </>
+                    )} */}
                     {register?.enableCovers && (
                         <>
                             <div className="mb-12 text-center" style={{ width: "300px" }}>
