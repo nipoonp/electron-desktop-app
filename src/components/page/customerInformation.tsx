@@ -375,6 +375,9 @@ const UserInformationFields = () => {
                         <FiX className="close-button" size={36} onClick={onClose} />
                     </div>
                     <div className="h2 mb-2">Enter customer details</div>
+                    {restaurant.enableLoyalty && (
+                        <div className="mb-2">To reigster a customer to your loyalty program you must enter name, email and phone number.</div>
+                    )}
                     <div className="mb-10" style={{ width: "400px" }}>
                         {/* {register.requestCustomerInformation && register.requestCustomerInformation.firstName && (
                             <> */}
