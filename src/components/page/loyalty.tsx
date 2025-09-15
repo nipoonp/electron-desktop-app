@@ -94,15 +94,15 @@ const LoyaltyLogin = ({ onBack, restaurantId }: { onBack: () => void; restaurant
             variables: { phoneNumber: rewardsIdentifier },
         });
 
-        if (resPhoneNumber?.data.listLoyaltyUser.items.length > 0) {
-            return resPhoneNumber.data.listLoyaltyUser.items[0];
+        if (resPhoneNumber?.data.getLoyaltyUserByPhoneNumber.items.length > 0) {
+            return resPhoneNumber.data.getLoyaltyUserByPhoneNumber.items[0];
         }
 
         const resEmail = await getLoyaltyUsersByEmailLazyQuery({
             variables: { email: rewardsIdentifier },
         });
 
-        return resEmail?.data.listLoyaltyUser.items.length > 0 ? resEmail.data.listLoyaltyUser.items[0] : null;
+        return resEmail?.data.getLoyaltyUserByEmail.items.length > 0 ? resEmail.data.getLoyaltyUserByEmail.items[0] : null;
     };
 
     const calculateTotalPoints = (histories: { points: number }[]) => histories.reduce((acc, history) => acc + history.points, 0);

@@ -171,8 +171,8 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
                 },
             });
 
-            if (resPhoneNumber.data && resPhoneNumber.data.listLoyaltyUser.items.length > 0) {
-                loyaltyUserRes = resPhoneNumber.data.listLoyaltyUser.items[0];
+            if (resPhoneNumber.data && resPhoneNumber.data.getLoyaltyUserByPhoneNumber.items.length > 0) {
+                loyaltyUserRes = resPhoneNumber.data.getLoyaltyUserByPhoneNumber.items[0];
             }
         }
 
@@ -183,8 +183,8 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
                 },
             });
 
-            if (resEmail.data && resEmail.data.listLoyaltyUser.items.length > 0) {
-                loyaltyUserRes = resEmail.data.listLoyaltyUser.items[0];
+            if (resEmail.data && resEmail.data.getLoyaltyUserByEmail.items.length > 0) {
+                loyaltyUserRes = resEmail.data.getLoyaltyUserByEmail.items[0];
             }
         }
 

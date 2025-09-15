@@ -15,7 +15,7 @@ export const useGetLoyaltyUsersByEmailLazyQuery = (rewardsIdentifier: string, lo
 
     useEffect(() => {
         if (_data) {
-            setSavedData(_data.listLoyaltyUser.items);
+            setSavedData(_data.getLoyaltyUserByEmail.items);
         }
     }, [_data]);
 

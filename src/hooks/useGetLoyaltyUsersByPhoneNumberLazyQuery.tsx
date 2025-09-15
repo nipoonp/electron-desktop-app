@@ -15,7 +15,7 @@ export const useGetLoyaltyUsersByPhoneNumberLazyQuery = (rewardsIdentifier: stri
 
     useEffect(() => {
         if (_data) {
-            setSavedData(_data.listLoyaltyUser.items);
+            setSavedData(_data.getLoyaltyUserByPhoneNumber.items);
         }
     }, [_data]);
 
