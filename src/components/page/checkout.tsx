@@ -291,6 +291,9 @@ export const Checkout = () => {
     if (!restaurant) navigate(beginOrderPath);
     if (!restaurant) throw "Restaurant is invalid";
 
+    const dineInAllowed = register.availableOrderTypes.includes(EOrderType.DINEIN);
+    const takeAwayAllowed = register.availableOrderTypes.includes(EOrderType.TAKEAWAY);
+
     const incrementRedirectTimer = (time: number) => {
         setPaymentOutcomeApprovedRedirectTimeLeft(time);
         transactionCompleteRedirectTime = time;
@@ -583,11 +586,11 @@ export const Checkout = () => {
                 hideModifierGroupName: printer.hideModifierGroupName,
                 skipReceiptCutCommand: printer.skipReceiptCutCommand,
                 printReceiptForEachProduct: printer.printReceiptForEachProduct,
-                hideOrderType: register.availableOrderTypes.length === 1, //Don't show order type if only 1 is available
+                hideOrderType: dineInAllowed && takeAwayAllowed ? false : true, //Don't show order type if only 1 is available
                 hideModifierGroupsForCustomer: false,
                 restaurant: {
                     name: restaurant.name,
-                    address: restaurant.address.formattedAddress,
+                    address: restaurant.address.receiptAddress || restaurant.address.formattedAddress,
                     gstNumber: restaurant.gstNumber,
                 },
                 restaurantLogoBase64: restaurantBase64Logo,
@@ -798,7 +801,7 @@ export const Checkout = () => {
             throw "Invalid user";
         }
 
-        if (register.availableOrderTypes.length === 0) {
+        if (!dineInAllowed && !takeAwayAllowed) {
             await logError("Invalid available order types", JSON.stringify({ register: register }));
             throw "Invalid available order types";
         }
@@ -1783,7 +1786,7 @@ export const Checkout = () => {
         <>
             <div className={isPOS ? "mt-4" : "mt-10"}></div>
             {title}
-            {register && register.availableOrderTypes.length > 1 && restaurantOrderType}
+            {dineInAllowed && takeAwayAllowed ? restaurantOrderType : null}
             {buzzerNumber && <div className="mb-2">{restaurantBuzzerNumber}</div>}
             {tableNumber && <div className="mb-2">{restaurantTableNumber}</div>}
             {covers && <div className="mb-2">{restaurantCovers}</div>}
