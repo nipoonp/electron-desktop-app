@@ -5,13 +5,13 @@ import { useEffect, useState } from "react";
 export const useGetLoyaltyUsersContainsEmailLazyQuery = (rewardsIdentifier: string, loyaltyHistoryRestaurantId: string) => {
     const [data, setSavedData] = useState<IGET_LOYALTY_USER_CONTAINS_PHONE_NUMBER_EMAIL[] | null>(null);
 
-    const [getLoyaltyUsersContainsEmailLazyQuery, { loading, error, data: _data }] = useLazyQuery(GET_LOYALTY_USER_CONTAINS_EMAIL, {
-        variables: {
-            rewardsIdentifier: rewardsIdentifier,
-            loyaltyHistoryRestaurantId: loyaltyHistoryRestaurantId,
-        },
-        fetchPolicy: "network-only",
-    });
+    // Do not bind variables here; pass them when executing to avoid refetch on each keystroke
+    const [getLoyaltyUsersContainsEmailLazyQuery, { loading, error, data: _data }] = useLazyQuery(
+        GET_LOYALTY_USER_CONTAINS_EMAIL,
+        {
+            fetchPolicy: "network-only",
+        }
+    );
 
     useEffect(() => {
         if (_data) {

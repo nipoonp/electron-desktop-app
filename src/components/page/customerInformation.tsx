@@ -15,6 +15,7 @@ import { convertCentsToDollars, resizeBase64ImageToWidth } from "../../util/util
 import { ECustomCustomerFieldType, ELOYALTY_ACTION, IGET_LOYALTY_USER_CONTAINS_PHONE_NUMBER_EMAIL } from "../../graphql/customQueries";
 import { useGetLoyaltyUsersContainsPhoneNumberLazyQuery } from "../../hooks/useGetLoyaltyUsersContainsPhoneNumberLazyQuery";
 import { useGetLoyaltyUsersContainsEmailLazyQuery } from "../../hooks/useGetLoyaltyUsersContainsEmailLazyQuery";
+import { useGetLoyaltyUsersContainsFirstNameLazyQuery } from "../../hooks/useGetLoyaltyUsersContainsFirstNameLazyQuery";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
 
 export default () => {
@@ -52,6 +53,10 @@ const CustomerSearch = (props: { onDisableSearchView: () => void }) => {
         restaurant ? restaurant.id : ""
     );
     const { getLoyaltyUsersContainsEmailLazyQuery } = useGetLoyaltyUsersContainsEmailLazyQuery(customerIdentifier, restaurant ? restaurant.id : "");
+    const { getLoyaltyUsersContainsFirstNameLazyQuery } = useGetLoyaltyUsersContainsFirstNameLazyQuery(
+        customerIdentifier,
+        restaurant ? restaurant.id : ""
+    );
 
     if (restaurant == null) throw "Restaurant is invalid!";
 
@@ -70,22 +75,51 @@ const CustomerSearch = (props: { onDisableSearchView: () => void }) => {
     const onSearch = async () => {
         let loyaltyUsers: IGET_LOYALTY_USER_CONTAINS_PHONE_NUMBER_EMAIL[] = [];
 
-        const resPhoneNumber = await getLoyaltyUsersContainsPhoneNumberLazyQuery({
-            variables: {
-                phoneNumber: customerIdentifier,
-            },
+        // Helper to page through results until nextToken is null
+        const fetchAllUsers = async (queryFn: Function, variables: Record<string, any>): Promise<IGET_LOYALTY_USER_CONTAINS_PHONE_NUMBER_EMAIL[]> => {
+            const all: IGET_LOYALTY_USER_CONTAINS_PHONE_NUMBER_EMAIL[] = [];
+            let nextToken: string | null | undefined = undefined;
+            do {
+                const res = await queryFn({
+                    variables: {
+                        ...variables,
+                        nextToken,
+                    },
+                });
+                const list = res?.data?.listLoyaltyUser;
+                const items = list?.items || [];
+                if (items.length) all.push(...items);
+                nextToken = list?.nextToken;
+            } while (nextToken);
+
+            return all;
+        };
+
+        // Search by phone first across all pages
+        const phoneResults = await fetchAllUsers(getLoyaltyUsersContainsPhoneNumberLazyQuery, {
+            phoneNumber: customerIdentifier,
+            loyaltyHistoryRestaurantId: restaurant.id,
         });
+        if (phoneResults.length > 0) {
+            loyaltyUsers = phoneResults;
+        }
 
-        if (resPhoneNumber.data.listLoyaltyUser.items.length > 0) loyaltyUsers = resPhoneNumber.data.listLoyaltyUser.items;
-
+        // If no phone matches, search by email across all pages
         if (!loyaltyUsers || loyaltyUsers.length === 0) {
-            const resEmail = await getLoyaltyUsersContainsEmailLazyQuery({
-                variables: {
-                    email: customerIdentifier,
-                },
+            const emailResults = await fetchAllUsers(getLoyaltyUsersContainsEmailLazyQuery, {
+                email: customerIdentifier,
+                loyaltyHistoryRestaurantId: restaurant.id,
             });
+            if (emailResults.length > 0) loyaltyUsers = emailResults;
+        }
 
-            if (resEmail.data.listLoyaltyUser.items.length > 0) loyaltyUsers = resEmail.data.listLoyaltyUser.items;
+        // If still nothing, search by first name across all pages
+        if (!loyaltyUsers || loyaltyUsers.length === 0) {
+            const firstNameResults = await fetchAllUsers(getLoyaltyUsersContainsFirstNameLazyQuery, {
+                firstName: customerIdentifier,
+                loyaltyHistoryRestaurantId: restaurant.id,
+            });
+            if (firstNameResults.length > 0) loyaltyUsers = firstNameResults;
         }
 
         let users: {
@@ -99,31 +133,33 @@ const CustomerSearch = (props: { onDisableSearchView: () => void }) => {
         }[] = [];
 
         if (loyaltyUsers) {
-            loyaltyUsers.forEach((loyaltyUser) => {
-                let userPoints = 0;
+            loyaltyUsers
+                .filter((u) => u.loyaltyHistories.items.length > 0)
+                .forEach((loyaltyUser) => {
+                    let userPoints = 0;
 
-                loyaltyUser.loyaltyHistories.items.forEach((loyaltyUserHistory) => {
-                    if (loyaltyUserHistory.action === ELOYALTY_ACTION.EARN) {
-                        userPoints += loyaltyUserHistory.points;
-                    } else if (loyaltyUserHistory.action === ELOYALTY_ACTION.REDEEM) {
-                        userPoints -= loyaltyUserHistory.points;
-                    }
+                    loyaltyUser.loyaltyHistories.items.forEach((loyaltyUserHistory) => {
+                        if (loyaltyUserHistory.action === ELOYALTY_ACTION.EARN) {
+                            userPoints += loyaltyUserHistory.points;
+                        } else if (loyaltyUserHistory.action === ELOYALTY_ACTION.REDEEM) {
+                            userPoints -= loyaltyUserHistory.points;
+                        }
+                    });
+
+                    const onAccountOrders = loyaltyUser.onAccountOrders?.items || [];
+
+                    const balance = onAccountOrders.reduce((sum, order) => sum + order.subTotal, 0);
+
+                    users.push({
+                        firstName: loyaltyUser.firstName,
+                        lastName: loyaltyUser.lastName,
+                        email: loyaltyUser.email,
+                        phoneNumber: loyaltyUser.phoneNumber,
+                        points: userPoints,
+                        onAccountOrders,
+                        onAccountOrdersBalance: balance,
+                    });
                 });
-
-                const onAccountOrders = loyaltyUser.onAccountOrders?.items || [];
-
-                const balance = onAccountOrders.reduce((sum, order) => sum + order.subTotal, 0);
-
-                users.push({
-                    firstName: loyaltyUser.firstName,
-                    lastName: loyaltyUser.lastName,
-                    email: loyaltyUser.email,
-                    phoneNumber: loyaltyUser.phoneNumber,
-                    points: userPoints,
-                    onAccountOrders,
-                    onAccountOrdersBalance: balance,
-                });
-            });
         }
 
         setLoyaltyUserRes(users);
@@ -167,7 +203,7 @@ const CustomerSearch = (props: { onDisableSearchView: () => void }) => {
             <div className="customer-search-wrapper">
                 <Input
                     name="Customer Identifier"
-                    placeholder="Search and connect customer to this order (02123456789 or support@tabin.co.nz)"
+                    placeholder="Search and connect customer to this order (02123456789, support@tabin.co.nz, or name)"
                     value={customerIdentifier}
                     onChange={onChangeCustomerIdentifier}
                 />
