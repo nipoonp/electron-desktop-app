@@ -705,6 +705,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setTableNumber(initialTableNumber);
         _setBuzzerNumber(initialBuzzerNumber);
         _setCustomerInformation(initialCustomerInformation);
+        _setOnAccountOrders(initialOnAccountOrders);
         _setCustomerLoyaltyPoints(initialCustomerLoyaltyPoints);
         _setProducts(initialProducts);
         _setNotes(initialNotes);
