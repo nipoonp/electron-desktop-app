@@ -1836,30 +1836,6 @@ export const UPDATE_RESTAURANT_PREPARATION_TIME = gql`
     }
 `;
 
-export const GET_LOYALTY_USER_BY_PHONE_NUMBER = gql`
-    query GetLoyaltyUserByPhoneNumber($phoneNumber: String!, $loyaltyHistoryRestaurantId: ID!) {
-        getLoyaltyUserByPhoneNumber(phoneNumber: $phoneNumber) {
-            items {
-                id
-                firstName
-                lastName
-                phoneNumber
-                email
-                loyaltyHistories(filter: { loyaltyHistoryRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 10000) {
-                    items {
-                        id
-                        action
-                        points
-                        createdAt
-                    }
-                    nextToken
-                }
-            }
-            nextToken
-        }
-    }
-`;
-
 export const GET_LOYALTY_USER_CONTAINS_PHONE_NUMBER = gql`
     ${ORDER_FIELDS_FRAGMENT}
     query listLoyaltyUser($phoneNumber: String, $loyaltyHistoryRestaurantId: ID, $nextToken: String) {
@@ -1882,30 +1858,6 @@ export const GET_LOYALTY_USER_CONTAINS_PHONE_NUMBER = gql`
                     items {
                         ...OrderFieldsFragment
                     }
-                }
-            }
-            nextToken
-        }
-    }
-`;
-
-export const GET_LOYALTY_USER_BY_EMAIL = gql`
-    query GetLoyaltyUserByEmail($email: String!, $loyaltyHistoryRestaurantId: ID!) {
-        getLoyaltyUserByEmail(email: $email) {
-            items {
-                id
-                firstName
-                lastName
-                phoneNumber
-                email
-                loyaltyHistories(filter: { loyaltyHistoryRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 10000) {
-                    items {
-                        id
-                        action
-                        points
-                        createdAt
-                    }
-                    nextToken
                 }
             }
             nextToken
