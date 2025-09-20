@@ -175,6 +175,7 @@ export interface IGET_USER_REGISTER_PRINTER_IGNORE_PRODUCT {
 }
 
 export const GET_RESTAURANT = gql`
+    ${ORDER_FIELDS_FRAGMENT}
     query GetRestaurant($restaurantId: ID!) {
         getRestaurant(id: $restaurantId) {
             id
@@ -914,6 +915,33 @@ export const GET_RESTAURANT = gql`
                     }
                 }
             }
+            loyaltyUsers(limit: 10000) {
+                items {
+                    id
+                    favourite
+                    loyaltyUser {
+                        id
+                        firstName
+                        lastName
+                        phoneNumber
+                        email
+                        loyaltyHistories(filter: { loyaltyHistoryRestaurantId: { eq: $restaurantId } }, limit: 1000) {
+                            items {
+                                id
+                                action
+                                points
+                                createdAt
+                                loyaltyHistoryOrderId
+                            }
+                        }
+                        onAccountOrders(filter: { orderRestaurantId: { eq: $restaurantId } }, limit: 1000) {
+                            items {
+                                ...OrderFieldsFragment
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 `;
@@ -950,6 +978,7 @@ export interface IGET_RESTAURANT {
     registers: { items: IGET_RESTAURANT_REGISTER[] };
     promotions: { items: IGET_RESTAURANT_PROMOTION[] };
     loyalties: { items: IGET_RESTAURANT_LOYALTY[] };
+    loyaltyUsers: { items: IGET_RESTAURANT_LOYALTY_USER_LINK[] };
     categories: {
         items: IGET_RESTAURANT_CATEGORY[];
     };
@@ -1265,13 +1294,33 @@ export interface IGET_RESTAURANT_LOYALTY_REWARD {
     promotionId: string;
 }
 
+export interface IGET_RESTAURANT_LOYALTY_USER_LINK {
+    id: string;
+    favourite: boolean | null;
+    loyaltyUser: IGET_RESTAURANT_LOYALTY_USER;
+}
+
+export interface IGET_RESTAURANT_LOYALTY_USER {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    phoneNumber: string | null;
+    email: string | null;
+    loyaltyHistories: {
+        items: IGET_RESTAURANT_LOYALTY_HISTORY[];
+    };
+    onAccountOrders: {
+        items: IGET_RESTAURANT_ORDER_FRAGMENT[];
+    };
+}
+
 export interface IGET_RESTAURANT_LOYALTY_HISTORY {
     id: string;
     action: string;
     points: number;
     createdAt: string;
-    loyaltyHistoryOrderId: string;
-    loyaltyUser: {
+    loyaltyHistoryOrderId?: string | null;
+    loyaltyUser?: {
         id: string;
         firstName: string;
         lastName: string;
@@ -1832,121 +1881,6 @@ export const UPDATE_RESTAURANT_PREPARATION_TIME = gql`
             id
             preparationTimeInMinutes
             delayBetweenOrdersInSeconds
-        }
-    }
-`;
-
-export const GET_LOYALTY_USER_CONTAINS_PHONE_NUMBER = gql`
-    ${ORDER_FIELDS_FRAGMENT}
-    query listLoyaltyUser($phoneNumber: String, $loyaltyHistoryRestaurantId: ID, $nextToken: String) {
-        listLoyaltyUser(filter: { phoneNumber: { contains: $phoneNumber } }, limit: 10000, nextToken: $nextToken) {
-            items {
-                id
-                firstName
-                lastName
-                phoneNumber
-                email
-                loyaltyHistories(filter: { loyaltyHistoryRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 10000) {
-                    items {
-                        id
-                        action
-                        points
-                        createdAt
-                    }
-                }
-                onAccountOrders(filter: { orderRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 10000) {
-                    items {
-                        ...OrderFieldsFragment
-                    }
-                }
-            }
-            nextToken
-        }
-    }
-`;
-
-export interface IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL {
-    id: string;
-    firstName: string;
-    lastName: string;
-    phoneNumber: string;
-    email: string;
-    loyaltyHistories: {
-        items: IGET_RESTAURANT_LOYALTY_HISTORY[];
-    };
-    onAccountOrders: {
-        items: IGET_RESTAURANT_ORDER_FRAGMENT[];
-    };
-}
-
-export const GET_LOYALTY_USER_CONTAINS_EMAIL = gql`
-    ${ORDER_FIELDS_FRAGMENT}
-    query listLoyaltyUser($email: String, $loyaltyHistoryRestaurantId: ID, $nextToken: String) {
-        listLoyaltyUser(filter: { email: { contains: $email } }, limit: 10000, nextToken: $nextToken) {
-            items {
-                id
-                firstName
-                lastName
-                phoneNumber
-                email
-                loyaltyHistories(filter: { loyaltyHistoryRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 10000) {
-                    items {
-                        id
-                        action
-                        points
-                        createdAt
-                    }
-                }
-                onAccountOrders(filter: { orderRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 10000) {
-                    items {
-                        ...OrderFieldsFragment
-                    }
-                }
-            }
-            nextToken
-        }
-    }
-`;
-
-export interface IGET_LOYALTY_USER_CONTAINS_PHONE_NUMBER_EMAIL {
-    id: string;
-    firstName: string;
-    lastName: string;
-    phoneNumber: string;
-    email: string;
-    loyaltyHistories: {
-        items: IGET_RESTAURANT_LOYALTY_HISTORY[];
-    };
-    onAccountOrders: {
-        items: IGET_RESTAURANT_ORDER_FRAGMENT[];
-    };
-}
-
-export const GET_LOYALTY_USER_CONTAINS_FIRST_NAME = gql`
-    ${ORDER_FIELDS_FRAGMENT}
-    query listLoyaltyUser($firstName: String, $loyaltyHistoryRestaurantId: ID, $nextToken: String) {
-        listLoyaltyUser(filter: { firstName: { contains: $firstName } }, limit: 1000, nextToken: $nextToken) {
-            items {
-                id
-                firstName
-                lastName
-                phoneNumber
-                email
-                loyaltyHistories(filter: { loyaltyHistoryRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 10000) {
-                    items {
-                        id
-                        action
-                        points
-                        createdAt
-                    }
-                }
-                onAccountOrders(filter: { orderRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 10000) {
-                    items {
-                        ...OrderFieldsFragment
-                    }
-                }
-            }
-            nextToken
         }
     }
 `;

@@ -8,9 +8,7 @@ import { Input } from "../../tabin/components/input";
 import { ModalV2 } from "../../tabin/components/modalv2";
 import { toast } from "../../tabin/components/toast";
 import { convertCentsToDollars } from "../../util/util";
-import { ELOYALTY_ACTION, IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL } from "../../graphql/customQueries";
-import { useGetLoyaltyUsersContainsPhoneNumberLazyQuery } from "../../hooks/useGetLoyaltyUsersContainsPhoneNumberLazyQuery";
-import { useGetLoyaltyUsersContainsEmailLazyQuery } from "../../hooks/useGetLoyaltyUsersContainsEmailLazyQuery";
+import { ELOYALTY_ACTION, IGET_RESTAURANT_LOYALTY_USER } from "../../graphql/customQueries";
 import { useUser } from "../../context/user-context";
 import "./promotionCodeModal.scss";
 
@@ -49,9 +47,6 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
         error: getPromotionsByCodeError,
         loading: getPromotionsByCodeLoading,
     } = useGetPromotionLazyQuery();
-
-    const { getLoyaltyUsersContainsPhoneNumberLazyQuery } = useGetLoyaltyUsersContainsPhoneNumberLazyQuery("", restaurant ? restaurant.id : "");
-    const { getLoyaltyUsersContainsEmailLazyQuery } = useGetLoyaltyUsersContainsEmailLazyQuery("", restaurant ? restaurant.id : "");
 
     useEffect(() => {
         if (getPromotionsByCodeError) {
@@ -161,35 +156,36 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
     };
 
     const onSearchLoyaltyHistory = async () => {
+        if (!restaurant) return 0;
+
+        const loyaltyUsers =
+            restaurant.loyaltyUsers?.items
+                ?.map((link) => link?.loyaltyUser)
+                .filter((user): user is IGET_RESTAURANT_LOYALTY_USER => Boolean(user)) || [];
+
+        const sanitizeDigits = (value: string) => value.replace(/\D/g, "");
+
+        let loyaltyUserRes: IGET_RESTAURANT_LOYALTY_USER | undefined;
+
+        if (customerInformation?.phoneNumber) {
+            const searchedDigits = sanitizeDigits(customerInformation.phoneNumber);
+            if (searchedDigits.length > 0) {
+                loyaltyUserRes = loyaltyUsers.find((user) => {
+                    if (!user.phoneNumber) return false;
+                    return sanitizeDigits(user.phoneNumber).includes(searchedDigits);
+                });
+            }
+        }
+
+        if (!loyaltyUserRes && customerInformation?.email) {
+            const searchedEmail = customerInformation.email.toLowerCase();
+            loyaltyUserRes = loyaltyUsers.find((user) => user.email?.toLowerCase().includes(searchedEmail));
+        }
+
         let returnPoints = 0;
-        let loyaltyUserRes: IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL | null = null;
-
-        if (customerInformation && customerInformation.phoneNumber) {
-            const resPhoneNumber = await getLoyaltyUsersContainsPhoneNumberLazyQuery({
-                variables: {
-                    phoneNumber: customerInformation.phoneNumber,
-                },
-            });
-
-            if (resPhoneNumber.data && resPhoneNumber.data.getLoyaltyUserByPhoneNumber.items.length > 0) {
-                loyaltyUserRes = resPhoneNumber.data.getLoyaltyUserByPhoneNumber.items[0];
-            }
-        }
-
-        if (!loyaltyUserRes && customerInformation && customerInformation.email) {
-            const resEmail = await getLoyaltyUsersContainsEmailLazyQuery({
-                variables: {
-                    email: customerInformation.email,
-                },
-            });
-
-            if (resEmail.data && resEmail.data.getLoyaltyUserByEmail.items.length > 0) {
-                loyaltyUserRes = resEmail.data.getLoyaltyUserByEmail.items[0];
-            }
-        }
-
         if (loyaltyUserRes) {
-            loyaltyUserRes.loyaltyHistories.items.forEach((history) => {
+            const histories = loyaltyUserRes.loyaltyHistories?.items || [];
+            histories.forEach((history) => {
                 if (history.action === ELOYALTY_ACTION.EARN) {
                     returnPoints += history.points;
                 } else if (history.action === ELOYALTY_ACTION.REDEEM) {

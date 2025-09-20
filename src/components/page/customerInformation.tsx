@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useMutation } from "@apollo/client";
 import { useNavigate } from "react-router";
 import { checkoutPath, restaurantPath } from "../main";
 import { useCart } from "../../context/cart-context";
@@ -11,12 +12,11 @@ import SignatureCanvas from "react-signature-canvas";
 
 import "./customerInformation.scss";
 import { FiX } from "react-icons/fi";
+import { FaRegStar, FaStar } from "react-icons/fa";
 import { convertCentsToDollars, resizeBase64ImageToWidth } from "../../util/util";
-import { ECustomCustomerFieldType, ELOYALTY_ACTION, IGET_LOYALTY_USER_CONTAINS_PHONE_NUMBER_EMAIL } from "../../graphql/customQueries";
-import { useGetLoyaltyUsersContainsPhoneNumberLazyQuery } from "../../hooks/useGetLoyaltyUsersContainsPhoneNumberLazyQuery";
-import { useGetLoyaltyUsersContainsEmailLazyQuery } from "../../hooks/useGetLoyaltyUsersContainsEmailLazyQuery";
-import { useGetLoyaltyUsersContainsFirstNameLazyQuery } from "../../hooks/useGetLoyaltyUsersContainsFirstNameLazyQuery";
+import { ECustomCustomerFieldType, ELOYALTY_ACTION, IGET_RESTAURANT_LOYALTY_USER_LINK } from "../../graphql/customQueries";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
+import { UPDATE_LOYALTY_USER_RESTAURANT_LINK } from "../../graphql/customMutations";
 
 export default () => {
     const [searchView, setSearchView] = useState(true);
@@ -29,36 +29,79 @@ export default () => {
     );
 };
 
+type LoyaltyUserSearchResult = {
+    loyaltyUserId: string;
+    linkId: string;
+    favourite: boolean;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber: string;
+    points: number;
+    onAccountOrders: IGET_RESTAURANT_ORDER_FRAGMENT[];
+    onAccountOrdersBalance: number;
+};
+
+const sortUsersByFavourite = (users: LoyaltyUserSearchResult[]) => [...users].sort((a, b) => Number(b.favourite) - Number(a.favourite));
+
 const CustomerSearch = (props: { onDisableSearchView: () => void }) => {
     const navigate = useNavigate();
-    const { restaurant } = useRestaurant();
+    const { restaurant, setRestaurant } = useRestaurant();
     const { isPOS } = useRegister();
     const { customerInformation, setCustomerInformation, setCustomerLoyaltyPoints, setOnAccountOrders } = useCart();
 
     const [customerIdentifier, setCustomerIdentifier] = useState("");
-    const [loyaltyUserRes, setLoyaltyUserRes] = useState<
-        {
-            firstName: string;
-            lastName: string;
-            email: string;
-            phoneNumber: string;
-            points: number;
-            onAccountOrders: IGET_RESTAURANT_ORDER_FRAGMENT[];
-            onAccountOrdersBalance: number;
-        }[]
-    >([]);
-
-    const { getLoyaltyUsersContainsPhoneNumberLazyQuery } = useGetLoyaltyUsersContainsPhoneNumberLazyQuery(
-        customerIdentifier,
-        restaurant ? restaurant.id : ""
-    );
-    const { getLoyaltyUsersContainsEmailLazyQuery } = useGetLoyaltyUsersContainsEmailLazyQuery(customerIdentifier, restaurant ? restaurant.id : "");
-    const { getLoyaltyUsersContainsFirstNameLazyQuery } = useGetLoyaltyUsersContainsFirstNameLazyQuery(
-        customerIdentifier,
-        restaurant ? restaurant.id : ""
-    );
+    const [loyaltyUserRes, setLoyaltyUserRes] = useState<LoyaltyUserSearchResult[]>([]);
+    const [favouriteMutationIds, setFavouriteMutationIds] = useState<string[]>([]);
+    const [updateLoyaltyUserFavourite] = useMutation(UPDATE_LOYALTY_USER_RESTAURANT_LINK);
 
     if (restaurant == null) throw "Restaurant is invalid!";
+
+    const getLoyaltyUserLinks = () =>
+        (restaurant.loyaltyUsers?.items || []).filter((link): link is IGET_RESTAURANT_LOYALTY_USER_LINK => Boolean(link && link.loyaltyUser));
+
+    const buildSearchResult = (link: IGET_RESTAURANT_LOYALTY_USER_LINK): LoyaltyUserSearchResult | null => {
+        const loyaltyUser = link.loyaltyUser;
+        if (!loyaltyUser) return null;
+
+        const histories = loyaltyUser.loyaltyHistories?.items || [];
+        // if (histories.length === 0) return null;
+
+        const points = histories.reduce((sum, history) => {
+            if (history.action === ELOYALTY_ACTION.EARN) return sum + history.points;
+            if (history.action === ELOYALTY_ACTION.REDEEM) return sum - history.points;
+            return sum;
+        }, 0);
+
+        const onAccountOrders = loyaltyUser.onAccountOrders?.items || [];
+        const balance = onAccountOrders.reduce((sum, order) => sum + (order.subTotal || 0), 0);
+
+        return {
+            loyaltyUserId: loyaltyUser.id,
+            linkId: link.id,
+            favourite: Boolean(link.favourite),
+            firstName: loyaltyUser.firstName || "",
+            lastName: loyaltyUser.lastName || "",
+            email: loyaltyUser.email || "",
+            phoneNumber: loyaltyUser.phoneNumber || "",
+            points,
+            onAccountOrders,
+            onAccountOrdersBalance: balance,
+        };
+    };
+
+    const mapLinksToResults = (links: IGET_RESTAURANT_LOYALTY_USER_LINK[]) =>
+        links.map(buildSearchResult).filter((user): user is LoyaltyUserSearchResult => Boolean(user));
+
+    useEffect(() => {
+        if (!restaurant) return;
+        if (customerIdentifier.trim().length > 0) return;
+
+        const favouriteLinks = getLoyaltyUserLinks().filter((link) => Boolean(link.favourite));
+        const favouriteResults = mapLinksToResults(favouriteLinks);
+
+        setLoyaltyUserRes(sortUsersByFavourite(favouriteResults));
+    }, [restaurant, customerIdentifier]);
 
     const onChangeCustomerIdentifier = (event: React.ChangeEvent<HTMLInputElement>) => {
         setCustomerIdentifier(event.target.value);
@@ -72,107 +115,42 @@ const CustomerSearch = (props: { onDisableSearchView: () => void }) => {
         }
     };
 
-    const onSearch = async () => {
-        let loyaltyUsers: IGET_LOYALTY_USER_CONTAINS_PHONE_NUMBER_EMAIL[] = [];
+    const onSearch = () => {
+        const identifier = customerIdentifier.trim();
+        const links = getLoyaltyUserLinks();
 
-        // Helper to page through results until nextToken is null
-        const fetchAllUsers = async (queryFn: Function, variables: Record<string, any>): Promise<IGET_LOYALTY_USER_CONTAINS_PHONE_NUMBER_EMAIL[]> => {
-            const all: IGET_LOYALTY_USER_CONTAINS_PHONE_NUMBER_EMAIL[] = [];
-            let nextToken: string | null | undefined = undefined;
-            do {
-                const res = await queryFn({
-                    variables: {
-                        ...variables,
-                        nextToken,
-                    },
-                });
-                const list = res?.data?.listLoyaltyUser;
-                const items = list?.items || [];
-                if (items.length) all.push(...items);
-                nextToken = list?.nextToken;
-            } while (nextToken);
-
-            return all;
-        };
-
-        // Search by phone first across all pages
-        const phoneResults = await fetchAllUsers(getLoyaltyUsersContainsPhoneNumberLazyQuery, {
-            phoneNumber: customerIdentifier,
-            loyaltyHistoryRestaurantId: restaurant.id,
-        });
-        if (phoneResults.length > 0) {
-            loyaltyUsers = phoneResults;
+        if (!identifier) {
+            const favouriteResults = mapLinksToResults(links.filter((link) => Boolean(link.favourite)));
+            setLoyaltyUserRes(sortUsersByFavourite(favouriteResults));
+            return;
         }
 
-        // If no phone matches, search by email across all pages
-        if (!loyaltyUsers || loyaltyUsers.length === 0) {
-            const emailResults = await fetchAllUsers(getLoyaltyUsersContainsEmailLazyQuery, {
-                email: customerIdentifier,
-                loyaltyHistoryRestaurantId: restaurant.id,
-            });
-            if (emailResults.length > 0) loyaltyUsers = emailResults;
-        }
+        const identifierLower = identifier.toLowerCase();
+        const identifierDigits = identifier.replace(/\D/g, "");
 
-        // If still nothing, search by first name across all pages
-        if (!loyaltyUsers || loyaltyUsers.length === 0) {
-            const firstNameResults = await fetchAllUsers(getLoyaltyUsersContainsFirstNameLazyQuery, {
-                firstName: customerIdentifier,
-                loyaltyHistoryRestaurantId: restaurant.id,
-            });
-            if (firstNameResults.length > 0) loyaltyUsers = firstNameResults;
-        }
+        const matchPhone =
+            identifierDigits.length > 0
+                ? links.filter((link) => {
+                      const phoneNumber = link.loyaltyUser.phoneNumber;
+                      if (!phoneNumber) return false;
+                      const userDigits = phoneNumber.replace(/\D/g, "");
+                      return userDigits.includes(identifierDigits);
+                  })
+                : [];
 
-        let users: {
-            firstName: string;
-            lastName: string;
-            email: string;
-            phoneNumber: string;
-            points: number;
-            onAccountOrders: IGET_RESTAURANT_ORDER_FRAGMENT[];
-            onAccountOrdersBalance: number;
-        }[] = [];
+        const matchEmail = identifierLower ? links.filter((link) => link.loyaltyUser.email?.toLowerCase().includes(identifierLower)) : [];
 
-        if (loyaltyUsers) {
-            loyaltyUsers
-                .filter((u) => u.loyaltyHistories.items.length > 0)
-                .forEach((loyaltyUser) => {
-                    let userPoints = 0;
+        const matchFirstName = identifierLower ? links.filter((link) => link.loyaltyUser.firstName?.toLowerCase().includes(identifierLower)) : [];
 
-                    loyaltyUser.loyaltyHistories.items.forEach((loyaltyUserHistory) => {
-                        if (loyaltyUserHistory.action === ELOYALTY_ACTION.EARN) {
-                            userPoints += loyaltyUserHistory.points;
-                        } else if (loyaltyUserHistory.action === ELOYALTY_ACTION.REDEEM) {
-                            userPoints -= loyaltyUserHistory.points;
-                        }
-                    });
+        let matchingLinks: IGET_RESTAURANT_LOYALTY_USER_LINK[] = matchPhone;
+        if (matchingLinks.length === 0) matchingLinks = matchEmail;
+        if (matchingLinks.length === 0) matchingLinks = matchFirstName;
 
-                    const onAccountOrders = loyaltyUser.onAccountOrders?.items || [];
-
-                    const balance = onAccountOrders.reduce((sum, order) => sum + order.subTotal, 0);
-
-                    users.push({
-                        firstName: loyaltyUser.firstName,
-                        lastName: loyaltyUser.lastName,
-                        email: loyaltyUser.email,
-                        phoneNumber: loyaltyUser.phoneNumber,
-                        points: userPoints,
-                        onAccountOrders,
-                        onAccountOrdersBalance: balance,
-                    });
-                });
-        }
-
+        const users = sortUsersByFavourite(mapLinksToResults(matchingLinks));
         setLoyaltyUserRes(users);
     };
 
-    const onSelectUser = (loyaltyUser: {
-        firstName: string;
-        lastName: string;
-        email: string;
-        phoneNumber: string;
-        points: number;
-        onAccountOrders: IGET_RESTAURANT_ORDER_FRAGMENT[];
-    }) => {
+    const onSelectUser = (loyaltyUser: LoyaltyUserSearchResult) => {
         if (customerInformation) {
             setCustomerInformation({
                 ...customerInformation,
@@ -193,6 +171,44 @@ const CustomerSearch = (props: { onDisableSearchView: () => void }) => {
         setCustomerLoyaltyPoints(loyaltyUser.points);
         setOnAccountOrders(loyaltyUser.onAccountOrders);
         onClose();
+    };
+
+    const onToggleFavourite = async (event: React.MouseEvent<HTMLButtonElement>, loyaltyUser: LoyaltyUserSearchResult) => {
+        event.stopPropagation();
+        const isUpdating = favouriteMutationIds.includes(loyaltyUser.linkId);
+        if (isUpdating) return;
+
+        const updatedFavourite = !loyaltyUser.favourite;
+        setFavouriteMutationIds((prev) => [...prev, loyaltyUser.linkId]);
+
+        try {
+            await updateLoyaltyUserFavourite({
+                variables: {
+                    id: loyaltyUser.linkId,
+                    favourite: updatedFavourite,
+                },
+            });
+
+            setLoyaltyUserRes((prev) =>
+                sortUsersByFavourite(prev.map((user) => (user.linkId === loyaltyUser.linkId ? { ...user, favourite: updatedFavourite } : user)))
+            );
+
+            const updatedRestaurant = {
+                ...restaurant,
+                loyaltyUsers: {
+                    ...restaurant.loyaltyUsers,
+                    items: (restaurant.loyaltyUsers?.items || []).map((link) =>
+                        link && link.id === loyaltyUser.linkId ? { ...link, favourite: updatedFavourite } : link
+                    ),
+                },
+            };
+
+            setRestaurant(updatedRestaurant);
+        } catch (error) {
+            console.error("Error updating favourite loyalty user", error);
+        } finally {
+            setFavouriteMutationIds((prev) => prev.filter((id) => id !== loyaltyUser.linkId));
+        }
     };
 
     return (
@@ -218,9 +234,19 @@ const CustomerSearch = (props: { onDisableSearchView: () => void }) => {
                 {loyaltyUserRes.map((loyaltyUser) => {
                     const unpaidOrders = (loyaltyUser.onAccountOrders || []).filter((order) => order.paid === false);
                     const unpaidBalance = unpaidOrders.reduce((sum, order) => sum + order.subTotal, 0);
+                    const isUpdatingFavourite = favouriteMutationIds.includes(loyaltyUser.linkId);
 
                     return (
-                        <div key={loyaltyUser.email} className="loyalty-user-wrapper" onClick={() => onSelectUser(loyaltyUser)}>
+                        <div key={loyaltyUser.linkId} className="loyalty-user-wrapper" onClick={() => onSelectUser(loyaltyUser)}>
+                            <button
+                                type="button"
+                                className={`loyalty-user-favourite ${loyaltyUser.favourite ? "active" : ""}`}
+                                onClick={(event) => onToggleFavourite(event, loyaltyUser)}
+                                disabled={isUpdatingFavourite}
+                                aria-label={`${loyaltyUser.favourite ? "Remove" : "Mark"} ${loyaltyUser.firstName || "customer"} as favourite`}
+                            >
+                                {loyaltyUser.favourite ? <FaStar /> : <FaRegStar />}
+                            </button>
                             <div className="text-bold">
                                 {loyaltyUser.firstName} {loyaltyUser.lastName}
                             </div>

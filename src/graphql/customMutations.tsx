@@ -40,6 +40,15 @@ export const UPDATE_REGISTER_KEY = gql`
     }
 `;
 
+export const UPDATE_LOYALTY_USER_RESTAURANT_LINK = gql`
+    mutation UpdateLoyaltyUserRestaurantLink($id: ID!, $favourite: Boolean) {
+        updateLoyaltyUserRestaurantLink(input: { id: $id, favourite: $favourite }) {
+            id
+            favourite
+        }
+    }
+`;
+
 export const CREATE_ORDER = gql`
     ${ORDER_FIELDS_FRAGMENT}
     mutation createOrder(
