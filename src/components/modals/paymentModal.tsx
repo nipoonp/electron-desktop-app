@@ -1039,17 +1039,22 @@ const POSPaymentScreen = (props: {
                 </div>
             </div>
 
-            {onAccountOrders.length > 0 && (
+            {onAccountOrders.filter((order) => order.paid === false).length > 0 && (
                 <div className="payment-modal-on-account-payments-wrapper mb-8">
                     <div className="text-bold mb-2">This customer has unpaid Account Balance</div>
-                    {onAccountOrders.map((order) => (
-                        <div className="mt-1">
-                            Order: {order.number} - {format(new Date(order.placedAt), "dd MMM h:mm:ss aa")} - {order.products.length}
-                            {order.products.length === 1 ? " item" : " items"} - ${convertCentsToDollars(order.subTotal)}
-                        </div>
-                    ))}
+                    {onAccountOrders
+                        .filter((order) => order.paid === false)
+                        .map((order) => (
+                            <div key={order.id} className="mt-1">
+                                Order: {order.number} - {format(new Date(order.placedAt), "dd MMM h:mm:ss aa")} - {order.products.length}
+                                {order.products.length === 1 ? " item" : " items"} - ${convertCentsToDollars(order.subTotal)}
+                            </div>
+                        ))}
                     <div className="mt-2 text-bold">
-                        Total: -${convertCentsToDollars(onAccountOrders.reduce((sum, order) => sum + order.subTotal, 0))}
+                        Total: -$
+                        {convertCentsToDollars(
+                            onAccountOrders.filter((order) => order.paid === false).reduce((sum, order) => sum + order.subTotal, 0)
+                        )}
                     </div>
                 </div>
             )}

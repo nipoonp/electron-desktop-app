@@ -215,21 +215,24 @@ const CustomerSearch = (props: { onDisableSearchView: () => void }) => {
                 </Button>
             </div>
             <div className="loyalty-users-wrapper">
-                {loyaltyUserRes.map((loyaltyUser) => (
-                    <div className="loyalty-user-wrapper" onClick={() => onSelectUser(loyaltyUser)}>
-                        <div className="text-bold">
-                            {loyaltyUser.firstName} {loyaltyUser.lastName}
+                {loyaltyUserRes.map((loyaltyUser) => {
+                    const unpaidOrders = (loyaltyUser.onAccountOrders || []).filter((order) => order.paid === false);
+                    const unpaidBalance = unpaidOrders.reduce((sum, order) => sum + order.subTotal, 0);
+
+                    return (
+                        <div key={loyaltyUser.email} className="loyalty-user-wrapper" onClick={() => onSelectUser(loyaltyUser)}>
+                            <div className="text-bold">
+                                {loyaltyUser.firstName} {loyaltyUser.lastName}
+                            </div>
+                            <div className="mt-1">{loyaltyUser.phoneNumber}</div>
+                            <div className="mt-1">{loyaltyUser.email}</div>
+                            <div className="mt-1">
+                                {loyaltyUser.points} {loyaltyUser.points > 1 ? "points" : "point"}
+                            </div>
+                            {unpaidBalance > 0 && <div className="mt-1 text-bold">Balance: -${convertCentsToDollars(unpaidBalance)}</div>}
                         </div>
-                        <div className="mt-1">{loyaltyUser.phoneNumber}</div>
-                        <div className="mt-1">{loyaltyUser.email}</div>
-                        <div className="mt-1">
-                            {loyaltyUser.points} {loyaltyUser.points > 1 ? "points" : "point"}
-                        </div>
-                        {loyaltyUser.onAccountOrdersBalance ? (
-                            <div className="mt-1 text-bold">Balance: -${convertCentsToDollars(loyaltyUser.onAccountOrdersBalance)}</div>
-                        ) : null}
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );
