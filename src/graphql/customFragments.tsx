@@ -19,6 +19,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         discount
         promotionId
         subTotal
+        tax
         paid
         paymentAmounts {
             cash
