@@ -1658,6 +1658,10 @@ export const printEftposReceipt = async (receiptDataInput: IEftposReceipt) => {
 };
 
 const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
+    const toCurrency = (value?: number | null) => (typeof value === "number" && value !== 0 ? `$${convertCentsToDollars(value)}` : null);
+
+    const addAmounts = (existing: number, incoming?: number | null) => existing + (typeof incoming === "number" ? incoming : 0);
+
     printer.alignCenter();
     printer.bold(true);
     printer.setTextSize(1, 1);
@@ -1669,32 +1673,168 @@ const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
 
     printer.newLine();
     printer.println(`Date Range: ${format(new Date(data.startDate), "dd MMM yyyy")} - ${format(new Date(data.endDate), "dd MMM yyyy")}`);
-    printer.newLine();
     printer.println(`Printed On: ${format(new Date(), "dd MMM yyyy HH:mm aa")}`);
+    printer.drawLine();
     printer.newLine();
 
-    Object.entries(data.dailySales).forEach(([date, data]) => {
+    const runningTotals = {
+        totalAmount: 0,
+        totalQuantity: 0,
+        totalDiscountAmount: 0,
+        totalRefundAmount: 0,
+        totalPaymentAmounts: {
+            cash: 0,
+            eftpos: 0,
+            online: 0,
+            uberEats: 0,
+            menulog: 0,
+            doordash: 0,
+            delivereasy: 0,
+            eftposSurcharge: 0,
+        },
+    };
+
+    const buildPaymentRows = (totals: IPrintSalesDataInput["dailySales"][string]["totalPaymentAmounts"]) =>
+        [
+            { label: "Cash", amount: totals.cash },
+            { label: "Eftpos", amount: totals.eftpos },
+            { label: "Online", amount: totals.online },
+            { label: "Uber Eats", amount: totals.uberEats },
+            { label: "Menu Log", amount: totals.menulog },
+            { label: "Doordash", amount: totals.doordash },
+            { label: "Delivereasy", amount: totals.delivereasy },
+            { label: "Card Surcharge", amount: totals.eftposSurcharge },
+        ].filter((row) => typeof row.amount === "number" && row.amount !== 0);
+
+    const dayEntries = Object.entries(data.dailySales);
+
+    dayEntries.forEach(([date, day]) => {
+        const discountAmount = day.totalDiscountAmount ?? 0;
+        const refundAmount = day.totalRefundAmount ?? 0;
+
         printer.bold(true);
-        printer.underline(true);
         printer.println(date);
-        printer.underline(false);
         printer.bold(false);
+        printer.drawLine();
 
-        printer.println(`Cash: $${convertCentsToDollars(data.totalPaymentAmounts.cash)}`);
-        printer.println(`Eftpos: $${convertCentsToDollars(data.totalPaymentAmounts.eftpos)}`);
-        printer.println(`Online: $${convertCentsToDollars(data.totalPaymentAmounts.online)}`);
-        printer.println(`Uber Eats: $${convertCentsToDollars(data.totalPaymentAmounts.uberEats)}`);
-        printer.println(`Menu Log: $${convertCentsToDollars(data.totalPaymentAmounts.menulog)}`);
-        printer.println(`Doordash: $${convertCentsToDollars(data.totalPaymentAmounts.doordash)}`);
-        printer.println(`Delivereasy: $${convertCentsToDollars(data.totalPaymentAmounts.delivereasy)}`);
+        const paymentRows = buildPaymentRows(day.totalPaymentAmounts);
+        if (paymentRows.length) {
+            printer.tableCustom([
+                { text: "Payment Type", width: 0.6, align: "LEFT", bold: true },
+                { text: "Amount", width: 0.4, align: "RIGHT", bold: true },
+            ]);
 
-        printer.bold(true);
-        printer.println(`Total: $${convertCentsToDollars(data.totalAmount)}`);
-        printer.println(`Number of Orders: ${data.totalQuantity}`);
+            paymentRows.forEach((row) => {
+                const formattedAmount = toCurrency(row.amount);
 
-        printer.bold(false);
+                if (!formattedAmount) return;
+
+                printer.tableCustom([
+                    { text: row.label, width: 0.6, align: "LEFT" },
+                    { text: formattedAmount, width: 0.4, align: "RIGHT" },
+                ]);
+            });
+        }
+
+        if (discountAmount || refundAmount) {
+            printer.newLine();
+            if (discountAmount) {
+                printer.tableCustom([
+                    { text: "Discounts", width: 0.6, align: "LEFT" },
+                    { text: `$${convertCentsToDollars(discountAmount)}`, width: 0.4, align: "RIGHT" },
+                ]);
+            }
+            if (refundAmount) {
+                printer.tableCustom([
+                    { text: "Refunds", width: 0.6, align: "LEFT" },
+                    { text: `$${convertCentsToDollars(refundAmount)}`, width: 0.4, align: "RIGHT" },
+                ]);
+            }
+        }
+
+        printer.drawLine();
+        printer.tableCustom([
+            { text: "Orders", width: 0.6, align: "LEFT", bold: true },
+            { text: `${day.totalQuantity}`, width: 0.4, align: "RIGHT", bold: true },
+        ]);
+        printer.tableCustom([
+            { text: "Total Sales", width: 0.6, align: "LEFT", bold: true },
+            { text: `$${convertCentsToDollars(day.totalAmount)}`, width: 0.4, align: "RIGHT", bold: true },
+        ]);
         printer.newLine();
+
+        runningTotals.totalAmount += day.totalAmount;
+        runningTotals.totalQuantity += day.totalQuantity;
+        runningTotals.totalDiscountAmount += discountAmount;
+        runningTotals.totalRefundAmount += refundAmount;
+        runningTotals.totalPaymentAmounts.cash = addAmounts(runningTotals.totalPaymentAmounts.cash, day.totalPaymentAmounts.cash);
+        runningTotals.totalPaymentAmounts.eftpos = addAmounts(runningTotals.totalPaymentAmounts.eftpos, day.totalPaymentAmounts.eftpos);
+        runningTotals.totalPaymentAmounts.online = addAmounts(runningTotals.totalPaymentAmounts.online, day.totalPaymentAmounts.online);
+        runningTotals.totalPaymentAmounts.uberEats = addAmounts(runningTotals.totalPaymentAmounts.uberEats, day.totalPaymentAmounts.uberEats);
+        runningTotals.totalPaymentAmounts.menulog = addAmounts(runningTotals.totalPaymentAmounts.menulog, day.totalPaymentAmounts.menulog);
+        runningTotals.totalPaymentAmounts.doordash = addAmounts(runningTotals.totalPaymentAmounts.doordash, day.totalPaymentAmounts.doordash);
+        runningTotals.totalPaymentAmounts.delivereasy = addAmounts(
+            runningTotals.totalPaymentAmounts.delivereasy,
+            day.totalPaymentAmounts.delivereasy
+        );
+        runningTotals.totalPaymentAmounts.eftposSurcharge = addAmounts(
+            runningTotals.totalPaymentAmounts.eftposSurcharge,
+            day.totalPaymentAmounts.eftposSurcharge
+        );
     });
+
+    if (dayEntries.length > 1) {
+        printer.bold(true);
+        printer.println("Summary");
+        printer.bold(false);
+        printer.drawLine();
+
+        const summaryRows = buildPaymentRows(runningTotals.totalPaymentAmounts);
+
+        if (summaryRows.length) {
+            printer.tableCustom([
+                { text: "Payment Type", width: 0.6, align: "LEFT", bold: true },
+                { text: "Amount", width: 0.4, align: "RIGHT", bold: true },
+            ]);
+
+            summaryRows.forEach((row) => {
+                const formattedAmount = toCurrency(row.amount);
+
+                if (!formattedAmount) return;
+
+                printer.tableCustom([
+                    { text: row.label, width: 0.6, align: "LEFT" },
+                    { text: formattedAmount, width: 0.4, align: "RIGHT" },
+                ]);
+            });
+        }
+
+        if (runningTotals.totalDiscountAmount || runningTotals.totalRefundAmount) {
+            printer.newLine();
+            if (runningTotals.totalDiscountAmount) {
+                printer.tableCustom([
+                    { text: "Discounts", width: 0.6, align: "LEFT" },
+                    { text: `$${convertCentsToDollars(runningTotals.totalDiscountAmount)}`, width: 0.4, align: "RIGHT" },
+                ]);
+            }
+            if (runningTotals.totalRefundAmount) {
+                printer.tableCustom([
+                    { text: "Refunds", width: 0.6, align: "LEFT" },
+                    { text: `$${convertCentsToDollars(runningTotals.totalRefundAmount)}`, width: 0.4, align: "RIGHT" },
+                ]);
+            }
+        }
+
+        printer.drawLine();
+        printer.tableCustom([
+            { text: "Total Orders", width: 0.6, align: "LEFT", bold: true },
+            { text: `${runningTotals.totalQuantity}`, width: 0.4, align: "RIGHT", bold: true },
+        ]);
+        printer.tableCustom([
+            { text: "Total Sales", width: 0.6, align: "LEFT", bold: true },
+            { text: `$${convertCentsToDollars(runningTotals.totalAmount)}`, width: 0.4, align: "RIGHT", bold: true },
+        ]);
+    }
 
     return printer;
 };

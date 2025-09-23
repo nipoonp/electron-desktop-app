@@ -483,6 +483,8 @@ export interface IPrintSalesDataInputDailySales {
     [date: string]: {
         totalAmount: number;
         totalQuantity: number;
+        totalDiscountAmount: number;
+        totalRefundAmount: number;
         totalPaymentAmounts: IOrderPaymentAmounts;
     };
 }
@@ -516,6 +518,8 @@ export interface IDailySales {
         totalAmount: number;
         totalQuantity: number;
         orders: IGET_RESTAURANT_ORDER_FRAGMENT[];
+        totalDiscountAmount: number;
+        totalRefundAmount: number;
         totalPaymentAmounts: IOrderPaymentAmounts;
     };
 }
