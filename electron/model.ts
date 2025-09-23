@@ -160,6 +160,8 @@ export interface IPrintSalesDataInputDailySales {
     [date: string]: {
         totalAmount: number;
         totalQuantity: number;
+        totalDiscountAmount: number;
+        totalRefundAmount: number;
         totalPaymentAmounts: IOrderPaymentAmounts;
     };
 }
@@ -222,6 +224,7 @@ export interface IOrderPaymentAmounts {
     menulog: number;
     doordash: number;
     delivereasy: number;
+    eftposSurcharge?: number;
 }
 
 export interface IPrintReceiptDataOutput {
