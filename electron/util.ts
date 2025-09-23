@@ -1686,6 +1686,7 @@ const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
             cash: 0,
             eftpos: 0,
             online: 0,
+            onAccount: 0,
             uberEats: 0,
             menulog: 0,
             doordash: 0,
