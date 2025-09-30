@@ -1840,8 +1840,8 @@ const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
         const paymentRows = buildPaymentRows(day.totalPaymentAmounts);
         if (paymentRows.length) {
             printer.tableCustom([
-                { text: "Payment Type", width: 0.6, align: "LEFT", bold: true },
-                { text: "Amount", width: 0.4, align: "RIGHT", bold: true },
+                { text: "Payment Type", width: 0.75, align: "LEFT", bold: true },
+                { text: "Amount", width: 0.25, align: "RIGHT", bold: true },
             ]);
 
             paymentRows.forEach((row) => {
@@ -1850,8 +1850,8 @@ const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
                 if (!formattedAmount) return;
 
                 printer.tableCustom([
-                    { text: row.label, width: 0.6, align: "LEFT" },
-                    { text: formattedAmount, width: 0.4, align: "RIGHT" },
+                    { text: row.label, width: 0.75, align: "LEFT" },
+                    { text: formattedAmount, width: 0.25, align: "RIGHT" },
                 ]);
             });
         }
@@ -1860,26 +1860,26 @@ const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
             printer.newLine();
             if (discountAmount) {
                 printer.tableCustom([
-                    { text: "Discounts", width: 0.6, align: "LEFT" },
-                    { text: `$${convertCentsToDollars(discountAmount)}`, width: 0.4, align: "RIGHT" },
+                    { text: "Discounts", width: 0.75, align: "LEFT" },
+                    { text: `$${convertCentsToDollars(discountAmount)}`, width: 0.25, align: "RIGHT" },
                 ]);
             }
             if (refundAmount) {
                 printer.tableCustom([
-                    { text: "Refunds", width: 0.6, align: "LEFT" },
-                    { text: `$${convertCentsToDollars(refundAmount)}`, width: 0.4, align: "RIGHT" },
+                    { text: "Refunds", width: 0.75, align: "LEFT" },
+                    { text: `$${convertCentsToDollars(refundAmount)}`, width: 0.25, align: "RIGHT" },
                 ]);
             }
         }
 
         printer.drawLine();
         printer.tableCustom([
-            { text: "Orders", width: 0.6, align: "LEFT", bold: true },
-            { text: `${day.totalQuantity}`, width: 0.4, align: "RIGHT", bold: true },
+            { text: "Orders", width: 0.75, align: "LEFT", bold: true },
+            { text: `${day.totalQuantity}`, width: 0.25, align: "RIGHT", bold: true },
         ]);
         printer.tableCustom([
-            { text: "Total Sales", width: 0.6, align: "LEFT", bold: true },
-            { text: `$${convertCentsToDollars(day.totalAmount)}`, width: 0.4, align: "RIGHT", bold: true },
+            { text: "Total Sales", width: 0.75, align: "LEFT", bold: true },
+            { text: `$${convertCentsToDollars(day.totalAmount)}`, width: 0.25, align: "RIGHT", bold: true },
         ]);
         printer.newLine();
 
@@ -1913,8 +1913,8 @@ const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
 
         if (summaryRows.length) {
             printer.tableCustom([
-                { text: "Payment Type", width: 0.6, align: "LEFT", bold: true },
-                { text: "Amount", width: 0.4, align: "RIGHT", bold: true },
+                { text: "Payment Type", width: 0.75, align: "LEFT", bold: true },
+                { text: "Amount", width: 0.25, align: "RIGHT", bold: true },
             ]);
 
             summaryRows.forEach((row) => {
@@ -1923,8 +1923,8 @@ const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
                 if (!formattedAmount) return;
 
                 printer.tableCustom([
-                    { text: row.label, width: 0.6, align: "LEFT" },
-                    { text: formattedAmount, width: 0.4, align: "RIGHT" },
+                    { text: row.label, width: 0.75, align: "LEFT" },
+                    { text: formattedAmount, width: 0.25, align: "RIGHT" },
                 ]);
             });
         }
@@ -1933,26 +1933,26 @@ const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
             printer.newLine();
             if (runningTotals.totalDiscountAmount) {
                 printer.tableCustom([
-                    { text: "Discounts", width: 0.6, align: "LEFT" },
-                    { text: `$${convertCentsToDollars(runningTotals.totalDiscountAmount)}`, width: 0.4, align: "RIGHT" },
+                    { text: "Discounts", width: 0.75, align: "LEFT" },
+                    { text: `$${convertCentsToDollars(runningTotals.totalDiscountAmount)}`, width: 0.25, align: "RIGHT" },
                 ]);
             }
             if (runningTotals.totalRefundAmount) {
                 printer.tableCustom([
-                    { text: "Refunds", width: 0.6, align: "LEFT" },
-                    { text: `$${convertCentsToDollars(runningTotals.totalRefundAmount)}`, width: 0.4, align: "RIGHT" },
+                    { text: "Refunds", width: 0.75, align: "LEFT" },
+                    { text: `$${convertCentsToDollars(runningTotals.totalRefundAmount)}`, width: 0.25, align: "RIGHT" },
                 ]);
             }
         }
 
         printer.drawLine();
         printer.tableCustom([
-            { text: "Total Orders", width: 0.6, align: "LEFT", bold: true },
-            { text: `${runningTotals.totalQuantity}`, width: 0.4, align: "RIGHT", bold: true },
+            { text: "Total Orders", width: 0.75, align: "LEFT", bold: true },
+            { text: `${runningTotals.totalQuantity}`, width: 0.25, align: "RIGHT", bold: true },
         ]);
         printer.tableCustom([
-            { text: "Total Sales", width: 0.6, align: "LEFT", bold: true },
-            { text: `$${convertCentsToDollars(runningTotals.totalAmount)}`, width: 0.4, align: "RIGHT", bold: true },
+            { text: "Total Sales", width: 0.75, align: "LEFT", bold: true },
+            { text: `$${convertCentsToDollars(runningTotals.totalAmount)}`, width: 0.25, align: "RIGHT", bold: true },
         ]);
     }
 
