@@ -5,7 +5,7 @@ import { useParams } from "react-router-dom";
 import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { checkoutPath, beginOrderPath, orderTypePath, tableNumberPath } from "../main";
-import { convertCentsToDollars, getQuantityRemainingText, isProductQuantityAvailable } from "../../util/util";
+import { convertCentsToDollars, getQuantityRemainingText, isOrderTypeAllowed, isProductQuantityAvailable } from "../../util/util";
 import { ProductModal } from "../modals/product";
 import { SearchProductModal } from "../modals/searchProductModal";
 import { IGET_RESTAURANT_PRODUCT, IGET_RESTAURANT_CATEGORY, IS3Object, EOrderType } from "../../graphql/customQueries";
@@ -179,14 +179,14 @@ const Restaurant = () => {
             if (selectedCategoryId) {
                 const selectedCategoryItem = restaurantCategories[selectedCategoryId];
 
-                if (selectedCategoryItem) {
+                if (selectedCategoryItem && isOrderTypeAllowed(orderType, selectedCategoryItem.availableOrderTypes)) {
                     setSelectedCategory(selectedCategoryItem);
                     onProcessSubCategories(selectedCategoryItem);
                 }
             } else if (register && register.defaultCategoryView) {
                 const selectedCategoryItem = restaurantCategories[register.defaultCategoryView];
 
-                if (selectedCategoryItem) {
+                if (selectedCategoryItem && isOrderTypeAllowed(orderType, selectedCategoryItem.availableOrderTypes)) {
                     setSelectedCategory(selectedCategoryItem);
                     onProcessSubCategories(selectedCategoryItem);
                 }
@@ -211,7 +211,14 @@ const Restaurant = () => {
                 register.preSelectedProducts.forEach((preSelectedProduct) => {
                     const product = restaurantProducts[preSelectedProduct];
 
-                    if (product) {
+                    if (product && isOrderTypeAllowed(orderType, product.availableOrderTypes)) {
+                        if (!product.categories.items[0]) return;
+                        if (
+                            !product.categories.items[0].category ||
+                            !isOrderTypeAllowed(orderType, product.categories.items[0].category.availableOrderTypes)
+                        )
+                            return;
+
                         const productToOrder: ICartProduct = {
                             isPreSelectedProduct: true,
                             id: product.id,
@@ -262,7 +269,7 @@ const Restaurant = () => {
                 setShowProductModal(true);
             }
         }
-    }, [restaurant]);
+    }, [restaurant, orderType]);
 
     const compareSortFunc = (a: IMostPopularProduct, b: IMostPopularProduct) => {
         if (!a.product.totalQuantitySold || !b.product.totalQuantitySold) return 0;
@@ -279,10 +286,12 @@ const Restaurant = () => {
 
         restaurant.categories.items.forEach((c) => {
             if (c.availablePlatforms && !c.availablePlatforms.includes(register.type)) return;
+            if (!isOrderTypeAllowed(orderType, c.availableOrderTypes)) return;
 
             c.products &&
                 c.products.items.forEach((p) => {
                     if (p.product.availablePlatforms && !p.product.availablePlatforms.includes(register.type)) return;
+                    if (!isOrderTypeAllowed(orderType, p.product.availableOrderTypes)) return;
 
                     if (p.product.totalQuantitySold) {
                         //Insert item if its not already in there.
@@ -301,6 +310,13 @@ const Restaurant = () => {
 
         setMostPopularProducts(newMostPopularProducts.slice(0, 20));
     }, [restaurant]);
+
+    useEffect(() => {
+        if (!selectedCategory) return;
+        if (isOrderTypeAllowed(orderType, selectedCategory.availableOrderTypes)) return;
+
+        setSelectedCategory(null);
+    }, [selectedCategory, orderType]);
 
     const onProcessSubCategories = (category: IGET_RESTAURANT_CATEGORY) => {
         const newSubCategories: string[] = [];
@@ -596,6 +612,7 @@ const Restaurant = () => {
         <>
             {restaurant.categories.items.map((c, index) => {
                 if (c.availablePlatforms && !c.availablePlatforms.includes(register.type)) return;
+                if (!isOrderTypeAllowed(orderType, c.availableOrderTypes)) return;
 
                 return (
                     <Category
@@ -733,6 +750,7 @@ const Restaurant = () => {
                 restaurant.categories.items.map((c) => {
                     if (selectedCategory.id !== c.id) return;
                     if (c.availablePlatforms && !c.availablePlatforms.includes(register.type)) return;
+                    if (!isOrderTypeAllowed(orderType, c.availableOrderTypes)) return;
 
                     return (
                         <>
@@ -769,6 +787,7 @@ const Restaurant = () => {
                                 {c.products &&
                                     c.products.items.map((p) => {
                                         if (p.product.availablePlatforms && !p.product.availablePlatforms.includes(register.type)) return;
+                                        if (!isOrderTypeAllowed(orderType, p.product.availableOrderTypes)) return;
                                         if (
                                             (selectedSubCategory &&
                                                 p.product.subCategories &&

@@ -3,6 +3,7 @@ import { addDays, isEqual } from "date-fns";
 import { IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
 import {
     EDiscountType,
+    EOrderType,
     ERegisterType,
     IGET_RESTAURANT_PROMOTION,
     IGET_RESTAURANT_PROMOTION_DISCOUNT,
@@ -108,6 +109,12 @@ export const isItemSoldOut = (soldOut?: boolean, soldOutDate?: string) => {
     }
 
     return false;
+};
+
+export const isOrderTypeAllowed = (orderType: EOrderType | null, availableOrderTypes?: EOrderType[] | null) => {
+    if (!orderType) return true;
+    if (!availableOrderTypes || availableOrderTypes.length === 0) return true;
+    return availableOrderTypes.includes(orderType);
 };
 
 export const isPromotionAvailable = (availability?: IGET_RESTAURANT_PROMOTION_AVAILABILITY) => {

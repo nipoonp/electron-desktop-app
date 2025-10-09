@@ -610,6 +610,7 @@ export const GET_RESTAURANT = gql`
                     }
                     displaySequence
                     availablePlatforms
+                    availableOrderTypes
                     availability {
                         monday {
                             startTime
@@ -666,6 +667,7 @@ export const GET_RESTAURANT = gql`
                                     identityPoolId
                                 }
                                 availablePlatforms
+                                availableOrderTypes
                                 isAgeRescricted
                                 availability {
                                     monday {
@@ -713,6 +715,7 @@ export const GET_RESTAURANT = gql`
                                             }
                                             displaySequence
                                             availablePlatforms
+                                            availableOrderTypes
                                             availability {
                                                 monday {
                                                     startTime
@@ -760,6 +763,7 @@ export const GET_RESTAURANT = gql`
                                             hideForCustomer
                                             collapsedByDefault
                                             availablePlatforms
+                                            availableOrderTypes
                                             alphabeticalSorting
                                             modifiers(limit: 50) {
                                                 items {
@@ -783,6 +787,7 @@ export const GET_RESTAURANT = gql`
                                                         soldOut
                                                         soldOutDate
                                                         availablePlatforms
+                                                        availableOrderTypes
                                                         subModifierGroups
                                                         preSelectedQuantity
                                                         productModifier {
@@ -794,22 +799,23 @@ export const GET_RESTAURANT = gql`
                                                             tags
                                                             totalQuantitySold
                                                             totalQuantityAvailable
-                                                            incrementAmount
-                                                            maxQuantityPerOrder
-                                                            soldOut
-                                                            soldOutDate
-                                                            imageUrl
-                                                            image {
-                                                                key
-                                                                bucket
-                                                                region
-                                                                identityPoolId
-                                                            }
-                                                            categories {
-                                                                items {
-                                                                    category {
-                                                                        id
-                                                                        name
+                                                        incrementAmount
+                                                        maxQuantityPerOrder
+                                                        soldOut
+                                                        soldOutDate
+                                                        imageUrl
+                                                        image {
+                                                            key
+                                                            bucket
+                                                            region
+                                                            identityPoolId
+                                                        }
+                                                        availableOrderTypes
+                                                        categories {
+                                                            items {
+                                                                category {
+                                                                    id
+                                                                    name
                                                                         kitchenName
                                                                         imageUrl
                                                                         image {
@@ -902,6 +908,7 @@ export const GET_RESTAURANT = gql`
                                                                                             region
                                                                                             identityPoolId
                                                                                         }
+                                                                                        availableOrderTypes
                                                                                         categories {
                                                                                             items {
                                                                                                 category {
@@ -1396,6 +1403,7 @@ export interface IGET_RESTAURANT_CATEGORY {
     imageUrl?: string;
     image?: IS3Object;
     availablePlatforms: ERegisterType[];
+    availableOrderTypes: EOrderType[];
     soldOut?: boolean;
     soldOutDate?: string;
     availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
@@ -1431,6 +1439,7 @@ export interface IGET_RESTAURANT_PRODUCT {
     imageUrl?: string;
     image?: IS3Object;
     availablePlatforms: ERegisterType[];
+    availableOrderTypes: EOrderType[];
     isAgeRescricted: boolean;
     availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
     subCategories?: string;
@@ -1456,6 +1465,7 @@ export interface IGET_RESTAURANT_MODIFIER_GROUP {
     hideForCustomer: boolean | null;
     collapsedByDefault?: boolean | null;
     availablePlatforms: ERegisterType[];
+    availableOrderTypes: EOrderType[];
     alphabeticalSorting: boolean;
     modifiers?: {
         items: IGET_RESTAURANT_MODIFIER_LINK[];
@@ -1481,6 +1491,7 @@ export interface IGET_RESTAURANT_MODIFIER {
     soldOut?: boolean;
     soldOutDate?: string;
     availablePlatforms: ERegisterType[];
+    availableOrderTypes: EOrderType[];
     isAgeRescricted: boolean;
     subModifierGroups: string;
     preSelectedQuantity: number;

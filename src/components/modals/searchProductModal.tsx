@@ -2,8 +2,14 @@ import { useState } from "react";
 
 import { Modal } from "../../tabin/components/modal";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
-import { isItemAvailable, isProductQuantityAvailable, isItemSoldOut, getQuantityRemainingText } from "../../util/util";
-import { convertCentsToDollars } from "../../util/util";
+import {
+    isItemAvailable,
+    isProductQuantityAvailable,
+    isItemSoldOut,
+    getQuantityRemainingText,
+    convertCentsToDollars,
+    isOrderTypeAllowed,
+} from "../../util/util";
 import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
 import { Button } from "../../tabin/components/button";
 import { useRestaurant } from "../../context/restaurant-context";
@@ -29,7 +35,7 @@ interface ISearchProductModalProps {
 export const SearchProductModal = (props: ISearchProductModalProps) => {
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
-    const { cartProductQuantitiesById } = useCart();
+    const { cartProductQuantitiesById, orderType } = useCart();
 
     const [searchTerm, setSearchTerm] = useState("");
     const [filteredProducts, setFilteredProducts] = useState<IFilteredProduct[]>([]);
@@ -53,7 +59,9 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
             category.products &&
                 category.products.items.forEach((p) => {
                     if (category.availablePlatforms && !category.availablePlatforms.includes(register.type)) return;
+                    if (!isOrderTypeAllowed(orderType, category.availableOrderTypes)) return;
                     if (p.product.availablePlatforms && !p.product.availablePlatforms.includes(register.type)) return;
+                    if (!isOrderTypeAllowed(orderType, p.product.availableOrderTypes)) return;
 
                     if (p.product.name.toLowerCase().includes(value.toLowerCase())) {
                         newFilteredProducts.push({

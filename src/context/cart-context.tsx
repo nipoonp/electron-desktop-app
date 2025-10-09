@@ -13,9 +13,10 @@ import {
     EPaymentMethod,
     ICustomerInformation,
 } from "../model/model";
-import { applyDiscountToCartProducts, checkIfPromotionValid, getOrderDiscountAmount } from "../util/util";
+import { applyDiscountToCartProducts, checkIfPromotionValid, getOrderDiscountAmount, isOrderTypeAllowed } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
 import { useRegister } from "./register-context";
+import { toast } from "../tabin/components/toast";
 
 const initialParkedOrderId = null;
 const initialParkedOrderNumber = null;
@@ -165,7 +166,7 @@ const CartContext = createContext<ContextProps>({
 });
 
 const CartProvider = (props: { children: React.ReactNode }) => {
-    const { restaurant } = useRestaurant();
+    const { restaurant, menuCategories, menuProducts } = useRestaurant();
     const { register } = useRegister();
 
     const [parkedOrderId, _setParkedOrderId] = useState<string | null>(initialParkedOrderId);
@@ -465,14 +466,87 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setParkedOrderNumber(parkedOrderNumber);
     };
 
-    const setOrderType = (orderType: EOrderType) => {
-        const order_type_surcharge = register?.orderTypeSurcharge != null ? register?.orderTypeSurcharge[orderType.toLocaleLowerCase()] : 0;
-        _setOrderType(orderType);
+    const setOrderType = (newOrderType: EOrderType) => {
+        if (orderType === newOrderType) return;
+
+        const isCartProductAllowed = (cartProduct: ICartProduct) => {
+            const product = menuProducts[cartProduct.id];
+            const category = cartProduct.category?.id ? menuCategories[cartProduct.category.id] : null;
+
+            if (product && !isOrderTypeAllowed(newOrderType, product.availableOrderTypes)) return false;
+            if (category && !isOrderTypeAllowed(newOrderType, category.availableOrderTypes)) return false;
+
+            return true;
+        };
+
+        const sanitiseProduct = (cartProduct: ICartProduct): ICartProduct => ({
+            ...cartProduct,
+            modifierGroups: cartProduct.modifierGroups.map((group) => ({
+                ...group,
+                modifiers: group.modifiers.map((modifier) => {
+                    if (!modifier.productModifiers) return { ...modifier, productModifiers: null };
+
+                    const allowedModifierProducts = modifier.productModifiers.filter(isCartProductAllowed);
+
+                    const sanitisedModifierProducts = allowedModifierProducts.map((modifierProduct) => ({
+                        ...modifierProduct,
+                        modifierGroups:
+                            modifierProduct.modifierGroups?.map((modifierGroup) => ({
+                                ...modifierGroup,
+                                modifiers: modifierGroup.modifiers.map((modifierOption) => ({ ...modifierOption })),
+                            })) ?? [],
+                    }));
+
+                    return { ...modifier, productModifiers: sanitisedModifierProducts };
+                }),
+            })),
+        });
+
+        const originalProducts = products ?? [];
+        const removedProductNames = new Set<string>();
+
+        const allowedProducts = originalProducts.filter((cartProduct) => {
+            const allowed = isCartProductAllowed(cartProduct);
+            if (!allowed) removedProductNames.add(cartProduct.name);
+            return allowed;
+        });
+
+        if (removedProductNames.size > 0) {
+            const orderTypeLabel = newOrderType.toLowerCase();
+            const removedNamesArray = Array.from(removedProductNames);
+
+            toast.error(
+                removedNamesArray.length === 1
+                    ? `${removedNamesArray[0]} was removed because it isn't available for ${orderTypeLabel} orders.`
+                    : `${removedNamesArray.join(", ")} were removed because they aren't available for ${orderTypeLabel} orders.`
+            );
+        }
+
+        const sanitisedProducts = allowedProducts.map(sanitiseProduct);
+
+        if (sanitisedProducts.length > 0) {
+            const newTotal = recalculateTotal(sanitisedProducts);
+
+            _setProducts(sanitisedProducts);
+            _setTotal(newTotal);
+            updateCartQuantities(sanitisedProducts);
+            processPromotions(sanitisedProducts, newTotal, newOrderType);
+        } else {
+            if (removedProductNames.size > 0) {
+                processPromotions([], 0, newOrderType);
+                _setProducts(null);
+                _setTotal(0);
+                updateCartQuantities(null);
+            } else if (products) {
+                processPromotions(products, total, newOrderType);
+            }
+        }
+
+        const order_type_surcharge = register?.orderTypeSurcharge != null ? register?.orderTypeSurcharge[newOrderType.toLocaleLowerCase()] : 0;
+        _setOrderType(newOrderType);
         _setOrderTypeSurcharge(order_type_surcharge);
 
-        setBuzzerNumber(null); //Reset buzzer number if you change order type
-
-        if (products) processPromotions(products, total, orderType);
+        setBuzzerNumber(null); // Reset buzzer number when order type changes
     };
 
     const setPaymentMethod = (paymentMethod: EPaymentMethod | null) => {
