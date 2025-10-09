@@ -302,4 +302,5 @@ export interface IOrderPaymentAmounts {
     menulog: number;
     doordash: number;
     delivereasy: number;
+    eftposSurcharge?: number;
 }
