@@ -1,9 +1,15 @@
-import { useState } from "react";
+import { useState, CSSProperties } from "react";
 
 import { Modal } from "../../tabin/components/modal";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
-import { isItemAvailable, isProductQuantityAvailable, isItemSoldOut, getQuantityRemainingText } from "../../util/util";
-import { convertCentsToDollars } from "../../util/util";
+import {
+    convertCentsToDollars,
+    getContrastTextColor,
+    getQuantityRemainingText,
+    isItemAvailable,
+    isItemSoldOut,
+    isProductQuantityAvailable,
+} from "../../util/util";
 import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
 import { Button } from "../../tabin/components/button";
 import { useRestaurant } from "../../context/restaurant-context";
@@ -105,7 +111,17 @@ export const SearchProductModal = (props: ISearchProductModalProps) => {
 
         return (
             <>
-                <div key={product.id} className={`product ${isValid ? "" : "sold-out"}`} onClick={() => isValid && onClickProduct(category, product)}>
+                <div
+                    key={product.id}
+                    className={`product ${isValid ? "" : "sold-out"}`}
+                    style={{
+                        backgroundColor: product.backgroundColor ? product.backgroundColor : undefined,
+                        color: product.backgroundColor ? getContrastTextColor(product.backgroundColor) : undefined,
+                        borderColor: product.borderColor ? product.borderColor : product.backgroundColor ? "unset" : undefined,
+                        borderWidth: product.borderColor ? "2px" : undefined,
+                    }}
+                    onClick={() => isValid && onClickProduct(category, product)}
+                >
                     {product.totalQuantityAvailable && product.totalQuantityAvailable <= 5 ? (
                         <span className="quantity-remaining ml-2">{getQuantityRemainingText(product.totalQuantityAvailable)}</span>
                     ) : (

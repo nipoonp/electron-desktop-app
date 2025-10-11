@@ -570,6 +570,8 @@ export const GET_RESTAURANT = gql`
                                 }
                                 availablePlatforms
                                 isAgeRescricted
+                                backgroundColor
+                                borderColor
                                 availability {
                                     monday {
                                         startTime
@@ -706,6 +708,8 @@ export const GET_RESTAURANT = gql`
                                                                 region
                                                                 identityPoolId
                                                             }
+                                                            backgroundColor
+                                                            borderColor
                                                             categories {
                                                                 items {
                                                                     category {
@@ -801,6 +805,8 @@ export const GET_RESTAURANT = gql`
                                                                                             region
                                                                                             identityPoolId
                                                                                         }
+                                                                                        backgroundColor
+                                                                                        borderColor
                                                                                         categories {
                                                                                             items {
                                                                                                 category {
@@ -1378,6 +1384,8 @@ export interface IGET_RESTAURANT_PRODUCT {
     image?: IS3Object;
     availablePlatforms: ERegisterType[];
     isAgeRescricted: boolean;
+    backgroundColor?: string | null;
+    borderColor?: string | null;
     availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
     subCategories?: string;
     categories: { items: IGET_RESTAURANT_CATEGORY_LINK[] };
@@ -1587,6 +1595,8 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                     identityPoolId
                 }
                 availablePlatforms
+                backgroundColor
+                borderColor
                 availability {
                     monday {
                         startTime
@@ -1716,6 +1726,8 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                 region
                                                 identityPoolId
                                             }
+                                            backgroundColor
+                                            borderColor
                                             categories {
                                                 items {
                                                     category {

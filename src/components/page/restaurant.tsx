@@ -5,7 +5,14 @@ import { useParams } from "react-router-dom";
 import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { checkoutPath, beginOrderPath, orderTypePath, tableNumberPath } from "../main";
-import { convertCentsToDollars, getQuantityRemainingText, isProductQuantityAvailable } from "../../util/util";
+import {
+    convertCentsToDollars,
+    getContrastTextColor,
+    getQuantityRemainingText,
+    isProductQuantityAvailable,
+    isItemAvailable,
+    isItemSoldOut,
+} from "../../util/util";
 import { ProductModal } from "../modals/product";
 import { SearchProductModal } from "../modals/searchProductModal";
 import { IGET_RESTAURANT_PRODUCT, IGET_RESTAURANT_CATEGORY, IS3Object, EOrderType } from "../../graphql/customQueries";
@@ -14,7 +21,6 @@ import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { Button } from "../../tabin/components/button";
 import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
 import { ICartProduct } from "../../model/model";
-import { isItemAvailable, isItemSoldOut } from "../../util/util";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
 //@ts-ignore as it does not have the types
 import { Shake } from "reshake";
@@ -510,6 +516,12 @@ const Restaurant = () => {
                 <div
                     key={product.id}
                     className={`product ${isValid ? "" : "sold-out"} ${addToCart ? "add-to-cart" : ""}`}
+                    style={{
+                        backgroundColor: product.backgroundColor ? product.backgroundColor : undefined,
+                        color: product.backgroundColor ? getContrastTextColor(product.backgroundColor) : undefined,
+                        borderColor: product.borderColor ? product.borderColor : product.backgroundColor ? "unset" : undefined,
+                        borderWidth: product.borderColor ? "2px" : undefined,
+                    }}
                     onClick={() => isValid && onClickProduct(category, product)}
                 >
                     <div className="product-quantity">{addToCart && addToCart.quantity}</div>

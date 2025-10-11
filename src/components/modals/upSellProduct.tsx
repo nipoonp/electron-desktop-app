@@ -1,11 +1,17 @@
 import { IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT } from "../../graphql/customQueries";
 import { Button } from "../../tabin/components/button";
-import { isItemAvailable, isProductQuantityAvailable, isItemSoldOut, getQuantityRemainingText } from "../../util/util";
-import { convertCentsToDollars } from "../../util/util";
+import {
+    convertCentsToDollars,
+    getContrastTextColor,
+    getQuantityRemainingText,
+    isItemAvailable,
+    isItemSoldOut,
+    isProductQuantityAvailable,
+} from "../../util/util";
 import { ModalV2 } from "../../tabin/components/modalv2";
 import { getCloudFrontDomainName } from "../../private/aws-custom";
 import { IMatchingUpSellCrossSellProductItem } from "../../model/model";
-import { useRef } from "react";
+import { useRef, CSSProperties } from "react";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { useCart } from "../../context/cart-context";
 
@@ -45,7 +51,17 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
 
         return (
             <>
-                <div key={product.id} className={`product ${isValid ? "" : "sold-out"}`} onClick={() => isValid && onAddToOrder(category, product)}>
+                <div
+                    key={product.id}
+                    className={`product ${isValid ? "" : "sold-out"}`}
+                    style={{
+                        backgroundColor: product.backgroundColor ? product.backgroundColor : undefined,
+                        color: product.backgroundColor ? getContrastTextColor(product.backgroundColor) : undefined,
+                        borderColor: product.borderColor ? product.borderColor : product.backgroundColor ? "unset" : undefined,
+                        borderWidth: product.borderColor ? "2px" : undefined,
+                    }}
+                    onClick={() => isValid && onAddToOrder(category, product)}
+                >
                     {product.totalQuantityAvailable && product.totalQuantityAvailable <= 5 ? (
                         <span className="quantity-remaining ml-2">{getQuantityRemainingText(product.totalQuantityAvailable)}</span>
                     ) : (

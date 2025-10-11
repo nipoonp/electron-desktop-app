@@ -902,3 +902,50 @@ export const getRestaurantTimings = (operatingHours: IGET_RESTAURANT_OPERATING_H
 
     return timings;
 };
+
+// Ensures hex strings are valid and expanded to six characters for consistent processing.
+const normalizeHexColor = (value: string): string | null => {
+    if (!value) return null;
+
+    const trimmed = value.trim();
+    const match = trimmed.match(/^#?([a-fA-F0-9]{3}|[a-fA-F0-9]{6})$/);
+
+    if (!match) return null;
+
+    const hex = match[1];
+    const expanded =
+        hex.length === 3
+            ? hex
+                  .split("")
+                  .map((char) => char + char)
+                  .join("")
+            : hex;
+
+    return `#${expanded.toUpperCase()}`;
+};
+
+// Converts a normalized hex color string to its RGB components.
+const hexToRgb = (hex: string) => {
+    const normalized = hex.replace("#", "");
+    const bigint = parseInt(normalized, 16);
+
+    return {
+        r: (bigint >> 16) & 255,
+        g: (bigint >> 8) & 255,
+        b: bigint & 255,
+    };
+};
+
+// Chooses a legible light or dark text color based on the background luminance.
+export const getContrastTextColor = (backgroundColor?: string | null, lightColor: string = "#FFFFFF", darkColor: string = "#000000") => {
+    if (!backgroundColor) return darkColor;
+
+    const normalizedHex = normalizeHexColor(backgroundColor);
+
+    if (!normalizedHex) return darkColor;
+
+    const { r, g, b } = hexToRgb(normalizedHex);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+    return luminance > 0.5 ? darkColor : lightColor;
+};
