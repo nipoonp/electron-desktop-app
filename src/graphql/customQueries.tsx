@@ -570,8 +570,8 @@ export const GET_RESTAURANT = gql`
                                 }
                                 availablePlatforms
                                 isAgeRescricted
-                                backgroundColor
-                                borderColor
+                                # backgroundColor
+                                # borderColor
                                 availability {
                                     monday {
                                         startTime
@@ -708,8 +708,8 @@ export const GET_RESTAURANT = gql`
                                                                 region
                                                                 identityPoolId
                                                             }
-                                                            backgroundColor
-                                                            borderColor
+                                                            # backgroundColor
+                                                            # borderColor
                                                             categories {
                                                                 items {
                                                                     category {
@@ -805,8 +805,8 @@ export const GET_RESTAURANT = gql`
                                                                                             region
                                                                                             identityPoolId
                                                                                         }
-                                                                                        backgroundColor
-                                                                                        borderColor
+                                                                                        # backgroundColor
+                                                                                        # borderColor
                                                                                         categories {
                                                                                             items {
                                                                                                 category {
@@ -1595,8 +1595,8 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                     identityPoolId
                 }
                 availablePlatforms
-                backgroundColor
-                borderColor
+                # backgroundColor
+                # borderColor
                 availability {
                     monday {
                         startTime
@@ -1726,8 +1726,8 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                 region
                                                 identityPoolId
                                             }
-                                            backgroundColor
-                                            borderColor
+                                            # backgroundColor
+                                            # borderColor
                                             categories {
                                                 items {
                                                     category {
