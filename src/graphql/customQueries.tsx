@@ -799,23 +799,23 @@ export const GET_RESTAURANT = gql`
                                                             tags
                                                             totalQuantitySold
                                                             totalQuantityAvailable
-                                                        incrementAmount
-                                                        maxQuantityPerOrder
-                                                        soldOut
-                                                        soldOutDate
-                                                        imageUrl
-                                                        image {
-                                                            key
-                                                            bucket
-                                                            region
-                                                            identityPoolId
-                                                        }
-                                                        availableOrderTypes
-                                                        categories {
-                                                            items {
-                                                                category {
-                                                                    id
-                                                                    name
+                                                            incrementAmount
+                                                            maxQuantityPerOrder
+                                                            soldOut
+                                                            soldOutDate
+                                                            imageUrl
+                                                            image {
+                                                                key
+                                                                bucket
+                                                                region
+                                                                identityPoolId
+                                                            }
+                                                            availableOrderTypes
+                                                            categories {
+                                                                items {
+                                                                    category {
+                                                                        id
+                                                                        name
                                                                         kitchenName
                                                                         imageUrl
                                                                         image {
@@ -1023,6 +1023,7 @@ export const GET_RESTAURANT = gql`
                         points
                         promotionId
                     }
+                    loyaltyGroupId
                 }
             }
         }
@@ -1353,6 +1354,7 @@ export interface IGET_RESTAURANT_LOYALTY {
     categories: IGET_RESTAURANT_LOYALTY_CATEGORY[];
     products: IGET_RESTAURANT_LOYALTY_PRODUCT[];
     rewards: IGET_RESTAURANT_LOYALTY_REWARD[];
+    loyaltyGroupId: string;
     loyaltyHistories: {
         items: IGET_RESTAURANT_LOYALTY_HISTORY[];
     };
@@ -1943,7 +1945,7 @@ export interface IGET_FEEDBACK_BY_RESTAURANT_COMMENT {
 }
 
 export const GET_LOYALTY_USER_BY_PHONE_NUMBER = gql`
-    query GetLoyaltyUserByPhoneNumber($phoneNumber: String!, $loyaltyHistoryRestaurantId: ID!) {
+    query GetLoyaltyUserByPhoneNumber($phoneNumber: String!) {
         getLoyaltyUserByPhoneNumber(phoneNumber: $phoneNumber) {
             items {
                 id
@@ -1951,12 +1953,13 @@ export const GET_LOYALTY_USER_BY_PHONE_NUMBER = gql`
                 lastName
                 phoneNumber
                 email
-                loyaltyHistories(filter: { loyaltyHistoryRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 10000) {
+                loyaltyHistories(limit: 10000) {
                     items {
                         id
                         action
                         points
                         createdAt
+                        loyaltyHistoryLoyaltyId
                     }
                     nextToken
                 }
@@ -1967,7 +1970,7 @@ export const GET_LOYALTY_USER_BY_PHONE_NUMBER = gql`
 `;
 
 export const GET_LOYALTY_USER_BY_EMAIL = gql`
-    query GetLoyaltyUserByEmail($email: String!, $loyaltyHistoryRestaurantId: ID!) {
+    query GetLoyaltyUserByEmail($email: String!) {
         getLoyaltyUserByEmail(email: $email) {
             items {
                 id
@@ -1975,12 +1978,13 @@ export const GET_LOYALTY_USER_BY_EMAIL = gql`
                 lastName
                 phoneNumber
                 email
-                loyaltyHistories(filter: { loyaltyHistoryRestaurantId: { eq: $loyaltyHistoryRestaurantId } }, limit: 10000) {
+                loyaltyHistories(limit: 10000) {
                     items {
                         id
                         action
                         points
                         createdAt
+                        loyaltyHistoryLoyaltyId
                     }
                     nextToken
                 }
@@ -2002,6 +2006,22 @@ export interface IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL {
             action: ELOYALTY_ACTION;
             points: number;
             createdAt: string;
+            loyaltyHistoryLoyaltyId?: string | null;
         }[];
     };
+}
+
+export const GET_LOYALTIES_BY_GROUP_ID = gql`
+    query GetLoyaltiesByGroupId($loyaltyGroupId: String!) {
+        getLoyaltiesByGroupId(loyaltyGroupId: $loyaltyGroupId, limit: 10000) {
+            items {
+                id
+            }
+            nextToken
+        }
+    }
+`;
+
+export interface IGET_LOYALTIES_BY_GROUP_ID_ITEM {
+    id: string;
 }

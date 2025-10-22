@@ -122,7 +122,7 @@ const BeginOrderAdvertisements = (props: { ads: IGET_RESTAURANT_ADVERTISEMENT[] 
                 <div
                     className="wrapper"
                     onClick={() => {
-                        if (restaurant.enableLoyalty && !register.disableKioskLoyaltyScreen) {
+                        if (restaurant.enableLoyalty && restaurant.loyalties.items.length > 0 && !register.disableKioskLoyaltyScreen) {
                             navigate(loyaltyPath);
                         } else {
                             navigate(restaurantPath + "/" + restaurant.id);
@@ -183,7 +183,7 @@ const BeginOrderDefault = () => {
                         <div
                             className="wrapper"
                             onClick={() => {
-                                if (restaurant.enableLoyalty && !register.disableKioskLoyaltyScreen) {
+                                if (restaurant.enableLoyalty && restaurant.loyalties.items.length > 0 && !register.disableKioskLoyaltyScreen) {
                                     navigate(loyaltyPath);
                                 } else {
                                     navigate(restaurantPath + "/" + restaurant.id);
