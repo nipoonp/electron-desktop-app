@@ -1,14 +1,14 @@
 {
-  "prod": {
+  "dev": {
     "awscloudformation": {
-      "AuthRoleName": "amplify-tabin-prod-182909-authRole",
-      "UnauthRoleArn": "arn:aws:iam::319846238176:role/amplify-tabin-prod-182909-unauthRole",
-      "AuthRoleArn": "arn:aws:iam::319846238176:role/amplify-tabin-prod-182909-authRole",
+      "AuthRoleName": "amplify-tabin-dev-223725-authRole",
+      "UnauthRoleArn": "arn:aws:iam::319846238176:role/amplify-tabin-dev-223725-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::319846238176:role/amplify-tabin-dev-223725-authRole",
       "Region": "ap-southeast-2",
-      "DeploymentBucketName": "amplify-tabin-prod-182909-deployment",
-      "UnauthRoleName": "amplify-tabin-prod-182909-unauthRole",
-      "StackName": "amplify-tabin-prod-182909",
-      "StackId": "arn:aws:cloudformation:ap-southeast-2:319846238176:stack/amplify-tabin-prod-182909/da2ed1a0-b51a-11ea-a020-06e276ca85be",
+      "DeploymentBucketName": "amplify-tabin-dev-223725-deployment",
+      "UnauthRoleName": "amplify-tabin-dev-223725-unauthRole",
+      "StackName": "amplify-tabin-dev-223725",
+      "StackId": "arn:aws:cloudformation:ap-southeast-2:319846238176:stack/amplify-tabin-dev-223725/ec9dc250-a8aa-11ea-acfe-0679bcf6ec2c",
       "AmplifyAppId": "d3bb210fy0rfx"
     }
   }

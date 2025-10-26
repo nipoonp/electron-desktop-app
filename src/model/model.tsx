@@ -402,6 +402,7 @@ export interface ICartPaymentAmounts {
 export interface ICartPayment {
     type: string;
     amount: number;
+    splitAllocation?: Record<string, number>;
 }
 
 export enum ERegisterPrinterType {

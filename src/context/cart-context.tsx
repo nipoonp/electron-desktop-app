@@ -24,6 +24,11 @@ try {
     ipcRenderer = electron.ipcRenderer;
 } catch (e) {}
 
+interface ISplitPaymentByPeopleState {
+    count: number;
+    paid: number;
+}
+
 const initialParkedOrderId = null;
 const initialParkedOrderNumber = null;
 const initialParkedOrderStatus = null;
@@ -50,6 +55,11 @@ const initialPercentageDiscount = 0;
 const initialSurcharge = 0;
 const initialPaidSoFar = 0;
 const initialOrderTypeSurcharge = 0;
+const initialPaidItemCounts: Record<string, number> = {};
+const initialSplitPaymentByPeopleState: ISplitPaymentByPeopleState = {
+    count: 0,
+    paid: 0,
+};
 const initialPaymentAmounts: ICartPaymentAmounts = {
     cash: 0,
     eftpos: 0,
@@ -125,6 +135,10 @@ type ContextProps = {
     setPayments: (payment: ICartPayment[]) => void;
     paymentAmounts: ICartPaymentAmounts;
     setPaymentAmounts: (paymentAmounts: ICartPaymentAmounts) => void;
+    paidItemCounts: Record<string, number>;
+    setPaidItemCounts: (counts: Record<string, number>) => void;
+    splitPaymentByPeople: ISplitPaymentByPeopleState;
+    setSplitPaymentByPeople: (splitPaymentByPeople: ISplitPaymentByPeopleState) => void;
     isShownUpSellCrossSellModal: boolean;
     setIsShownUpSellCrossSellModal: (isShownUpSellCrossSellModal: boolean) => void;
     isShownOrderThresholdMessageModal: boolean;
@@ -193,6 +207,10 @@ const CartContext = createContext<ContextProps>({
     setPayments: () => {},
     paymentAmounts: initialPaymentAmounts,
     setPaymentAmounts: () => {},
+    paidItemCounts: initialPaidItemCounts,
+    setPaidItemCounts: (_counts: Record<string, number>) => {},
+    splitPaymentByPeople: initialSplitPaymentByPeopleState,
+    setSplitPaymentByPeople: (_splitPaymentByPeople: ISplitPaymentByPeopleState) => {},
     isShownUpSellCrossSellModal: initialIsShownUpSellCrossSellModal,
     isShownOrderThresholdMessageModal: initialIsShownOrderThresholdMessageModal,
     setIsShownUpSellCrossSellModal: () => {},
@@ -227,6 +245,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [percentageDiscount, _setPercentageDiscount] = useState<number>(initialPercentageDiscount);
     const [surcharge, _setSurcharge] = useState<number>(initialSurcharge);
     const [paymentAmounts, _setPaymentAmounts] = useState<ICartPaymentAmounts>(initialPaymentAmounts);
+    const [paidItemCounts, _setPaidItemCounts] = useState<Record<string, number>>(initialPaidItemCounts);
     const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
     const [payments, _setPayments] = useState<ICartPayment[]>(initialPayments);
     const [orderTypeSurcharge, _setOrderTypeSurcharge] = useState<number>(initialOrderTypeSurcharge);
@@ -247,6 +266,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
     const [orderScheduledAt, _setOrderScheduledAt] = useState<string | null>(initialOrderScheduledAt);
     const [orderDetail, _setOrderDetail] = useState<IGET_RESTAURANT_ORDER_FRAGMENT | null>(initialOrderDetail);
+    const [splitPaymentByPeople, _setSplitPaymentByPeople] = useState<ISplitPaymentByPeopleState>(initialSplitPaymentByPeopleState);
 
     // useEffect(() => {
     // console.log("xxx...products", products);
@@ -674,6 +694,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const setPaymentAmounts = (amount: ICartPaymentAmounts) => {
         _setPaymentAmounts(amount);
     };
+    const setPaidItemCounts = (counts: Record<string, number>) => {
+        _setPaidItemCounts(counts);
+    };
+    const setSplitPaymentByPeople = (value: ISplitPaymentByPeopleState) => {
+        _setSplitPaymentByPeople(value);
+    };
 
     const setPayments = (payments: ICartPayment[]) => {
         _setPayments(payments);
@@ -721,6 +747,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setPercentageDiscount(initialPercentageDiscount);
         _setSurcharge(initialSurcharge);
         _setPaymentAmounts(initialPaymentAmounts);
+        _setPaidItemCounts(initialPaidItemCounts);
+        _setSplitPaymentByPeople(initialSplitPaymentByPeopleState);
         _setSubTotal(initialSubTotal);
         _setPayments(initialPayments);
         _setIsShownUpSellCrossSellModal(initialIsShownUpSellCrossSellModal);
@@ -792,6 +820,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 orderTypeSurcharge: orderTypeSurcharge,
                 paymentAmounts: paymentAmounts,
                 setPaymentAmounts: setPaymentAmounts,
+                paidItemCounts: paidItemCounts,
+                setPaidItemCounts: setPaidItemCounts,
+                splitPaymentByPeople: splitPaymentByPeople,
+                setSplitPaymentByPeople: setSplitPaymentByPeople,
                 payments: payments,
                 setPayments: setPayments,
                 isShownUpSellCrossSellModal: isShownUpSellCrossSellModal,

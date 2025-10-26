@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FiArrowDown, FiX } from "react-icons/fi";
 import { useCart } from "../../context/cart-context";
 import { useMutation, useQuery } from "@apollo/client";
@@ -11,6 +11,8 @@ import {
     ITyroEftposQuestion,
     IEftposTransactionOutcome,
     IMX51EftposQuestion,
+    ICartProduct,
+    ICartPaymentAmounts,
 } from "../../model/model";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { Button } from "../../tabin/components/button";
@@ -27,12 +29,64 @@ import "./paymentModal.scss";
 import { EPromotionType, IGET_FEEDBACK_BY_RESTAURANT } from "../../graphql/customQueries";
 import Restaurant from "../page/restaurant";
 import { format } from "date-fns";
+import { Stepper } from "../../tabin/components/stepper";
 
 const AMOUNT_5 = "5.00";
 const AMOUNT_10 = "10.00";
 const AMOUNT_20 = "20.00";
 const AMOUNT_50 = "50.00";
 const AMOUNT_100 = "100.00";
+const SPLIT_BY_PEOPLE_MIN_COUNT = 2;
+const QUICK_CASH_AMOUNTS = [AMOUNT_5, AMOUNT_10, AMOUNT_20, AMOUNT_50, AMOUNT_100];
+const REMOVABLE_PAYMENT_CONFIG: Record<
+    string,
+    {
+        label: string;
+        amountKey: keyof ICartPaymentAmounts;
+    }
+> = {
+    CASH: { label: "Cash", amountKey: "cash" },
+    UBEREATS: { label: "Uber Eats", amountKey: "uberEats" },
+    MENULOG: { label: "Menulog", amountKey: "menulog" },
+    DOORDASH: { label: "Doordash", amountKey: "doordash" },
+    DELIVEREASY: { label: "Delivereasy", amountKey: "delivereasy" },
+    ONACCOUNT: { label: "On Account", amountKey: "onAccount" },
+};
+
+const computeNextSplitByPeopleShare = (count: number, paidCount: number, remainingAmount: number) => {
+    if (count <= 0 || remainingAmount <= 0) return Math.max(remainingAmount, 0);
+
+    const peopleLeft = Math.max(count - paidCount, 1);
+    const baseShare = Math.floor(remainingAmount / peopleLeft);
+    const remainder = remainingAmount - baseShare * peopleLeft;
+    const currentIndex = Math.min(paidCount, peopleLeft - 1);
+
+    return baseShare + (currentIndex < remainder ? 1 : 0);
+};
+
+const areCountMapsEqual = (first: Record<string, number>, second: Record<string, number>) => {
+    if (first === second) return true;
+    const firstKeys = Object.keys(first);
+    const secondKeys = Object.keys(second);
+    if (firstKeys.length !== secondKeys.length) return false;
+
+    for (const key of firstKeys) {
+        if (first[key] !== second[key]) return false;
+    }
+
+    return true;
+};
+
+type SplitItemsCommand =
+    | {
+          id: number;
+          type: "reset";
+          resetAmount: boolean;
+      }
+    | {
+          id: number;
+          type: "finalise";
+      };
 
 interface IPaymentModalProps {
     isOpen: boolean;
@@ -353,6 +407,363 @@ export const PaymentModal = (props: IPaymentModalProps) => {
                 <div className="payment-modal">{getActivePaymentModalComponent()}</div>
             </Modal>
         </>
+    );
+};
+
+type SplitPaymentByItemsProps = {
+    isSplitByItems: boolean;
+    onToggleSplitByItems: () => void;
+    onAmountChange: (amount: string) => void;
+    onAmountErrorChange: (error: string) => void;
+    products: ICartProduct[] | null;
+    paidItemCounts: Record<string, number>;
+    setPaidItemCounts: (counts: Record<string, number>) => void;
+    command: SplitItemsCommand | null;
+    onCommandHandled: (id: number) => void;
+};
+
+const SplitPaymentByItems = (props: SplitPaymentByItemsProps) => {
+    const {
+        isSplitByItems,
+        onToggleSplitByItems,
+        onAmountChange,
+        onAmountErrorChange,
+        products,
+        paidItemCounts,
+        setPaidItemCounts,
+        command,
+        onCommandHandled,
+    } = props;
+    const [selectedQuantities, setSelectedQuantities] = useState<Record<string, number>>({});
+
+    const hasSplitSelection = Object.values(selectedQuantities).some((qty) => qty > 0);
+    const getProductKey = (index: number) => `product-${index}`;
+
+    const getProductUnitPrices = (product: ICartProduct) => {
+        if (product.quantity <= 0) return [];
+
+        const lineTotal = product.totalPrice * product.quantity - product.discount;
+        if (lineTotal <= 0) {
+            return new Array(product.quantity).fill(0);
+        }
+
+        const baseUnitPrice = Math.floor(lineTotal / product.quantity);
+        const remainder = lineTotal - baseUnitPrice * product.quantity;
+
+        return Array.from({ length: product.quantity }, (_, unitIndex) => baseUnitPrice + (unitIndex < remainder ? 1 : 0));
+    };
+
+    const getRemainingQuantity = useCallback(
+        (index: number) => {
+            if (!products) return 0;
+
+            const product = products[index];
+            if (!product) return 0;
+
+            const key = getProductKey(index);
+            const paidCount = paidItemCounts[key] ?? 0;
+            return Math.max(product.quantity - paidCount, 0);
+        },
+        [paidItemCounts, products]
+    );
+
+    const calculateSelectionTotal = useCallback(
+        (selection: Record<string, number>) => {
+            if (!products) return 0;
+
+            return Object.entries(selection).reduce((total, [key, qty]) => {
+                if (qty <= 0) return total;
+
+                const index = Number(key.replace("product-", ""));
+                if (Number.isNaN(index)) return total;
+
+                const product = products[index];
+                if (!product) return total;
+
+                const paidCount = paidItemCounts[key] ?? 0;
+                const unitPrices = getProductUnitPrices(product);
+                const startIndex = Math.min(paidCount, unitPrices.length);
+                const endIndex = Math.min(startIndex + qty, unitPrices.length);
+                if (endIndex <= startIndex) return total;
+
+                const itemTotal = unitPrices.slice(startIndex, endIndex).reduce((sum, value) => sum + value, 0);
+                return total + itemTotal;
+            }, 0);
+        },
+        [paidItemCounts, products]
+    );
+
+    const updateSelection = (index: number, nextCount: number) => {
+        const key = getProductKey(index);
+        setSelectedQuantities((prev) => {
+            const remaining = getRemainingQuantity(index);
+            const safeCount = Math.min(Math.max(nextCount, 0), remaining);
+            const current = prev[key] ?? 0;
+
+            if (current === safeCount) return prev;
+
+            const next = { ...prev };
+            if (safeCount > 0) {
+                next[key] = safeCount;
+            } else {
+                delete next[key];
+            }
+
+            return next;
+        });
+    };
+
+    const clearSelection = useCallback(
+        (resetAmount: boolean) => {
+            setSelectedQuantities({});
+            if (resetAmount) {
+                onAmountChange(convertCentsToDollars(0));
+                onAmountErrorChange("");
+            }
+        },
+        [onAmountChange, onAmountErrorChange]
+    );
+
+    useEffect(() => {
+        if (!products) {
+            setSelectedQuantities({});
+            return;
+        }
+
+        setSelectedQuantities((prev) => {
+            const next: Record<string, number> = {};
+            let changed = false;
+
+            products.forEach((product, index) => {
+                const key = getProductKey(index);
+                const previousSelected = prev[key] ?? 0;
+                const remaining = getRemainingQuantity(index);
+                const bounded = Math.min(previousSelected, remaining);
+
+                if (bounded > 0) {
+                    next[key] = bounded;
+                }
+
+                if (bounded !== previousSelected) {
+                    changed = true;
+                }
+            });
+
+            if (Object.keys(prev).length !== Object.keys(next).length) {
+                changed = true;
+            }
+
+            return changed ? next : prev;
+        });
+    }, [getRemainingQuantity, products]);
+
+    useEffect(() => {
+        if (!isSplitByItems) return;
+
+        const totalCents = calculateSelectionTotal(selectedQuantities);
+        onAmountChange(convertCentsToDollars(totalCents));
+        onAmountErrorChange("");
+    }, [calculateSelectionTotal, isSplitByItems, onAmountChange, onAmountErrorChange, selectedQuantities]);
+
+    useEffect(() => {
+        if (isSplitByItems) return;
+        if (Object.keys(selectedQuantities).length === 0) return;
+        clearSelection(false);
+    }, [clearSelection, isSplitByItems, selectedQuantities]);
+
+    useEffect(() => {
+        if (!command) return;
+
+        if (command.type === "reset") {
+            clearSelection(command.resetAmount);
+            onCommandHandled(command.id);
+            return;
+        }
+
+        if (command.type === "finalise") {
+            if (!isSplitByItems || !products || Object.keys(selectedQuantities).length === 0) {
+                onCommandHandled(command.id);
+                return;
+            }
+
+            const nextCounts = { ...paidItemCounts };
+            let changed = false;
+
+            Object.entries(selectedQuantities).forEach(([key, qty]) => {
+                if (qty <= 0) return;
+
+                const index = Number(key.replace("product-", ""));
+                if (Number.isNaN(index)) return;
+
+                const product = products[index];
+                if (!product) return;
+
+                const currentPaid = paidItemCounts[key] ?? 0;
+                const remaining = Math.max(product.quantity - currentPaid, 0);
+                const quantityToCommit = Math.min(qty, remaining);
+                const updatedPaid = Math.min(product.quantity, currentPaid + quantityToCommit);
+
+                if (nextCounts[key] !== updatedPaid) {
+                    nextCounts[key] = updatedPaid;
+                    changed = true;
+                }
+            });
+
+            if (changed && !areCountMapsEqual(paidItemCounts, nextCounts)) {
+                setPaidItemCounts(nextCounts);
+            }
+
+            clearSelection(true);
+            onCommandHandled(command.id);
+        }
+    }, [clearSelection, command, isSplitByItems, onCommandHandled, paidItemCounts, products, selectedQuantities, setPaidItemCounts]);
+
+    return (
+        <>
+            <div className="payment-modal-split-header">
+                <div className="h3 cursor-pointer" onClick={onToggleSplitByItems}>
+                    Split payment by items
+                </div>
+                {isSplitByItems && hasSplitSelection && <Link onClick={() => clearSelection(true)}>Clear selection</Link>}
+            </div>
+            {isSplitByItems && (
+                <div className="payment-modal-split-items mb-2">
+                    {products && products.length > 0 ? (
+                        products.map((product, index) => {
+                            const key = getProductKey(index);
+                            const remaining = getRemainingQuantity(index);
+                            const isFullyPaid = remaining === 0;
+                            const selectedQty = isFullyPaid ? 0 : selectedQuantities[key] ?? 0;
+                            const unitPrices = getProductUnitPrices(product);
+                            const paidCount = paidItemCounts[key] ?? 0;
+                            const nextUnitPrice = isFullyPaid ? 0 : unitPrices[paidCount] ?? 0;
+                            const selectionAmount = isFullyPaid
+                                ? 0
+                                : (() => {
+                                      const startIndex = Math.min(paidCount, unitPrices.length);
+                                      const endIndex = Math.min(startIndex + selectedQty, unitPrices.length);
+                                      if (endIndex <= startIndex) return 0;
+                                      return unitPrices.slice(startIndex, endIndex).reduce((sum, value) => sum + value, 0);
+                                  })();
+
+                            return (
+                                <div key={key} className={`payment-modal-split-item${isFullyPaid ? " payment-modal-split-item-paid" : ""}`}>
+                                    <div className="payment-modal-split-item-info">
+                                        <div className="text-bold text-left mb-1">{product.name}</div>
+                                        {isFullyPaid ? (
+                                            <div className="text-grey">Paid</div>
+                                        ) : (
+                                            <div className="text-grey">
+                                                Remaining {remaining} × ${convertCentsToDollars(nextUnitPrice)}
+                                            </div>
+                                        )}
+                                    </div>
+                                    {isFullyPaid ? (
+                                        <div className="payment-modal-split-item-controls paid">Paid</div>
+                                    ) : (
+                                        <Stepper
+                                            count={selectedQty}
+                                            min={0}
+                                            max={remaining}
+                                            size={32}
+                                            onUpdate={(count: number) => updateSelection(index, count)}
+                                        />
+                                    )}
+                                    <div className={`payment-modal-split-item-amount${isFullyPaid ? " paid" : ""}`}>
+                                        {isFullyPaid ? "Paid" : `$${convertCentsToDollars(selectionAmount)}`}
+                                    </div>
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <div className="text-left text-grey">No items available to split.</div>
+                    )}
+                </div>
+            )}
+        </>
+    );
+};
+
+type SplitPaymentByPeopleProps = {
+    isSplitByPeople: boolean;
+    onToggleSplitByPeople: () => void;
+    onResetSplitByPeople: () => void;
+    splitPaymentByPeople: { count: number; paid: number };
+    onUpdateSplitPeopleCount: (count: number) => void;
+    totalRemainingCents: number;
+    totalRemainingDollars: string;
+    onAmountChange: (amount: string) => void;
+    onAmountErrorChange: (error: string) => void;
+    setSplitPaymentByPeople: (next: { count: number; paid: number }) => void;
+};
+
+const SplitPaymentByPeople = (props: SplitPaymentByPeopleProps) => {
+    const {
+        isSplitByPeople,
+        onToggleSplitByPeople,
+        onResetSplitByPeople,
+        splitPaymentByPeople,
+        onUpdateSplitPeopleCount,
+        totalRemainingCents,
+        totalRemainingDollars,
+        onAmountChange,
+        onAmountErrorChange,
+        setSplitPaymentByPeople,
+    } = props;
+
+    const { count, paid } = splitPaymentByPeople;
+    const peopleRemaining = Math.max(count - paid, 0);
+
+    useEffect(() => {
+        if (!isSplitByPeople) return;
+
+        if (peopleRemaining <= 0 || totalRemainingCents <= 0) {
+            setSplitPaymentByPeople({ count: 0, paid: 0 });
+            onAmountChange(totalRemainingDollars);
+            onAmountErrorChange("");
+            return;
+        }
+
+        const shareCents = computeNextSplitByPeopleShare(count, paid, totalRemainingCents);
+        onAmountChange(convertCentsToDollars(shareCents));
+        onAmountErrorChange("");
+    }, [
+        count,
+        paid,
+        isSplitByPeople,
+        peopleRemaining,
+        totalRemainingCents,
+        totalRemainingDollars,
+        onAmountChange,
+        onAmountErrorChange,
+        setSplitPaymentByPeople,
+    ]);
+
+    const nextSplitByPeopleAmountCents = isSplitByPeople ? computeNextSplitByPeopleShare(count, paid, totalRemainingCents) : 0;
+
+    return (
+        <div className="mb-4">
+            <div className="d-flex d-flex-align-center">
+                <div className="h3 cursor-pointer text-left mb-3" onClick={onToggleSplitByPeople}>
+                    Split payment equally by people
+                </div>
+                {isSplitByPeople && (
+                    <Link className="mb-3 ml-2" onClick={onResetSplitByPeople}>
+                        Reset split
+                    </Link>
+                )}
+            </div>
+            {isSplitByPeople && (
+                <div className="mb-4">
+                    <Stepper count={count} min={SPLIT_BY_PEOPLE_MIN_COUNT} max={99} size={28} onUpdate={onUpdateSplitPeopleCount}>
+                        <div>
+                            People remaining: {peopleRemaining}
+                            <span className="ml-2">Next share: ${convertCentsToDollars(nextSplitByPeopleAmountCents)}</span>
+                        </div>
+                    </Stepper>
+                </div>
+            )}
+        </div>
     );
 };
 
@@ -917,7 +1328,12 @@ const POSPaymentScreen = (props: {
         setPayments,
         paymentAmounts,
         setPaymentAmounts,
+        paidItemCounts,
+        setPaidItemCounts,
+        splitPaymentByPeople,
+        setSplitPaymentByPeople,
         paidSoFar,
+        products,
         setUserAppliedPromotion,
         promotion,
         userAppliedPromotionCode,
@@ -928,73 +1344,161 @@ const POSPaymentScreen = (props: {
     const { register } = useRegister();
     const { restaurant } = useRestaurant();
 
-    const totalRemaining = subTotal - paidSoFar;
+    const [isSplitByItems, setIsSplitByItems] = useState(false);
+    const [splitItemsCommand, setSplitItemsCommand] = useState<SplitItemsCommand | null>(null);
+    const splitItemsCommandId = useRef(0);
+
+    const sendSplitItemsCommand = useCallback(
+        (command: { type: "reset"; resetAmount: boolean } | { type: "finalise" }) => {
+            splitItemsCommandId.current += 1;
+            setSplitItemsCommand({ id: splitItemsCommandId.current, ...command });
+        },
+        [setSplitItemsCommand]
+    );
+
+    const handleSplitItemsCommandHandled = useCallback(
+        (commandId: number) => {
+            setSplitItemsCommand((current) => (current && current.id === commandId ? null : current));
+        },
+        [setSplitItemsCommand]
+    );
+
+    const totalRemaining = Math.max(subTotal - paidSoFar, 0);
     const totalRemainingInDollars = convertCentsToDollars(totalRemaining);
+    const isSplitByPeople = splitPaymentByPeople.count > 0;
+    const unpaidOnAccountOrders = onAccountOrders.filter((order) => !order.paid);
+    const unpaidOnAccountTotal = unpaidOnAccountOrders.reduce((sum, order) => sum + order.subTotal, 0);
 
-    const onRemoveCashTransaction = (index: number) => {
-        const payment = payments[index];
-        const newPayments = [...payments];
-        const newPaymentAmounts = paymentAmounts.cash - payment.amount;
+    useEffect(() => {
+        if (!products) {
+            if (Object.keys(paidItemCounts).length > 0) {
+                setPaidItemCounts({});
+            }
+            sendSplitItemsCommand({ type: "reset", resetAmount: true });
+            setSplitPaymentByPeople({ count: 0, paid: 0 });
+            return;
+        }
 
-        newPayments.splice(index, 1);
+        const next: Record<string, number> = {};
 
-        setPayments(newPayments);
-        setPaymentAmounts({ ...paymentAmounts, cash: newPaymentAmounts });
+        products.forEach((product, index) => {
+            const key = `product-${index}`;
+            const previousPaid = paidItemCounts[key] ?? 0;
+            const bounded = Math.min(previousPaid, product.quantity);
+            next[key] = bounded;
+        });
+
+        if (!areCountMapsEqual(paidItemCounts, next)) {
+            setPaidItemCounts(next);
+        }
+    }, [paidItemCounts, products, sendSplitItemsCommand, setPaidItemCounts, setSplitPaymentByPeople]);
+
+    const disableItemSplit = (options?: { resetAmount?: boolean }) => {
+        if (!isSplitByItems) return;
+
+        setIsSplitByItems(false);
+        sendSplitItemsCommand({ type: "reset", resetAmount: options?.resetAmount ?? false });
     };
 
-    const onRemoveUberEatsTransaction = (index: number) => {
-        const payment = payments[index];
-        const newPayments = [...payments];
-        const newPaymentAmounts = paymentAmounts.uberEats - payment.amount;
-
-        newPayments.splice(index, 1);
-
-        setPayments(newPayments);
-        setPaymentAmounts({ ...paymentAmounts, uberEats: newPaymentAmounts });
+    const clearSplitByPeople = (resetAmount: boolean = true) => {
+        setSplitPaymentByPeople({ count: 0, paid: 0 });
+        if (resetAmount) onAmountChange(totalRemainingInDollars);
+        onAmountErrorChange("");
     };
 
-    const onRemoveOnAccountTransaction = (index: number) => {
-        const payment = payments[index];
-        const newPayments = [...payments];
-        const newPaymentAmounts = paymentAmounts.onAccount - payment.amount;
-
-        newPayments.splice(index, 1);
-
-        setPayments(newPayments);
-        setPaymentAmounts({ ...paymentAmounts, onAccount: newPaymentAmounts });
+    const enableSplitByPeople = () => {
+        disableItemSplit();
+        const nextCount = splitPaymentByPeople.count >= SPLIT_BY_PEOPLE_MIN_COUNT ? splitPaymentByPeople.count : SPLIT_BY_PEOPLE_MIN_COUNT;
+        if (splitPaymentByPeople.count !== nextCount || splitPaymentByPeople.paid !== 0) {
+            setSplitPaymentByPeople({ count: nextCount, paid: 0 });
+        }
+        onAmountErrorChange("");
     };
 
-    const onRemoveMenulogTransaction = (index: number) => {
-        const payment = payments[index];
-        const newPayments = [...payments];
-        const newPaymentAmounts = paymentAmounts.menulog - payment.amount;
+    const updateSplitPeopleCount = (nextCount: number) => {
+        if (!isSplitByPeople) return;
 
-        newPayments.splice(index, 1);
-
-        setPayments(newPayments);
-        setPaymentAmounts({ ...paymentAmounts, menulog: newPaymentAmounts });
+        const safeCount = Math.max(nextCount, SPLIT_BY_PEOPLE_MIN_COUNT);
+        const safePaid = Math.min(splitPaymentByPeople.paid, safeCount);
+        if (safeCount !== splitPaymentByPeople.count || safePaid !== splitPaymentByPeople.paid) {
+            setSplitPaymentByPeople({ count: safeCount, paid: safePaid });
+        }
     };
 
-    const onRemoveDoordashTransaction = (index: number) => {
-        const payment = payments[index];
-        const newPayments = [...payments];
-        const newPaymentAmounts = paymentAmounts.doordash - payment.amount;
+    const revertSplitPeopleShare = () => {
+        if (splitPaymentByPeople.count <= 0 || splitPaymentByPeople.paid <= 0) return;
 
-        newPayments.splice(index, 1);
-
-        setPayments(newPayments);
-        setPaymentAmounts({ ...paymentAmounts, doordash: newPaymentAmounts });
+        setSplitPaymentByPeople({ count: splitPaymentByPeople.count, paid: splitPaymentByPeople.paid - 1 });
     };
 
-    const onRemoveDelivereasyTransaction = (index: number) => {
+    const onToggleSplitPeople = () => {
+        if (isSplitByPeople) {
+            clearSplitByPeople();
+        } else {
+            enableSplitByPeople();
+        }
+    };
+
+    const onToggleSplit = () => {
+        const nextSplitState = !isSplitByItems;
+        setIsSplitByItems(nextSplitState);
+        sendSplitItemsCommand({ type: "reset", resetAmount: nextSplitState });
+
+        if (nextSplitState) {
+            clearSplitByPeople(false);
+            onAmountChange(convertCentsToDollars(0));
+        } else {
+            onAmountChange(totalRemainingInDollars);
+            onAmountErrorChange("");
+        }
+    };
+
+    const processPayment = (handler: (amount: string) => void, amountValue?: string) => {
+        const paymentAmount = amountValue ?? amount;
+        handler(paymentAmount);
+        if (isSplitByPeople) {
+            const { count, paid } = splitPaymentByPeople;
+            if (count > 0) {
+                const peopleLeft = Math.max(count - paid, 0);
+                if (peopleLeft > 0) {
+                    const nextPaid = Math.min(count, paid + 1);
+                    if (nextPaid !== paid) {
+                        setSplitPaymentByPeople({ count, paid: nextPaid });
+                    }
+                }
+            }
+        }
+        sendSplitItemsCommand({ type: "finalise" });
+    };
+
+    const handleCashPayment = () => processPayment(onClickCash);
+    const handleEftposPayment = () => processPayment(onClickEftpos);
+    const handleOnAccountPayment = () => processPayment(onClickOnAccount);
+    const handleUberEatsPayment = () => processPayment(onClickUberEats);
+    const handleMenulogPayment = () => processPayment(onClickMenulog);
+    const handleDoordashPayment = () => processPayment(onClickDoordash);
+    const handleDelivereasyPayment = () => processPayment(onClickDelivereasy);
+
+    const handleQuickCashPayment = (quickAmount: string) => {
+        if (isSplitByItems) disableItemSplit();
+        if (isSplitByPeople) clearSplitByPeople(false);
+
+        onAmountErrorChange("");
+        onClickCash(quickAmount);
+    };
+
+    const removePayment = (index: number, amountKey: keyof ICartPaymentAmounts) => {
         const payment = payments[index];
-        const newPayments = [...payments];
-        const newPaymentAmounts = paymentAmounts.delivereasy - payment.amount;
+        if (!payment) return;
 
-        newPayments.splice(index, 1);
+        const updatedPayments = payments.filter((_, paymentIndex) => paymentIndex !== index);
+        const updatedAmountValue = Math.max(paymentAmounts[amountKey] - payment.amount, 0);
 
-        setPayments(newPayments);
-        setPaymentAmounts({ ...paymentAmounts, delivereasy: newPaymentAmounts });
+        setPayments(updatedPayments);
+        setPaymentAmounts({ ...paymentAmounts, [amountKey]: updatedAmountValue });
+        setPaidItemCounts({});
+        sendSplitItemsCommand({ type: "reset", resetAmount: true });
+        revertSplitPeopleShare();
     };
 
     const onBlurAmount = () => {
@@ -1009,6 +1513,9 @@ const POSPaymentScreen = (props: {
     };
 
     const onChangeAmount = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (isSplitByItems) disableItemSplit();
+        if (isSplitByPeople) clearSplitByPeople(false);
+
         onAmountChange(event.target.value);
         onAmountErrorChange("");
     };
@@ -1039,33 +1546,53 @@ const POSPaymentScreen = (props: {
                 </div>
             </div>
 
-            {onAccountOrders.filter((order) => order.paid === false).length > 0 && (
+            <div className="payment-modal-split-section">
+                <SplitPaymentByItems
+                    isSplitByItems={isSplitByItems}
+                    onToggleSplitByItems={onToggleSplit}
+                    onAmountChange={onAmountChange}
+                    onAmountErrorChange={onAmountErrorChange}
+                    products={products}
+                    paidItemCounts={paidItemCounts}
+                    setPaidItemCounts={setPaidItemCounts}
+                    command={splitItemsCommand}
+                    onCommandHandled={handleSplitItemsCommandHandled}
+                />
+
+                <SplitPaymentByPeople
+                    isSplitByPeople={isSplitByPeople}
+                    onToggleSplitByPeople={onToggleSplitPeople}
+                    onResetSplitByPeople={() => clearSplitByPeople()}
+                    splitPaymentByPeople={splitPaymentByPeople}
+                    onUpdateSplitPeopleCount={updateSplitPeopleCount}
+                    totalRemainingCents={totalRemaining}
+                    totalRemainingDollars={totalRemainingInDollars}
+                    onAmountChange={onAmountChange}
+                    onAmountErrorChange={onAmountErrorChange}
+                    setSplitPaymentByPeople={setSplitPaymentByPeople}
+                />
+            </div>
+
+            {unpaidOnAccountOrders.length > 0 && (
                 <div className="payment-modal-on-account-payments-wrapper mb-8">
                     <div className="text-bold mb-2">This customer has unpaid Account Balance</div>
-                    {onAccountOrders
-                        .filter((order) => order.paid === false)
-                        .map((order) => (
-                            <div key={order.id} className="mt-1">
-                                Order: {order.number} - {format(new Date(order.placedAt), "dd MMM h:mm:ss aa")} - {order.products.length}
-                                {order.products.length === 1 ? " item" : " items"} - ${convertCentsToDollars(order.subTotal)}
-                            </div>
-                        ))}
-                    <div className="mt-2 text-bold">
-                        Total: -$
-                        {convertCentsToDollars(
-                            onAccountOrders.filter((order) => order.paid === false).reduce((sum, order) => sum + order.subTotal, 0)
-                        )}
-                    </div>
+                    {unpaidOnAccountOrders.map((order) => (
+                        <div key={order.id} className="mt-1">
+                            Order: {order.number} - {format(new Date(order.placedAt), "dd MMM h:mm:ss aa")} - {order.products.length}
+                            {order.products.length === 1 ? " item" : " items"} - ${convertCentsToDollars(order.subTotal)}
+                        </div>
+                    ))}
+                    <div className="mt-2 text-bold">Total: -${convertCentsToDollars(unpaidOnAccountTotal)}</div>
                 </div>
             )}
 
             <div className="h3 mb-4">Payment Methods</div>
             <div className="payment-modal-payment-buttons-wrapper mb-8">
                 <div className="payment-modal-payment-button-wrapper">
-                    <Button className="large payment-modal-cash-button" onClick={() => onClickCash(amount)}>
+                    <Button className="large payment-modal-cash-button" onClick={handleCashPayment}>
                         Cash
                     </Button>
-                    <Button className="large payment-modal-eftpos-button" onClick={() => onClickEftpos(amount)}>
+                    <Button className="large payment-modal-eftpos-button" onClick={handleEftposPayment}>
                         Eftpos
                     </Button>
                     {register &&
@@ -1074,27 +1601,27 @@ const POSPaymentScreen = (props: {
                         customerInformation.firstName &&
                         customerInformation.email &&
                         customerInformation.phoneNumber && (
-                            <Button className="large payment-modal-on-account-button" onClick={() => onClickOnAccount(amount)}>
+                            <Button className="large payment-modal-on-account-button" onClick={handleOnAccountPayment}>
                                 On Account
                             </Button>
                         )}
                     {register && register.enableUberEatsPayments && (
-                        <Button className="large payment-modal-uber-eats-button" onClick={() => onClickUberEats(amount)}>
+                        <Button className="large payment-modal-uber-eats-button" onClick={handleUberEatsPayment}>
                             Uber Eats
                         </Button>
                     )}
                     {register && register.enableMenulogPayments && (
-                        <Button className="large payment-modal-menulog-button" onClick={() => onClickMenulog(amount)}>
+                        <Button className="large payment-modal-menulog-button" onClick={handleMenulogPayment}>
                             Menulog
                         </Button>
                     )}
                     {register && register.enableDoordashPayments && (
-                        <Button className="large payment-modal-doordash-button" onClick={() => onClickDoordash(amount)}>
+                        <Button className="large payment-modal-doordash-button" onClick={handleDoordashPayment}>
                             Doordash
                         </Button>
                     )}
                     {register && register.enableDelivereasyPayments && (
-                        <Button className="large payment-modal-delivereasy-button" onClick={() => onClickDelivereasy(amount)}>
+                        <Button className="large payment-modal-delivereasy-button" onClick={handleDelivereasyPayment}>
                             Delivereasy
                         </Button>
                     )}
@@ -1102,58 +1629,42 @@ const POSPaymentScreen = (props: {
             </div>
             <div className="h3 mb-4">Quick Cash Options</div>
             <div className="payment-modal-quick-cash-button-wrapper mb-8">
-                <div className="payment-modal-quick-cash-button" onClick={() => onClickCash(AMOUNT_5)}>
-                    $5
-                </div>
-                <div className="payment-modal-quick-cash-button ml-4" onClick={() => onClickCash(AMOUNT_10)}>
-                    $10
-                </div>
-                <div className="payment-modal-quick-cash-button ml-4" onClick={() => onClickCash(AMOUNT_20)}>
-                    $20
-                </div>
-                <div className="payment-modal-quick-cash-button ml-4" onClick={() => onClickCash(AMOUNT_50)}>
-                    $50
-                </div>
-                <div className="payment-modal-quick-cash-button ml-4" onClick={() => onClickCash(AMOUNT_100)}>
-                    $100
-                </div>
+                {QUICK_CASH_AMOUNTS.map((quickAmount, index) => {
+                    const displayAmount = parseFloat(quickAmount).toString();
+
+                    return (
+                        <div
+                            key={quickAmount}
+                            className={`payment-modal-quick-cash-button${index > 0 ? " ml-4" : ""}${isSplitByItems ? " disabled" : ""}`}
+                            onClick={() => !isSplitByItems && handleQuickCashPayment(quickAmount)}
+                        >
+                            ${displayAmount}
+                        </div>
+                    );
+                })}
             </div>
             {payments && payments.length > 0 && (
                 <>
                     <div className="h3 mb-4">Paid So Far</div>
-                    {payments.map((payment, index) => (
-                        <>
-                            {payment.type === "CASH" ? (
-                                <div className="mb-2">
-                                    Cash: ${convertCentsToDollars(payment.amount)}{" "}
-                                    <Link onClick={() => onRemoveCashTransaction(index)}>(Remove)</Link>
+                    {payments.map((payment, index) => {
+                        const removalConfig = REMOVABLE_PAYMENT_CONFIG[payment.type];
+                        const key = `payment-${index}-${payment.type}`;
+
+                        if (removalConfig) {
+                            return (
+                                <div key={key} className="mb-2">
+                                    {removalConfig.label}: ${convertCentsToDollars(payment.amount)}{" "}
+                                    <Link onClick={() => removePayment(index, removalConfig.amountKey)}>(Remove)</Link>
                                 </div>
-                            ) : payment.type === "UBEREATS" ? (
-                                <div className="mb-2">
-                                    Uber Eats: ${convertCentsToDollars(payment.amount)}{" "}
-                                    <Link onClick={() => onRemoveUberEatsTransaction(index)}>(Remove)</Link>
-                                </div>
-                            ) : payment.type === "MENULOG" ? (
-                                <div className="mb-2">
-                                    Menulog: ${convertCentsToDollars(payment.amount)}{" "}
-                                    <Link onClick={() => onRemoveMenulogTransaction(index)}>(Remove)</Link>
-                                </div>
-                            ) : payment.type === "DOORDASH" ? (
-                                <div className="mb-2">
-                                    Doordash: ${convertCentsToDollars(payment.amount)}{" "}
-                                    <Link onClick={() => onRemoveDoordashTransaction(index)}>(Remove)</Link>
-                                </div>
-                            ) : payment.type === "DELIVEREASY" ? (
-                                <div className="mb-2">
-                                    Delivereasy: ${convertCentsToDollars(payment.amount)}{" "}
-                                    <Link onClick={() => onRemoveDelivereasyTransaction(index)}>(Remove)</Link>
-                                </div>
-                            ) : (
-                                //For all Eftpos types Verifone, Smartpay, Windcave and Tyro
-                                <div className="mb-2">Eftpos: ${convertCentsToDollars(payment.amount)}</div>
-                            )}
-                        </>
-                    ))}
+                            );
+                        }
+
+                        return (
+                            <div key={key} className="mb-2">
+                                Eftpos: ${convertCentsToDollars(payment.amount)}
+                            </div>
+                        );
+                    })}
                 </>
             )}
         </>
