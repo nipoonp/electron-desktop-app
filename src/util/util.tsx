@@ -918,12 +918,19 @@ export const getRestaurantTimings = (operatingHours: IGET_RESTAURANT_OPERATING_H
     return timings;
 };
 
-export const calculateTotalLoyaltyPoints = (histories: { action: ELOYALTY_ACTION; points: number }[]) =>
-    histories.reduce((acc, history) => {
-        if (history.action === ELOYALTY_ACTION.EARN) {
-            return acc + history.points;
-        } else if (history.action === ELOYALTY_ACTION.REDEEM) {
-            return acc - history.points;
-        }
-        return acc;
-    }, 0);
+export const calculateTotalLoyaltyPoints = (
+    histories: { action: ELOYALTY_ACTION; points: number; loyaltyHistoryLoyaltyId?: string | null }[],
+    loyaltyGroupList: string[] = []
+): number => {
+    let total = 0;
+
+    for (const { action, points, loyaltyHistoryLoyaltyId } of histories) {
+        const isRelevant = !loyaltyHistoryLoyaltyId || loyaltyGroupList.includes(loyaltyHistoryLoyaltyId);
+        if (!isRelevant) continue;
+
+        if (action === ELOYALTY_ACTION.EARN) total += points;
+        else if (action === ELOYALTY_ACTION.REDEEM) total -= points;
+    }
+
+    return total;
+};

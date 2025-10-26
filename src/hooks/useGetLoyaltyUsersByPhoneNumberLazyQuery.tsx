@@ -7,8 +7,7 @@ export const useGetLoyaltyUsersByPhoneNumberLazyQuery = (rewardsIdentifier: stri
 
     const [getLoyaltyUsersByPhoneNumberLazyQuery, { loading, error, data: _data }] = useLazyQuery(GET_LOYALTY_USER_BY_PHONE_NUMBER, {
         variables: {
-            rewardsIdentifier: rewardsIdentifier,
-            loyaltyHistoryRestaurantId: loyaltyHistoryRestaurantId,
+            phoneNumber: rewardsIdentifier,
         },
         fetchPolicy: "network-only",
     });
