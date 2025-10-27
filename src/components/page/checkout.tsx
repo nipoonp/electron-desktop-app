@@ -54,6 +54,7 @@ import {
     EOrderType,
     ITyroEftposQuestion,
     IMX51EftposQuestion,
+    ICartModifier,
 } from "../../model/model";
 import { useUser } from "../../context/user-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
@@ -816,6 +817,262 @@ export const Checkout = () => {
             throw "No products have been selected";
         }
 
+        const updatedProducts: ICartProduct[] = JSON.parse(JSON.stringify(products));
+
+        updatedProducts.forEach((product) => {
+            product.modifierGroups.forEach((modifierGroup) => {
+                const cleanedModifiers: ICartModifier[] = [];
+                modifierGroup.modifiers.forEach((modifier) => {
+                    if (modifier.id !== "4533751c-0c66-43cf-8c37-7bdac1e464a6") {
+                        cleanedModifiers.push(modifier);
+                    } else if (modifier.id === "4533751c-0c66-43cf-8c37-7bdac1e464a6") {
+                        modifier.productModifiers?.forEach((prodMod) => {
+                            prodMod.modifierGroups.forEach((prodModGroup) => {
+                                if (prodModGroup.id === "f3335268-87e2-4711-8356-e55a9d86902e") {
+                                    prodModGroup.modifiers.forEach((prodModGroupMod) => {
+                                        if (prodModGroupMod.price === 0) {
+                                            if (prodModGroupMod.productModifiers && prodModGroupMod.productModifiers.length > 0) {
+                                                updatedProducts.push({
+                                                    id: prodModGroupMod.productModifiers[0].id,
+                                                    name: prodModGroupMod.productModifiers[0].name,
+                                                    kitchenName: null,
+                                                    image: null,
+                                                    notes: null,
+                                                    price: 0,
+                                                    totalPrice: 0,
+                                                    discount: 0,
+                                                    isAgeRescricted: false,
+                                                    quantity: 1,
+                                                    category: null,
+                                                    modifierGroups: [],
+                                                });
+                                            }
+                                        } else {
+                                            updatedProducts.push({
+                                                id: "b65546fc-6f74-498f-9aee-7b75f8085e38_94", //"UPGRADE SNACK" Product
+                                                name: "UPGRADE SNACK",
+                                                kitchenName: null,
+                                                image: null,
+                                                notes: null,
+                                                price: 0,
+                                                totalPrice: 0,
+                                                discount: 0,
+                                                isAgeRescricted: false,
+                                                quantity: 1,
+                                                category: null,
+                                                modifierGroups: [
+                                                    {
+                                                        id: "45511723-3b84-4ab5-a1e0-0a90837cf5bc_1",
+                                                        name: "UPGRADE SNACK", //"UPGRADE SNACK" Modifier Group
+                                                        kitchenName: "",
+                                                        choiceDuplicate: 1,
+                                                        choiceMin: 1,
+                                                        choiceMax: 1,
+                                                        hideForCustomer: false,
+                                                        modifiers: [
+                                                            {
+                                                                id: prodModGroupMod.id,
+                                                                name: prodModGroupMod.name,
+                                                                kitchenName: "",
+                                                                price: prodModGroupMod.price,
+                                                                preSelectedQuantity: 0,
+                                                                quantity: 1,
+                                                                productModifiers: null,
+                                                                image: null,
+                                                            },
+                                                        ],
+                                                    },
+                                                ],
+                                            });
+                                        }
+                                    });
+                                }
+
+                                if (prodModGroup.id === "a8155eef-c46f-49a1-99b9-fea20a99aebe") {
+                                    prodModGroup.modifiers.forEach((prodModGroupMod) => {
+                                        if (prodModGroupMod.price === 0) {
+                                            if (prodModGroupMod.productModifiers && prodModGroupMod.productModifiers.length > 0) {
+                                                updatedProducts.push({
+                                                    id: prodModGroupMod.productModifiers[0].id,
+                                                    name: prodModGroupMod.productModifiers[0].name,
+                                                    kitchenName: null,
+                                                    image: null,
+                                                    notes: null,
+                                                    price: 0,
+                                                    totalPrice: 0,
+                                                    discount: 0,
+                                                    isAgeRescricted: false,
+                                                    quantity: 1,
+                                                    category: null,
+                                                    modifierGroups: [],
+                                                });
+                                            }
+                                        } else {
+                                            const mapping = {
+                                                "f5328a5b-22f0-4419-8cba-5254e0edaf19_17": {
+                                                    //U/G TO VIET COFFEE
+                                                    productId: "68e66936-7dc2-4bed-ae4c-6c76e8d1a487_93",
+                                                    productName: "UPGRAD TO VIET COFFEE",
+                                                },
+                                                "458b473f-031f-4cbc-a2d3-a7701968f028_29": {
+                                                    //U/G TO GREEN APPLE TEA
+                                                    productId: "230361e8-d7a9-4d1d-9438-6c2cac2e1691_95",
+                                                    productName: "UPGRADE TO FRUITY TEA",
+                                                },
+                                                "173c5008-ab22-4f5d-8b60-3babd766f285_30": {
+                                                    //U/G TO LYCHEE TEA
+                                                    productId: "230361e8-d7a9-4d1d-9438-6c2cac2e1691_95",
+                                                    productName: "UPGRADE TO FRUITY TEA",
+                                                },
+                                                "9564c0b6-2555-4035-8e0e-8df3e1b84e56_31": {
+                                                    //U/G TO STAW BLUE TEA
+                                                    productId: "230361e8-d7a9-4d1d-9438-6c2cac2e1691_95",
+                                                    productName: "UPGRADE TO FRUITY TEA",
+                                                },
+                                                "7c772604-fccc-4066-aca0-209fa8772f28_32": {
+                                                    //U/G TO GRAPEFRUIT TEA
+                                                    productId: "230361e8-d7a9-4d1d-9438-6c2cac2e1691_95",
+                                                    productName: "UPGRADE TO FRUITY TEA",
+                                                },
+                                                "69412d01-39bb-4ceb-940d-e2f2be2038d2_33": {
+                                                    //U/G TO PASSIONFRUIT TEA
+                                                    productId: "230361e8-d7a9-4d1d-9438-6c2cac2e1691_95",
+                                                    productName: "UPGRADE TO FRUITY TEA",
+                                                },
+                                                "041b9314-a9d3-479e-b4a6-400eb33f2f4b_34": {
+                                                    //U/G TO LEMON TEA
+                                                    productId: "230361e8-d7a9-4d1d-9438-6c2cac2e1691_95",
+                                                    productName: "UPGRADE TO FRUITY TEA",
+                                                },
+                                                "8358aae6-cdb9-4ea2-bf82-850f608651dc_23": {
+                                                    //U/G TO ORIGINAL TEA
+                                                    productId: "ea8ce11c-1ec9-45d0-9821-7c2a604e6bbd_96",
+                                                    productName: "UPGRADE TO BUBBLE TEA",
+                                                },
+                                                "8d5f5574-6989-4e64-88b3-976fa3b00f8f_24": {
+                                                    //U/G TO BROWN SUGAR TEA
+                                                    productId: "ea8ce11c-1ec9-45d0-9821-7c2a604e6bbd_96",
+                                                    productName: "UPGRADE TO BUBBLE TEA",
+                                                },
+                                                "c9bd2be8-6e45-4d1e-8254-91d6f0ff8423_25": {
+                                                    //U/G TO CREAMY MANGO TEA
+                                                    productId: "ea8ce11c-1ec9-45d0-9821-7c2a604e6bbd_96",
+                                                    productName: "UPGRADE TO BUBBLE TEA",
+                                                },
+                                                "64d557b6-212a-42c1-b57e-8766453b5463_26": {
+                                                    //U/G TO  GREEN MATCHA TE
+                                                    productId: "ea8ce11c-1ec9-45d0-9821-7c2a604e6bbd_96",
+                                                    productName: "UPGRADE TO BUBBLE TEA",
+                                                },
+                                                "1c9b3b90-3e1b-415c-bca0-0f04afb8f69b_27": {
+                                                    //U/G TO TIRAMISU TEA
+                                                    productId: "ea8ce11c-1ec9-45d0-9821-7c2a604e6bbd_96",
+                                                    productName: "UPGRADE TO BUBBLE TEA",
+                                                },
+                                                "2b099dc5-c85c-41a8-aa2a-0e48d25058dd_28": {
+                                                    //U/G TO TARO TEA
+                                                    productId: "ea8ce11c-1ec9-45d0-9821-7c2a604e6bbd_96",
+                                                    productName: "UPGRADE TO BUBBLE TEA",
+                                                },
+                                                "7c4c43cb-5308-4c50-83d8-0179a5eb2445_18": {
+                                                    //U/G TO LIME LEMONADE
+                                                    productId: "0a6985cd-3d65-483a-90ac-f824775d8cd6_97",
+                                                    productName: "UPGRADE TO FRUIT DRINK",
+                                                },
+                                                "fdb4ea77-0d09-4c01-8072-0649425ae953_19": {
+                                                    //U/G TO HONEY LEMONADE
+                                                    productId: "0a6985cd-3d65-483a-90ac-f824775d8cd6_97",
+                                                    productName: "UPGRADE TO FRUIT DRINK",
+                                                },
+                                                "a1ea9d83-269f-441b-8bec-97a1fa0affc5_22": {
+                                                    //U/G TO PASSION LEMONADE
+                                                    productId: "0a6985cd-3d65-483a-90ac-f824775d8cd6_97",
+                                                    productName: "UPGRADE TO FRUIT DRINK",
+                                                },
+                                                "20d63e44-4353-408b-b747-a61f8d8f84e6_21": {
+                                                    //U/G TO MANGO LEMONADE
+                                                    productId: "0a6985cd-3d65-483a-90ac-f824775d8cd6_97",
+                                                    productName: "UPGRADE TO FRUIT DRINK",
+                                                },
+                                                "b3e3e667-561b-40ca-89ad-2179d23398b7_35": {
+                                                    //U/G TO VIET BEER
+                                                    productId: "6f1a0fd6-6b7e-4dae-a69d-a465405830ee_98",
+                                                    productName: "UPGRADE TO BEER / WINE",
+                                                },
+                                                "a301b66b-ac75-40c6-9365-d2eabe798501_36": {
+                                                    //U/G TO THAI BEER
+                                                    productId: "6f1a0fd6-6b7e-4dae-a69d-a465405830ee_98",
+                                                    productName: "UPGRADE TO BEER / WINE",
+                                                },
+                                                "7cc97746-9abe-4716-86f2-61eeeeccd71a_37": {
+                                                    //U/G TO LIGHT BEER
+                                                    productId: "6f1a0fd6-6b7e-4dae-a69d-a465405830ee_98",
+                                                    productName: "UPGRADE TO BEER / WINE",
+                                                },
+                                                "ad5393c5-0293-48d1-af04-0e4799042b93_38": {
+                                                    //U/G TO CHARDONNAY
+                                                    productId: "6f1a0fd6-6b7e-4dae-a69d-a465405830ee_98",
+                                                    productName: "UPGRADE TO BEER / WINE",
+                                                },
+                                                "df2f5e20-12b5-4569-9127-679cba06d1f8_39": {
+                                                    //U/G TO SAUVIGNON BLANC
+                                                    productId: "6f1a0fd6-6b7e-4dae-a69d-a465405830ee_98",
+                                                    productName: "UPGRADE TO BEER / WINE",
+                                                },
+                                                "6b8f7c87-5d36-461a-ae26-b2f6963e180f_40": {
+                                                    //U/G TO PINOT NOIR
+                                                    productId: "6f1a0fd6-6b7e-4dae-a69d-a465405830ee_98",
+                                                    productName: "UPGRADE TO BEER / WINE",
+                                                },
+                                            };
+
+                                            updatedProducts.push({
+                                                id: mapping[prodModGroupMod.id].productId,
+                                                name: mapping[prodModGroupMod.id].productName,
+                                                kitchenName: null,
+                                                image: null,
+                                                notes: null,
+                                                price: 0,
+                                                totalPrice: 0,
+                                                discount: 0,
+                                                isAgeRescricted: false,
+                                                quantity: 1,
+                                                category: null,
+                                                modifierGroups: [
+                                                    {
+                                                        id: mapping[prodModGroupMod.id].productId,
+                                                        name: mapping[prodModGroupMod.id].productName,
+                                                        kitchenName: "",
+                                                        choiceDuplicate: 1,
+                                                        choiceMin: 1,
+                                                        choiceMax: 1,
+                                                        hideForCustomer: false,
+                                                        modifiers: [
+                                                            {
+                                                                id: prodModGroupMod.id,
+                                                                name: prodModGroupMod.name,
+                                                                kitchenName: "",
+                                                                price: prodModGroupMod.price,
+                                                                preSelectedQuantity: 0,
+                                                                quantity: 1,
+                                                                productModifiers: null,
+                                                                image: null,
+                                                            },
+                                                        ],
+                                                    },
+                                                ],
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        });
+                    }
+                });
+                modifierGroup.modifiers = cleanedModifiers;
+            });
+        });
+
         let variables;
 
         try {
@@ -860,7 +1117,7 @@ export const Checkout = () => {
                 subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0),
                 preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                 registerId: register.id,
-                products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
+                products: updatedProducts, // copy obj so we can mutate it later
                 placedAt: toLocalISOString(now),
                 placedAtUtc: now.toISOString(),
                 orderUserId: user.id,
@@ -924,7 +1181,7 @@ export const Checkout = () => {
                     subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0),
                     preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                     registerId: register.id,
-                    products: JSON.stringify(products), // copy obj so we can mutate it later
+                    products: JSON.stringify(updatedProducts), // copy obj so we can mutate it later
                     placedAt: toLocalISOString(now),
                     placedAtUtc: now.toISOString(),
                     orderUserId: user.id,
@@ -952,17 +1209,17 @@ export const Checkout = () => {
                     delete product.modifierGroups;
                 }
 
-                if (product.image == null) {
-                    delete product.image;
-                }
+                // if (product.image == null) {
+                //     delete product.image;
+                // }
 
                 if (product.notes == null || product.notes == "") {
                     delete product.notes;
                 }
 
-                if (product.category.image == null) {
-                    delete product.category.image;
-                }
+                // if (product.category.image == null) {
+                //     delete product.category.image;
+                // }
 
                 // if (product.isAgeRescricted == null) {
                 delete product.isAgeRescricted;
