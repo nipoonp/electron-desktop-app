@@ -819,16 +819,30 @@ export const Checkout = () => {
 
         const updatedProducts: ICartProduct[] = JSON.parse(JSON.stringify(products));
 
+        const modifierCombosList = [
+            "4533751c-0c66-43cf-8c37-7bdac1e464a6", //BANH MI COMBO modifier
+            "bf6cdefc-f762-4227-897b-bf9b025e0e0e", //CURRY COMBO modifier
+            "21953181-14e1-456d-8316-77f1ec1eea0b", //LAKSA COMBO modifier
+            "90d534e3-af07-4f18-b222-f0f0b7f3e407", //NASI GORENG COMBO modifier
+            "89ec22a3-9d80-4eb8-a4f9-9263c36cb1f9", //NOODLE SALAD COMBO modifier
+            "72ce6d73-122e-40b7-825b-c3d169f08ef7", //PAD THAI COMBO modifier
+            "8686953d-0e30-4603-8cd5-19fe10a7f546", //PHO COMBO modifier
+            "0fe39a49-5cd4-4352-9f98-6683f547c80f", //RICE SALAD COMBO modifier
+        ];
+
         updatedProducts.forEach((product) => {
             product.modifierGroups.forEach((modifierGroup) => {
                 const cleanedModifiers: ICartModifier[] = [];
                 modifierGroup.modifiers.forEach((modifier) => {
-                    if (modifier.id !== "4533751c-0c66-43cf-8c37-7bdac1e464a6") {
+                    if (!modifierCombosList.includes(modifier.id)) {
+                        //COMBO modifier
                         cleanedModifiers.push(modifier);
-                    } else if (modifier.id === "4533751c-0c66-43cf-8c37-7bdac1e464a6") {
+                    } else if (modifierCombosList.includes(modifier.id)) {
+                        //COMBO modifier
                         modifier.productModifiers?.forEach((prodMod) => {
                             prodMod.modifierGroups.forEach((prodModGroup) => {
                                 if (prodModGroup.id === "f3335268-87e2-4711-8356-e55a9d86902e") {
+                                    //SELECT YOUR SNACK modifier group
                                     prodModGroup.modifiers.forEach((prodModGroupMod) => {
                                         if (prodModGroupMod.price === 0) {
                                             if (prodModGroupMod.productModifiers && prodModGroupMod.productModifiers.length > 0) {
@@ -889,6 +903,7 @@ export const Checkout = () => {
                                 }
 
                                 if (prodModGroup.id === "a8155eef-c46f-49a1-99b9-fea20a99aebe") {
+                                    //SELECT YOUR DRINK modifier group
                                     prodModGroup.modifiers.forEach((prodModGroupMod) => {
                                         if (prodModGroupMod.price === 0) {
                                             if (prodModGroupMod.productModifiers && prodModGroupMod.productModifiers.length > 0) {
