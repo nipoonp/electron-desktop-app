@@ -26,15 +26,7 @@ interface IUserLoyalty {
 
 export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
     const { restaurant } = useRestaurant();
-    const {
-        setUserAppliedPromotion,
-        setUserAppliedLoyaltyId,
-        orderType,
-        total,
-        customerInformation,
-        customerLoyaltyPoints,
-        setCustomerLoyaltyPoints,
-    } = useCart();
+    const { setUserAppliedPromotion, setUserAppliedLoyaltyId, orderType, total, customerInformation, customerLoyaltyPoints } = useCart();
 
     const [promotionCode, setPromotionCode] = useState("");
     const [error, setError] = useState("");
@@ -136,11 +128,7 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
                 return;
             }
 
-            //    setPromotionCode(code);
-
-            const userPoints = await onSearchLoyaltyHistory();
-
-            if (!userPoints || userPoints < points) {
+            if (!customerLoyaltyPoints || customerLoyaltyPoints < points) {
                 toast.error("You do not have enough points to redeem this reward.");
                 return;
             }
@@ -153,50 +141,6 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
                 },
             });
         }
-    };
-
-    const onSearchLoyaltyHistory = async () => {
-        if (!restaurant) return 0;
-
-        const loyaltyUsers =
-            restaurant.loyaltyUsers?.items
-                ?.map((link) => link?.loyaltyUser)
-                .filter((user): user is IGET_RESTAURANT_LOYALTY_USER => Boolean(user)) || [];
-
-        const sanitizeDigits = (value: string) => value.replace(/\D/g, "");
-
-        let loyaltyUserRes: IGET_RESTAURANT_LOYALTY_USER | undefined;
-
-        if (customerInformation?.phoneNumber) {
-            const searchedDigits = sanitizeDigits(customerInformation.phoneNumber);
-            if (searchedDigits.length > 0) {
-                loyaltyUserRes = loyaltyUsers.find((user) => {
-                    if (!user.phoneNumber) return false;
-                    return sanitizeDigits(user.phoneNumber).includes(searchedDigits);
-                });
-            }
-        }
-
-        if (!loyaltyUserRes && customerInformation?.email) {
-            const searchedEmail = customerInformation.email.toLowerCase();
-            loyaltyUserRes = loyaltyUsers.find((user) => user.email?.toLowerCase().includes(searchedEmail));
-        }
-
-        let returnPoints = 0;
-        if (loyaltyUserRes) {
-            const histories = loyaltyUserRes.loyaltyHistories?.items || [];
-            histories.forEach((history) => {
-                if (history.action === ELOYALTY_ACTION.EARN) {
-                    returnPoints += history.points;
-                } else if (history.action === ELOYALTY_ACTION.REDEEM) {
-                    returnPoints -= history.points;
-                }
-            });
-        }
-
-        setCustomerLoyaltyPoints(returnPoints);
-
-        return returnPoints;
     };
 
     return (

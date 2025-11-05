@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import { useMutation } from "@apollo/client";
+import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLazyQuery, useMutation } from "@apollo/client";
 import { useNavigate } from "react-router";
 import { checkoutPath, restaurantPath } from "../main";
 import { useCart } from "../../context/cart-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { Button } from "../../tabin/components/button";
 import { Input } from "../../tabin/components/input";
+import { toast } from "../../tabin/components/toast";
 import { useRestaurant } from "../../context/restaurant-context";
 import { useRegister } from "../../context/register-context";
 import SignatureCanvas from "react-signature-canvas";
@@ -13,12 +14,121 @@ import SignatureCanvas from "react-signature-canvas";
 import "./customerInformation.scss";
 import { FiX } from "react-icons/fi";
 import { FaRegStar, FaStar } from "react-icons/fa";
-import { convertCentsToDollars, resizeBase64ImageToWidth } from "../../util/util";
-import { ECustomCustomerFieldType, ELOYALTY_ACTION, IGET_RESTAURANT_LOYALTY_USER_LINK } from "../../graphql/customQueries";
+import { calculateTotalLoyaltyPoints, convertCentsToDollars, resizeBase64ImageToWidth } from "../../util/util";
+import {
+    ECustomCustomerFieldType,
+    ELOYALTY_ACTION,
+    GET_LOYALTY_USER_LINKS_BY_RESTAURANT,
+    IGET_LOYALTIES_BY_GROUP_ID_ITEM,
+    IGET_LOYALTY_USER_LINK,
+    IGET_LOYALTY_USER_LINKS_BY_RESTAURANT,
+    IGET_RESTAURANT_LOYALTY_HISTORY,
+} from "../../graphql/customQueries";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
 import { UPDATE_LOYALTY_USER_RESTAURANT_LINK } from "../../graphql/customMutations";
+import { useGetLoyaltiesByGroupIdLazyQuery } from "../../hooks/useGetLoyaltiesByGroupIdLazyQuery";
+import { useGetLoyaltyHistoryByLoyaltyIdLazyQuery } from "../../hooks/useGetLoyaltyHistoryByLoyaltyIdLazyQuery";
+import { LoyaltyUserAggregate, LoyaltyUserLinkInfo, LoyaltyUserSearchResult } from "../../model/model";
 
-export default () => {
+const MIN_IDENTIFIER_LENGTH = 3;
+const MAX_DISPLAYED_USERS = 30;
+
+type LoyaltyHistoryMap = Record<string, IGET_RESTAURANT_LOYALTY_HISTORY[]>;
+
+const sortUsersByFavourite = (users: LoyaltyUserSearchResult[]) => [...users].sort((a, b) => Number(b.favourite) - Number(a.favourite));
+
+const buildSearchTokens = (user: LoyaltyUserSearchResult) => ({
+    name: `${user.firstName} ${user.lastName}`.trim().toLowerCase(),
+    email: user.email.toLowerCase(),
+    phone: user.phoneNumber.toLowerCase(),
+    phoneDigits: user.phoneNumber.replace(/\D/g, ""),
+});
+
+const deriveFavouriteUsers = (aggregates: LoyaltyUserAggregate[]) =>
+    sortUsersByFavourite(aggregates.map((aggregate) => aggregate.result).filter((user) => user.favourite));
+
+const filterAggregatedUsers = (aggregates: LoyaltyUserAggregate[], identifier: string) => {
+    const trimmedIdentifier = identifier.trim();
+    if (!trimmedIdentifier) return sortUsersByFavourite(aggregates.map((aggregate) => aggregate.result));
+
+    const normalizedIdentifier = trimmedIdentifier.toLowerCase();
+    const digitsIdentifier = trimmedIdentifier.replace(/\D/g, "");
+
+    const filtered = aggregates.filter(({ searchTokens }) => {
+        const nameMatch = searchTokens.name.includes(normalizedIdentifier);
+        const emailMatch = searchTokens.email.includes(normalizedIdentifier);
+
+        let phoneMatch = false;
+        if (digitsIdentifier) {
+            phoneMatch = searchTokens.phoneDigits.includes(digitsIdentifier);
+        } else {
+            phoneMatch = searchTokens.phone.includes(normalizedIdentifier);
+        }
+
+        return nameMatch || emailMatch || phoneMatch;
+    });
+
+    return sortUsersByFavourite(filtered.map((aggregate) => aggregate.result));
+};
+
+const buildLoyaltyUserAggregates = (
+    loyaltyHistoriesByLoyaltyId: LoyaltyHistoryMap,
+    loyaltyGroupIds: string[],
+    loyaltyUserLinks: Record<string, LoyaltyUserLinkInfo>
+): LoyaltyUserAggregate[] => {
+    const loyaltyUserMap: Record<
+        string,
+        { histories: IGET_RESTAURANT_LOYALTY_HISTORY[]; user: NonNullable<IGET_RESTAURANT_LOYALTY_HISTORY["loyaltyUser"]> }
+    > = {};
+
+    Object.values(loyaltyHistoriesByLoyaltyId).forEach((histories) => {
+        histories.forEach((history) => {
+            const userId = history.loyaltyHistoryLoyaltyUserId;
+            const user = history.loyaltyUser;
+            if (!userId || !user) return;
+
+            if (!loyaltyUserMap[userId]) {
+                loyaltyUserMap[userId] = { histories: [], user };
+            }
+
+            loyaltyUserMap[userId].histories.push(history);
+        });
+    });
+
+    return Object.entries(loyaltyUserMap).map(([userId, { histories, user }]) => {
+        const points = calculateTotalLoyaltyPoints(
+            histories.map((history) => ({
+                action: history.action as ELOYALTY_ACTION,
+                points: history.points,
+                loyaltyHistoryLoyaltyId: history.loyaltyHistoryLoyaltyId,
+            })),
+            loyaltyGroupIds
+        );
+
+        const loyaltyUserId = user.id || userId;
+        const linkInfo = loyaltyUserLinks[loyaltyUserId];
+
+        const result: LoyaltyUserSearchResult = {
+            loyaltyUserId,
+            linkId: linkInfo?.id ?? "",
+            favourite: linkInfo?.favourite ?? false,
+            firstName: user.firstName || "",
+            lastName: user.lastName || "",
+            email: user.email || "",
+            phoneNumber: user.phoneNumber || "",
+            points,
+            onAccountOrders: [],
+            onAccountOrdersBalance: 0,
+        };
+
+        return {
+            result,
+            searchTokens: buildSearchTokens(result),
+        };
+    });
+};
+
+export default function CustomerInformation() {
     const [searchView, setSearchView] = useState(true);
     const { customerInformation } = useCart();
 
@@ -27,87 +137,182 @@ export default () => {
             {searchView && !customerInformation ? <CustomerSearch onDisableSearchView={() => setSearchView(false)} /> : <UserInformationFields />}
         </div>
     );
-};
+}
 
-type LoyaltyUserSearchResult = {
-    loyaltyUserId: string;
-    linkId: string;
-    favourite: boolean;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phoneNumber: string;
-    points: number;
-    onAccountOrders: IGET_RESTAURANT_ORDER_FRAGMENT[];
-    onAccountOrdersBalance: number;
-};
-
-const sortUsersByFavourite = (users: LoyaltyUserSearchResult[]) => [...users].sort((a, b) => Number(b.favourite) - Number(a.favourite));
-
-const CustomerSearch = (props: { onDisableSearchView: () => void }) => {
+const CustomerSearch = ({ onDisableSearchView }: { onDisableSearchView: () => void }) => {
     const navigate = useNavigate();
-    const { restaurant, setRestaurant } = useRestaurant();
+    const { restaurant } = useRestaurant();
     const { isPOS } = useRegister();
-    const { customerInformation, setCustomerInformation, setCustomerLoyaltyPoints, setOnAccountOrders } = useCart();
+    const {
+        customerInformation,
+        setCustomerInformation,
+        setCustomerLoyaltyPoints,
+        setOnAccountOrders,
+        loyaltyUserAggregates,
+        setLoyaltyUserAggregates,
+    } = useCart();
 
     const [customerIdentifier, setCustomerIdentifier] = useState("");
-    const [loyaltyUserRes, setLoyaltyUserRes] = useState<LoyaltyUserSearchResult[]>([]);
     const [favouriteMutationIds, setFavouriteMutationIds] = useState<string[]>([]);
     const [updateLoyaltyUserFavourite] = useMutation(UPDATE_LOYALTY_USER_RESTAURANT_LINK);
 
-    if (restaurant == null) throw "Restaurant is invalid!";
+    const { getLoyaltiesByGroupIdLazyQuery } = useGetLoyaltiesByGroupIdLazyQuery();
+    const { getLoyaltyHistoryByLoyaltyIdLazyQuery } = useGetLoyaltyHistoryByLoyaltyIdLazyQuery();
+    const [getLoyaltyUserLinksByRestaurantLazyQuery] = useLazyQuery<IGET_LOYALTY_USER_LINKS_BY_RESTAURANT>(GET_LOYALTY_USER_LINKS_BY_RESTAURANT, {
+        fetchPolicy: "network-only",
+    });
 
-    const getLoyaltyUserLinks = () =>
-        (restaurant.loyaltyUsers?.items || []).filter((link): link is IGET_RESTAURANT_LOYALTY_USER_LINK => Boolean(link && link.loyaltyUser));
+    const fetchLoyaltyGroupIds = useCallback(
+        async (loyaltyGroupId: string) => {
+            const response = await getLoyaltiesByGroupIdLazyQuery({ variables: { loyaltyGroupId } });
+            const items = response?.data?.getLoyaltiesByGroupId?.items ?? [];
+            return items
+                .filter(Boolean)
+                .map((item: IGET_LOYALTIES_BY_GROUP_ID_ITEM) => item.id)
+                .filter(Boolean) as string[];
+        },
+        [getLoyaltiesByGroupIdLazyQuery]
+    );
 
-    const buildSearchResult = (link: IGET_RESTAURANT_LOYALTY_USER_LINK): LoyaltyUserSearchResult | null => {
-        const loyaltyUser = link.loyaltyUser;
-        if (!loyaltyUser) return null;
+    const fetchLoyaltyHistoriesForLoyaltyId = useCallback(
+        async (loyaltyId: string) => {
+            const histories: IGET_RESTAURANT_LOYALTY_HISTORY[] = [];
+            let nextToken: string | null | undefined = null;
 
-        const histories = loyaltyUser.loyaltyHistories?.items || [];
-        // if (histories.length === 0) return null;
+            do {
+                const response = await getLoyaltyHistoryByLoyaltyIdLazyQuery({
+                    variables: { id: loyaltyId, nextToken },
+                });
 
-        const points = histories.reduce((sum, history) => {
-            if (history.action === ELOYALTY_ACTION.EARN) return sum + history.points;
-            if (history.action === ELOYALTY_ACTION.REDEEM) return sum - history.points;
-            return sum;
-        }, 0);
+                const connection = response?.data?.getLoyalty?.loyaltyHistories;
+                if (!connection) break;
 
-        const onAccountOrders = loyaltyUser.onAccountOrders?.items || [];
-        const balance = onAccountOrders.reduce((sum, order) => sum + (order.subTotal || 0), 0);
+                const items = (connection.items ?? []).filter((item): item is IGET_RESTAURANT_LOYALTY_HISTORY => Boolean(item));
+                histories.push(...items);
 
-        return {
-            loyaltyUserId: loyaltyUser.id,
-            linkId: link.id,
-            favourite: Boolean(link.favourite),
-            firstName: loyaltyUser.firstName || "",
-            lastName: loyaltyUser.lastName || "",
-            email: loyaltyUser.email || "",
-            phoneNumber: loyaltyUser.phoneNumber || "",
-            points,
-            onAccountOrders,
-            onAccountOrdersBalance: balance,
-        };
-    };
+                nextToken = connection.nextToken ?? null;
+            } while (nextToken);
 
-    const mapLinksToResults = (links: IGET_RESTAURANT_LOYALTY_USER_LINK[]) =>
-        links.map(buildSearchResult).filter((user): user is LoyaltyUserSearchResult => Boolean(user));
+            return histories;
+        },
+        [getLoyaltyHistoryByLoyaltyIdLazyQuery]
+    );
+
+    const fetchLoyaltyHistoriesByGroup = useCallback(
+        async (loyaltyIds: string[]) => {
+            const sanitizedIds = loyaltyIds.filter(Boolean);
+            const entries = await Promise.all(
+                sanitizedIds.map(async (loyaltyId) => {
+                    const histories = await fetchLoyaltyHistoriesForLoyaltyId(loyaltyId);
+                    return [loyaltyId, histories] as const;
+                })
+            );
+
+            return Object.fromEntries(entries) as LoyaltyHistoryMap;
+        },
+        [fetchLoyaltyHistoriesForLoyaltyId]
+    );
+
+    const fetchLoyaltyUserLinks = useCallback(async () => {
+        if (!restaurant?.id) return {};
+
+        const linkMap: Record<string, LoyaltyUserLinkInfo> = {};
+        let nextToken: string | null | undefined = null;
+
+        do {
+            const response = await getLoyaltyUserLinksByRestaurantLazyQuery({
+                variables: {
+                    restaurantId: restaurant.id,
+                    nextToken,
+                },
+            });
+
+            const connection = response.data?.getRestaurant?.loyaltyUsers;
+            const items = connection?.items ?? [];
+
+            items.forEach((item) => {
+                const link = item as IGET_LOYALTY_USER_LINK | null;
+                const loyaltyUserId = link?.loyaltyUser?.id;
+                if (!link?.id || !loyaltyUserId) return;
+
+                linkMap[loyaltyUserId] = {
+                    id: link.id,
+                    favourite: Boolean(link.favourite),
+                };
+            });
+
+            nextToken = connection?.nextToken ?? null;
+        } while (nextToken);
+
+        return linkMap;
+    }, [getLoyaltyUserLinksByRestaurantLazyQuery, restaurant?.id]);
 
     useEffect(() => {
         if (!restaurant) return;
-        if (customerIdentifier.trim().length > 0) return;
+        if (loyaltyUserAggregates.length > 0) return;
 
-        const favouriteLinks = getLoyaltyUserLinks().filter((link) => Boolean(link.favourite));
-        const favouriteResults = mapLinksToResults(favouriteLinks);
+        let cancelled = false;
 
-        setLoyaltyUserRes(sortUsersByFavourite(favouriteResults));
-    }, [restaurant, customerIdentifier]);
+        const load = async () => {
+            const loyaltyItems = restaurant.loyalties?.items ?? [];
+            const loyaltyGroupId = loyaltyItems[0]?.loyaltyGroupId;
 
-    const onChangeCustomerIdentifier = (event: React.ChangeEvent<HTMLInputElement>) => {
+            if (!loyaltyGroupId) {
+                if (!cancelled) setLoyaltyUserAggregates([]);
+                return;
+            }
+
+            const loyaltyGroupIds = await fetchLoyaltyGroupIds(loyaltyGroupId);
+            if (!loyaltyGroupIds.length) {
+                if (!cancelled) setLoyaltyUserAggregates([]);
+                return;
+            }
+
+            const [loyaltyUserLinks, loyaltyHistoriesByLoyaltyId] = await Promise.all([
+                fetchLoyaltyUserLinks(),
+                fetchLoyaltyHistoriesByGroup(loyaltyGroupIds),
+            ]);
+
+            if (cancelled) return;
+
+            const aggregates = buildLoyaltyUserAggregates(loyaltyHistoriesByLoyaltyId, loyaltyGroupIds, loyaltyUserLinks);
+            setLoyaltyUserAggregates(aggregates);
+        };
+
+        void load();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [
+        fetchLoyaltyGroupIds,
+        fetchLoyaltyHistoriesByGroup,
+        fetchLoyaltyUserLinks,
+        loyaltyUserAggregates.length,
+        restaurant,
+        setLoyaltyUserAggregates,
+    ]);
+
+    if (!restaurant) {
+        throw new Error("Restaurant is invalid!");
+    }
+
+    const favouriteUsers = useMemo(() => deriveFavouriteUsers(loyaltyUserAggregates).slice(0, MAX_DISPLAYED_USERS), [loyaltyUserAggregates]);
+
+    const trimmedCustomerIdentifier = customerIdentifier.trim();
+
+    const filteredUsers = useMemo(() => {
+        if (trimmedCustomerIdentifier.length < MIN_IDENTIFIER_LENGTH) return [];
+        return filterAggregatedUsers(loyaltyUserAggregates, trimmedCustomerIdentifier).slice(0, MAX_DISPLAYED_USERS);
+    }, [loyaltyUserAggregates, trimmedCustomerIdentifier]);
+
+    const displayedUsers = trimmedCustomerIdentifier.length >= MIN_IDENTIFIER_LENGTH ? filteredUsers : favouriteUsers.slice(0, MAX_DISPLAYED_USERS);
+
+    const handleCustomerIdentifierChange = (event: ChangeEvent<HTMLInputElement>) => {
         setCustomerIdentifier(event.target.value);
     };
 
-    const onClose = () => {
+    const handleClose = () => {
         if (isPOS) {
             navigate(`${restaurantPath}/${restaurant.id}`);
         } else {
@@ -115,42 +320,7 @@ const CustomerSearch = (props: { onDisableSearchView: () => void }) => {
         }
     };
 
-    const onSearch = () => {
-        const identifier = customerIdentifier.trim();
-        const links = getLoyaltyUserLinks();
-
-        if (!identifier) {
-            const favouriteResults = mapLinksToResults(links.filter((link) => Boolean(link.favourite)));
-            setLoyaltyUserRes(sortUsersByFavourite(favouriteResults));
-            return;
-        }
-
-        const identifierLower = identifier.toLowerCase();
-        const identifierDigits = identifier.replace(/\D/g, "");
-
-        const matchPhone =
-            identifierDigits.length > 0
-                ? links.filter((link) => {
-                      const phoneNumber = link.loyaltyUser.phoneNumber;
-                      if (!phoneNumber) return false;
-                      const userDigits = phoneNumber.replace(/\D/g, "");
-                      return userDigits.includes(identifierDigits);
-                  })
-                : [];
-
-        const matchEmail = identifierLower ? links.filter((link) => link.loyaltyUser.email?.toLowerCase().includes(identifierLower)) : [];
-
-        const matchFirstName = identifierLower ? links.filter((link) => link.loyaltyUser.firstName?.toLowerCase().includes(identifierLower)) : [];
-
-        let matchingLinks: IGET_RESTAURANT_LOYALTY_USER_LINK[] = matchPhone;
-        if (matchingLinks.length === 0) matchingLinks = matchEmail;
-        if (matchingLinks.length === 0) matchingLinks = matchFirstName;
-
-        const users = sortUsersByFavourite(mapLinksToResults(matchingLinks));
-        setLoyaltyUserRes(users);
-    };
-
-    const onSelectUser = (loyaltyUser: LoyaltyUserSearchResult) => {
+    const handleSelectUser = (loyaltyUser: LoyaltyUserSearchResult) => {
         if (customerInformation) {
             setCustomerInformation({
                 ...customerInformation,
@@ -170,95 +340,118 @@ const CustomerSearch = (props: { onDisableSearchView: () => void }) => {
 
         setCustomerLoyaltyPoints(loyaltyUser.points);
         setOnAccountOrders(loyaltyUser.onAccountOrders);
-        onClose();
+        handleClose();
     };
 
-    const onToggleFavourite = async (event: React.MouseEvent<HTMLButtonElement>, loyaltyUser: LoyaltyUserSearchResult) => {
+    const handleToggleFavourite = async (event: React.MouseEvent<HTMLButtonElement>, loyaltyUser: LoyaltyUserSearchResult) => {
         event.stopPropagation();
+        event.preventDefault();
+
         const isUpdating = favouriteMutationIds.includes(loyaltyUser.linkId);
         if (isUpdating) return;
 
+        let linkId = loyaltyUser.linkId;
+
+        if (!linkId) {
+            const linkMap = await fetchLoyaltyUserLinks();
+            const linkInfo = linkMap[loyaltyUser.loyaltyUserId];
+
+            if (!linkInfo) {
+                toast.error("Unable to update favourite for this customer.");
+                return;
+            }
+
+            linkId = linkInfo.id;
+
+            setLoyaltyUserAggregates((previous) =>
+                previous.map((aggregate) =>
+                    aggregate.result.loyaltyUserId === loyaltyUser.loyaltyUserId
+                        ? { ...aggregate, result: { ...aggregate.result, linkId: linkInfo.id, favourite: linkInfo.favourite } }
+                        : aggregate
+                )
+            );
+        }
+
+        if (!linkId) return;
+
         const updatedFavourite = !loyaltyUser.favourite;
-        setFavouriteMutationIds((prev) => [...prev, loyaltyUser.linkId]);
+        const resolvedLinkId = linkId;
+        setFavouriteMutationIds((prev) => [...prev, resolvedLinkId]);
 
         try {
             await updateLoyaltyUserFavourite({
                 variables: {
-                    id: loyaltyUser.linkId,
+                    id: linkId,
                     favourite: updatedFavourite,
                 },
             });
 
-            setLoyaltyUserRes((prev) =>
-                sortUsersByFavourite(prev.map((user) => (user.linkId === loyaltyUser.linkId ? { ...user, favourite: updatedFavourite } : user)))
+            setLoyaltyUserAggregates((previous) =>
+                previous.map((aggregate) =>
+                    aggregate.result.linkId === linkId ? { ...aggregate, result: { ...aggregate.result, favourite: updatedFavourite } } : aggregate
+                )
             );
-
-            const updatedRestaurant = {
-                ...restaurant,
-                loyaltyUsers: {
-                    ...restaurant.loyaltyUsers,
-                    items: (restaurant.loyaltyUsers?.items || []).map((link) =>
-                        link && link.id === loyaltyUser.linkId ? { ...link, favourite: updatedFavourite } : link
-                    ),
-                },
-            };
-
-            setRestaurant(updatedRestaurant);
         } catch (error) {
             console.error("Error updating favourite loyalty user", error);
         } finally {
-            setFavouriteMutationIds((prev) => prev.filter((id) => id !== loyaltyUser.linkId));
+            setFavouriteMutationIds((prev) => prev.filter((id) => id !== resolvedLinkId));
         }
     };
 
     return (
         <div className="customer-information">
             <div className="close-button-wrapper">
-                <FiX className="close-button" size={36} onClick={onClose} />
+                <FiX className="close-button" size={36} onClick={handleClose} />
             </div>
             <div className="customer-search-wrapper">
                 <Input
                     name="Customer Identifier"
                     placeholder="Search and connect customer to this order (02123456789, support@tabin.co.nz, or name)"
                     value={customerIdentifier}
-                    onChange={onChangeCustomerIdentifier}
+                    onChange={handleCustomerIdentifierChange}
                 />
-                <Button onClick={onSearch} disabled={customerIdentifier.length < 5}>
-                    Search
-                </Button>
-                <Button className="customer-search-new-customer" onClick={() => props.onDisableSearchView()}>
+                <Button className="customer-search-new-customer" onClick={onDisableSearchView}>
                     New Customer
                 </Button>
             </div>
             <div className="loyalty-users-wrapper">
-                {loyaltyUserRes.map((loyaltyUser) => {
-                    const unpaidOrders = (loyaltyUser.onAccountOrders || []).filter((order) => order.paid === false);
-                    const unpaidBalance = unpaidOrders.reduce((sum, order) => sum + order.subTotal, 0);
-                    const isUpdatingFavourite = favouriteMutationIds.includes(loyaltyUser.linkId);
+                {displayedUsers.length > 0 ? (
+                    displayedUsers.map((loyaltyUser) => {
+                        const loyaltyUserKey = loyaltyUser.linkId || loyaltyUser.loyaltyUserId;
+                        const unpaidOrders = (loyaltyUser.onAccountOrders || []).filter((order) => order.paid === false);
+                        const unpaidBalance = unpaidOrders.reduce((sum, order) => sum + order.subTotal, 0);
+                        const isUpdatingFavourite = loyaltyUser.linkId ? favouriteMutationIds.includes(loyaltyUser.linkId) : false;
 
-                    return (
-                        <div key={loyaltyUser.linkId} className="loyalty-user-wrapper" onClick={() => onSelectUser(loyaltyUser)}>
-                            <button
-                                type="button"
-                                className={`loyalty-user-favourite ${loyaltyUser.favourite ? "active" : ""}`}
-                                onClick={(event) => onToggleFavourite(event, loyaltyUser)}
-                                disabled={isUpdatingFavourite}
-                                aria-label={`${loyaltyUser.favourite ? "Remove" : "Mark"} ${loyaltyUser.firstName || "customer"} as favourite`}
-                            >
-                                {loyaltyUser.favourite ? <FaStar /> : <FaRegStar />}
-                            </button>
-                            <div className="text-bold">
-                                {loyaltyUser.firstName} {loyaltyUser.lastName}
+                        return (
+                            <div key={loyaltyUserKey} className="loyalty-user-wrapper" onClick={() => handleSelectUser(loyaltyUser)}>
+                                {loyaltyUser.linkId && (
+                                    <button
+                                        type="button"
+                                        className={`loyalty-user-favourite ${loyaltyUser.favourite ? "active" : ""}`}
+                                        onClick={(event) => handleToggleFavourite(event, loyaltyUser)}
+                                        disabled={isUpdatingFavourite}
+                                        aria-label={`${loyaltyUser.favourite ? "Remove" : "Mark"} ${
+                                            loyaltyUser.firstName || "customer"
+                                        } as favourite`}
+                                    >
+                                        {loyaltyUser.favourite ? <FaStar /> : <FaRegStar />}
+                                    </button>
+                                )}
+                                <div className="text-bold">
+                                    {loyaltyUser.firstName} {loyaltyUser.lastName}
+                                </div>
+                                <div className="mt-1">{loyaltyUser.phoneNumber}</div>
+                                <div className="mt-1">{loyaltyUser.email}</div>
+                                <div className="mt-1">
+                                    {loyaltyUser.points} {loyaltyUser.points > 1 ? "points" : "point"}
+                                </div>
+                                {unpaidBalance > 0 && <div className="mt-1 text-bold">Balance: -${convertCentsToDollars(unpaidBalance)}</div>}
                             </div>
-                            <div className="mt-1">{loyaltyUser.phoneNumber}</div>
-                            <div className="mt-1">{loyaltyUser.email}</div>
-                            <div className="mt-1">
-                                {loyaltyUser.points} {loyaltyUser.points > 1 ? "points" : "point"}
-                            </div>
-                            {unpaidBalance > 0 && <div className="mt-1 text-bold">Balance: -${convertCentsToDollars(unpaidBalance)}</div>}
-                        </div>
-                    );
-                })}
+                        );
+                    })
+                ) : (
+                    <>No customers to show.</>
+                )}
             </div>
         </div>
     );
@@ -289,19 +482,20 @@ const UserInformationFields = () => {
     const [phoneNumberError, setPhoneNumberError] = useState(false);
     const [signatureError, setSignatureError] = useState(false);
 
-    const signatureCanvasRef = useRef();
+    const signatureCanvasRef = useRef<SignatureCanvas | null>(null);
     const signatureMimeType = "image/png";
 
     useEffect(() => {
-        if (!customerInformation || !customerInformation.signatureBase64) return;
-        //@ts-ignore
-        signatureCanvasRef.current.fromDataURL(customerInformation.signatureBase64, signatureMimeType);
-    }, []);
+        if (!customerInformation?.signatureBase64) return;
+        signatureCanvasRef.current?.fromDataURL(customerInformation.signatureBase64, signatureMimeType);
+    }, [customerInformation, signatureMimeType]);
 
-    if (!register) throw "Register is not valid";
-    if (restaurant == null) throw "Restaurant is invalid!";
+    if (!register) throw new Error("Register is not valid");
+    if (!restaurant) throw new Error("Restaurant is invalid!");
 
-    const onClose = () => {
+    type RegisterCustomField = NonNullable<NonNullable<typeof register.requestCustomerInformation>["customFields"]>[number];
+
+    const handleClose = () => {
         if (isPOS) {
             navigate(`${restaurantPath}/${restaurant.id}`);
         } else {
@@ -309,7 +503,7 @@ const UserInformationFields = () => {
         }
     };
 
-    const onNext = async () => {
+    const handleNext = async () => {
         if (!register.requestCustomerInformation) return;
 
         let invalid = false;
@@ -326,38 +520,34 @@ const UserInformationFields = () => {
             setPhoneNumberError(true);
             invalid = true;
         }
-        //@ts-ignore
-        if (register.requestCustomerInformation.signature && signatureCanvasRef.current.isEmpty()) {
+        if (register.requestCustomerInformation.signature && signatureCanvasRef.current?.isEmpty()) {
             setSignatureError(true);
             invalid = true;
         }
 
-        if (!invalid) {
-            let resizedSignatureBase64: string = "";
+        if (invalid) return;
 
-            if (signatureCanvasRef.current) {
-                //@ts-ignore
-                const signatureBase64 = signatureCanvasRef.current.getTrimmedCanvas().toDataURL(signatureMimeType);
-                resizedSignatureBase64 = await resizeBase64ImageToWidth(signatureBase64, 200, signatureMimeType);
-            }
+        let resizedSignatureBase64 = "";
 
-            setCustomerInformation({
-                firstName: firstName,
-                email: email,
-                phoneNumber: phoneNumber,
-                signatureBase64: resizedSignatureBase64,
-                customFields: customFields,
-            });
-
-            setOnAccountOrders([]); //For a new customer there would be no onAccount orders. They have to select from the search bar.
-
-            navigate(`${restaurantPath}/${restaurant.id}`);
-
-            // navigate(`${checkoutPath}/true`);
+        if (signatureCanvasRef.current) {
+            const signatureBase64 = signatureCanvasRef.current.getTrimmedCanvas().toDataURL(signatureMimeType);
+            resizedSignatureBase64 = await resizeBase64ImageToWidth(signatureBase64, 200, signatureMimeType);
         }
+
+        setCustomerInformation({
+            firstName,
+            email,
+            phoneNumber,
+            signatureBase64: resizedSignatureBase64,
+            customFields,
+        });
+
+        setOnAccountOrders([]);
+
+        navigate(`${restaurantPath}/${restaurant.id}`);
     };
 
-    const onUnlink = () => {
+    const handleUnlink = () => {
         setCustomerInformation(null);
         setOnAccountOrders([]);
         setCustomerLoyaltyPoints(null);
@@ -365,132 +555,107 @@ const UserInformationFields = () => {
         removeUserAppliedPromotion();
     };
 
-    const onChangeFirstName = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFirstName(e.target.value);
+    const handleFirstNameChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setFirstName(event.target.value);
         setFirstNameError(false);
     };
 
-    const onChangeEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setEmail(e.target.value.toLowerCase());
+    const handleEmailChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setEmail(event.target.value.toLowerCase());
         setEmailError(false);
     };
 
-    const onChangePhoneNumber = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setPhoneNumber(e.target.value);
+    const handlePhoneNumberChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setPhoneNumber(event.target.value);
         setPhoneNumberError(false);
     };
 
-    const onChangeCustomField = (e: React.ChangeEvent<HTMLInputElement>, field, index: number) => {
-        const customFieldsCpy = [...customFields];
+    const handleCustomFieldChange = (event: ChangeEvent<HTMLInputElement>, field: RegisterCustomField, index: number) => {
+        const updatedFields = [...customFields];
 
-        if (customFieldsCpy[index]) {
-            customFieldsCpy[index].value = e.target.value;
+        if (updatedFields[index]) {
+            updatedFields[index].value = event.target.value;
         } else {
-            customFieldsCpy[index] = { ...field, value: e.target.value };
+            updatedFields[index] = { ...field, value: event.target.value };
         }
-        setCustomFields(customFieldsCpy);
+
+        setCustomFields(updatedFields);
     };
 
-    const onClearSignature = () => {
-        //@ts-ignore
-        signatureCanvasRef.current.clear();
+    const handleClearSignature = () => {
+        signatureCanvasRef.current?.clear();
     };
 
     return (
-        <>
-            <PageWrapper>
-                <div className="customer-information">
-                    <div className="close-button-wrapper">
-                        <FiX className="close-button" size={36} onClick={onClose} />
-                    </div>
-                    <div className="h2 mb-2">Enter customer details</div>
-                    {restaurant.enableLoyalty && (
-                        <div className="mb-2">To reigster a customer to your loyalty program you must enter name, email and phone number.</div>
-                    )}
-                    <div className="mb-10" style={{ width: "400px" }}>
-                        {/* {register.requestCustomerInformation && register.requestCustomerInformation.firstName && (
-                            <> */}
-                        <div className="h2 mt-2 mb-2">Name</div>
-                        <Input
-                            type="firstName"
-                            autoFocus={true}
-                            onChange={onChangeFirstName}
-                            value={firstName}
-                            error={firstNameError ? "Required" : ""}
-                            disabled={customerInformation ? true : false}
-                        />
-                        {/* </>
-                        )} */}
-                        {/* {register.requestCustomerInformation && register.requestCustomerInformation.email && (
-                            <> */}
-                        <div className="h2 mt-2 mb-2">Email</div>
-                        <Input
-                            type="email"
-                            onChange={onChangeEmail}
-                            value={email}
-                            error={emailError ? "Required" : ""}
-                            disabled={customerInformation ? true : false}
-                        />
-                        {/* </>
-                        )} */}
-                        {/* {register.requestCustomerInformation && register.requestCustomerInformation.phoneNumber && (
-                            <> */}
-                        <div className="h2 mt-2 mb-2">Phone Number</div>
-                        <Input
-                            type="number"
-                            onChange={onChangePhoneNumber}
-                            value={phoneNumber}
-                            error={phoneNumberError ? "Required" : ""}
-                            disabled={customerInformation ? true : false}
-                        />
-                        {/* </>
-                        )} */}
-                        {register.requestCustomerInformation && register.requestCustomerInformation.signature && (
-                            <>
-                                <div className="h2 mt-2 mb-2">Signature</div>
-                                <SignatureCanvas
-                                    ref={signatureCanvasRef}
-                                    canvasProps={{ className: `customer-signature-canvas ${signatureError ? "error" : ""}` }}
-                                />
-                                {signatureError && <div className="text-error mt-2 mb-2">{signatureError ? "Required" : ""}</div>}
-                                <Button className="customer-signature-clear-button" onClick={onClearSignature}>
-                                    Clear
-                                </Button>
-                            </>
-                        )}
-                        {register.requestCustomerInformation &&
-                            register.requestCustomerInformation.customFields?.map((field, index) => (
-                                <>
-                                    {field.type === ECustomCustomerFieldType.STRING && (
-                                        <>
-                                            <div className="h2 mt-2 mb-2">{field.label}</div>
-                                            <Input
-                                                name={field.label}
-                                                onChange={(e) => onChangeCustomField(e, field, index)}
-                                                value={customFields[index]?.value}
-                                            />
-                                        </>
-                                    )}
-                                    {field.type === ECustomCustomerFieldType.NUMBER && (
-                                        <>
-                                            <div className="h2 mt-2 mb-2">{field.label}</div>
-                                            <Input
-                                                type="number"
-                                                name={field.label}
-                                                onChange={(e) => onChangeCustomField(e, field, index)}
-                                                value={customFields[index]?.value}
-                                            />
-                                        </>
-                                    )}
-                                </>
-                            ))}
-                    </div>
-                    <div className="customer-information-buttons">
-                        {customerInformation && <Button onClick={onUnlink}>Unlink</Button>}
-                        <Button onClick={onNext}>Next</Button>
-                    </div>
+        <PageWrapper>
+            <div className="customer-information">
+                <div className="close-button-wrapper">
+                    <FiX className="close-button" size={36} onClick={handleClose} />
                 </div>
-            </PageWrapper>
-        </>
+                <div className="h2 mb-2">Enter customer details</div>
+                {restaurant.enableLoyalty && (
+                    <div className="mb-2">To register a customer to your loyalty program you must enter name, email and phone number.</div>
+                )}
+                <div className="mb-10" style={{ width: "400px" }}>
+                    <div className="h2 mt-2 mb-2">Name</div>
+                    <Input
+                        type="text"
+                        autoFocus
+                        onChange={handleFirstNameChange}
+                        value={firstName}
+                        error={firstNameError ? "Required" : ""}
+                        disabled={Boolean(customerInformation)}
+                    />
+
+                    <div className="h2 mt-2 mb-2">Email</div>
+                    <Input
+                        type="email"
+                        onChange={handleEmailChange}
+                        value={email}
+                        error={emailError ? "Required" : ""}
+                        disabled={Boolean(customerInformation)}
+                    />
+
+                    <div className="h2 mt-2 mb-2">Phone Number</div>
+                    <Input
+                        type="tel"
+                        onChange={handlePhoneNumberChange}
+                        value={phoneNumber}
+                        error={phoneNumberError ? "Required" : ""}
+                        disabled={Boolean(customerInformation)}
+                    />
+
+                    {register.requestCustomerInformation?.signature && (
+                        <>
+                            <div className="h2 mt-2 mb-2">Signature</div>
+                            <SignatureCanvas
+                                ref={signatureCanvasRef}
+                                canvasProps={{ className: `customer-signature-canvas ${signatureError ? "error" : ""}` }}
+                            />
+                            {signatureError && <div className="text-error mt-2 mb-2">Required</div>}
+                            <Button className="customer-signature-clear-button" onClick={handleClearSignature}>
+                                Clear
+                            </Button>
+                        </>
+                    )}
+
+                    {register.requestCustomerInformation?.customFields?.map((field, index) => (
+                        <div key={`${field.label}-${index}`}>
+                            <div className="h2 mt-2 mb-2">{field.label}</div>
+                            <Input
+                                type={field.type === ECustomCustomerFieldType.NUMBER ? "number" : "text"}
+                                name={field.label}
+                                onChange={(event) => handleCustomFieldChange(event, field, index)}
+                                value={customFields[index]?.value}
+                            />
+                        </div>
+                    ))}
+                </div>
+                <div className="customer-information-buttons">
+                    {customerInformation && <Button onClick={handleUnlink}>Unlink</Button>}
+                    <Button onClick={handleNext}>Next</Button>
+                </div>
+            </div>
+        </PageWrapper>
     );
 };

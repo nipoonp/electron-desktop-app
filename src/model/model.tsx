@@ -584,3 +584,31 @@ export enum CheckIfPromotionValidResponse {
     EXPIRED = "EXPIRED",
     INVALID_PLATFORM = "INVALID_PLATFORM",
 }
+
+export type LoyaltyUserSearchResult = {
+    loyaltyUserId: string;
+    linkId: string;
+    favourite: boolean;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber: string;
+    points: number;
+    onAccountOrders: IGET_RESTAURANT_ORDER_FRAGMENT[];
+    onAccountOrdersBalance: number;
+};
+
+export type LoyaltyUserAggregate = {
+    result: LoyaltyUserSearchResult;
+    searchTokens: {
+        name: string;
+        email: string;
+        phone: string;
+        phoneDigits: string;
+    };
+};
+
+export type LoyaltyUserLinkInfo = {
+    id: string;
+    favourite: boolean;
+};

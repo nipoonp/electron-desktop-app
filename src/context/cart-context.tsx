@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, Dispatch, SetStateAction } from "react";
 import { EOrderStatus, EPromotionType, IGET_RESTAURANT_PROMOTION } from "../graphql/customQueries";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
 
@@ -12,6 +12,7 @@ import {
     ICartPayment,
     EPaymentMethod,
     ICustomerInformation,
+    LoyaltyUserAggregate,
 } from "../model/model";
 import { applyDiscountToCartProducts, checkIfPromotionValid, getOrderDiscountAmount } from "../util/util";
 import { useRestaurant } from "./restaurant-context";
@@ -39,6 +40,7 @@ const initialTableNumber = null;
 const initialBuzzerNumber = null;
 const initialCustomerInformation = null;
 const initialOnAccountOrders = [];
+const initialLoyaltyUserAggregates: LoyaltyUserAggregate[] = [];
 const initialCustomerLoyaltyPoints = 0;
 const initialProducts = null;
 const initialNotes = "";
@@ -102,6 +104,8 @@ type ContextProps = {
     setCustomerInformation: (customerInformation: ICustomerInformation | null) => void;
     onAccountOrders: IGET_RESTAURANT_ORDER_FRAGMENT[];
     setOnAccountOrders: (orders: IGET_RESTAURANT_ORDER_FRAGMENT[]) => void;
+    loyaltyUserAggregates: LoyaltyUserAggregate[];
+    setLoyaltyUserAggregates: Dispatch<SetStateAction<LoyaltyUserAggregate[]>>;
     customerLoyaltyPoints: number | null;
     setCustomerLoyaltyPoints: (customerLoyaltyPoints: number | null) => void;
     products: ICartProduct[] | null;
@@ -174,6 +178,8 @@ const CartContext = createContext<ContextProps>({
     setCustomerInformation: () => {},
     onAccountOrders: initialOnAccountOrders,
     setOnAccountOrders: () => {},
+    loyaltyUserAggregates: initialLoyaltyUserAggregates,
+    setLoyaltyUserAggregates: () => {},
     customerLoyaltyPoints: initialCustomerLoyaltyPoints,
     setCustomerLoyaltyPoints: () => {},
     products: initialProducts,
@@ -237,6 +243,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const [buzzerNumber, _setBuzzerNumber] = useState<string | null>(initialBuzzerNumber);
     const [customerInformation, _setCustomerInformation] = useState<ICustomerInformation | null>(initialCustomerInformation);
     const [onAccountOrders, _setOnAccountOrders] = useState<IGET_RESTAURANT_ORDER_FRAGMENT[]>(initialOnAccountOrders);
+    const [loyaltyUserAggregates, _setLoyaltyUserAggregates] = useState<LoyaltyUserAggregate[]>(initialLoyaltyUserAggregates);
     const [customerLoyaltyPoints, _setCustomerLoyaltyPoints] = useState<number | null>(initialCustomerLoyaltyPoints);
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
     const [notes, _setNotes] = useState<string>(initialNotes);
@@ -573,6 +580,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setOnAccountOrders(onAccountOrders);
     };
 
+    const setLoyaltyUserAggregates = (loyaltyUserAggregates: SetStateAction<LoyaltyUserAggregate[]>) => {
+        _setLoyaltyUserAggregates(loyaltyUserAggregates);
+    };
+
     const setCustomerLoyaltyPoints = (customerLoyaltyPoints: number | null) => {
         _setCustomerLoyaltyPoints(customerLoyaltyPoints);
     };
@@ -732,6 +743,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setBuzzerNumber(initialBuzzerNumber);
         _setCustomerInformation(initialCustomerInformation);
         _setOnAccountOrders(initialOnAccountOrders);
+        _setLoyaltyUserAggregates(initialLoyaltyUserAggregates);
         _setCustomerLoyaltyPoints(initialCustomerLoyaltyPoints);
         _setProducts(initialProducts);
         _setNotes(initialNotes);
@@ -782,6 +794,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 onAccountOrders: onAccountOrders,
                 setOnAccountOrders: setOnAccountOrders,
                 customerLoyaltyPoints: customerLoyaltyPoints,
+                loyaltyUserAggregates: loyaltyUserAggregates,
+                setLoyaltyUserAggregates: setLoyaltyUserAggregates,
                 setCustomerLoyaltyPoints: setCustomerLoyaltyPoints,
                 products: products,
                 cartProductQuantitiesById: cartProductQuantitiesById,

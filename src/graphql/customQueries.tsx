@@ -175,7 +175,6 @@ export interface IGET_USER_REGISTER_PRINTER_IGNORE_PRODUCT {
 }
 
 export const GET_RESTAURANT = gql`
-    ${ORDER_FIELDS_FRAGMENT}
     query GetRestaurant($restaurantId: ID!) {
         getRestaurant(id: $restaurantId) {
             id
@@ -919,33 +918,7 @@ export const GET_RESTAURANT = gql`
                         points
                         promotionId
                     }
-                }
-            }
-            loyaltyUsers(limit: 10000) {
-                items {
-                    id
-                    favourite
-                    loyaltyUser {
-                        id
-                        firstName
-                        lastName
-                        phoneNumber
-                        email
-                        loyaltyHistories(filter: { loyaltyHistoryRestaurantId: { eq: $restaurantId } }, limit: 1000) {
-                            items {
-                                id
-                                action
-                                points
-                                createdAt
-                                loyaltyHistoryOrderId
-                            }
-                        }
-                        onAccountOrders(filter: { orderRestaurantId: { eq: $restaurantId } }, limit: 1000) {
-                            items {
-                                ...OrderFieldsFragment
-                            }
-                        }
-                    }
+                    loyaltyGroupId
                 }
             }
         }
@@ -984,7 +957,6 @@ export interface IGET_RESTAURANT {
     registers: { items: IGET_RESTAURANT_REGISTER[] };
     promotions: { items: IGET_RESTAURANT_PROMOTION[] };
     loyalties: { items: IGET_RESTAURANT_LOYALTY[] };
-    loyaltyUsers: { items: IGET_RESTAURANT_LOYALTY_USER_LINK[] };
     categories: {
         items: IGET_RESTAURANT_CATEGORY[];
     };
@@ -1277,6 +1249,7 @@ export interface IGET_RESTAURANT_LOYALTY {
     categories: IGET_RESTAURANT_LOYALTY_CATEGORY[];
     products: IGET_RESTAURANT_LOYALTY_PRODUCT[];
     rewards: IGET_RESTAURANT_LOYALTY_REWARD[];
+    loyaltyGroupId: string;
     loyaltyHistories: {
         items: IGET_RESTAURANT_LOYALTY_HISTORY[];
     };
@@ -1300,12 +1273,6 @@ export interface IGET_RESTAURANT_LOYALTY_REWARD {
     promotionId: string;
 }
 
-export interface IGET_RESTAURANT_LOYALTY_USER_LINK {
-    id: string;
-    favourite: boolean | null;
-    loyaltyUser: IGET_RESTAURANT_LOYALTY_USER;
-}
-
 export interface IGET_RESTAURANT_LOYALTY_USER {
     id: string;
     firstName: string | null;
@@ -1326,6 +1293,8 @@ export interface IGET_RESTAURANT_LOYALTY_HISTORY {
     points: number;
     createdAt: string;
     loyaltyHistoryOrderId?: string | null;
+    loyaltyHistoryLoyaltyId?: string | null;
+    loyaltyHistoryLoyaltyUserId?: string | null;
     loyaltyUser?: {
         id: string;
         firstName: string;
@@ -1333,6 +1302,101 @@ export interface IGET_RESTAURANT_LOYALTY_HISTORY {
         email: string;
         phoneNumber: string;
     };
+}
+
+export const GET_LOYALTIES_BY_GROUP_ID = gql`
+    query GetLoyaltiesByGroupId($loyaltyGroupId: String!) {
+        getLoyaltiesByGroupId(loyaltyGroupId: $loyaltyGroupId, limit: 10000) {
+            items {
+                id
+            }
+            nextToken
+        }
+    }
+`;
+
+export interface IGET_LOYALTIES_BY_GROUP_ID_ITEM {
+    id: string;
+}
+
+export const GET_LOYALTY_USER_LINKS_BY_RESTAURANT = gql`
+    query GetLoyaltyUserLinksByRestaurant($restaurantId: ID!, $nextToken: String, $limit: Int = 1000) {
+        getRestaurant(id: $restaurantId) {
+            id
+            loyaltyUsers(limit: $limit, nextToken: $nextToken) {
+                nextToken
+                items {
+                    id
+                    favourite
+                    loyaltyUser {
+                        id
+                        firstName
+                        lastName
+                        email
+                        phoneNumber
+                    }
+                }
+            }
+        }
+    }
+`;
+
+export interface IGET_LOYALTY_USER_LINK {
+    id: string;
+    favourite: boolean | null;
+    loyaltyUser?: {
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+        email: string | null;
+        phoneNumber: string | null;
+    } | null;
+}
+
+export interface IGET_LOYALTY_USER_LINKS_BY_RESTAURANT {
+    getRestaurant?: {
+        loyaltyUsers?: {
+            nextToken?: string | null;
+            items?: (IGET_LOYALTY_USER_LINK | null)[] | null;
+        } | null;
+    } | null;
+}
+
+export const GET_LOYALTY_HISTORY_BY_LOYALTY_ID = gql`
+    query GetLoyaltyHistoryByLoyaltyId($id: ID!, $nextToken: String) {
+        getLoyalty(id: $id) {
+            id
+            loyaltyHistories(limit: 1000, nextToken: $nextToken) {
+                items {
+                    id
+                    action
+                    points
+                    createdAt
+                    loyaltyHistoryOrderId
+                    loyaltyHistoryLoyaltyId
+                    loyaltyHistoryLoyaltyUserId
+                    loyaltyUser {
+                        id
+                        firstName
+                        lastName
+                        email
+                        phoneNumber
+                    }
+                }
+                nextToken
+            }
+        }
+    }
+`;
+
+export interface IGET_LOYALTY_HISTORY_BY_LOYALTY_ID {
+    getLoyalty?: {
+        id: string;
+        loyaltyHistories?: {
+            items?: IGET_RESTAURANT_LOYALTY_HISTORY[] | null;
+            nextToken?: string | null;
+        } | null;
+    } | null;
 }
 
 export enum ELoyaltyType {
