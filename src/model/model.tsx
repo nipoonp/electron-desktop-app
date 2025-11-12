@@ -611,4 +611,8 @@ export type LoyaltyUserAggregate = {
 export type LoyaltyUserLinkInfo = {
     id: string;
     favourite: boolean;
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string | null;
+    phoneNumber?: string | null;
 };

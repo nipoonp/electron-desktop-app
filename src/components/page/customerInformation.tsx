@@ -28,10 +28,18 @@ import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
 import { UPDATE_LOYALTY_USER_RESTAURANT_LINK } from "../../graphql/customMutations";
 import { useGetLoyaltiesByGroupIdLazyQuery } from "../../hooks/useGetLoyaltiesByGroupIdLazyQuery";
 import { useGetLoyaltyHistoryByLoyaltyIdLazyQuery } from "../../hooks/useGetLoyaltyHistoryByLoyaltyIdLazyQuery";
-import { LoyaltyUserAggregate, LoyaltyUserLinkInfo, LoyaltyUserSearchResult } from "../../model/model";
+import { ICustomerInformation, LoyaltyUserAggregate, LoyaltyUserLinkInfo, LoyaltyUserSearchResult } from "../../model/model";
 
 const MIN_IDENTIFIER_LENGTH = 3;
 const MAX_DISPLAYED_USERS = 30;
+const SIGNATURE_MIME_TYPE = "image/png";
+const EMPTY_CUSTOMER_INFORMATION: ICustomerInformation = {
+    firstName: "",
+    email: "",
+    phoneNumber: "",
+    signatureBase64: "",
+    customFields: [],
+};
 
 type LoyaltyHistoryMap = Record<string, IGET_RESTAURANT_LOYALTY_HISTORY[]>;
 
@@ -76,10 +84,33 @@ const buildLoyaltyUserAggregates = (
     loyaltyGroupIds: string[],
     loyaltyUserLinks: Record<string, LoyaltyUserLinkInfo>
 ): LoyaltyUserAggregate[] => {
-    const loyaltyUserMap: Record<
-        string,
-        { histories: IGET_RESTAURANT_LOYALTY_HISTORY[]; user: NonNullable<IGET_RESTAURANT_LOYALTY_HISTORY["loyaltyUser"]> }
-    > = {};
+    type AggregatedUser = {
+        histories: IGET_RESTAURANT_LOYALTY_HISTORY[];
+        user: {
+            id: string;
+            firstName: string;
+            lastName: string;
+            email: string;
+            phoneNumber: string;
+        };
+    };
+
+    const loyaltyUserMap: Record<string, AggregatedUser> = {};
+
+    Object.entries(loyaltyUserLinks).forEach(([userId, linkInfo]) => {
+        if (!userId) return;
+
+        loyaltyUserMap[userId] = {
+            histories: [],
+            user: {
+                id: userId,
+                firstName: linkInfo.firstName || "",
+                lastName: linkInfo.lastName || "",
+                email: linkInfo.email || "",
+                phoneNumber: linkInfo.phoneNumber || "",
+            },
+        };
+    });
 
     Object.values(loyaltyHistoriesByLoyaltyId).forEach((histories) => {
         histories.forEach((history) => {
@@ -88,10 +119,26 @@ const buildLoyaltyUserAggregates = (
             if (!userId || !user) return;
 
             if (!loyaltyUserMap[userId]) {
-                loyaltyUserMap[userId] = { histories: [], user };
+                loyaltyUserMap[userId] = {
+                    histories: [],
+                    user: {
+                        id: user.id || userId,
+                        firstName: user.firstName || "",
+                        lastName: user.lastName || "",
+                        email: user.email || "",
+                        phoneNumber: user.phoneNumber || "",
+                    },
+                };
             }
 
             loyaltyUserMap[userId].histories.push(history);
+            loyaltyUserMap[userId].user = {
+                id: user.id || userId,
+                firstName: user.firstName || loyaltyUserMap[userId].user.firstName,
+                lastName: user.lastName || loyaltyUserMap[userId].user.lastName,
+                email: user.email || loyaltyUserMap[userId].user.email,
+                phoneNumber: user.phoneNumber || loyaltyUserMap[userId].user.phoneNumber,
+            };
         });
     });
 
@@ -232,12 +279,17 @@ const CustomerSearch = ({ onDisableSearchView }: { onDisableSearchView: () => vo
 
             items.forEach((item) => {
                 const link = item as IGET_LOYALTY_USER_LINK | null;
-                const loyaltyUserId = link?.loyaltyUser?.id;
+                const loyaltyUser = link?.loyaltyUser;
+                const loyaltyUserId = loyaltyUser?.id;
                 if (!link?.id || !loyaltyUserId) return;
 
                 linkMap[loyaltyUserId] = {
                     id: link.id,
                     favourite: Boolean(link.favourite),
+                    firstName: loyaltyUser.firstName,
+                    lastName: loyaltyUser.lastName,
+                    email: loyaltyUser.email,
+                    phoneNumber: loyaltyUser.phoneNumber,
                 };
             });
 
@@ -257,21 +309,13 @@ const CustomerSearch = ({ onDisableSearchView }: { onDisableSearchView: () => vo
             const loyaltyItems = restaurant.loyalties?.items ?? [];
             const loyaltyGroupId = loyaltyItems[0]?.loyaltyGroupId;
 
-            if (!loyaltyGroupId) {
-                if (!cancelled) setLoyaltyUserAggregates([]);
-                return;
-            }
+            const loyaltyUserLinksPromise = fetchLoyaltyUserLinks();
+            const loyaltyGroupIds = loyaltyGroupId ? await fetchLoyaltyGroupIds(loyaltyGroupId) : [];
+            const loyaltyHistoriesPromise = loyaltyGroupIds.length
+                ? fetchLoyaltyHistoriesByGroup(loyaltyGroupIds)
+                : Promise.resolve({} as LoyaltyHistoryMap);
 
-            const loyaltyGroupIds = await fetchLoyaltyGroupIds(loyaltyGroupId);
-            if (!loyaltyGroupIds.length) {
-                if (!cancelled) setLoyaltyUserAggregates([]);
-                return;
-            }
-
-            const [loyaltyUserLinks, loyaltyHistoriesByLoyaltyId] = await Promise.all([
-                fetchLoyaltyUserLinks(),
-                fetchLoyaltyHistoriesByGroup(loyaltyGroupIds),
-            ]);
+            const [loyaltyUserLinks, loyaltyHistoriesByLoyaltyId] = await Promise.all([loyaltyUserLinksPromise, loyaltyHistoriesPromise]);
 
             if (cancelled) return;
 
@@ -297,16 +341,17 @@ const CustomerSearch = ({ onDisableSearchView }: { onDisableSearchView: () => vo
         throw new Error("Restaurant is invalid!");
     }
 
-    const favouriteUsers = useMemo(() => deriveFavouriteUsers(loyaltyUserAggregates).slice(0, MAX_DISPLAYED_USERS), [loyaltyUserAggregates]);
-
+    const favouriteUsers = useMemo(() => deriveFavouriteUsers(loyaltyUserAggregates), [loyaltyUserAggregates]);
     const trimmedCustomerIdentifier = customerIdentifier.trim();
+    const hasMinimumIdentifier = trimmedCustomerIdentifier.length >= MIN_IDENTIFIER_LENGTH;
 
-    const filteredUsers = useMemo(() => {
-        if (trimmedCustomerIdentifier.length < MIN_IDENTIFIER_LENGTH) return [];
+    const displayedUsers = useMemo(() => {
+        if (!hasMinimumIdentifier) {
+            return favouriteUsers.slice(0, MAX_DISPLAYED_USERS);
+        }
+
         return filterAggregatedUsers(loyaltyUserAggregates, trimmedCustomerIdentifier).slice(0, MAX_DISPLAYED_USERS);
-    }, [loyaltyUserAggregates, trimmedCustomerIdentifier]);
-
-    const displayedUsers = trimmedCustomerIdentifier.length >= MIN_IDENTIFIER_LENGTH ? filteredUsers : favouriteUsers.slice(0, MAX_DISPLAYED_USERS);
+    }, [favouriteUsers, hasMinimumIdentifier, loyaltyUserAggregates, trimmedCustomerIdentifier]);
 
     const handleCustomerIdentifierChange = (event: ChangeEvent<HTMLInputElement>) => {
         setCustomerIdentifier(event.target.value);
@@ -321,22 +366,14 @@ const CustomerSearch = ({ onDisableSearchView }: { onDisableSearchView: () => vo
     };
 
     const handleSelectUser = (loyaltyUser: LoyaltyUserSearchResult) => {
-        if (customerInformation) {
-            setCustomerInformation({
-                ...customerInformation,
-                firstName: loyaltyUser.firstName,
-                email: loyaltyUser.email,
-                phoneNumber: loyaltyUser.phoneNumber,
-            });
-        } else {
-            setCustomerInformation({
-                firstName: loyaltyUser.firstName,
-                email: loyaltyUser.email,
-                phoneNumber: loyaltyUser.phoneNumber,
-                signatureBase64: "",
-                customFields: [],
-            });
-        }
+        const baseInformation = customerInformation ? { ...customerInformation } : { ...EMPTY_CUSTOMER_INFORMATION };
+
+        setCustomerInformation({
+            ...baseInformation,
+            firstName: loyaltyUser.firstName,
+            email: loyaltyUser.email,
+            phoneNumber: loyaltyUser.phoneNumber,
+        });
 
         setCustomerLoyaltyPoints(loyaltyUser.points);
         setOnAccountOrders(loyaltyUser.onAccountOrders);
@@ -414,9 +451,9 @@ const CustomerSearch = ({ onDisableSearchView }: { onDisableSearchView: () => vo
                     New Customer
                 </Button>
             </div>
-            <div className="loyalty-users-wrapper">
-                {displayedUsers.length > 0 ? (
-                    displayedUsers.map((loyaltyUser) => {
+            {displayedUsers.length > 0 ? (
+                <div className="loyalty-users-wrapper">
+                    {displayedUsers.map((loyaltyUser) => {
                         const loyaltyUserKey = loyaltyUser.linkId || loyaltyUser.loyaltyUserId;
                         const unpaidOrders = (loyaltyUser.onAccountOrders || []).filter((order) => order.paid === false);
                         const unpaidBalance = unpaidOrders.reduce((sum, order) => sum + order.subTotal, 0);
@@ -442,26 +479,27 @@ const CustomerSearch = ({ onDisableSearchView }: { onDisableSearchView: () => vo
                                 </div>
                                 <div className="mt-1">{loyaltyUser.phoneNumber}</div>
                                 <div className="mt-1">{loyaltyUser.email}</div>
-                                <div className="mt-1">
-                                    {loyaltyUser.points} {loyaltyUser.points > 1 ? "points" : "point"}
-                                </div>
+                                {loyaltyUser.points > 0 && (
+                                    <div className="mt-1">
+                                        {loyaltyUser.points} {loyaltyUser.points > 1 ? "points" : "point"}
+                                    </div>
+                                )}
                                 {unpaidBalance > 0 && <div className="mt-1 text-bold">Balance: -${convertCentsToDollars(unpaidBalance)}</div>}
                             </div>
                         );
-                    })
-                ) : (
-                    <>No customers to show.</>
-                )}
-            </div>
+                    })}
+                </div>
+            ) : (
+                <div className="mt-4">No customers to show. Search or add a customer above.</div>
+            )}
         </div>
     );
 };
 
 const UserInformationFields = () => {
     const navigate = useNavigate();
-    const { register } = useRegister();
+    const { register, isPOS } = useRegister();
     const { restaurant } = useRestaurant();
-    const { isPOS } = useRegister();
 
     const {
         customerInformation,
@@ -483,15 +521,19 @@ const UserInformationFields = () => {
     const [signatureError, setSignatureError] = useState(false);
 
     const signatureCanvasRef = useRef<SignatureCanvas | null>(null);
-    const signatureMimeType = "image/png";
-
     useEffect(() => {
         if (!customerInformation?.signatureBase64) return;
-        signatureCanvasRef.current?.fromDataURL(customerInformation.signatureBase64, signatureMimeType);
-    }, [customerInformation, signatureMimeType]);
+        signatureCanvasRef.current?.fromDataURL(customerInformation.signatureBase64, SIGNATURE_MIME_TYPE);
+    }, [customerInformation]);
 
     if (!register) throw new Error("Register is not valid");
     if (!restaurant) throw new Error("Restaurant is invalid!");
+
+    const requestCustomerInformation = register.requestCustomerInformation;
+    const requiresFirstName = Boolean(requestCustomerInformation?.firstName);
+    const requiresEmail = Boolean(requestCustomerInformation?.email);
+    const requiresPhoneNumber = Boolean(requestCustomerInformation?.phoneNumber);
+    const requiresSignature = Boolean(requestCustomerInformation?.signature);
 
     type RegisterCustomField = NonNullable<NonNullable<typeof register.requestCustomerInformation>["customFields"]>[number];
 
@@ -504,23 +546,23 @@ const UserInformationFields = () => {
     };
 
     const handleNext = async () => {
-        if (!register.requestCustomerInformation) return;
+        if (!requestCustomerInformation) return;
 
         let invalid = false;
 
-        if (register.requestCustomerInformation.firstName && !firstName) {
+        if (requiresFirstName && !firstName) {
             setFirstNameError(true);
             invalid = true;
         }
-        if (register.requestCustomerInformation.email && !email) {
+        if (requiresEmail && !email) {
             setEmailError(true);
             invalid = true;
         }
-        if (register.requestCustomerInformation.phoneNumber && !phoneNumber) {
+        if (requiresPhoneNumber && !phoneNumber) {
             setPhoneNumberError(true);
             invalid = true;
         }
-        if (register.requestCustomerInformation.signature && signatureCanvasRef.current?.isEmpty()) {
+        if (requiresSignature && signatureCanvasRef.current?.isEmpty()) {
             setSignatureError(true);
             invalid = true;
         }
@@ -530,8 +572,8 @@ const UserInformationFields = () => {
         let resizedSignatureBase64 = "";
 
         if (signatureCanvasRef.current) {
-            const signatureBase64 = signatureCanvasRef.current.getTrimmedCanvas().toDataURL(signatureMimeType);
-            resizedSignatureBase64 = await resizeBase64ImageToWidth(signatureBase64, 200, signatureMimeType);
+            const signatureBase64 = signatureCanvasRef.current.getTrimmedCanvas().toDataURL(SIGNATURE_MIME_TYPE);
+            resizedSignatureBase64 = await resizeBase64ImageToWidth(signatureBase64, 200, SIGNATURE_MIME_TYPE);
         }
 
         setCustomerInformation({
@@ -625,7 +667,7 @@ const UserInformationFields = () => {
                         disabled={Boolean(customerInformation)}
                     />
 
-                    {register.requestCustomerInformation?.signature && (
+                    {requiresSignature && (
                         <>
                             <div className="h2 mt-2 mb-2">Signature</div>
                             <SignatureCanvas
@@ -639,7 +681,7 @@ const UserInformationFields = () => {
                         </>
                     )}
 
-                    {register.requestCustomerInformation?.customFields?.map((field, index) => (
+                    {requestCustomerInformation?.customFields?.map((field, index) => (
                         <div key={`${field.label}-${index}`}>
                             <div className="h2 mt-2 mb-2">{field.label}</div>
                             <Input
