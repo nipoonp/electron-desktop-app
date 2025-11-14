@@ -10,6 +10,7 @@ import { PageWrapper } from "../../tabin/components/pageWrapper";
 
 import "./registerList.scss";
 import { useAuth } from "../../context/auth-context";
+import { ERegisterType } from "../../graphql/customQueries";
 
 export default () => {
     const navigate = useNavigate();
@@ -53,36 +54,38 @@ export default () => {
                 <div className="register-list">
                     <>
                         <div className="h2 mb-6">Select a register to use</div>
-                        {restaurant.registers.items.map((reg, index) => (
-                            <>
-                                {index != 0 && <div className="separator-4"></div>}
-                                <div className="register-list-item">
-                                    <div>{reg.name}</div>
-                                    {register && register.id == reg.id ? (
-                                        <>
-                                            <Button
-                                                onClick={() => {
-                                                    onDisconnect(reg.id);
-                                                }}
-                                            >
-                                                Disconnect
-                                            </Button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Button
-                                                disabled={reg.active}
-                                                onClick={() => {
-                                                    onConnect(reg.id);
-                                                }}
-                                            >
-                                                {reg.active ? "Unavailable" : "Use"}
-                                            </Button>
-                                        </>
-                                    )}
-                                </div>
-                            </>
-                        ))}
+                        {restaurant.registers.items
+                            .filter((reg) => reg.type !== ERegisterType.ONLINE)
+                            .map((reg, index) => (
+                                <>
+                                    {index != 0 && <div className="separator-4"></div>}
+                                    <div className="register-list-item">
+                                        <div>{reg.name}</div>
+                                        {register && register.id == reg.id ? (
+                                            <>
+                                                <Button
+                                                    onClick={() => {
+                                                        onDisconnect(reg.id);
+                                                    }}
+                                                >
+                                                    Disconnect
+                                                </Button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Button
+                                                    disabled={reg.active}
+                                                    onClick={() => {
+                                                        onConnect(reg.id);
+                                                    }}
+                                                >
+                                                    {reg.active ? "Unavailable" : "Use"}
+                                                </Button>
+                                            </>
+                                        )}
+                                    </div>
+                                </>
+                            ))}
                         <div className="mt-2">
                             <Button onClick={logout}>Log Out</Button>
                         </div>
