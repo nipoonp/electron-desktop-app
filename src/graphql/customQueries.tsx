@@ -568,6 +568,7 @@ export const GET_RESTAURANT = gql`
                     minSpend
                     applyToCheapest
                     applyToModifiers
+                    maxApplicationsPerOrder
                     items {
                         items {
                             id
@@ -1296,6 +1297,7 @@ export interface IGET_RESTAURANT_PROMOTION {
     minSpend: number;
     applyToCheapest: boolean;
     applyToModifiers: boolean;
+    maxApplicationsPerOrder: number | null;
     type: EPromotionType;
     items: { items: IGET_RESTAURANT_PROMOTION_ITEMS[] };
     discounts: { items: IGET_RESTAURANT_PROMOTION_DISCOUNT[] };
@@ -1555,6 +1557,7 @@ export const GET_PROMOTION_BY_CODE = gql`
                 minSpend
                 applyToCheapest
                 applyToModifiers
+                maxApplicationsPerOrder
                 items {
                     items {
                         id
