@@ -392,67 +392,49 @@ export const toDataURL = (url, callback) => {
 };
 
 export const checkIfPromotionValid = (promotion: IGET_RESTAURANT_PROMOTION): CheckIfPromotionValidResponse => {
-    const now = new Date();
-
     const platform = process.env.REACT_APP_PLATFORM;
 
-    if (!platform || !promotion.availablePlatforms) return CheckIfPromotionValidResponse.INVALID_PLATFORM;
-    if (!promotion.availablePlatforms.includes(ERegisterType[platform])) return CheckIfPromotionValidResponse.INVALID_PLATFORM;
+    if (!platform || !promotion.availablePlatforms?.includes(ERegisterType[platform])) return CheckIfPromotionValidResponse.INVALID_PLATFORM;
 
-    const startDate = new Date(promotion.startDate);
-    const endDate = new Date(promotion.endDate);
-
-    const isWithin = isWithinInterval(now, { start: startDate, end: endDate });
+    const now = new Date();
+    const isWithin = isWithinInterval(now, {
+        start: new Date(promotion.startDate),
+        end: new Date(promotion.endDate),
+    });
 
     if (!isWithin) return CheckIfPromotionValidResponse.EXPIRED;
 
     const isAvailable = promotion.availability && isPromotionAvailable(promotion.availability);
-
     if (!isAvailable) return CheckIfPromotionValidResponse.UNAVAILABLE;
 
     return CheckIfPromotionValidResponse.VALID;
 };
 
-const buildPromotionSortComparator = (applyToCheapest: boolean, applyToModifiers: boolean) => (a: ICartProduct, b: ICartProduct) => {
-    if (applyToCheapest) {
-        if (applyToModifiers) {
-            return a.totalPrice > b.totalPrice ? 1 : -1;
-        } else {
-            return a.price > b.price ? 1 : -1;
-        }
-    } else {
-        if (applyToModifiers) {
-            //reverse sort: largest to smallest
-            return a.totalPrice > b.totalPrice ? -1 : 1;
-        } else {
-            return a.price > b.price ? 1 : -1;
-        }
-    }
+const buildPromotionSortComparator = (applyToCheapest: boolean, applyToModifiers: boolean) => {
+    const priceKey = applyToModifiers ? "totalPrice" : "price";
+    const order = applyToCheapest ? 1 : -1;
+
+    return (a: ICartProduct, b: ICartProduct) => (a[priceKey] - b[priceKey]) * order;
 };
 
 const findPromotionItemMatches = (cartProducts: ICartProduct[], item: IGET_RESTAURANT_PROMOTION_ITEMS) => {
-    const matchingProductsTemp: ICartProduct[] = [];
+    const matchingProducts = new Set<ICartProduct>();
     let quantityCounted = 0;
 
-    item.categoryIds?.forEach((categoryId) => {
-        cartProducts.forEach((cartProduct) => {
-            if (categoryId === cartProduct.category?.id) {
-                quantityCounted += cartProduct.quantity;
-                matchingProductsTemp.push(cartProduct);
-            }
-        });
+    cartProducts.forEach((cartProduct) => {
+        const matchesCategory = cartProduct.category?.id && item.categoryIds?.includes(cartProduct.category.id);
+        const matchesProduct = item.productIds?.includes(cartProduct.id);
+
+        if (matchesCategory || matchesProduct) {
+            matchingProducts.add(cartProduct);
+            quantityCounted += cartProduct.quantity;
+        }
     });
 
-    item.productIds?.forEach((productId) => {
-        cartProducts.forEach((cartProduct) => {
-            if (productId === cartProduct.id) {
-                quantityCounted += cartProduct.quantity;
-                matchingProductsTemp.push(cartProduct);
-            }
-        });
-    });
-
-    return { matchingProductsTemp, quantityCounted };
+    return {
+        matchingProducts: Array.from(matchingProducts),
+        quantityCounted,
+    };
 };
 
 const getMatchingPromotionProducts = (
@@ -461,131 +443,165 @@ const getMatchingPromotionProducts = (
     applyToCheapest: boolean,
     applyToModifiers: boolean,
     maxApplications?: number
-): { matchingProducts: ICartProduct[]; applications: number } | null => {
-    //For promotions with multiple item groups, it would become a && condition. For example, if first group is category: Vege Pizza (min quantity = 2).
-    //And second group is category: Sides (min quantity = 1.
-    //Then the user would need to select at least 2 Vege Pizza AND a side to get the discount
-
-    let matchingProducts: ICartProduct[] = [];
-    let matchingCondition = true;
+): { matchingProducts: ICartProduct[]; matchingProductsPerApplication: ICartProduct[][]; applications: number } | null => {
     let applications = Number.MAX_SAFE_INTEGER;
     const matchingProductsByPromotionItem: { products: ICartProduct[]; item: IGET_RESTAURANT_PROMOTION_ITEMS }[] = [];
 
-    promotionItems.forEach((item) => {
-        if (!matchingCondition) return;
-
-        const { matchingProductsTemp, quantityCounted } = findPromotionItemMatches(cartProducts, item);
+    // Check all promotion items meet minimum quantity requirements
+    for (const item of promotionItems) {
+        const { matchingProducts, quantityCounted } = findPromotionItemMatches(cartProducts, item);
 
         if (quantityCounted < item.minQuantity) {
-            //Didn't match the condition
-            matchingCondition = false;
-        } else {
-            matchingProductsByPromotionItem.push({ products: matchingProductsTemp, item });
-            applications = Math.min(applications, Math.floor(quantityCounted / item.minQuantity));
+            return null; // Condition not met
         }
-    });
 
-    if (maxApplications !== undefined) {
-        applications = Math.min(applications, maxApplications);
+        matchingProductsByPromotionItem.push({ products: matchingProducts, item });
+        applications = Math.min(applications, Math.floor(quantityCounted / item.minQuantity));
     }
 
-    if (!matchingCondition || applications === Number.MAX_SAFE_INTEGER || applications === 0) return null;
+    if (maxApplications !== undefined) applications = Math.min(applications, maxApplications);
 
+    if (applications === Number.MAX_SAFE_INTEGER || applications === 0) return null;
+
+    // Distribute products across applications
     const comparator = buildPromotionSortComparator(applyToCheapest, applyToModifiers);
+    const matchingProductsPerApplication: ICartProduct[][] = Array.from({ length: applications }, () => []);
+    const aggregatedProducts = new Map<string, ICartProduct>();
+
+    const getProductKey = (p: ICartProduct) => (p.index !== undefined ? `idx-${p.index}` : `id-${p.id}`);
 
     matchingProductsByPromotionItem.forEach(({ products, item }) => {
-        //Sort by price and get the lowest/highest depending on settings
         const sortedProducts = [...products].sort(comparator);
+        const minQuantity = item.minQuantity || 1;
 
-        let counter = item.minQuantity * applications;
+        let applicationIndex = 0;
+        let remainingForCurrentApplication = minQuantity;
 
         sortedProducts.forEach((p) => {
-            if (counter == 0) return;
+            let quantityLeft = p.quantity;
 
-            const quantity = p.quantity;
-            const qtyToUse = counter > quantity ? quantity : counter;
+            while (quantityLeft > 0 && applicationIndex < applications) {
+                const qtyToUse = Math.min(quantityLeft, remainingForCurrentApplication);
+                const productForApplication = { ...p, quantity: qtyToUse };
 
-            matchingProducts.push({ ...p, quantity: qtyToUse });
-            counter -= qtyToUse;
+                matchingProductsPerApplication[applicationIndex].push(productForApplication);
+
+                const key = getProductKey(p);
+                const existing = aggregatedProducts.get(key);
+                if (existing) {
+                    existing.quantity += qtyToUse;
+                } else {
+                    aggregatedProducts.set(key, { ...p, quantity: qtyToUse });
+                }
+
+                quantityLeft -= qtyToUse;
+                remainingForCurrentApplication -= qtyToUse;
+
+                if (remainingForCurrentApplication === 0) {
+                    applicationIndex++;
+                    remainingForCurrentApplication = minQuantity;
+                }
+            }
         });
     });
 
-    return matchingCondition ? { matchingProducts, applications } : null;
+    return {
+        matchingProducts: Array.from(aggregatedProducts.values()),
+        matchingProductsPerApplication,
+        applications,
+    };
 };
 
 export const applyDiscountToCartProducts = (promotion: ICartPromotion | null, cartProducts: ICartProduct[]) => {
-    const cartProductsCpy: ICartProduct[] = JSON.parse(JSON.stringify(cartProducts));
-
-    //Reset all discount values
-    cartProductsCpy.forEach((cartProduct) => {
-        cartProduct.discount = 0;
-    });
+    const cartProductsCpy = cartProducts.map((p) => ({ ...p, discount: 0 }));
 
     promotion?.matchingProducts.forEach((matchingProduct) => {
-        if (matchingProduct.index === undefined) return;
-
-        cartProductsCpy[matchingProduct.index].discount = matchingProduct.discount;
+        if (matchingProduct.index !== undefined) {
+            cartProductsCpy[matchingProduct.index].discount = matchingProduct.discount;
+        }
     });
 
     return cartProductsCpy;
 };
 
-const discountMatchingProducts = (matchingProducts: ICartProduct[], discountedAmount: number, applyToModifiers: boolean) => {
+const discountMatchingProducts = (
+    matchingProducts: ICartProduct[],
+    discountedAmount: number,
+    applyToModifiers: boolean,
+    applications: number = 1,
+    matchingProductsPerApplication?: ICartProduct[][],
+    perApplicationDiscounts?: number[]
+) => {
     if (matchingProducts.length === 0) return matchingProducts;
 
-    const matchingProductsCpy: ICartProduct[] = JSON.parse(JSON.stringify(matchingProducts));
+    const matchingProductsCpy = matchingProducts.map((p) => ({ ...p }));
+    const productsPerApplication = matchingProductsPerApplication?.length ? matchingProductsPerApplication : [matchingProductsCpy];
+    const applicationsToUse = Math.max(1, applications || 1);
 
-    const totalQty = matchingProducts.reduce((total, p) => total + p.quantity, 0);
+    const getProductKey = (p: ICartProduct) => (p.index !== undefined ? `idx-${p.index}` : `id-${p.id}`);
+    const discountMap = new Map<string, number>();
 
-    let remainingAmount = discountedAmount;
-    let remainingQty = totalQty;
+    for (let i = 0; i < applicationsToUse; i++) {
+        const appProducts = productsPerApplication[i] || [];
+        const appDiscountTotal = perApplicationDiscounts?.[i] ?? discountedAmount / applicationsToUse;
+        let remainingAppDiscount = appDiscountTotal;
 
-    matchingProductsCpy
-        .sort((a, b) => {
-            if (applyToModifiers) {
-                return a.totalPrice - b.totalPrice;
-            } else {
-                return a.price - b.price;
-            }
-        }) //Required to sort from smallest to largest
-        .forEach((p) => {
-            const discountAmountPerProduct = remainingAmount / remainingQty;
+        const priceKey = applyToModifiers ? "totalPrice" : "price";
+        const sortedProducts = [...appProducts].sort((a, b) => a[priceKey] - b[priceKey]);
 
-            if (applyToModifiers) {
-                p.discount = discountAmountPerProduct > p.totalPrice ? p.totalPrice * p.quantity : discountAmountPerProduct * p.quantity;
-            } else {
-                p.discount = discountAmountPerProduct > p.price ? p.price * p.quantity : discountAmountPerProduct * p.quantity;
-            }
+        for (const p of sortedProducts) {
+            if (remainingAppDiscount <= 0) break;
 
-            remainingAmount -= p.discount;
-            remainingQty -= p.quantity;
-        });
+            const discountablePerUnit = applyToModifiers ? p.totalPrice : p.price;
+            const maxDiscountForProduct = discountablePerUnit * p.quantity;
+            const appliedDiscount = Math.min(remainingAppDiscount, maxDiscountForProduct);
+            const key = getProductKey(p);
+
+            discountMap.set(key, (discountMap.get(key) || 0) + appliedDiscount);
+            remainingAppDiscount -= appliedDiscount;
+        }
+    }
+
+    matchingProductsCpy.forEach((p) => {
+        p.discount = discountMap.get(getProductKey(p)) || 0;
+    });
 
     return matchingProductsCpy;
+};
+
+const calculateApplicationDiscount = (discount: IGET_RESTAURANT_PROMOTION_DISCOUNT, discountableAmount: number): number => {
+    switch (discount.type) {
+        case EDiscountType.FIXED:
+            return Math.min(discountableAmount, discount.amount);
+        case EDiscountType.PERCENTAGE:
+            return (discountableAmount * discount.amount) / 100;
+        case EDiscountType.SETPRICE:
+            return Math.max(0, discountableAmount - discount.amount);
+        default:
+            return 0;
+    }
 };
 
 const processPromotionDiscounts = (
     cartProducts: ICartProduct[],
     discounts: IGET_RESTAURANT_PROMOTION_DISCOUNT[],
-    matchingPromotionProducts?: { matchingProducts: ICartProduct[]; applications: number },
+    matchingPromotionProducts?: { matchingProducts: ICartProduct[]; matchingProductsPerApplication: ICartProduct[][]; applications: number },
     total: number = 0,
     applyToCheapest: boolean = false,
     applyToModifiers: boolean = false,
     maxApplications?: number | null
 ) => {
-    let currentBestDiscount: { amount: number; matchingProducts: ICartProduct[] } = { amount: 0, matchingProducts: [] };
+    let currentBestDiscount = {
+        amount: 0,
+        matchingProducts: [] as ICartProduct[],
+        matchingProductsPerApplication: [] as ICartProduct[][],
+        applications: 1,
+        perApplicationDiscounts: [] as number[],
+    };
+
     const getTotalDiscountableAmount = (products: ICartProduct[]) => {
-        let totalDiscountableAmount = 0;
-
-        products.forEach((p) => {
-            if (applyToModifiers) {
-                totalDiscountableAmount += p.totalPrice * p.quantity;
-            } else {
-                totalDiscountableAmount += p.price * p.quantity;
-            }
-        });
-
-        return totalDiscountableAmount;
+        const priceKey = applyToModifiers ? "totalPrice" : "price";
+        return products.reduce((sum, p) => sum + p[priceKey] * p.quantity, 0);
     };
 
     discounts.forEach((discount) => {
@@ -595,12 +611,11 @@ const processPromotionDiscounts = (
         }
 
         let applications = baseApplications;
-        let discountedAmount = 0;
         let matchingDiscountProducts: ICartProduct[] | null = null;
-        let totalDiscountableAmount = total ? total : getTotalDiscountableAmount(matchingPromotionProducts?.matchingProducts || []);
+        let matchingDiscountProductsPerApplication: ICartProduct[][] | null = null;
 
-        //For related items promotion
-        if (discount.items && discount.items.items.length > 0) {
+        // Handle related items promotion
+        if (discount.items?.items.length > 0) {
             const matchingDiscountResults = getMatchingPromotionProducts(
                 cartProducts,
                 discount.items.items,
@@ -608,52 +623,61 @@ const processPromotionDiscounts = (
                 applyToModifiers,
                 baseApplications
             );
-            matchingDiscountProducts = matchingDiscountResults?.matchingProducts || null;
+
+            if (!matchingDiscountResults) return;
+
+            matchingDiscountProducts = matchingDiscountResults.matchingProducts;
+            matchingDiscountProductsPerApplication = matchingDiscountResults.matchingProductsPerApplication;
             applications =
-                baseApplications && matchingDiscountResults?.applications
+                baseApplications && matchingDiscountResults.applications
                     ? Math.min(baseApplications, matchingDiscountResults.applications)
-                    : matchingDiscountResults?.applications ?? baseApplications;
-
-            if (!matchingDiscountProducts) return;
-
-            totalDiscountableAmount = getTotalDiscountableAmount(matchingDiscountProducts);
+                    : matchingDiscountResults.applications ?? baseApplications;
         }
 
-        switch (discount.type) {
-            case EDiscountType.FIXED:
-                discountedAmount = Math.min(totalDiscountableAmount, discount.amount * (applications || 1));
-                break;
-            case EDiscountType.PERCENTAGE:
-                discountedAmount = (totalDiscountableAmount * discount.amount) / 100;
-                break;
-            case EDiscountType.SETPRICE:
-                discountedAmount = Math.max(0, totalDiscountableAmount - discount.amount * (applications || 1));
-                break;
-            default:
-                break;
+        const applicationCount = applications || 1;
+        const productsForDiscount = matchingDiscountProducts || matchingPromotionProducts?.matchingProducts || [];
+        const perApplicationProducts = matchingDiscountProductsPerApplication || matchingPromotionProducts?.matchingProductsPerApplication || [];
+        const productsPerApplication = perApplicationProducts.length ? perApplicationProducts : [productsForDiscount];
+
+        const perApplicationDiscounts: number[] = [];
+        let totalDiscountAmount = 0;
+
+        for (let i = 0; i < applicationCount; i++) {
+            const appProducts = productsPerApplication[i] || [];
+            const appDiscountableAmount = total ? total / applicationCount : getTotalDiscountableAmount(appProducts);
+
+            const applicationDiscount = calculateApplicationDiscount(discount, appDiscountableAmount);
+            perApplicationDiscounts.push(applicationDiscount);
+            totalDiscountAmount += applicationDiscount;
         }
 
-        if (currentBestDiscount.amount < discountedAmount) {
+        if (currentBestDiscount.amount < totalDiscountAmount) {
             currentBestDiscount = {
-                amount: discountedAmount,
-                matchingProducts: matchingDiscountProducts || matchingPromotionProducts?.matchingProducts || [],
+                amount: totalDiscountAmount,
+                matchingProducts: productsForDiscount,
+                matchingProductsPerApplication: productsPerApplication,
+                applications: applicationCount,
+                perApplicationDiscounts,
             };
         }
     });
 
     return {
         matchingProducts: currentBestDiscount.matchingProducts,
-        discountedAmount: Math.floor(currentBestDiscount.amount), //Round to nearest number so we are not working with floats
+        matchingProductsPerApplication: currentBestDiscount.matchingProductsPerApplication,
+        perApplicationDiscounts: currentBestDiscount.perApplicationDiscounts,
+        applications: currentBestDiscount.applications,
+        discountedAmount: Math.floor(currentBestDiscount.amount),
     };
 };
 
 export const getOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, cartProducts: ICartProduct[], total?: number) => {
-    let bestPromotionDiscount: {
-        matchingProducts: ICartProduct[];
-        discountedAmount: number;
-    };
+    const isEntireOrder = promotion.type === EPromotionType.ENTIREORDER;
+    const maxApplications = promotion.maxApplicationsPerOrder ?? 1;
 
-    if (promotion.type === EPromotionType.ENTIREORDER) {
+    let bestPromotionDiscount;
+
+    if (isEntireOrder) {
         bestPromotionDiscount = processPromotionDiscounts(
             cartProducts,
             promotion.discounts.items,
@@ -661,7 +685,16 @@ export const getOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, car
             total,
             undefined,
             promotion.applyToModifiers,
-            promotion.maxApplicationsPerOrder ?? 1
+            maxApplications
+        );
+
+        bestPromotionDiscount.matchingProducts = discountMatchingProducts(
+            cartProducts,
+            bestPromotionDiscount.discountedAmount,
+            promotion.applyToModifiers,
+            bestPromotionDiscount.applications,
+            bestPromotionDiscount.matchingProductsPerApplication,
+            bestPromotionDiscount.perApplicationDiscounts
         );
     } else {
         const matchingPromotionProducts = getMatchingPromotionProducts(
@@ -669,7 +702,7 @@ export const getOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, car
             promotion.items.items,
             promotion.applyToCheapest,
             promotion.applyToModifiers,
-            promotion.maxApplicationsPerOrder ?? 1
+            maxApplications
         );
 
         if (!matchingPromotionProducts) return null;
@@ -681,13 +714,16 @@ export const getOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, car
             undefined,
             promotion.applyToCheapest,
             promotion.applyToModifiers,
-            promotion.maxApplicationsPerOrder ?? 1
+            maxApplications
         );
 
         bestPromotionDiscount.matchingProducts = discountMatchingProducts(
             bestPromotionDiscount.matchingProducts,
             bestPromotionDiscount.discountedAmount,
-            promotion.applyToModifiers
+            promotion.applyToModifiers,
+            bestPromotionDiscount.applications,
+            bestPromotionDiscount.matchingProductsPerApplication,
+            bestPromotionDiscount.perApplicationDiscounts
         );
     }
 

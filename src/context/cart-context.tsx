@@ -401,7 +401,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const setUserAppliedPromotion = (promotion: IGET_RESTAURANT_PROMOTION): CheckIfPromotionValidResponse => {
         if (!products) return CheckIfPromotionValidResponse.UNAVAILABLE;
 
-        const status = promotion.startDate == null || promotion.endDate == null ? "VALID" : checkIfPromotionValid(promotion);
+        const status =
+            promotion.startDate == null || promotion.endDate == null ? CheckIfPromotionValidResponse.VALID : checkIfPromotionValid(promotion);
 
         if (status !== CheckIfPromotionValidResponse.VALID) return status;
 
