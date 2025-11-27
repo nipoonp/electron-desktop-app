@@ -304,11 +304,13 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
     const setUserAppliedPromotions = (promotions: IGET_RESTAURANT_PROMOTION[]): CheckIfPromotionValidResponse => {
         if (!products) return CheckIfPromotionValidResponse.UNAVAILABLE;
+        if (!promotions || promotions.length === 0) return CheckIfPromotionValidResponse.UNAVAILABLE;
 
         const promotionStatus: { promotion: IGET_RESTAURANT_PROMOTION; status: CheckIfPromotionValidResponse }[] = [];
 
         promotions.forEach((promotion) => {
-            const status = promotion.startDate == null || promotion.endDate == null ? "VALID" : checkIfPromotionValid(promotion);
+            const status =
+                promotion.startDate == null || promotion.endDate == null ? CheckIfPromotionValidResponse.VALID : checkIfPromotionValid(promotion);
 
             if (status !== CheckIfPromotionValidResponse.VALID) {
                 promotionStatus.push({ promotion: promotion, status: status });
@@ -329,7 +331,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
             _setAvailablePromotions(availablePromotions);
             _setUserAppliedPromotionCode(availablePromotions[0].code);
         } else {
-            return promotionStatus[0].status;
+            return promotionStatus[0]?.status ?? CheckIfPromotionValidResponse.UNAVAILABLE;
         }
 
         return CheckIfPromotionValidResponse.VALID;
