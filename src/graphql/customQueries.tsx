@@ -40,42 +40,6 @@ export enum ECustomCustomerFieldType {
     DROPDOWN = "DROPDOWN",
 }
 
-export const LIST_RESTAURANTS = gql`
-    query ListRestaurants {
-        listRestaurants(limit: 1000) {
-            items {
-                id
-                name
-                description
-                verified
-                restaurantManagerId
-                users {
-                    items {
-                        user {
-                            id
-                        }
-                    }
-                }
-            }
-        }
-    }
-`;
-
-export interface ILIST_RESTAURANTS {
-    id: string;
-    name: string;
-    description: string;
-    verified: boolean;
-    restaurantManagerId: string;
-    users: {
-        items: {
-            user: {
-                id: string;
-            };
-        }[];
-    };
-}
-
 export const GET_USER = gql`
     query GetUser($userId: ID!) {
         getUser(id: $userId) {
