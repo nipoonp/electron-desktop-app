@@ -11,8 +11,6 @@ import {
 } from "../graphql/customQueries";
 import { useGetRestaurantQuery } from "../hooks/useGetRestaurantQuery";
 import { getCloudFrontDomainName } from "../private/aws-custom";
-import { useListRestaurantsQuery } from "../hooks/useListRestaurantsQuery";
-import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
 import { getBase64FromUrlImage } from "../util/util";
 
 interface IMENU_CATEGORIES {
