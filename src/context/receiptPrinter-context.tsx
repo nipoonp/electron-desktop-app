@@ -72,10 +72,10 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         const ordersFetchTimer = setInterval(async () => {
             try {
                 let showOnlineOrderPromot = false;
-                const storedPrintedOnlineOrders = localStorage.getItem("printedOnlineOrders");
-                const printedOnlineOrders: {
+                const storedPrintedOrders = localStorage.getItem("printedOnlineOrders");
+                const printedOrders: {
                     [orderId: string]: boolean;
-                } = storedPrintedOnlineOrders ? JSON.parse(storedPrintedOnlineOrders) : {};
+                } = storedPrintedOrders ? JSON.parse(storedPrintedOrders) : {};
 
                 const res = await getRestaurantOnlineOrdersByBeginWithPlacedAt({
                     variables: {
@@ -86,10 +86,14 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
                 const newOrders: IGET_RESTAURANT_ORDER_FRAGMENT[] = res.data.getOrdersByRestaurantByPlacedAt.items;
 
-                for (var i = 0; i < newOrders.length; i++) {
-                    const order = newOrders[i];
+                const ordersToPrint = newOrders.filter(
+                    (order) => order.onlineOrder || order.thirdPartyIntegrationResult?.platform === "DELIVERECTPOS"
+                );
 
-                    if (printedOnlineOrders[order.id] !== undefined) continue;
+                for (var i = 0; i < ordersToPrint.length; i++) {
+                    const order = ordersToPrint[i];
+
+                    if (printedOrders[order.id] !== undefined) continue;
 
                     for (var j = 0; j < register.printers.items.length; j++) {
                         const printer = register.printers.items[j];
@@ -159,12 +163,12 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                         });
                     }
 
-                    printedOnlineOrders[order.id] = true;
+                    printedOrders[order.id] = true;
                 }
 
                 if (showOnlineOrderPromot) setIsShownNewOnlineOrderReceivedModal(true);
 
-                localStorage.setItem("printedOnlineOrders", JSON.stringify(printedOnlineOrders));
+                localStorage.setItem("printedOnlineOrders", JSON.stringify(printedOrders));
             } catch (e) {
                 console.error("Error", e);
                 await toast.error("Error polling for new online orders");

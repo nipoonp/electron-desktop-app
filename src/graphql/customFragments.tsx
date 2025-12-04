@@ -31,6 +31,14 @@ export const ORDER_FIELDS_FRAGMENT = gql`
             doordash
             delivereasy
         }
+        thirdPartyIntegrationResult {
+            shift8IsSuccess
+            shift8ErrorMessage
+            isSuccess
+            errorMessage
+            platform
+            platformChannel
+        }
         onlineOrder
         guestCheckout
         orderScheduledAt
@@ -222,6 +230,14 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     subTotal: number;
     paid: boolean;
     paymentAmounts: IOrderPaymentAmounts | null;
+    thirdPartyIntegrationResult: {
+        shift8IsSuccess: boolean | null;
+        shift8ErrorMessage: string | null;
+        isSuccess: boolean | null;
+        errorMessage: string | null;
+        platform: string | null;
+        platformChannel: string | null;
+    } | null;
     onlineOrder: boolean | null;
     guestCheckout: boolean | null;
     orderScheduledAt: string | null;
@@ -243,10 +259,6 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     buzzer: string | null;
     covers: number | null;
     registerId: string;
-    thirdPartyIntegrationResult: {
-        isSuccess: boolean;
-        errorMessage: string;
-    };
     products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[];
 }
 
