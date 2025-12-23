@@ -838,6 +838,8 @@ export const Checkout = () => {
                         //COMBO modifier
                         cleanedModifiers.push(modifier);
                     } else if (modifierCombosList.includes(modifier.id)) {
+                        cleanedModifiers.push(modifier);
+
                         //COMBO modifier
                         modifier.productModifiers?.forEach((prodMod) => {
                             prodMod.modifierGroups.forEach((prodModGroup) => {
