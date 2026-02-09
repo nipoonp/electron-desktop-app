@@ -79,7 +79,7 @@ export default () => {
                     hideModifierGroupName: register.printers.items[0].hideModifierGroupName,
                     skipReceiptCutCommand: register.printers.items[0].skipReceiptCutCommand,
                     printReceiptForEachProduct: register.printers.items[0].printReceiptForEachProduct,
-                    hideOrderType: register.availableOrderTypes.length === 0,
+                    hideOrderType: false,
                     products: convertProductTypesForPrint(productsToPrint),
                     displayPaymentRequiredMessage: !order.paid,
                     enableLoyalty: restaurant ? restaurant.enableLoyalty : false,
@@ -340,7 +340,7 @@ export default () => {
                 hideModifierGroupName: printer.hideModifierGroupName,
                 skipReceiptCutCommand: printer.skipReceiptCutCommand,
                 printReceiptForEachProduct: printer.printReceiptForEachProduct,
-                hideOrderType: register.availableOrderTypes.length === 0,
+                hideOrderType: false,
                 products: convertProductTypesForPrint(productsToPrint),
             });
         }
