@@ -30,7 +30,7 @@
         "electron-updater": "6.1.7",
         "graphql": "16.8.1",
         "kioskboard": "2.3.0",
-        "node-sass": "9.0.0",
+        "sass": "1.69.5",
         "node-thermal-printer": "4.2.0",
         "papaparse": "5.4.1",
         "react": "18.2.0",
