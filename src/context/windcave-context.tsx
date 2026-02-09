@@ -7,6 +7,7 @@ import { useRegister } from "./register-context";
 import { format } from "date-fns";
 import { useErrorLogging } from "./errorLogging-context";
 import { delay } from "../model/util";
+import { useElectron } from "./electron-context";
 
 var convert = require("xml-js");
 
@@ -182,6 +183,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
     const { logError } = useErrorLogging();
+    const { checkParentView } = useElectron();
 
     const logs = useRef<string>(initialLogs);
 
@@ -239,6 +241,42 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
 
     const addToLogs = (log: string) => {
         logs.current += format(new Date(), "dd/MM/yy HH:mm:ss.SSS ") + log + "\n";
+    };
+
+    const postWindcaveXML = async (xml: string) => {
+        const parentView = checkParentView();
+
+        if (parentView.reactNativeWebView) {
+            const windcaveRequest = typeof window !== "undefined" ? (window as any).windcaveRequest : undefined;
+            if (windcaveRequest) {
+                const res = await windcaveRequest(xml, {
+                    url: BASE_URL,
+                    method: "POST",
+                    headers: { "Content-Type": "application/xml" },
+                    responseType: "text",
+                });
+
+                if (!res.ok) {
+                    const status = res.status ? ` (${res.status})` : "";
+                    throw new Error(res.error || `Windcave request failed${status}`);
+                }
+
+                return {
+                    status: res.status ?? 200,
+                    data: res.data,
+                    headers: res.headers,
+                    statusText: res.statusText,
+                };
+            }
+
+            throw new Error("Windcave bridge not available in WebView");
+        }
+
+        return axios.post(BASE_URL, xml, {
+            headers: {
+                "Content-Type": "application/xml",
+            },
+        });
     };
 
     const sendTransaction = async (
@@ -305,11 +343,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         const paramsXML = convert.json2xml(params, { compact: true, spaces: 4 });
 
         try {
-            const response = await axios.post(BASE_URL, paramsXML, {
-                headers: {
-                    "Content-Type": "application/xml",
-                },
-            });
+            const response = await postWindcaveXML(paramsXML);
 
             console.log(`Transaction POST response received (${response.status}) ${response.data}`);
             addToLogs(JSON.stringify({ url: BASE_URL, data: response }));
@@ -385,11 +419,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         const paramsXML = convert.json2xml(params, { compact: true, spaces: 4 });
 
         try {
-            const response = await axios.post(BASE_URL, paramsXML, {
-                headers: {
-                    "Content-Type": "application/xml",
-                },
-            });
+            const response = await postWindcaveXML(paramsXML);
 
             console.log(`Transaction POST response received (${response.status}) ${response.data}`);
             addToLogs(JSON.stringify({ url: BASE_URL, data: response }));
@@ -453,11 +483,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
 
                 const paramsXML = convert.json2xml(params, { compact: true, spaces: 4 });
 
-                const response = await axios.post(BASE_URL, paramsXML, {
-                    headers: {
-                        "Content-Type": "application/xml",
-                    },
-                });
+                const response = await postWindcaveXML(paramsXML);
 
                 console.log(`Transaction GET response received (${response.status}) ${response.data}`);
                 addToLogs(JSON.stringify({ url: BASE_URL, data: response }));
