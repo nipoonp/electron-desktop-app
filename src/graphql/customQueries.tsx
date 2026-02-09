@@ -384,6 +384,7 @@ export const GET_RESTAURANT = gql`
                     enableBuzzerNumbersForDineIn
                     enableSkuScanner
                     enableFeedback
+                    checkConditionsBeforeCreateOrder
                     enablePayLater
                     enableCashPayments
                     enableEftposPayments
@@ -1039,6 +1040,7 @@ export interface IGET_RESTAURANT_REGISTER {
     enableBuzzerNumbersForDineIn: boolean;
     enableSkuScanner: boolean;
     enableFeedback: boolean;
+    checkConditionsBeforeCreateOrder: boolean;
     enablePayLater: boolean;
     enableCashPayments: boolean;
     enableEftposPayments: boolean;

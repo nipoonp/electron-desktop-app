@@ -3,8 +3,9 @@ import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useNavigate } from "react-router-dom";
 import { convertBase64ToFile, convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
-import { useMutation } from "@apollo/client";
+import { useMutation, useApolloClient } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
+import { GET_RESTAURANT } from "../../graphql/customQueries";
 import { FiArrowDownCircle } from "react-icons/fi";
 import {
     IGET_RESTAURANT_CATEGORY,
@@ -22,6 +23,7 @@ import {
     buzzerNumberPath,
     paymentMethodPath,
     customerInformationPath,
+    checkoutPath,
 } from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
@@ -159,6 +161,8 @@ export const Checkout = () => {
 
     const { getThirdPartyOrderResponse } = useGetThirdPartyOrderResponseLazyQuery();
 
+    const client = useApolloClient();
+
     // state
     const [selectedCategoryForProductModal, setSelectedCategoryForProductModal] = useState<IGET_RESTAURANT_CATEGORY | null>(null);
     const [selectedProductForProductModal, setSelectedProductForProductModal] = useState<IGET_RESTAURANT_PRODUCT | null>(null);
@@ -184,7 +188,7 @@ export const Checkout = () => {
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
     const [paymentOutcomeOrderNumber, setPaymentOutcomeOrderNumber] = useState<string | null>(null);
     const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(
-        restaurant?.delayBetweenOrdersInSeconds || 10
+        restaurant?.delayBetweenOrdersInSeconds || 10,
     );
     let transactionCompleteRedirectTime = restaurant?.delayBetweenOrdersInSeconds || 10;
 
@@ -296,7 +300,7 @@ export const Checkout = () => {
                 () => {},
                 () => {
                     cancelOrder();
-                }
+                },
             );
         } else {
             cancelOrder();
@@ -470,6 +474,7 @@ export const Checkout = () => {
             return;
         }
 
+        setPaymentOutcomeOrderNumber(null);
         setShowPaymentModal(true);
 
         if (isPOS) {
@@ -655,15 +660,105 @@ export const Checkout = () => {
         newPayments: ICartPayment[],
         eftposCardType?: EEftposTransactionOutcomeCardType,
         eftposSurcharge?: number,
-        eftposTip?: number
-    ) => {
+        eftposTip?: number,
+    ): Promise<boolean> => {
         //If parked order do not generate order number
         let orderNumber =
             parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
 
-        setPaymentOutcomeOrderNumber(orderNumber);
-
         try {
+            console.log("Submitting order with order number: ", register.checkConditionsBeforeCreateOrder);
+            // Check backend quantities before creating order
+            if (register.checkConditionsBeforeCreateOrder) {
+                const { data: restaurantData } = await client.query({
+                    query: GET_RESTAURANT,
+                    variables: { restaurantId: restaurant.id },
+                    fetchPolicy: "network-only",
+                });
+                console.log("Fetched latest restaurant data: ", restaurantData);
+                if (restaurantData && restaurantData.getRestaurant) {
+                    const latestRestaurant = restaurantData.getRestaurant;
+                    const soldOutItems: string[] = [];
+
+                    // Check products
+                    if (products) {
+                        for (let index = 0; index < products.length; index++) {
+                            const cartProduct = products[index];
+                            console.log(`Checking availability for product: ${JSON.stringify(cartProduct)}`);
+
+                            const addSoldOutItem = (name: string) => {
+                                if (!soldOutItems.includes(name)) soldOutItems.push(name);
+                            };
+
+                            if (!cartProduct.category) {
+                                addSoldOutItem(cartProduct.name);
+                                continue;
+                            }
+                            const category = latestRestaurant.categories.items.find((c) => c.id === cartProduct.category!.id);
+                            if (!category) {
+                                addSoldOutItem(cartProduct.name);
+                                continue;
+                            }
+                            const productItem = category.products.items.find((p) => p.product.id === cartProduct.id);
+                            if (!productItem) {
+                                addSoldOutItem(cartProduct.name);
+                                continue;
+                            }
+                            const product = productItem.product;
+                            const productAvailableQuantity = product.soldOut ? 0 : product.totalQuantityAvailable;
+                            if (product.soldOut || (productAvailableQuantity !== null && productAvailableQuantity < cartProduct.quantity)) {
+                                console.log(
+                                    `Product ${cartProduct.name} is sold out or has insufficient quantity. Available: ${productAvailableQuantity}, Requested: ${cartProduct.quantity}`,
+                                );
+                                addSoldOutItem(product.name);
+                            }
+
+                            // Check modifiers
+                            for (const mg of cartProduct.modifierGroups) {
+                                for (const m of mg.modifiers) {
+                                    const modifierGroupItem = product.modifierGroups.items.find((mgItem) => mgItem.modifierGroup.id === mg.id);
+                                    if (!modifierGroupItem) {
+                                        addSoldOutItem(m.name);
+                                        continue;
+                                    }
+                                    const modifierItem = modifierGroupItem.modifierGroup.modifiers.items.find(
+                                        (modItem) => modItem.modifier.id === m.id,
+                                    );
+                                    if (!modifierItem) {
+                                        addSoldOutItem(m.name);
+                                        continue;
+                                    }
+                                    const modifier = modifierItem.modifier;
+                                    const modifierAvailableQuantity = modifier.soldOut ? 0 : modifier.totalQuantityAvailable;
+                                    if (modifier.soldOut || (modifierAvailableQuantity !== null && modifierAvailableQuantity < m.quantity)) {
+                                        addSoldOutItem(modifier.name);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (soldOutItems.length > 0) {
+                        setShowPaymentModal(false);
+                        setPaymentModalState(EPaymentModalState.None);
+                        setPaymentOutcomeOrderNumber(null);
+                        showAlert(
+                            "Items Unavailable",
+                            `The following items are sold out or have insufficient quantity: ${soldOutItems.join(", ")}.`,
+                            () => {
+                                setShowPaymentModal(false);
+                                setPaymentModalState(EPaymentModalState.None);
+                                navigate(checkoutPath);
+                            },
+                            () => {},
+                            "Close",
+                            null,
+                        );
+                        return false;
+                    }
+                }
+            }
+
             let signatureS3Object: IS3Object | null = null;
 
             if (customerInformation && customerInformation.signatureBase64) {
@@ -674,7 +769,7 @@ export const Checkout = () => {
                 const signatureFile = await convertBase64ToFile(
                     customerInformation.signatureBase64,
                     `${filename}.${fileExtension}`,
-                    `image/${fileExtension}`
+                    `image/${fileExtension}`,
                 );
 
                 const uploadedObject: any = await Storage.put(`${filename}.${fileExtension}`, signatureFile, {
@@ -698,9 +793,10 @@ export const Checkout = () => {
                 signatureS3Object,
                 eftposCardType,
                 eftposSurcharge,
-                eftposTip
+                eftposTip,
             );
 
+            setPaymentOutcomeOrderNumber(newOrder.number);
             createdOrder.current = newOrder;
             updateOrderDetail(newOrder);
 
@@ -720,6 +816,7 @@ export const Checkout = () => {
             }
 
             beginTransactionCompleteTimeout();
+            return true;
         } catch (e) {
             throw e;
         }
@@ -772,7 +869,7 @@ export const Checkout = () => {
         signatureS3Object: IS3Object | null,
         eftposCardType?: EEftposTransactionOutcomeCardType,
         eftposSurcharge?: number,
-        eftposTip?: number
+        eftposTip?: number,
     ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
         const now = new Date();
         if (!user) {
@@ -902,7 +999,7 @@ export const Checkout = () => {
                     placedAtUtc: now.toISOString(),
                     orderUserId: user.id,
                     orderRestaurantId: restaurant.id,
-                })
+                }),
             );
             throw "Error in createOrderMutation input";
         }
@@ -1025,7 +1122,7 @@ export const Checkout = () => {
                     register.windcaveStationUser,
                     register.windcaveStationKey,
                     amount,
-                    "Purchase"
+                    "Purchase",
                 );
             } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
@@ -1035,7 +1132,7 @@ export const Checkout = () => {
                     register.eftposIpAddress,
                     register.eftposPortNumber,
                     restaurant.id,
-                    setEftposMessage
+                    setEftposMessage,
                 );
             } else if (register.eftposProvider == EEftposProvider.TYRO) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
@@ -1046,7 +1143,7 @@ export const Checkout = () => {
                     register.tyroMerchantId,
                     register.tyroTerminalId,
                     setEftposMessage,
-                    setEftposQuestion
+                    setEftposQuestion,
                 );
             } else if (register.eftposProvider == EEftposProvider.MX51) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
@@ -1144,17 +1241,19 @@ export const Checkout = () => {
 
                 if (newTotalPaymentAmounts >= subTotal) {
                     //Passing paymentAmounts, payments via params so we send the most updated values
-                    await onSubmitOrder(
+                    const didSubmit = await onSubmitOrder(
                         true,
                         false,
                         newPaymentAmounts,
                         newPayments,
                         outcome.eftposCardType,
                         outcome.eftposSurcharge,
-                        outcome.eftposTip
+                        outcome.eftposTip,
                     );
 
-                    setPaymentModalState(EPaymentModalState.EftposResult);
+                    if (didSubmit) {
+                        setPaymentModalState(EPaymentModalState.EftposResult);
+                    }
                 } else {
                     //Payment pending
                     if (isPOS) setPaymentModalState(EPaymentModalState.POSScreen);
@@ -1198,9 +1297,11 @@ export const Checkout = () => {
                 setCashTransactionChangeAmount(changeAmount);
 
                 //Passing paymentAmounts, payments via params so we send the most updated values
-                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+                const didSubmit = await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
 
-                setPaymentModalState(EPaymentModalState.CashResult);
+                if (didSubmit) {
+                    setPaymentModalState(EPaymentModalState.CashResult);
+                }
             }
         } catch (e) {
             setCreateOrderError(e);
@@ -1225,9 +1326,11 @@ export const Checkout = () => {
             //If paid for everything
             if (newTotalPaymentAmounts >= subTotal) {
                 //Passing paymentAmounts, payments via params so we send the most updated values
-                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+                const didSubmit = await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
 
-                setPaymentModalState(EPaymentModalState.UberEatsResult);
+                if (didSubmit) {
+                    setPaymentModalState(EPaymentModalState.UberEatsResult);
+                }
             }
         } catch (e) {
             setCreateOrderError(e);
@@ -1252,9 +1355,11 @@ export const Checkout = () => {
             //If paid for everything
             if (newTotalPaymentAmounts >= subTotal) {
                 //Passing paymentAmounts, payments via params so we send the most updated values
-                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+                const didSubmit = await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
 
-                setPaymentModalState(EPaymentModalState.MenulogResult);
+                if (didSubmit) {
+                    setPaymentModalState(EPaymentModalState.MenulogResult);
+                }
             }
         } catch (e) {
             setCreateOrderError(e);
@@ -1279,9 +1384,11 @@ export const Checkout = () => {
             //If paid for everything
             if (newTotalPaymentAmounts >= subTotal) {
                 //Passing paymentAmounts, payments via params so we send the most updated values
-                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+                const didSubmit = await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
 
-                setPaymentModalState(EPaymentModalState.DoordashResult);
+                if (didSubmit) {
+                    setPaymentModalState(EPaymentModalState.DoordashResult);
+                }
             }
         } catch (e) {
             setCreateOrderError(e);
@@ -1306,9 +1413,11 @@ export const Checkout = () => {
             //If paid for everything
             if (newTotalPaymentAmounts >= subTotal) {
                 //Passing paymentAmounts, payments via params so we send the most updated values
-                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+                const didSubmit = await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
 
-                setPaymentModalState(EPaymentModalState.DelivereasyResult);
+                if (didSubmit) {
+                    setPaymentModalState(EPaymentModalState.DelivereasyResult);
+                }
             }
         } catch (e) {
             setCreateOrderError(e);
@@ -1324,6 +1433,7 @@ export const Checkout = () => {
     };
 
     const onClickPayLater = async () => {
+        setPaymentOutcomeOrderNumber(null);
         setShowPaymentModal(true);
 
         const newPaymentAmounts: ICartPaymentAmounts = {
@@ -1338,15 +1448,18 @@ export const Checkout = () => {
         const newPayments: ICartPayment[] = [];
 
         try {
-            await onSubmitOrder(false, false, newPaymentAmounts, newPayments);
+            const didSubmit = await onSubmitOrder(false, false, newPaymentAmounts, newPayments);
 
-            setPaymentModalState(EPaymentModalState.PayLater);
+            if (didSubmit) {
+                setPaymentModalState(EPaymentModalState.PayLater);
+            }
         } catch (e) {
             setCreateOrderError(e);
         }
     };
 
     const onParkOrder = async () => {
+        setPaymentOutcomeOrderNumber(null);
         setShowPaymentModal(true);
 
         const newPaymentAmounts: ICartPaymentAmounts = {
@@ -1782,7 +1895,7 @@ export const Checkout = () => {
             {promotion ? (
                 <div className="h3 text-center mb-2">
                     {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
-                        promotion.discountedAmount
+                        promotion.discountedAmount,
                     )}`}{" "}
                     {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
                 </div>
