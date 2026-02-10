@@ -196,6 +196,12 @@ export const Checkout = () => {
     const [showUpSellCategoryModal, setShowUpSellCategoryModal] = useState(false);
     const [showUpSellProductModal, setShowUpSellProductModal] = useState(false);
     const [showOrderThresholdMessageModal, setShowOrderThresholdMessageModal] = useState(false);
+    const [isUnavailableAlertVisible, setIsUnavailableAlertVisible] = useState(false);
+    const pendingPaymentScale = useRef<{
+        oldSubTotal: number;
+        oldPaymentAmounts: ICartPaymentAmounts;
+        oldPayments: ICartPayment[];
+    } | null>(null);
 
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
     const [showModal, setShowModal] = useState<string>("");
@@ -276,6 +282,32 @@ export const Checkout = () => {
             setIsShownUpSellCrossSellModal(true);
         }, 1000);
     }, []);
+
+    useEffect(() => {
+        const pending = pendingPaymentScale.current;
+        if (!pending) return;
+        if (pending.oldSubTotal <= 0 || subTotal === pending.oldSubTotal) return;
+
+        const ratio = Math.min(1, Math.max(0, subTotal / pending.oldSubTotal));
+        const scaledPaymentAmounts: ICartPaymentAmounts = {
+            ...pending.oldPaymentAmounts,
+            cash: Math.round(pending.oldPaymentAmounts.cash * ratio),
+            eftpos: Math.round(pending.oldPaymentAmounts.eftpos * ratio),
+            online: Math.round(pending.oldPaymentAmounts.online * ratio),
+            uberEats: Math.round(pending.oldPaymentAmounts.uberEats * ratio),
+            menulog: Math.round(pending.oldPaymentAmounts.menulog * ratio),
+            doordash: Math.round(pending.oldPaymentAmounts.doordash * ratio),
+            delivereasy: Math.round(pending.oldPaymentAmounts.delivereasy * ratio),
+        };
+        const scaledPayments: ICartPayment[] = pending.oldPayments.map((payment) => ({
+            ...payment,
+            amount: Math.round(payment.amount * ratio),
+        }));
+
+        setPaymentAmounts(scaledPaymentAmounts);
+        setPayments(scaledPayments);
+        pendingPaymentScale.current = null;
+    }, [subTotal, setPaymentAmounts, setPayments]);
 
     if (!register) throw "Register is not valid";
     if (!restaurant) navigate(beginOrderPath);
@@ -679,38 +711,59 @@ export const Checkout = () => {
                 if (restaurantData && restaurantData.getRestaurant) {
                     const latestRestaurant = restaurantData.getRestaurant;
                     const soldOutItems: string[] = [];
+                    const productsToRemove: number[] = [];
+                    const productsToUpdate: { index: number; product: ICartProduct }[] = [];
 
                     // Check products
                     if (products) {
                         for (let index = 0; index < products.length; index++) {
                             const cartProduct = products[index];
-                            console.log(`Checking availability for product: ${JSON.stringify(cartProduct)}`);
+                            let updatedProduct: ICartProduct | null = null;
 
                             const addSoldOutItem = (name: string) => {
                                 if (!soldOutItems.includes(name)) soldOutItems.push(name);
                             };
 
+                            const markProductForRemoval = () => {
+                                console.log("Marking product for removal at index: ", index);
+                                if (!productsToRemove.includes(index)) productsToRemove.push(index);
+                            };
+
+                            const ensureUpdatedProduct = () => {
+                                if (!updatedProduct) {
+                                    updatedProduct = JSON.parse(JSON.stringify(cartProduct)) as ICartProduct;
+                                }
+                                return updatedProduct;
+                            };
+
                             if (!cartProduct.category) {
                                 addSoldOutItem(cartProduct.name);
+                                markProductForRemoval();
                                 continue;
                             }
                             const category = latestRestaurant.categories.items.find((c) => c.id === cartProduct.category!.id);
                             if (!category) {
                                 addSoldOutItem(cartProduct.name);
+                                markProductForRemoval();
                                 continue;
                             }
                             const productItem = category.products.items.find((p) => p.product.id === cartProduct.id);
                             if (!productItem) {
                                 addSoldOutItem(cartProduct.name);
+                                markProductForRemoval();
                                 continue;
                             }
                             const product = productItem.product;
                             const productAvailableQuantity = product.soldOut ? 0 : product.totalQuantityAvailable;
                             if (product.soldOut || (productAvailableQuantity !== null && productAvailableQuantity < cartProduct.quantity)) {
-                                console.log(
-                                    `Product ${cartProduct.name} is sold out or has insufficient quantity. Available: ${productAvailableQuantity}, Requested: ${cartProduct.quantity}`,
-                                );
                                 addSoldOutItem(product.name);
+                                if (productAvailableQuantity !== null && productAvailableQuantity > 0) {
+                                    const productCopy = ensureUpdatedProduct();
+                                    productCopy.quantity = productAvailableQuantity;
+                                } else {
+                                    markProductForRemoval();
+                                    continue;
+                                }
                             }
 
                             // Check modifiers
@@ -719,6 +772,7 @@ export const Checkout = () => {
                                     const modifierGroupItem = product.modifierGroups.items.find((mgItem) => mgItem.modifierGroup.id === mg.id);
                                     if (!modifierGroupItem) {
                                         addSoldOutItem(m.name);
+                                        markProductForRemoval();
                                         continue;
                                     }
                                     const modifierItem = modifierGroupItem.modifierGroup.modifiers.items.find(
@@ -726,14 +780,30 @@ export const Checkout = () => {
                                     );
                                     if (!modifierItem) {
                                         addSoldOutItem(m.name);
+                                        markProductForRemoval();
                                         continue;
                                     }
                                     const modifier = modifierItem.modifier;
                                     const modifierAvailableQuantity = modifier.soldOut ? 0 : modifier.totalQuantityAvailable;
                                     if (modifier.soldOut || (modifierAvailableQuantity !== null && modifierAvailableQuantity < m.quantity)) {
                                         addSoldOutItem(modifier.name);
+                                        const productCopy = ensureUpdatedProduct();
+                                        const updatedGroup = productCopy.modifierGroups.find((g) => g.id === mg.id);
+                                        if (!updatedGroup) {
+                                            markProductForRemoval();
+                                            continue;
+                                        }
+                                        updatedGroup.modifiers = updatedGroup.modifiers.filter((mod) => mod.id !== m.id);
+                                        const remainingQuantity = updatedGroup.modifiers.reduce((sum, mod) => sum + mod.quantity, 0);
+                                        if (updatedGroup.choiceMin && remainingQuantity < updatedGroup.choiceMin) {
+                                            markProductForRemoval();
+                                        }
                                     }
                                 }
+                            }
+
+                            if (updatedProduct && !productsToRemove.includes(index)) {
+                                productsToUpdate.push({ index, product: updatedProduct });
                             }
                         }
                     }
@@ -742,16 +812,34 @@ export const Checkout = () => {
                         setShowPaymentModal(false);
                         setPaymentModalState(EPaymentModalState.None);
                         setPaymentOutcomeOrderNumber(null);
+                        setIsUnavailableAlertVisible(true);
                         showAlert(
                             "Items Unavailable",
                             `The following items are sold out or have insufficient quantity: ${soldOutItems.join(", ")}.`,
                             () => {
                                 setShowPaymentModal(false);
                                 setPaymentModalState(EPaymentModalState.None);
+                                setIsUnavailableAlertVisible(false);
+                                pendingPaymentScale.current = {
+                                    oldSubTotal: subTotal,
+                                    oldPaymentAmounts: paymentAmounts,
+                                    oldPayments: payments,
+                                };
+                                const removeIndexes = productsToRemove.slice().sort((a, b) => b - a);
+                                for (let i = 0; i < productsToUpdate.length; i++) {
+                                    const update = productsToUpdate[i];
+                                    if (removeIndexes.includes(update.index)) continue;
+                                    updateProduct(update.index, update.product);
+                                }
+                                removeIndexes.forEach((removeIndex) => {
+                                    deleteProduct(removeIndex);
+                                });
                                 navigate(checkoutPath);
                             },
-                            () => {},
-                            "Close",
+                            () => {
+                                setIsUnavailableAlertVisible(false);
+                            },
+                            "Edit order",
                             null,
                         );
                         return false;
