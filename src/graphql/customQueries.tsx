@@ -399,6 +399,7 @@ export const GET_RESTAURANT = gql`
                     enableBuzzerNumbersForDineIn
                     enableSkuScanner
                     enableFeedback
+                    checkConditionsBeforeCreateOrder
                     enablePayLater
                     enableCashPayments
                     enableEftposPayments
@@ -995,6 +996,48 @@ export const GET_RESTAURANT = gql`
     }
 `;
 
+export const GET_RESTAURANT_AVAILABILITY = gql`
+    query GetRestaurantAvailability($restaurantId: ID!) {
+        getRestaurant(id: $restaurantId) {
+            id
+            categories(limit: 20) {
+                items {
+                    id
+                    products(limit: 100) {
+                        items {
+                            product {
+                                id
+                                name
+                                soldOut
+                                totalQuantityAvailable
+                                modifierGroups(limit: 20) {
+                                    items {
+                                        modifierGroup {
+                                            id
+                                            name
+                                            choiceMin
+                                            modifiers(limit: 50) {
+                                                items {
+                                                    modifier {
+                                                        id
+                                                        name
+                                                        soldOut
+                                                        totalQuantityAvailable
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+`;
+
 export interface IGET_RESTAURANT {
     id: string;
     name: string;
@@ -1098,6 +1141,7 @@ export interface IGET_RESTAURANT_REGISTER {
     enableBuzzerNumbersForDineIn: boolean;
     enableSkuScanner: boolean;
     enableFeedback: boolean;
+    checkConditionsBeforeCreateOrder?: boolean;
     enablePayLater: boolean;
     enableCashPayments: boolean;
     enableEftposPayments: boolean;
