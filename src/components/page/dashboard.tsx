@@ -338,12 +338,25 @@ export default () => {
                         break;
                 }
 
+                console.log("Refund outcome:", refundOutcome);
+
                 if (refundOutcome?.transactionOutcome === EEftposTransactionOutcome.Success) {
                     //@ts-ignore
                     iframe.contentWindow.postMessage(
                         {
                             action: "eftposRefundResponse",
                             success: true,
+                            refundAmount: amount,
+                            outcomeMessage: refundOutcome.message,
+                        },
+                        iFrameBaseUrl,
+                    );
+                } else if (refundOutcome?.transactionOutcome === EEftposTransactionOutcome.Fail) {
+                    //@ts-ignore
+                    iframe.contentWindow.postMessage(
+                        {
+                            action: "eftposRefundResponse",
+                            success: false,
                             refundAmount: amount,
                             outcomeMessage: refundOutcome.message,
                         },
