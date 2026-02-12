@@ -339,8 +339,12 @@ export default () => {
                 }
 
                 console.log("Refund outcome:", refundOutcome);
+                console.log("Amount", amount);
+
+                const iframe = document.querySelector("iframe");
 
                 if (refundOutcome?.transactionOutcome === EEftposTransactionOutcome.Success) {
+                    //Only if refund was sucessful
                     //@ts-ignore
                     iframe.contentWindow.postMessage(
                         {
@@ -352,6 +356,7 @@ export default () => {
                         iFrameBaseUrl,
                     );
                 } else if (refundOutcome?.transactionOutcome === EEftposTransactionOutcome.Fail) {
+                    //If refund was failed, cancelled or declined it will come here
                     //@ts-ignore
                     iframe.contentWindow.postMessage(
                         {
