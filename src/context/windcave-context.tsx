@@ -168,10 +168,16 @@ type ContextProps = {
         transactionType: string,
         action?: string,
     ) => Promise<IEftposTransactionOutcome>;
+    refundTransaction: (stationId: string, user: string, key: string, amount: number, action?: string) => Promise<IEftposTransactionOutcome>;
 };
 
 const WindcaveContext = createContext<ContextProps>({
     createTransaction: (stationId: string, user: string, key: string, amount: number, transactionType: string, action?: string) => {
+        return new Promise(() => {
+            console.log("");
+        });
+    },
+    refundTransaction: (stationId: string, user: string, key: string, amount: number, action?: string) => {
         return new Promise(() => {
             console.log("");
         });
@@ -658,7 +664,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                 resetVariables();
 
                 const txnRef = await sendTransaction(stationId, user, key, amount, transactionType, action);
-                const outcome: IEftposTransactionOutcome = await pollForOutcome(stationId, user, key, txnRef);
+                const outcome: IEftposTransactionOutcome = await pollForOutcome(stationId, user, key, txnRef, action);
 
                 resolve(outcome);
             } catch (e) {
@@ -672,10 +678,37 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         });
     };
 
+    const refundTransaction = (
+        stationId: string,
+        user: string,
+        key: string,
+        amount: number,
+        action: string = ACTION,
+    ): Promise<IEftposTransactionOutcome> => {
+        return new Promise(async (resolve, reject) => {
+            try {
+                resetVariables();
+
+                const txnRef = await sendTransaction(stationId, user, key, amount, "Refund", action);
+                const outcome: IEftposTransactionOutcome = await pollForOutcome(stationId, user, key, txnRef, action);
+
+                resolve(outcome);
+            } catch (e) {
+                console.log("Error", e);
+                addToLogs(`Error ${e}`);
+
+                reject(e);
+            } finally {
+                await createEftposTransactionLog(restaurant ? restaurant.id : "", "Refund", amount);
+            }
+        });
+    };
+
     return (
         <WindcaveContext.Provider
             value={{
                 createTransaction: createTransaction,
+                refundTransaction: refundTransaction,
             }}
             children={props.children}
         />
