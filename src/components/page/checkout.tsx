@@ -88,6 +88,7 @@ import awsconfig from "../../aws-exports";
 import { OrderScheduleDateTime } from "../../tabin/components/orderScheduleDateTime";
 import { useGetThirdPartyOrderResponseLazyQuery } from "../../hooks/useGetThirdPartyOrderResponseLazyQuery";
 import { useCheckConditionsBeforeCreateOrder } from "../../hooks/useCheckConditionsBeforeCreateOrder";
+import { IGET_RESTAURANT_AVAILABILITY } from "../../graphql/customQueries";
 
 import "./checkout.scss";
 import axios from "axios";
@@ -97,6 +98,12 @@ import { useMX51 } from "../../context/mx51-context";
 import { LoyaltyHeader } from "../shared/loyaltyHeader";
 
 const logger = new Logger("checkout");
+
+type AvailabilityCheckResult = {
+    soldOutItems: string[];
+    productsToRemove: number[];
+    productsToUpdate: { index: number; product: ICartProduct }[];
+};
 
 // Component
 export const Checkout = () => {
@@ -172,7 +179,7 @@ export const Checkout = () => {
             logger.debug("update order mutation result: ", mutationResult);
         },
     });
-    const { checkConditionsBeforeCreateOrder } = useCheckConditionsBeforeCreateOrder();
+    const { getRestaurantDataAvailability } = useCheckConditionsBeforeCreateOrder();
 
     const { getThirdPartyOrderResponse } = useGetThirdPartyOrderResponseLazyQuery();
 
@@ -703,6 +710,114 @@ export const Checkout = () => {
             });
     };
 
+    const checkConditionsBeforeCreateOrder = (
+        latestRestaurant: IGET_RESTAURANT_AVAILABILITY["getRestaurant"] | null | undefined,
+        cartProducts: ICartProduct[] | null,
+    ): AvailabilityCheckResult => {
+        if (!latestRestaurant || !cartProducts) {
+            return { soldOutItems: [], productsToRemove: [], productsToUpdate: [] };
+        }
+
+        const soldOutItems: string[] = [];
+        const productsToRemove: number[] = [];
+        const productsToUpdate: { index: number; product: ICartProduct }[] = [];
+
+        for (let index = 0; index < cartProducts.length; index++) {
+            const cartProduct = cartProducts[index];
+            let updatedProduct: ICartProduct | null = null;
+
+            const addSoldOutItem = (name: string) => {
+                if (!soldOutItems.includes(name)) soldOutItems.push(name);
+            };
+
+            const markProductForRemoval = () => {
+                if (!productsToRemove.includes(index)) productsToRemove.push(index);
+            };
+
+            const ensureUpdatedProduct = () => {
+                if (!updatedProduct) {
+                    updatedProduct = JSON.parse(JSON.stringify(cartProduct)) as ICartProduct;
+                }
+                return updatedProduct;
+            };
+
+            if (!cartProduct.category) {
+                addSoldOutItem(cartProduct.name);
+                markProductForRemoval();
+                continue;
+            }
+
+            const category = latestRestaurant.categories.items.find((c) => c.id === cartProduct.category!.id);
+            if (!category) {
+                addSoldOutItem(cartProduct.name);
+                markProductForRemoval();
+                continue;
+            }
+
+            const productItem = category.products.items.find((p) => p.product.id === cartProduct.id);
+            if (!productItem) {
+                addSoldOutItem(cartProduct.name);
+                markProductForRemoval();
+                continue;
+            }
+
+            const product = productItem.product;
+            const productAvailableQuantity = product.soldOut ? 0 : product.totalQuantityAvailable;
+            if (product.soldOut || (productAvailableQuantity !== null && productAvailableQuantity < cartProduct.quantity)) {
+                addSoldOutItem(product.name);
+                if (productAvailableQuantity !== null && productAvailableQuantity > 0) {
+                    const productCopy = ensureUpdatedProduct();
+                    productCopy.quantity = productAvailableQuantity;
+                } else {
+                    markProductForRemoval();
+                    continue;
+                }
+            }
+
+            for (const mg of cartProduct.modifierGroups) {
+                for (const m of mg.modifiers) {
+                    const modifierGroupItem = product.modifierGroups.items.find((mgItem) => mgItem.modifierGroup.id === mg.id);
+                    if (!modifierGroupItem) {
+                        addSoldOutItem(m.name);
+                        markProductForRemoval();
+                        continue;
+                    }
+
+                    const modifierItem = modifierGroupItem.modifierGroup.modifiers.items.find((modItem) => modItem.modifier.id === m.id);
+                    if (!modifierItem) {
+                        addSoldOutItem(m.name);
+                        markProductForRemoval();
+                        continue;
+                    }
+
+                    const modifier = modifierItem.modifier;
+                    const modifierAvailableQuantity = modifier.soldOut ? 0 : modifier.totalQuantityAvailable;
+                    if (modifier.soldOut || (modifierAvailableQuantity !== null && modifierAvailableQuantity < m.quantity)) {
+                        addSoldOutItem(modifier.name);
+                        const productCopy = ensureUpdatedProduct();
+                        const updatedGroup = productCopy.modifierGroups.find((g) => g.id === mg.id);
+                        if (!updatedGroup) {
+                            markProductForRemoval();
+                            continue;
+                        }
+                        updatedGroup.modifiers = updatedGroup.modifiers.filter((mod) => mod.id !== m.id);
+                        const remainingQuantity = updatedGroup.modifiers.reduce((sum, mod) => sum + mod.quantity, 0);
+                        const choiceMin = modifierGroupItem.modifierGroup.choiceMin;
+                        if (choiceMin && remainingQuantity < choiceMin) {
+                            markProductForRemoval();
+                        }
+                    }
+                }
+            }
+
+            if (updatedProduct && !productsToRemove.includes(index)) {
+                productsToUpdate.push({ index, product: updatedProduct });
+            }
+        }
+
+        return { soldOutItems, productsToRemove, productsToUpdate };
+    };
+
     const onSubmitOrder = async (
         paid: boolean,
         parkOrder: boolean,
@@ -722,7 +837,13 @@ export const Checkout = () => {
             console.log("on submit order called with: ", register, register.checkConditionsBeforeCreateOrder);
             // Check backend quantities before creating order
             if (register.checkConditionsBeforeCreateOrder) {
-                const { soldOutItems, productsToRemove, productsToUpdate } = await checkConditionsBeforeCreateOrder(restaurant.id, products);
+                const { data: restaurantData } = await getRestaurantDataAvailability({
+                    variables: { restaurantId: restaurant.id },
+                });
+                const { soldOutItems, productsToRemove, productsToUpdate } = checkConditionsBeforeCreateOrder(
+                    restaurantData?.getRestaurant,
+                    products,
+                );
 
                 if (soldOutItems.length > 0) {
                     setShowPaymentModal(false);

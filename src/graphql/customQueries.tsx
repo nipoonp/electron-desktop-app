@@ -1038,6 +1038,62 @@ export const GET_RESTAURANT_AVAILABILITY = gql`
     }
 `;
 
+export interface IGET_RESTAURANT_AVAILABILITY {
+    getRestaurant: IGET_RESTAURANT_AVAILABILITY_RESTAURANT;
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_RESTAURANT {
+    id: string;
+    categories: {
+        items: IGET_RESTAURANT_AVAILABILITY_CATEGORY[];
+    };
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_CATEGORY {
+    id: string;
+    products: {
+        items: IGET_RESTAURANT_AVAILABILITY_PRODUCT_LINK[];
+    };
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_PRODUCT_LINK {
+    product: IGET_RESTAURANT_AVAILABILITY_PRODUCT;
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_PRODUCT {
+    id: string;
+    name: string;
+    soldOut: boolean | null;
+    totalQuantityAvailable: number | null;
+    modifierGroups: {
+        items: IGET_RESTAURANT_AVAILABILITY_MODIFIER_GROUP_LINK[];
+    };
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_MODIFIER_GROUP_LINK {
+    modifierGroup: IGET_RESTAURANT_AVAILABILITY_MODIFIER_GROUP;
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_MODIFIER_GROUP {
+    id: string;
+    name: string;
+    choiceMin: number | null;
+    modifiers: {
+        items: IGET_RESTAURANT_AVAILABILITY_MODIFIER_LINK[];
+    };
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_MODIFIER_LINK {
+    modifier: IGET_RESTAURANT_AVAILABILITY_MODIFIER;
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_MODIFIER {
+    id: string;
+    name: string;
+    soldOut: boolean | null;
+    totalQuantityAvailable: number | null;
+}
+
 export interface IGET_RESTAURANT {
     id: string;
     name: string;
