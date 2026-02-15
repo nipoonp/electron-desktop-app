@@ -32,6 +32,7 @@ import {
     customerInformationPath,
     dashboardPath,
     ordersPath,
+    checkoutPath,
 } from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
@@ -86,6 +87,8 @@ import { Storage } from "aws-amplify";
 import awsconfig from "../../aws-exports";
 import { OrderScheduleDateTime } from "../../tabin/components/orderScheduleDateTime";
 import { useGetThirdPartyOrderResponseLazyQuery } from "../../hooks/useGetThirdPartyOrderResponseLazyQuery";
+import { useCheckConditionsBeforeCreateOrder } from "../../hooks/useCheckConditionsBeforeCreateOrder";
+import { IGET_RESTAURANT_AVAILABILITY } from "../../graphql/customQueries";
 
 import "./checkout.scss";
 import axios from "axios";
@@ -103,6 +106,12 @@ import { FaCashRegister } from "react-icons/fa";
 import { FaRectangleList } from "react-icons/fa6";
 
 const logger = new Logger("checkout");
+
+type AvailabilityCheckResult = {
+    soldOutItems: string[];
+    productsToRemove: number[];
+    productsToUpdate: { index: number; product: ICartProduct }[];
+};
 
 // Component
 export const Checkout = () => {
@@ -185,6 +194,7 @@ export const Checkout = () => {
             logger.debug("update order mutation result: ", mutationResult);
         },
     });
+    const { getRestaurantDataAvailability } = useCheckConditionsBeforeCreateOrder();
 
     const { getThirdPartyOrderResponse } = useGetThirdPartyOrderResponseLazyQuery();
 
@@ -213,7 +223,7 @@ export const Checkout = () => {
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
     const [paymentOutcomeOrderNumber, setPaymentOutcomeOrderNumber] = useState<string | null>(null);
     const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(
-        restaurant?.delayBetweenOrdersInSeconds || 10
+        restaurant?.delayBetweenOrdersInSeconds || 10,
     );
     let transactionCompleteRedirectTime = restaurant?.delayBetweenOrdersInSeconds || 10;
 
@@ -222,6 +232,11 @@ export const Checkout = () => {
     const [showUpSellProductModal, setShowUpSellProductModal] = useState(false);
     const [showOrderThresholdMessageModal, setShowOrderThresholdMessageModal] = useState(false);
     const [showDiscountModal, setShowDiscountModal] = useState(false);
+    const pendingPaymentScale = useRef<{
+        oldSubTotal: number;
+        oldPaymentAmounts: ICartPaymentAmounts;
+        oldPayments: ICartPayment[];
+    } | null>(null);
 
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
     const [showModal, setShowModal] = useState<string>("");
@@ -303,6 +318,32 @@ export const Checkout = () => {
         }, 1000);
     }, []);
 
+    useEffect(() => {
+        const pending = pendingPaymentScale.current;
+        if (!pending) return;
+        if (pending.oldSubTotal <= 0 || subTotal === pending.oldSubTotal) return;
+
+        const ratio = Math.min(1, Math.max(0, subTotal / pending.oldSubTotal));
+        const scaledPaymentAmounts: ICartPaymentAmounts = {
+            ...pending.oldPaymentAmounts,
+            cash: Math.round(pending.oldPaymentAmounts.cash * ratio),
+            eftpos: Math.round(pending.oldPaymentAmounts.eftpos * ratio),
+            online: Math.round(pending.oldPaymentAmounts.online * ratio),
+            uberEats: Math.round(pending.oldPaymentAmounts.uberEats * ratio),
+            menulog: Math.round(pending.oldPaymentAmounts.menulog * ratio),
+            doordash: Math.round(pending.oldPaymentAmounts.doordash * ratio),
+            delivereasy: Math.round(pending.oldPaymentAmounts.delivereasy * ratio),
+        };
+        const scaledPayments: ICartPayment[] = pending.oldPayments.map((payment) => ({
+            ...payment,
+            amount: Math.round(payment.amount * ratio),
+        }));
+
+        setPaymentAmounts(scaledPaymentAmounts);
+        setPayments(scaledPayments);
+        pendingPaymentScale.current = null;
+    }, [subTotal, setPaymentAmounts, setPayments]);
+
     if (!register) throw "Register is not valid";
     if (!restaurant) navigate(beginOrderPath);
     if (!restaurant) throw "Restaurant is invalid";
@@ -326,7 +367,7 @@ export const Checkout = () => {
                 () => {},
                 () => {
                     cancelOrder();
-                }
+                },
             );
         } else {
             cancelOrder();
@@ -693,6 +734,114 @@ export const Checkout = () => {
             });
     };
 
+    const checkConditionsBeforeCreateOrder = (
+        latestRestaurant: IGET_RESTAURANT_AVAILABILITY["getRestaurant"] | null | undefined,
+        cartProducts: ICartProduct[] | null,
+    ): AvailabilityCheckResult => {
+        if (!latestRestaurant || !cartProducts) {
+            return { soldOutItems: [], productsToRemove: [], productsToUpdate: [] };
+        }
+
+        const soldOutItems: string[] = [];
+        const productsToRemove: number[] = [];
+        const productsToUpdate: { index: number; product: ICartProduct }[] = [];
+
+        for (let index = 0; index < cartProducts.length; index++) {
+            const cartProduct = cartProducts[index];
+            let updatedProduct: ICartProduct | null = null;
+
+            const addSoldOutItem = (name: string) => {
+                if (!soldOutItems.includes(name)) soldOutItems.push(name);
+            };
+
+            const markProductForRemoval = () => {
+                if (!productsToRemove.includes(index)) productsToRemove.push(index);
+            };
+
+            const ensureUpdatedProduct = () => {
+                if (!updatedProduct) {
+                    updatedProduct = JSON.parse(JSON.stringify(cartProduct)) as ICartProduct;
+                }
+                return updatedProduct;
+            };
+
+            if (!cartProduct.category) {
+                addSoldOutItem(cartProduct.name);
+                markProductForRemoval();
+                continue;
+            }
+
+            const category = latestRestaurant.categories.items.find((c) => c.id === cartProduct.category!.id);
+            if (!category) {
+                addSoldOutItem(cartProduct.name);
+                markProductForRemoval();
+                continue;
+            }
+
+            const productItem = category.products.items.find((p) => p.product.id === cartProduct.id);
+            if (!productItem) {
+                addSoldOutItem(cartProduct.name);
+                markProductForRemoval();
+                continue;
+            }
+
+            const product = productItem.product;
+            const productAvailableQuantity = product.soldOut ? 0 : product.totalQuantityAvailable;
+            if (product.soldOut || (productAvailableQuantity !== null && productAvailableQuantity < cartProduct.quantity)) {
+                addSoldOutItem(product.name);
+                if (productAvailableQuantity !== null && productAvailableQuantity > 0) {
+                    const productCopy = ensureUpdatedProduct();
+                    productCopy.quantity = productAvailableQuantity;
+                } else {
+                    markProductForRemoval();
+                    continue;
+                }
+            }
+
+            for (const mg of cartProduct.modifierGroups) {
+                for (const m of mg.modifiers) {
+                    const modifierGroupItem = product.modifierGroups.items.find((mgItem) => mgItem.modifierGroup.id === mg.id);
+                    if (!modifierGroupItem) {
+                        addSoldOutItem(m.name);
+                        markProductForRemoval();
+                        continue;
+                    }
+
+                    const modifierItem = modifierGroupItem.modifierGroup.modifiers.items.find((modItem) => modItem.modifier.id === m.id);
+                    if (!modifierItem) {
+                        addSoldOutItem(m.name);
+                        markProductForRemoval();
+                        continue;
+                    }
+
+                    const modifier = modifierItem.modifier;
+                    const modifierAvailableQuantity = modifier.soldOut ? 0 : modifier.totalQuantityAvailable;
+                    if (modifier.soldOut || (modifierAvailableQuantity !== null && modifierAvailableQuantity < m.quantity)) {
+                        addSoldOutItem(modifier.name);
+                        const productCopy = ensureUpdatedProduct();
+                        const updatedGroup = productCopy.modifierGroups.find((g) => g.id === mg.id);
+                        if (!updatedGroup) {
+                            markProductForRemoval();
+                            continue;
+                        }
+                        updatedGroup.modifiers = updatedGroup.modifiers.filter((mod) => mod.id !== m.id);
+                        const remainingQuantity = updatedGroup.modifiers.reduce((sum, mod) => sum + mod.quantity, 0);
+                        const choiceMin = modifierGroupItem.modifierGroup.choiceMin;
+                        if (choiceMin && remainingQuantity < choiceMin) {
+                            markProductForRemoval();
+                        }
+                    }
+                }
+            }
+
+            if (updatedProduct && !productsToRemove.includes(index)) {
+                productsToUpdate.push({ index, product: updatedProduct });
+            }
+        }
+
+        return { soldOutItems, productsToRemove, productsToUpdate };
+    };
+
     const onSubmitOrder = async (
         paid: boolean,
         parkOrder: boolean,
@@ -700,7 +849,7 @@ export const Checkout = () => {
         newPayments: ICartPayment[],
         eftposCardType?: EEftposTransactionOutcomeCardType,
         eftposSurcharge?: number,
-        eftposTip?: number
+        eftposTip?: number,
     ) => {
         console.log("xxx...parkedOrderStatus", parkedOrderStatus);
         //If parked order do not generate order number
@@ -711,6 +860,49 @@ export const Checkout = () => {
         setPaymentOutcomeOrderNumber(orderNumber);
 
         try {
+            console.log("on submit order called with: ", register, register.checkConditionsBeforeCreateOrder);
+            // Check backend quantities before creating order
+            if (register.checkConditionsBeforeCreateOrder) {
+                const { data: restaurantData } = await getRestaurantDataAvailability({
+                    variables: { restaurantId: restaurant.id },
+                });
+                const { soldOutItems, productsToRemove, productsToUpdate } = checkConditionsBeforeCreateOrder(
+                    restaurantData?.getRestaurant,
+                    products,
+                );
+
+                if (soldOutItems.length > 0) {
+                    setShowPaymentModal(false);
+                    setPaymentModalState(EPaymentModalState.None);
+                    setPaymentOutcomeOrderNumber(null);
+                    showAlert(
+                        "Items Unavailable",
+                        `The following items are sold out or have insufficient quantity: ${soldOutItems.join(", ")}`,
+                        () => {
+                            pendingPaymentScale.current = {
+                                oldSubTotal: subTotal,
+                                oldPaymentAmounts: paymentAmounts,
+                                oldPayments: payments,
+                            };
+                            const removeIndexes = productsToRemove.slice().sort((a, b) => b - a);
+                            for (let i = 0; i < productsToUpdate.length; i++) {
+                                const update = productsToUpdate[i];
+                                if (removeIndexes.includes(update.index)) continue;
+                                updateProduct(update.index, update.product);
+                            }
+                            removeIndexes.forEach((removeIndex) => {
+                                deleteProduct(removeIndex);
+                            });
+                            navigate(checkoutPath);
+                        },
+                        () => {},
+                        "Edit order",
+                        null,
+                    );
+                    return;
+                }
+            }
+
             let signatureS3Object: IS3Object | null = null;
 
             if (customerInformation && customerInformation.signatureBase64) {
@@ -721,7 +913,7 @@ export const Checkout = () => {
                 const signatureFile = await convertBase64ToFile(
                     customerInformation.signatureBase64,
                     `${filename}.${fileExtension}`,
-                    `image/${fileExtension}`
+                    `image/${fileExtension}`,
                 );
 
                 const uploadedObject: any = await Storage.put(`${filename}.${fileExtension}`, signatureFile, {
@@ -746,7 +938,7 @@ export const Checkout = () => {
                 signatureS3Object,
                 eftposCardType,
                 eftposSurcharge,
-                eftposTip
+                eftposTip,
             );
 
             createdOrder.current = newOrder;
@@ -821,7 +1013,7 @@ export const Checkout = () => {
         signatureS3Object: IS3Object | null,
         eftposCardType?: EEftposTransactionOutcomeCardType,
         eftposSurcharge?: number,
-        eftposTip?: number
+        eftposTip?: number,
     ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
         const now = new Date();
         if (!user) {
@@ -957,7 +1149,7 @@ export const Checkout = () => {
                     placedAtUtc: now.toISOString(),
                     orderUserId: user.id,
                     orderRestaurantId: restaurant.id,
-                })
+                }),
             );
             throw "Error in createOrderMutation input";
         }
@@ -1080,7 +1272,7 @@ export const Checkout = () => {
                     register.windcaveStationUser,
                     register.windcaveStationKey,
                     amount,
-                    "Purchase"
+                    "Purchase",
                 );
             } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
@@ -1090,7 +1282,7 @@ export const Checkout = () => {
                     register.eftposIpAddress,
                     register.eftposPortNumber,
                     restaurant.id,
-                    setEftposMessage
+                    setEftposMessage,
                 );
             } else if (register.eftposProvider == EEftposProvider.TYRO) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
@@ -1101,7 +1293,7 @@ export const Checkout = () => {
                     register.tyroMerchantId,
                     register.tyroTerminalId,
                     setEftposMessage,
-                    setEftposQuestion
+                    setEftposQuestion,
                 );
             } else if (register.eftposProvider == EEftposProvider.MX51) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
@@ -1206,7 +1398,7 @@ export const Checkout = () => {
                         newPayments,
                         outcome.eftposCardType,
                         outcome.eftposSurcharge,
-                        outcome.eftposTip
+                        outcome.eftposTip,
                     );
 
                     setPaymentModalState(EPaymentModalState.EftposResult);
@@ -1947,7 +2139,7 @@ export const Checkout = () => {
             {promotion ? (
                 <div className="text-center mb-1">
                     {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
-                        promotion.discountedAmount
+                        promotion.discountedAmount,
                     )}`}{" "}
                     {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
                 </div>
