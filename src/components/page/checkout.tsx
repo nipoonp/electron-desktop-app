@@ -729,7 +729,7 @@ export const Checkout = () => {
                         navigate(checkoutPath);
                     },
                     null,
-                    "Edit order",
+                    "Review Order",
                 );
                 return;
             }
