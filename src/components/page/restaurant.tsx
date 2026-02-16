@@ -530,7 +530,7 @@ const Restaurant = () => {
 
         const isValid = !isSoldOut && isProductAvailable && isCategoryAvailable && isQuantityAvailable;
 
-        const addToCartQuantity = products && products.reduce((sum, p) => (product.id === p.id ? sum + p.quantity : 0), 0);
+        const addToCartQuantity = products && products.reduce((sum, p) => sum + (product.id === p.id ? p.quantity : 0), 0);
 
         return (
             <>
