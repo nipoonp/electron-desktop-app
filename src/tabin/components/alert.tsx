@@ -3,11 +3,25 @@ import { Button } from "./button";
 import { ModalV2 } from "./modalv2";
 
 type ContextProps = {
-    showAlert: (heading: string, body: string, onFalse: () => void, onTrue: () => void) => void;
+    showAlert: (
+        heading: string,
+        body: string,
+        onFalse: () => void,
+        onTrue: () => void,
+        falseButtonText?: string,
+        trueButtonText?: string | null,
+    ) => void;
 };
 
 const AlertContext = createContext<ContextProps>({
-    showAlert: (heading: string, body: string, onFalse: () => void, onTrue: () => void) => {},
+    showAlert: (
+        heading: string,
+        body: string,
+        onFalse: () => void,
+        onTrue: () => void,
+        falseButtonText?: string,
+        trueButtonText?: string | null,
+    ) => {},
 });
 
 let onTrueFunc;
@@ -17,11 +31,26 @@ const AlertProvider = (props: { children: React.ReactNode }) => {
     const [isAlertVisible, setIsAlertVisible] = useState(false);
     const [heading, setHeading] = useState("");
     const [body, setBody] = useState("");
+    const [falseButtonText, setFalseButtonText] = useState(Alert.defaultProps.falseButtonText);
+    const [trueButtonText, setTrueButtonText] = useState<string | null>(Alert.defaultProps.trueButtonText);
 
-    const showAlert = (heading: string, body: string, onFalse: () => void, onTrue: () => void) => {
+    const showAlert = (
+        heading: string,
+        body: string,
+        onFalse: () => void,
+        onTrue: () => void,
+        falseButtonText?: string,
+        trueButtonText?: string | null,
+    ) => {
         setIsAlertVisible(true);
         setHeading(heading);
         setBody(body);
+        setFalseButtonText(falseButtonText || Alert.defaultProps.falseButtonText);
+        if (trueButtonText === null) {
+            setTrueButtonText(null);
+        } else {
+            setTrueButtonText(trueButtonText || Alert.defaultProps.trueButtonText);
+        }
         onTrueFunc = onTrue;
         onFalseFunc = onFalse;
     };
@@ -41,13 +70,22 @@ const AlertProvider = (props: { children: React.ReactNode }) => {
             value={{
                 showAlert: showAlert,
             }}
-            children={
-                <>
-                    {props.children}
-                    {isAlertVisible && <Alert heading={heading} body={body} onTrue={_onTrue} onFalse={_onFalse} />}
-                </>
-            }
-        />
+                    children={
+                        <>
+                            {props.children}
+                            {isAlertVisible && (
+                                <Alert
+                                    heading={heading}
+                                    body={body}
+                                    onTrue={_onTrue}
+                                    onFalse={_onFalse}
+                                    falseButtonText={falseButtonText}
+                                    trueButtonText={trueButtonText}
+                                />
+                            )}
+                        </>
+                    }
+                />
     );
 };
 
@@ -63,21 +101,23 @@ export const Alert = (props: IProps) => {
                 <div style={{ display: "flex" }}>
                     <Button
                         style={{
-                            width: "50%",
+                            width: props.trueButtonText ? "50%" : "100%",
                             backgroundColor: "#ffffff",
                             color: "#484848",
                             border: "1px solid #e0e0e0",
                             padding: "16px 30px",
                             fontWeight: 300,
                         }}
-                        className="mr-2"
+                        className={props.trueButtonText ? "mr-2" : ""}
                         onClick={props.onFalse}
                     >
                         {props.falseButtonText}
                     </Button>
-                    <Button style={{ width: "50%" }} onClick={props.onTrue}>
-                        {props.trueButtonText}
-                    </Button>
+                    {props.trueButtonText && (
+                        <Button style={{ width: "50%" }} onClick={props.onTrue}>
+                            {props.trueButtonText}
+                        </Button>
+                    )}
                 </div>
             </div>
         </ModalV2>
@@ -88,7 +128,7 @@ export interface IProps {
     heading: string;
     body: string;
     falseButtonText: string;
-    trueButtonText: string;
+    trueButtonText: string | null;
     onFalse: () => void;
     onTrue: () => void;
     children?: React.ReactNode;
