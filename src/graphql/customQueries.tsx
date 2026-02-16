@@ -304,6 +304,7 @@ export const GET_RESTAURANT = gql`
                     enableSkuScanner
                     hideMostPopularCategory
                     enableFeedback
+                    checkConditionsBeforeCreateOrder
                     enablePayLater
                     enableCashPayments
                     enableEftposPayments
@@ -890,6 +891,112 @@ export const GET_RESTAURANT = gql`
     }
 `;
 
+export const GET_RESTAURANT_AVAILABILITY = gql`
+    query GetRestaurantAvailability($restaurantId: ID!) {
+        getRestaurant(id: $restaurantId) {
+            id
+            categories(limit: 20) {
+                items {
+                    id
+                    soldOut
+                    soldOutDate
+                    products(limit: 100) {
+                        items {
+                            product {
+                                id
+                                name
+                                soldOut
+                                soldOutDate
+                                totalQuantityAvailable
+                                modifierGroups(limit: 20) {
+                                    items {
+                                        modifierGroup {
+                                            id
+                                            name
+                                            choiceMin
+                                            modifiers(limit: 50) {
+                                                items {
+                                                    modifier {
+                                                        id
+                                                        name
+                                                        soldOut
+                                                        soldOutDate
+                                                        totalQuantityAvailable
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+`;
+
+export interface IGET_RESTAURANT_AVAILABILITY {
+    getRestaurant: IGET_RESTAURANT_AVAILABILITY_RESTAURANT;
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_RESTAURANT {
+    id: string;
+    categories: {
+        items: IGET_RESTAURANT_AVAILABILITY_CATEGORY[];
+    };
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_CATEGORY {
+    id: string;
+    soldOut: boolean | null;
+    soldOutDate: string | null;
+    products: {
+        items: IGET_RESTAURANT_AVAILABILITY_PRODUCT_LINK[];
+    };
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_PRODUCT_LINK {
+    product: IGET_RESTAURANT_AVAILABILITY_PRODUCT;
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_PRODUCT {
+    id: string;
+    name: string;
+    soldOut: boolean | null;
+    soldOutDate: string | null;
+    totalQuantityAvailable: number | null;
+    modifierGroups: {
+        items: IGET_RESTAURANT_AVAILABILITY_MODIFIER_GROUP_LINK[];
+    };
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_MODIFIER_GROUP_LINK {
+    modifierGroup: IGET_RESTAURANT_AVAILABILITY_MODIFIER_GROUP;
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_MODIFIER_GROUP {
+    id: string;
+    name: string;
+    choiceMin: number | null;
+    modifiers: {
+        items: IGET_RESTAURANT_AVAILABILITY_MODIFIER_LINK[];
+    };
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_MODIFIER_LINK {
+    modifier: IGET_RESTAURANT_AVAILABILITY_MODIFIER;
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_MODIFIER {
+    id: string;
+    name: string;
+    soldOut: boolean | null;
+    soldOutDate: string | null;
+    totalQuantityAvailable: number | null;
+}
+
 export interface IGET_RESTAURANT {
     id: string;
     name: string;
@@ -994,6 +1101,7 @@ export interface IGET_RESTAURANT_REGISTER {
     enableSkuScanner: boolean;
     hideMostPopularCategory: boolean;
     enableFeedback: boolean;
+    checkConditionsBeforeCreateOrder?: boolean;
     enablePayLater: boolean;
     enableCashPayments: boolean;
     enableEftposPayments: boolean;
