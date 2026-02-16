@@ -9,6 +9,7 @@ import {
     convertProductTypesForPrint,
     filterPrintProducts,
     getOrderNumber,
+    isItemSoldOut,
 } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
@@ -21,6 +22,10 @@ import {
     IGET_THIRD_PARTY_ORDER_RESPONSE,
     IGET_RESTAURANT_REGISTER_PRINTER,
     EOrderStatus,
+    IGET_RESTAURANT_AVAILABILITY_RESTAURANT,
+    IGET_RESTAURANT_AVAILABILITY_MODIFIER,
+    IGET_RESTAURANT_AVAILABILITY_PRODUCT,
+    IGET_RESTAURANT_AVAILABILITY_CATEGORY,
 } from "../../graphql/customQueries";
 import {
     restaurantPath,
@@ -111,6 +116,21 @@ type AvailabilityCheckResult = {
     soldOutItems: string[];
     productsToRemove: number[];
     productsToUpdate: { index: number; product: ICartProduct }[];
+};
+
+type AvailabilityModifierGroupIndex = {
+    choiceMin: number | null;
+    modifiersById: Map<string, IGET_RESTAURANT_AVAILABILITY_MODIFIER>;
+};
+
+type AvailabilityProductIndex = {
+    product: IGET_RESTAURANT_AVAILABILITY_PRODUCT;
+    modifierGroupsById: Map<string, AvailabilityModifierGroupIndex>;
+};
+
+type AvailabilityCategoryIndex = {
+    category: IGET_RESTAURANT_AVAILABILITY_CATEGORY;
+    productsById: Map<string, AvailabilityProductIndex>;
 };
 
 // Component
@@ -735,27 +755,61 @@ export const Checkout = () => {
     };
 
     const checkConditionsBeforeCreateOrder = (
-        latestRestaurant: IGET_RESTAURANT_AVAILABILITY["getRestaurant"] | null | undefined,
+        latestRestaurant: IGET_RESTAURANT_AVAILABILITY_RESTAURANT | null | undefined,
         cartProducts: ICartProduct[] | null,
     ): AvailabilityCheckResult => {
         if (!latestRestaurant || !cartProducts) {
             return { soldOutItems: [], productsToRemove: [], productsToUpdate: [] };
         }
 
-        const soldOutItems: string[] = [];
-        const productsToRemove: number[] = [];
+        const soldOutItems = new Set<string>();
+        const productsToRemove = new Set<number>();
         const productsToUpdate: { index: number; product: ICartProduct }[] = [];
+
+        const categoriesById = new Map<string, AvailabilityCategoryIndex>();
+        for (const category of latestRestaurant.categories.items) {
+            const productsById = new Map<string, AvailabilityProductIndex>();
+
+            for (const productItem of category.products.items) {
+                const product = productItem.product;
+                const modifierGroupsById = new Map<string, AvailabilityModifierGroupIndex>();
+
+                for (const modifierGroupItem of product.modifierGroups.items) {
+                    const modifierGroup = modifierGroupItem.modifierGroup;
+                    const modifiersById = new Map(
+                        modifierGroup.modifiers.items.map((modifierItem) => [modifierItem.modifier.id, modifierItem.modifier]),
+                    );
+
+                    modifierGroupsById.set(modifierGroup.id, {
+                        choiceMin: modifierGroup.choiceMin,
+                        modifiersById,
+                    });
+                }
+
+                productsById.set(product.id, {
+                    product,
+                    modifierGroupsById,
+                });
+            }
+
+            categoriesById.set(category.id, {
+                category,
+                productsById,
+            });
+        }
 
         for (let index = 0; index < cartProducts.length; index++) {
             const cartProduct = cartProducts[index];
             let updatedProduct: ICartProduct | null = null;
+            let shouldRemoveProduct = false;
 
             const addSoldOutItem = (name: string) => {
-                if (!soldOutItems.includes(name)) soldOutItems.push(name);
+                soldOutItems.add(name);
             };
 
             const markProductForRemoval = () => {
-                if (!productsToRemove.includes(index)) productsToRemove.push(index);
+                productsToRemove.add(index);
+                shouldRemoveProduct = true;
             };
 
             const ensureUpdatedProduct = () => {
@@ -771,23 +825,31 @@ export const Checkout = () => {
                 continue;
             }
 
-            const category = latestRestaurant.categories.items.find((c) => c.id === cartProduct.category!.id);
-            if (!category) {
+            const categoryIndex = categoriesById.get(cartProduct.category.id);
+            if (!categoryIndex) {
                 addSoldOutItem(cartProduct.name);
                 markProductForRemoval();
                 continue;
             }
 
-            const productItem = category.products.items.find((p) => p.product.id === cartProduct.id);
-            if (!productItem) {
+            const isCategorySoldOut = isItemSoldOut(categoryIndex.category.soldOut ?? undefined, categoryIndex.category.soldOutDate ?? undefined);
+            if (isCategorySoldOut) {
                 addSoldOutItem(cartProduct.name);
                 markProductForRemoval();
                 continue;
             }
 
-            const product = productItem.product;
-            const productAvailableQuantity = product.soldOut ? 0 : product.totalQuantityAvailable;
-            if (product.soldOut || (productAvailableQuantity !== null && productAvailableQuantity < cartProduct.quantity)) {
+            const productIndex = categoryIndex.productsById.get(cartProduct.id);
+            if (!productIndex) {
+                addSoldOutItem(cartProduct.name);
+                markProductForRemoval();
+                continue;
+            }
+
+            const product = productIndex.product;
+            const isProductSoldOut = isItemSoldOut(product.soldOut ?? undefined, product.soldOutDate ?? undefined);
+            const productAvailableQuantity = isProductSoldOut ? 0 : product.totalQuantityAvailable;
+            if (isProductSoldOut || (productAvailableQuantity !== null && productAvailableQuantity < cartProduct.quantity)) {
                 addSoldOutItem(product.name);
                 if (productAvailableQuantity !== null && productAvailableQuantity > 0) {
                     const productCopy = ensureUpdatedProduct();
@@ -799,24 +861,28 @@ export const Checkout = () => {
             }
 
             for (const mg of cartProduct.modifierGroups) {
+                if (shouldRemoveProduct) break;
+
                 for (const m of mg.modifiers) {
-                    const modifierGroupItem = product.modifierGroups.items.find((mgItem) => mgItem.modifierGroup.id === mg.id);
-                    if (!modifierGroupItem) {
+                    if (shouldRemoveProduct) break;
+
+                    const modifierGroupIndex = productIndex.modifierGroupsById.get(mg.id);
+                    if (!modifierGroupIndex) {
                         addSoldOutItem(m.name);
                         markProductForRemoval();
                         continue;
                     }
 
-                    const modifierItem = modifierGroupItem.modifierGroup.modifiers.items.find((modItem) => modItem.modifier.id === m.id);
-                    if (!modifierItem) {
+                    const modifier = modifierGroupIndex.modifiersById.get(m.id);
+                    if (!modifier) {
                         addSoldOutItem(m.name);
                         markProductForRemoval();
                         continue;
                     }
 
-                    const modifier = modifierItem.modifier;
-                    const modifierAvailableQuantity = modifier.soldOut ? 0 : modifier.totalQuantityAvailable;
-                    if (modifier.soldOut || (modifierAvailableQuantity !== null && modifierAvailableQuantity < m.quantity)) {
+                    const isModifierSoldOut = isItemSoldOut(modifier.soldOut ?? undefined, modifier.soldOutDate ?? undefined);
+                    const modifierAvailableQuantity = isModifierSoldOut ? 0 : modifier.totalQuantityAvailable;
+                    if (isModifierSoldOut || (modifierAvailableQuantity !== null && modifierAvailableQuantity < m.quantity)) {
                         addSoldOutItem(modifier.name);
                         const productCopy = ensureUpdatedProduct();
                         const updatedGroup = productCopy.modifierGroups.find((g) => g.id === mg.id);
@@ -826,7 +892,7 @@ export const Checkout = () => {
                         }
                         updatedGroup.modifiers = updatedGroup.modifiers.filter((mod) => mod.id !== m.id);
                         const remainingQuantity = updatedGroup.modifiers.reduce((sum, mod) => sum + mod.quantity, 0);
-                        const choiceMin = modifierGroupItem.modifierGroup.choiceMin;
+                        const choiceMin = modifierGroupIndex.choiceMin;
                         if (choiceMin && remainingQuantity < choiceMin) {
                             markProductForRemoval();
                         }
@@ -834,12 +900,16 @@ export const Checkout = () => {
                 }
             }
 
-            if (updatedProduct && !productsToRemove.includes(index)) {
+            if (updatedProduct && !productsToRemove.has(index)) {
                 productsToUpdate.push({ index, product: updatedProduct });
             }
         }
 
-        return { soldOutItems, productsToRemove, productsToUpdate };
+        return {
+            soldOutItems: Array.from(soldOutItems),
+            productsToRemove: Array.from(productsToRemove),
+            productsToUpdate,
+        };
     };
 
     const onSubmitOrder = async (
@@ -893,7 +963,6 @@ export const Checkout = () => {
                             removeIndexes.forEach((removeIndex) => {
                                 deleteProduct(removeIndex);
                             });
-                            navigate(checkoutPath);
                         },
                         () => {},
                         "Edit order",
