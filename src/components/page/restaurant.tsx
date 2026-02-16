@@ -358,10 +358,12 @@ const Restaurant = () => {
             showAlert(
                 "Incomplete Payments",
                 "There have been partial payments made on this order. Are you sure you would like to cancel this order?",
-                () => {},
+                null,
                 () => {
                     cancelOrder();
-                }
+                },
+                "No",
+                "Yes",
             );
         } else {
             cancelOrder();

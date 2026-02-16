@@ -109,6 +109,7 @@ import { HiCurrencyDollar } from "react-icons/hi2";
 import { RiTimer2Fill } from "react-icons/ri";
 import { FaCashRegister } from "react-icons/fa";
 import { FaRectangleList } from "react-icons/fa6";
+import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 
 const logger = new Logger("checkout");
 
@@ -260,6 +261,7 @@ export const Checkout = () => {
 
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
     const [showModal, setShowModal] = useState<string>("");
+    const [showFullScreenSpinner, setShowFullScreenSpinner] = useState(false);
 
     useEffect(() => {
         const checkDivScrollable = () => {
@@ -384,10 +386,12 @@ export const Checkout = () => {
             showAlert(
                 "Incomplete Payments",
                 "There have been partial payments made on this order. Are you sure you would like to cancel this order?",
-                () => {},
+                null,
                 () => {
                     cancelOrder();
                 },
+                "No",
+                "Yes",
             );
         } else {
             cancelOrder();
@@ -527,6 +531,164 @@ export const Checkout = () => {
         deleteProduct(displayOrder);
     };
 
+    const checkConditionsBeforeCreateOrder = (
+        latestRestaurant: IGET_RESTAURANT_AVAILABILITY_RESTAURANT | null | undefined,
+        cartProducts: ICartProduct[] | null,
+    ): AvailabilityCheckResult => {
+        if (!latestRestaurant || !cartProducts) {
+            return { soldOutItems: [], productsToRemove: [], productsToUpdate: [] };
+        }
+
+        const soldOutItems = new Set<string>();
+        const productsToRemove = new Set<number>();
+        const productsToUpdate: { index: number; product: ICartProduct }[] = [];
+
+        const categoriesById = new Map<string, AvailabilityCategoryIndex>();
+        for (const category of latestRestaurant.categories.items) {
+            const productsById = new Map<string, AvailabilityProductIndex>();
+
+            for (const productItem of category.products.items) {
+                const product = productItem.product;
+                const modifierGroupsById = new Map<string, AvailabilityModifierGroupIndex>();
+
+                for (const modifierGroupItem of product.modifierGroups.items) {
+                    const modifierGroup = modifierGroupItem.modifierGroup;
+                    const modifiersById = new Map(
+                        modifierGroup.modifiers.items.map((modifierItem) => [modifierItem.modifier.id, modifierItem.modifier]),
+                    );
+
+                    modifierGroupsById.set(modifierGroup.id, {
+                        choiceMin: modifierGroup.choiceMin,
+                        modifiersById,
+                    });
+                }
+
+                productsById.set(product.id, {
+                    product,
+                    modifierGroupsById,
+                });
+            }
+
+            categoriesById.set(category.id, {
+                category,
+                productsById,
+            });
+        }
+
+        for (let index = 0; index < cartProducts.length; index++) {
+            const cartProduct = cartProducts[index];
+            let updatedProduct: ICartProduct | null = null;
+            let shouldRemoveProduct = false;
+
+            const addSoldOutItem = (name: string) => {
+                soldOutItems.add(name);
+            };
+
+            const markProductForRemoval = () => {
+                productsToRemove.add(index);
+                shouldRemoveProduct = true;
+            };
+
+            const ensureUpdatedProduct = () => {
+                if (!updatedProduct) {
+                    updatedProduct = JSON.parse(JSON.stringify(cartProduct)) as ICartProduct;
+                }
+                return updatedProduct;
+            };
+
+            if (!cartProduct.category) {
+                addSoldOutItem(cartProduct.name);
+                markProductForRemoval();
+                continue;
+            }
+
+            const categoryIndex = categoriesById.get(cartProduct.category.id);
+            if (!categoryIndex) {
+                addSoldOutItem(cartProduct.name);
+                markProductForRemoval();
+                continue;
+            }
+
+            const isCategorySoldOut = isItemSoldOut(categoryIndex.category.soldOut ?? undefined, categoryIndex.category.soldOutDate ?? undefined);
+            if (isCategorySoldOut) {
+                addSoldOutItem(cartProduct.name);
+                markProductForRemoval();
+                continue;
+            }
+
+            const productIndex = categoryIndex.productsById.get(cartProduct.id);
+            if (!productIndex) {
+                addSoldOutItem(cartProduct.name);
+                markProductForRemoval();
+                continue;
+            }
+
+            const product = productIndex.product;
+            const isProductSoldOut = isItemSoldOut(product.soldOut ?? undefined, product.soldOutDate ?? undefined);
+            const productAvailableQuantity = isProductSoldOut ? 0 : product.totalQuantityAvailable;
+            if (isProductSoldOut || (productAvailableQuantity !== null && productAvailableQuantity < cartProduct.quantity)) {
+                addSoldOutItem(product.name);
+                if (productAvailableQuantity !== null && productAvailableQuantity > 0) {
+                    const productCopy = ensureUpdatedProduct();
+                    productCopy.quantity = productAvailableQuantity;
+                } else {
+                    markProductForRemoval();
+                    continue;
+                }
+            }
+
+            for (const mg of cartProduct.modifierGroups) {
+                if (shouldRemoveProduct) break;
+
+                for (const m of mg.modifiers) {
+                    if (shouldRemoveProduct) break;
+
+                    const modifierGroupIndex = productIndex.modifierGroupsById.get(mg.id);
+                    if (!modifierGroupIndex) {
+                        addSoldOutItem(m.name);
+                        markProductForRemoval();
+                        continue;
+                    }
+
+                    const modifier = modifierGroupIndex.modifiersById.get(m.id);
+                    if (!modifier) {
+                        addSoldOutItem(m.name);
+                        markProductForRemoval();
+                        continue;
+                    }
+
+                    const isModifierSoldOut = isItemSoldOut(modifier.soldOut ?? undefined, modifier.soldOutDate ?? undefined);
+                    const modifierAvailableQuantity = isModifierSoldOut ? 0 : modifier.totalQuantityAvailable;
+                    if (isModifierSoldOut || (modifierAvailableQuantity !== null && modifierAvailableQuantity < m.quantity)) {
+                        addSoldOutItem(modifier.name);
+                        const productCopy = ensureUpdatedProduct();
+                        const updatedGroup = productCopy.modifierGroups.find((g) => g.id === mg.id);
+                        if (!updatedGroup) {
+                            markProductForRemoval();
+                            continue;
+                        }
+                        updatedGroup.modifiers = updatedGroup.modifiers.filter((mod) => mod.id !== m.id);
+                        const remainingQuantity = updatedGroup.modifiers.reduce((sum, mod) => sum + mod.quantity, 0);
+                        const choiceMin = modifierGroupIndex.choiceMin;
+                        if (choiceMin && remainingQuantity < choiceMin) {
+                            markProductForRemoval();
+                        }
+                    }
+                }
+            }
+
+            if (updatedProduct && !productsToRemove.has(index)) {
+                productsToUpdate.push({ index, product: updatedProduct });
+            }
+        }
+
+        return {
+            soldOutItems: Array.from(soldOutItems),
+            productsToRemove: Array.from(productsToRemove),
+            productsToUpdate,
+        };
+    };
+
     const onClickOrderButton = async () => {
         // if (restaurant.orderThresholds?.enable && restaurant.orderThresholdMessage && !isShownOrderThresholdMessageModal) {
         //     setShowOrderThresholdMessageModal(true);
@@ -559,6 +721,49 @@ export const Checkout = () => {
         //         return;
         //     }
         // }
+
+        console.log("on submit order called with: ", register, register.checkConditionsBeforeCreateOrder);
+        // Check backend quantities before creating order
+        if (register.checkConditionsBeforeCreateOrder) {
+            setShowFullScreenSpinner(true);
+
+            const { data: restaurantData } = await getRestaurantDataAvailability({
+                variables: { restaurantId: restaurant.id },
+            });
+            const { soldOutItems, productsToRemove, productsToUpdate } = checkConditionsBeforeCreateOrder(restaurantData?.getRestaurant, products);
+
+            setShowFullScreenSpinner(false);
+
+            if (soldOutItems.length > 0) {
+                setShowPaymentModal(false);
+                setPaymentModalState(EPaymentModalState.None);
+                setPaymentOutcomeOrderNumber(null);
+                showAlert(
+                    "Items Unavailable",
+                    `The following items are sold out or have insufficient quantity: ${soldOutItems.join(", ")}`,
+                    null,
+                    () => {
+                        pendingPaymentScale.current = {
+                            oldSubTotal: subTotal,
+                            oldPaymentAmounts: paymentAmounts,
+                            oldPayments: payments,
+                        };
+                        const removeIndexes = productsToRemove.slice().sort((a, b) => b - a);
+                        for (let i = 0; i < productsToUpdate.length; i++) {
+                            const update = productsToUpdate[i];
+                            if (removeIndexes.includes(update.index)) continue;
+                            updateProduct(update.index, update.product);
+                        }
+                        removeIndexes.forEach((removeIndex) => {
+                            deleteProduct(removeIndex);
+                        });
+                    },
+                    null,
+                    "Edit order",
+                );
+                return;
+            }
+        }
 
         if (!isPOS && register.enableEftposPayments && register.enableCashPayments && paymentMethod === null) {
             navigate(paymentMethodPath);
@@ -754,164 +959,6 @@ export const Checkout = () => {
             });
     };
 
-    const checkConditionsBeforeCreateOrder = (
-        latestRestaurant: IGET_RESTAURANT_AVAILABILITY_RESTAURANT | null | undefined,
-        cartProducts: ICartProduct[] | null,
-    ): AvailabilityCheckResult => {
-        if (!latestRestaurant || !cartProducts) {
-            return { soldOutItems: [], productsToRemove: [], productsToUpdate: [] };
-        }
-
-        const soldOutItems = new Set<string>();
-        const productsToRemove = new Set<number>();
-        const productsToUpdate: { index: number; product: ICartProduct }[] = [];
-
-        const categoriesById = new Map<string, AvailabilityCategoryIndex>();
-        for (const category of latestRestaurant.categories.items) {
-            const productsById = new Map<string, AvailabilityProductIndex>();
-
-            for (const productItem of category.products.items) {
-                const product = productItem.product;
-                const modifierGroupsById = new Map<string, AvailabilityModifierGroupIndex>();
-
-                for (const modifierGroupItem of product.modifierGroups.items) {
-                    const modifierGroup = modifierGroupItem.modifierGroup;
-                    const modifiersById = new Map(
-                        modifierGroup.modifiers.items.map((modifierItem) => [modifierItem.modifier.id, modifierItem.modifier]),
-                    );
-
-                    modifierGroupsById.set(modifierGroup.id, {
-                        choiceMin: modifierGroup.choiceMin,
-                        modifiersById,
-                    });
-                }
-
-                productsById.set(product.id, {
-                    product,
-                    modifierGroupsById,
-                });
-            }
-
-            categoriesById.set(category.id, {
-                category,
-                productsById,
-            });
-        }
-
-        for (let index = 0; index < cartProducts.length; index++) {
-            const cartProduct = cartProducts[index];
-            let updatedProduct: ICartProduct | null = null;
-            let shouldRemoveProduct = false;
-
-            const addSoldOutItem = (name: string) => {
-                soldOutItems.add(name);
-            };
-
-            const markProductForRemoval = () => {
-                productsToRemove.add(index);
-                shouldRemoveProduct = true;
-            };
-
-            const ensureUpdatedProduct = () => {
-                if (!updatedProduct) {
-                    updatedProduct = JSON.parse(JSON.stringify(cartProduct)) as ICartProduct;
-                }
-                return updatedProduct;
-            };
-
-            if (!cartProduct.category) {
-                addSoldOutItem(cartProduct.name);
-                markProductForRemoval();
-                continue;
-            }
-
-            const categoryIndex = categoriesById.get(cartProduct.category.id);
-            if (!categoryIndex) {
-                addSoldOutItem(cartProduct.name);
-                markProductForRemoval();
-                continue;
-            }
-
-            const isCategorySoldOut = isItemSoldOut(categoryIndex.category.soldOut ?? undefined, categoryIndex.category.soldOutDate ?? undefined);
-            if (isCategorySoldOut) {
-                addSoldOutItem(cartProduct.name);
-                markProductForRemoval();
-                continue;
-            }
-
-            const productIndex = categoryIndex.productsById.get(cartProduct.id);
-            if (!productIndex) {
-                addSoldOutItem(cartProduct.name);
-                markProductForRemoval();
-                continue;
-            }
-
-            const product = productIndex.product;
-            const isProductSoldOut = isItemSoldOut(product.soldOut ?? undefined, product.soldOutDate ?? undefined);
-            const productAvailableQuantity = isProductSoldOut ? 0 : product.totalQuantityAvailable;
-            if (isProductSoldOut || (productAvailableQuantity !== null && productAvailableQuantity < cartProduct.quantity)) {
-                addSoldOutItem(product.name);
-                if (productAvailableQuantity !== null && productAvailableQuantity > 0) {
-                    const productCopy = ensureUpdatedProduct();
-                    productCopy.quantity = productAvailableQuantity;
-                } else {
-                    markProductForRemoval();
-                    continue;
-                }
-            }
-
-            for (const mg of cartProduct.modifierGroups) {
-                if (shouldRemoveProduct) break;
-
-                for (const m of mg.modifiers) {
-                    if (shouldRemoveProduct) break;
-
-                    const modifierGroupIndex = productIndex.modifierGroupsById.get(mg.id);
-                    if (!modifierGroupIndex) {
-                        addSoldOutItem(m.name);
-                        markProductForRemoval();
-                        continue;
-                    }
-
-                    const modifier = modifierGroupIndex.modifiersById.get(m.id);
-                    if (!modifier) {
-                        addSoldOutItem(m.name);
-                        markProductForRemoval();
-                        continue;
-                    }
-
-                    const isModifierSoldOut = isItemSoldOut(modifier.soldOut ?? undefined, modifier.soldOutDate ?? undefined);
-                    const modifierAvailableQuantity = isModifierSoldOut ? 0 : modifier.totalQuantityAvailable;
-                    if (isModifierSoldOut || (modifierAvailableQuantity !== null && modifierAvailableQuantity < m.quantity)) {
-                        addSoldOutItem(modifier.name);
-                        const productCopy = ensureUpdatedProduct();
-                        const updatedGroup = productCopy.modifierGroups.find((g) => g.id === mg.id);
-                        if (!updatedGroup) {
-                            markProductForRemoval();
-                            continue;
-                        }
-                        updatedGroup.modifiers = updatedGroup.modifiers.filter((mod) => mod.id !== m.id);
-                        const remainingQuantity = updatedGroup.modifiers.reduce((sum, mod) => sum + mod.quantity, 0);
-                        const choiceMin = modifierGroupIndex.choiceMin;
-                        if (choiceMin && remainingQuantity < choiceMin) {
-                            markProductForRemoval();
-                        }
-                    }
-                }
-            }
-
-            if (updatedProduct && !productsToRemove.has(index)) {
-                productsToUpdate.push({ index, product: updatedProduct });
-            }
-        }
-
-        return {
-            soldOutItems: Array.from(soldOutItems),
-            productsToRemove: Array.from(productsToRemove),
-            productsToUpdate,
-        };
-    };
-
     const onSubmitOrder = async (
         paid: boolean,
         parkOrder: boolean,
@@ -930,48 +977,6 @@ export const Checkout = () => {
         setPaymentOutcomeOrderNumber(orderNumber);
 
         try {
-            console.log("on submit order called with: ", register, register.checkConditionsBeforeCreateOrder);
-            // Check backend quantities before creating order
-            if (register.checkConditionsBeforeCreateOrder) {
-                const { data: restaurantData } = await getRestaurantDataAvailability({
-                    variables: { restaurantId: restaurant.id },
-                });
-                const { soldOutItems, productsToRemove, productsToUpdate } = checkConditionsBeforeCreateOrder(
-                    restaurantData?.getRestaurant,
-                    products,
-                );
-
-                if (soldOutItems.length > 0) {
-                    setShowPaymentModal(false);
-                    setPaymentModalState(EPaymentModalState.None);
-                    setPaymentOutcomeOrderNumber(null);
-                    showAlert(
-                        "Items Unavailable",
-                        `The following items are sold out or have insufficient quantity: ${soldOutItems.join(", ")}`,
-                        () => {
-                            pendingPaymentScale.current = {
-                                oldSubTotal: subTotal,
-                                oldPaymentAmounts: paymentAmounts,
-                                oldPayments: payments,
-                            };
-                            const removeIndexes = productsToRemove.slice().sort((a, b) => b - a);
-                            for (let i = 0; i < productsToUpdate.length; i++) {
-                                const update = productsToUpdate[i];
-                                if (removeIndexes.includes(update.index)) continue;
-                                updateProduct(update.index, update.product);
-                            }
-                            removeIndexes.forEach((removeIndex) => {
-                                deleteProduct(removeIndex);
-                            });
-                        },
-                        () => {},
-                        "Edit order",
-                        null,
-                    );
-                    return;
-                }
-            }
-
             let signatureS3Object: IS3Object | null = null;
 
             if (customerInformation && customerInformation.signatureBase64) {
@@ -1955,7 +1960,7 @@ export const Checkout = () => {
 
     const modalsAndSpinners = (
         <>
-            {/* <FullScreenSpinner show={loading} text={loadingMessage} /> */}
+            {showFullScreenSpinner && <FullScreenSpinner show={true} text="Processing your order..." />}
 
             {upSellCategoryModal()}
             {upSellProductModal()}
