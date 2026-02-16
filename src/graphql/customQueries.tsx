@@ -1003,12 +1003,15 @@ export const GET_RESTAURANT_AVAILABILITY = gql`
             categories(limit: 20) {
                 items {
                     id
+                    soldOut
+                    soldOutDate
                     products(limit: 100) {
                         items {
                             product {
                                 id
                                 name
                                 soldOut
+                                soldOutDate
                                 totalQuantityAvailable
                                 modifierGroups(limit: 20) {
                                     items {
@@ -1022,6 +1025,7 @@ export const GET_RESTAURANT_AVAILABILITY = gql`
                                                         id
                                                         name
                                                         soldOut
+                                                        soldOutDate
                                                         totalQuantityAvailable
                                                     }
                                                 }
@@ -1051,6 +1055,8 @@ export interface IGET_RESTAURANT_AVAILABILITY_RESTAURANT {
 
 export interface IGET_RESTAURANT_AVAILABILITY_CATEGORY {
     id: string;
+    soldOut: boolean | null;
+    soldOutDate: string | null;
     products: {
         items: IGET_RESTAURANT_AVAILABILITY_PRODUCT_LINK[];
     };
@@ -1064,6 +1070,7 @@ export interface IGET_RESTAURANT_AVAILABILITY_PRODUCT {
     id: string;
     name: string;
     soldOut: boolean | null;
+    soldOutDate: string | null;
     totalQuantityAvailable: number | null;
     modifierGroups: {
         items: IGET_RESTAURANT_AVAILABILITY_MODIFIER_GROUP_LINK[];
@@ -1091,6 +1098,7 @@ export interface IGET_RESTAURANT_AVAILABILITY_MODIFIER {
     id: string;
     name: string;
     soldOut: boolean | null;
+    soldOutDate: string | null;
     totalQuantityAvailable: number | null;
 }
 
