@@ -95,7 +95,7 @@ export const Alert = (props: IProps) => {
             <div className={`alert ${props.className}`} style={props.style}>
                 <div className="mb-3">
                     <div className="h3 mb-2">{props.heading}</div>
-                    <div style={{ lineHeight: 1.4 }}>{props.body}</div>
+                    <div style={{ lineHeight: 1.4, whiteSpace: "pre-line" }}>{props.body}</div>
                 </div>
 
                 <div style={{ display: "flex" }}>

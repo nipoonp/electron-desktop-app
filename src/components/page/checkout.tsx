@@ -91,7 +91,7 @@ import { Storage } from "aws-amplify";
 import awsconfig from "../../aws-exports";
 import { OrderScheduleDateTime } from "../../tabin/components/orderScheduleDateTime";
 import { useGetThirdPartyOrderResponseLazyQuery } from "../../hooks/useGetThirdPartyOrderResponseLazyQuery";
-import { useCheckConditionsBeforeCreateOrder } from "../../hooks/useCheckConditionsBeforeCreateOrder";
+import { useGetRestaurantAvailabilityLazyQuery } from "../../hooks/useGetRestaurantAvailabilityLazyQuery";
 
 import "./checkout.scss";
 import axios from "axios";
@@ -110,7 +110,6 @@ type AvailabilityCheckResult = {
 };
 
 type AvailabilityModifierGroupIndex = {
-    choiceMin: number | null;
     modifiersById: Map<string, IGET_RESTAURANT_AVAILABILITY_MODIFIER>;
 };
 
@@ -198,7 +197,7 @@ export const Checkout = () => {
             logger.debug("update order mutation result: ", mutationResult);
         },
     });
-    const { getRestaurantDataAvailability } = useCheckConditionsBeforeCreateOrder();
+    const { getRestaurantDataAvailability } = useGetRestaurantAvailabilityLazyQuery();
 
     const { getThirdPartyOrderResponse } = useGetThirdPartyOrderResponseLazyQuery();
 
@@ -539,7 +538,6 @@ export const Checkout = () => {
                     );
 
                     modifierGroupsById.set(modifierGroup.id, {
-                        choiceMin: modifierGroup.choiceMin,
                         modifiersById,
                     });
                 }
@@ -559,15 +557,14 @@ export const Checkout = () => {
         for (let index = 0; index < cartProducts.length; index++) {
             const cartProduct = cartProducts[index];
             let updatedProduct: ICartProduct | null = null;
-            let shouldRemoveProduct = false;
 
             const addSoldOutItem = (name: string) => {
                 soldOutItems.add(name);
             };
 
-            const markProductForRemoval = () => {
+            const markProductForRemoval = (name: string) => {
+                addSoldOutItem(name);
                 productsToRemove.add(index);
-                shouldRemoveProduct = true;
             };
 
             const ensureUpdatedProduct = () => {
@@ -577,30 +574,31 @@ export const Checkout = () => {
                 return updatedProduct;
             };
 
+            const removeModifierGroupFromProduct = (modifierGroupId: string) => {
+                const productCopy = ensureUpdatedProduct();
+                productCopy.modifierGroups = productCopy.modifierGroups.filter((group) => group.id !== modifierGroupId);
+            };
+
             if (!cartProduct.category) {
-                addSoldOutItem(cartProduct.name);
-                markProductForRemoval();
+                markProductForRemoval(cartProduct.name);
                 continue;
             }
 
             const categoryIndex = categoriesById.get(cartProduct.category.id);
             if (!categoryIndex) {
-                addSoldOutItem(cartProduct.name);
-                markProductForRemoval();
+                markProductForRemoval(cartProduct.name);
                 continue;
             }
 
             const isCategorySoldOut = isItemSoldOut(categoryIndex.category.soldOut ?? undefined, categoryIndex.category.soldOutDate ?? undefined);
             if (isCategorySoldOut) {
-                addSoldOutItem(cartProduct.name);
-                markProductForRemoval();
+                markProductForRemoval(cartProduct.name);
                 continue;
             }
 
             const productIndex = categoryIndex.productsById.get(cartProduct.id);
             if (!productIndex) {
-                addSoldOutItem(cartProduct.name);
-                markProductForRemoval();
+                markProductForRemoval(cartProduct.name);
                 continue;
             }
 
@@ -613,28 +611,24 @@ export const Checkout = () => {
                     const productCopy = ensureUpdatedProduct();
                     productCopy.quantity = productAvailableQuantity;
                 } else {
-                    markProductForRemoval();
+                    productsToRemove.add(index);
                     continue;
                 }
             }
 
             for (const mg of cartProduct.modifierGroups) {
-                if (shouldRemoveProduct) break;
+                const modifierGroupIndex = productIndex.modifierGroupsById.get(mg.id);
+                if (!modifierGroupIndex) {
+                    removeModifierGroupFromProduct(mg.id);
+                    continue;
+                }
 
+                let shouldRemoveModifierGroup = false;
                 for (const m of mg.modifiers) {
-                    if (shouldRemoveProduct) break;
-
-                    const modifierGroupIndex = productIndex.modifierGroupsById.get(mg.id);
-                    if (!modifierGroupIndex) {
-                        addSoldOutItem(m.name);
-                        markProductForRemoval();
-                        continue;
-                    }
-
                     const modifier = modifierGroupIndex.modifiersById.get(m.id);
                     if (!modifier) {
                         addSoldOutItem(m.name);
-                        markProductForRemoval();
+                        shouldRemoveModifierGroup = true;
                         continue;
                     }
 
@@ -642,19 +636,12 @@ export const Checkout = () => {
                     const modifierAvailableQuantity = isModifierSoldOut ? 0 : modifier.totalQuantityAvailable;
                     if (isModifierSoldOut || (modifierAvailableQuantity !== null && modifierAvailableQuantity < m.quantity)) {
                         addSoldOutItem(modifier.name);
-                        const productCopy = ensureUpdatedProduct();
-                        const updatedGroup = productCopy.modifierGroups.find((g) => g.id === mg.id);
-                        if (!updatedGroup) {
-                            markProductForRemoval();
-                            continue;
-                        }
-                        updatedGroup.modifiers = updatedGroup.modifiers.filter((mod) => mod.id !== m.id);
-                        const remainingQuantity = updatedGroup.modifiers.reduce((sum, mod) => sum + mod.quantity, 0);
-                        const choiceMin = modifierGroupIndex.choiceMin;
-                        if (choiceMin && remainingQuantity < choiceMin) {
-                            markProductForRemoval();
-                        }
+                        shouldRemoveModifierGroup = true;
                     }
+                }
+
+                if (shouldRemoveModifierGroup) {
+                    removeModifierGroupFromProduct(mg.id);
                 }
             }
 
@@ -710,6 +697,7 @@ export const Checkout = () => {
 
             const { data: restaurantData } = await getRestaurantDataAvailability({
                 variables: { restaurantId: restaurant.id },
+                fetchPolicy: "no-cache", //This is to stop the GetRestaurant API get double called. I think its somehting to do with useGetRestaurantQuery "cache-first" and "netowrk-first" fetchPolicy.
             });
             const { soldOutItems, productsToRemove, productsToUpdate } = checkConditionsBeforeCreateOrder(restaurantData?.getRestaurant, products);
 
@@ -721,7 +709,7 @@ export const Checkout = () => {
                 setPaymentOutcomeOrderNumber(null);
                 showAlert(
                     "Items Unavailable",
-                    `The following items are sold out or have insufficient quantity: ${soldOutItems.join(", ")}`,
+                    `The following items are no longer available:\n${soldOutItems.join("\n")}`,
                     null,
                     () => {
                         pendingPaymentScale.current = {
