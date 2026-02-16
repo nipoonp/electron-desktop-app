@@ -747,7 +747,7 @@ export const Checkout = () => {
                         });
                     },
                     null,
-                    "Review order",
+                    "Review Order",
                 );
                 return;
             }
