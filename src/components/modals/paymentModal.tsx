@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { FiArrowDown, FiX } from "react-icons/fi";
 import { useCart } from "../../context/cart-context";
-import { useMutation, useQuery } from "@apollo/client";
+import { useMutation } from "@apollo/client";
 import { useRegister } from "../../context/register-context";
 import { useRestaurant } from "../../context/restaurant-context";
 import {
@@ -23,7 +23,7 @@ import { Link } from "../../tabin/components/link";
 import { Modal } from "../../tabin/components/modal";
 import { convertCentsToDollars, convertDollarsToCentsReturnInt } from "../../util/util";
 import { CREATE_FEEDBACK, UPDATE_FEEDBACK } from "../../graphql/customMutations";
-import { useListFeedbackLazyQuery } from "../../hooks/useGetFeeddbackByRestaurant";
+import { useGetFeedbackByRestaurant } from "../../hooks/useGetFeedbackByRestaurant";
 
 import "./paymentModal.scss";
 import { EPromotionType, IGET_FEEDBACK_BY_RESTAURANT } from "../../graphql/customQueries";
@@ -464,7 +464,7 @@ const SplitPaymentByItems = (props: SplitPaymentByItemsProps) => {
             const paidCount = paidItemCounts[key] ?? 0;
             return Math.max(product.quantity - paidCount, 0);
         },
-        [paidItemCounts, products]
+        [paidItemCounts, products],
     );
 
     const calculateSelectionTotal = useCallback(
@@ -490,7 +490,7 @@ const SplitPaymentByItems = (props: SplitPaymentByItemsProps) => {
                 return total + itemTotal;
             }, 0);
         },
-        [paidItemCounts, products]
+        [paidItemCounts, products],
     );
 
     const updateSelection = (index: number, nextCount: number) => {
@@ -521,7 +521,7 @@ const SplitPaymentByItems = (props: SplitPaymentByItemsProps) => {
                 onAmountErrorChange("");
             }
         },
-        [onAmountChange, onAmountErrorChange]
+        [onAmountChange, onAmountErrorChange],
     );
 
     useEffect(() => {
@@ -633,10 +633,10 @@ const SplitPaymentByItems = (props: SplitPaymentByItemsProps) => {
                             const key = getProductKey(index);
                             const remaining = getRemainingQuantity(index);
                             const isFullyPaid = remaining === 0;
-                            const selectedQty = isFullyPaid ? 0 : selectedQuantities[key] ?? 0;
+                            const selectedQty = isFullyPaid ? 0 : (selectedQuantities[key] ?? 0);
                             const unitPrices = getProductUnitPrices(product);
                             const paidCount = paidItemCounts[key] ?? 0;
-                            const nextUnitPrice = isFullyPaid ? 0 : unitPrices[paidCount] ?? 0;
+                            const nextUnitPrice = isFullyPaid ? 0 : (unitPrices[paidCount] ?? 0);
                             const selectionAmount = isFullyPaid
                                 ? 0
                                 : (() => {
@@ -1353,14 +1353,14 @@ const POSPaymentScreen = (props: {
             splitItemsCommandId.current += 1;
             setSplitItemsCommand({ id: splitItemsCommandId.current, ...command });
         },
-        [setSplitItemsCommand]
+        [setSplitItemsCommand],
     );
 
     const handleSplitItemsCommandHandled = useCallback(
         (commandId: number) => {
             setSplitItemsCommand((current) => (current && current.id === commandId ? null : current));
         },
-        [setSplitItemsCommand]
+        [setSplitItemsCommand],
     );
 
     const totalRemaining = Math.max(subTotal - paidSoFar, 0);
@@ -1690,7 +1690,9 @@ const FeedbackSection = (props: { paymentOutcomeApprovedRedirectTimeLeft: number
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
     const { orderDetail } = useCart();
-    const { data: getFeedbackData, error: errorFeedback, loading: loadingFeedback } = useListFeedbackLazyQuery(restaurant ? restaurant?.id : "");
+    const isFeedbackEnabled = Boolean(register?.enableFeedback);
+    const restaurantId = restaurant?.id ?? "";
+    const { data: getFeedbackData, error: errorFeedback, loading: loadingFeedback } = useGetFeedbackByRestaurant(restaurantId, isFeedbackEnabled);
 
     const { incrementRedirectTimer } = props;
     const [newRating, setNewRating] = useState<number>(0);
@@ -1698,7 +1700,7 @@ const FeedbackSection = (props: { paymentOutcomeApprovedRedirectTimeLeft: number
     const [feedbackAdded, setFeedbackAdded] = useState<boolean>(false);
     const [showComment, setShowComment] = useState<boolean>(false);
 
-    const feedbackSubmit = (rating) => {
+    const feedbackSubmit = (rating: number) => {
         setNewRating(rating);
         setShowComment(true);
     };
@@ -1708,10 +1710,15 @@ const FeedbackSection = (props: { paymentOutcomeApprovedRedirectTimeLeft: number
     });
     const [updateFeedback] = useMutation(UPDATE_FEEDBACK);
 
-    if (errorFeedback) return <div>Unable to lead feedback</div>;
+    if (!isFeedbackEnabled) return null;
+    if (errorFeedback) return <div>Unable to load feedback</div>;
     if (loadingFeedback) return <p>Loading feedback</p>;
 
     const onSubmitFeedback = async () => {
+        if (!isFeedbackEnabled || !restaurantId || !newRating) {
+            return;
+        }
+
         try {
             if (getFeedbackData && getFeedbackData.length > 0) {
                 // Update
@@ -1733,7 +1740,7 @@ const FeedbackSection = (props: { paymentOutcomeApprovedRedirectTimeLeft: number
                         id: oldFeedback.id,
                         averageRating: totalRating / totalNumberOfRatings,
                         totalNumberOfRatings: totalNumberOfRatings,
-                        feedbackRestaurantId: restaurant?.id,
+                        feedbackRestaurantId: restaurantId,
                         comments: [...modifiedResponse.comments, newFeedbackComment],
                     },
                 });
@@ -1747,7 +1754,7 @@ const FeedbackSection = (props: { paymentOutcomeApprovedRedirectTimeLeft: number
                 const createFeedbackInput = {
                     averageRating: newRating,
                     totalNumberOfRatings: 1,
-                    feedbackRestaurantId: restaurant?.id,
+                    feedbackRestaurantId: restaurantId,
                     comments: [newFeedbackComment],
                 };
 
@@ -1766,7 +1773,7 @@ const FeedbackSection = (props: { paymentOutcomeApprovedRedirectTimeLeft: number
         }
     };
 
-    const commentChangeEvent = (e) => {
+    const commentChangeEvent = (e: ChangeEvent<HTMLTextAreaElement>) => {
         setComment(e.target.value);
     };
 
@@ -1776,7 +1783,7 @@ const FeedbackSection = (props: { paymentOutcomeApprovedRedirectTimeLeft: number
 
     return (
         <>
-            {register?.enableFeedback ? (
+            {isFeedbackEnabled ? (
                 <>
                     {feedbackAdded ? (
                         <div className="h2 mb-6">Thank you for Feedback</div>
@@ -1834,10 +1841,12 @@ const FeedbackSection = (props: { paymentOutcomeApprovedRedirectTimeLeft: number
                                         value={comment}
                                         placeholder="Enter feedback comment"
                                         onChange={(e) => commentChangeEvent(e)}
-                                        onFocus={(e) => onFocusFeedbackComment()}
+                                        onFocus={onFocusFeedbackComment}
                                     />
                                 ) : null}
-                                <Button onClick={() => onSubmitFeedback()}>Submit Feedback</Button>
+                                <Button onClick={() => onSubmitFeedback()} disabled={newRating === 0}>
+                                    Submit Feedback
+                                </Button>
                             </div>
                         </div>
                     )}
