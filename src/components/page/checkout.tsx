@@ -8,10 +8,12 @@ import {
     convertCentsToDollars,
     convertProductTypesForPrint,
     filterPrintProducts,
+    getCartProductUnitTotalPrice,
     getOrderNumber,
     isItemAvailable,
     isItemSoldOut,
     isProductQuantityAvailable,
+    toLocalISOString,
 } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
@@ -69,7 +71,6 @@ import { useVerifone } from "../../context/verifone-context";
 import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
-import { toLocalISOString } from "../../util/util";
 import { useRestaurant } from "../../context/restaurant-context";
 import { UpSellProductModal } from "../modals/upSellProduct";
 import { Link } from "../../tabin/components/link";
@@ -234,11 +235,6 @@ export const Checkout = () => {
     const [showUpSellCategoryModal, setShowUpSellCategoryModal] = useState(false);
     const [showUpSellProductModal, setShowUpSellProductModal] = useState(false);
     const [showOrderThresholdMessageModal, setShowOrderThresholdMessageModal] = useState(false);
-    const pendingPaymentScale = useRef<{
-        oldSubTotal: number;
-        oldPaymentAmounts: ICartPaymentAmounts;
-        oldPayments: ICartPayment[];
-    } | null>(null);
 
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
     const [showModal, setShowModal] = useState<string>("");
@@ -320,32 +316,6 @@ export const Checkout = () => {
             setIsShownUpSellCrossSellModal(true);
         }, 1000);
     }, []);
-
-    useEffect(() => {
-        const pending = pendingPaymentScale.current;
-        if (!pending) return;
-        if (pending.oldSubTotal <= 0 || subTotal === pending.oldSubTotal) return;
-
-        const ratio = Math.min(1, Math.max(0, subTotal / pending.oldSubTotal));
-        const scaledPaymentAmounts: ICartPaymentAmounts = {
-            ...pending.oldPaymentAmounts,
-            cash: Math.round(pending.oldPaymentAmounts.cash * ratio),
-            eftpos: Math.round(pending.oldPaymentAmounts.eftpos * ratio),
-            online: Math.round(pending.oldPaymentAmounts.online * ratio),
-            uberEats: Math.round(pending.oldPaymentAmounts.uberEats * ratio),
-            menulog: Math.round(pending.oldPaymentAmounts.menulog * ratio),
-            doordash: Math.round(pending.oldPaymentAmounts.doordash * ratio),
-            delivereasy: Math.round(pending.oldPaymentAmounts.delivereasy * ratio),
-        };
-        const scaledPayments: ICartPayment[] = pending.oldPayments.map((payment) => ({
-            ...payment,
-            amount: Math.round(payment.amount * ratio),
-        }));
-
-        setPaymentAmounts(scaledPaymentAmounts);
-        setPayments(scaledPayments);
-        pendingPaymentScale.current = null;
-    }, [subTotal, setPaymentAmounts, setPayments]);
 
     if (!register) throw "Register is not valid";
     if (!restaurant) navigate(beginOrderPath);
@@ -567,7 +537,7 @@ export const Checkout = () => {
                 productsToRemove.add(index);
             };
 
-            const ensureUpdatedProduct = () => {
+            const ensureUpdatedProduct = (): ICartProduct => {
                 if (!updatedProduct) {
                     updatedProduct = JSON.parse(JSON.stringify(cartProduct)) as ICartProduct;
                 }
@@ -645,8 +615,10 @@ export const Checkout = () => {
                 }
             }
 
-            if (updatedProduct && !productsToRemove.has(index)) {
-                productsToUpdate.push({ index, product: updatedProduct });
+            const productToUpdate = !productsToRemove.has(index) ? (updatedProduct as ICartProduct | null) : null;
+            if (productToUpdate) {
+                productToUpdate.totalPrice = getCartProductUnitTotalPrice(productToUpdate);
+                productsToUpdate.push({ index, product: productToUpdate });
             }
         }
 
@@ -712,11 +684,6 @@ export const Checkout = () => {
                     `The following items are no longer available:\n${soldOutItems.join("\n")}`,
                     null,
                     () => {
-                        pendingPaymentScale.current = {
-                            oldSubTotal: subTotal,
-                            oldPaymentAmounts: paymentAmounts,
-                            oldPayments: payments,
-                        };
                         const removeIndexes = productsToRemove.slice().sort((a, b) => b - a);
                         for (let i = 0; i < productsToUpdate.length; i++) {
                             const update = productsToUpdate[i];
