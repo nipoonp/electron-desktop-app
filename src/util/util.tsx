@@ -305,6 +305,35 @@ export const getQuantityRemainingText = (quantityRemaining: number) => {
     }
 };
 
+export const getCartProductUnitTotalPrice = (cartProduct: ICartProduct): number => {
+    let price = cartProduct.price;
+
+    cartProduct.modifierGroups.forEach((modifierGroup) => {
+        modifierGroup.modifiers.forEach((modifier) => {
+            const changedQuantity = modifier.quantity - modifier.preSelectedQuantity;
+            if (changedQuantity > 0) {
+                price += modifier.price * changedQuantity;
+            }
+
+            if (modifier.productModifiers) {
+                modifier.productModifiers.forEach((productModifier) => {
+                    productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
+                        orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
+                            const nestedChangedQuantity =
+                                orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
+                            if (nestedChangedQuantity > 0) {
+                                price += orderedProductModifierModifier.price * nestedChangedQuantity;
+                            }
+                        });
+                    });
+                });
+            }
+        });
+    });
+
+    return price;
+};
+
 const getPromotionDayData = (availability: IGET_RESTAURANT_PROMOTION_AVAILABILITY) => {
     const day: number = getDay(new Date());
 
