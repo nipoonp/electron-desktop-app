@@ -11,6 +11,9 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         refundedAt
         notes
         eftposReceipt
+        orderBatchable
+        orderBatchWindowInSeconds
+        orderMergeId
         total
         surcharge
         orderTypeSurcharge
@@ -218,6 +221,9 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     refundedAt: string | null;
     notes: string | null;
     eftposReceipt: string | null;
+    orderBatchable: number | null;
+    orderBatchWindowInSeconds: number | null;
+    orderMergeId: string | null;
     total: number;
     surcharge: number | null;
     orderTypeSurcharge: number | null;

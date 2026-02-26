@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation } from "@apollo/client";
+import axios from "axios";
 import { UPDATE_ORDER_STATUS } from "../../graphql/customMutations";
 import {
     EOrderStatus,
@@ -37,9 +38,10 @@ import {
 import { convertCentsToDollars } from "../../util/util";
 import { StepperWithQuantityInput } from "../../tabin/components/stepperWithQuantityInput";
 import { BsFillCheckCircleFill, BsFillExclamationCircleFill } from "react-icons/bs";
+import { FaLink } from "react-icons/fa6";
 import { FiMail } from "react-icons/fi";
 import { CachedImage } from "../../tabin/components/cachedImage";
-import { getCloudFrontDomainName } from "../../private/aws-custom";
+import { getCloudFrontDomainName, getCreateMergedOrderEndpoint } from "../../private/aws-custom";
 import { useAuth } from "../../context/auth-context";
 import { Link } from "../../tabin/components/link";
 import { useRestaurant } from "../../context/restaurant-context";
@@ -80,13 +82,14 @@ const Orders = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [date, setDate] = useState(queryDate ? queryDate : format(new Date(), "yyyy-MM-dd"));
     const [preparationTimeInMinutes, setPreparationTimeInMinutes] = useState(
-        restaurant && restaurant.preparationTimeInMinutes ? restaurant.preparationTimeInMinutes.toString() : ""
+        restaurant && restaurant.preparationTimeInMinutes ? restaurant.preparationTimeInMinutes.toString() : "",
     );
 
     const [showSelectReceiptPrinterModal, setShowSelectReceiptPrinterModal] = useState(false);
     const [receiptPrinterModalPrintReorderData, setReceiptPrinterModalPrintReorderData] = useState<IOrderReceipt | null>(null);
+    const [selectedMergeOrderIds, setSelectedMergeOrderIds] = useState<string[]>([]);
 
-    const { data: orders, error, loading } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant ? restaurant.id : "", date);
+    const { data: orders, error, loading, refetch } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant ? restaurant.id : "", date);
 
     const { getRestaurant } = useGetRestaurantLazyQuery();
 
@@ -108,6 +111,10 @@ const Orders = () => {
 
         setPreparationTimeInMinutes(restaurant && restaurant.preparationTimeInMinutes ? restaurant.preparationTimeInMinutes.toString() : "");
     }, [restaurant]);
+
+    useEffect(() => {
+        setSelectedMergeOrderIds([]);
+    }, [date, eOrderStatus, restaurant?.id]);
 
     const [updateOrderStatusMutation] = useMutation(UPDATE_ORDER_STATUS, {
         refetchQueries: refetchOrders,
@@ -549,6 +556,60 @@ const Orders = () => {
         navigate(beginOrderPath);
     };
 
+    const isUnpaidOrder = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+        return (
+            !!order.paymentAmounts &&
+            !order.paymentAmounts.cash &&
+            !order.paymentAmounts.eftpos &&
+            !order.paymentAmounts.online &&
+            !order.paymentAmounts.onAccount &&
+            !order.paymentAmounts.uberEats &&
+            !order.paymentAmounts.menulog &&
+            !order.paymentAmounts.doordash &&
+            !order.paymentAmounts.delivereasy
+        );
+    };
+
+    const onToggleOrderMergeSelection = (orderId: string) => {
+        setSelectedMergeOrderIds((prev) => {
+            if (prev.includes(orderId)) return prev.filter((id) => id !== orderId);
+            if (prev.length >= 2) {
+                toast.error("Please select only two orders to merge.");
+                return prev;
+            }
+            return [...prev, orderId];
+        });
+    };
+
+    const onMergeSelectedOrders = async () => {
+        if (selectedMergeOrderIds.length !== 2) {
+            toast.error("Please select two orders to merge.");
+            return;
+        }
+
+        const [order1Id, order2Id] = selectedMergeOrderIds;
+
+        setShowFullScreenSpinner(true);
+
+        try {
+            const endpoint = getCreateMergedOrderEndpoint();
+
+            await axios({
+                method: "post",
+                url: endpoint,
+                data: { order1Id, order2Id },
+            });
+            await refetch();
+            setSelectedMergeOrderIds([]);
+            toast.success("Orders merged successfully.");
+        } catch (e) {
+            console.error(e);
+            toast.error("Could not merge orders. Please try again.");
+        } finally {
+            setShowFullScreenSpinner(false);
+        }
+    };
+
     const modalsAndSpinners = <>{selectReceiptPrinterModal()}</>;
 
     return (
@@ -577,6 +638,19 @@ const Orders = () => {
                             onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(event.target.value)}
                         />
                     </div>
+                    {selectedMergeOrderIds.length > 0 && (
+                        <div className="merge-orders-bar">
+                            <div>{selectedMergeOrderIds.length === 1 ? "Select one more order" : "Ready to merge"}</div>
+                            <div className="d-flex d-flex-align-center">
+                                <Button className="mr-1" onClick={onMergeSelectedOrders} disabled={selectedMergeOrderIds.length !== 2}>
+                                    Merge Selected
+                                </Button>
+                                <Button onClick={() => setSelectedMergeOrderIds([])} disabled={selectedMergeOrderIds.length === 0}>
+                                    Clear
+                                </Button>
+                            </div>
+                        </div>
+                    )}
 
                     {restaurant && restaurant.preparationTimeInMinutes && (
                         <div className="average-preparation-time-wrapper">
@@ -622,43 +696,38 @@ const Orders = () => {
                 </div>
 
                 <div className="orders-wrapper">
-                    {orders.map(
-                        (order) =>
-                            ((order.status === eOrderStatus &&
-                                !(
-                                    order.paymentAmounts &&
-                                    !order.paymentAmounts.cash &&
-                                    !order.paymentAmounts.eftpos &&
-                                    !order.paymentAmounts.online &&
-                                    !order.paymentAmounts.onAccount &&
-                                    !order.paymentAmounts.uberEats &&
-                                    !order.paymentAmounts.menulog &&
-                                    !order.paymentAmounts.doordash &&
-                                    !order.paymentAmounts.delivereasy
-                                )) ||
-                                (eOrderStatus === EOrderStatus.PARKED &&
-                                    order.paymentAmounts &&
-                                    !order.paymentAmounts.cash &&
-                                    !order.paymentAmounts.eftpos &&
-                                    !order.paymentAmounts.online &&
-                                    !order.paymentAmounts.onAccount &&
-                                    !order.paymentAmounts.uberEats &&
-                                    !order.paymentAmounts.menulog &&
-                                    !order.paymentAmounts.doordash &&
-                                    !order.paymentAmounts.delivereasy)) && (
-                                <Order
-                                    key={order.id}
-                                    searchTerm={searchTerm}
-                                    order={order}
-                                    restaurant={restaurant}
-                                    onOrderComplete={onOrderComplete}
-                                    onOrderRefund={onOrderRefund}
-                                    onOrderCancel={onOrderCancel}
-                                    onOrderReprint={onOrderReprint}
-                                    onOpenParkedOrder={onOpenParkedOrder}
-                                />
-                            )
-                    )}
+                    {(() => {
+                        const mergedChildrenMap: Record<string, IGET_RESTAURANT_ORDER_FRAGMENT[]> = {};
+                        orders.forEach((o) => {
+                            if (o.orderMergeId) {
+                                if (!mergedChildrenMap[o.orderMergeId]) mergedChildrenMap[o.orderMergeId] = [];
+                                mergedChildrenMap[o.orderMergeId].push(o);
+                            }
+                        });
+
+                        const displayOrders = orders.filter((o) => !o.orderMergeId);
+
+                        return displayOrders.map(
+                            (order) =>
+                                ((order.status === eOrderStatus && !isUnpaidOrder(order)) ||
+                                    (eOrderStatus === EOrderStatus.PARKED && isUnpaidOrder(order))) && (
+                                    <Order
+                                        key={order.id}
+                                        searchTerm={searchTerm}
+                                        order={order}
+                                        mergedOrders={mergedChildrenMap[order.id] || []}
+                                        restaurant={restaurant}
+                                        onOrderComplete={onOrderComplete}
+                                        onOrderRefund={onOrderRefund}
+                                        onOrderCancel={onOrderCancel}
+                                        onOrderReprint={onOrderReprint}
+                                        onOpenParkedOrder={onOpenParkedOrder}
+                                        mergeSelected={selectedMergeOrderIds.includes(order.id)}
+                                        onToggleMergeSelection={onToggleOrderMergeSelection}
+                                    />
+                                ),
+                        );
+                    })()}
                 </div>
             </div>
         </PageWrapper>
@@ -670,20 +739,40 @@ export default Orders;
 const Order = (props: {
     searchTerm: string;
     order: IGET_RESTAURANT_ORDER_FRAGMENT;
+    mergedOrders: IGET_RESTAURANT_ORDER_FRAGMENT[];
     restaurant;
     onOrderComplete: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
     onOrderRefund: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
     onOrderCancel: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
     onOrderReprint: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
     onOpenParkedOrder: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
+    mergeSelected: boolean;
+    onToggleMergeSelection: (orderId: string) => void;
+    hideActionButtons?: boolean;
+    forceShowDetails?: boolean;
 }) => {
     const { isAdmin } = useAuth();
-    const { searchTerm, order, restaurant, onOrderComplete, onOrderRefund, onOrderCancel, onOrderReprint, onOpenParkedOrder } = props;
+    const {
+        searchTerm,
+        order,
+        mergedOrders,
+        restaurant,
+        onOrderComplete,
+        onOrderRefund,
+        onOrderCancel,
+        onOrderReprint,
+        onOpenParkedOrder,
+        mergeSelected,
+        onToggleMergeSelection,
+        hideActionButtons,
+        forceShowDetails,
+    } = props;
     const [mailPopup, setMailPopup] = useState(false);
     const [emails, setEmails] = useState("");
     const [viewReceipt, setViewReceipt] = useState(false);
 
     const [showOrderDetail, setShowOrderDetail] = useState(false);
+    const [mergedModalOpen, setMergedModalOpen] = useState(false);
 
     if (searchTerm && searchTerm !== order.number) return <div></div>;
 
@@ -711,10 +800,11 @@ const Order = (props: {
     const onClickShowOrderDetail = () => {
         setShowOrderDetail(!showOrderDetail);
     };
+    const shouldShowOrderDetail = forceShowDetails || showOrderDetail;
 
     return (
         <div className="order-wrapper">
-            <div onClick={onClickShowOrderDetail}>
+            <div onClick={forceShowDetails ? undefined : onClickShowOrderDetail}>
                 {isAdmin && <div className="text-small mb-2">ID: {order.id}</div>}
                 {/* {isAdmin && order.thirdPartyIntegrationResult && (
                 <div className="d-flex d-flex-align-center text-small mb-1">
@@ -741,9 +831,29 @@ const Order = (props: {
                         <div className="order-number-type-number">{order.number}</div>
                         <div className="h4">{order.type}</div>
                     </div>
-                    <div className="link" onClick={() => onOpenMailPopup()}>
-                        <FiMail color="black" />
-                    </div>
+                    {!hideActionButtons && (
+                        <div className="d-flex d-flex-align-center">
+                            <div
+                                className={`order-merge-toggle mr-2 ${mergeSelected ? "active" : ""}`}
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    onToggleMergeSelection(order.id);
+                                }}
+                                title={mergeSelected ? "Remove from merge selection" : "Add to merge selection"}
+                            >
+                                <FaLink />
+                            </div>
+                            <div
+                                className="link"
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    onOpenMailPopup();
+                                }}
+                            >
+                                <FiMail color="black" />
+                            </div>
+                        </div>
+                    )}
                 </div>
                 {order.status === EOrderStatus.PARKED ? (
                     <div className="mb-1">Order parked: {format(new Date(order.placedAt), "dd MMM h:mm:ss aa")}</div>
@@ -760,6 +870,37 @@ const Order = (props: {
                 {order.table && <div className="mb-1 text-bold">Table: {order.table}</div>}
                 {order.covers && <div className="mb-1 text-bold">Covers: {order.covers}</div>}
                 {order.buzzer && <div className="mb-1 text-bold">Buzzer: {order.buzzer}</div>}
+                {order.orderBatchable ? <div className="mb-1 text-bold">Mergeable: {order.orderBatchable}</div> : null}
+                {order.orderBatchWindowInSeconds != null && <div className="mb-1 text-bold">Merge Window (s): {order.orderBatchWindowInSeconds}</div>}
+
+                {mergedOrders && mergedOrders.length > 0 && (
+                    <>
+                        <div className="d-flex j-space-beteen d-flex-align-center">
+                            <div className="text-bold">Merged Orders ({mergedOrders.length})</div>
+                            <Link
+                                onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    setMergedModalOpen(true);
+                                }}
+                            >
+                                View
+                            </Link>
+                        </div>
+                        <MergedOrdersModal
+                            isOpen={mergedModalOpen}
+                            onRequestClose={() => setMergedModalOpen(false)}
+                            orders={mergedOrders}
+                            restaurant={restaurant}
+                            onOrderComplete={onOrderComplete}
+                            onOrderRefund={onOrderRefund}
+                            onOrderCancel={onOrderCancel}
+                            onOrderReprint={onOrderReprint}
+                            onOpenParkedOrder={onOpenParkedOrder}
+                        />
+                        <div className="separator-2"></div>
+                    </>
+                )}
 
                 {order.customerInformation && (
                     <>
@@ -790,7 +931,7 @@ const Order = (props: {
                 )}
             </div>
 
-            {showOrderDetail && (
+            {shouldShowOrderDetail && (
                 <div>
                     {order.products.map((product) => (
                         <div key={product.id}>
@@ -886,28 +1027,30 @@ const Order = (props: {
                     )}
                     <div className="separator-2"></div>
 
-                    <div className="order-action-buttons-container mt-2">
-                        {order.status !== EOrderStatus.PARKED && order.status !== EOrderStatus.COMPLETED && (
-                            <Button onClick={() => onOrderComplete(order)}>Complete</Button>
-                        )}
-                        {order.status !== EOrderStatus.PARKED && order.status !== EOrderStatus.REFUNDED && (
-                            <Button onClick={() => onOrderRefund(order)}>Refund</Button>
-                        )}
-                        {order.status !== EOrderStatus.PARKED && order.status !== EOrderStatus.CANCELLED && (
-                            <Button onClick={() => onOrderCancel(order)}>Cancel</Button>
-                        )}
-                        {(order.status === EOrderStatus.PARKED ||
-                            (order.paymentAmounts &&
-                                !order.paymentAmounts.cash &&
-                                !order.paymentAmounts.eftpos &&
-                                !order.paymentAmounts.online &&
-                                !order.paymentAmounts.onAccount &&
-                                !order.paymentAmounts.uberEats &&
-                                !order.paymentAmounts.menulog &&
-                                !order.paymentAmounts.doordash &&
-                                !order.paymentAmounts.delivereasy)) && <Button onClick={() => onOpenParkedOrder(order)}>Open Sale</Button>}
-                        {<Button onClick={() => onOrderReprint(order)}>Reprint</Button>}
-                    </div>
+                    {!hideActionButtons && (
+                        <div className="order-action-buttons-container mt-2">
+                            {order.status !== EOrderStatus.PARKED && order.status !== EOrderStatus.COMPLETED && (
+                                <Button onClick={() => onOrderComplete(order)}>Complete</Button>
+                            )}
+                            {order.status !== EOrderStatus.PARKED && order.status !== EOrderStatus.REFUNDED && (
+                                <Button onClick={() => onOrderRefund(order)}>Refund</Button>
+                            )}
+                            {order.status !== EOrderStatus.PARKED && order.status !== EOrderStatus.CANCELLED && (
+                                <Button onClick={() => onOrderCancel(order)}>Cancel</Button>
+                            )}
+                            {(order.status === EOrderStatus.PARKED ||
+                                (order.paymentAmounts &&
+                                    !order.paymentAmounts.cash &&
+                                    !order.paymentAmounts.eftpos &&
+                                    !order.paymentAmounts.online &&
+                                    !order.paymentAmounts.onAccount &&
+                                    !order.paymentAmounts.uberEats &&
+                                    !order.paymentAmounts.menulog &&
+                                    !order.paymentAmounts.doordash &&
+                                    !order.paymentAmounts.delivereasy)) && <Button onClick={() => onOpenParkedOrder(order)}>Open Sale</Button>}
+                            {<Button onClick={() => onOrderReprint(order)}>Reprint</Button>}
+                        </div>
+                    )}
 
                     {order.eftposReceipt && (
                         <Link className="text-small mt-2" onClick={onToggleReceipt}>
@@ -1025,5 +1168,88 @@ const OrderItemDetails = (props: {
             {modifiersDisplay}
             {notesDisplay}
         </div>
+    );
+};
+
+const MergedOrdersModal = (props: {
+    isOpen: boolean;
+    onRequestClose: () => void;
+    orders: IGET_RESTAURANT_ORDER_FRAGMENT[];
+    restaurant: any;
+    onOrderComplete: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
+    onOrderRefund: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
+    onOrderCancel: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
+    onOrderReprint: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
+    onOpenParkedOrder: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
+}) => {
+    const { isOpen, onRequestClose, orders, restaurant, onOrderComplete, onOrderRefund, onOrderCancel, onOrderReprint, onOpenParkedOrder } = props;
+    const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+    const toggle = (id: string) => setExpanded((e) => ({ ...e, [id]: !e[id] }));
+
+    const itemsCount = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => order.products?.reduce((acc, p) => acc + (p.quantity || 0), 0) || 0;
+
+    return (
+        <ModalV2 isOpen={isOpen} onRequestClose={onRequestClose}>
+            <div
+                className="m-3"
+                onClick={(event) => {
+                    event.stopPropagation();
+                }}
+            >
+                <div className="h3 mb-2">Merged Orders</div>
+                <div className="text-grey mb-2">{orders.length} orders combined into this merge</div>
+                <div>
+                    {orders.map((o) => (
+                        <div key={o.id} className="mb-2 p-2" style={{ border: "1px solid #e5e5e5", borderRadius: 6 }}>
+                            <div className="d-flex j-space-beteen d-flex-align-center">
+                                {!expanded[o.id] && (
+                                    <div>
+                                        <div className="order-number-type-wrapper mb-1">
+                                            <div className="order-number-type-number">{o.number}</div>
+                                            <div className="h4">{o.type}</div>
+                                        </div>
+                                        <div className="text-grey mt-2">
+                                            {format(new Date(o.placedAt), "dd MMM h:mm aa")} • {itemsCount(o)} items • $
+                                            {convertCentsToDollars(o.subTotal || 0)}
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="merged-order-details-link-wrapper">
+                                    <Link
+                                        onClick={(event) => {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                            toggle(o.id);
+                                        }}
+                                    >
+                                        {expanded[o.id] ? "Hide details" : "View details"}
+                                    </Link>
+                                </div>
+                            </div>
+                            {expanded[o.id] && (
+                                <div className="mt-2">
+                                    <Order
+                                        searchTerm=""
+                                        order={o}
+                                        mergedOrders={[]}
+                                        restaurant={restaurant}
+                                        onOrderComplete={onOrderComplete}
+                                        onOrderRefund={onOrderRefund}
+                                        onOrderCancel={onOrderCancel}
+                                        onOrderReprint={onOrderReprint}
+                                        onOpenParkedOrder={onOpenParkedOrder}
+                                        mergeSelected={false}
+                                        onToggleMergeSelection={() => null}
+                                        hideActionButtons={true}
+                                        forceShowDetails={true}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </ModalV2>
     );
 };
