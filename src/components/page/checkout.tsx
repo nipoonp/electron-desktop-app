@@ -905,8 +905,8 @@ export const Checkout = () => {
 
         register.printers &&
             register.printers.items.forEach(async (printer) => {
-                //Open cash drawer if paid by cash, even if we don't print a receipt
-                if (order.paymentAmounts && order.paymentAmounts.cash > 0) {
+                // Open cash drawer independently from receipt roles unless explicitly disabled.
+                if (order.paymentAmounts && order.paymentAmounts.cash > 0 && printer.openCashDrawerForCashPayment !== false) {
                     await printNoSaleReceipt({ printer: { printerType: printer.type, printerAddress: printer.address } });
                 }
 

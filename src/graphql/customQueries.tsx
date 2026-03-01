@@ -110,6 +110,7 @@ export interface IGET_USER_REGISTER_PRINTER {
     kitchenPrinter: boolean;
     kitchenPrinterSmall: boolean;
     kitchenPrinterLarge: boolean;
+    openCashDrawerForCashPayment: boolean | null;
     hidePreparationTime: boolean;
     hideModifierGroupName: boolean;
     skipReceiptCutCommand: boolean;
@@ -363,6 +364,7 @@ export const GET_RESTAURANT = gql`
                             kitchenPrinter
                             kitchenPrinterSmall
                             kitchenPrinterLarge
+                            openCashDrawerForCashPayment
                             hidePreparationTime
                             hideModifierGroupName
                             skipReceiptCutCommand
@@ -1163,6 +1165,7 @@ export interface IGET_RESTAURANT_REGISTER_PRINTER {
     kitchenPrinter: boolean;
     kitchenPrinterSmall: boolean;
     kitchenPrinterLarge: boolean;
+    openCashDrawerForCashPayment: boolean | null;
     hidePreparationTime: boolean;
     hideModifierGroupName: boolean;
     skipReceiptCutCommand: boolean;
