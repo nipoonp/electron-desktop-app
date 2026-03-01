@@ -6,6 +6,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         id
         country
         placedAt
+        parkedAt
         completedAt
         cancelledAt
         refundedAt
