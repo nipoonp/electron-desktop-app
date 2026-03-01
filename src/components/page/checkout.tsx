@@ -880,7 +880,7 @@ export const Checkout = () => {
 
     const getParkedOrderPrintedProductQuantities = (orderId: string) => {
         try {
-            const parsedProductQuantities = JSON.parse(sessionStorage.getItem(getParkedOrderPrintedProductStorageKey(orderId)) || "{}");
+            const parsedProductQuantities = JSON.parse(localStorage.getItem(getParkedOrderPrintedProductStorageKey(orderId)) || "{}");
             if (!parsedProductQuantities) return {} as Record<string, number>;
 
             return Object.entries(parsedProductQuantities).reduce(
@@ -897,11 +897,7 @@ export const Checkout = () => {
     };
 
     const setParkedOrderPrintedProductQuantities = (orderId: string, printedProductQuantities: Record<string, number>) => {
-        try {
-            sessionStorage.setItem(getParkedOrderPrintedProductStorageKey(orderId), JSON.stringify(printedProductQuantities));
-        } catch (error) {
-            logger.warn("unable to persist parked order printed product quantities", error);
-        }
+        localStorage.setItem(getParkedOrderPrintedProductStorageKey(orderId), JSON.stringify(printedProductQuantities));
     };
 
     const printReceipts = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
@@ -1071,6 +1067,8 @@ export const Checkout = () => {
 
                 await pollForThirdPartyResponse(newOrder.id);
             }
+
+            if (parkedOrderId) localStorage.removeItem(getParkedOrderPrintedProductStorageKey(parkedOrderId));
 
             beginTransactionCompleteTimeout();
         } catch (e) {
