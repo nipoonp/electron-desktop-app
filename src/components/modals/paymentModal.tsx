@@ -1882,7 +1882,7 @@ const AskToPrintParkedOrderReceipts = (props: { onPrinterParkedOrderReceipts: ()
     return (
         <>
             <div className="ask-to-print-parked-order-receipts">
-                <div className="h1 mb-6 text-center would-you-like-parked-order-receipts">Would you like to print order receipts?</div>
+                <div className="h1 mb-6 text-center would-you-like-parked-order-receipts">Would you like to print kitchen receipt?</div>
                 <Button
                     className="print-parked-receipts-button"
                     onClick={() => {

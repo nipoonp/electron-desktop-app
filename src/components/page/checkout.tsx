@@ -195,8 +195,6 @@ export const Checkout = () => {
     const { user } = useUser();
     const { logError } = useErrorLogging();
 
-    console.log("xxx...orderType", orderType);
-
     const transactionEftposReceipts = useRef<string>("");
 
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
@@ -876,7 +874,34 @@ export const Checkout = () => {
         }
     };
 
+    const isKitchenReceiptPrinter = (printer: IGET_RESTAURANT_REGISTER_PRINTER) =>
+        printer.kitchenPrinter === true || printer.kitchenPrinterSmall === true || printer.kitchenPrinterLarge === true;
+
+    const getReceiptPrinter = (printer: IGET_RESTAURANT_REGISTER_PRINTER, receiptType: "customer" | "kitchen"): IGET_RESTAURANT_REGISTER_PRINTER => ({
+        ...printer,
+        customerPrinter: receiptType === "customer",
+        kitchenPrinter: receiptType === "kitchen" ? printer.kitchenPrinter : false,
+        kitchenPrinterSmall: receiptType === "kitchen" ? printer.kitchenPrinterSmall : false,
+        kitchenPrinterLarge: receiptType === "kitchen" ? printer.kitchenPrinterLarge : false,
+    });
+
     const getParkedOrderPrintedProductStorageKey = (orderId: string) => `parkedOrderPrintedProductIds:${orderId}`;
+
+    const getProductQuantities = (products: IGET_RESTAURANT_ORDER_FRAGMENT["products"]) =>
+        products.reduce(
+            (productQuantities, product) => {
+                productQuantities[product.id] = (productQuantities[product.id] || 0) + product.quantity;
+
+                return productQuantities;
+            },
+            {} as Record<string, number>,
+        );
+
+    const mergeProductQuantities = (target: Record<string, number>, source: Record<string, number>, strategy: "add" | "max") => {
+        Object.entries(source).forEach(([productId, quantity]) => {
+            target[productId] = strategy === "add" ? (target[productId] || 0) + quantity : Math.max(target[productId] || 0, quantity);
+        });
+    };
 
     const getParkedOrderPrintedProductQuantities = (orderId: string) => {
         try {
@@ -900,28 +925,65 @@ export const Checkout = () => {
         localStorage.setItem(getParkedOrderPrintedProductStorageKey(orderId), JSON.stringify(printedProductQuantities));
     };
 
-    const printReceipts = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+    const getUnprintedParkedOrderProducts = (order: IGET_RESTAURANT_ORDER_FRAGMENT, printedProductQuantities: Record<string, number>) => {
+        const remainingPrintedProductQuantities = { ...printedProductQuantities };
+
+        return order.products.reduce(
+            (productsToPrint, product) => {
+                const printedQuantity = remainingPrintedProductQuantities[product.id] || 0;
+                const quantityToPrint = Math.max(product.quantity - printedQuantity, 0);
+
+                remainingPrintedProductQuantities[product.id] = Math.max(printedQuantity - product.quantity, 0);
+
+                if (quantityToPrint > 0) productsToPrint.push({ ...product, quantity: quantityToPrint });
+
+                return productsToPrint;
+            },
+            [] as IGET_RESTAURANT_ORDER_FRAGMENT["products"],
+        );
+    };
+
+    const printReceipts = async (
+        order: IGET_RESTAURANT_ORDER_FRAGMENT,
+        options?: {
+            treatAsPreviouslyParked?: boolean;
+        },
+    ) => {
+        if (!register.printers) return;
+
+        const treatAsPreviouslyParked = options?.treatAsPreviouslyParked ?? Boolean(order.parkedAt);
+        const shouldPromptForCustomerReceipt = register.askToPrintCustomerReceipt === true;
         let hasPrintedParkedOrderReceipts = false;
 
-        register.printers &&
-            register.printers.items.forEach(async (printer) => {
-                //Open cash drawer if paid by cash, even if we don't print a receipt
-                if (order.paymentAmounts && order.paymentAmounts.cash > 0) {
-                    await printNoSaleReceipt({ printer: { printerType: printer.type, printerAddress: printer.address } });
-                }
+        for (const printer of register.printers.items) {
+            //Open cash drawer if paid by cash, even if we don't print a receipt
+            if (order.paymentAmounts && order.paymentAmounts.cash > 0) {
+                await printNoSaleReceipt({ printer: { printerType: printer.type, printerAddress: printer.address } });
+            }
 
-                if (printer.customerPrinter === true && register.askToPrintCustomerReceipt === true) return;
-
-                //If an order was parked before and it's a kitchen printer, only print the products that haven't been printed before to avoid duplicate prints for the kitchen.
-                if (order.parkedAt && printer.kitchenPrinter === true) {
-                    if (hasPrintedParkedOrderReceipts) return;
-
+            // If an order was parked before, print only newly added kitchen items, but still allow a full customer copy.
+            if (treatAsPreviouslyParked && isKitchenReceiptPrinter(printer)) {
+                if (!hasPrintedParkedOrderReceipts) {
                     hasPrintedParkedOrderReceipts = true;
                     await onPrintParkedOrderReceipts(order);
-                } else {
-                    await sendReceiptPrint(order, printer);
                 }
-            });
+
+                if (printer.customerPrinter === true && !shouldPromptForCustomerReceipt) {
+                    await sendReceiptPrint(order, getReceiptPrinter(printer, "customer"));
+                }
+
+                continue;
+            }
+
+            if (printer.customerPrinter === true && shouldPromptForCustomerReceipt) {
+                if (!isKitchenReceiptPrinter(printer)) continue;
+
+                await sendReceiptPrint(order, getReceiptPrinter(printer, "kitchen"));
+                continue;
+            }
+
+            await sendReceiptPrint(order, printer);
+        }
     };
 
     const printEftposReceipts = (eftposReceipt: string) => {
@@ -938,7 +1000,7 @@ export const Checkout = () => {
             register.printers.items.forEach((printer) => {
                 if (printer.customerPrinter !== true || register.askToPrintCustomerReceipt !== true) return;
 
-                sendReceiptPrint(order, printer);
+                sendReceiptPrint(order, getReceiptPrinter(printer, "customer"));
             });
     };
 
@@ -946,51 +1008,27 @@ export const Checkout = () => {
         if (!register.printers) return;
 
         const printedProductQuantities = getParkedOrderPrintedProductQuantities(order.id);
-        const remainingPrintedProductQuantities = { ...printedProductQuantities };
-        const unprintedProducts = order.products.reduce(
-            (productsToPrint, product) => {
-                const alreadyPrintedQuantity = remainingPrintedProductQuantities[product.id] || 0;
-                const quantityToPrint = Math.max(product.quantity - alreadyPrintedQuantity, 0);
-
-                remainingPrintedProductQuantities[product.id] = Math.max(alreadyPrintedQuantity - product.quantity, 0);
-
-                if (quantityToPrint > 0) productsToPrint.push({ ...product, quantity: quantityToPrint });
-
-                return productsToPrint;
-            },
-            [] as IGET_RESTAURANT_ORDER_FRAGMENT["products"],
-        );
+        const unprintedProducts = getUnprintedParkedOrderProducts(order, printedProductQuantities);
 
         if (unprintedProducts.length === 0) return;
         const printedProductQuantitiesThisRun: Record<string, number> = {};
 
         for (const printer of register.printers.items) {
-            if (printer.kitchenPrinter !== true) continue;
+            if (!isKitchenReceiptPrinter(printer)) continue;
 
             const printerProducts = filterPrintProducts([...unprintedProducts], printer);
 
             if (printerProducts.length === 0) continue;
 
             try {
-                await sendReceiptPrint({ ...order, products: printerProducts }, printer);
-                const printerPrintedProductQuantities: Record<string, number> = {};
-
-                printerProducts.forEach((product) => {
-                    printerPrintedProductQuantities[product.id] = (printerPrintedProductQuantities[product.id] || 0) + product.quantity;
-                });
-
-                Object.entries(printerPrintedProductQuantities).forEach(([productId, quantity]) => {
-                    printedProductQuantitiesThisRun[productId] = Math.max(printedProductQuantitiesThisRun[productId] || 0, quantity);
-                });
+                await sendReceiptPrint({ ...order, products: printerProducts }, getReceiptPrinter(printer, "kitchen"));
+                mergeProductQuantities(printedProductQuantitiesThisRun, getProductQuantities(printerProducts), "max");
             } catch (error) {
                 logger.error("unable to print parked order receipt", error);
             }
         }
 
-        Object.entries(printedProductQuantitiesThisRun).forEach(([productId, quantity]) => {
-            printedProductQuantities[productId] = (printedProductQuantities[productId] || 0) + quantity;
-        });
-
+        mergeProductQuantities(printedProductQuantities, printedProductQuantitiesThisRun, "add");
         setParkedOrderPrintedProductQuantities(order.id, printedProductQuantities);
     };
 
@@ -1003,11 +1041,12 @@ export const Checkout = () => {
         eftposSurcharge?: number,
         eftposTip?: number,
     ) => {
-        console.log("xxx...parkedOrderStatus", parkedOrderStatus);
+        const wasEditingParkedOrder = Boolean(parkedOrderId);
+        const keepParkedStatus = wasEditingParkedOrder && parkOrder && Boolean(parkedOrderStatus);
         //If parked order do not generate order number
-        let orderNumber =
+        const orderNumber =
             parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
-        let orderStatus = parkedOrderId && parkedOrderStatus ? parkedOrderStatus : EOrderStatus.NEW;
+        const orderStatus = keepParkedStatus ? parkedOrderStatus! : EOrderStatus.NEW;
 
         setPaymentOutcomeOrderNumber(orderNumber);
 
@@ -1054,7 +1093,7 @@ export const Checkout = () => {
             updateOrderDetail(newOrder);
 
             if (register.printers && register.printers.items.length > 0 && !parkOrder) {
-                await printReceipts(newOrder);
+                await printReceipts(newOrder, { treatAsPreviouslyParked: wasEditingParkedOrder });
             }
 
             // If using third party integration. Poll for resposne
@@ -1068,7 +1107,7 @@ export const Checkout = () => {
                 await pollForThirdPartyResponse(newOrder.id);
             }
 
-            if (parkedOrderId) localStorage.removeItem(getParkedOrderPrintedProductStorageKey(parkedOrderId));
+            if (parkedOrderId && !parkOrder) localStorage.removeItem(getParkedOrderPrintedProductStorageKey(parkedOrderId));
 
             beginTransactionCompleteTimeout();
         } catch (e) {
