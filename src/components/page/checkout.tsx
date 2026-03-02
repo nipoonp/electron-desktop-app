@@ -905,10 +905,8 @@ export const Checkout = () => {
 
         register.printers &&
             register.printers.items.forEach(async (printer) => {
-                console.log("xxx...printing receipt for printer: ", printer);
                 //Open cash drawer if paid by cash, even if we don't print a receipt
                 if (order.paymentAmounts && order.paymentAmounts.cash > 0) {
-                    console.log("xxx...printing no sale receipt to open cash drawer");
                     await printNoSaleReceipt({ printer: { printerType: printer.type, printerAddress: printer.address } });
                 }
 
