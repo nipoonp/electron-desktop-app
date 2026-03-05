@@ -360,6 +360,45 @@ const Orders = () => {
 
             if (!restaurant) return;
 
+            const getPrintedProductQuantities = (orderId: string) => {
+                try {
+                    const parsedProductQuantities = JSON.parse(localStorage.getItem(`parkedOrderPrintedProductIds:${orderId}`) || "{}");
+                    if (!parsedProductQuantities) return {} as Record<string, number>;
+
+                    return Object.entries(parsedProductQuantities).reduce(
+                        (printedProductQuantities, [productId, quantity]) => {
+                            if (typeof quantity === "number" && quantity > 0) printedProductQuantities[productId] = quantity;
+
+                            return printedProductQuantities;
+                        },
+                        {} as Record<string, number>,
+                    );
+                } catch {
+                    return {} as Record<string, number>;
+                }
+            };
+
+            const mergedPrintedProductQuantities = getPrintedProductQuantities(pOrder.id);
+            let hasMergedPrintedProducts = false;
+
+            orders
+                .filter((order) => order.orderMergeId === pOrder.id)
+                .forEach((mergedOrder) => {
+                    const printedProductQuantities = getPrintedProductQuantities(mergedOrder.id);
+                    if (Object.keys(printedProductQuantities).length === 0) return;
+
+                    Object.entries(printedProductQuantities).forEach(([productId, quantity]) => {
+                        mergedPrintedProductQuantities[productId] = (mergedPrintedProductQuantities[productId] || 0) + quantity;
+                    });
+
+                    localStorage.removeItem(`parkedOrderPrintedProductIds:${mergedOrder.id}`);
+                    hasMergedPrintedProducts = true;
+                });
+
+            if (hasMergedPrintedProducts) {
+                localStorage.setItem(`parkedOrderPrintedProductIds:${pOrder.id}`, JSON.stringify(mergedPrintedProductQuantities));
+            }
+
             navigate(restaurantPath + "/" + restaurant.id);
 
             clearCart();
