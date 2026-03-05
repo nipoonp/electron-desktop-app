@@ -6,10 +6,10 @@ type ContextProps = {
     showAlert: (
         heading: string,
         body: string,
-        onFalse: () => void,
-        onTrue: () => void,
-        falseButtonText?: string,
-        trueButtonText?: string | null,
+        onFalse: (() => void) | null,
+        onTrue: (() => void) | null,
+        falseButtonText: string | null,
+        trueButtonText: string | null,
     ) => void;
 };
 
@@ -17,39 +17,39 @@ const AlertContext = createContext<ContextProps>({
     showAlert: (
         heading: string,
         body: string,
-        onFalse: () => void,
-        onTrue: () => void,
-        falseButtonText?: string,
-        trueButtonText?: string | null,
+        onFalse: (() => void) | null,
+        onTrue: (() => void) | null,
+        falseButtonText: string | null,
+        trueButtonText: string | null,
     ) => {},
 });
 
-let onTrueFunc;
-let onFalseFunc;
+let onTrueFunc: (() => void) | null = null;
+let onFalseFunc: (() => void) | null = null;
 
 const AlertProvider = (props: { children: React.ReactNode }) => {
     const [isAlertVisible, setIsAlertVisible] = useState(false);
     const [heading, setHeading] = useState("");
     const [body, setBody] = useState("");
-    const [falseButtonText, setFalseButtonText] = useState(Alert.defaultProps.falseButtonText);
-    const [trueButtonText, setTrueButtonText] = useState<string | null>(Alert.defaultProps.trueButtonText);
+    const [falseButtonText, setFalseButtonText] = useState<string | null>(null);
+    const [trueButtonText, setTrueButtonText] = useState<string | null>(null);
 
     const showAlert = (
         heading: string,
         body: string,
-        onFalse: () => void,
-        onTrue: () => void,
-        falseButtonText?: string,
-        trueButtonText?: string | null,
+        onFalse: (() => void) | null,
+        onTrue: (() => void) | null,
+        falseButtonText: string | null,
+        trueButtonText: string | null,
     ) => {
         setIsAlertVisible(true);
         setHeading(heading);
         setBody(body);
-        setFalseButtonText(falseButtonText || Alert.defaultProps.falseButtonText);
+        setFalseButtonText(falseButtonText);
         if (trueButtonText === null) {
             setTrueButtonText(null);
         } else {
-            setTrueButtonText(trueButtonText || Alert.defaultProps.trueButtonText);
+            setTrueButtonText(trueButtonText);
         }
         onTrueFunc = onTrue;
         onFalseFunc = onFalse;
@@ -95,24 +95,26 @@ export const Alert = (props: IProps) => {
             <div className={`alert ${props.className}`} style={props.style}>
                 <div className="mb-3">
                     <div className="h3 mb-2">{props.heading}</div>
-                    <div style={{ lineHeight: 1.4 }}>{props.body}</div>
+                    <div style={{ lineHeight: 1.4, whiteSpace: "pre-line" }}>{props.body}</div>
                 </div>
 
                 <div style={{ display: "flex" }}>
-                    <Button
-                        style={{
-                            width: props.trueButtonText ? "50%" : "100%",
-                            backgroundColor: "#ffffff",
-                            color: "#484848",
-                            border: "1px solid #e0e0e0",
-                            padding: "16px 30px",
-                            fontWeight: 300,
-                        }}
-                        className={props.trueButtonText ? "mr-2" : ""}
-                        onClick={props.onFalse}
-                    >
-                        {props.falseButtonText}
-                    </Button>
+                    {props.falseButtonText && (
+                        <Button
+                            style={{
+                                width: props.trueButtonText ? "50%" : "100%",
+                                backgroundColor: "#ffffff",
+                                color: "#484848",
+                                border: "1px solid #e0e0e0",
+                                padding: "16px 30px",
+                                fontWeight: 300,
+                            }}
+                            className={props.trueButtonText ? "mr-2" : ""}
+                            onClick={props.onFalse}
+                        >
+                            {props.falseButtonText}
+                        </Button>
+                    )}
                     {props.trueButtonText && (
                         <Button style={{ width: "50%" }} onClick={props.onTrue}>
                             {props.trueButtonText}
@@ -127,7 +129,7 @@ export const Alert = (props: IProps) => {
 export interface IProps {
     heading: string;
     body: string;
-    falseButtonText: string;
+    falseButtonText: string | null;
     trueButtonText: string | null;
     onFalse: () => void;
     onTrue: () => void;
@@ -135,11 +137,6 @@ export interface IProps {
     style?: React.CSSProperties;
     className?: string;
 }
-
-Alert.defaultProps = {
-    falseButtonText: "No",
-    trueButtonText: "Yes",
-};
 
 const useAlert = () => {
     const context = useContext(AlertContext);

@@ -8,8 +8,11 @@ import {
     convertCentsToDollars,
     convertProductTypesForPrint,
     filterPrintProducts,
+    getCartProductUnitTotalPrice,
     getOrderNumber,
     isItemSoldOut,
+    isProductQuantityAvailable,
+    toLocalISOString,
 } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
@@ -71,7 +74,6 @@ import { useVerifone } from "../../context/verifone-context";
 import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
-import { toLocalISOString } from "../../util/util";
 import { useRestaurant } from "../../context/restaurant-context";
 import { UpSellProductModal } from "../modals/upSellProduct";
 import { Link } from "../../tabin/components/link";
@@ -93,8 +95,8 @@ import { Storage } from "aws-amplify";
 import awsconfig from "../../aws-exports";
 import { OrderScheduleDateTime } from "../../tabin/components/orderScheduleDateTime";
 import { useGetThirdPartyOrderResponseLazyQuery } from "../../hooks/useGetThirdPartyOrderResponseLazyQuery";
-import { useCheckConditionsBeforeCreateOrder } from "../../hooks/useCheckConditionsBeforeCreateOrder";
 import { IGET_RESTAURANT_AVAILABILITY } from "../../graphql/customQueries";
+import { useGetRestaurantAvailabilityLazyQuery } from "../../hooks/useGetRestaurantAvailabilityLazyQuery";
 
 import "./checkout.scss";
 import axios from "axios";
@@ -110,6 +112,7 @@ import { HiCurrencyDollar } from "react-icons/hi2";
 import { RiTimer2Fill } from "react-icons/ri";
 import { FaCashRegister } from "react-icons/fa";
 import { FaRectangleList } from "react-icons/fa6";
+import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 
 const logger = new Logger("checkout");
 
@@ -120,7 +123,6 @@ type AvailabilityCheckResult = {
 };
 
 type AvailabilityModifierGroupIndex = {
-    choiceMin: number | null;
     modifiersById: Map<string, IGET_RESTAURANT_AVAILABILITY_MODIFIER>;
 };
 
@@ -194,8 +196,6 @@ export const Checkout = () => {
     const { user } = useUser();
     const { logError } = useErrorLogging();
 
-    console.log("xxx...orderType", orderType);
-
     const transactionEftposReceipts = useRef<string>("");
 
     const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
@@ -215,7 +215,7 @@ export const Checkout = () => {
             logger.debug("update order mutation result: ", mutationResult);
         },
     });
-    const { getRestaurantDataAvailability } = useCheckConditionsBeforeCreateOrder();
+    const { getRestaurantDataAvailability } = useGetRestaurantAvailabilityLazyQuery();
 
     const { getThirdPartyOrderResponse } = useGetThirdPartyOrderResponseLazyQuery();
 
@@ -253,14 +253,10 @@ export const Checkout = () => {
     const [showUpSellProductModal, setShowUpSellProductModal] = useState(false);
     const [showOrderThresholdMessageModal, setShowOrderThresholdMessageModal] = useState(false);
     const [showDiscountModal, setShowDiscountModal] = useState(false);
-    const pendingPaymentScale = useRef<{
-        oldSubTotal: number;
-        oldPaymentAmounts: ICartPaymentAmounts;
-        oldPayments: ICartPayment[];
-    } | null>(null);
 
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
     const [showModal, setShowModal] = useState<string>("");
+    const [showFullScreenSpinner, setShowFullScreenSpinner] = useState(false);
 
     useEffect(() => {
         const checkDivScrollable = () => {
@@ -339,32 +335,6 @@ export const Checkout = () => {
         }, 1000);
     }, []);
 
-    useEffect(() => {
-        const pending = pendingPaymentScale.current;
-        if (!pending) return;
-        if (pending.oldSubTotal <= 0 || subTotal === pending.oldSubTotal) return;
-
-        const ratio = Math.min(1, Math.max(0, subTotal / pending.oldSubTotal));
-        const scaledPaymentAmounts: ICartPaymentAmounts = {
-            ...pending.oldPaymentAmounts,
-            cash: Math.round(pending.oldPaymentAmounts.cash * ratio),
-            eftpos: Math.round(pending.oldPaymentAmounts.eftpos * ratio),
-            online: Math.round(pending.oldPaymentAmounts.online * ratio),
-            uberEats: Math.round(pending.oldPaymentAmounts.uberEats * ratio),
-            menulog: Math.round(pending.oldPaymentAmounts.menulog * ratio),
-            doordash: Math.round(pending.oldPaymentAmounts.doordash * ratio),
-            delivereasy: Math.round(pending.oldPaymentAmounts.delivereasy * ratio),
-        };
-        const scaledPayments: ICartPayment[] = pending.oldPayments.map((payment) => ({
-            ...payment,
-            amount: Math.round(payment.amount * ratio),
-        }));
-
-        setPaymentAmounts(scaledPaymentAmounts);
-        setPayments(scaledPayments);
-        pendingPaymentScale.current = null;
-    }, [subTotal, setPaymentAmounts, setPayments]);
-
     if (!register) throw "Register is not valid";
     if (!restaurant) navigate(beginOrderPath);
     if (!restaurant) throw "Restaurant is invalid";
@@ -385,10 +355,12 @@ export const Checkout = () => {
             showAlert(
                 "Incomplete Payments",
                 "There have been partial payments made on this order. Are you sure you would like to cancel this order?",
-                () => {},
+                null,
                 () => {
                     cancelOrder();
                 },
+                "No",
+                "Yes",
             );
         } else {
             cancelOrder();
@@ -528,6 +500,154 @@ export const Checkout = () => {
         deleteProduct(displayOrder);
     };
 
+    const checkConditionsBeforeCreateOrder = (
+        latestRestaurant: IGET_RESTAURANT_AVAILABILITY_RESTAURANT | null | undefined,
+        cartProducts: ICartProduct[] | null,
+    ): AvailabilityCheckResult => {
+        if (!latestRestaurant || !cartProducts) {
+            return { soldOutItems: [], productsToRemove: [], productsToUpdate: [] };
+        }
+
+        const soldOutItems = new Set<string>();
+        const productsToRemove = new Set<number>();
+        const productsToUpdate: { index: number; product: ICartProduct }[] = [];
+
+        const categoriesById = new Map<string, AvailabilityCategoryIndex>();
+        for (const category of latestRestaurant.categories.items) {
+            const productsById = new Map<string, AvailabilityProductIndex>();
+
+            for (const productItem of category.products.items) {
+                const product = productItem.product;
+                const modifierGroupsById = new Map<string, AvailabilityModifierGroupIndex>();
+
+                for (const modifierGroupItem of product.modifierGroups.items) {
+                    const modifierGroup = modifierGroupItem.modifierGroup;
+                    const modifiersById = new Map(
+                        modifierGroup.modifiers.items.map((modifierItem) => [modifierItem.modifier.id, modifierItem.modifier]),
+                    );
+
+                    modifierGroupsById.set(modifierGroup.id, {
+                        modifiersById,
+                    });
+                }
+
+                productsById.set(product.id, {
+                    product,
+                    modifierGroupsById,
+                });
+            }
+
+            categoriesById.set(category.id, {
+                category,
+                productsById,
+            });
+        }
+
+        for (let index = 0; index < cartProducts.length; index++) {
+            const cartProduct = cartProducts[index];
+            let updatedProduct: ICartProduct | null = null;
+
+            const addSoldOutItem = (name: string) => {
+                soldOutItems.add(name);
+            };
+
+            const markProductForRemoval = (name: string) => {
+                addSoldOutItem(name);
+                productsToRemove.add(index);
+            };
+
+            const ensureUpdatedProduct = (): ICartProduct => {
+                if (!updatedProduct) {
+                    updatedProduct = JSON.parse(JSON.stringify(cartProduct)) as ICartProduct;
+                }
+                return updatedProduct;
+            };
+
+            const removeModifierGroupFromProduct = (modifierGroupId: string) => {
+                const productCopy = ensureUpdatedProduct();
+                productCopy.modifierGroups = productCopy.modifierGroups.filter((group) => group.id !== modifierGroupId);
+            };
+
+            if (!cartProduct.category) {
+                markProductForRemoval(cartProduct.name);
+                continue;
+            }
+
+            const categoryIndex = categoriesById.get(cartProduct.category.id);
+            if (!categoryIndex) {
+                markProductForRemoval(cartProduct.name);
+                continue;
+            }
+
+            const isCategorySoldOut = isItemSoldOut(categoryIndex.category.soldOut ?? undefined, categoryIndex.category.soldOutDate ?? undefined);
+            if (isCategorySoldOut) {
+                markProductForRemoval(cartProduct.name);
+                continue;
+            }
+
+            const productIndex = categoryIndex.productsById.get(cartProduct.id);
+            if (!productIndex) {
+                markProductForRemoval(cartProduct.name);
+                continue;
+            }
+
+            const product = productIndex.product;
+            const isProductSoldOut = isItemSoldOut(product.soldOut ?? undefined, product.soldOutDate ?? undefined);
+            const productAvailableQuantity = isProductSoldOut ? 0 : product.totalQuantityAvailable;
+            if (isProductSoldOut || (productAvailableQuantity !== null && productAvailableQuantity < cartProduct.quantity)) {
+                addSoldOutItem(product.name);
+                if (productAvailableQuantity !== null && productAvailableQuantity > 0) {
+                    const productCopy = ensureUpdatedProduct();
+                    productCopy.quantity = productAvailableQuantity;
+                } else {
+                    productsToRemove.add(index);
+                    continue;
+                }
+            }
+
+            for (const mg of cartProduct.modifierGroups) {
+                const modifierGroupIndex = productIndex.modifierGroupsById.get(mg.id);
+                if (!modifierGroupIndex) {
+                    removeModifierGroupFromProduct(mg.id);
+                    continue;
+                }
+
+                let shouldRemoveModifierGroup = false;
+                for (const m of mg.modifiers) {
+                    const modifier = modifierGroupIndex.modifiersById.get(m.id);
+                    if (!modifier) {
+                        addSoldOutItem(m.name);
+                        shouldRemoveModifierGroup = true;
+                        continue;
+                    }
+
+                    const isModifierSoldOut = isItemSoldOut(modifier.soldOut ?? undefined, modifier.soldOutDate ?? undefined);
+                    const modifierAvailableQuantity = isModifierSoldOut ? 0 : modifier.totalQuantityAvailable;
+                    if (isModifierSoldOut || (modifierAvailableQuantity !== null && modifierAvailableQuantity < m.quantity)) {
+                        addSoldOutItem(modifier.name);
+                        shouldRemoveModifierGroup = true;
+                    }
+                }
+
+                if (shouldRemoveModifierGroup) {
+                    removeModifierGroupFromProduct(mg.id);
+                }
+            }
+
+            const productToUpdate = !productsToRemove.has(index) ? (updatedProduct as ICartProduct | null) : null;
+            if (productToUpdate) {
+                productToUpdate.totalPrice = getCartProductUnitTotalPrice(productToUpdate);
+                productsToUpdate.push({ index, product: productToUpdate });
+            }
+        }
+
+        return {
+            soldOutItems: Array.from(soldOutItems),
+            productsToRemove: Array.from(productsToRemove),
+            productsToUpdate,
+        };
+    };
+
     const onClickOrderButton = async () => {
         // if (restaurant.orderThresholds?.enable && restaurant.orderThresholdMessage && !isShownOrderThresholdMessageModal) {
         //     setShowOrderThresholdMessageModal(true);
@@ -560,6 +680,45 @@ export const Checkout = () => {
         //         return;
         //     }
         // }
+
+        console.log("on submit order called with: ", register, register.checkConditionsBeforeCreateOrder);
+        // Check backend quantities before creating order
+        if (register.checkConditionsBeforeCreateOrder) {
+            setShowFullScreenSpinner(true);
+
+            const { data: restaurantData } = await getRestaurantDataAvailability({
+                variables: { restaurantId: restaurant.id },
+                fetchPolicy: "no-cache", //This is to stop the GetRestaurant API get double called. I think its somehting to do with useGetRestaurantQuery "cache-first" and "netowrk-first" fetchPolicy.
+            });
+            const { soldOutItems, productsToRemove, productsToUpdate } = checkConditionsBeforeCreateOrder(restaurantData?.getRestaurant, products);
+
+            setShowFullScreenSpinner(false);
+
+            if (soldOutItems.length > 0) {
+                setShowPaymentModal(false);
+                setPaymentModalState(EPaymentModalState.None);
+                setPaymentOutcomeOrderNumber(null);
+                showAlert(
+                    "Items Unavailable",
+                    `The following items are no longer available:\n${soldOutItems.join("\n")}`,
+                    null,
+                    () => {
+                        const removeIndexes = productsToRemove.slice().sort((a, b) => b - a);
+                        for (let i = 0; i < productsToUpdate.length; i++) {
+                            const update = productsToUpdate[i];
+                            if (removeIndexes.includes(update.index)) continue;
+                            updateProduct(update.index, update.product);
+                        }
+                        removeIndexes.forEach((removeIndex) => {
+                            deleteProduct(removeIndex);
+                        });
+                    },
+                    null,
+                    "Review Order",
+                );
+                return;
+            }
+        }
 
         if (!isPOS && register.enableEftposPayments && register.enableCashPayments && paymentMethod === null) {
             navigate(paymentMethodPath);
@@ -716,18 +875,116 @@ export const Checkout = () => {
         }
     };
 
-    const printReceipts = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
-        register.printers &&
-            register.printers.items.forEach(async (printer) => {
-                //Open cash drawer if paid by cash, even if we don't print a receipt
-                if (order.paymentAmounts && order.paymentAmounts.cash > 0) {
-                    await printNoSaleReceipt({ printer: { printerType: printer.type, printerAddress: printer.address } });
+    const isKitchenReceiptPrinter = (printer: IGET_RESTAURANT_REGISTER_PRINTER) =>
+        printer.kitchenPrinter === true || printer.kitchenPrinterSmall === true || printer.kitchenPrinterLarge === true;
+
+    const getReceiptPrinter = (printer: IGET_RESTAURANT_REGISTER_PRINTER, receiptType: "customer" | "kitchen"): IGET_RESTAURANT_REGISTER_PRINTER => ({
+        ...printer,
+        customerPrinter: receiptType === "customer",
+        kitchenPrinter: receiptType === "kitchen" ? printer.kitchenPrinter : false,
+        kitchenPrinterSmall: receiptType === "kitchen" ? printer.kitchenPrinterSmall : false,
+        kitchenPrinterLarge: receiptType === "kitchen" ? printer.kitchenPrinterLarge : false,
+    });
+
+    const getParkedOrderPrintedProductStorageKey = (orderId: string) => `parkedOrderPrintedProductIds:${orderId}`;
+
+    const getProductQuantities = (products: IGET_RESTAURANT_ORDER_FRAGMENT["products"]) =>
+        products.reduce(
+            (productQuantities, product) => {
+                productQuantities[product.id] = (productQuantities[product.id] || 0) + product.quantity;
+
+                return productQuantities;
+            },
+            {} as Record<string, number>,
+        );
+
+    const mergeProductQuantities = (target: Record<string, number>, source: Record<string, number>, strategy: "add" | "max") => {
+        Object.entries(source).forEach(([productId, quantity]) => {
+            target[productId] = strategy === "add" ? (target[productId] || 0) + quantity : Math.max(target[productId] || 0, quantity);
+        });
+    };
+
+    const getParkedOrderPrintedProductQuantities = (orderId: string) => {
+        try {
+            const parsedProductQuantities = JSON.parse(localStorage.getItem(getParkedOrderPrintedProductStorageKey(orderId)) || "{}");
+            if (!parsedProductQuantities) return {} as Record<string, number>;
+
+            return Object.entries(parsedProductQuantities).reduce(
+                (printedProductQuantities, [productId, quantity]) => {
+                    if (typeof quantity === "number" && quantity > 0) printedProductQuantities[productId] = quantity;
+
+                    return printedProductQuantities;
+                },
+                {} as Record<string, number>,
+            );
+        } catch {
+            return {} as Record<string, number>;
+        }
+    };
+
+    const setParkedOrderPrintedProductQuantities = (orderId: string, printedProductQuantities: Record<string, number>) => {
+        localStorage.setItem(getParkedOrderPrintedProductStorageKey(orderId), JSON.stringify(printedProductQuantities));
+    };
+
+    const getUnprintedParkedOrderProducts = (order: IGET_RESTAURANT_ORDER_FRAGMENT, printedProductQuantities: Record<string, number>) => {
+        const remainingPrintedProductQuantities = { ...printedProductQuantities };
+
+        return order.products.reduce(
+            (productsToPrint, product) => {
+                const printedQuantity = remainingPrintedProductQuantities[product.id] || 0;
+                const quantityToPrint = Math.max(product.quantity - printedQuantity, 0);
+
+                remainingPrintedProductQuantities[product.id] = Math.max(printedQuantity - product.quantity, 0);
+
+                if (quantityToPrint > 0) productsToPrint.push({ ...product, quantity: quantityToPrint });
+
+                return productsToPrint;
+            },
+            [] as IGET_RESTAURANT_ORDER_FRAGMENT["products"],
+        );
+    };
+
+    const printReceipts = async (
+        order: IGET_RESTAURANT_ORDER_FRAGMENT,
+        options?: {
+            treatAsPreviouslyParked?: boolean;
+        },
+    ) => {
+        if (!register.printers) return;
+
+        const treatAsPreviouslyParked = options?.treatAsPreviouslyParked ?? Boolean(order.parkedAt);
+        const shouldPromptForCustomerReceipt = register.askToPrintCustomerReceipt === true;
+        let hasPrintedParkedOrderReceipts = false;
+
+        for (const printer of register.printers.items) {
+            //Open cash drawer if paid by cash, even if we don't print a receipt
+            if (order.paymentAmounts && order.paymentAmounts.cash > 0) {
+                await printNoSaleReceipt({ printer: { printerType: printer.type, printerAddress: printer.address } });
+            }
+
+            // If an order was parked before, print only newly added kitchen items, but still allow a full customer copy.
+            if (treatAsPreviouslyParked && isKitchenReceiptPrinter(printer)) {
+                if (!hasPrintedParkedOrderReceipts) {
+                    hasPrintedParkedOrderReceipts = true;
+                    await onPrintParkedOrderReceipts(order);
                 }
 
-                if (printer.customerPrinter === true && register.askToPrintCustomerReceipt === true) return;
+                if (printer.customerPrinter === true && !shouldPromptForCustomerReceipt) {
+                    await sendReceiptPrint(order, getReceiptPrinter(printer, "customer"));
+                }
 
-                await sendReceiptPrint(order, printer);
-            });
+                continue;
+            }
+
+            if (printer.customerPrinter === true && shouldPromptForCustomerReceipt) {
+                if (!isKitchenReceiptPrinter(printer)) continue;
+
+                await sendReceiptPrint(order, getReceiptPrinter(printer, "kitchen"));
+                continue;
+            }
+
+            await sendReceiptPrint(order, printer);
+        }
     };
 
     const printEftposReceipts = (eftposReceipt: string) => {
@@ -744,173 +1001,36 @@ export const Checkout = () => {
             register.printers.items.forEach((printer) => {
                 if (printer.customerPrinter !== true || register.askToPrintCustomerReceipt !== true) return;
 
-                sendReceiptPrint(order, printer);
+                sendReceiptPrint(order, getReceiptPrinter(printer, "customer"));
             });
     };
 
-    const onPrintParkedOrderReceipts = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
-        register.printers &&
-            register.printers.items.forEach((printer) => {
-                sendReceiptPrint(order, printer);
-            });
-    };
+    const onPrintParkedOrderReceipts = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+        if (!register.printers) return;
 
-    const checkConditionsBeforeCreateOrder = (
-        latestRestaurant: IGET_RESTAURANT_AVAILABILITY_RESTAURANT | null | undefined,
-        cartProducts: ICartProduct[] | null,
-    ): AvailabilityCheckResult => {
-        if (!latestRestaurant || !cartProducts) {
-            return { soldOutItems: [], productsToRemove: [], productsToUpdate: [] };
-        }
+        const printedProductQuantities = getParkedOrderPrintedProductQuantities(order.id);
+        const unprintedProducts = getUnprintedParkedOrderProducts(order, printedProductQuantities);
 
-        const soldOutItems = new Set<string>();
-        const productsToRemove = new Set<number>();
-        const productsToUpdate: { index: number; product: ICartProduct }[] = [];
+        if (unprintedProducts.length === 0) return;
+        const printedProductQuantitiesThisRun: Record<string, number> = {};
 
-        const categoriesById = new Map<string, AvailabilityCategoryIndex>();
-        for (const category of latestRestaurant.categories.items) {
-            const productsById = new Map<string, AvailabilityProductIndex>();
+        for (const printer of register.printers.items) {
+            if (!isKitchenReceiptPrinter(printer)) continue;
 
-            for (const productItem of category.products.items) {
-                const product = productItem.product;
-                const modifierGroupsById = new Map<string, AvailabilityModifierGroupIndex>();
+            const printerProducts = filterPrintProducts([...unprintedProducts], printer);
 
-                for (const modifierGroupItem of product.modifierGroups.items) {
-                    const modifierGroup = modifierGroupItem.modifierGroup;
-                    const modifiersById = new Map(
-                        modifierGroup.modifiers.items.map((modifierItem) => [modifierItem.modifier.id, modifierItem.modifier]),
-                    );
+            if (printerProducts.length === 0) continue;
 
-                    modifierGroupsById.set(modifierGroup.id, {
-                        choiceMin: modifierGroup.choiceMin,
-                        modifiersById,
-                    });
-                }
-
-                productsById.set(product.id, {
-                    product,
-                    modifierGroupsById,
-                });
-            }
-
-            categoriesById.set(category.id, {
-                category,
-                productsById,
-            });
-        }
-
-        for (let index = 0; index < cartProducts.length; index++) {
-            const cartProduct = cartProducts[index];
-            let updatedProduct: ICartProduct | null = null;
-            let shouldRemoveProduct = false;
-
-            const addSoldOutItem = (name: string) => {
-                soldOutItems.add(name);
-            };
-
-            const markProductForRemoval = () => {
-                productsToRemove.add(index);
-                shouldRemoveProduct = true;
-            };
-
-            const ensureUpdatedProduct = () => {
-                if (!updatedProduct) {
-                    updatedProduct = JSON.parse(JSON.stringify(cartProduct)) as ICartProduct;
-                }
-                return updatedProduct;
-            };
-
-            if (!cartProduct.category) {
-                addSoldOutItem(cartProduct.name);
-                markProductForRemoval();
-                continue;
-            }
-
-            const categoryIndex = categoriesById.get(cartProduct.category.id);
-            if (!categoryIndex) {
-                addSoldOutItem(cartProduct.name);
-                markProductForRemoval();
-                continue;
-            }
-
-            const isCategorySoldOut = isItemSoldOut(categoryIndex.category.soldOut ?? undefined, categoryIndex.category.soldOutDate ?? undefined);
-            if (isCategorySoldOut) {
-                addSoldOutItem(cartProduct.name);
-                markProductForRemoval();
-                continue;
-            }
-
-            const productIndex = categoryIndex.productsById.get(cartProduct.id);
-            if (!productIndex) {
-                addSoldOutItem(cartProduct.name);
-                markProductForRemoval();
-                continue;
-            }
-
-            const product = productIndex.product;
-            const isProductSoldOut = isItemSoldOut(product.soldOut ?? undefined, product.soldOutDate ?? undefined);
-            const productAvailableQuantity = isProductSoldOut ? 0 : product.totalQuantityAvailable;
-            if (isProductSoldOut || (productAvailableQuantity !== null && productAvailableQuantity < cartProduct.quantity)) {
-                addSoldOutItem(product.name);
-                if (productAvailableQuantity !== null && productAvailableQuantity > 0) {
-                    const productCopy = ensureUpdatedProduct();
-                    productCopy.quantity = productAvailableQuantity;
-                } else {
-                    markProductForRemoval();
-                    continue;
-                }
-            }
-
-            for (const mg of cartProduct.modifierGroups) {
-                if (shouldRemoveProduct) break;
-
-                for (const m of mg.modifiers) {
-                    if (shouldRemoveProduct) break;
-
-                    const modifierGroupIndex = productIndex.modifierGroupsById.get(mg.id);
-                    if (!modifierGroupIndex) {
-                        addSoldOutItem(m.name);
-                        markProductForRemoval();
-                        continue;
-                    }
-
-                    const modifier = modifierGroupIndex.modifiersById.get(m.id);
-                    if (!modifier) {
-                        addSoldOutItem(m.name);
-                        markProductForRemoval();
-                        continue;
-                    }
-
-                    const isModifierSoldOut = isItemSoldOut(modifier.soldOut ?? undefined, modifier.soldOutDate ?? undefined);
-                    const modifierAvailableQuantity = isModifierSoldOut ? 0 : modifier.totalQuantityAvailable;
-                    if (isModifierSoldOut || (modifierAvailableQuantity !== null && modifierAvailableQuantity < m.quantity)) {
-                        addSoldOutItem(modifier.name);
-                        const productCopy = ensureUpdatedProduct();
-                        const updatedGroup = productCopy.modifierGroups.find((g) => g.id === mg.id);
-                        if (!updatedGroup) {
-                            markProductForRemoval();
-                            continue;
-                        }
-                        updatedGroup.modifiers = updatedGroup.modifiers.filter((mod) => mod.id !== m.id);
-                        const remainingQuantity = updatedGroup.modifiers.reduce((sum, mod) => sum + mod.quantity, 0);
-                        const choiceMin = modifierGroupIndex.choiceMin;
-                        if (choiceMin && remainingQuantity < choiceMin) {
-                            markProductForRemoval();
-                        }
-                    }
-                }
-            }
-
-            if (updatedProduct && !productsToRemove.has(index)) {
-                productsToUpdate.push({ index, product: updatedProduct });
+            try {
+                await sendReceiptPrint({ ...order, products: printerProducts }, getReceiptPrinter(printer, "kitchen"));
+                mergeProductQuantities(printedProductQuantitiesThisRun, getProductQuantities(printerProducts), "max");
+            } catch (error) {
+                logger.error("unable to print parked order receipt", error);
             }
         }
 
-        return {
-            soldOutItems: Array.from(soldOutItems),
-            productsToRemove: Array.from(productsToRemove),
-            productsToUpdate,
-        };
+        mergeProductQuantities(printedProductQuantities, printedProductQuantitiesThisRun, "add");
+        setParkedOrderPrintedProductQuantities(order.id, printedProductQuantities);
     };
 
     const onSubmitOrder = async (
@@ -922,57 +1042,16 @@ export const Checkout = () => {
         eftposSurcharge?: number,
         eftposTip?: number,
     ) => {
-        console.log("xxx...parkedOrderStatus", parkedOrderStatus);
+        const wasEditingParkedOrder = Boolean(parkedOrderId);
+        const keepParkedStatus = wasEditingParkedOrder && parkOrder && Boolean(parkedOrderStatus);
         //If parked order do not generate order number
-        let orderNumber =
+        const orderNumber =
             parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
-        let orderStatus = parkedOrderId && parkedOrderStatus ? parkedOrderStatus : EOrderStatus.NEW;
+        const orderStatus = keepParkedStatus ? parkedOrderStatus! : EOrderStatus.NEW;
 
         setPaymentOutcomeOrderNumber(orderNumber);
 
         try {
-            console.log("on submit order called with: ", register, register.checkConditionsBeforeCreateOrder);
-            // Check backend quantities before creating order
-            if (register.checkConditionsBeforeCreateOrder) {
-                const { data: restaurantData } = await getRestaurantDataAvailability({
-                    variables: { restaurantId: restaurant.id },
-                });
-                const { soldOutItems, productsToRemove, productsToUpdate } = checkConditionsBeforeCreateOrder(
-                    restaurantData?.getRestaurant,
-                    products,
-                );
-
-                if (soldOutItems.length > 0) {
-                    setShowPaymentModal(false);
-                    setPaymentModalState(EPaymentModalState.None);
-                    setPaymentOutcomeOrderNumber(null);
-                    showAlert(
-                        "Items Unavailable",
-                        `The following items are sold out or have insufficient quantity: ${soldOutItems.join(", ")}`,
-                        () => {
-                            pendingPaymentScale.current = {
-                                oldSubTotal: subTotal,
-                                oldPaymentAmounts: paymentAmounts,
-                                oldPayments: payments,
-                            };
-                            const removeIndexes = productsToRemove.slice().sort((a, b) => b - a);
-                            for (let i = 0; i < productsToUpdate.length; i++) {
-                                const update = productsToUpdate[i];
-                                if (removeIndexes.includes(update.index)) continue;
-                                updateProduct(update.index, update.product);
-                            }
-                            removeIndexes.forEach((removeIndex) => {
-                                deleteProduct(removeIndex);
-                            });
-                        },
-                        () => {},
-                        "Edit order",
-                        null,
-                    );
-                    return;
-                }
-            }
-
             let signatureS3Object: IS3Object | null = null;
 
             if (customerInformation && customerInformation.signatureBase64) {
@@ -1014,8 +1093,8 @@ export const Checkout = () => {
             createdOrder.current = newOrder;
             updateOrderDetail(newOrder);
 
-            if (register.printers && register.printers.items.length > 0 && !parkedOrderId) {
-                await printReceipts(newOrder);
+            if (register.printers && register.printers.items.length > 0 && !parkOrder) {
+                await printReceipts(newOrder, { treatAsPreviouslyParked: wasEditingParkedOrder });
             }
 
             // If using third party integration. Poll for resposne
@@ -1028,6 +1107,8 @@ export const Checkout = () => {
 
                 await pollForThirdPartyResponse(newOrder.id);
             }
+
+            if (parkedOrderId && !parkOrder) localStorage.removeItem(getParkedOrderPrintedProductStorageKey(parkedOrderId));
 
             beginTransactionCompleteTimeout();
         } catch (e) {
@@ -1973,7 +2054,7 @@ export const Checkout = () => {
 
     const modalsAndSpinners = (
         <>
-            {/* <FullScreenSpinner show={loading} text={loadingMessage} /> */}
+            {showFullScreenSpinner && <FullScreenSpinner show={true} text="Processing your order..." />}
 
             {upSellCategoryModal()}
             {upSellProductModal()}
