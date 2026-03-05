@@ -1874,10 +1874,19 @@ const PreparationTime = () => {
 
 const AskToPrintParkedOrderReceipts = (props: { onPrinterParkedOrderReceipts: () => void }) => {
     const { onPrinterParkedOrderReceipts } = props;
+    const { register } = useRegister();
 
     const [hide, setHide] = useState(false);
+    const shouldAutoPrintParkedOrderKitchenReceipts = register?.autoPrintParkedOrderKitchenReceipts === true;
 
-    if (hide) return <></>;
+    useEffect(() => {
+        if (!shouldAutoPrintParkedOrderKitchenReceipts || hide) return;
+
+        onPrinterParkedOrderReceipts();
+        setHide(true);
+    }, [hide, onPrinterParkedOrderReceipts, shouldAutoPrintParkedOrderKitchenReceipts]);
+
+    if (hide || shouldAutoPrintParkedOrderKitchenReceipts) return <></>;
 
     return (
         <>

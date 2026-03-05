@@ -340,6 +340,7 @@ export const GET_RESTAURANT = gql`
                     tyroTerminalId
                     skipEftposReceiptSignature
                     askToPrintCustomerReceipt
+                    autoPrintParkedOrderKitchenReceipts
                     orderNumberSuffix
                     orderNumberStart
                     surchargePercentage
@@ -1124,6 +1125,7 @@ export interface IGET_RESTAURANT_REGISTER {
     tyroTerminalId: number;
     skipEftposReceiptSignature: boolean;
     askToPrintCustomerReceipt: boolean;
+    autoPrintParkedOrderKitchenReceipts?: boolean;
     orderNumberSuffix: string;
     orderNumberStart: number;
     surchargePercentage: number;
