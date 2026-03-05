@@ -616,3 +616,79 @@ export type LoyaltyUserLinkInfo = {
     email?: string | null;
     phoneNumber?: string | null;
 };
+
+// Floor plan and the table management.
+export type ShapeType = "rect" | "circle" | "wall" | "plant" | "pillar" | "chair" | "stool" | "armchair" | "floor";
+export type CategoryType = "tables" | "chairs" | "structure" | "decor" | "select";
+
+export type FloorStyle = "tile" | "wood" | "concrete";
+
+export type TableStatus = "available" | "occupied" | "idle" | "reserved";
+
+export interface ITableNodesAttributes {
+    id: string;
+    type: ShapeType;
+
+    // Position
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rotation: number;
+
+    // Business Data
+    number: string;
+    seats?: number;
+    sectionId: string;
+
+    // Production Features
+    status?: TableStatus; // live POS state
+    locked?: boolean; // prevent movement
+    zIndex?: number; // layer order
+
+    // Floor + Chairs
+    floorStyle?: FloorStyle;
+}
+
+export interface ISection {
+    id: string;
+    name: string;
+    hidden?: boolean;
+}
+
+export type FloorPlanNodePayload = {
+    id: string;
+    type: ShapeType;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rotation: number;
+    number: string;
+    seats?: number;
+    sectionId: string;
+    status?: TableStatus;
+    locked: boolean;
+    zIndex: number;
+    floorStyle?: FloorStyle;
+};
+
+export type FloorPlanPayload = {
+    id?: string;
+    restaurantId: string;
+    nodes: FloorPlanNodePayload[];
+    sections: Array<{
+        id: string;
+        name: string;
+        hidden?: boolean;
+    }>;
+};
+
+export type FloorPlanSaveState = "idle" | "dirty" | "saving" | "saved" | "error";
+
+export type LayoutSnapshot = {
+    tables: ITableNodesAttributes[];
+    sections: ISection[];
+    selectedId: string | null;
+    activeSectionId: string;
+};

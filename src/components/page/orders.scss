@@ -88,6 +88,12 @@
             border: 1px solid #eeeeee;
             border-radius: 10px;
 
+            .order-top-actions {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
             .order-customer-signature {
                 height: 100px;
             }

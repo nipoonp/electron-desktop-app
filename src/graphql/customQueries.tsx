@@ -1,5 +1,5 @@
 import { gql } from "@apollo/client";
-import { EReceiptPrinterPrinterType } from "../model/model";
+import { EReceiptPrinterPrinterType, ISection, ITableNodesAttributes } from "../model/model";
 import { IGET_RESTAURANT_ORDER_FRAGMENT, ORDER_FIELDS_FRAGMENT } from "./customFragments";
 
 export enum EOrderStatus {
@@ -202,6 +202,7 @@ export const GET_RESTAURANT = gql`
             }
             autoCompleteOrders
             enableLoyalty
+            # checkTableFeature
             preparationTimeInMinutes
             delayBetweenOrdersInSeconds
             orderThresholdMessage
@@ -1015,6 +1016,7 @@ export interface IGET_RESTAURANT {
     customStyleSheet?: IS3Object;
     autoCompleteOrders: boolean | null;
     enableLoyalty: boolean | null;
+    checkTableFeature: boolean | true;
     preparationTimeInMinutes: number | null;
     delayBetweenOrdersInSeconds: number | null;
     orderThresholdMessage: string | null;
@@ -2005,6 +2007,51 @@ export const GET_RESTAURANT_PING_DATA = gql`
     }
 `;
 
+export const GET_FLOOR_PLAN = gql`
+    query GetFloorPlan($restaurantId: ID!) {
+        listTablePlansByRestaurantId(restaurantId: $restaurantId, limit: 100) {
+            items {
+                id
+                restaurantId
+                nodes {
+                    id
+                    type
+                    x
+                    y
+                    width
+                    height
+                    rotation
+                    number
+                    seats
+                    sectionId
+                    status
+                    locked
+                    zIndex
+                    floorStyle
+                }
+                sections {
+                    id
+                    name
+                    hidden
+                }
+                owner
+                createdAt
+                updatedAt
+            }
+        }
+    }
+`;
+
+export interface IGET_FLOOR_PLAN {
+    id: string;
+    restaurantId: string;
+    nodes: ITableNodesAttributes[];
+    sections: ISection[];
+    owner?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+}
+
 export interface IGET_RESTAURANT_PING_DATA {
     id: string;
     preparationTimeInMinutes: number | null;
@@ -2035,3 +2082,4 @@ export const UPDATE_RESTAURANT_PREPARATION_TIME = gql`
         }
     }
 `;
+

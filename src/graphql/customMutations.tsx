@@ -49,6 +49,81 @@ export const UPDATE_LOYALTY_USER_RESTAURANT_LINK = gql`
     }
 `;
 
+export const CREATE_TABLE_PLAN = gql`
+    mutation CreateTablePlan($input: CreateRestaurantTablePlanInput!) {
+        createTablePlan(input: $input) {
+            id
+            restaurantId
+            nodes {
+                id
+                type
+                x
+                y
+                width
+                height
+                rotation
+                number
+                seats
+                sectionId
+                status
+                locked
+                zIndex
+                floorStyle
+            }
+            sections {
+                id
+                name
+                hidden
+            }
+            owner
+            createdAt
+            updatedAt
+        }
+    }
+`;
+
+export const UPDATE_TABLE_PLAN = gql`
+    mutation UpdateTablePlan($input: UpdateRestaurantTablePlanInput!) {
+        updateTablePlan(input: $input) {
+            id
+            restaurantId
+            nodes {
+                id
+                type
+                x
+                y
+                width
+                height
+                rotation
+                number
+                seats
+                sectionId
+                status
+                locked
+                zIndex
+                floorStyle
+            }
+            sections {
+                id
+                name
+                hidden
+            }
+            owner
+            createdAt
+            updatedAt
+        }
+    }
+`;
+
+export const DELETE_TABLE_PLAN = gql`
+    mutation DeleteTablePlan($input: DeleteRestaurantTablePlanInput!) {
+        deleteTablePlan(input: $input) {
+            id
+            restaurantId
+        }
+    }
+`;
+
 export const CREATE_ORDER = gql`
     ${ORDER_FIELDS_FRAGMENT}
     mutation createOrder(

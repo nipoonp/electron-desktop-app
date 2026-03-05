@@ -80,7 +80,7 @@ const Orders = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [date, setDate] = useState(queryDate ? queryDate : format(new Date(), "yyyy-MM-dd"));
     const [preparationTimeInMinutes, setPreparationTimeInMinutes] = useState(
-        restaurant && restaurant.preparationTimeInMinutes ? restaurant.preparationTimeInMinutes.toString() : ""
+        restaurant && restaurant.preparationTimeInMinutes ? restaurant.preparationTimeInMinutes.toString() : "",
     );
 
     const [showSelectReceiptPrinterModal, setShowSelectReceiptPrinterModal] = useState(false);
@@ -622,9 +622,9 @@ const Orders = () => {
                 </div>
 
                 <div className="orders-wrapper">
-                    {orders.map(
-                        (order) =>
-                            ((order.status === eOrderStatus &&
+                    {orders.map((order) => {
+                        const isVisible =
+                            (order.status === eOrderStatus &&
                                 !(
                                     order.paymentAmounts &&
                                     !order.paymentAmounts.cash &&
@@ -636,29 +636,33 @@ const Orders = () => {
                                     !order.paymentAmounts.doordash &&
                                     !order.paymentAmounts.delivereasy
                                 )) ||
-                                (eOrderStatus === EOrderStatus.PARKED &&
-                                    order.paymentAmounts &&
-                                    !order.paymentAmounts.cash &&
-                                    !order.paymentAmounts.eftpos &&
-                                    !order.paymentAmounts.online &&
-                                    !order.paymentAmounts.onAccount &&
-                                    !order.paymentAmounts.uberEats &&
-                                    !order.paymentAmounts.menulog &&
-                                    !order.paymentAmounts.doordash &&
-                                    !order.paymentAmounts.delivereasy)) && (
-                                <Order
-                                    key={order.id}
-                                    searchTerm={searchTerm}
-                                    order={order}
-                                    restaurant={restaurant}
-                                    onOrderComplete={onOrderComplete}
-                                    onOrderRefund={onOrderRefund}
-                                    onOrderCancel={onOrderCancel}
-                                    onOrderReprint={onOrderReprint}
-                                    onOpenParkedOrder={onOpenParkedOrder}
-                                />
-                            )
-                    )}
+                            (eOrderStatus === EOrderStatus.PARKED &&
+                                order.paymentAmounts &&
+                                !order.paymentAmounts.cash &&
+                                !order.paymentAmounts.eftpos &&
+                                !order.paymentAmounts.online &&
+                                !order.paymentAmounts.onAccount &&
+                                !order.paymentAmounts.uberEats &&
+                                !order.paymentAmounts.menulog &&
+                                !order.paymentAmounts.doordash &&
+                                !order.paymentAmounts.delivereasy);
+
+                        if (!isVisible) return null;
+
+                        return (
+                            <Order
+                                key={order.id}
+                                searchTerm={searchTerm}
+                                order={order}
+                                restaurant={restaurant}
+                                onOrderComplete={onOrderComplete}
+                                onOrderRefund={onOrderRefund}
+                                onOrderCancel={onOrderCancel}
+                                onOrderReprint={onOrderReprint}
+                                onOpenParkedOrder={onOpenParkedOrder}
+                            />
+                        );
+                    })}
                 </div>
             </div>
         </PageWrapper>
@@ -682,7 +686,6 @@ const Order = (props: {
     const [mailPopup, setMailPopup] = useState(false);
     const [emails, setEmails] = useState("");
     const [viewReceipt, setViewReceipt] = useState(false);
-
     const [showOrderDetail, setShowOrderDetail] = useState(false);
 
     if (searchTerm && searchTerm !== order.number) return <div></div>;
@@ -741,8 +744,16 @@ const Order = (props: {
                         <div className="order-number-type-number">{order.number}</div>
                         <div className="h4">{order.type}</div>
                     </div>
-                    <div className="link" onClick={() => onOpenMailPopup()}>
-                        <FiMail color="black" />
+                    <div className="order-top-actions">
+                        <div
+                            className="link"
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                onOpenMailPopup();
+                            }}
+                        >
+                            <FiMail color="black" />
+                        </div>
                     </div>
                 </div>
                 {order.status === EOrderStatus.PARKED ? (

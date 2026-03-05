@@ -15,6 +15,7 @@ import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
 import { FiArrowDownCircle } from "react-icons/fi";
 import {
+    GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT,
     IGET_RESTAURANT_CATEGORY,
     IGET_RESTAURANT_PRODUCT,
     EPromotionType,
@@ -1106,16 +1107,29 @@ export const Checkout = () => {
         }
 
         let variables;
+        const selectedOrderType = orderType ? orderType : register.availableOrderTypes[0];
+        const isDineInOrder = selectedOrderType === EOrderType.DINEIN;
+        const orderRefetchQueries = isDineInOrder
+            ? [
+                  {
+                      query: GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT,
+                      variables: {
+                          orderRestaurantId: restaurant.id,
+                          placedAt: toLocalISOString(now).slice(0, 10),
+                      },
+                  },
+              ]
+            : undefined;
 
         try {
             variables = {
                 country: restaurant.country,
                 status: orderStatus,
                 paid: paid,
-                type: orderType ? orderType : register.availableOrderTypes[0],
+                type: selectedOrderType,
                 number: orderNumber,
-                covers: orderType === EOrderType.DINEIN ? covers : undefined,
-                table: tableNumber,
+                covers: isDineInOrder ? covers : undefined,
+                table: isDineInOrder ? tableNumber : undefined,
                 buzzer: buzzerNumber,
                 orderScheduledAt: orderScheduledAt,
                 customerInformation: customerInformation
@@ -1176,10 +1190,10 @@ export const Checkout = () => {
                     country: restaurant.country,
                     status: orderStatus,
                     paid: paid,
-                    type: orderType ? orderType : register.availableOrderTypes[0],
+                    type: selectedOrderType,
                     number: orderNumber,
-                    covers: orderType === EOrderType.DINEIN ? covers : undefined,
-                    table: tableNumber,
+                    covers: isDineInOrder ? covers : undefined,
+                    table: isDineInOrder ? tableNumber : undefined,
                     buzzer: buzzerNumber,
                     orderScheduledAt: orderScheduledAt,
                     customerInformation: customerInformation
@@ -1263,12 +1277,14 @@ export const Checkout = () => {
             if (parkedOrderId) {
                 const res: any = await updateOrderMutation({
                     variables: { orderId: parkedOrderId, ...variables },
+                    refetchQueries: orderRefetchQueries,
+                    awaitRefetchQueries: true,
                 });
 
                 console.log("update order mutation result: ", res);
                 return res.data.updateOrder;
             } else {
-                return await retryCreateOrder(variables);
+                return await retryCreateOrder(variables, orderRefetchQueries);
             }
         } catch (e) {
             console.log("process order mutation error: ", e);
@@ -1278,12 +1294,14 @@ export const Checkout = () => {
         }
     };
 
-    const retryCreateOrder = async (variables) => {
+    const retryCreateOrder = async (variables, refetchQueries?: any[]) => {
         //If the create order fails, retry up to 5 times
         for (let i = 0; i < 5; i++) {
             try {
                 const res: any = await createOrderMutation({
                     variables: variables,
+                    refetchQueries,
+                    awaitRefetchQueries: true,
                 });
 
                 console.log("create order mutation result: ", res);
