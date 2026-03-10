@@ -1032,6 +1032,13 @@ export const Checkout = () => {
         setParkedOrderPrintedProductQuantities(order.id, printedProductQuantities);
     };
 
+    const onPrintOnAccountOrderReceipts = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+        register.printers &&
+            register.printers.items.forEach((printer) => {
+                sendReceiptPrint(order, printer);
+            });
+    };
+
     const onSubmitOrder = async (
         paid: boolean,
         parkOrder: boolean,
@@ -1094,6 +1101,10 @@ export const Checkout = () => {
 
             if (register.printers && register.printers.items.length > 0 && !parkOrder) {
                 await printReceipts(newOrder, { treatAsPreviouslyParked: wasEditingParkedOrder });
+            }
+
+            if (parkOrder && register.autoPrintParkedOrderKitchenReceipts) {
+                await onPrintParkedOrderReceipts(newOrder);
             }
 
             // If using third party integration. Poll for resposne
@@ -2012,6 +2023,7 @@ export const Checkout = () => {
                         cashTransactionChangeAmount={cashTransactionChangeAmount}
                         onPrintCustomerReceipt={() => createdOrder.current && onPrintCustomerReceipt(createdOrder.current)}
                         onPrintParkedOrderReceipts={() => createdOrder.current && onPrintParkedOrderReceipts(createdOrder.current)}
+                        onPrintOnAccountOrderReceipts={() => createdOrder.current && onPrintOnAccountOrderReceipts(createdOrder.current)}
                         paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                         incrementRedirectTimer={incrementRedirectTimer}
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}

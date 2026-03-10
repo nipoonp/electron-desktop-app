@@ -28,6 +28,11 @@
         opacity: 0.5;
     }
 
+    .price-edit-input {
+        padding: 0 6px;
+        width: 70px;
+    }
+
     .detail {
         display: grid;
         grid-auto-rows: auto; /* shrink to min size*/
