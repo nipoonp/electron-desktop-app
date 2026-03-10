@@ -10,9 +10,8 @@ export const useGetPromotionByIdLazyQuery = () => {
     });
 
     useEffect(() => {
-        const promotion = _data?.getPromotion;
-        if (promotion) {
-            setPromotionsById((prev) => ({ ...prev, [promotion.id]: promotion }));
+        if (_data?.getPromotion) {
+            setPromotionsById((prev) => ({ ...prev, [_data.getPromotion.id]: _data.getPromotion }));
         }
     }, [_data]);
 

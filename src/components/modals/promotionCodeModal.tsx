@@ -33,7 +33,7 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
 
     const tempLoyaltyId = useRef<string | null>(null);
 
-    const { getPromotionById, promotionsById: loyaltyPromotionsById, loading: loyaltyPromotionsLoading } = useGetPromotionByIdLazyQuery();
+    const { getPromotionById, promotionsById: loyaltyPromotionsById } = useGetPromotionByIdLazyQuery();
 
     useEffect(() => {
         if (!props.isOpen || !restaurant?.loyalties?.items?.length) return;
@@ -180,34 +180,26 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
                                 restaurant.loyalties &&
                                 restaurant.loyalties.items.map((loyalty) => (
                                     <>
-                                        {loyalty ? (
-                                            loyalty.rewards
-                                                // .filter((reward) => {
-                                                //     const promotion = loyaltyPromotionsById[reward.promotionId];
-                                                //     if (!promotion) return false;
-                                                //     if (promotion.totalAvailableUses !== null && promotion.totalNumberUsed >= promotion.totalAvailableUses) return false;
-                                                //     return checkIfPromotionValid(promotion) === CheckIfPromotionValidResponse.VALID;
-                                                // })
-                                                .map((reward) => (
-                                                    <div key={reward.promotionId} className="reward-promotion mb-2">
-                                                        <div className="reward-promotion-name">
-                                                            {loyaltyPromotionsLoading
-                                                                ? "Loading..."
-                                                                : loyaltyPromotionsById[reward.promotionId]?.name}
-                                                        </div>
-                                                        <div>
-                                                            {reward.points} point{reward.points !== 1 ? "s" : ""}
-                                                        </div>
-                                                        <Button
-                                                            disabled={!loyaltyPromotionsById[reward.promotionId]}
-                                                            onClick={() => onApply(loyalty.id, reward.promotionId, reward.points)}
-                                                        >
-                                                            Apply
-                                                        </Button>
+                                        {loyalty && loyalty.rewards.length > 0 ? (
+                                            loyalty.rewards.map((reward) => (
+                                                <div key={reward.promotionId} className="reward-promotion mb-2">
+                                                    <div className="h3 reward-promotion-name">{loyaltyPromotionsById[reward.promotionId]?.name}</div>
+                                                    <div>
+                                                        {reward.points} point{reward.points !== 1 ? "s" : ""}
                                                     </div>
-                                                ))
+                                                    <Button
+                                                        disabled={
+                                                            !loyaltyPromotionsById[reward.promotionId] ||
+                                                            (customerLoyaltyPoints ? customerLoyaltyPoints < reward.points : false)
+                                                        }
+                                                        onClick={() => onApply(loyalty.id, reward.promotionId, reward.points)}
+                                                    >
+                                                        Apply
+                                                    </Button>
+                                                </div>
+                                            ))
                                         ) : (
-                                            <div>No rewards available.</div>
+                                            <div className="mt-2">No rewards available</div>
                                         )}
                                     </>
                                 ))}
