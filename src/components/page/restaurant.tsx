@@ -379,10 +379,12 @@ const Restaurant = () => {
             showAlert(
                 "Incomplete Payments",
                 "There have been partial payments made on this order. Are you sure you would like to cancel this order?",
-                () => {},
+                null,
                 () => {
                     cancelOrder();
-                }
+                },
+                "No",
+                "Yes",
             );
         } else {
             cancelOrder();
@@ -530,7 +532,7 @@ const Restaurant = () => {
 
         const isValid = !isSoldOut && isProductAvailable && isCategoryAvailable && isQuantityAvailable;
 
-        const addToCartQuantity = products && products.reduce((sum, p) => (product.id === p.id ? sum + p.quantity : 0), 0);
+        const addToCartQuantity = products && products.reduce((sum, p) => sum + (product.id === p.id ? p.quantity : 0), 0);
 
         return (
             <>

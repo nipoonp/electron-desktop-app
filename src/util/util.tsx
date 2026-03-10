@@ -1,4 +1,4 @@
-import { eachMinuteOfInterval, format, getDay, isAfter, isWithinInterval, startOfDay } from "date-fns";
+import { eachMinuteOfInterval, format, getDay, isAfter, isBefore, isWithinInterval, startOfDay } from "date-fns";
 import { addDays, isEqual } from "date-fns";
 import { IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
 import {
@@ -302,6 +302,35 @@ export const getQuantityRemainingText = (quantityRemaining: number) => {
     }
 };
 
+export const getCartProductUnitTotalPrice = (cartProduct: ICartProduct): number => {
+    let price = cartProduct.price;
+
+    cartProduct.modifierGroups.forEach((modifierGroup) => {
+        modifierGroup.modifiers.forEach((modifier) => {
+            const changedQuantity = modifier.quantity - modifier.preSelectedQuantity;
+            if (changedQuantity > 0) {
+                price += modifier.price * changedQuantity;
+            }
+
+            if (modifier.productModifiers) {
+                modifier.productModifiers.forEach((productModifier) => {
+                    productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
+                        orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
+                            const nestedChangedQuantity =
+                                orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
+                            if (nestedChangedQuantity > 0) {
+                                price += orderedProductModifierModifier.price * nestedChangedQuantity;
+                            }
+                        });
+                    });
+                });
+            }
+        });
+    });
+
+    return price;
+};
+
 const getPromotionDayData = (availability: IGET_RESTAURANT_PROMOTION_AVAILABILITY) => {
     const day: number = getDay(new Date());
 
@@ -394,12 +423,9 @@ export const checkIfPromotionValid = (promotion: IGET_RESTAURANT_PROMOTION): Che
     if (!platform || !promotion.availablePlatforms?.includes(ERegisterType[platform])) return CheckIfPromotionValidResponse.INVALID_PLATFORM;
 
     const now = new Date();
-    const isWithin = isWithinInterval(now, {
-        start: new Date(promotion.startDate),
-        end: new Date(promotion.endDate),
-    });
 
-    if (!isWithin) return CheckIfPromotionValidResponse.EXPIRED;
+    if (promotion.startDate != null && isBefore(now, new Date(promotion.startDate))) return CheckIfPromotionValidResponse.EXPIRED;
+    if (promotion.endDate != null && isAfter(now, new Date(promotion.endDate))) return CheckIfPromotionValidResponse.EXPIRED;
 
     const isAvailable = promotion.availability && isPromotionAvailable(promotion.availability);
     if (!isAvailable) return CheckIfPromotionValidResponse.UNAVAILABLE;

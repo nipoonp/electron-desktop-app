@@ -392,7 +392,7 @@ export const ReceiptPrinter = () => {
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPrinterAddress1(event.target.value)}
                 />
 
-                <Input
+                {/* <Input
                     className="mb-4"
                     label="Bluetooth Printer Address 2:"
                     type="text"
@@ -400,9 +400,9 @@ export const ReceiptPrinter = () => {
                     value={printerAddress2}
                     placeholder="00:04:61:02:AA:FF"
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPrinterAddress2(event.target.value)}
-                />
+                /> */}
 
-                <Input
+                {/* <Input
                     className="mb-4"
                     label="Bluetooth Printer Address 3:"
                     type="text"
@@ -410,7 +410,7 @@ export const ReceiptPrinter = () => {
                     value={printerAddress3}
                     placeholder="00:04:61:02:AA:FF"
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setPrinterAddress3(event.target.value)}
-                />
+                /> */}
 
                 <Button onClick={onPrintTestReceipt}>Print Test Receipt(s)</Button>
             </div>

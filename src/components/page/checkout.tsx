@@ -8,10 +8,12 @@ import {
     convertCentsToDollars,
     convertProductTypesForPrint,
     filterPrintProducts,
+    getCartProductUnitTotalPrice,
     getOrderNumber,
     isItemAvailable,
     isItemSoldOut,
     isProductQuantityAvailable,
+    toLocalISOString,
 } from "../../util/util";
 import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
@@ -23,6 +25,10 @@ import {
     IS3Object,
     IGET_THIRD_PARTY_ORDER_RESPONSE,
     IGET_RESTAURANT_REGISTER_PRINTER,
+    IGET_RESTAURANT_AVAILABILITY_RESTAURANT,
+    IGET_RESTAURANT_AVAILABILITY_CATEGORY,
+    IGET_RESTAURANT_AVAILABILITY_PRODUCT,
+    IGET_RESTAURANT_AVAILABILITY_MODIFIER,
 } from "../../graphql/customQueries";
 import {
     restaurantPath,
@@ -32,6 +38,7 @@ import {
     buzzerNumberPath,
     paymentMethodPath,
     customerInformationPath,
+    checkoutPath,
 } from "../main";
 import { ShoppingBasketIcon } from "../../tabin/components/icons/shoppingBasketIcon";
 import { ProductModal } from "../modals/product";
@@ -64,7 +71,6 @@ import { useVerifone } from "../../context/verifone-context";
 import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
-import { toLocalISOString } from "../../util/util";
 import { useRestaurant } from "../../context/restaurant-context";
 import { UpSellProductModal } from "../modals/upSellProduct";
 import { Link } from "../../tabin/components/link";
@@ -86,6 +92,7 @@ import { Storage } from "aws-amplify";
 import awsconfig from "../../aws-exports";
 import { OrderScheduleDateTime } from "../../tabin/components/orderScheduleDateTime";
 import { useGetThirdPartyOrderResponseLazyQuery } from "../../hooks/useGetThirdPartyOrderResponseLazyQuery";
+import { useGetRestaurantAvailabilityLazyQuery } from "../../hooks/useGetRestaurantAvailabilityLazyQuery";
 
 import "./checkout.scss";
 import axios from "axios";
@@ -93,8 +100,29 @@ import { R18MessageModal } from "../modals/r18MessageModal";
 import { useTyro } from "../../context/tyro-context";
 import { useMX51 } from "../../context/mx51-context";
 import { LoyaltyHeader } from "../shared/loyaltyHeader";
+import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 
 const logger = new Logger("checkout");
+
+type AvailabilityCheckResult = {
+    soldOutItems: string[];
+    productsToRemove: number[];
+    productsToUpdate: { index: number; product: ICartProduct }[];
+};
+
+type AvailabilityModifierGroupIndex = {
+    modifiersById: Map<string, IGET_RESTAURANT_AVAILABILITY_MODIFIER>;
+};
+
+type AvailabilityProductIndex = {
+    product: IGET_RESTAURANT_AVAILABILITY_PRODUCT;
+    modifierGroupsById: Map<string, AvailabilityModifierGroupIndex>;
+};
+
+type AvailabilityCategoryIndex = {
+    category: IGET_RESTAURANT_AVAILABILITY_CATEGORY;
+    productsById: Map<string, AvailabilityProductIndex>;
+};
 
 // Component
 export const Checkout = () => {
@@ -170,6 +198,7 @@ export const Checkout = () => {
             logger.debug("update order mutation result: ", mutationResult);
         },
     });
+    const { getRestaurantDataAvailability } = useGetRestaurantAvailabilityLazyQuery();
 
     const { getThirdPartyOrderResponse } = useGetThirdPartyOrderResponseLazyQuery();
 
@@ -198,7 +227,7 @@ export const Checkout = () => {
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
     const [paymentOutcomeOrderNumber, setPaymentOutcomeOrderNumber] = useState<string | null>(null);
     const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(
-        restaurant?.delayBetweenOrdersInSeconds || 10
+        restaurant?.delayBetweenOrdersInSeconds || 10,
     );
     let transactionCompleteRedirectTime = restaurant?.delayBetweenOrdersInSeconds || 10;
 
@@ -209,6 +238,7 @@ export const Checkout = () => {
 
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
     const [showModal, setShowModal] = useState<string>("");
+    const [showFullScreenSpinner, setShowFullScreenSpinner] = useState(false);
 
     useEffect(() => {
         const checkDivScrollable = () => {
@@ -310,10 +340,12 @@ export const Checkout = () => {
             showAlert(
                 "Incomplete Payments",
                 "There have been partial payments made on this order. Are you sure you would like to cancel this order?",
-                () => {},
+                null,
                 () => {
                     cancelOrder();
-                }
+                },
+                "No",
+                "Yes",
             );
         } else {
             cancelOrder();
@@ -449,6 +481,154 @@ export const Checkout = () => {
         deleteProduct(displayOrder);
     };
 
+    const checkConditionsBeforeCreateOrder = (
+        latestRestaurant: IGET_RESTAURANT_AVAILABILITY_RESTAURANT | null | undefined,
+        cartProducts: ICartProduct[] | null,
+    ): AvailabilityCheckResult => {
+        if (!latestRestaurant || !cartProducts) {
+            return { soldOutItems: [], productsToRemove: [], productsToUpdate: [] };
+        }
+
+        const soldOutItems = new Set<string>();
+        const productsToRemove = new Set<number>();
+        const productsToUpdate: { index: number; product: ICartProduct }[] = [];
+
+        const categoriesById = new Map<string, AvailabilityCategoryIndex>();
+        for (const category of latestRestaurant.categories.items) {
+            const productsById = new Map<string, AvailabilityProductIndex>();
+
+            for (const productItem of category.products.items) {
+                const product = productItem.product;
+                const modifierGroupsById = new Map<string, AvailabilityModifierGroupIndex>();
+
+                for (const modifierGroupItem of product.modifierGroups.items) {
+                    const modifierGroup = modifierGroupItem.modifierGroup;
+                    const modifiersById = new Map(
+                        modifierGroup.modifiers.items.map((modifierItem) => [modifierItem.modifier.id, modifierItem.modifier]),
+                    );
+
+                    modifierGroupsById.set(modifierGroup.id, {
+                        modifiersById,
+                    });
+                }
+
+                productsById.set(product.id, {
+                    product,
+                    modifierGroupsById,
+                });
+            }
+
+            categoriesById.set(category.id, {
+                category,
+                productsById,
+            });
+        }
+
+        for (let index = 0; index < cartProducts.length; index++) {
+            const cartProduct = cartProducts[index];
+            let updatedProduct: ICartProduct | null = null;
+
+            const addSoldOutItem = (name: string) => {
+                soldOutItems.add(name);
+            };
+
+            const markProductForRemoval = (name: string) => {
+                addSoldOutItem(name);
+                productsToRemove.add(index);
+            };
+
+            const ensureUpdatedProduct = (): ICartProduct => {
+                if (!updatedProduct) {
+                    updatedProduct = JSON.parse(JSON.stringify(cartProduct)) as ICartProduct;
+                }
+                return updatedProduct;
+            };
+
+            const removeModifierGroupFromProduct = (modifierGroupId: string) => {
+                const productCopy = ensureUpdatedProduct();
+                productCopy.modifierGroups = productCopy.modifierGroups.filter((group) => group.id !== modifierGroupId);
+            };
+
+            if (!cartProduct.category) {
+                markProductForRemoval(cartProduct.name);
+                continue;
+            }
+
+            const categoryIndex = categoriesById.get(cartProduct.category.id);
+            if (!categoryIndex) {
+                markProductForRemoval(cartProduct.name);
+                continue;
+            }
+
+            const isCategorySoldOut = isItemSoldOut(categoryIndex.category.soldOut ?? undefined, categoryIndex.category.soldOutDate ?? undefined);
+            if (isCategorySoldOut) {
+                markProductForRemoval(cartProduct.name);
+                continue;
+            }
+
+            const productIndex = categoryIndex.productsById.get(cartProduct.id);
+            if (!productIndex) {
+                markProductForRemoval(cartProduct.name);
+                continue;
+            }
+
+            const product = productIndex.product;
+            const isProductSoldOut = isItemSoldOut(product.soldOut ?? undefined, product.soldOutDate ?? undefined);
+            const productAvailableQuantity = isProductSoldOut ? 0 : product.totalQuantityAvailable;
+            if (isProductSoldOut || (productAvailableQuantity !== null && productAvailableQuantity < cartProduct.quantity)) {
+                addSoldOutItem(product.name);
+                if (productAvailableQuantity !== null && productAvailableQuantity > 0) {
+                    const productCopy = ensureUpdatedProduct();
+                    productCopy.quantity = productAvailableQuantity;
+                } else {
+                    productsToRemove.add(index);
+                    continue;
+                }
+            }
+
+            for (const mg of cartProduct.modifierGroups) {
+                const modifierGroupIndex = productIndex.modifierGroupsById.get(mg.id);
+                if (!modifierGroupIndex) {
+                    removeModifierGroupFromProduct(mg.id);
+                    continue;
+                }
+
+                let shouldRemoveModifierGroup = false;
+                for (const m of mg.modifiers) {
+                    const modifier = modifierGroupIndex.modifiersById.get(m.id);
+                    if (!modifier) {
+                        addSoldOutItem(m.name);
+                        shouldRemoveModifierGroup = true;
+                        continue;
+                    }
+
+                    const isModifierSoldOut = isItemSoldOut(modifier.soldOut ?? undefined, modifier.soldOutDate ?? undefined);
+                    const modifierAvailableQuantity = isModifierSoldOut ? 0 : modifier.totalQuantityAvailable;
+                    if (isModifierSoldOut || (modifierAvailableQuantity !== null && modifierAvailableQuantity < m.quantity)) {
+                        addSoldOutItem(modifier.name);
+                        shouldRemoveModifierGroup = true;
+                    }
+                }
+
+                if (shouldRemoveModifierGroup) {
+                    removeModifierGroupFromProduct(mg.id);
+                }
+            }
+
+            const productToUpdate = !productsToRemove.has(index) ? (updatedProduct as ICartProduct | null) : null;
+            if (productToUpdate) {
+                productToUpdate.totalPrice = getCartProductUnitTotalPrice(productToUpdate);
+                productsToUpdate.push({ index, product: productToUpdate });
+            }
+        }
+
+        return {
+            soldOutItems: Array.from(soldOutItems),
+            productsToRemove: Array.from(productsToRemove),
+            productsToUpdate,
+        };
+    };
+
     const onClickOrderButton = async () => {
         if (restaurant.orderThresholds?.enable && restaurant.orderThresholdMessage && !isShownOrderThresholdMessageModal) {
             setShowOrderThresholdMessageModal(true);
@@ -478,6 +658,46 @@ export const Checkout = () => {
 
             if (invalid) {
                 navigate(customerInformationPath);
+                return;
+            }
+        }
+
+        console.log("on submit order called with: ", register, register.checkConditionsBeforeCreateOrder);
+        // Check backend quantities before creating order
+        if (register.checkConditionsBeforeCreateOrder) {
+            setShowFullScreenSpinner(true);
+
+            const { data: restaurantData } = await getRestaurantDataAvailability({
+                variables: { restaurantId: restaurant.id },
+                fetchPolicy: "no-cache", //This is to stop the GetRestaurant API get double called. I think its somehting to do with useGetRestaurantQuery "cache-first" and "netowrk-first" fetchPolicy.
+            });
+            const { soldOutItems, productsToRemove, productsToUpdate } = checkConditionsBeforeCreateOrder(restaurantData?.getRestaurant, products);
+
+            setShowFullScreenSpinner(false);
+
+            if (soldOutItems.length > 0) {
+                setShowPaymentModal(false);
+                setPaymentModalState(EPaymentModalState.None);
+                setPaymentOutcomeOrderNumber(null);
+                showAlert(
+                    "Items Unavailable",
+                    `The following items are no longer available:\n${soldOutItems.join("\n")}`,
+                    null,
+                    () => {
+                        const removeIndexes = productsToRemove.slice().sort((a, b) => b - a);
+                        for (let i = 0; i < productsToUpdate.length; i++) {
+                            const update = productsToUpdate[i];
+                            if (removeIndexes.includes(update.index)) continue;
+                            updateProduct(update.index, update.product);
+                        }
+                        removeIndexes.forEach((removeIndex) => {
+                            deleteProduct(removeIndex);
+                        });
+                        navigate(checkoutPath);
+                    },
+                    null,
+                    "Review Order",
+                );
                 return;
             }
         }
@@ -676,7 +896,7 @@ export const Checkout = () => {
         newPayments: ICartPayment[],
         eftposCardType?: EEftposTransactionOutcomeCardType,
         eftposSurcharge?: number,
-        eftposTip?: number
+        eftposTip?: number,
     ) => {
         //If parked order do not generate order number
         let orderNumber =
@@ -695,7 +915,7 @@ export const Checkout = () => {
                 const signatureFile = await convertBase64ToFile(
                     customerInformation.signatureBase64,
                     `${filename}.${fileExtension}`,
-                    `image/${fileExtension}`
+                    `image/${fileExtension}`,
                 );
 
                 const uploadedObject: any = await Storage.put(`${filename}.${fileExtension}`, signatureFile, {
@@ -719,7 +939,7 @@ export const Checkout = () => {
                 signatureS3Object,
                 eftposCardType,
                 eftposSurcharge,
-                eftposTip
+                eftposTip,
             );
 
             createdOrder.current = newOrder;
@@ -793,7 +1013,7 @@ export const Checkout = () => {
         signatureS3Object: IS3Object | null,
         eftposCardType?: EEftposTransactionOutcomeCardType,
         eftposSurcharge?: number,
-        eftposTip?: number
+        eftposTip?: number,
     ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
         const now = new Date();
         if (!user) {
@@ -929,7 +1149,7 @@ export const Checkout = () => {
                     placedAtUtc: now.toISOString(),
                     orderUserId: user.id,
                     orderRestaurantId: restaurant.id,
-                })
+                }),
             );
             throw "Error in createOrderMutation input";
         }
@@ -1052,7 +1272,7 @@ export const Checkout = () => {
                     register.windcaveStationUser,
                     register.windcaveStationKey,
                     amount,
-                    "Purchase"
+                    "Purchase",
                 );
             } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
@@ -1062,7 +1282,7 @@ export const Checkout = () => {
                     register.eftposIpAddress,
                     register.eftposPortNumber,
                     restaurant.id,
-                    setEftposMessage
+                    setEftposMessage,
                 );
             } else if (register.eftposProvider == EEftposProvider.TYRO) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
@@ -1073,7 +1293,7 @@ export const Checkout = () => {
                     register.tyroMerchantId,
                     register.tyroTerminalId,
                     setEftposMessage,
-                    setEftposQuestion
+                    setEftposQuestion,
                 );
             } else if (register.eftposProvider == EEftposProvider.MX51) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
@@ -1178,7 +1398,7 @@ export const Checkout = () => {
                         newPayments,
                         outcome.eftposCardType,
                         outcome.eftposSurcharge,
-                        outcome.eftposTip
+                        outcome.eftposTip,
                     );
 
                     setPaymentModalState(EPaymentModalState.EftposResult);
@@ -1635,7 +1855,7 @@ export const Checkout = () => {
 
     const modalsAndSpinners = (
         <>
-            {/* <FullScreenSpinner show={loading} text={loadingMessage} /> */}
+            {showFullScreenSpinner && <FullScreenSpinner show={true} text="Processing your order..." />}
 
             {upSellCategoryModal()}
             {upSellProductModal()}
@@ -1826,7 +2046,7 @@ export const Checkout = () => {
             ) : promotion ? (
                 <div className="h3 text-center mb-2">
                     {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
-                        promotion.discountedAmount
+                        promotion.discountedAmount,
                     )}`}{" "}
                     {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
                 </div>

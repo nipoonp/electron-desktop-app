@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useCart } from "../../context/cart-context";
 import { useRestaurant } from "../../context/restaurant-context";
 import { useGetPromotionLazyQuery } from "../../hooks/useGetPromotionLazyQuery";
+import { useGetPromotionByIdLazyQuery } from "../../hooks/useGetPromotionByIdLazyQuery";
 import { CheckIfPromotionValidResponse, EOrderType } from "../../model/model";
 import { Button } from "../../tabin/components/button";
 import { ModalV2 } from "../../tabin/components/modalv2";
@@ -27,6 +28,19 @@ export const RewardsModal = (props: IRewardsModalProps) => {
         error: getPromotionsByCodeError,
         loading: getPromotionsByCodeLoading,
     } = useGetPromotionLazyQuery();
+
+    const { getPromotionById, promotionsById } = useGetPromotionByIdLazyQuery();
+
+    // Fetch loyalty reward promotions only when modal opens
+    useEffect(() => {
+        if (!restaurant?.loyalties?.items?.length) return;
+
+        const promotionIds = Array.from(
+            new Set(restaurant.loyalties.items.flatMap((loyalty) => loyalty.rewards.map((reward) => reward.promotionId))),
+        );
+
+        promotionIds.forEach((id) => getPromotionById({ variables: { id } }));
+    }, []);
 
     useEffect(() => {
         if (getPromotionsByCodeError) {
@@ -58,7 +72,7 @@ export const RewardsModal = (props: IRewardsModalProps) => {
                     return;
                 }
 
-                const status = setUserAppliedPromotions([appliedPromotion]); //Apply the first one if there are many with the same code.
+                const status = setUserAppliedPromotions([appliedPromotion]);
 
                 if (status == CheckIfPromotionValidResponse.UNAVAILABLE) {
                     setError("This code is currently unavailable. Please try again later");
@@ -88,23 +102,23 @@ export const RewardsModal = (props: IRewardsModalProps) => {
     const onApply = async (loyaltyId: string, promoId: string, points: number) => {
         if (!restaurant) return;
 
-        const promotionCode = restaurant.promotions.items.find((item) => item.id === promoId)?.code;
-
-        if (!promotionCode) {
-            toast.error("Error in applying reward");
+        if (!customerLoyaltyPoints || customerLoyaltyPoints < points) {
+            toast.error("You do not have enough points to redeem this reward.");
             return;
         }
 
-        if (!customerLoyaltyPoints || customerLoyaltyPoints < points) {
-            toast.error("You do not have enough points to redeem this reward.");
+        const promotion = promotionsById[promoId];
+
+        if (!promotion?.code) {
+            toast.error("Error in applying reward");
             return;
         }
 
         tempLoyaltyId.current = loyaltyId;
         await getPromotionsByCode({
             variables: {
-                code: promotionCode,
-                promotionRestaurantId: restaurant ? restaurant.id : "",
+                code: promotion.code,
+                promotionRestaurantId: restaurant.id,
             },
         });
     };
@@ -118,17 +132,18 @@ export const RewardsModal = (props: IRewardsModalProps) => {
                         restaurant.loyalties &&
                         restaurant.loyalties.items.map((loyalty) => (
                             <>
-                                {loyalty ? (
+                                {loyalty && loyalty.rewards.length > 0 ? (
                                     loyalty.rewards.map((reward) => (
                                         <div key={reward.promotionId} className="reward-promotion mb-2">
-                                            <div className="h3 reward-promotion-name">
-                                                {restaurant.promotions.items.find((item) => item.id === reward.promotionId)?.name}
-                                            </div>
+                                            <div className="h3 reward-promotion-name">{promotionsById[reward.promotionId]?.name}</div>
                                             <div>
                                                 {reward.points} point{reward.points !== 1 ? "s" : ""}
                                             </div>
                                             <Button
-                                                disabled={customerLoyaltyPoints ? customerLoyaltyPoints < reward.points : false}
+                                                disabled={
+                                                    !promotionsById[reward.promotionId] ||
+                                                    (customerLoyaltyPoints ? customerLoyaltyPoints < reward.points : false)
+                                                }
                                                 onClick={() => onApply(loyalty.id, reward.promotionId, reward.points)}
                                             >
                                                 Apply
@@ -136,7 +151,7 @@ export const RewardsModal = (props: IRewardsModalProps) => {
                                         </div>
                                     ))
                                 ) : (
-                                    <div>No rewards available.</div>
+                                    <div>No rewards available</div>
                                 )}
                             </>
                         ))}
