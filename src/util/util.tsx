@@ -1,4 +1,4 @@
-import { eachMinuteOfInterval, format, getDay, isAfter, isWithinInterval, startOfDay } from "date-fns";
+import { eachMinuteOfInterval, format, getDay, isAfter, isBefore, isWithinInterval, startOfDay } from "date-fns";
 import { addDays, isEqual } from "date-fns";
 import { IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
 import {
@@ -423,12 +423,9 @@ export const checkIfPromotionValid = (promotion: IGET_RESTAURANT_PROMOTION): Che
     if (!platform || !promotion.availablePlatforms?.includes(ERegisterType[platform])) return CheckIfPromotionValidResponse.INVALID_PLATFORM;
 
     const now = new Date();
-    const isWithin = isWithinInterval(now, {
-        start: new Date(promotion.startDate),
-        end: new Date(promotion.endDate),
-    });
 
-    if (!isWithin) return CheckIfPromotionValidResponse.EXPIRED;
+    if (promotion.startDate != null && isBefore(now, new Date(promotion.startDate))) return CheckIfPromotionValidResponse.EXPIRED;
+    if (promotion.endDate != null && isAfter(now, new Date(promotion.endDate))) return CheckIfPromotionValidResponse.EXPIRED;
 
     const isAvailable = promotion.availability && isPromotionAvailable(promotion.availability);
     if (!isAvailable) return CheckIfPromotionValidResponse.UNAVAILABLE;
