@@ -2396,6 +2396,11 @@ export const Checkout = () => {
                     {isPOS && <>{customerInformationFooter}</>}
                     {isPOS && <>{clearSaleFooter}</>}
                 </div>
+                {parkedOrderNumber && (
+                    <div className="parked-order-banner">
+                        Updating Parked Order #{parkedOrderNumber}
+                    </div>
+                )}
                 <div className="order-wrapper">
                     <div
                         ref={(ref) => setProductsWrapperElement(ref)}
