@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { FiArrowLeft, FiArrowRight, FiRotateCw, FiX } from "react-icons/fi";
 import { useNavigate } from "react-router";
-import { ICartModifier, ICartModifierGroup, ICartProduct } from "../../model/model";
+import {
+    EEftposProvider,
+    EEftposTransactionOutcome,
+    ICartModifier,
+    ICartModifierGroup,
+    ICartProduct,
+    IEftposTransactionOutcome,
+} from "../../model/model";
 import { useCart } from "../../context/cart-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { useRegister } from "../../context/register-context";
 import { useRestaurant } from "../../context/restaurant-context";
+import { useWindcave } from "../../context/windcave-context";
 import { IGET_RESTAURANT_ORDER_FRAGMENT, IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../../graphql/customFragments";
 import { IGET_RESTAURANT_REGISTER_PRINTER } from "../../graphql/customQueries";
 import { ERegisterPrinterType, IOrderReceipt, IPrintSalesData } from "../../model/model";
@@ -39,6 +47,7 @@ export default () => {
     const { register } = useRegister();
     const { printSalesData } = useReceiptPrinter();
     const { printReceipt } = useReceiptPrinter();
+    const { refundTransaction: windcaveRefundTransaction } = useWindcave();
     const navigate = useNavigate();
 
     const [showSelectReceiptPrinterModal, setShowSelectReceiptPrinterModal] = useState(false);
@@ -79,7 +88,7 @@ export default () => {
                     hideModifierGroupName: register.printers.items[0].hideModifierGroupName,
                     skipReceiptCutCommand: register.printers.items[0].skipReceiptCutCommand,
                     printReceiptForEachProduct: register.printers.items[0].printReceiptForEachProduct,
-                    hideOrderType: register.availableOrderTypes.length === 0,
+                    hideOrderType: false,
                     products: convertProductTypesForPrint(productsToPrint),
                     displayPaymentRequiredMessage: !order.paid,
                     enableLoyalty: restaurant ? restaurant.enableLoyalty : false,
@@ -287,6 +296,82 @@ export default () => {
                 console.error(e);
                 toast.error("There was an error opening your parked order.");
             }
+        } else if (data.action === "eftposRefund") {
+            try {
+                if (!register) {
+                    toast.error("No register configured.");
+                    return;
+                }
+
+                const amount = Number(data.refundAmount || "0");
+                if (!amount || Number.isNaN(amount) || amount <= 0) {
+                    toast.error("Refund amount is missing or invalid.");
+                    return;
+                }
+
+                let refundOutcome: IEftposTransactionOutcome | null = null;
+
+                switch (register.eftposProvider) {
+                    case EEftposProvider.WINDCAVE: {
+                        refundOutcome = await windcaveRefundTransaction(
+                            register.windcaveStationId,
+                            register.windcaveStationUser,
+                            register.windcaveStationKey,
+                            amount,
+                        );
+                        break;
+                    }
+                    case EEftposProvider.SMARTPAY:
+                        // TODO: add Smartpay refund transaction support
+                        break;
+                    case EEftposProvider.VERIFONE:
+                        // TODO: add Verifone refund transaction support
+                        break;
+                    case EEftposProvider.TYRO:
+                        // TODO: add Tyro refund transaction support
+                        break;
+                    case EEftposProvider.MX51:
+                        // TODO: add MX51 refund transaction support
+                        break;
+                    default:
+                        // TODO: add refund transaction support for this provider
+                        break;
+                }
+
+                console.log("Refund outcome:", refundOutcome);
+                console.log("Amount", amount);
+
+                const iframe = document.querySelector("iframe");
+
+                if (refundOutcome?.transactionOutcome === EEftposTransactionOutcome.Success) {
+                    //Only if refund was sucessful
+                    //@ts-ignore
+                    iframe.contentWindow.postMessage(
+                        {
+                            action: "eftposRefundResponse",
+                            success: true,
+                            refundAmount: amount,
+                            outcomeMessage: refundOutcome.message,
+                        },
+                        iFrameBaseUrl,
+                    );
+                } else if (refundOutcome?.transactionOutcome === EEftposTransactionOutcome.Fail) {
+                    //If refund was failed, cancelled or declined it will come here
+                    //@ts-ignore
+                    iframe.contentWindow.postMessage(
+                        {
+                            action: "eftposRefundResponse",
+                            success: false,
+                            refundAmount: amount,
+                            outcomeMessage: refundOutcome.message,
+                        },
+                        iFrameBaseUrl,
+                    );
+                }
+            } catch (e) {
+                console.error(e);
+                toast.error("There was an error processing the refund.");
+            }
         }
     };
 
@@ -307,7 +392,7 @@ export default () => {
             printerType: ERegisterPrinterType;
             printerAddress: string;
         },
-        printData: IPrintSalesData
+        printData: IPrintSalesData,
     ) => {
         await printSalesData({
             type: printData.type,
@@ -340,7 +425,7 @@ export default () => {
                 hideModifierGroupName: printer.hideModifierGroupName,
                 skipReceiptCutCommand: printer.skipReceiptCutCommand,
                 printReceiptForEachProduct: printer.printReceiptForEachProduct,
-                hideOrderType: register.availableOrderTypes.length === 0,
+                hideOrderType: false,
                 products: convertProductTypesForPrint(productsToPrint),
             });
         }

@@ -9,6 +9,7 @@ import {
     isItemAvailable,
     isItemSoldOut,
     isModifierQuantityAvailable,
+    isOrderTypeAllowed,
     isProductQuantityAvailable,
 } from "../../util/util";
 import { FiArrowDownCircle } from "react-icons/fi";
@@ -63,7 +64,7 @@ export const ProductModal = (props: {
 }) => {
     const { register } = useRegister();
     const { category, product, currentSelectedProductModifier, isOpen, onAddProduct, onUpdateProduct, onClose, editProduct } = props;
-    const { cartProductQuantitiesById } = useCart();
+    const { cartProductQuantitiesById, orderType } = useCart();
 
     const getPreSelectedModifiers = () => {
         //Set preselected modifiers logic
@@ -227,7 +228,7 @@ export const ProductModal = (props: {
 
         price = price * quantity;
         setTotalDisplayPrice(price);
-    }, [orderedModifiers, quantity]);
+    }, [orderedModifiers, quantity, orderType]);
 
     const onModalClose = () => {
         onClose();
@@ -803,6 +804,7 @@ export const ProductModal = (props: {
                 product.modifierGroups.items.map((mg) => {
                     if (mg.modifierGroup.hideForCustomer) return;
                     if (register && mg.modifierGroup.availablePlatforms && !mg.modifierGroup.availablePlatforms.includes(register.type)) return;
+                    if (!isOrderTypeAllowed(orderType, mg.modifierGroup.availableOrderTypes)) return;
 
                     return (
                         <>
@@ -1049,7 +1051,7 @@ export const ModifierGroup = (props: {
         scrollToDiv,
     } = props;
     const { register } = useRegister();
-    const { cartProductQuantitiesById, cartModifierQuantitiesById } = useCart();
+    const { cartProductQuantitiesById, cartModifierQuantitiesById, orderType } = useCart();
 
     const [collapsed, setCollapsed] = useState<boolean>(modifierGroup.collapsedByDefault ? modifierGroup.collapsedByDefault : false);
     const [subModifierGroups, setSubModifierGroups] = useState<string[]>([]);
@@ -1209,6 +1211,7 @@ export const ModifierGroup = (props: {
                                 .sort((a, b) => (modifierGroup.alphabeticalSorting ? a.modifier.name.localeCompare(b.modifier.name) : 0))
                                 .map((m) => {
                                     if (register && m.modifier.availablePlatforms && !m.modifier.availablePlatforms.includes(register.type)) return;
+                                    if (!isOrderTypeAllowed(orderType, m.modifier.availableOrderTypes)) return;
                                     if (
                                         (selectedSubModifierGroup &&
                                             m.modifier.subModifierGroups &&
