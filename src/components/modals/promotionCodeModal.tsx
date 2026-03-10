@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { useCart } from "../../context/cart-context";
 import { useRestaurant } from "../../context/restaurant-context";
 import { useGetPromotionLazyQuery } from "../../hooks/useGetPromotionLazyQuery";
+import { useGetPromotionByIdLazyQuery } from "../../hooks/useGetPromotionByIdLazyQuery";
 import { CheckIfPromotionValidResponse, EOrderType } from "../../model/model";
 import { Button } from "../../tabin/components/button";
 import { Input } from "../../tabin/components/input";
 import { ModalV2 } from "../../tabin/components/modalv2";
 import { toast } from "../../tabin/components/toast";
-import { convertCentsToDollars } from "../../util/util";
-import { ELOYALTY_ACTION, IGET_RESTAURANT_LOYALTY_USER } from "../../graphql/customQueries";
+import { checkIfPromotionValid, convertCentsToDollars } from "../../util/util";
 import { useUser } from "../../context/user-context";
 import "./promotionCodeModal.scss";
 
@@ -32,6 +32,19 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
     const [error, setError] = useState("");
 
     const tempLoyaltyId = useRef<string | null>(null);
+
+    const { getPromotionById, promotionsById: loyaltyPromotionsById, loading: loyaltyPromotionsLoading } = useGetPromotionByIdLazyQuery();
+
+    useEffect(() => {
+        if (!props.isOpen || !restaurant?.loyalties?.items?.length) return;
+        if (!customerInformation?.firstName || !customerInformation?.email || !customerInformation?.phoneNumber) return;
+
+        const promotionIds = Array.from(
+            new Set(restaurant.loyalties.items.flatMap((loyalty) => loyalty.rewards.map((reward) => reward.promotionId))),
+        );
+
+        promotionIds.forEach((id) => getPromotionById({ variables: { id } }));
+    }, [props.isOpen, customerInformation]);
 
     const {
         getPromotionsByCode,
@@ -116,31 +129,25 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
     };
 
     const onApply = async (loyaltyId: string, promoId: string, points: number) => {
-        console.log("xxx...", promoId);
-        console.log("xxx...", restaurant?.promotions.items);
-
-        if (restaurant) {
-            const promotionCode = restaurant.promotions.items.find((item) => item.id === promoId)?.code;
-            console.log("xxx...", promotionCode);
-
-            if (!promotionCode) {
-                toast.error("Error in applying reward");
-                return;
-            }
-
-            if (!customerLoyaltyPoints || customerLoyaltyPoints < points) {
-                toast.error("You do not have enough points to redeem this reward.");
-                return;
-            }
-
-            tempLoyaltyId.current = loyaltyId;
-            await getPromotionsByCode({
-                variables: {
-                    code: promotionCode,
-                    promotionRestaurantId: restaurant ? restaurant.id : "",
-                },
-            });
+        if (!customerLoyaltyPoints || customerLoyaltyPoints < points) {
+            toast.error("You do not have enough points to redeem this reward.");
+            return;
         }
+
+        const promotion = loyaltyPromotionsById[promoId];
+        console.log("onApply promotion:", promotion, "promoId:", promoId, "loyaltyPromotionsById:", loyaltyPromotionsById);
+        if (!promotion?.code || !restaurant) {
+            toast.error("Error in applying reward");
+            return;
+        }
+
+        tempLoyaltyId.current = loyaltyId;
+        await getPromotionsByCode({
+            variables: {
+                code: promotion.code,
+                promotionRestaurantId: restaurant.id,
+            },
+        });
     };
 
     return (
@@ -174,22 +181,31 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
                                 restaurant.loyalties.items.map((loyalty) => (
                                     <>
                                         {loyalty ? (
-                                            loyalty.rewards.map((reward) => (
-                                                <div key={reward.promotionId} className="reward-promotion mb-2">
-                                                    <div className="reward-promotion-name">
-                                                        {restaurant.promotions.items.find((item) => item.id === reward.promotionId)?.name}
+                                            loyalty.rewards
+                                                // .filter((reward) => {
+                                                //     const promotion = loyaltyPromotionsById[reward.promotionId];
+                                                //     if (!promotion) return false;
+                                                //     if (promotion.totalAvailableUses !== null && promotion.totalNumberUsed >= promotion.totalAvailableUses) return false;
+                                                //     return checkIfPromotionValid(promotion) === CheckIfPromotionValidResponse.VALID;
+                                                // })
+                                                .map((reward) => (
+                                                    <div key={reward.promotionId} className="reward-promotion mb-2">
+                                                        <div className="reward-promotion-name">
+                                                            {loyaltyPromotionsLoading
+                                                                ? "Loading..."
+                                                                : loyaltyPromotionsById[reward.promotionId]?.name}
+                                                        </div>
+                                                        <div>
+                                                            {reward.points} point{reward.points !== 1 ? "s" : ""}
+                                                        </div>
+                                                        <Button
+                                                            disabled={!loyaltyPromotionsById[reward.promotionId]}
+                                                            onClick={() => onApply(loyalty.id, reward.promotionId, reward.points)}
+                                                        >
+                                                            Apply
+                                                        </Button>
                                                     </div>
-                                                    <div>
-                                                        {reward.points} point{reward.points !== 1 ? "s" : ""}
-                                                    </div>
-                                                    <Button
-                                                        // disabled={loyaltyPoints < reward.points}
-                                                        onClick={() => onApply(loyalty.id, reward.promotionId, reward.points)}
-                                                    >
-                                                        Apply
-                                                    </Button>
-                                                </div>
-                                            ))
+                                                ))
                                         ) : (
                                             <div>No rewards available.</div>
                                         )}

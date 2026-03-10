@@ -392,7 +392,7 @@ export const GET_RESTAURANT = gql`
                     }
                 }
             }
-            promotions {
+            promotions(filter: { autoApply: { eq: true } }) {
                 items {
                     id
                     name
@@ -1657,6 +1657,81 @@ export const GET_PROMOTION_BY_CODE = gql`
                                 categoryIds
                                 productIds
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+`;
+
+export const GET_PROMOTION_BY_ID = gql`
+    query GetPromotion($id: ID!) {
+        getPromotion(id: $id) {
+            id
+            name
+            type
+            code
+            autoApply
+            startDate
+            endDate
+            availability {
+                monday {
+                    startTime
+                    endTime
+                }
+                tuesday {
+                    startTime
+                    endTime
+                }
+                wednesday {
+                    startTime
+                    endTime
+                }
+                thursday {
+                    startTime
+                    endTime
+                }
+                friday {
+                    startTime
+                    endTime
+                }
+                saturday {
+                    startTime
+                    endTime
+                }
+                sunday {
+                    startTime
+                    endTime
+                }
+            }
+            availablePlatforms
+            availableOrderTypes
+            totalNumberUsed
+            totalAvailableUses
+            minSpend
+            applyToCheapest
+            applyToModifiers
+            maxApplicationsPerOrder
+            items {
+                items {
+                    id
+                    minQuantity
+                    categoryIds
+                    productIds
+                }
+            }
+            discounts {
+                items {
+                    id
+                    amount
+                    type
+                    items {
+                        items {
+                            id
+                            minQuantity
+                            categoryIds
+                            productIds
                         }
                     }
                 }
