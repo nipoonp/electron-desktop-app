@@ -858,7 +858,7 @@ export const Checkout = () => {
                                                     totalPrice: 0,
                                                     discount: 0,
                                                     isAgeRescricted: false,
-                                                    quantity: 1,
+                                                    quantity: product.quantity,
                                                     category: null,
                                                     modifierGroups: [],
                                                 });
@@ -874,7 +874,7 @@ export const Checkout = () => {
                                                 totalPrice: 0,
                                                 discount: 0,
                                                 isAgeRescricted: false,
-                                                quantity: 1,
+                                                quantity: product.quantity,
                                                 category: null,
                                                 modifierGroups: [
                                                     {
@@ -919,7 +919,7 @@ export const Checkout = () => {
                                                     totalPrice: 0,
                                                     discount: 0,
                                                     isAgeRescricted: false,
-                                                    quantity: 1,
+                                                    quantity: product.quantity,
                                                     category: null,
                                                     modifierGroups: [],
                                                 });
@@ -1053,7 +1053,7 @@ export const Checkout = () => {
                                                 totalPrice: 0,
                                                 discount: 0,
                                                 isAgeRescricted: false,
-                                                quantity: 1,
+                                                quantity: product.quantity,
                                                 category: null,
                                                 modifierGroups: [
                                                     {
