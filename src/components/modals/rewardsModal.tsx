@@ -151,7 +151,7 @@ export const RewardsModal = (props: IRewardsModalProps) => {
                                         </div>
                                     ))
                                 ) : (
-                                    <div>No rewards available.</div>
+                                    <div>No rewards available</div>
                                 )}
                             </>
                         ))}
