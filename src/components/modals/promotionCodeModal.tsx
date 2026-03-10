@@ -175,7 +175,7 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
                         <div className="separator-4"></div>
                         <div className="mt-3">
                             <div className="h3 mb-2">Please select your reward</div>
-                            {`${customerInformation.firstName} has ${customerLoyaltyPoints} point${customerLoyaltyPoints !== 1 ? "s" : ""}`}
+                            <div className="mb-2">{`${customerInformation.firstName} has ${customerLoyaltyPoints} point${customerLoyaltyPoints !== 1 ? "s" : ""}`}</div>
                             {restaurant &&
                                 restaurant.loyalties &&
                                 restaurant.loyalties.items.map((loyalty) => (
@@ -199,7 +199,7 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
                                                 </div>
                                             ))
                                         ) : (
-                                            <div className="mt-2">No rewards available</div>
+                                            <div>No rewards available</div>
                                         )}
                                     </>
                                 ))}
