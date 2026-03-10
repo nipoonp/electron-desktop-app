@@ -1,4 +1,4 @@
-import { eachMinuteOfInterval, format, getDay, isAfter, isWithinInterval, startOfDay } from "date-fns";
+import { eachMinuteOfInterval, format, getDay, isAfter, isBefore, isWithinInterval, startOfDay } from "date-fns";
 import { addDays, isEqual } from "date-fns";
 import { IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
 import {
@@ -128,7 +128,7 @@ export const isPromotionAvailable = (availability?: IGET_RESTAURANT_PROMOTION_AV
             parseInt(timeSlot.startTime.split(":")[0]),
             parseInt(timeSlot.startTime.split(":")[1]),
             0,
-            0
+            0,
         );
         let endDateTime = new Date(
             currentDateTime.getFullYear(),
@@ -137,7 +137,7 @@ export const isPromotionAvailable = (availability?: IGET_RESTAURANT_PROMOTION_AV
             parseInt(timeSlot.endTime.split(":")[0]),
             parseInt(timeSlot.endTime.split(":")[1]),
             0,
-            0
+            0,
         );
 
         //Check if endDateTime is set for 12:00AM, if it is add one day because it should be start of next day.
@@ -175,7 +175,7 @@ export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY
             parseInt(timeSlot.startTime.split(":")[0]),
             parseInt(timeSlot.startTime.split(":")[1]),
             0,
-            0
+            0,
         );
 
         let endDateTime = new Date(
@@ -185,7 +185,7 @@ export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY
             parseInt(timeSlot.endTime.split(":")[0]),
             parseInt(timeSlot.endTime.split(":")[1]),
             0,
-            0
+            0,
         );
 
         if (isAfter(startDateTime, endDateTime)) return;
@@ -210,7 +210,7 @@ export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY
 
 export const calculateTotalLoyaltyPoints = (
     histories: { action: ELOYALTY_ACTION; points: number; loyaltyHistoryLoyaltyId?: string | null }[],
-    loyaltyGroupList: string[] = []
+    loyaltyGroupList: string[] = [],
 ): number => {
     let total = 0;
 
@@ -230,7 +230,7 @@ export const getProductQuantityAvailable = (
         id: string;
         totalQuantityAvailable: number;
     },
-    cartProducts: ICartItemQuantitiesById
+    cartProducts: ICartItemQuantitiesById,
 ) => {
     let quantityAvailable = menuProductItem.totalQuantityAvailable;
 
@@ -246,7 +246,7 @@ export const isProductQuantityAvailable = (
         id: string;
         totalQuantityAvailable?: number;
     },
-    cartProducts: ICartItemQuantitiesById
+    cartProducts: ICartItemQuantitiesById,
 ) => {
     if (!menuProductItem.totalQuantityAvailable) return true;
 
@@ -255,7 +255,7 @@ export const isProductQuantityAvailable = (
             id: menuProductItem.id,
             totalQuantityAvailable: menuProductItem.totalQuantityAvailable,
         },
-        cartProducts
+        cartProducts,
     );
 
     return productQuantityAvailable > 0;
@@ -266,7 +266,7 @@ export const getModifierQuantityAvailable = (
         id: string;
         totalQuantityAvailable: number;
     },
-    cartModifiers: ICartItemQuantitiesById
+    cartModifiers: ICartItemQuantitiesById,
 ) => {
     let quantityAvailable = menuModifierItem.totalQuantityAvailable;
 
@@ -282,7 +282,7 @@ export const isModifierQuantityAvailable = (
         id: string;
         totalQuantityAvailable?: number;
     },
-    cartModifiers: ICartItemQuantitiesById
+    cartModifiers: ICartItemQuantitiesById,
 ) => {
     if (!menuModifierItem.totalQuantityAvailable) return true;
 
@@ -291,7 +291,7 @@ export const isModifierQuantityAvailable = (
             id: menuModifierItem.id,
             totalQuantityAvailable: menuModifierItem.totalQuantityAvailable,
         },
-        cartModifiers
+        cartModifiers,
     );
 
     return modifierQuantityAvailable > 0;
@@ -426,12 +426,9 @@ export const checkIfPromotionValid = (promotion: IGET_RESTAURANT_PROMOTION): Che
     if (!platform || !promotion.availablePlatforms?.includes(ERegisterType[platform])) return CheckIfPromotionValidResponse.INVALID_PLATFORM;
 
     const now = new Date();
-    const isWithin = isWithinInterval(now, {
-        start: new Date(promotion.startDate),
-        end: new Date(promotion.endDate),
-    });
 
-    if (!isWithin) return CheckIfPromotionValidResponse.EXPIRED;
+    if (promotion.startDate != null && isBefore(now, new Date(promotion.startDate))) return CheckIfPromotionValidResponse.EXPIRED;
+    if (promotion.endDate != null && isAfter(now, new Date(promotion.endDate))) return CheckIfPromotionValidResponse.EXPIRED;
 
     const isAvailable = promotion.availability && isPromotionAvailable(promotion.availability);
     if (!isAvailable) return CheckIfPromotionValidResponse.UNAVAILABLE;
@@ -471,7 +468,7 @@ const getMatchingPromotionProducts = (
     promotionItems: IGET_RESTAURANT_PROMOTION_ITEMS[],
     applyToCheapest: boolean,
     applyToModifiers: boolean,
-    maxApplications?: number
+    maxApplications?: number,
 ): { matchingProducts: ICartProduct[]; matchingProductsPerApplication: ICartProduct[][]; applications: number } | null => {
     let applications = Number.MAX_SAFE_INTEGER;
     const matchingProductsByPromotionItem: { products: ICartProduct[]; item: IGET_RESTAURANT_PROMOTION_ITEMS }[] = [];
@@ -559,7 +556,7 @@ const discountMatchingProducts = (
     applyToModifiers: boolean,
     applications: number = 1,
     matchingProductsPerApplication?: ICartProduct[][],
-    perApplicationDiscounts?: number[]
+    perApplicationDiscounts?: number[],
 ) => {
     if (matchingProducts.length === 0) return matchingProducts;
 
@@ -618,7 +615,7 @@ const processPromotionDiscounts = (
     total: number = 0,
     applyToCheapest: boolean = false,
     applyToModifiers: boolean = false,
-    maxApplications?: number | null
+    maxApplications?: number | null,
 ) => {
     let currentBestDiscount = {
         amount: 0,
@@ -650,7 +647,7 @@ const processPromotionDiscounts = (
                 discount.items.items,
                 applyToCheapest,
                 applyToModifiers,
-                baseApplications
+                baseApplications,
             );
 
             if (!matchingDiscountResults) return;
@@ -660,7 +657,7 @@ const processPromotionDiscounts = (
             applications =
                 baseApplications && matchingDiscountResults.applications
                     ? Math.min(baseApplications, matchingDiscountResults.applications)
-                    : matchingDiscountResults.applications ?? baseApplications;
+                    : (matchingDiscountResults.applications ?? baseApplications);
         }
 
         const applicationCount = applications || 1;
@@ -714,7 +711,7 @@ export const getOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, car
             total,
             undefined,
             promotion.applyToModifiers,
-            maxApplications
+            maxApplications,
         );
 
         bestPromotionDiscount.matchingProducts = discountMatchingProducts(
@@ -723,7 +720,7 @@ export const getOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, car
             promotion.applyToModifiers,
             bestPromotionDiscount.applications,
             bestPromotionDiscount.matchingProductsPerApplication,
-            bestPromotionDiscount.perApplicationDiscounts
+            bestPromotionDiscount.perApplicationDiscounts,
         );
     } else {
         const matchingPromotionProducts = getMatchingPromotionProducts(
@@ -731,7 +728,7 @@ export const getOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, car
             promotion.items.items,
             promotion.applyToCheapest,
             promotion.applyToModifiers,
-            maxApplications
+            maxApplications,
         );
 
         if (!matchingPromotionProducts) return null;
@@ -743,7 +740,7 @@ export const getOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, car
             undefined,
             promotion.applyToCheapest,
             promotion.applyToModifiers,
-            maxApplications
+            maxApplications,
         );
 
         bestPromotionDiscount.matchingProducts = discountMatchingProducts(
@@ -752,7 +749,7 @@ export const getOrderDiscountAmount = (promotion: IGET_RESTAURANT_PROMOTION, car
             promotion.applyToModifiers,
             bestPromotionDiscount.applications,
             bestPromotionDiscount.matchingProductsPerApplication,
-            bestPromotionDiscount.perApplicationDiscounts
+            bestPromotionDiscount.perApplicationDiscounts,
         );
     }
 
@@ -959,17 +956,17 @@ export const getRestaurantTimings = (operatingHours: IGET_RESTAURANT_OPERATING_H
                             date.getMonth(),
                             date.getDate(),
                             parseInt(openingTimeSlotHour),
-                            parseInt(openingTimeSlotMinute)
+                            parseInt(openingTimeSlotMinute),
                         ),
                         end: new Date(
                             date.getFullYear(),
                             date.getMonth(),
                             date.getDate(),
                             parseInt(closingTimeSlotHour),
-                            parseInt(closingTimeSlotMinute)
+                            parseInt(closingTimeSlotMinute),
                         ),
                     },
-                    { step: timeInterval }
+                    { step: timeInterval },
                 );
 
                 intervals.push(...newIntervals);
