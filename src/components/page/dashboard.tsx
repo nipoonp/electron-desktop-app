@@ -13,7 +13,9 @@ import { useCart } from "../../context/cart-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { useRegister } from "../../context/register-context";
 import { useRestaurant } from "../../context/restaurant-context";
+import { useSmartpay } from "../../context/smartpay-context";
 import { useWindcave } from "../../context/windcave-context";
+import { useVerifone } from "../../context/verifone-context";
 import { IGET_RESTAURANT_ORDER_FRAGMENT, IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../../graphql/customFragments";
 import { IGET_RESTAURANT_REGISTER_PRINTER } from "../../graphql/customQueries";
 import { ERegisterPrinterType, IOrderReceipt, IPrintSalesData } from "../../model/model";
@@ -48,7 +50,9 @@ export default () => {
     const { register } = useRegister();
     const { printSalesData } = useReceiptPrinter();
     const { printReceipt } = useReceiptPrinter();
+    const { refundTransaction: smartpayRefundTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
     const { refundTransaction: windcaveRefundTransaction } = useWindcave();
+    const { refundTransaction: verifoneRefundTransaction } = useVerifone();
     const navigate = useNavigate();
 
     const [showSelectReceiptPrinterModal, setShowSelectReceiptPrinterModal] = useState(false);
@@ -331,10 +335,17 @@ export default () => {
                         break;
                     }
                     case EEftposProvider.SMARTPAY:
-                        // TODO: add Smartpay refund transaction support
+                        const pollingUrl = await smartpayRefundTransaction(amount);
+                        refundOutcome = await smartpayPollForOutcome(pollingUrl, () => {});
                         break;
                     case EEftposProvider.VERIFONE:
-                        // TODO: add Verifone refund transaction support
+                        refundOutcome = await verifoneRefundTransaction(
+                            amount,
+                            register.eftposIpAddress,
+                            register.eftposPortNumber,
+                            restaurant?.id || "",
+                            () => null,
+                        );
                         break;
                     case EEftposProvider.TYRO:
                         // TODO: add Tyro refund transaction support
