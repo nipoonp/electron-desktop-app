@@ -1,4 +1,4 @@
-import { ISection, ShapeType, ITableNodesAttributes, TableStatus, FloorStyle } from "../model/model";
+import { FloorStyle, ISection, ITableNodesAttributes, ShapeType, TableStatus } from "../../../model/model";
 
 export const SNAP_SIZE = 10;
 export const GRID_SIZE = 20;
@@ -51,36 +51,8 @@ export const nextZIndexForType = (type: ShapeType, nodes: ITableNodesAttributes[
 // Shared snap helper used by drag/drop and resize so all nodes align to the same grid.
 export const snapToGrid = (val: number) => Math.round(val / SNAP_SIZE) * SNAP_SIZE;
 
+// Determines table shape interactive when view mode is enabled so user can still select tables to view details but can't accidentally move them around.
 export const isNonInteractive = (type: ShapeType) => ["wall", "plant", "pillar", "chair", "stool", "armchair", "floor"].includes(type);
-
-export const recalculateSeats = (nodes: ITableNodesAttributes[]) => {
-    const DISTANCE_THRESHOLD = 120;
-
-    const distance = (x1: number, y1: number, x2: number, y2: number) => Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-
-    // Legacy helper that infers seats from nearby chairs; callers opt in explicitly.
-    return nodes.map((node) => {
-        if (!["rect", "circle"].includes(node.type)) return node;
-
-        const centerX = node.x + node.width / 2;
-        const centerY = node.y + node.height / 2;
-
-        const chairCount = nodes.filter((n) => {
-            if (!["chair", "stool", "armchair"].includes(n.type)) return false;
-            if (n.sectionId !== node.sectionId) return false;
-
-            const cx = n.x + n.width / 2;
-            const cy = n.y + n.height / 2;
-
-            return distance(centerX, centerY, cx, cy) < DISTANCE_THRESHOLD;
-        }).length;
-
-        return {
-            ...node,
-            seats: chairCount > 0 ? chairCount : node.seats,
-        };
-    });
-};
 
 // Collapses older saved table states into the current four-state model so existing layouts still load safely.
 const normalizeTableStatus = (status?: string): TableStatus => {
@@ -103,6 +75,7 @@ const normalizeTableStatus = (status?: string): TableStatus => {
     }
 };
 
+// Applies backward-compatible defaults to raw nodes so legacy saved layouts still behave in current UI.
 export const normalizeTables = (nodes: ITableNodesAttributes[]) =>
     nodes.map((node) => {
         const isTable = ["rect", "circle"].includes(node.type);
@@ -118,19 +91,8 @@ export const normalizeTables = (nodes: ITableNodesAttributes[]) =>
         };
     });
 
+// Ensures section flags are always boolean so view-mode filtering and toggles are deterministic.
 export const normalizeSections = (list: ISection[]) => list.map((section) => ({ ...section, hidden: section.hidden ?? false }));
-
-export const formatMoney = (value?: number) => {
-    if (value === undefined || value === null) return "-";
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
-};
-
-export const formatElapsed = (mins?: number) => {
-    if (mins === undefined || mins === null) return "-";
-    const hours = Math.floor(mins / 60);
-    const remaining = mins % 60;
-    return hours > 0 ? `${hours}h ${remaining}m` : `${remaining}m`;
-};
 
 export const STATUS_META: Record<TableStatus, { label: string; fill: string; stroke: string; text: string; dot: string }> = {
     available: { label: "Available", fill: "#f8f9fa", stroke: "#ced4da", text: "#495057", dot: "#adb5bd" },
@@ -154,6 +116,7 @@ const STATUS_ORDER_INDEX: Record<TableStatus, number> = STATUS_ORDER.reduce(
     } as Record<TableStatus, number>,
 );
 
+// Parses table labels as numbers when possible to support natural numeric ordering in list view.
 const parseTableNumber = (value?: string) => {
     const trimmed = `${value || ""}`.trim();
     if (!trimmed) return Number.POSITIVE_INFINITY;
@@ -161,6 +124,7 @@ const parseTableNumber = (value?: string) => {
     return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
 };
 
+// Sorts table cards by status priority first, then by table number/text for stable list ordering.
 export const compareTablesByStatusOrder = (a: ITableNodesAttributes, b: ITableNodesAttributes) => {
     const aStatus = normalizeTableStatus(a.status);
     const bStatus = normalizeTableStatus(b.status);

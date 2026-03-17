@@ -2,9 +2,10 @@ import React, { useEffect, useRef } from "react";
 import { Circle, Group, Layer, Line, Rect, Text, Transformer } from "react-konva";
 import Konva from "konva";
 
-import { FLOOR_STYLE_META, GRID_SIZE, STATUS_META, snapToGrid } from "../../util/tableNumberUtils";
-import { ITableNodesAttributes } from "../../model/model";
+import { FLOOR_STYLE_META, GRID_SIZE, STATUS_META, snapToGrid } from "./tableNumberUtils";
+import { ITableNodesAttributes } from "../../../model/model";
 
+// Renders one floor-plan node with selection, drag/resize, and type-specific visuals.
 export const TableNode = React.memo(
     ({
         shapeProps,
@@ -278,6 +279,7 @@ export const TableNode = React.memo(
     },
 );
 
+// Draws the editor alignment grid as a non-interactive Konva layer.
 export const BackgroundGrid = ({ width, height }: { width: number; height: number }) => {
     const lines: React.ReactElement[] = [];
     for (let i = 0; i < width / GRID_SIZE; i++)

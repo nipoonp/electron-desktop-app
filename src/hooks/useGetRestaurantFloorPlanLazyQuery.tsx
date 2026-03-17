@@ -7,6 +7,8 @@ type GetFloorPlanResponse = {
     } | null;
 };
 
+// Lazy floor-plan loader used by table-number flow:
+// fetches from network on demand and returns the most recently updated plan only.
 export const useGetRestaurantFloorPlanLazyQuery = () => {
     const [getRestaurantFloorPlan, { loading, error, data }] = useLazyQuery<GetFloorPlanResponse>(GET_FLOOR_PLAN, {
         fetchPolicy: "network-only",

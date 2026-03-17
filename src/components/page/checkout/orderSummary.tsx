@@ -8,6 +8,7 @@ import { FiChevronDown, FiChevronRight } from "react-icons/fi";
 import { useEffect, useState } from "react";
 import { Input } from "../../../tabin/components/input";
 import { TiDelete } from "react-icons/ti";
+import { FiCheckCircle, FiBell } from "react-icons/fi";
 import { CachedImage } from "../../../tabin/components/cachedImage";
 import { getCloudFrontDomainName } from "../../../private/aws-custom";
 import { Link } from "../../../tabin/components/link";
@@ -19,8 +20,10 @@ export const OrderSummary = (props: {
     onRemoveProduct?: (displayOrder: number) => void;
     onUpdateProductQuantity: (displayOrder: number, productQuantity: number) => void;
     onApplyProductDiscount: (displayOrder: number, discount: number) => void;
+    showKitchenSendStatus?: boolean;
+    kitchenSendStatusByDisplayOrder?: Record<number, "sent" | "unsent">;
 }) => {
-    const { products, onEditProduct, onRemoveProduct, onUpdateProductQuantity, onApplyProductDiscount } = props;
+    const { products, onEditProduct, onRemoveProduct, onUpdateProductQuantity, onApplyProductDiscount, showKitchenSendStatus, kitchenSendStatusByDisplayOrder } = props;
 
     if (!products || products.length === 0) return <h1>No items in cart!</h1>;
 
@@ -39,6 +42,8 @@ export const OrderSummary = (props: {
                                     onUpdateProductQuantity={onUpdateProductQuantity}
                                     onApplyProductDiscount={onApplyProductDiscount}
                                     onRemoveProduct={onRemoveProduct}
+                                    showKitchenSendStatus={showKitchenSendStatus}
+                                    kitchenSendStatus={kitchenSendStatusByDisplayOrder?.[index]}
                                 />
                                 <div className="separator-2"></div>
                             </div>
@@ -58,8 +63,10 @@ const OrderItem = (props: {
     onUpdateProductQuantity: (displayOrder: number, productQuantity: number) => void;
     onApplyProductDiscount: (displayOrder: number, discount: number) => void;
     onRemoveProduct?: (displayOrder: number) => void;
+    showKitchenSendStatus?: boolean;
+    kitchenSendStatus?: "sent" | "unsent";
 }) => {
-    const { product, displayOrder, onEditProduct, onUpdateProductQuantity, onApplyProductDiscount, onRemoveProduct } = props;
+    const { product, displayOrder, onEditProduct, onUpdateProductQuantity, onApplyProductDiscount, onRemoveProduct, showKitchenSendStatus, kitchenSendStatus } = props;
     const { isPOS } = useRegister();
 
     const [displayPrice, setDisplayPrice] = useState(convertCentsToDollars(product.totalPrice * product.quantity - product.discount));
@@ -191,6 +198,8 @@ const OrderItem = (props: {
                     notes={product.notes}
                     isPreSelectedProduct={product.isPreSelectedProduct}
                     modifierGroups={product.modifierGroups}
+                    showKitchenSendStatus={showKitchenSendStatus}
+                    kitchenSendStatus={kitchenSendStatus}
                     onEditProduct={() => onEditProduct(product, displayOrder)}
                 />
                 <div className={`${onRemoveProduct ? "text-center" : "text-right"}`}>
@@ -229,9 +238,11 @@ const OrderItemDetails = (props: {
     notes: string | null;
     isPreSelectedProduct?: boolean;
     modifierGroups: ICartModifierGroup[];
+    showKitchenSendStatus?: boolean;
+    kitchenSendStatus?: "sent" | "unsent";
     onEditProduct: () => void;
 }) => {
-    const { name, quantity, notes, modifierGroups, onEditProduct } = props;
+    const { name, quantity, notes, modifierGroups, showKitchenSendStatus, kitchenSendStatus, onEditProduct } = props;
     const { isPOS } = useRegister();
 
     const modifierString = (preSelectedQuantity: number, quantity: number, name: string, price: number) => {
@@ -265,6 +276,15 @@ const OrderItemDetails = (props: {
 
     const nameDisplay = (
         <div className="name-edit-button">
+            {/* Shows per-row kitchen status from checkout row-status mapping. */}
+            {showKitchenSendStatus && (
+                <span
+                    className={`kitchen-send-status ${kitchenSendStatus === "sent" ? "sent" : "unsent"}`}
+                    title={kitchenSendStatus === "sent" ? "Sent to kitchen" : "Not sent to kitchen"}
+                >
+                    {kitchenSendStatus === "sent" ? <FiCheckCircle size={14} /> : <FiBell size={14} />}
+                </span>
+            )}
             {/* <div className="h4 mr-2">{nameDisplayString}</div> {editButton} */}
             <div className="text-bold">{nameDisplayString}</div>
         </div>

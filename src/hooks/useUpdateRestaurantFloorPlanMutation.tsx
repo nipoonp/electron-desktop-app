@@ -9,10 +9,13 @@ type TablePlanMutationInput = {
     sections: ISection[];
 };
 
+// Unified floor-plan save hook:
+// updates when input.id exists, otherwise creates a new restaurant table plan.
 export const useUpdateRestaurantFloorPlanMutation = () => {
     const [createFloorPlan, createResult] = useMutation(CREATE_TABLE_PLAN);
     const [updateFloorPlan, updateResult] = useMutation(UPDATE_TABLE_PLAN);
 
+    // Keeps callsites simple by hiding create-vs-update mutation branching.
     const updateRestaurantFloorPlan = async (options: {
         variables: {
             input: TablePlanMutationInput;

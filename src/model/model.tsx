@@ -625,6 +625,14 @@ export type FloorStyle = "tile" | "wood" | "concrete";
 
 export type TableStatus = "available" | "occupied" | "idle" | "reserved";
 
+export type TableLiveState = {
+    status: TableStatus;
+    covers: number | null;
+    totalCents: number | null;
+    elapsedMinutes: number | null;
+    serverLabel: string;
+};
+
 export interface ITableNodesAttributes {
     id: string;
     type: ShapeType;

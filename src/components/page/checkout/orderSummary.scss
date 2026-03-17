@@ -35,6 +35,22 @@
 
         .name-edit-button {
             display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .kitchen-send-status {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            &.sent {
+                color: #2b8a3e;
+            }
+
+            &.unsent {
+                color: #f08c00;
+            }
         }
 
         .edit-button {

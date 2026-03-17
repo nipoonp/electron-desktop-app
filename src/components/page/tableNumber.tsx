@@ -1,10 +1,14 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
+import { useMutation } from "@apollo/client";
+import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
 import { checkoutPath, restaurantPath } from "../main";
 import { useCart } from "../../context/cart-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { Button } from "../../tabin/components/button";
 import { useRestaurant } from "../../context/restaurant-context";
+import { useUser } from "../../context/user-context";
 import {
     FiX,
     FiEdit2,
@@ -12,13 +16,11 @@ import {
     FiSquare,
     FiCircle,
     FiLayout,
-    FiList,
     FiMap,
     FiBox,
     FiSave,
     FiLogOut,
     FiMousePointer,
-    FiSettings,
     FiZoomIn,
     FiZoomOut,
     FiMaximize2,
@@ -27,24 +29,26 @@ import { useRegister } from "../../context/register-context";
 import { Stepper } from "../../tabin/components/stepper";
 import { Stage, Layer } from "react-konva";
 
-import { BackgroundGrid, TableNode } from "./tableNumberComponent";
+import { BackgroundGrid, TableNode } from "./tableNumber/tableNumberComponent";
+import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
 import { EOrderStatus, EOrderType } from "../../graphql/customQueries";
 import {
     CategoryType,
     FloorPlanPayload,
     FloorPlanSaveState,
+    ICartProduct,
     ISection,
     ITableNodesAttributes,
     LayoutSnapshot,
     FloorStyle,
     ShapeType,
     TableStatus,
+    TableLiveState,
 } from "../../model/model";
 import {
     isNonInteractive,
     normalizeSections,
     normalizeTables,
-    recalculateSeats,
     snapToGrid,
     HISTORY_LIMIT,
     ZOOM_MIN,
@@ -61,29 +65,156 @@ import {
     STATUS_META,
     STATUS_ORDER,
     compareTablesByStatusOrder,
-} from "../../util/tableNumberUtils";
+} from "./tableNumber/tableNumberUtils";
+import {
+    calculateCartProductsTotal,
+    cloneAndSanitizeCartProducts,
+    mapOrderProductsToCartProducts,
+    toOrderPaymentAmountsInput,
+} from "./tableNumber/orderCartMappers";
+import {
+    formatOrderTotal,
+    getParkedOrderPrintedProductStorageKey,
+    getElapsedMinutes,
+    getServerLabelForOrder,
+    initializeRunningOrderPrintedProductTracking,
+    isOpenDineInRunningOrder,
+} from "./tableNumber/runningOrderUtils";
+import {
+    buildUniqueId,
+    createFloorPlanPayload,
+    hashPayload,
+    nextTableNumberInSection,
+    normalizeSectionName,
+    normalizeSectionsWithMap,
+    prepareLayoutForPersistence,
+} from "./tableNumber/floorPlanPersistence";
 import { useGetRestaurantFloorPlanLazyQuery } from "../../hooks/useGetRestaurantFloorPlanLazyQuery";
 import { useGetRestaurantOrdersByBeginWithPlacedAt } from "../../hooks/useGetRestaurantOrdersByBeginWithPlacedAt";
 import { useUpdateRestaurantFloorPlanMutation } from "../../hooks/useUpdateRestaurantFloorPlanMutation";
 import { TableAddSectionModal, TableLayoutEditModal, TableSectionSettingsModal } from "../modals/tableNumberModals";
+import { UPDATE_ORDER } from "../../graphql/customMutations";
 
 import "./tableNumber.scss";
 import { Input } from "../../tabin/components/input";
 import { toast } from "../../tabin/components/toast";
+import { toLocalISOString } from "../../util/util";
+import { getCreateMergedOrderEndpoint } from "../../private/aws-custom";
+import { MdSettings } from "react-icons/md";
+import { FaRectangleList } from "react-icons/fa6";
 
-// Main table layout screen for viewing, editing, and saving the restaurant floor plan.
-export default () => {
+// Feature flag toggle for table-number experience.
+const TABLE_FEATURE_STATIC_FALLBACK = true;
+
+// Uses restaurant-level feature config when available; falls back to static value for now.
+const getIsTableFeatureEnabled = (restaurant: { checkTableFeature?: boolean | null } | null | undefined) => {
+    if (typeof restaurant?.checkTableFeature === "boolean") return restaurant.checkTableFeature;
+    return TABLE_FEATURE_STATIC_FALLBACK;
+};
+
+// Feature disabled flow: simple table + covers entry screen. (Existimg flow)
+const TableNumberFeatureDisabledPage = () => {
     const navigate = useNavigate();
     const { restaurant } = useRestaurant();
-    const { register } = useRegister();
-    const { setTableNumber, covers, setCovers, tableNumber } = useCart();
-    const { isPOS } = useRegister();
+    const { register, isPOS } = useRegister();
+    const { tableNumber, setTableNumber, covers, setCovers } = useCart();
+    const [table, setTable] = useState(tableNumber || "");
+    const [coversNumber, setCoversNumber] = useState(covers || 1);
+    const [tableError, setTableError] = useState(false);
+
+    if (restaurant == null) throw "Restaurant is invalid!";
+
+    // Closes the basic table-number screen and routes to POS home or checkout depending on register mode.
+    const onClose = () => {
+        const restaurantId = restaurant?.id;
+        if (isPOS) {
+            if (!restaurantId) return;
+            navigate(`${restaurantPath}/${restaurantId}`);
+            return;
+        }
+        navigate(`${checkoutPath}`);
+    };
+
+    // Validates table input, stores table/covers into cart state, and exits this screen.
+    const onNext = () => {
+        const normalizedTable = `${table || ""}`.trim();
+        if (!normalizedTable) {
+            setTableError(true);
+            return;
+        }
+        setTableNumber(normalizedTable);
+        setCovers(coversNumber);
+        onClose();
+    };
+
+    return (
+        <PageWrapper>
+            <div className="table-number">
+                <div className="close-button-wrapper">
+                    <FiX className="close-button" size={36} onClick={onClose} />
+                </div>
+
+                <div className="mb-4 text-center" style={{ width: "300px" }}>
+                    <div className="h3 mb-2">Table Number</div>
+                    <Input
+                        autoFocus
+                        onChange={(event) => {
+                            setTable(event.target.value);
+                            setTableError(false);
+                        }}
+                        value={table || ""}
+                        error={tableError ? "Required" : ""}
+                    />
+                    {tableError && <div className="text-error mt-2">{tableError ? "Required" : ""}</div>}
+                </div>
+
+                {register?.enableCovers && (
+                    <div className="mb-12 text-center" style={{ width: "300px" }}>
+                        <div className="h3 mb-2">Number Of Diners</div>
+                        <div className="covers-wrapper">
+                            <Stepper count={coversNumber} min={1} max={20} onUpdate={setCoversNumber} size={48} />
+                        </div>
+                    </div>
+                )}
+                <Button onClick={onNext}>Next</Button>
+            </div>
+        </PageWrapper>
+    );
+};
+
+// Feature enabled flow: full floor-plan designer + running-order aware table selection.
+const TableNumberFeatureEnabledPage = () => {
+    const navigate = useNavigate();
+    const { restaurant } = useRestaurant();
+    const { register, isPOS } = useRegister();
+    const { user } = useUser();
+    const {
+        clearCart,
+        parkedOrderId,
+        setOrderType,
+        setParkedOrderId,
+        setParkedOrderNumber,
+        setParkedOrderStatus,
+        setTableNumber,
+        setBuzzerNumber,
+        setCustomerInformation,
+        products,
+        setProducts,
+        setNotes,
+        covers,
+        setCovers,
+        total,
+        tableNumber,
+    } = useCart();
+    // Load floor plan only after restaurant data is ready.
     const { getRestaurantFloorPlan, data: floorPlanData, loading: floorPlanLoading } = useGetRestaurantFloorPlanLazyQuery();
     const todayOrderDateKey = getTodayOrderDateKey();
-    // The floor plan reads the latest order snapshot when this screen loads; checkout triggers targeted refetches after order writes.
-    const { data: activeOrders } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant?.id || "", todayOrderDateKey);
+    // This page shows the newest orders when it opens.
+    // After checkout saves an order, it refetches so this page gets updated data.
+    const { data: activeOrders, refetch: refetchActiveOrders } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant?.id || "", todayOrderDateKey);
+    // Unified save mutation decides between create/update based on payload id.
     const { updateRestaurantFloorPlan } = useUpdateRestaurantFloorPlanMutation();
-    const isTableFeatureEnabled = true;
+    const [updateOrderMutation] = useMutation(UPDATE_ORDER);
 
     // State
     const [tables, setTables] = useState<ITableNodesAttributes[]>([]);
@@ -110,12 +241,19 @@ export default () => {
     const [table, setTable] = useState(tableNumber || "");
     const [coversNumber, setCoversNumber] = useState(covers || 1);
     const [tableError, setTableError] = useState(false);
+    const [transferTargetTable, setTransferTargetTable] = useState("");
+    const [transferError, setTransferError] = useState<string | null>(null);
+    const [transferBusy, setTransferBusy] = useState(false);
+    const [mergeSourceTable, setMergeSourceTable] = useState("");
+    const [mergeError, setMergeError] = useState<string | null>(null);
+    const [mergeBusy, setMergeBusy] = useState(false);
+    // Progressive action mode: keep transfer/merge UI hidden until user chooses an action.
+    const [orderActionMode, setOrderActionMode] = useState<"none" | "transfer" | "merge">("none");
 
     const containerRef = useRef<HTMLDivElement>(null);
     const [stageSize, setStageSize] = useState({ width: 800, height: 600 });
     const savedStateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const hasLoadedFloorPlanRef = useRef(false);
-    const hasRequestedFloorPlanRef = useRef(false);
     const hasHydratedFromServerRef = useRef(false);
     const lastSavedPayloadHashRef = useRef<string | null>(null);
     const [saveState, setSaveState] = useState<FloorPlanSaveState>("idle");
@@ -126,6 +264,7 @@ export default () => {
     const [redoStack, setRedoStack] = useState<LayoutSnapshot[]>([]);
     const [stageScale, setStageScale] = useState(1);
     const [stagePosition, setStagePosition] = useState({ x: 0, y: 0 });
+    const [tableLiveClockMs, setTableLiveClockMs] = useState(() => Date.now());
 
     // Creates a shallow copy of the table nodes so undo/redo snapshots are isolated from live state.
     const cloneTables = (nodes: ITableNodesAttributes[]) => nodes.map((node) => ({ ...node }));
@@ -142,7 +281,10 @@ export default () => {
 
     // Pushes the current layout into the undo stack and clears redo history after a new change.
     const pushUndoSnapshot = () => {
-        setUndoStack((prev) => [...prev.slice(-(HISTORY_LIMIT - 1)), createSnapshot()]);
+        setUndoStack((prev) => {
+            const trimmedStack = prev.slice(-(HISTORY_LIMIT - 1));
+            return [...trimmedStack, createSnapshot()];
+        });
         setRedoStack([]);
     };
 
@@ -154,222 +296,27 @@ export default () => {
         setActiveSectionId(snapshot.activeSectionId);
     };
 
-    // Central update helper for table nodes so history tracking and optional seat recalculation stay consistent.
-    const updateTables = (
-        updater: (prev: ITableNodesAttributes[]) => ITableNodesAttributes[],
-        options?: { recalculate?: boolean; trackHistory?: boolean },
-    ) => {
-        const shouldTrackHistory = options?.trackHistory ?? isDesignMode;
-        if (shouldTrackHistory) pushUndoSnapshot();
-        setTables((prev) => {
-            const next = updater(prev);
-            return options?.recalculate ? recalculateSeats(next) : next;
-        });
+    // Applies one table-list update and records an undo snapshot while in design mode.
+    const updateTables = (updater: (prev: ITableNodesAttributes[]) => ITableNodesAttributes[]) => {
+        if (isDesignMode) pushUndoSnapshot();
+        setTables(updater);
     };
 
     // Updates tables and sections together when a change needs to affect the whole layout.
     const updateLayout = (
-        updater: (state: { tables: ITableNodesAttributes[]; sections: ISection[]; selectedId: string | null; activeSectionId: string }) => {
+        updater: (state: { tables: ITableNodesAttributes[]; sections: ISection[] }) => {
             tables: ITableNodesAttributes[];
             sections: ISection[];
-            selectedId?: string | null;
-            activeSectionId?: string;
         },
-        options?: { recalculate?: boolean; trackHistory?: boolean },
     ) => {
-        const shouldTrackHistory = options?.trackHistory ?? isDesignMode;
-        if (shouldTrackHistory) pushUndoSnapshot();
-
+        if (isDesignMode) pushUndoSnapshot();
         const next = updater({
             tables: cloneTables(tables),
             sections: cloneSections(sections),
-            selectedId,
-            activeSectionId,
         });
-        setTables(options?.recalculate ? recalculateSeats(next.tables) : next.tables);
+        setTables(next.tables);
         setSections(next.sections);
-        if (next.selectedId !== undefined) selectShape(next.selectedId);
-        if (next.activeSectionId !== undefined) setActiveSectionId(next.activeSectionId);
     };
-
-    // Normalizes a section name by trimming extra spaces before showing or saving it.
-    const normalizeSectionName = (value: string) => value.replace(/\s+/g, " ").trim();
-    // Converts section text into a safe slug that can be used as a stable section id.
-    const normalizeSectionId = (value: string) =>
-        value
-            .toLowerCase()
-            .replace(/[^a-z0-9\s-]/g, "")
-            .trim()
-            .replace(/\s+/g, "-")
-            .replace(/-+/g, "-")
-            .replace(/^-|-$/g, "");
-
-    // Generates a unique section id when a name would otherwise collide with an existing section.
-    const buildUniqueId = (base: string, usedIds: Set<string>, fallbackPrefix: string, index: number) => {
-        let seed = normalizeSectionId(base);
-        if (!seed) seed = `${fallbackPrefix}-${index + 1}`;
-        let candidate = seed;
-        let suffix = 2;
-        while (usedIds.has(candidate)) {
-            candidate = `${seed}-${suffix}`;
-            suffix += 1;
-        }
-        usedIds.add(candidate);
-        return candidate;
-    };
-
-    // Normalizes section names/ids and also returns a mapping from old ids to new ids.
-    const normalizeSectionsWithMap = (list: ISection[]) => {
-        if (list.length === 0) {
-            const fallback: ISection = { id: "main", name: "Main Room", hidden: false };
-            return { normalized: [fallback], mapping: new Map<string, string>() };
-        }
-        const usedIds = new Set<string>();
-        const mapping = new Map<string, string>();
-        const normalized = list.map((section, index) => {
-            const name = normalizeSectionName(section.name || "");
-            const nextId = buildUniqueId(section.id || name, usedIds, "section", index);
-            mapping.set(section.id, nextId);
-            return {
-                ...section,
-                id: nextId,
-                name: name || `Section ${index + 1}`,
-                hidden: section.hidden ?? false,
-            };
-        });
-        return { normalized, mapping };
-    };
-
-    // Cleans nodes before persistence so saved payloads always contain valid ids, numbers, and defaults.
-    const normalizeNodesForPersistence = (nodes: FloorPlanPayload["nodes"], sectionsList: ISection[]): FloorPlanPayload["nodes"] => {
-        const validSectionIds = new Set(sectionsList.map((section) => section.id));
-        const fallbackSectionId = sectionsList[0]?.id || "main";
-        const usedNodeIds = new Set<string>();
-        // Fills safe defaults so incomplete or older layouts can still be saved and reloaded.
-        return nodes.map((node, index) => {
-            let candidateId = (node.id || "").trim();
-            if (!candidateId) candidateId = `node-${index + 1}`;
-            while (usedNodeIds.has(candidateId)) {
-                candidateId = `${candidateId}-${index + 1}`;
-            }
-            usedNodeIds.add(candidateId);
-
-            const sectionId = validSectionIds.has(node.sectionId) ? node.sectionId : fallbackSectionId;
-            return {
-                ...node,
-                id: candidateId,
-                number: ["rect", "circle"].includes(node.type) ? (node.number || "").trim() : node.number || "",
-                sectionId,
-                locked: node.locked ?? false,
-                zIndex: node.type === "floor" ? FLOOR_Z_INDEX : (node.zIndex ?? 0),
-            };
-        });
-    };
-
-    // Validates the layout payload before save to catch duplicate table numbers and invalid ids early.
-    const validateLayout = (nodes: FloorPlanPayload["nodes"], sectionsList: ISection[]) => {
-        if (sectionsList.length === 0) return "At least one section is required.";
-
-        const sectionIds = new Set<string>();
-        for (const section of sectionsList) {
-            if (!section.id || !section.id.trim()) return "Section ID cannot be empty.";
-            if (sectionIds.has(section.id)) return `Section ID '${section.id}' is duplicated.`;
-            sectionIds.add(section.id);
-        }
-
-        const tableNumbersBySection = new Map<string, Set<string>>();
-        for (const node of nodes) {
-            if (!node.id || !node.id.trim()) return "Element ID cannot be empty.";
-            if (node.type !== "rect" && node.type !== "circle") continue;
-            const tableNumber = (node.number || "").trim();
-            if (!tableNumber) return "Every table must have a number.";
-
-            const sectionId = node.sectionId;
-            const bucket = tableNumbersBySection.get(sectionId) || new Set<string>();
-            if (bucket.has(tableNumber)) {
-                const sectionName = sectionsList.find((section) => section.id === sectionId)?.name || sectionId;
-                return `Duplicate table number '${tableNumber}' in section '${sectionName}'.`;
-            }
-            bucket.add(tableNumber);
-            tableNumbersBySection.set(sectionId, bucket);
-        }
-
-        return null;
-    };
-
-    // Returns the next available table number within the current section.
-    const nextTableNumberInSection = (sectionId: string, nodes: ITableNodesAttributes[]) => {
-        const used = new Set(
-            nodes
-                .filter((node) => node.sectionId === sectionId && (node.type === "rect" || node.type === "circle"))
-                .map((node) => (node.number || "").trim())
-                .filter(Boolean),
-        );
-        let candidate = 1;
-        while (used.has(`${candidate}`)) candidate += 1;
-        return `${candidate}`;
-    };
-
-    // Normalizes and validates the outgoing payload before it is sent to the backend.
-    const prepareLayoutForPersistence = (inputPayload: FloorPlanPayload) => {
-        const { normalized: normalizedSections, mapping } = normalizeSectionsWithMap(inputPayload.sections);
-        const remappedNodes = inputPayload.nodes.map((node) => ({
-            ...node,
-            sectionId: mapping.get(node.sectionId) || normalizedSections[0]?.id || node.sectionId,
-        }));
-        const normalizedNodes = normalizeNodesForPersistence(remappedNodes, normalizedSections);
-        const validationError = validateLayout(normalizedNodes, normalizedSections);
-        if (validationError) return { payload: null, validationError };
-        return {
-            payload: {
-                ...inputPayload,
-                sections: normalizedSections,
-                nodes: normalizedNodes,
-            },
-            validationError: null,
-        };
-    };
-
-    // Builds the backend payload shape from the current in-memory layout state.
-    // Only structural layout data is persisted here; live service values stay on the order record.
-    const createFloorPlanPayload = ({
-        planId,
-        restaurantId,
-        nodes,
-        sectionList,
-    }: {
-        planId: string | null;
-        restaurantId: string;
-        nodes: ITableNodesAttributes[];
-        sectionList: ISection[];
-    }): FloorPlanPayload => ({
-        ...(planId ? { id: planId } : {}),
-        restaurantId,
-        nodes: nodes.map((node) => ({
-            id: node.id,
-            type: node.type,
-            x: node.x,
-            y: node.y,
-            width: node.width,
-            height: node.height,
-            rotation: node.rotation,
-            number: node.number,
-            seats: node.seats,
-            sectionId: node.sectionId,
-            status: node.status,
-            locked: node.locked ?? false,
-            zIndex: node.type === "floor" ? FLOOR_Z_INDEX : (node.zIndex ?? 0),
-            floorStyle: node.floorStyle,
-        })),
-        sections: sectionList.map((section) => ({
-            id: section.id,
-            name: section.name,
-            hidden: section.hidden,
-        })),
-    });
-
-    // Converts the payload into a hash string so the screen can detect unsaved changes.
-    const hashPayload = (payload: FloorPlanPayload) => JSON.stringify(payload);
 
     // Clears the temporary "Saved" state after a short delay so the status banner can return to idle.
     const scheduleSavedStateReset = () => {
@@ -379,26 +326,22 @@ export default () => {
         }, 1500);
     };
 
-    // Requests the saved floor plan when the restaurant context is ready.
+    // Fetches saved floor plan once restaurant data is available.
     useEffect(() => {
         const restaurantId = restaurant?.id;
         if (!restaurantId) return;
-        if (!isTableFeatureEnabled) return;
         hasLoadedFloorPlanRef.current = false;
-        hasRequestedFloorPlanRef.current = true;
         getRestaurantFloorPlan({
             variables: {
                 restaurantId,
             },
         });
-    }, [restaurant?.id, isTableFeatureEnabled, getRestaurantFloorPlan]);
+    }, [restaurant?.id, getRestaurantFloorPlan]);
 
-    // Hydrates local editor state from the latest floor-plan response.
+    // Loads the floor-plan data from server response into local editor state.
     useEffect(() => {
         const restaurantId = restaurant?.id;
         if (!restaurantId) return;
-        if (!isTableFeatureEnabled) return;
-        if (!hasRequestedFloorPlanRef.current) return;
         if (floorPlanLoading) return;
 
         const plan = floorPlanData;
@@ -454,13 +397,12 @@ export default () => {
         setUndoStack([]);
         setRedoStack([]);
         hasLoadedFloorPlanRef.current = true;
-    }, [floorPlanData, floorPlanLoading, isTableFeatureEnabled, restaurant?.id]);
+    }, [floorPlanData, floorPlanLoading, restaurant?.id]);
 
-    // Builds the current payload only when the editor has enough context to save safely.
+    // Creates save payload only when required data is ready.
     const buildFloorPlanPayload = () => {
         const restaurantId = restaurant?.id;
         if (!restaurantId) return null;
-        if (!isTableFeatureEnabled) return null;
         if (!hasLoadedFloorPlanRef.current) return null;
 
         return createFloorPlanPayload({
@@ -471,7 +413,7 @@ export default () => {
         });
     };
 
-    // Persists the prepared floor-plan payload and re-syncs local state with the normalized saved result.
+    // Saves floor plan and updates local state with the saved data.
     const persistFloorPlan = async (payload: FloorPlanPayload) => {
         if (!payload) return;
         const prepared = prepareLayoutForPersistence(payload);
@@ -555,7 +497,7 @@ export default () => {
             return;
         }
         setSaveState((prev) => (prev === "saving" ? prev : "dirty"));
-    }, [tables, sections, floorPlanId, restaurant?.id, isTableFeatureEnabled, updateRestaurantFloorPlan]);
+    }, [tables, sections, floorPlanId, restaurant?.id, updateRestaurantFloorPlan]);
 
     // Clears the delayed saved-state timer when the component unmounts.
     useEffect(() => {
@@ -568,6 +510,13 @@ export default () => {
     useEffect(() => {
         if (showSectionSettings) setSectionDrafts(sections);
     }, [showSectionSettings, sections]);
+
+    //refreshes table metadata timers so "time open" stays live in view mode.
+    useEffect(() => {
+        if (isDesignMode) return;
+        const intervalId = window.setInterval(() => setTableLiveClockMs(Date.now()), 60 * 1000);
+        return () => window.clearInterval(intervalId);
+    }, [isDesignMode]);
 
     // Keeps the active section valid in view mode if a section is hidden or removed.
     useEffect(() => {
@@ -617,9 +566,49 @@ export default () => {
             setTableError(true);
             return;
         }
+        const runningOrder = activeRunningOrdersByTable.get(normalizedTable);
+
+        // If resuming an existing running order (or replacing an old parked binding), reset cart state first.
+        if (runningOrder || parkedOrderId) clearCart();
+
+        // Point 1: start a dine-in session for the selected table.
+        // Keep current cart items when user selected items first and table later.
+        setOrderType(EOrderType.DINEIN);
         setTable(normalizedTable);
         setTableNumber(normalizedTable);
         setCovers(coversNumber);
+
+        if (runningOrder) {
+            // Point 2: resume the already-open running order for this table instead of creating a new one.
+            setParkedOrderId(runningOrder.id);
+            setParkedOrderNumber(runningOrder.number);
+            setParkedOrderStatus(runningOrder.status);
+            setBuzzerNumber(runningOrder.buzzer || null);
+            setNotes(runningOrder.notes || "");
+            setCustomerInformation(
+                runningOrder.customerInformation
+                    ? {
+                          firstName: runningOrder.customerInformation.firstName || "",
+                          email: runningOrder.customerInformation.email || "",
+                          phoneNumber: runningOrder.customerInformation.phoneNumber || "",
+                          signatureBase64: "",
+                          customFields: [],
+                      }
+                    : null,
+            );
+            setProducts(mapOrderProductsToCartProducts(runningOrder.products));
+            if (typeof runningOrder.covers === "number" && runningOrder.covers > 0) setCovers(runningOrder.covers);
+
+            // Point 3: enable continuous add-item flow by marking currently loaded items as the printed baseline.
+            initializeRunningOrderPrintedProductTracking(runningOrder);
+            // Point 4: preserve round-based send tracking so each fire cycle prints only still-unsent items.
+        } else {
+            // Ensure this stays a fresh non-parked session when no running order exists on the selected table.
+            setParkedOrderId(null);
+            setParkedOrderNumber(null);
+            setParkedOrderStatus(null);
+        }
+
         onClose();
     };
 
@@ -699,9 +688,7 @@ export default () => {
     // Unlocks existing floor nodes in edit mode so they can be resized or moved.
     useEffect(() => {
         if (!isDesignMode) return;
-        updateTables((prev) => prev.map((node) => (node.type === "floor" && node.locked ? { ...node, locked: false } : node)), {
-            trackHistory: false,
-        });
+        updateTables((prev) => prev.map((node) => (node.type === "floor" && node.locked ? { ...node, locked: false } : node)));
     }, [isDesignMode]);
 
     // Opens the add-section modal from section settings.
@@ -720,7 +707,7 @@ export default () => {
         }
 
         const used = new Set(sectionDrafts.map((section) => section.id));
-        const newId = buildUniqueId(name, used, "section", sectionDrafts.length);
+        const newId = buildUniqueId(undefined, used);
         setSectionError(null);
         setSectionDrafts((prev) => [...prev, { id: newId, name, hidden: false }]);
         setAddSectionError(null);
@@ -772,12 +759,10 @@ export default () => {
         }
 
         const { normalized, mapping } = normalizeSectionsWithMap(cleanedDrafts);
-        const nextTables = recalculateSeats(
-            tables.map((tableNode) => ({
-                ...tableNode,
-                sectionId: mapping.get(tableNode.sectionId) || normalized[0]?.id || tableNode.sectionId,
-            })),
-        );
+        const nextTables = tables.map((tableNode) => ({
+            ...tableNode,
+            sectionId: mapping.get(tableNode.sectionId) || normalized[0]?.id || tableNode.sectionId,
+        }));
         updateLayout(() => ({
             tables: nextTables,
             sections: normalized,
@@ -843,7 +828,7 @@ export default () => {
 
     // Creates a new shape with the right defaults for its type and inserts it into the layout.
     const addShapeAt = (type: ShapeType, x: number, y: number, floorStyle?: FloorStyle, rotation?: number) => {
-        const newId = `t${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        const newId = uuidv4();
 
         let width = 80,
             height = 80;
@@ -914,7 +899,10 @@ export default () => {
         if (undoStack.length === 0) return;
         const previous = undoStack[undoStack.length - 1];
         setUndoStack((prev) => prev.slice(0, -1));
-        setRedoStack((prev) => [...prev.slice(-(HISTORY_LIMIT - 1)), createSnapshot()]);
+        setRedoStack((prev) => {
+            const trimmedStack = prev.slice(-(HISTORY_LIMIT - 1));
+            return [...trimmedStack, createSnapshot()];
+        });
         restoreSnapshot(previous);
     };
 
@@ -923,7 +911,10 @@ export default () => {
         if (redoStack.length === 0) return;
         const next = redoStack[redoStack.length - 1];
         setRedoStack((prev) => prev.slice(0, -1));
-        setUndoStack((prev) => [...prev.slice(-(HISTORY_LIMIT - 1)), createSnapshot()]);
+        setUndoStack((prev) => {
+            const trimmedStack = prev.slice(-(HISTORY_LIMIT - 1));
+            return [...trimmedStack, createSnapshot()];
+        });
         restoreSnapshot(next);
     };
 
@@ -1008,84 +999,62 @@ export default () => {
         };
     }, [stagePosition, stageScale, safeStageWidth, safeStageHeight, minimapSize.width, minimapSize.height]);
 
-    if (!isTableFeatureEnabled) {
-        return (
-            <PageWrapper>
-                <div className="table-number-layout full-height">
-                    <div className="layout-content">
-                        <div className="input-form-container">
-                            <div className="close-button-wrapper-right">
-                                <FiX className="close-button" size={32} onClick={onClose} />
-                            </div>
-                            <div className="form-section top-spacing">
-                                <div className="h3 section-title">Select Table</div>
-                                <Input
-                                    autoFocus
-                                    onChange={(e) => {
-                                        setTable(e.target.value);
-                                        setTableError(false);
-                                    }}
-                                    value={table || ""}
-                                    error={tableError ? "Required" : ""}
-                                    placeholder="Enter table..."
-                                />
-                                {tableError && <div className="text-error mt-2">{tableError ? "Required" : ""}</div>}
-                            </div>
-                            {register?.enableCovers && (
-                                <div className="form-section">
-                                    <div className="h3 section-title">Covers</div>
-                                    <div className="covers-wrapper">
-                                        <Stepper count={coversNumber} min={1} max={20} onUpdate={setCoversNumber} size={48} />
-                                    </div>
-                                </div>
-                            )}
-                            <div style={{ marginTop: "auto", width: "100%", paddingTop: "20px" }}>
-                                <Button onClick={onNext} style={{ width: "100%", height: "50px", fontSize: "1.2rem" }}>
-                                    Next
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </PageWrapper>
-        );
-    }
-
+    // Only parked dine-in orders should mark a table as occupied in floor layout.
     const visibleActiveOrders = useMemo(
         () =>
-            (activeOrders || []).filter(
-                (order) => order.type === EOrderType.DINEIN && (order.status === EOrderStatus.NEW || order.status === EOrderStatus.PARKED),
-            ),
+            (activeOrders || []).filter((order) => isOpenDineInRunningOrder(order) && `${order.status || ""}`.toUpperCase() === EOrderStatus.PARKED),
         [activeOrders],
     );
 
-    const activeOrdersByTable = useMemo<
-        Map<
-            string,
-            {
-                status: TableStatus;
-            }
-        >
-    >(() => {
-        const summaries = new Map<string, { status: TableStatus }>();
-
+    // Keeps only one open running order per table for resume flow, preferring the newest by placedAt.
+    const activeRunningOrdersByTable = useMemo<Map<string, IGET_RESTAURANT_ORDER_FRAGMENT>>(() => {
+        const byTable = new Map<string, IGET_RESTAURANT_ORDER_FRAGMENT>();
         visibleActiveOrders.forEach((order) => {
+            // Extra guard: NEW orders must never drive table occupancy in this layout.
+            if (`${order.status || ""}`.toUpperCase() !== EOrderStatus.PARKED) return;
             const tableNumberValue = `${order.table || ""}`.trim();
             if (!tableNumberValue) return;
-            summaries.set(tableNumberValue, { status: "occupied" });
+
+            const existing = byTable.get(tableNumberValue);
+            if (!existing) {
+                byTable.set(tableNumberValue, order);
+                return;
+            }
+
+            const existingPlacedAt = new Date(existing.placedAt).getTime();
+            const nextPlacedAt = new Date(order.placedAt).getTime();
+            if (!Number.isFinite(existingPlacedAt) || nextPlacedAt >= existingPlacedAt) byTable.set(tableNumberValue, order);
         });
-        return summaries;
+        return byTable;
     }, [visibleActiveOrders]);
 
-    // View mode overlays live order state onto the saved floor plan, while edit mode keeps using raw layout data.
+    // Point 5: drive runtime table state from currently open orders and expose live table metadata.
+    const liveTableStateByTable = useMemo<Map<string, TableLiveState>>(() => {
+        const summaries = new Map<string, TableLiveState>();
+
+        activeRunningOrdersByTable.forEach((order, tableNumberValue) => {
+            const covers = typeof order.covers === "number" && order.covers > 0 ? order.covers : null;
+            const currentRegisterName = register && order.registerId === register.id ? register.name || null : null;
+            summaries.set(tableNumberValue, {
+                status: "occupied",
+                covers,
+                totalCents: typeof order.total === "number" ? order.total : null,
+                elapsedMinutes: getElapsedMinutes(order.placedAt, tableLiveClockMs),
+                serverLabel: getServerLabelForOrder(order, currentRegisterName),
+            });
+        });
+        return summaries;
+    }, [activeRunningOrdersByTable, register, tableLiveClockMs]);
+
+    // Point 5: open-order status is overlaid onto the layout so table cards and map stay in sync.
     const runtimeTables: ITableNodesAttributes[] = useMemo(
         () =>
             tables.map((node) => {
                 if (node.type !== "rect" && node.type !== "circle") return node;
 
                 const tableNumberValue = `${node.number || ""}`.trim();
-                const activeOrder = activeOrdersByTable.get(tableNumberValue);
-                if (!activeOrder) {
+                const liveState = liveTableStateByTable.get(tableNumberValue);
+                if (!liveState) {
                     return {
                         ...node,
                         status: node.status === "reserved" ? "reserved" : "available",
@@ -1094,10 +1063,10 @@ export default () => {
 
                 return {
                     ...node,
-                    status: activeOrder.status,
+                    status: liveState.status,
                 };
             }),
-        [tables, activeOrdersByTable],
+        [tables, liveTableStateByTable],
     );
 
     // Builds the section-specific canvas list using the visual render ordering rules.
@@ -1108,8 +1077,365 @@ export default () => {
     const visibleSections = isDesignMode ? sections : sections.filter((s) => !s.hidden);
     const selectedNode = selectedId ? displayTables.find((t) => t.id === selectedId) : null;
     const selectedTable = selectedNode && !isNonInteractive(selectedNode.type) ? selectedNode : null;
-    const selectedTableHasLiveOrder = !!selectedTable && activeOrdersByTable.has(`${selectedTable.number || ""}`.trim());
+    const selectedTableLiveState = selectedTable ? liveTableStateByTable.get(`${selectedTable.number || ""}`.trim()) : null;
+    const selectedTableCartTotalCents = useMemo(() => {
+        if (!selectedTable) return null;
+        const selectedTableNumber = `${selectedTable.number || ""}`.trim();
+        const draftTableNumber = `${table || tableNumber || ""}`.trim();
+        if (!selectedTableNumber || selectedTableNumber !== draftTableNumber) return null;
+        if (!products || products.length === 0) return null;
+        return total;
+    }, [selectedTable, table, tableNumber, products, total]);
+    const selectedTableHasLiveOrder = !!selectedTableLiveState;
+    const selectedRunningOrder = selectedTable ? activeRunningOrdersByTable.get(`${selectedTable.number || ""}`.trim()) || null : null;
+    const transferSourceTable = `${selectedRunningOrder?.table || selectedTable?.number || ""}`.trim();
+    const allTableNumbers = useMemo(() => {
+        const tableNumbers = new Set<string>();
+        tables.forEach((node) => {
+            if (node.type !== "rect" && node.type !== "circle") return;
+            const tableNumberValue = `${node.number || ""}`.trim();
+            if (tableNumberValue) tableNumbers.add(tableNumberValue);
+        });
+        return Array.from(tableNumbers).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+    }, [tables]);
 
+    // Transfer targets must be empty tables (no running order) to avoid accidental implicit merges.
+    const transferTargetOptions = useMemo(
+        () =>
+            allTableNumbers.filter(
+                (tableNumberValue) => tableNumberValue !== transferSourceTable && !activeRunningOrdersByTable.has(tableNumberValue),
+            ),
+        [allTableNumbers, transferSourceTable, activeRunningOrdersByTable],
+    );
+
+    // Merge sources only include tables that currently have an open running dine-in order.
+    const mergeSourceOptions = useMemo(
+        () =>
+            Array.from(activeRunningOrdersByTable.keys())
+                .filter((tableNumberValue) => tableNumberValue !== transferSourceTable)
+                .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })),
+        [activeRunningOrdersByTable, transferSourceTable],
+    );
+    const hasTransferTargets = transferTargetOptions.length > 0;
+    const hasMergeSources = mergeSourceOptions.length > 0;
+
+    useEffect(() => {
+        // Reset action flow whenever table/order context changes.
+        setOrderActionMode("none");
+        setTransferError(null);
+        setMergeError(null);
+    }, [selectedId, selectedRunningOrder?.id]);
+
+    useEffect(() => {
+        if (!selectedRunningOrder) {
+            if (transferTargetTable) setTransferTargetTable("");
+            return;
+        }
+        if (transferTargetOptions.length === 0) {
+            if (transferTargetTable) setTransferTargetTable("");
+            return;
+        }
+        if (!transferTargetTable || !transferTargetOptions.includes(transferTargetTable)) {
+            setTransferTargetTable(transferTargetOptions[0]);
+        }
+    }, [transferTargetOptions, transferTargetTable, selectedRunningOrder]);
+    useEffect(() => {
+        if (!selectedRunningOrder) {
+            if (mergeSourceTable) setMergeSourceTable("");
+            return;
+        }
+        if (mergeSourceOptions.length === 0) {
+            if (mergeSourceTable) setMergeSourceTable("");
+            return;
+        }
+        if (!mergeSourceTable || !mergeSourceOptions.includes(mergeSourceTable)) {
+            setMergeSourceTable(mergeSourceOptions[0]);
+        }
+    }, [mergeSourceOptions, mergeSourceTable, selectedRunningOrder]);
+    useEffect(() => {
+        // Auto-close mode if no valid action targets remain after data refresh.
+        if (orderActionMode === "transfer" && !hasTransferTargets) {
+            setOrderActionMode("none");
+        }
+        if (orderActionMode === "merge" && !hasMergeSources) {
+            setOrderActionMode("none");
+        }
+    }, [orderActionMode, hasTransferTargets, hasMergeSources]);
+
+    // Builds sanitized UPDATE_ORDER mutation variables while preserving key order metadata.
+    const buildOrderUpdateMutationVariables = (
+        order: IGET_RESTAURANT_ORDER_FRAGMENT,
+        nextProducts: ICartProduct[],
+        options?: { tableOverride?: string; preserveFinancials?: boolean },
+    ) => {
+        if (!user?.id) throw new Error("Cannot perform this action because user context is missing.");
+        if (!restaurant?.id) throw new Error("Cannot perform this action because restaurant context is missing.");
+        if (!restaurant.country) throw new Error("Cannot perform this action because restaurant country is missing.");
+
+        const status = order.status;
+        const now = new Date();
+        const total = options?.preserveFinancials ? order.total : calculateCartProductsTotal(nextProducts);
+        const subTotal = options?.preserveFinancials ? order.subTotal : total;
+        const tableValue = options?.tableOverride !== undefined ? `${options.tableOverride || ""}`.trim() : `${order.table || ""}`.trim();
+        const sanitizedProducts = cloneAndSanitizeCartProducts(nextProducts);
+
+        const variables: Record<string, any> = {
+            orderId: order.id,
+            status,
+            paid: order.paid,
+            type: order.type,
+            number: order.number,
+            table: tableValue || undefined,
+            buzzer: order.buzzer || undefined,
+            notes: order.notes || undefined,
+            eftposReceipt: order.eftposReceipt || undefined,
+            paymentAmounts: toOrderPaymentAmountsInput(order.paymentAmounts),
+            total,
+            discount: undefined,
+            promotionId: undefined,
+            subTotal,
+            preparationTimeInMinutes: restaurant.preparationTimeInMinutes || undefined,
+            registerId: order.registerId || register?.id,
+            products: sanitizedProducts,
+            placedAt: order.placedAt,
+            parkedAt: status === EOrderStatus.PARKED ? order.parkedAt || order.placedAt : undefined,
+            parkedAtUtc: status === EOrderStatus.PARKED ? now.toISOString() : undefined,
+            completedAt: status === EOrderStatus.COMPLETED ? order.completedAt || toLocalISOString(now) : undefined,
+            completedAtUtc: status === EOrderStatus.COMPLETED ? now.toISOString() : undefined,
+            orderUserId: user.id,
+            orderRestaurantId: restaurant.id,
+        };
+
+        if (!variables.registerId) throw new Error("Cannot perform this action because register context is missing.");
+        if (!variables.buzzer) delete variables.buzzer;
+        if (!variables.notes) delete variables.notes;
+        if (!variables.eftposReceipt) delete variables.eftposReceipt;
+        if (!variables.paymentAmounts) delete variables.paymentAmounts;
+        if (!variables.table) delete variables.table;
+
+        return variables;
+    };
+
+    // Reads the saved per-product print counters for a parked/running order from local storage.
+    const getPrintedProductQuantities = (orderId: string) => {
+        try {
+            const parsedProductQuantities = JSON.parse(localStorage.getItem(getParkedOrderPrintedProductStorageKey(orderId)) || "{}");
+            if (!parsedProductQuantities) return {} as Record<string, number>;
+
+            return Object.entries(parsedProductQuantities).reduce(
+                (printedProductQuantities, [productId, quantity]) => {
+                    if (typeof quantity === "number" && quantity > 0) printedProductQuantities[productId] = quantity;
+                    return printedProductQuantities;
+                },
+                {} as Record<string, number>,
+            );
+        } catch {
+            return {} as Record<string, number>;
+        }
+    };
+
+    // Combines source-order print counters into destination-order counters so kitchen delta printing stays accurate after merge.
+    const mergePrintedProductTracking = (destinationOrderId: string, sourceOrderId: string) => {
+        const destinationPrintedProductQuantities = getPrintedProductQuantities(destinationOrderId);
+        const sourcePrintedProductQuantities = getPrintedProductQuantities(sourceOrderId);
+
+        const hasSourcePrintedProducts = Object.keys(sourcePrintedProductQuantities).length > 0;
+        if (!hasSourcePrintedProducts) return;
+
+        Object.entries(sourcePrintedProductQuantities).forEach(([productId, quantity]) => {
+            destinationPrintedProductQuantities[productId] = (destinationPrintedProductQuantities[productId] || 0) + quantity;
+        });
+
+        localStorage.setItem(getParkedOrderPrintedProductStorageKey(destinationOrderId), JSON.stringify(destinationPrintedProductQuantities));
+        localStorage.removeItem(getParkedOrderPrintedProductStorageKey(sourceOrderId));
+    };
+
+    // Merges one running dine-in order into the selected table order (destination).
+    const runMergeOrder = async (destinationOrder: IGET_RESTAURANT_ORDER_FRAGMENT, sourceTable: string) => {
+        if (!destinationOrder) throw new Error("Select a destination table with a running order.");
+
+        const normalizedSourceTable = `${sourceTable || ""}`.trim();
+        const normalizedDestinationTable = `${destinationOrder.table || transferSourceTable || ""}`.trim();
+        if (!normalizedSourceTable) throw new Error("Select a source table to merge.");
+        if (!normalizedDestinationTable) throw new Error("Destination table is invalid.");
+        if (normalizedSourceTable === normalizedDestinationTable) throw new Error("Source and destination tables cannot be the same.");
+
+        const sourceOrder = activeRunningOrdersByTable.get(normalizedSourceTable);
+        if (!sourceOrder) throw new Error("Source table does not have an active running order.");
+        if (sourceOrder.id === destinationOrder.id) throw new Error("Source and destination orders are the same.");
+
+        const endpoint = getCreateMergedOrderEndpoint();
+        await axios({
+            method: "post",
+            url: endpoint,
+            data: {
+                // Keep destination as order1 so the merged bill stays on the selected table.
+                order1Id: destinationOrder.id,
+                order2Id: sourceOrder.id,
+            },
+        });
+
+        mergePrintedProductTracking(destinationOrder.id, sourceOrder.id);
+
+        const refreshedOrdersResponse: any = await refetchActiveOrders();
+        const refreshedOrders = (refreshedOrdersResponse?.data?.getOrdersByRestaurantByPlacedAt?.items || []).filter(Boolean);
+        const refreshedDestinationOrder =
+            refreshedOrders.find((order: IGET_RESTAURANT_ORDER_FRAGMENT) => order.id === destinationOrder.id) || destinationOrder;
+
+        // If the current cart session was bound to the source order, re-bind it to the merged destination order.
+        if (parkedOrderId === sourceOrder.id) {
+            const destinationTableValue = `${refreshedDestinationOrder.table || normalizedDestinationTable}`.trim();
+            setParkedOrderId(refreshedDestinationOrder.id);
+            setParkedOrderNumber(refreshedDestinationOrder.number);
+            setParkedOrderStatus(refreshedDestinationOrder.status);
+            setTableNumber(destinationTableValue);
+            setTable(destinationTableValue);
+            setBuzzerNumber(refreshedDestinationOrder.buzzer || null);
+            setNotes(refreshedDestinationOrder.notes || "");
+            setCustomerInformation(
+                refreshedDestinationOrder.customerInformation
+                    ? {
+                          firstName: refreshedDestinationOrder.customerInformation.firstName || "",
+                          email: refreshedDestinationOrder.customerInformation.email || "",
+                          phoneNumber: refreshedDestinationOrder.customerInformation.phoneNumber || "",
+                          signatureBase64: "",
+                          customFields: [],
+                      }
+                    : null,
+            );
+            setProducts(mapOrderProductsToCartProducts(refreshedDestinationOrder.products));
+            if (typeof refreshedDestinationOrder.covers === "number" && refreshedDestinationOrder.covers > 0) {
+                setCovers(refreshedDestinationOrder.covers);
+            }
+            initializeRunningOrderPrintedProductTracking(refreshedDestinationOrder);
+        }
+
+        toast.success(`Running order merged into Table ${normalizedDestinationTable}.`);
+    };
+
+    // Transfers one running order to another table when the target has no active running order.
+    const runTransferOrder = async (sourceOrder: IGET_RESTAURANT_ORDER_FRAGMENT, targetTable: string) => {
+        if (!sourceOrder) throw new Error("Please select a running order first.");
+        const normalizedTargetTable = `${targetTable || ""}`.trim();
+        const normalizedSourceTable = `${sourceOrder.table || ""}`.trim();
+        if (!normalizedTargetTable) throw new Error("Please select a target table.");
+        if (normalizedTargetTable === normalizedSourceTable) throw new Error("Source and target tables cannot be the same.");
+
+        const targetOrder = activeRunningOrdersByTable.get(normalizedTargetTable);
+        if (targetOrder && targetOrder.id !== sourceOrder.id) {
+            throw new Error("Target table already has a running order.");
+        }
+
+        const sourceProducts = mapOrderProductsToCartProducts(sourceOrder.products);
+        await updateOrderMutation({
+            variables: buildOrderUpdateMutationVariables(sourceOrder, sourceProducts, {
+                tableOverride: normalizedTargetTable,
+                preserveFinancials: true,
+            }),
+        });
+
+        if (parkedOrderId === sourceOrder.id) {
+            setTableNumber(normalizedTargetTable);
+            setTable(normalizedTargetTable);
+        }
+
+        await refetchActiveOrders();
+        toast.success("Running order transferred.");
+    };
+
+    // Opens transfer mode and keeps merge controls collapsed.
+    const startTransferMode = () => {
+        if (orderActionMode === "merge") return;
+        if (!selectedRunningOrder || !hasTransferTargets || transferBusy || mergeBusy) return;
+        setOrderActionMode("transfer");
+        setTransferError(null);
+        setMergeError(null);
+    };
+
+    // Opens merge mode and keeps transfer controls collapsed.
+    const startMergeMode = () => {
+        if (orderActionMode === "transfer") return;
+        if (!selectedRunningOrder || mergeBusy || transferBusy) return;
+        if (!hasMergeSources) {
+            const message = "No other running table is available to merge.";
+            setMergeError(message);
+            toast.error(message);
+            return;
+        }
+        setOrderActionMode("merge");
+        setMergeError(null);
+        setTransferError(null);
+    };
+
+    // Returns to compact action chooser and clears inline action errors.
+    const clearOrderActionMode = () => {
+        if (transferBusy || mergeBusy) return;
+        setOrderActionMode("none");
+        setTransferError(null);
+        setMergeError(null);
+    };
+
+    // Validates transfer UI state and executes the transfer action with user feedback.
+    const onRunTransferOperation = async () => {
+        if (transferBusy || mergeBusy || orderActionMode !== "transfer") return;
+
+        const sourceOrder = selectedRunningOrder;
+        const normalizedTargetTable = `${transferTargetTable || ""}`.trim();
+        if (!sourceOrder) {
+            setTransferError("Select a table with a running order.");
+            return;
+        }
+        if (!normalizedTargetTable) {
+            setTransferError("Select a target table.");
+            return;
+        }
+
+        setTransferBusy(true);
+        setTransferError(null);
+
+        try {
+            await runTransferOrder(sourceOrder, normalizedTargetTable);
+            setOrderActionMode("none");
+        } catch (error: any) {
+            const message = error?.message || "Unable to complete this action.";
+            setTransferError(message);
+            toast.error(message);
+        } finally {
+            setTransferBusy(false);
+        }
+    };
+
+    // Validates merge UI state and executes source->destination table merge with user feedback.
+    const onRunMergeOperation = async () => {
+        if (mergeBusy || transferBusy || orderActionMode !== "merge") return;
+
+        const destinationOrder = selectedRunningOrder;
+        const normalizedSourceTable = `${mergeSourceTable || ""}`.trim();
+        if (!destinationOrder) {
+            setMergeError("Select a destination table with a running order.");
+            return;
+        }
+        if (!normalizedSourceTable) {
+            setMergeError("Select a source table.");
+            return;
+        }
+
+        setMergeBusy(true);
+        setMergeError(null);
+
+        try {
+            await runMergeOrder(destinationOrder, normalizedSourceTable);
+            setOrderActionMode("none");
+        } catch (error: any) {
+            const message = error?.message || "Unable to merge running orders.";
+            setMergeError(message);
+            toast.error(message);
+        } finally {
+            setMergeBusy(false);
+        }
+    };
+
+    //List view of tables sorted by status.
     const listViewTables = useMemo(
         () =>
             visibleTables
@@ -1118,6 +1444,7 @@ export default () => {
                 .sort(compareTablesByStatusOrder),
         [visibleTables],
     );
+
     // Render path starts here after the runtime order overlay has been applied for view mode.
     return (
         <PageWrapper>
@@ -1135,8 +1462,8 @@ export default () => {
                                     {s.name}
                                 </button>
                             ))}
-                            <button className="tab-btn settings-btn" onClick={openSectionSettings} title="Section Settings">
-                                <FiSettings />
+                            <button className="tab-btn" onClick={openSectionSettings} title="Section Settings">
+                                <MdSettings size="22px" />
                             </button>
                         </div>
                         <div className="action-buttons">
@@ -1146,17 +1473,17 @@ export default () => {
                                     onClick={() => setViewMode("map")}
                                     title="Map View"
                                 >
-                                    <FiMap />
+                                    <FiMap size="20px" />
                                 </button>
                                 <button
                                     className={`toggle-btn ${viewMode === "list" ? "active" : ""}`}
                                     onClick={() => setViewMode("list")}
                                     title="List View"
                                 >
-                                    <FiList />
+                                    <FaRectangleList size="20px" />
                                 </button>
                             </div>
-                            <Button className={`action-btn edit-btn`} onClick={handleEditClick} title="Edit Layout">
+                            <Button className={`action-btn`} onClick={handleEditClick} title="Edit Layout">
                                 <FiEdit2 /> Edit
                             </Button>
                         </div>
@@ -1449,31 +1776,54 @@ export default () => {
                                     <div className="empty-state">No tables in this section.</div>
                                 ) : (
                                     <div className="table-grid">
-                                        {listViewTables.map((t) => (
-                                            <div
-                                                key={t.id}
-                                                className={`table-card ${selectedId === t.id ? "selected" : ""}`}
-                                                onClick={() => {
-                                                    if (isDesignMode) bringNodeToFront(t.id);
-                                                    selectShape(t.id);
-                                                    setTable(t.number);
-                                                    setTableError(false);
-                                                    const nextCovers = t.seats;
-                                                    if (nextCovers) setCoversNumber(nextCovers);
-                                                }}
-                                            >
-                                                <div className="card-icon">{t.type === "circle" ? <FiCircle /> : <FiSquare />}</div>
-                                                <div className="card-info">
-                                                    <div className="number">Table {t.number}</div>
-                                                    <div className="seats">{t.seats || 0} Seats</div>
-                                                    <div className="meta">
-                                                        <span className={`status-pill status-${t.status || "available"}`}>
-                                                            {STATUS_META[t.status || "available"].label}
-                                                        </span>
+                                        {listViewTables.map((t) => {
+                                            const liveState = liveTableStateByTable.get(`${t.number || ""}`.trim());
+                                            return (
+                                                <div
+                                                    key={t.id}
+                                                    className={`table-card ${selectedId === t.id ? "selected" : ""}`}
+                                                    onClick={() => {
+                                                        if (isDesignMode) bringNodeToFront(t.id);
+                                                        selectShape(t.id);
+                                                        setTable(t.number);
+                                                        setTableError(false);
+                                                        const nextCovers = liveState?.covers || t.seats;
+                                                        if (nextCovers) setCoversNumber(nextCovers);
+                                                    }}
+                                                >
+                                                    <div className="card-icon">{t.type === "circle" ? <FiCircle /> : <FiSquare />}</div>
+                                                    <div className="card-info">
+                                                        <div className="number">Table {t.number}</div>
+                                                        <div className="meta">
+                                                            <span className={`status-pill status-${t.status || "available"}`}>
+                                                                {STATUS_META[t.status || "available"].label}
+                                                            </span>
+                                                        </div>
+                                                        {/* Point 5: table cards surface live open-order metadata for fast floor visibility. */}
+                                                        <div className="meta-line">
+                                                            <span className="meta-label">Open</span>
+                                                            <span className="meta-value">
+                                                                {liveState?.elapsedMinutes !== null && liveState?.elapsedMinutes !== undefined
+                                                                    ? `${liveState.elapsedMinutes}m`
+                                                                    : "-"}
+                                                            </span>
+                                                        </div>
+                                                        <div className="meta-line">
+                                                            <span className="meta-label">Covers</span>
+                                                            <span className="meta-value">{liveState?.covers || t.seats || 0}</span>
+                                                        </div>
+                                                        <div className="meta-line">
+                                                            <span className="meta-label">Total</span>
+                                                            <span className="meta-value">{formatOrderTotal(liveState?.totalCents)}</span>
+                                                        </div>
+                                                        <div className="meta-line">
+                                                            <span className="meta-label">Server</span>
+                                                            <span className="meta-value">{liveState?.serverLabel || "-"}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>
@@ -1672,7 +2022,29 @@ export default () => {
                                     <div className="detail-grid">
                                         <div>
                                             <div className="detail-label">Guests</div>
-                                            <div className="detail-value">{coversNumber || selectedTable.seats || 0}</div>
+                                            <div className="detail-value">
+                                                {selectedTableLiveState?.covers || coversNumber || selectedTable.seats || 0}
+                                            </div>
+                                        </div>
+                                        {/* Point 5: selected table details use the same live metadata model as table cards. */}
+                                        <div>
+                                            <div className="detail-label">Time Open</div>
+                                            <div className="detail-value">
+                                                {selectedTableLiveState?.elapsedMinutes !== null &&
+                                                selectedTableLiveState?.elapsedMinutes !== undefined
+                                                    ? `${selectedTableLiveState.elapsedMinutes}m`
+                                                    : "-"}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="detail-label">Total</div>
+                                            <div className="detail-value">
+                                                {formatOrderTotal(selectedTableLiveState?.totalCents ?? selectedTableCartTotalCents)}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="detail-label">Server</div>
+                                            <div className="detail-value">{selectedTableLiveState?.serverLabel || "-"}</div>
                                         </div>
                                     </div>
                                     {!selectedTableHasLiveOrder && (
@@ -1686,6 +2058,116 @@ export default () => {
                                                     {STATUS_META[status].label}
                                                 </button>
                                             ))}
+                                        </div>
+                                    )}
+                                    {selectedRunningOrder && (
+                                        <div className="transfer-panel">
+                                            <div className="detail-label">Order Actions</div>
+                                            <div className="status-actions">
+                                                <button
+                                                    className={`status-action ${orderActionMode === "transfer" ? "active" : ""}`}
+                                                    onClick={startTransferMode}
+                                                    disabled={transferBusy || mergeBusy || !hasTransferTargets || orderActionMode === "merge"}
+                                                >
+                                                    Transfer Order
+                                                </button>
+                                                <button
+                                                    className={`status-action ${orderActionMode === "merge" ? "active" : ""}`}
+                                                    onClick={startMergeMode}
+                                                    disabled={mergeBusy || transferBusy || orderActionMode === "transfer"}
+                                                >
+                                                    Merge Orders
+                                                </button>
+                                                {orderActionMode !== "none" && (
+                                                    <button
+                                                        className="status-action"
+                                                        onClick={clearOrderActionMode}
+                                                        disabled={transferBusy || mergeBusy}
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {orderActionMode === "none" && (
+                                                <div className="helper-text">
+                                                    {hasTransferTargets || hasMergeSources || !!selectedRunningOrder
+                                                        ? "Choose an action for this running order."
+                                                        : "No transfer or merge action is currently available."}
+                                                </div>
+                                            )}
+                                            {orderActionMode === "none" && mergeError && <div className="transfer-error">{mergeError}</div>}
+
+                                            {orderActionMode === "transfer" && (
+                                                <>
+                                                    <label className="detail-label">Target Table</label>
+                                                    <select
+                                                        className="transfer-target-select"
+                                                        value={transferTargetTable}
+                                                        onChange={(event) => {
+                                                            setTransferTargetTable(event.target.value);
+                                                            if (transferError) setTransferError(null);
+                                                        }}
+                                                        disabled={transferBusy || mergeBusy || !hasTransferTargets}
+                                                    >
+                                                        {!hasTransferTargets && <option value="">No empty target table available</option>}
+                                                        {transferTargetOptions.map((tableNumberOption) => (
+                                                            <option key={tableNumberOption} value={tableNumberOption}>
+                                                                Table {tableNumberOption}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    {transferError && <div className="transfer-error">{transferError}</div>}
+                                                    {!hasTransferTargets && (
+                                                        <div className="helper-text">No empty table is available for transfer.</div>
+                                                    )}
+                                                    <Button
+                                                        className="transfer-action-btn"
+                                                        disabled={transferBusy || mergeBusy || !hasTransferTargets}
+                                                        onClick={() => void onRunTransferOperation()}
+                                                    >
+                                                        {transferBusy ? "Processing..." : "Transfer Running Order"}
+                                                    </Button>
+                                                </>
+                                            )}
+
+                                            {orderActionMode === "merge" && (
+                                                <>
+                                                    <label className="detail-label">Source Table</label>
+                                                    <select
+                                                        className="transfer-target-select"
+                                                        value={mergeSourceTable}
+                                                        onChange={(event) => {
+                                                            setMergeSourceTable(event.target.value);
+                                                            if (mergeError) setMergeError(null);
+                                                        }}
+                                                        disabled={mergeBusy || transferBusy || !hasMergeSources}
+                                                    >
+                                                        {!hasMergeSources && <option value="">No source table available</option>}
+                                                        {mergeSourceOptions.map((tableNumberOption) => (
+                                                            <option key={tableNumberOption} value={tableNumberOption}>
+                                                                Table {tableNumberOption}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    {mergeSourceTable && (
+                                                        <div className="helper-text">
+                                                            Merge Table {mergeSourceTable} into Table {transferSourceTable}.
+                                                        </div>
+                                                    )}
+                                                    {mergeError && <div className="transfer-error">{mergeError}</div>}
+                                                    {!hasMergeSources && (
+                                                        <div className="helper-text">No source table with a running order is available.</div>
+                                                    )}
+                                                    <Button
+                                                        className="transfer-action-btn"
+                                                        disabled={mergeBusy || transferBusy || !hasMergeSources}
+                                                        onClick={() => void onRunMergeOperation()}
+                                                    >
+                                                        {mergeBusy ? "Processing..." : "Merge Into Selected Table"}
+                                                    </Button>
+                                                </>
+                                            )}
                                         </div>
                                     )}
                                     <div className="helper-text">
@@ -1771,3 +2253,12 @@ export default () => {
         </PageWrapper>
     );
 };
+
+// Feature switch: keep disabled flow first in this file, enabled flow after it.
+const TableNumberPage = () => {
+    const { restaurant } = useRestaurant();
+    const isTableFeatureEnabled = getIsTableFeatureEnabled(restaurant);
+    return isTableFeatureEnabled ? <TableNumberFeatureEnabledPage /> : <TableNumberFeatureDisabledPage />;
+};
+
+export default TableNumberPage;

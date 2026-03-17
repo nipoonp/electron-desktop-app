@@ -16,23 +16,18 @@ export const TableLayoutEditModal = (props: ITableLayoutEditModalProps) => {
         <ModalV2
             isOpen={props.isOpen}
             onRequestClose={props.onClose}
-            disableClose={true}
+            disableClose={false}
             width="400px"
             padding="0"
             overlayClassName="table-layout-modal-overlay"
         >
             <div className="table-layout-edit-modal">
-                <h3>Edit Floor Plan</h3>
+                <div className="h3 mb-3">Edit Floor Plan</div>
                 <p>
-                    You are about to edit the table layout for <b>{props.sectionName}</b>.
+                    You are about to edit the table layout for <strong>{props.sectionName}</strong>.
                 </p>
                 <div className="modal-actions">
-                    <Button className="secondary" onClick={props.onClose}>
-                        Cancel
-                    </Button>
-                    <Button className="primary" onClick={props.onConfirm}>
-                        Confirm & Edit
-                    </Button>
+                    <Button onClick={props.onConfirm}>Confirm & Edit</Button>
                 </div>
             </div>
         </ModalV2>
@@ -56,13 +51,13 @@ export const TableSectionSettingsModal = (props: ITableSectionSettingsModalProps
         <ModalV2
             isOpen={props.isOpen}
             onRequestClose={props.onClose}
-            disableClose={true}
-            width="520px"
+            disableClose={false}
+            width="460px"
             padding="0"
             overlayClassName="table-layout-modal-overlay"
         >
             <div className="table-section-settings-modal">
-                <h3>Section Settings</h3>
+                <div className="h3">Section Settings</div>
                 <p>Rename sections, or toggle visibility for the floor plan.</p>
                 {props.sectionError && <div className="section-error">{props.sectionError}</div>}
                 <div className="section-list">
@@ -94,15 +89,8 @@ export const TableSectionSettingsModal = (props: ITableSectionSettingsModalProps
                     ))}
                 </div>
                 <div className="modal-actions">
-                    <Button className="secondary" onClick={props.onClose}>
-                        Cancel
-                    </Button>
-                    <Button className="secondary" onClick={props.onAddSection}>
-                        Add Section
-                    </Button>
-                    <Button className="primary" onClick={props.onSave}>
-                        Save
-                    </Button>
+                    <Button onClick={props.onAddSection}>Add Section</Button>
+                    <Button onClick={props.onSave}>Save</Button>
                 </div>
             </div>
         </ModalV2>
@@ -123,8 +111,8 @@ export const TableAddSectionModal = (props: ITableAddSectionModalProps) => {
         <ModalV2
             isOpen={props.isOpen}
             onRequestClose={props.onClose}
-            disableClose={true}
-            width="420px"
+            disableClose={false}
+            width="360px"
             padding="0"
             overlayClassName="table-layout-modal-overlay"
         >
@@ -140,12 +128,7 @@ export const TableAddSectionModal = (props: ITableAddSectionModalProps) => {
                     autoFocus
                 />
                 <div className="modal-actions">
-                    <Button className="secondary" onClick={props.onClose}>
-                        Cancel
-                    </Button>
-                    <Button className="primary" onClick={props.onSave}>
-                        Add Section
-                    </Button>
+                    <Button onClick={props.onSave}>Add Section</Button>
                 </div>
             </div>
         </ModalV2>

@@ -115,15 +115,6 @@ export const UPDATE_TABLE_PLAN = gql`
     }
 `;
 
-export const DELETE_TABLE_PLAN = gql`
-    mutation DeleteTablePlan($input: DeleteRestaurantTablePlanInput!) {
-        deleteTablePlan(input: $input) {
-            id
-            restaurantId
-        }
-    }
-`;
-
 export const CREATE_ORDER = gql`
     ${ORDER_FIELDS_FRAGMENT}
     mutation createOrder(
