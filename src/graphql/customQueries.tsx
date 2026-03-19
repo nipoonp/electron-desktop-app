@@ -2111,7 +2111,6 @@ export const GET_FLOOR_PLAN = gql`
                     name
                     hidden
                 }
-                owner
                 createdAt
                 updatedAt
             }
@@ -2124,7 +2123,6 @@ export interface IGET_FLOOR_PLAN {
     restaurantId: string;
     nodes: ITableNodesAttributes[];
     sections: ISection[];
-    owner?: string | null;
     createdAt?: string | null;
     updatedAt?: string | null;
 }

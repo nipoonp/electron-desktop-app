@@ -103,18 +103,7 @@ export const STATUS_META: Record<TableStatus, { label: string; fill: string; str
 
 export const STATUS_ORDER: TableStatus[] = ["available", "occupied", "idle", "reserved"];
 // Precomputed status rank used by list view sorting and any other status-priority workflows.
-const STATUS_ORDER_INDEX: Record<TableStatus, number> = STATUS_ORDER.reduce(
-    (acc, status, index) => ({
-        ...acc,
-        [status]: index,
-    }),
-    {
-        available: 0,
-        occupied: 0,
-        idle: 0,
-        reserved: 0,
-    } as Record<TableStatus, number>,
-);
+const STATUS_ORDER_INDEX = Object.fromEntries(STATUS_ORDER.map((s, i) => [s, i])) as Record<TableStatus, number>;
 
 // Parses table labels as numbers when possible to support natural numeric ordering in list view.
 const parseTableNumber = (value?: string) => {

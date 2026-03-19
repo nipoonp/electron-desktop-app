@@ -165,7 +165,7 @@ const TableNumberFeatureDisabledPage = () => {
                         value={table || ""}
                         error={tableError ? "Required" : ""}
                     />
-                    {tableError && <div className="text-error mt-2">{tableError ? "Required" : ""}</div>}
+                    {tableError && <div className="text-error mt-2">Required</div>}
                 </div>
 
                 {register?.enableCovers && (
@@ -251,7 +251,6 @@ const TableNumberFeatureEnabledPage = () => {
     const [stageSize, setStageSize] = useState({ width: 800, height: 600 });
 
     const hasLoadedFloorPlanRef = useRef(false);
-    const hasHydratedFromServerRef = useRef(false);
     const lastSavedPayloadHashRef = useRef<string | null>(null);
 
     const [undoStack, setUndoStack] = useState<LayoutSnapshot[]>([]);
@@ -341,7 +340,6 @@ const TableNumberFeatureEnabledPage = () => {
                 nodes: nextTables,
                 sectionList: nextSections,
             });
-            hasHydratedFromServerRef.current = true;
             setFloorPlanId(null);
             // Default layout creation intentionally disabled.
             setTables(nextTables);
@@ -368,7 +366,6 @@ const TableNumberFeatureEnabledPage = () => {
             sectionList: nextSections,
         });
 
-        hasHydratedFromServerRef.current = true;
         setFloorPlanId(plan.id);
         setTables(nextTables);
         setSections(nextSections);
@@ -377,20 +374,6 @@ const TableNumberFeatureEnabledPage = () => {
         setRedoStack([]);
         hasLoadedFloorPlanRef.current = true;
     }, [floorPlanData, floorPlanLoading, restaurant?.id]);
-
-    // Creates save payload only when required data is ready.
-    const buildFloorPlanPayload = () => {
-        const restaurantId = restaurant?.id;
-        if (!restaurantId) return null;
-        if (!hasLoadedFloorPlanRef.current) return null;
-
-        return createFloorPlanPayload({
-            planId: floorPlanId,
-            restaurantId,
-            nodes: tables,
-            sectionList: sections,
-        });
-    };
 
     // Saves floor plan and updates local state with the saved data.
     const persistFloorPlan = async (payload: FloorPlanPayload) => {
@@ -430,10 +413,11 @@ const TableNumberFeatureEnabledPage = () => {
 
     // Saves only when the current payload differs from the last successfully saved payload.
     const flushPendingSave = async () => {
-        const payload = buildFloorPlanPayload();
-        if (!payload) return true;
-        const isDirty = hashPayload(payload) !== lastSavedPayloadHashRef.current;
-        if (!isDirty) return true;
+        const restaurantId = restaurant?.id;
+        if (!restaurantId || !hasLoadedFloorPlanRef.current) return true;
+
+        const payload = createFloorPlanPayload({ planId: floorPlanId, restaurantId, nodes: tables, sectionList: sections });
+        if (hashPayload(payload) === lastSavedPayloadHashRef.current) return true;
 
         try {
             await persistFloorPlan(payload);
@@ -844,11 +828,6 @@ const TableNumberFeatureEnabledPage = () => {
         setStagePosition({ x: 0, y: 0 });
     };
 
-    // Triggers a manual save.
-    const handleManualSave = async () => {
-        await flushPendingSave();
-    };
-
     // Enables Ctrl/Cmd+Z and Ctrl/Cmd+Y shortcuts while editing the layout.
     useEffect(() => {
         if (!isDesignMode) return;
@@ -893,18 +872,12 @@ const TableNumberFeatureEnabledPage = () => {
     }, [stagePosition, stageScale, safeStageWidth, safeStageHeight, minimapSize.width, minimapSize.height]);
 
     // Only parked dine-in orders should mark a table as occupied in floor layout.
-    const visibleActiveOrders = useMemo(
-        () =>
-            (activeOrders || []).filter((order) => isOpenDineInRunningOrder(order) && `${order.status || ""}`.toUpperCase() === EOrderStatus.PARKED),
-        [activeOrders],
-    );
+    const visibleActiveOrders = useMemo(() => (activeOrders || []).filter(isOpenDineInRunningOrder), [activeOrders]);
 
     // Keeps only one open running order per table for resume flow, preferring the newest by placedAt.
     const activeRunningOrdersByTable = useMemo<Map<string, IGET_RESTAURANT_ORDER_FRAGMENT>>(() => {
         const byTable = new Map<string, IGET_RESTAURANT_ORDER_FRAGMENT>();
         visibleActiveOrders.forEach((order) => {
-            // Extra guard: NEW orders must never drive table occupancy in this layout.
-            if (`${order.status || ""}`.toUpperCase() !== EOrderStatus.PARKED) return;
             const tableNumberValue = `${order.table || ""}`.trim();
             if (!tableNumberValue) return;
 
@@ -1445,7 +1418,7 @@ const TableNumberFeatureEnabledPage = () => {
                                     </div>
                                     <div className="label">Delete</div>
                                 </div>
-                                <div className="sidebar-item" onClick={() => void handleManualSave()} title="Save layout changes to backend">
+                                <div className="sidebar-item" onClick={() => void flushPendingSave()} title="Save layout changes to backend">
                                     <div className="icon">
                                         <FiSave />
                                     </div>
@@ -2070,7 +2043,7 @@ const TableNumberFeatureEnabledPage = () => {
                                         error={tableError ? "Required" : ""}
                                         placeholder="Enter or select table..."
                                     />
-                                    {tableError && <div className="text-error mt-2">{tableError ? "Required" : ""}</div>}
+                                    {tableError && <div className="text-error mt-2">Required</div>}
                                 </>
                             )}
                         </div>

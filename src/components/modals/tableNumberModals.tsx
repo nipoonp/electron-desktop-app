@@ -81,13 +81,12 @@ export const TableSectionSettingsModal = (props: ITableSectionSettingsModalProps
             onRequestClose={props.onClose}
             disableClose={false}
             width="460px"
-            padding="0"
             overlayClassName="table-layout-modal-overlay"
         >
             <div className="table-section-settings-modal">
-                <div className="h3">Section Settings</div>
-                <p>Rename sections, or toggle visibility for the floor plan.</p>
-                {props.sectionError && <div className="section-error">{props.sectionError}</div>}
+                <div className="h3 mb-2">Section Settings</div>
+                <div className="mb-2">Rename sections, or toggle visibility for the floor plan.</div>
+                {props.sectionError && <div className="section-error mb-2">{props.sectionError}</div>}
                 <div className="section-list">
                     {props.sectionDrafts.map((section) => (
                         <div key={section.id} className="section-row">

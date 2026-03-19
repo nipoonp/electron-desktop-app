@@ -12,8 +12,8 @@ type TablePlanMutationInput = {
 // Unified floor-plan save hook:
 // updates when input.id exists, otherwise creates a new restaurant table plan.
 export const useUpdateRestaurantFloorPlanMutation = () => {
-    const [createFloorPlan, createResult] = useMutation(CREATE_TABLE_PLAN);
-    const [updateFloorPlan, updateResult] = useMutation(UPDATE_TABLE_PLAN);
+    const [createFloorPlan] = useMutation(CREATE_TABLE_PLAN);
+    const [updateFloorPlan] = useMutation(UPDATE_TABLE_PLAN);
 
     // Keeps callsites simple by hiding create-vs-update mutation branching.
     const updateRestaurantFloorPlan = async (options: {
@@ -30,10 +30,5 @@ export const useUpdateRestaurantFloorPlanMutation = () => {
         return await createFloorPlan({ variables: { input } });
     };
 
-    return {
-        updateRestaurantFloorPlan,
-        loading: createResult.loading || updateResult.loading,
-        error: createResult.error || updateResult.error,
-        data: updateResult.data || createResult.data,
-    };
+    return { updateRestaurantFloorPlan };
 };

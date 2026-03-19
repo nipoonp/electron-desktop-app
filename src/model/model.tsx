@@ -692,8 +692,6 @@ export type FloorPlanPayload = {
     }>;
 };
 
-export type FloorPlanSaveState = "idle" | "dirty" | "saving" | "saved" | "error";
-
 export type LayoutSnapshot = {
     tables: ITableNodesAttributes[];
     sections: ISection[];
