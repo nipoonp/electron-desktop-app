@@ -35,7 +35,7 @@ import { EOrderStatus, EOrderType } from "../../graphql/customQueries";
 import {
     CategoryType,
     FloorPlanPayload,
-    FloorPlanSaveState,
+
     ICartProduct,
     ISection,
     ITableNodesAttributes,
@@ -92,7 +92,7 @@ import {
 import { useGetRestaurantFloorPlanLazyQuery } from "../../hooks/useGetRestaurantFloorPlanLazyQuery";
 import { useGetRestaurantOrdersByBeginWithPlacedAt } from "../../hooks/useGetRestaurantOrdersByBeginWithPlacedAt";
 import { useUpdateRestaurantFloorPlanMutation } from "../../hooks/useUpdateRestaurantFloorPlanMutation";
-import { TableAddSectionModal, TableLayoutEditModal, TableSectionSettingsModal } from "../modals/tableNumberModals";
+import { TableLayoutEditModal, TableSectionSettingsModal } from "../modals/tableNumberModals";
 import { UPDATE_ORDER } from "../../graphql/customMutations";
 
 import "./tableNumber.scss";
@@ -228,11 +228,8 @@ const TableNumberFeatureEnabledPage = () => {
     const [isDesignMode, setIsDesignMode] = useState(false);
     const [showEditConfirm, setShowEditConfirm] = useState(false);
     const [showSectionSettings, setShowSectionSettings] = useState(false);
-    const [showAddSectionModal, setShowAddSectionModal] = useState(false);
     const [sectionDrafts, setSectionDrafts] = useState<ISection[]>(sections);
     const [sectionError, setSectionError] = useState<string | null>(null);
-    const [newSectionName, setNewSectionName] = useState("");
-    const [addSectionError, setAddSectionError] = useState<string | null>(null);
 
     // Sidebar State
     const [activeCategory, setActiveCategory] = useState<CategoryType | null>("tables");
@@ -252,14 +249,11 @@ const TableNumberFeatureEnabledPage = () => {
 
     const containerRef = useRef<HTMLDivElement>(null);
     const [stageSize, setStageSize] = useState({ width: 800, height: 600 });
-    const savedStateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     const hasLoadedFloorPlanRef = useRef(false);
     const hasHydratedFromServerRef = useRef(false);
     const lastSavedPayloadHashRef = useRef<string | null>(null);
-    const [saveState, setSaveState] = useState<FloorPlanSaveState>("idle");
-    const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
-    const [retryPayload, setRetryPayload] = useState<FloorPlanPayload | null>(null);
-    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
     const [undoStack, setUndoStack] = useState<LayoutSnapshot[]>([]);
     const [redoStack, setRedoStack] = useState<LayoutSnapshot[]>([]);
     const [stageScale, setStageScale] = useState(1);
@@ -318,13 +312,6 @@ const TableNumberFeatureEnabledPage = () => {
         setSections(next.sections);
     };
 
-    // Clears the temporary "Saved" state after a short delay so the status banner can return to idle.
-    const scheduleSavedStateReset = () => {
-        if (savedStateTimeoutRef.current) clearTimeout(savedStateTimeoutRef.current);
-        savedStateTimeoutRef.current = setTimeout(() => {
-            setSaveState((prev) => (prev === "saved" ? "idle" : prev));
-        }, 1500);
-    };
 
     // Fetches saved floor plan once restaurant data is available.
     useEffect(() => {
@@ -360,10 +347,6 @@ const TableNumberFeatureEnabledPage = () => {
             setTables(nextTables);
             setSections(nextSections);
             lastSavedPayloadHashRef.current = hashPayload(payload);
-            setHasUnsavedChanges(false);
-            setRetryPayload(null);
-            setSaveErrorMessage(null);
-            setSaveState("idle");
             setUndoStack([]);
             setRedoStack([]);
             hasLoadedFloorPlanRef.current = true;
@@ -390,10 +373,6 @@ const TableNumberFeatureEnabledPage = () => {
         setTables(nextTables);
         setSections(nextSections);
         lastSavedPayloadHashRef.current = hashPayload(payload);
-        setHasUnsavedChanges(false);
-        setRetryPayload(null);
-        setSaveErrorMessage(null);
-        setSaveState("idle");
         setUndoStack([]);
         setRedoStack([]);
         hasLoadedFloorPlanRef.current = true;
@@ -418,16 +397,11 @@ const TableNumberFeatureEnabledPage = () => {
         if (!payload) return;
         const prepared = prepareLayoutForPersistence(payload);
         if (!prepared.payload) {
-            setRetryPayload(payload);
-            setHasUnsavedChanges(true);
-            setSaveState("error");
-            setSaveErrorMessage(prepared.validationError || "Layout validation failed.");
+            alert(prepared.validationError || "Layout validation failed.");
             throw new Error(prepared.validationError || "Layout validation failed.");
         }
 
         const sanitizedPayload = prepared.payload;
-        setSaveState("saving");
-        setSaveErrorMessage(null);
 
         try {
             const result: any = await updateRestaurantFloorPlan({
@@ -446,17 +420,10 @@ const TableNumberFeatureEnabledPage = () => {
             setTables(normalizeTables(persistedPayload.nodes as ITableNodesAttributes[]));
             setSections(normalizeSections(persistedPayload.sections));
             lastSavedPayloadHashRef.current = hashPayload(persistedPayload);
-            setHasUnsavedChanges(false);
-            setRetryPayload(null);
-            setSaveState("saved");
-            scheduleSavedStateReset();
 
             if (savedId) setFloorPlanId(savedId);
         } catch (error: any) {
-            setRetryPayload(sanitizedPayload);
-            setHasUnsavedChanges(true);
-            setSaveState("error");
-            setSaveErrorMessage(error?.message || "Unable to save floor plan.");
+            alert(error?.message || "Unable to save floor plan.");
             throw error;
         }
     };
@@ -477,34 +444,6 @@ const TableNumberFeatureEnabledPage = () => {
         }
     };
 
-    // Recomputes whether there are unsaved changes whenever layout state changes.
-    useEffect(() => {
-        const payload = buildFloorPlanPayload();
-        if (!payload) return;
-        const payloadHash = hashPayload(payload);
-
-        if (hasHydratedFromServerRef.current) {
-            hasHydratedFromServerRef.current = false;
-            return;
-        }
-
-        const isDirty = payloadHash !== lastSavedPayloadHashRef.current;
-        setHasUnsavedChanges(isDirty);
-        if (!isDirty) {
-            setRetryPayload(null);
-            setSaveErrorMessage(null);
-            setSaveState((prev) => (prev === "saving" || prev === "saved" ? prev : "idle"));
-            return;
-        }
-        setSaveState((prev) => (prev === "saving" ? prev : "dirty"));
-    }, [tables, sections, floorPlanId, restaurant?.id, updateRestaurantFloorPlan]);
-
-    // Clears the delayed saved-state timer when the component unmounts.
-    useEffect(() => {
-        return () => {
-            if (savedStateTimeoutRef.current) clearTimeout(savedStateTimeoutRef.current);
-        };
-    }, []);
 
     // Refreshes the section modal draft values whenever the modal is opened or sections change.
     useEffect(() => {
@@ -691,28 +630,15 @@ const TableNumberFeatureEnabledPage = () => {
         updateTables((prev) => prev.map((node) => (node.type === "floor" && node.locked ? { ...node, locked: false } : node)));
     }, [isDesignMode]);
 
-    // Opens the add-section modal from section settings.
-    const addSection = () => {
-        setAddSectionError(null);
-        setNewSectionName("");
-        setShowAddSectionModal(true);
-    };
-
-    // Adds a new section draft from the modal input.
-    const saveNewSection = () => {
-        const name = normalizeSectionName(newSectionName || "");
-        if (!name) {
-            setAddSectionError("Section name cannot be empty.");
-            return;
-        }
-
+    // Adds a new section draft inline — returns an error string if invalid, null on success.
+    const addSection = (rawName: string): string | null => {
+        const name = normalizeSectionName(rawName || "");
+        if (!name) return "Section name cannot be empty.";
         const used = new Set(sectionDrafts.map((section) => section.id));
         const newId = buildUniqueId(undefined, used);
         setSectionError(null);
         setSectionDrafts((prev) => [...prev, { id: newId, name, hidden: false }]);
-        setAddSectionError(null);
-        setNewSectionName("");
-        setShowAddSectionModal(false);
+        return null;
     };
 
     // Removes a section from the modal draft list while keeping at least one section available.
@@ -730,17 +656,11 @@ const TableNumberFeatureEnabledPage = () => {
     const openSectionSettings = () => {
         setSectionDrafts(sections);
         setSectionError(null);
-        setAddSectionError(null);
-        setNewSectionName("");
         setShowSectionSettings(true);
     };
 
-    // Closes section-management UI and clears any pending add-section draft state.
     const closeSectionSettings = () => {
         setShowSectionSettings(false);
-        setShowAddSectionModal(false);
-        setAddSectionError(null);
-        setNewSectionName("");
     };
 
     // Validates and saves the section settings modal back into layout state.
@@ -924,14 +844,9 @@ const TableNumberFeatureEnabledPage = () => {
         setStagePosition({ x: 0, y: 0 });
     };
 
-    // Triggers a manual save and updates the save banner when it succeeds.
+    // Triggers a manual save.
     const handleManualSave = async () => {
-        const didSave = await flushPendingSave();
-        if (didSave) {
-            setSaveErrorMessage(null);
-            setSaveState("saved");
-            scheduleSavedStateReset();
-        }
+        await flushPendingSave();
     };
 
     // Enables Ctrl/Cmd+Z and Ctrl/Cmd+Y shortcuts while editing the layout.
@@ -956,28 +871,6 @@ const TableNumberFeatureEnabledPage = () => {
         return () => window.removeEventListener("keydown", onKeyDown);
     }, [isDesignMode, undoStack.length, redoStack.length]);
 
-    // Retries the most recent failed save using the cached retry payload.
-    const retrySave = async () => {
-        const payload = retryPayload || buildFloorPlanPayload();
-        if (!payload) return;
-
-        try {
-            await persistFloorPlan(payload);
-        } catch (error) {
-            console.error("Retry save failed", error);
-        }
-    };
-
-    const saveStateLabel =
-        saveState === "saving"
-            ? "Saving..."
-            : saveState === "saved"
-              ? "Saved"
-              : saveState === "error"
-                ? "Save failed"
-                : hasUnsavedChanges
-                  ? "Unsaved changes"
-                  : "All changes synced";
 
     const safeStageWidth = Math.max(stageSize.width, 1);
     const safeStageHeight = Math.max(stageSize.height, 1);
@@ -1465,6 +1358,9 @@ const TableNumberFeatureEnabledPage = () => {
                             <button className="tab-btn" onClick={openSectionSettings} title="Section Settings">
                                 <MdSettings size="22px" />
                             </button>
+                            <button className="tab-btn" onClick={handleEditClick} title="Edit Layout">
+                                <FiEdit2 size="20px" />
+                            </button>
                         </div>
                         <div className="action-buttons">
                             <div className="view-toggle">
@@ -1483,9 +1379,6 @@ const TableNumberFeatureEnabledPage = () => {
                                     <FaRectangleList size="20px" />
                                 </button>
                             </div>
-                            <Button className={`action-btn`} onClick={handleEditClick} title="Edit Layout">
-                                <FiEdit2 /> Edit
-                            </Button>
                         </div>
                     </div>
                 )}
@@ -1845,15 +1738,6 @@ const TableNumberFeatureEnabledPage = () => {
                         <div className="close-button-wrapper-right">
                             <FiX className="close-button" size={32} onClick={onClose} />
                         </div>
-                        <div className={`save-status-banner state-${saveState}`}>
-                            <span className="save-status-label">{saveStateLabel}</span>
-                            {saveState === "error" && (
-                                <button className="save-retry-btn" onClick={() => void retrySave()}>
-                                    Retry
-                                </button>
-                            )}
-                        </div>
-                        {saveState === "error" && saveErrorMessage && <div className="save-status-error">{saveErrorMessage}</div>}
 
                         <div className="form-section top-spacing">
                             <div className="h3 section-title">
@@ -1899,15 +1783,12 @@ const TableNumberFeatureEnabledPage = () => {
                                                                     (t.number || "").trim() === newVal,
                                                             );
                                                             if (newVal && isDuplicate) {
-                                                                setSaveState("error");
-                                                                setSaveErrorMessage(`Table number '${newVal}' already exists in this section.`);
+                                                                alert(`Table number '${newVal}' already exists in this section.`);
                                                                 return;
                                                             }
                                                             updateTables((prev) =>
                                                                 prev.map((t) => (t.id === selectedId ? { ...t, number: newVal } : t)),
                                                             );
-                                                            setSaveErrorMessage(null);
-                                                            setSaveState((prev) => (prev === "error" ? "dirty" : prev));
                                                             setTable(newVal);
                                                         }}
                                                     />
@@ -2223,7 +2104,7 @@ const TableNumberFeatureEnabledPage = () => {
                     sectionDrafts={sectionDrafts}
                     sectionError={sectionError}
                     onClose={closeSectionSettings}
-                    onAddSection={addSection}
+                    onAddSection={(name) => addSection(name)}
                     onSave={() => void saveSectionSettings()}
                     onDeleteSection={deleteSectionDraft}
                     onSectionNameChange={(sectionId, value) =>
@@ -2234,21 +2115,6 @@ const TableNumberFeatureEnabledPage = () => {
                     }
                 />
 
-                <TableAddSectionModal
-                    isOpen={showAddSectionModal}
-                    value={newSectionName}
-                    error={addSectionError}
-                    onClose={() => {
-                        setShowAddSectionModal(false);
-                        setAddSectionError(null);
-                        setNewSectionName("");
-                    }}
-                    onChange={(value) => {
-                        setNewSectionName(value);
-                        if (addSectionError) setAddSectionError(null);
-                    }}
-                    onSave={saveNewSection}
-                />
             </div>
         </PageWrapper>
     );

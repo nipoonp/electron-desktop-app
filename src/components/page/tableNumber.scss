@@ -55,8 +55,8 @@
                     background-color: #f1f3f5;
                 }
                 &.active {
-                    background-color: #e7f5ff;
-                    color: var(--primary-color);
+                    background-color: var(--primary-color);
+                    color: var(--secondary-text-color);
                     font-weight: 600;
                 }
                 &.hidden {

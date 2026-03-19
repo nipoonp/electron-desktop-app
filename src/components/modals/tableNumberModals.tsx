@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { FiEye, FiEyeOff, FiTrash2, FiPlus } from "react-icons/fi";
 import { ISection } from "../../model/model";
 import { Button } from "../../tabin/components/button";
 import { ModalV2 } from "../../tabin/components/modalv2";
@@ -18,14 +20,13 @@ export const TableLayoutEditModal = (props: ITableLayoutEditModalProps) => {
             onRequestClose={props.onClose}
             disableClose={false}
             width="400px"
-            padding="0"
             overlayClassName="table-layout-modal-overlay"
         >
             <div className="table-layout-edit-modal">
-                <div className="h3 mb-3">Edit Floor Plan</div>
-                <p>
+                <div className="h3 mb-2">Edit Floor Plan</div>
+                <div className="mb-3">
                     You are about to edit the table layout for <strong>{props.sectionName}</strong>.
-                </p>
+                </div>
                 <div className="modal-actions">
                     <Button onClick={props.onConfirm}>Confirm & Edit</Button>
                 </div>
@@ -39,7 +40,7 @@ interface ITableSectionSettingsModalProps {
     sectionDrafts: ISection[];
     sectionError: string | null;
     onClose: () => void;
-    onAddSection: () => void;
+    onAddSection: (name: string) => string | null;
     onSave: () => void;
     onDeleteSection: (sectionId: string) => void;
     onSectionNameChange: (sectionId: string, value: string) => void;
@@ -47,6 +48,33 @@ interface ITableSectionSettingsModalProps {
 }
 
 export const TableSectionSettingsModal = (props: ITableSectionSettingsModalProps) => {
+    const [addingSection, setAddingSection] = useState(false);
+    const [newName, setNewName] = useState("");
+    const [addError, setAddError] = useState<string | null>(null);
+
+    const handleAddClick = () => {
+        setNewName("");
+        setAddError(null);
+        setAddingSection(true);
+    };
+
+    const handleAddConfirm = () => {
+        const error = props.onAddSection(newName);
+        if (error) {
+            setAddError(error);
+            return;
+        }
+        setAddingSection(false);
+        setNewName("");
+        setAddError(null);
+    };
+
+    const handleAddCancel = () => {
+        setAddingSection(false);
+        setNewName("");
+        setAddError(null);
+    };
+
     return (
         <ModalV2
             isOpen={props.isOpen}
@@ -68,67 +96,55 @@ export const TableSectionSettingsModal = (props: ITableSectionSettingsModalProps
                                 value={section.name}
                                 onChange={(e) => props.onSectionNameChange(section.id, e.target.value)}
                             />
-                            <label className="section-toggle">
-                                <input
-                                    type="checkbox"
-                                    checked={!section.hidden}
-                                    onChange={(e) => props.onSectionVisibilityChange(section.id, e.target.checked)}
-                                />
-                                <span>{section.hidden ? "Hidden" : "Visible"}</span>
-                            </label>
                             <button
                                 type="button"
-                                className="section-delete"
+                                className="section-icon-btn"
+                                onClick={() => props.onSectionVisibilityChange(section.id, !!section.hidden)}
+                                title={section.hidden ? "Show section" : "Hide section"}
+                            >
+                                {section.hidden ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+                            </button>
+                            <button
+                                type="button"
+                                className="section-icon-btn danger"
                                 onClick={() => props.onDeleteSection(section.id)}
                                 disabled={props.sectionDrafts.length <= 1}
                                 title={props.sectionDrafts.length <= 1 ? "At least one section is required." : `Delete ${section.name}`}
                             >
-                                Delete
+                                <FiTrash2 size={16} />
                             </button>
                         </div>
                     ))}
+                    {addingSection ? (
+                        <div className="section-add-inline">
+                            <input
+                                className="section-input"
+                                value={newName}
+                                onChange={(e) => {
+                                    setNewName(e.target.value);
+                                    if (addError) setAddError(null);
+                                }}
+                                placeholder="Section name"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") handleAddConfirm();
+                                    if (e.key === "Escape") handleAddCancel();
+                                }}
+                            />
+                            <button type="button" className="section-icon-btn" onClick={handleAddConfirm} title="Confirm">
+                                <FiPlus size={16} />
+                            </button>
+                        </div>
+                    ) : (
+                        <button type="button" className="add-section-row" onClick={handleAddClick}>
+                            <FiPlus size={14} />
+                            <span>Add Section</span>
+                        </button>
+                    )}
+                    {addError && <div className="section-error">{addError}</div>}
                 </div>
                 <div className="modal-actions">
-                    <Button onClick={props.onAddSection}>Add Section</Button>
                     <Button onClick={props.onSave}>Save</Button>
-                </div>
-            </div>
-        </ModalV2>
-    );
-};
-
-interface ITableAddSectionModalProps {
-    isOpen: boolean;
-    value: string;
-    error: string | null;
-    onClose: () => void;
-    onChange: (value: string) => void;
-    onSave: () => void;
-}
-
-export const TableAddSectionModal = (props: ITableAddSectionModalProps) => {
-    return (
-        <ModalV2
-            isOpen={props.isOpen}
-            onRequestClose={props.onClose}
-            disableClose={false}
-            width="360px"
-            padding="0"
-            overlayClassName="table-layout-modal-overlay"
-        >
-            <div className="table-add-section-modal">
-                <h3>Add Section</h3>
-                <p>Enter a name for the new section.</p>
-                {props.error && <div className="section-error">{props.error}</div>}
-                <input
-                    className="section-input"
-                    value={props.value}
-                    onChange={(e) => props.onChange(e.target.value)}
-                    placeholder="Section name"
-                    autoFocus
-                />
-                <div className="modal-actions">
-                    <Button onClick={props.onSave}>Add Section</Button>
                 </div>
             </div>
         </ModalV2>
