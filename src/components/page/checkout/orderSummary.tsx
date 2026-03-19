@@ -206,6 +206,7 @@ const OrderItem = (props: {
                     {isOptionsExpanded ? (
                         <Input
                             key={`price-${product.id}`}
+                            className="price-edit-input"
                             type="number"
                             // label="Price (each)"
                             name="price"

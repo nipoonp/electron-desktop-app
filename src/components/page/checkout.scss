@@ -22,6 +22,16 @@
         }
     }
 
+    .parked-order-banner {
+        width: 100%;
+        background-color: var(--primary-color);
+        color: var(--background-color);
+        text-align: center;
+        padding: 6px 12px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
     .order-wrapper {
         display: flex;
         flex: 1;

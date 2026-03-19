@@ -182,10 +182,7 @@ export const setParkedOrderPrintedProductQuantities = (orderId: string, printedP
 };
 
 // Returns only quantities that have not been sent to kitchen yet.
-export const getUnprintedParkedOrderProducts = (
-    order: IGET_RESTAURANT_ORDER_FRAGMENT,
-    printedProductQuantities: Record<string, number>,
-) => {
+export const getUnprintedParkedOrderProducts = (order: IGET_RESTAURANT_ORDER_FRAGMENT, printedProductQuantities: Record<string, number>) => {
     const remainingPrintedProductQuantities = { ...printedProductQuantities };
 
     return order.products.reduce(
@@ -1051,8 +1048,7 @@ export const Checkout = () => {
         setKitchenPrintTrackingVersion((prev) => prev + 1);
     };
 
-    const showKitchenSendStatusInCart =
-        orderType === EOrderType.DINEIN && parkedOrderStatus === EOrderStatus.PARKED && Boolean(parkedOrderId);
+    const showKitchenSendStatusInCart = orderType === EOrderType.DINEIN && parkedOrderStatus === EOrderStatus.PARKED && Boolean(parkedOrderId);
     const kitchenSendStatusByDisplayOrder = useMemo(() => {
         // Row-level status map used by the cart UI: index -> "sent" | "unsent".
         const statusByDisplayOrder: Record<number, "sent" | "unsent"> = {};
@@ -1076,6 +1072,13 @@ export const Checkout = () => {
 
         return statusByDisplayOrder;
     }, [showKitchenSendStatusInCart, parkedOrderId, products, kitchenPrintTrackingVersion]);
+
+    const onPrintOnAccountOrderReceipts = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+        register.printers &&
+            register.printers.items.forEach((printer) => {
+                sendReceiptPrint(order, printer);
+            });
+    };
 
     const onSubmitOrder = async (
         paid: boolean,
@@ -1139,17 +1142,14 @@ export const Checkout = () => {
 
             if (register.printers && register.printers.items.length > 0) {
                 if (parkOrder) {
-                    const localProductsSnapshot =
-                        (JSON.parse(JSON.stringify(products || [])) as IGET_RESTAURANT_ORDER_FRAGMENT["products"]) || [];
+                    const localProductsSnapshot = (JSON.parse(JSON.stringify(products || [])) as IGET_RESTAURANT_ORDER_FRAGMENT["products"]) || [];
                     const savedOrderProducts = (newOrder.products || []) as IGET_RESTAURANT_ORDER_FRAGMENT["products"];
                     const getTotalQuantity = (orderProducts: IGET_RESTAURANT_ORDER_FRAGMENT["products"]) =>
                         (orderProducts || []).reduce((totalQuantity, product) => totalQuantity + (product.quantity || 0), 0);
                     // Prefer saved mutation products so tracking keys match reopened order rows.
                     // Fallback to local cart snapshot when response lags behind the latest cart edits.
                     const productsForParkedPrint =
-                        getTotalQuantity(savedOrderProducts) >= getTotalQuantity(localProductsSnapshot)
-                            ? savedOrderProducts
-                            : localProductsSnapshot;
+                        getTotalQuantity(savedOrderProducts) >= getTotalQuantity(localProductsSnapshot) ? savedOrderProducts : localProductsSnapshot;
                     const orderForParkedPrint: IGET_RESTAURANT_ORDER_FRAGMENT = {
                         ...newOrder,
                         products: productsForParkedPrint,
@@ -1159,6 +1159,10 @@ export const Checkout = () => {
                 } else {
                     await printReceipts(newOrder, { treatAsPreviouslyParked: wasEditingParkedOrder });
                 }
+            }
+
+            if (parkOrder && register.autoPrintParkedOrderKitchenReceipts) {
+                await onPrintParkedOrderReceipts(newOrder);
             }
 
             // If using third party integration. Poll for resposne
@@ -1496,7 +1500,7 @@ export const Checkout = () => {
                     }
                 };
 
-                const pollingUrl = await smartpayCreateTransaction(amount, "Card.Purchase");
+                const pollingUrl = await smartpayCreateTransaction(amount);
                 outcome = await smartpayPollForOutcome(pollingUrl, delayed);
             } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
                 outcome = await windcaveCreateTransaction(
@@ -2094,6 +2098,7 @@ export const Checkout = () => {
                         cashTransactionChangeAmount={cashTransactionChangeAmount}
                         onPrintCustomerReceipt={() => createdOrder.current && onPrintCustomerReceipt(createdOrder.current)}
                         onPrintParkedOrderReceipts={() => createdOrder.current && onPrintParkedOrderReceipts(createdOrder.current)}
+                        onPrintOnAccountOrderReceipts={() => createdOrder.current && onPrintOnAccountOrderReceipts(createdOrder.current)}
                         paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                         incrementRedirectTimer={incrementRedirectTimer}
                         paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
@@ -2474,6 +2479,7 @@ export const Checkout = () => {
                     {isPOS && <>{customerInformationFooter}</>}
                     {isPOS && <>{clearSaleFooter}</>}
                 </div>
+                {parkedOrderNumber && <div className="parked-order-banner">Updating Parked Order #{parkedOrderNumber}</div>}
                 <div className="order-wrapper">
                     <div
                         ref={(ref) => setProductsWrapperElement(ref)}

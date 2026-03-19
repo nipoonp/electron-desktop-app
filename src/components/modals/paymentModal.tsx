@@ -98,6 +98,7 @@ interface IPaymentModalProps {
     eftposTransactionOutcome: IEftposTransactionOutcome | null;
     onPrintCustomerReceipt: () => void;
     onPrintParkedOrderReceipts: () => void;
+    onPrintOnAccountOrderReceipts: () => void;
     paymentOutcomeOrderNumber: string | null;
     incrementRedirectTimer: (time: number) => void;
     paymentOutcomeApprovedRedirectTimeLeft: number;
@@ -130,6 +131,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         onContinueToNextOrder,
         onPrintCustomerReceipt,
         onPrintParkedOrderReceipts,
+        onPrintOnAccountOrderReceipts,
         eftposTransactionProcessMessage,
         eftposTransactionProcessQuestion,
         eftposSignatureRequiredQuestion,
@@ -329,7 +331,7 @@ export const PaymentModal = (props: IPaymentModalProps) => {
         } else if (paymentModalState === EPaymentModalState.OnAccountResult) {
             return (
                 <PaymentOnAccountPayment
-                    onPrintParkedOrderReceipts={onPrintParkedOrderReceipts}
+                    onPrintOnAccountOrderReceipts={onPrintOnAccountOrderReceipts}
                     paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
                     paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
                     onContinueToNextOrder={onContinueToNextOrder}
@@ -1091,12 +1093,12 @@ const PaymentCashPaymentPOS = (props: {
 };
 
 const PaymentOnAccountPayment = (props: {
-    onPrintParkedOrderReceipts: () => void;
+    onPrintOnAccountOrderReceipts: () => void;
     paymentOutcomeOrderNumber: string | null;
     paymentOutcomeApprovedRedirectTimeLeft: number;
     onContinueToNextOrder: () => void;
 }) => {
-    const { onPrintParkedOrderReceipts, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
+    const { onPrintOnAccountOrderReceipts, paymentOutcomeOrderNumber, paymentOutcomeApprovedRedirectTimeLeft, onContinueToNextOrder } = props;
 
     return (
         <>
@@ -1104,7 +1106,7 @@ const PaymentOnAccountPayment = (props: {
             <div className="mb-1">Reference order number is</div>
             <div className="order-number h1">{paymentOutcomeOrderNumber}</div>
             <div className="separator-2 mb-2"></div>
-            <AskToPrintParkedOrderReceipts onPrinterParkedOrderReceipts={onPrintParkedOrderReceipts} />
+            <AskToPrintParkedOrderReceipts onPrinterParkedOrderReceipts={onPrintOnAccountOrderReceipts} />
             <div className="separator-2 mb-2"></div>
             <PaymentModalFooter
                 paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
@@ -1878,13 +1880,6 @@ const AskToPrintParkedOrderReceipts = (props: { onPrinterParkedOrderReceipts: ()
 
     const [hide, setHide] = useState(false);
     const shouldAutoPrintParkedOrderKitchenReceipts = register?.autoPrintParkedOrderKitchenReceipts === true;
-
-    useEffect(() => {
-        if (!shouldAutoPrintParkedOrderKitchenReceipts || hide) return;
-
-        onPrinterParkedOrderReceipts();
-        setHide(true);
-    }, [hide, onPrinterParkedOrderReceipts, shouldAutoPrintParkedOrderKitchenReceipts]);
 
     if (hide || shouldAutoPrintParkedOrderKitchenReceipts) return <></>;
 
