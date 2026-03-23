@@ -253,7 +253,10 @@ export const TableNode = React.memo(
                             fontSize={14}
                             fontFamily="'Inter', sans-serif"
                             fontStyle="bold"
-                            fill={isSelected ? "#fff" : statusMeta.text}
+                            // Keep selected table labels high-contrast so numbers stay readable on light fills.
+                            fill={isSelected ? "#1f2937" : statusMeta.text}
+                            stroke={isSelected ? "rgba(255, 255, 255, 0.9)" : undefined}
+                            strokeWidth={isSelected ? 0.6 : 0}
                         />
                     )}
                     {isTableShape && !isDesignMode && (

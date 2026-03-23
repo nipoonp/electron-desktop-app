@@ -8,7 +8,7 @@ import { FiChevronDown, FiChevronRight } from "react-icons/fi";
 import { useEffect, useState } from "react";
 import { Input } from "../../../tabin/components/input";
 import { TiDelete } from "react-icons/ti";
-import { FiCheckCircle, FiBell } from "react-icons/fi";
+import { FaReceipt } from "react-icons/fa";
 import { CachedImage } from "../../../tabin/components/cachedImage";
 import { getCloudFrontDomainName } from "../../../private/aws-custom";
 import { Link } from "../../../tabin/components/link";
@@ -23,7 +23,15 @@ export const OrderSummary = (props: {
     showKitchenSendStatus?: boolean;
     kitchenSendStatusByDisplayOrder?: Record<number, "sent" | "unsent">;
 }) => {
-    const { products, onEditProduct, onRemoveProduct, onUpdateProductQuantity, onApplyProductDiscount, showKitchenSendStatus, kitchenSendStatusByDisplayOrder } = props;
+    const {
+        products,
+        onEditProduct,
+        onRemoveProduct,
+        onUpdateProductQuantity,
+        onApplyProductDiscount,
+        showKitchenSendStatus,
+        kitchenSendStatusByDisplayOrder,
+    } = props;
 
     if (!products || products.length === 0) return <h1>No items in cart!</h1>;
 
@@ -66,7 +74,16 @@ const OrderItem = (props: {
     showKitchenSendStatus?: boolean;
     kitchenSendStatus?: "sent" | "unsent";
 }) => {
-    const { product, displayOrder, onEditProduct, onUpdateProductQuantity, onApplyProductDiscount, onRemoveProduct, showKitchenSendStatus, kitchenSendStatus } = props;
+    const {
+        product,
+        displayOrder,
+        onEditProduct,
+        onUpdateProductQuantity,
+        onApplyProductDiscount,
+        onRemoveProduct,
+        showKitchenSendStatus,
+        kitchenSendStatus,
+    } = props;
     const { isPOS } = useRegister();
 
     const [displayPrice, setDisplayPrice] = useState(convertCentsToDollars(product.totalPrice * product.quantity - product.discount));
@@ -283,7 +300,7 @@ const OrderItemDetails = (props: {
                     className={`kitchen-send-status ${kitchenSendStatus === "sent" ? "sent" : "unsent"}`}
                     title={kitchenSendStatus === "sent" ? "Sent to kitchen" : "Not sent to kitchen"}
                 >
-                    {kitchenSendStatus === "sent" ? <FiCheckCircle size={14} /> : <FiBell size={14} />}
+                    <FaReceipt size={14} color={kitchenSendStatus === "sent" ? "#2f9e44" : "#e03131"} />
                 </span>
             )}
             {/* <div className="h4 mr-2">{nameDisplayString}</div> {editButton} */}

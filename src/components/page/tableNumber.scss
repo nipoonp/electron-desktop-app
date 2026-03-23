@@ -139,12 +139,12 @@
 
     /* --- LEFT SIDEBAR (Edit Mode) --- */
     .editor-sidebar {
-        width: 80px;
+        width: 72px;
         background-color: #1a1d21;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
-        padding: 16px 0;
+        justify-content: flex-start;
+        padding: 10px 0 8px;
         z-index: 200;
         color: #adb5bd;
         box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
@@ -153,11 +153,7 @@
         .sidebar-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-
-            &.bottom {
-                margin-top: auto;
-            }
+            gap: 4px;
         }
 
         .sidebar-item {
@@ -165,25 +161,44 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 12px 0;
+            min-height: 54px;
+            padding: 6px 0;
             cursor: pointer;
             transition: all 0.2s;
             border-left: 3px solid transparent;
 
             .icon {
-                font-size: 24px;
-                margin-bottom: 4px;
+                width: 20px;
+                height: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 2px;
+
+                svg {
+                    width: 18px;
+                    height: 18px;
+                }
             }
             .label {
-                font-size: 10px;
+                font-size: 8.5px;
                 font-weight: 500;
                 text-transform: uppercase;
-                letter-spacing: 0.5px;
+                letter-spacing: 0.2px;
+                line-height: 1.1;
+                text-align: center;
+                white-space: nowrap;
             }
 
             &:hover {
                 color: #fff;
                 background-color: rgba(255, 255, 255, 0.05);
+            }
+
+            &.disabled {
+                opacity: 0.45;
+                cursor: not-allowed;
+                pointer-events: none;
             }
 
             &.active {
@@ -192,11 +207,41 @@
                 background-color: rgba(51, 154, 240, 0.1);
             }
         }
+
+        @media (max-height: 860px) {
+            width: 68px;
+            padding: 6px 0;
+
+            .sidebar-group {
+                gap: 2px;
+            }
+
+            .sidebar-item {
+                min-height: 48px;
+                padding: 4px 0;
+
+                .icon {
+                    width: 18px;
+                    height: 18px;
+                    margin-bottom: 1px;
+
+                    svg {
+                        width: 16px;
+                        height: 16px;
+                    }
+                }
+
+                .label {
+                    font-size: 8px;
+                    letter-spacing: 0.25px;
+                }
+            }
+        }
     }
 
     /* --- PALETTE PANEL (Slide out) --- */
     .palette-panel {
-        width: 220px;
+        width: 150px;
         background-color: #f8f9fa;
         border-right: 1px solid #dee2e6;
         display: flex;

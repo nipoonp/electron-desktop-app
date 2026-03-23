@@ -24,6 +24,7 @@ import {
     FiZoomIn,
     FiZoomOut,
     FiMaximize2,
+    FiCopy,
 } from "react-icons/fi";
 import { useRegister } from "../../context/register-context";
 import { Stepper } from "../../tabin/components/stepper";
@@ -35,7 +36,6 @@ import { EOrderStatus, EOrderType } from "../../graphql/customQueries";
 import {
     CategoryType,
     FloorPlanPayload,
-
     ICartProduct,
     ISection,
     ITableNodesAttributes,
@@ -92,7 +92,7 @@ import {
 import { useGetRestaurantFloorPlanLazyQuery } from "../../hooks/useGetRestaurantFloorPlanLazyQuery";
 import { useGetRestaurantOrdersByBeginWithPlacedAt } from "../../hooks/useGetRestaurantOrdersByBeginWithPlacedAt";
 import { useUpdateRestaurantFloorPlanMutation } from "../../hooks/useUpdateRestaurantFloorPlanMutation";
-import { TableLayoutEditModal, TableSectionSettingsModal } from "../modals/tableNumberModals";
+import { TableLayoutEditModal, TableLayoutUnsavedChangesModal, TableSectionSettingsModal } from "../modals/tableNumberModals";
 import { UPDATE_ORDER } from "../../graphql/customMutations";
 
 import "./tableNumber.scss";
@@ -105,6 +105,27 @@ import { FaRectangleList } from "react-icons/fa6";
 
 // Feature flag toggle for table-number experience.
 const TABLE_FEATURE_STATIC_FALLBACK = true;
+const CLUSTER_CHAIR_CAPTURE_PADDING = 70;
+const TABLE_CLUSTER_PASTE_OFFSET = 30;
+const CHAIR_SHAPE_TYPES: ShapeType[] = ["chair", "stool", "armchair"];
+
+type TableClusterClipboardItem = {
+    node: ITableNodesAttributes;
+    offsetX: number;
+    offsetY: number;
+    isSourceTable: boolean;
+};
+
+type TableClusterClipboard = {
+    items: TableClusterClipboardItem[];
+    anchorX: number;
+    anchorY: number;
+    sourceSectionId: string;
+    createdAt: number;
+};
+
+const isChairShapeType = (type: ShapeType) => CHAIR_SHAPE_TYPES.includes(type);
+const isTableShapeType = (type: ShapeType) => type === "rect" || type === "circle";
 
 // Uses restaurant-level feature config when available; falls back to static value for now.
 const getIsTableFeatureEnabled = (restaurant: { checkTableFeature?: boolean | null } | null | undefined) => {
@@ -227,6 +248,9 @@ const TableNumberFeatureEnabledPage = () => {
     const [selectedId, selectShape] = useState<string | null>(null);
     const [isDesignMode, setIsDesignMode] = useState(false);
     const [showEditConfirm, setShowEditConfirm] = useState(false);
+    const [showUnsavedChangesPrompt, setShowUnsavedChangesPrompt] = useState(false);
+    const [unsavedPromptSaving, setUnsavedPromptSaving] = useState(false);
+    const [unsavedPromptError, setUnsavedPromptError] = useState<string | null>(null);
     const [showSectionSettings, setShowSectionSettings] = useState(false);
     const [sectionDrafts, setSectionDrafts] = useState<ISection[]>(sections);
     const [sectionError, setSectionError] = useState<string | null>(null);
@@ -249,9 +273,15 @@ const TableNumberFeatureEnabledPage = () => {
 
     const containerRef = useRef<HTMLDivElement>(null);
     const [stageSize, setStageSize] = useState({ width: 800, height: 600 });
+    const tableClusterClipboardRef = useRef<TableClusterClipboard | null>(null);
+    const lastTableClusterPasteRef = useRef<{ createdAt: number; x: number; y: number } | null>(null);
+    const lastCanvasPointerWorldRef = useRef<{ x: number; y: number } | null>(null);
+    const [hasTableClusterClipboard, setHasTableClusterClipboard] = useState(false);
 
     const hasLoadedFloorPlanRef = useRef(false);
     const lastSavedPayloadHashRef = useRef<string | null>(null);
+    const hasPendingLayoutChangesRef = useRef(false);
+    const pendingEditExitActionRef = useRef<(() => void) | null>(null);
 
     const [undoStack, setUndoStack] = useState<LayoutSnapshot[]>([]);
     const [redoStack, setRedoStack] = useState<LayoutSnapshot[]>([]);
@@ -287,11 +317,13 @@ const TableNumberFeatureEnabledPage = () => {
         setSections(cloneSections(snapshot.sections));
         selectShape(snapshot.selectedId);
         setActiveSectionId(snapshot.activeSectionId);
+        if (isDesignMode) hasPendingLayoutChangesRef.current = true;
     };
 
     // Applies one table-list update and records an undo snapshot while in design mode.
     const updateTables = (updater: (prev: ITableNodesAttributes[]) => ITableNodesAttributes[]) => {
         if (isDesignMode) pushUndoSnapshot();
+        if (isDesignMode) hasPendingLayoutChangesRef.current = true;
         setTables(updater);
     };
 
@@ -303,6 +335,7 @@ const TableNumberFeatureEnabledPage = () => {
         },
     ) => {
         if (isDesignMode) pushUndoSnapshot();
+        if (isDesignMode) hasPendingLayoutChangesRef.current = true;
         const next = updater({
             tables: cloneTables(tables),
             sections: cloneSections(sections),
@@ -310,7 +343,6 @@ const TableNumberFeatureEnabledPage = () => {
         setTables(next.tables);
         setSections(next.sections);
     };
-
 
     // Fetches saved floor plan once restaurant data is available.
     useEffect(() => {
@@ -348,6 +380,7 @@ const TableNumberFeatureEnabledPage = () => {
             setUndoStack([]);
             setRedoStack([]);
             hasLoadedFloorPlanRef.current = true;
+            hasPendingLayoutChangesRef.current = false;
             return;
         }
 
@@ -373,6 +406,7 @@ const TableNumberFeatureEnabledPage = () => {
         setUndoStack([]);
         setRedoStack([]);
         hasLoadedFloorPlanRef.current = true;
+        hasPendingLayoutChangesRef.current = false;
     }, [floorPlanData, floorPlanLoading, restaurant?.id]);
 
     // Saves floor plan and updates local state with the saved data.
@@ -403,6 +437,7 @@ const TableNumberFeatureEnabledPage = () => {
             setTables(normalizeTables(persistedPayload.nodes as ITableNodesAttributes[]));
             setSections(normalizeSections(persistedPayload.sections));
             lastSavedPayloadHashRef.current = hashPayload(persistedPayload);
+            hasPendingLayoutChangesRef.current = false;
 
             if (savedId) setFloorPlanId(savedId);
         } catch (error: any) {
@@ -417,7 +452,10 @@ const TableNumberFeatureEnabledPage = () => {
         if (!restaurantId || !hasLoadedFloorPlanRef.current) return true;
 
         const payload = createFloorPlanPayload({ planId: floorPlanId, restaurantId, nodes: tables, sectionList: sections });
-        if (hashPayload(payload) === lastSavedPayloadHashRef.current) return true;
+        if (hashPayload(payload) === lastSavedPayloadHashRef.current) {
+            hasPendingLayoutChangesRef.current = false;
+            return true;
+        }
 
         try {
             await persistFloorPlan(payload);
@@ -428,6 +466,64 @@ const TableNumberFeatureEnabledPage = () => {
         }
     };
 
+    // Returns true when current edit state differs from the last saved floor-plan payload.
+    const hasUnsavedLayoutChanges = () => {
+        const restaurantId = restaurant?.id;
+        if (!restaurantId || !hasLoadedFloorPlanRef.current) return false;
+        if (!hasPendingLayoutChangesRef.current) return false;
+        const payload = createFloorPlanPayload({ planId: floorPlanId, restaurantId, nodes: tables, sectionList: sections });
+        return hashPayload(payload) !== lastSavedPayloadHashRef.current;
+    };
+
+    // Runs the exit action immediately when safe; otherwise opens a styled save/discard prompt.
+    const requestExitFromEditMode = (onProceed: () => void) => {
+        if (!isDesignMode || !hasUnsavedLayoutChanges()) {
+            onProceed();
+            return;
+        }
+        pendingEditExitActionRef.current = onProceed;
+        setUnsavedPromptError(null);
+        setShowUnsavedChangesPrompt(true);
+    };
+
+    // Prompt action: keep editing and close the modal.
+    const onCancelUnsavedPrompt = () => {
+        if (unsavedPromptSaving) return;
+        pendingEditExitActionRef.current = null;
+        setUnsavedPromptError(null);
+        setShowUnsavedChangesPrompt(false);
+    };
+
+    // Prompt action: discard unsaved edits and continue exiting.
+    const onDiscardUnsavedPrompt = () => {
+        if (unsavedPromptSaving) return;
+        const proceed = pendingEditExitActionRef.current;
+        pendingEditExitActionRef.current = null;
+        setUnsavedPromptError(null);
+        setShowUnsavedChangesPrompt(false);
+        proceed?.();
+    };
+
+    // Prompt action: save layout first, then continue exiting when save succeeds.
+    const onSaveUnsavedPrompt = async () => {
+        if (unsavedPromptSaving) return;
+        setUnsavedPromptSaving(true);
+        setUnsavedPromptError(null);
+
+        const didSaveSucceed = await flushPendingSave();
+        if (!didSaveSucceed) {
+            setUnsavedPromptSaving(false);
+            setUnsavedPromptError("Unable to save layout changes. Please try again.");
+            return;
+        }
+
+        const proceed = pendingEditExitActionRef.current;
+        pendingEditExitActionRef.current = null;
+        setUnsavedPromptSaving(false);
+        setUnsavedPromptError(null);
+        setShowUnsavedChangesPrompt(false);
+        proceed?.();
+    };
 
     // Refreshes the section modal draft values whenever the modal is opened or sections change.
     useEffect(() => {
@@ -469,18 +565,22 @@ const TableNumberFeatureEnabledPage = () => {
     // Leaves the table screen and routes back to the correct page for POS or kiosk flow.
     const onClose = () => {
         const restaurantId = restaurant?.id;
-        if (isPOS) {
-            if (!restaurantId) return;
-            navigate(`${restaurantPath}/${restaurantId}`);
-            return;
-        }
-        navigate(`${checkoutPath}`);
+        requestExitFromEditMode(() => {
+            if (isPOS) {
+                if (!restaurantId) return;
+                navigate(`${restaurantPath}/${restaurantId}`);
+                return;
+            }
+            navigate(`${checkoutPath}`);
+        });
     };
 
     // Finalizes the selected single table number and stores it in cart state.
     const onNext = () => {
         if (isDesignMode) {
-            setIsDesignMode(false);
+            requestExitFromEditMode(() => {
+                setIsDesignMode(false);
+            });
             return;
         }
 
@@ -586,7 +686,9 @@ const TableNumberFeatureEnabledPage = () => {
     // Enters edit mode or exits it if the editor is already open.
     const handleEditClick = () => {
         if (isDesignMode) {
-            setIsDesignMode(false);
+            requestExitFromEditMode(() => {
+                setIsDesignMode(false);
+            });
         } else {
             setShowEditConfirm(true); // Confirm entry
         }
@@ -850,7 +952,6 @@ const TableNumberFeatureEnabledPage = () => {
         return () => window.removeEventListener("keydown", onKeyDown);
     }, [isDesignMode, undoStack.length, redoStack.length]);
 
-
     const safeStageWidth = Math.max(stageSize.width, 1);
     const safeStageHeight = Math.max(stageSize.height, 1);
     const minimapScale = 0.2;
@@ -955,6 +1056,8 @@ const TableNumberFeatureEnabledPage = () => {
     const selectedTableHasLiveOrder = !!selectedTableLiveState;
     const selectedRunningOrder = selectedTable ? activeRunningOrdersByTable.get(`${selectedTable.number || ""}`.trim()) || null : null;
     const transferSourceTable = `${selectedRunningOrder?.table || selectedTable?.number || ""}`.trim();
+    const canCopySelectedTableCluster = isDesignMode && selectedNode != null && (selectedNode.type === "rect" || selectedNode.type === "circle");
+    const canPasteTableCluster = isDesignMode && hasTableClusterClipboard;
     const allTableNumbers = useMemo(() => {
         const tableNumbers = new Set<string>();
         tables.forEach((node) => {
@@ -1301,6 +1404,208 @@ const TableNumberFeatureEnabledPage = () => {
         }
     };
 
+    // Returns nearest chairs from the selected table center, limited by default covers.
+    // This same selector is reused by copy/paste and table-drag so both behaviors stay consistent.
+    const getCoverBasedChairsForTable = (tableNode: ITableNodesAttributes, nodes: ITableNodesAttributes[]) => {
+        const coverCount = Math.max(1, Number(tableNode.seats || DEFAULT_SEATS));
+        const tableCenterX = tableNode.x + tableNode.width / 2;
+        const tableCenterY = tableNode.y + tableNode.height / 2;
+        const tableBounds = {
+            left: tableNode.x - CLUSTER_CHAIR_CAPTURE_PADDING,
+            right: tableNode.x + tableNode.width + CLUSTER_CHAIR_CAPTURE_PADDING,
+            top: tableNode.y - CLUSTER_CHAIR_CAPTURE_PADDING,
+            bottom: tableNode.y + tableNode.height + CLUSTER_CHAIR_CAPTURE_PADDING,
+        };
+
+        const nearbyChairs = nodes
+            .filter((node) => {
+                if (!isChairShapeType(node.type) || node.sectionId !== tableNode.sectionId) return false;
+                const centerX = node.x + node.width / 2;
+                const centerY = node.y + node.height / 2;
+                return centerX >= tableBounds.left && centerX <= tableBounds.right && centerY >= tableBounds.top && centerY <= tableBounds.bottom;
+            })
+            .map((chair) => {
+                // Center-to-center distance keeps drag/copy behavior aligned to visual proximity.
+                const chairCenterX = chair.x + chair.width / 2;
+                const chairCenterY = chair.y + chair.height / 2;
+                const distance = Math.hypot(chairCenterX - tableCenterX, chairCenterY - tableCenterY);
+                return { chair, distance };
+            })
+            .sort((a, b) => a.distance - b.distance)
+            .slice(0, coverCount)
+            .map(({ chair }) => chair);
+
+        return nearbyChairs;
+    };
+
+    // Moves the table and the nearest chairs up to default covers count on pure drag.
+    const moveTableWithCoverBasedChairs = (currentNodes: ITableNodesAttributes[], nextTableAttrs: ITableNodesAttributes) => {
+        const previousTable = currentNodes.find((node) => node.id === nextTableAttrs.id);
+        if (!previousTable) return currentNodes;
+        if (!isTableShapeType(previousTable.type)) {
+            return currentNodes.map((node) => (node.id === nextTableAttrs.id ? nextTableAttrs : node));
+        }
+
+        // Only drag movement should carry chairs; resize/rotate should not.
+        const isPureDrag =
+            previousTable.width === nextTableAttrs.width &&
+            previousTable.height === nextTableAttrs.height &&
+            previousTable.rotation === nextTableAttrs.rotation &&
+            previousTable.sectionId === nextTableAttrs.sectionId;
+        if (!isPureDrag) {
+            return currentNodes.map((node) => (node.id === nextTableAttrs.id ? nextTableAttrs : node));
+        }
+
+        const deltaX = nextTableAttrs.x - previousTable.x;
+        const deltaY = nextTableAttrs.y - previousTable.y;
+        if (deltaX === 0 && deltaY === 0) {
+            return currentNodes.map((node) => (node.id === nextTableAttrs.id ? nextTableAttrs : node));
+        }
+
+        const chairsToMove = getCoverBasedChairsForTable(previousTable, currentNodes);
+        const chairIdsToMove = new Set(chairsToMove.map((chair) => chair.id));
+
+        return currentNodes.map((node) => {
+            if (node.id === nextTableAttrs.id) return nextTableAttrs;
+            if (!chairIdsToMove.has(node.id) || node.locked) return node;
+            return {
+                ...node,
+                x: snapToGrid(node.x + deltaX),
+                y: snapToGrid(node.y + deltaY),
+            };
+        });
+    };
+
+    // Copies selected table with nearest chairs up to its default covers count.
+    const copySelectedTableCluster = () => {
+        if (!isDesignMode) return;
+
+        const selectedTableNode = tables.find((node) => node.id === selectedId && isTableShapeType(node.type));
+        if (!selectedTableNode) {
+            toast.error("Select a table to copy.");
+            return;
+        }
+
+        const nearbyChairs = getCoverBasedChairsForTable(selectedTableNode, tables);
+
+        const clusterNodes = [selectedTableNode, ...nearbyChairs];
+        tableClusterClipboardRef.current = {
+            items: clusterNodes.map((node) => ({
+                node: { ...node },
+                offsetX: node.x - selectedTableNode.x,
+                offsetY: node.y - selectedTableNode.y,
+                isSourceTable: node.id === selectedTableNode.id,
+            })),
+            anchorX: selectedTableNode.x,
+            anchorY: selectedTableNode.y,
+            sourceSectionId: selectedTableNode.sectionId,
+            createdAt: Date.now(),
+        };
+        lastTableClusterPasteRef.current = null;
+        setHasTableClusterClipboard(true);
+        toast.success(nearbyChairs.length > 0 ? `Copied table with ${nearbyChairs.length} chair(s) by covers.` : "Copied table cluster.");
+    };
+
+    // Pastes the copied cluster at cursor position (fallback: viewport center), creating new ids/numbers safely.
+    const pasteCopiedTableCluster = () => {
+        if (!isDesignMode) return;
+
+        const clipboard = tableClusterClipboardRef.current;
+        if (!clipboard || clipboard.items.length === 0) {
+            toast.error("Copy a table first.");
+            return;
+        }
+
+        let anchorX = clipboard.anchorX;
+        let anchorY = clipboard.anchorY;
+        const pointerWorldPosition = lastCanvasPointerWorldRef.current;
+        if (pointerWorldPosition) {
+            anchorX = pointerWorldPosition.x;
+            anchorY = pointerWorldPosition.y;
+        } else if (lastTableClusterPasteRef.current?.createdAt === clipboard.createdAt) {
+            anchorX = lastTableClusterPasteRef.current.x + TABLE_CLUSTER_PASTE_OFFSET;
+            anchorY = lastTableClusterPasteRef.current.y + TABLE_CLUSTER_PASTE_OFFSET;
+        } else {
+            // If no pointer is available yet, paste near the viewport center in world coordinates.
+            anchorX = (-stagePosition.x + stageSize.width / 2) / stageScale;
+            anchorY = (-stagePosition.y + stageSize.height / 2) / stageScale;
+        }
+
+        const targetSectionId = activeSectionId || clipboard.sourceSectionId;
+        let nextSelectedTableId: string | null = null;
+        let nextSelectedTableNumber = "";
+
+        updateTables((prev) => {
+            const usedIds = new Set(prev.map((node) => node.id));
+            const nextNodes = [...prev];
+
+            clipboard.items.forEach((item) => {
+                let nextId = uuidv4();
+                while (usedIds.has(nextId)) nextId = uuidv4();
+                usedIds.add(nextId);
+
+                const isTableShape = item.node.type === "rect" || item.node.type === "circle";
+                const tableNumberValue = isTableShape ? nextTableNumberInSection(targetSectionId, nextNodes) : item.node.number || "";
+                const nextNode: ITableNodesAttributes = {
+                    ...item.node,
+                    id: nextId,
+                    x: snapToGrid(anchorX + item.offsetX),
+                    y: snapToGrid(anchorY + item.offsetY),
+                    sectionId: targetSectionId,
+                    number: tableNumberValue,
+                    status: isTableShape ? "available" : item.node.status,
+                    zIndex: item.node.type === "floor" ? FLOOR_Z_INDEX : nextZIndexForType(item.node.type, nextNodes),
+                    locked: false,
+                };
+                nextNodes.push(nextNode);
+
+                if (item.isSourceTable) {
+                    nextSelectedTableId = nextId;
+                    nextSelectedTableNumber = tableNumberValue;
+                }
+            });
+
+            return nextNodes;
+        });
+
+        if (nextSelectedTableId) {
+            selectShape(nextSelectedTableId);
+            if (nextSelectedTableNumber) setTable(nextSelectedTableNumber);
+        }
+
+        lastTableClusterPasteRef.current = { createdAt: clipboard.createdAt, x: anchorX, y: anchorY };
+        toast.success("Table cluster pasted.");
+    };
+
+    // Adds copy/paste shortcuts for edit mode while avoiding inputs/textareas.
+    useEffect(() => {
+        if (!isDesignMode) return;
+
+        const onKeyDown = (event: KeyboardEvent) => {
+            const isCtrlOrCmd = event.ctrlKey || event.metaKey;
+            if (!isCtrlOrCmd) return;
+
+            const target = event.target as HTMLElement | null;
+            const tagName = `${target?.tagName || ""}`.toLowerCase();
+            const isTypingTarget = tagName === "input" || tagName === "textarea" || !!target?.closest("[contenteditable='true']");
+            if (isTypingTarget) return;
+
+            const key = event.key.toLowerCase();
+            if (key === "c") {
+                event.preventDefault();
+                copySelectedTableCluster();
+                return;
+            }
+            if (key === "v") {
+                event.preventDefault();
+                pasteCopiedTableCluster();
+            }
+        };
+
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [isDesignMode, tables, selectedId, activeSectionId, stagePosition.x, stagePosition.y, stageScale, stageSize.width, stageSize.height]);
+
     //List view of tables sorted by status.
     const listViewTables = useMemo(
         () =>
@@ -1409,14 +1714,31 @@ const TableNumberFeatureEnabledPage = () => {
                                     </div>
                                     <div className="label">Select</div>
                                 </div>
-                            </div>
-
-                            <div className="sidebar-group bottom">
                                 <div className="sidebar-item" onClick={deleteSelected}>
                                     <div className="icon">
                                         <FiTrash2 />
                                     </div>
                                     <div className="label">Delete</div>
+                                </div>
+                                <div
+                                    className={`sidebar-item ${canCopySelectedTableCluster ? "" : "disabled"}`}
+                                    onClick={copySelectedTableCluster}
+                                    title="Copy selected table with nearby chairs (Ctrl/Cmd+C)"
+                                >
+                                    <div className="icon">
+                                        <FiCopy />
+                                    </div>
+                                    <div className="label">Copy</div>
+                                </div>
+                                <div
+                                    className={`sidebar-item ${canPasteTableCluster ? "" : "disabled"}`}
+                                    onClick={pasteCopiedTableCluster}
+                                    title="Paste copied table cluster (Ctrl/Cmd+V)"
+                                >
+                                    <div className="icon">
+                                        <FiCopy style={{ transform: "scaleX(-1)" }} />
+                                    </div>
+                                    <div className="label">Paste</div>
                                 </div>
                                 <div className="sidebar-item" onClick={() => void flushPendingSave()} title="Save layout changes to backend">
                                     <div className="icon">
@@ -1570,10 +1892,42 @@ const TableNumberFeatureEnabledPage = () => {
                                         setStagePosition(nextPosition);
                                     }}
                                     onMouseDown={(e) => {
+                                        const pointer = e.target.getStage()?.getPointerPosition();
+                                        if (pointer) {
+                                            lastCanvasPointerWorldRef.current = {
+                                                x: (pointer.x - stagePosition.x) / stageScale,
+                                                y: (pointer.y - stagePosition.y) / stageScale,
+                                            };
+                                        }
                                         if (e.target === e.target.getStage()) selectShape(null);
                                     }}
+                                    onMouseMove={(e) => {
+                                        if (!isDesignMode) return;
+                                        const pointer = e.target.getStage()?.getPointerPosition();
+                                        if (!pointer) return;
+                                        lastCanvasPointerWorldRef.current = {
+                                            x: (pointer.x - stagePosition.x) / stageScale,
+                                            y: (pointer.y - stagePosition.y) / stageScale,
+                                        };
+                                    }}
                                     onTouchStart={(e) => {
+                                        const pointer = e.target.getStage()?.getPointerPosition();
+                                        if (pointer) {
+                                            lastCanvasPointerWorldRef.current = {
+                                                x: (pointer.x - stagePosition.x) / stageScale,
+                                                y: (pointer.y - stagePosition.y) / stageScale,
+                                            };
+                                        }
                                         if (e.target === e.target.getStage()) selectShape(null);
+                                    }}
+                                    onTouchMove={(e) => {
+                                        if (!isDesignMode) return;
+                                        const pointer = e.target.getStage()?.getPointerPosition();
+                                        if (!pointer) return;
+                                        lastCanvasPointerWorldRef.current = {
+                                            x: (pointer.x - stagePosition.x) / stageScale,
+                                            y: (pointer.y - stagePosition.y) / stageScale,
+                                        };
                                     }}
                                     style={{ backgroundColor: isDesignMode ? "#f8f9fa" : "#fff" }}
                                 >
@@ -1600,9 +1954,7 @@ const TableNumberFeatureEnabledPage = () => {
                                                     const idx = tables.findIndex((t) => t.id === newAttrs.id);
                                                     if (idx < 0) return;
                                                     if (tables[idx]?.locked) return;
-                                                    const newT = [...tables];
-                                                    newT[idx] = newAttrs;
-                                                    updateTables(() => newT);
+                                                    updateTables((prev) => moveTableWithCoverBasedChairs(prev, newAttrs));
                                                 }}
                                             />
                                         ))}
@@ -2072,6 +2424,15 @@ const TableNumberFeatureEnabledPage = () => {
                     onConfirm={confirmEditMode}
                 />
 
+                <TableLayoutUnsavedChangesModal
+                    isOpen={showUnsavedChangesPrompt}
+                    isSaving={unsavedPromptSaving}
+                    error={unsavedPromptError}
+                    onCancel={onCancelUnsavedPrompt}
+                    onDiscard={onDiscardUnsavedPrompt}
+                    onSave={onSaveUnsavedPrompt}
+                />
+
                 <TableSectionSettingsModal
                     isOpen={showSectionSettings}
                     sectionDrafts={sectionDrafts}
@@ -2087,7 +2448,6 @@ const TableNumberFeatureEnabledPage = () => {
                         setSectionDrafts((prev) => prev.map((s) => (s.id === sectionId ? { ...s, hidden: !isVisible } : s)))
                     }
                 />
-
             </div>
         </PageWrapper>
     );

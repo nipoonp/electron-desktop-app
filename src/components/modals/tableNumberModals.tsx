@@ -35,6 +35,44 @@ export const TableLayoutEditModal = (props: ITableLayoutEditModalProps) => {
     );
 };
 
+interface ITableLayoutUnsavedChangesModalProps {
+    isOpen: boolean;
+    isSaving: boolean;
+    error?: string | null;
+    onCancel: () => void;
+    onDiscard: () => void;
+    onSave: () => void;
+}
+
+export const TableLayoutUnsavedChangesModal = (props: ITableLayoutUnsavedChangesModalProps) => {
+    return (
+        <ModalV2
+            isOpen={props.isOpen}
+            onRequestClose={props.onCancel}
+            disableClose={props.isSaving}
+            width="420px"
+            overlayClassName="table-layout-modal-overlay"
+        >
+            <div className="table-layout-unsaved-modal">
+                <div className="h3 mb-2">Unsaved Layout Changes</div>
+                <div className="mb-3">You have unsaved layout changes. Save before leaving edit mode?</div>
+                {props.error && <div className="unsaved-error mb-3">{props.error}</div>}
+                <div className="modal-actions">
+                    <Button className="secondary" onClick={props.onCancel} disabled={props.isSaving}>
+                        Cancel
+                    </Button>
+                    <Button className="secondary" onClick={props.onDiscard} disabled={props.isSaving}>
+                        Discard
+                    </Button>
+                    <Button onClick={props.onSave} disabled={props.isSaving}>
+                        {props.isSaving ? "Saving..." : "Save"}
+                    </Button>
+                </div>
+            </div>
+        </ModalV2>
+    );
+};
+
 interface ITableSectionSettingsModalProps {
     isOpen: boolean;
     sectionDrafts: ISection[];

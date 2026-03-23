@@ -3,6 +3,7 @@
 }
 
 .table-layout-edit-modal,
+.table-layout-unsaved-modal,
 .table-section-settings-modal {
     .modal-actions {
         display: flex;
@@ -30,6 +31,17 @@
                 }
             }
         }
+    }
+}
+
+.table-layout-unsaved-modal {
+    .unsaved-error {
+        font-size: 12px;
+        color: #c92a2a;
+        background: #fff5f5;
+        border: 1px solid #ffa8a8;
+        border-radius: 8px;
+        padding: 8px 10px;
     }
 }
 
