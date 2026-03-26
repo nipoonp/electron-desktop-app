@@ -2158,3 +2158,92 @@ export const UPDATE_RESTAURANT_PREPARATION_TIME = gql`
     }
 `;
 
+
+export enum EReservationStatus {
+    PENDING = "PENDING",
+    CONFIRMED = "CONFIRMED",
+    SEATED = "SEATED",
+    COMPLETED = "COMPLETED",
+    CANCELLED = "CANCELLED",
+    NO_SHOW = "NO_SHOW",
+}
+
+export interface IGET_RESERVATION {
+    id: string;
+    restaurantId: string;
+    date: string;
+    time: string;
+    covers: number;
+    status: EReservationStatus;
+    customerName: string;
+    customerEmail: string | null;
+    customerPhone: string | null;
+    notes: string | null;
+    tableNumber: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+// Slim interface used only for the floor plan overlay (avoids over-fetching).
+export interface IGET_RESERVATION_FOR_TABLE {
+    id: string;
+    tableNumber: string | null;
+    status: string;
+    date: string;
+}
+
+// Slim query for floor plan overlay — only fetches the fields needed to derive reserved table status.
+export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE = gql`
+    query GetReservationsByRestaurantByDate(
+        $restaurantId: ID!
+        $date: ModelStringKeyConditionInput
+        $limit: Int
+    ) {
+        getReservationsByRestaurantByDate(
+            restaurantId: $restaurantId
+            date: $date
+            limit: $limit
+        ) {
+            items {
+                id
+                tableNumber
+                status
+                date
+            }
+        }
+    }
+`;
+
+// Full query used by the reservations management page.
+export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE_FULL = gql`
+    query GetReservationsByRestaurantByDateFull(
+        $restaurantId: ID!
+        $date: ModelStringKeyConditionInput
+        $limit: Int
+        $nextToken: String
+    ) {
+        getReservationsByRestaurantByDate(
+            restaurantId: $restaurantId
+            date: $date
+            limit: $limit
+            nextToken: $nextToken
+        ) {
+            items {
+                id
+                restaurantId
+                date
+                time
+                covers
+                status
+                customerName
+                customerEmail
+                customerPhone
+                notes
+                tableNumber
+                createdAt
+                updatedAt
+            }
+            nextToken
+        }
+    }
+`;

@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { useMutation } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { checkoutPath, restaurantPath } from "../main";
@@ -25,14 +25,16 @@ import {
     FiZoomOut,
     FiMaximize2,
     FiCopy,
+    FiCalendar,
 } from "react-icons/fi";
 import { useRegister } from "../../context/register-context";
 import { Stepper } from "../../tabin/components/stepper";
 import { Stage, Layer } from "react-konva";
 
 import { BackgroundGrid, TableNode } from "./tableNumber/tableNumberComponent";
+import ReservationsPanel from "./tableNumber/ReservationsPanel";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
-import { EOrderStatus, EOrderType } from "../../graphql/customQueries";
+import { EOrderStatus, EOrderType, GET_RESERVATIONS_BY_RESTAURANT_BY_DATE, IGET_RESERVATION_FOR_TABLE } from "../../graphql/customQueries";
 import {
     CategoryType,
     FloorPlanPayload,
@@ -233,6 +235,13 @@ const TableNumberFeatureEnabledPage = () => {
     // This page shows the newest orders when it opens.
     // After checkout saves an order, it refetches so this page gets updated data.
     const { data: activeOrders, refetch: refetchActiveOrders } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant?.id || "", todayOrderDateKey);
+    // Fetch today's reservations to overlay "reserved" status on tables with upcoming bookings.
+    const { data: todayReservationsData } = useQuery(GET_RESERVATIONS_BY_RESTAURANT_BY_DATE, {
+        variables: { restaurantId: restaurant?.id, date: { eq: todayOrderDateKey }, limit: 500 },
+        skip: !restaurant?.id,
+        fetchPolicy: "network-only",
+        pollInterval: 60000, // refresh every minute
+    });
     // Unified save mutation decides between create/update based on payload id.
     const { updateRestaurantFloorPlan } = useUpdateRestaurantFloorPlanMutation();
     const [updateOrderMutation] = useMutation(UPDATE_ORDER);
@@ -247,6 +256,7 @@ const TableNumberFeatureEnabledPage = () => {
     // UI State
     const [selectedId, selectShape] = useState<string | null>(null);
     const [isDesignMode, setIsDesignMode] = useState(false);
+    const [showReservationsPanel, setShowReservationsPanel] = useState(false);
     const [showEditConfirm, setShowEditConfirm] = useState(false);
     const [showUnsavedChangesPrompt, setShowUnsavedChangesPrompt] = useState(false);
     const [unsavedPromptSaving, setUnsavedPromptSaving] = useState(false);
@@ -1013,6 +1023,18 @@ const TableNumberFeatureEnabledPage = () => {
         return summaries;
     }, [activeRunningOrdersByTable, register, tableLiveClockMs]);
 
+    // Derive the set of table numbers that have a PENDING or CONFIRMED reservation today.
+    const reservedTableNumbers = useMemo<Set<string>>(() => {
+        const items: IGET_RESERVATION_FOR_TABLE[] = todayReservationsData?.getReservationsByRestaurantByDate?.items ?? [];
+        const reserved = new Set<string>();
+        items.forEach((r) => {
+            if (r.tableNumber && (r.status === "PENDING" || r.status === "CONFIRMED")) {
+                reserved.add(r.tableNumber.trim());
+            }
+        });
+        return reserved;
+    }, [todayReservationsData]);
+
     // Point 5: open-order status is overlaid onto the layout so table cards and map stay in sync.
     const runtimeTables: ITableNodesAttributes[] = useMemo(
         () =>
@@ -1024,7 +1046,7 @@ const TableNumberFeatureEnabledPage = () => {
                 if (!liveState) {
                     return {
                         ...node,
-                        status: node.status === "reserved" ? "reserved" : "available",
+                        status: reservedTableNumbers.has(tableNumberValue) ? "reserved" : "available",
                     };
                 }
 
@@ -1033,7 +1055,7 @@ const TableNumberFeatureEnabledPage = () => {
                     status: liveState.status,
                 };
             }),
-        [tables, liveTableStateByTable],
+        [tables, liveTableStateByTable, reservedTableNumbers],
     );
 
     // Builds the section-specific canvas list using the visual render ordering rules.
@@ -1094,6 +1116,13 @@ const TableNumberFeatureEnabledPage = () => {
         setTransferError(null);
         setMergeError(null);
     }, [selectedId, selectedRunningOrder?.id]);
+
+    // Auto-open the reservations panel when staff tap a reserved table.
+    useEffect(() => {
+        if (!isDesignMode && selectedTable?.status === "reserved") {
+            setShowReservationsPanel(true);
+        }
+    }, [selectedTable?.status, isDesignMode]);
 
     useEffect(() => {
         if (!selectedRunningOrder) {
@@ -1656,6 +1685,13 @@ const TableNumberFeatureEnabledPage = () => {
                                 >
                                     <FaRectangleList size="20px" />
                                 </button>
+                                <button
+                                    className={`toggle-btn ${showReservationsPanel ? "active" : ""}`}
+                                    onClick={() => setShowReservationsPanel((prev) => !prev)}
+                                    title="Reservations"
+                                >
+                                    <FiCalendar size="20px" />
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -2058,8 +2094,17 @@ const TableNumberFeatureEnabledPage = () => {
                         )}
                     </div>
 
-                    {/* Right Side: Input Form */}
+                    {/* Right Side: Reservations panel or Input Form */}
                     <div className="input-form-container">
+                        {!isDesignMode && showReservationsPanel ? (
+                            <ReservationsPanel
+                                restaurantId={restaurant?.id ?? ""}
+                                tableNodes={tables}
+                                highlightTableNumber={selectedTable?.status === "reserved" ? `${selectedTable.number ?? ""}`.trim() || null : null}
+                                onClose={() => setShowReservationsPanel(false)}
+                            />
+                        ) : (
+                        <>
                         <div className="close-button-wrapper-right">
                             <FiX className="close-button" size={32} onClick={onClose} />
                         </div>
@@ -2414,6 +2459,8 @@ const TableNumberFeatureEnabledPage = () => {
                                 {isDesignMode ? "Done" : "Next"}
                             </Button>
                         </div>
+                        </>
+                        )}
                     </div>
                 </div>
 

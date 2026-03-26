@@ -342,3 +342,91 @@ export const UPDATE_REGISTER_TYRO = gql`
         }
     }
 `;
+
+export const CREATE_RESERVATION = gql`
+    mutation CreateReservation(
+        $restaurantId: ID!
+        $date: AWSDate!
+        $time: AWSTime!
+        $covers: Int!
+        $status: ReservationStatus!
+        $customerName: String!
+        $customerEmail: String
+        $customerPhone: String
+        $notes: String
+        $tableNumber: String
+    ) {
+        createReservation(
+            input: {
+                restaurantId: $restaurantId
+                date: $date
+                time: $time
+                covers: $covers
+                status: $status
+                customerName: $customerName
+                customerEmail: $customerEmail
+                customerPhone: $customerPhone
+                notes: $notes
+                tableNumber: $tableNumber
+            }
+        ) {
+            id
+            restaurantId
+            date
+            time
+            covers
+            status
+            customerName
+            customerEmail
+            customerPhone
+            notes
+            tableNumber
+            createdAt
+            updatedAt
+        }
+    }
+`;
+
+export const UPDATE_RESERVATION = gql`
+    mutation UpdateReservation(
+        $id: ID!
+        $date: AWSDate
+        $time: AWSTime
+        $covers: Int
+        $status: ReservationStatus
+        $customerName: String
+        $customerEmail: String
+        $customerPhone: String
+        $notes: String
+        $tableNumber: String
+    ) {
+        updateReservation(
+            input: {
+                id: $id
+                date: $date
+                time: $time
+                covers: $covers
+                status: $status
+                customerName: $customerName
+                customerEmail: $customerEmail
+                customerPhone: $customerPhone
+                notes: $notes
+                tableNumber: $tableNumber
+            }
+        ) {
+            id
+            restaurantId
+            date
+            time
+            covers
+            status
+            customerName
+            customerEmail
+            customerPhone
+            notes
+            tableNumber
+            createdAt
+            updatedAt
+        }
+    }
+`;
