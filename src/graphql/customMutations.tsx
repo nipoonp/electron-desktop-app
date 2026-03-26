@@ -49,6 +49,22 @@ export const UPDATE_LOYALTY_USER_RESTAURANT_LINK = gql`
     }
 `;
 
+export const CREATE_TABLE_PLAN = gql`
+    mutation CreateTablePlan($input: CreateRestaurantTablePlanInput!) {
+        createTablePlan(input: $input) {
+            id
+        }
+    }
+`;
+
+export const UPDATE_TABLE_PLAN = gql`
+    mutation UpdateTablePlan($input: UpdateRestaurantTablePlanInput!) {
+        updateTablePlan(input: $input) {
+            id
+        }
+    }
+`;
+
 export const CREATE_ORDER = gql`
     ${ORDER_FIELDS_FRAGMENT}
     mutation createOrder(
@@ -323,6 +339,94 @@ export const UPDATE_REGISTER_TYRO = gql`
             id
             tyroMerchantId
             tyroTerminalId
+        }
+    }
+`;
+
+export const CREATE_RESERVATION = gql`
+    mutation CreateReservation(
+        $restaurantId: ID!
+        $date: AWSDate!
+        $time: AWSTime!
+        $covers: Int!
+        $status: ReservationStatus!
+        $customerName: String!
+        $customerEmail: String
+        $customerPhone: String
+        $notes: String
+        $tableNumber: String
+    ) {
+        createReservation(
+            input: {
+                restaurantId: $restaurantId
+                date: $date
+                time: $time
+                covers: $covers
+                status: $status
+                customerName: $customerName
+                customerEmail: $customerEmail
+                customerPhone: $customerPhone
+                notes: $notes
+                tableNumber: $tableNumber
+            }
+        ) {
+            id
+            restaurantId
+            date
+            time
+            covers
+            status
+            customerName
+            customerEmail
+            customerPhone
+            notes
+            tableNumber
+            createdAt
+            updatedAt
+        }
+    }
+`;
+
+export const UPDATE_RESERVATION = gql`
+    mutation UpdateReservation(
+        $id: ID!
+        $date: AWSDate
+        $time: AWSTime
+        $covers: Int
+        $status: ReservationStatus
+        $customerName: String
+        $customerEmail: String
+        $customerPhone: String
+        $notes: String
+        $tableNumber: String
+    ) {
+        updateReservation(
+            input: {
+                id: $id
+                date: $date
+                time: $time
+                covers: $covers
+                status: $status
+                customerName: $customerName
+                customerEmail: $customerEmail
+                customerPhone: $customerPhone
+                notes: $notes
+                tableNumber: $tableNumber
+            }
+        ) {
+            id
+            restaurantId
+            date
+            time
+            covers
+            status
+            customerName
+            customerEmail
+            customerPhone
+            notes
+            tableNumber
+            createdAt
+            updatedAt
         }
     }
 `;

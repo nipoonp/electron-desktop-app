@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useNavigate } from "react-router-dom";
@@ -18,6 +18,7 @@ import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
 import { FiArrowDownCircle } from "react-icons/fi";
 import {
+    GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT,
     IGET_RESTAURANT_CATEGORY,
     IGET_RESTAURANT_PRODUCT,
     EPromotionType,
@@ -135,6 +136,70 @@ type AvailabilityCategoryIndex = {
     productsById: Map<string, AvailabilityProductIndex>;
 };
 
+// Storage key used to keep round-based kitchen print counters per order.
+export const getParkedOrderPrintedProductStorageKey = (orderId: string) => `parkedOrderPrintedProductIds:${orderId}`;
+
+// Builds a productId -> quantity map from order products.
+export const getProductQuantities = (products: IGET_RESTAURANT_ORDER_FRAGMENT["products"]) =>
+    (products || []).reduce(
+        (productQuantities, product) => {
+            productQuantities[product.id] = (productQuantities[product.id] || 0) + product.quantity;
+
+            return productQuantities;
+        },
+        {} as Record<string, number>,
+    );
+
+// Merges product quantities into a target map using add or max strategy.
+export const mergeProductQuantities = (target: Record<string, number>, source: Record<string, number>, strategy: "add" | "max") => {
+    Object.entries(source).forEach(([productId, quantity]) => {
+        target[productId] = strategy === "add" ? (target[productId] || 0) + quantity : Math.max(target[productId] || 0, quantity);
+    });
+};
+
+// Reads saved printed quantities for an order.
+export const getParkedOrderPrintedProductQuantities = (orderId: string) => {
+    try {
+        const parsedProductQuantities = JSON.parse(localStorage.getItem(getParkedOrderPrintedProductStorageKey(orderId)) || "{}");
+        if (!parsedProductQuantities) return {} as Record<string, number>;
+
+        return Object.entries(parsedProductQuantities).reduce(
+            (printedProductQuantities, [productId, quantity]) => {
+                if (typeof quantity === "number" && quantity > 0) printedProductQuantities[productId] = quantity;
+
+                return printedProductQuantities;
+            },
+            {} as Record<string, number>,
+        );
+    } catch {
+        return {} as Record<string, number>;
+    }
+};
+
+// Saves printed quantities for an order.
+export const setParkedOrderPrintedProductQuantities = (orderId: string, printedProductQuantities: Record<string, number>) => {
+    localStorage.setItem(getParkedOrderPrintedProductStorageKey(orderId), JSON.stringify(printedProductQuantities));
+};
+
+// Returns only quantities that have not been sent to kitchen yet.
+export const getUnprintedParkedOrderProducts = (order: IGET_RESTAURANT_ORDER_FRAGMENT, printedProductQuantities: Record<string, number>) => {
+    const remainingPrintedProductQuantities = { ...printedProductQuantities };
+
+    return order.products.reduce(
+        (productsToPrint, product) => {
+            const printedQuantity = remainingPrintedProductQuantities[product.id] || 0;
+            const quantityToPrint = Math.max(product.quantity - printedQuantity, 0);
+
+            remainingPrintedProductQuantities[product.id] = Math.max(printedQuantity - product.quantity, 0);
+
+            if (quantityToPrint > 0) productsToPrint.push({ ...product, quantity: quantityToPrint });
+
+            return productsToPrint;
+        },
+        [] as IGET_RESTAURANT_ORDER_FRAGMENT["products"],
+    );
+};
+
 // Component
 export const Checkout = () => {
     // context
@@ -154,6 +219,7 @@ export const Checkout = () => {
         customerInformation,
         paymentMethod,
         setPaymentMethod,
+        setTableNumber,
         setNotes,
         covers,
         tableNumber,
@@ -256,6 +322,7 @@ export const Checkout = () => {
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
     const [showModal, setShowModal] = useState<string>("");
     const [showFullScreenSpinner, setShowFullScreenSpinner] = useState(false);
+    const [kitchenPrintTrackingVersion, setKitchenPrintTrackingVersion] = useState(0);
 
     useEffect(() => {
         const checkDivScrollable = () => {
@@ -885,64 +952,6 @@ export const Checkout = () => {
         kitchenPrinterLarge: receiptType === "kitchen" ? printer.kitchenPrinterLarge : false,
     });
 
-    const getParkedOrderPrintedProductStorageKey = (orderId: string) => `parkedOrderPrintedProductIds:${orderId}`;
-
-    const getProductQuantities = (products: IGET_RESTAURANT_ORDER_FRAGMENT["products"]) =>
-        products.reduce(
-            (productQuantities, product) => {
-                productQuantities[product.id] = (productQuantities[product.id] || 0) + product.quantity;
-
-                return productQuantities;
-            },
-            {} as Record<string, number>,
-        );
-
-    const mergeProductQuantities = (target: Record<string, number>, source: Record<string, number>, strategy: "add" | "max") => {
-        Object.entries(source).forEach(([productId, quantity]) => {
-            target[productId] = strategy === "add" ? (target[productId] || 0) + quantity : Math.max(target[productId] || 0, quantity);
-        });
-    };
-
-    const getParkedOrderPrintedProductQuantities = (orderId: string) => {
-        try {
-            const parsedProductQuantities = JSON.parse(localStorage.getItem(getParkedOrderPrintedProductStorageKey(orderId)) || "{}");
-            if (!parsedProductQuantities) return {} as Record<string, number>;
-
-            return Object.entries(parsedProductQuantities).reduce(
-                (printedProductQuantities, [productId, quantity]) => {
-                    if (typeof quantity === "number" && quantity > 0) printedProductQuantities[productId] = quantity;
-
-                    return printedProductQuantities;
-                },
-                {} as Record<string, number>,
-            );
-        } catch {
-            return {} as Record<string, number>;
-        }
-    };
-
-    const setParkedOrderPrintedProductQuantities = (orderId: string, printedProductQuantities: Record<string, number>) => {
-        localStorage.setItem(getParkedOrderPrintedProductStorageKey(orderId), JSON.stringify(printedProductQuantities));
-    };
-
-    const getUnprintedParkedOrderProducts = (order: IGET_RESTAURANT_ORDER_FRAGMENT, printedProductQuantities: Record<string, number>) => {
-        const remainingPrintedProductQuantities = { ...printedProductQuantities };
-
-        return order.products.reduce(
-            (productsToPrint, product) => {
-                const printedQuantity = remainingPrintedProductQuantities[product.id] || 0;
-                const quantityToPrint = Math.max(product.quantity - printedQuantity, 0);
-
-                remainingPrintedProductQuantities[product.id] = Math.max(printedQuantity - product.quantity, 0);
-
-                if (quantityToPrint > 0) productsToPrint.push({ ...product, quantity: quantityToPrint });
-
-                return productsToPrint;
-            },
-            [] as IGET_RESTAURANT_ORDER_FRAGMENT["products"],
-        );
-    };
-
     const printReceipts = async (
         order: IGET_RESTAURANT_ORDER_FRAGMENT,
         options?: {
@@ -1009,9 +1018,11 @@ export const Checkout = () => {
 
         const printedProductQuantities = getParkedOrderPrintedProductQuantities(order.id);
         const unprintedProducts = getUnprintedParkedOrderProducts(order, printedProductQuantities);
+        const unprintedProductQuantities = getProductQuantities(unprintedProducts);
 
         if (unprintedProducts.length === 0) return;
         const printedProductQuantitiesThisRun: Record<string, number> = {};
+        let hasTrackedKitchenSendThisRun = false;
 
         for (const printer of register.printers.items) {
             if (!isKitchenReceiptPrinter(printer)) continue;
@@ -1023,14 +1034,44 @@ export const Checkout = () => {
             try {
                 await sendReceiptPrint({ ...order, products: printerProducts }, getReceiptPrinter(printer, "kitchen"));
                 mergeProductQuantities(printedProductQuantitiesThisRun, getProductQuantities(printerProducts), "max");
+                hasTrackedKitchenSendThisRun = true;
             } catch (error) {
                 logger.error("unable to print parked order receipt", error);
             }
         }
 
+        // Keep cart send-state aligned with a completed park cycle even when no kitchen printer send succeeds.
+        if (!hasTrackedKitchenSendThisRun) mergeProductQuantities(printedProductQuantitiesThisRun, unprintedProductQuantities, "max");
+
         mergeProductQuantities(printedProductQuantities, printedProductQuantitiesThisRun, "add");
         setParkedOrderPrintedProductQuantities(order.id, printedProductQuantities);
+        setKitchenPrintTrackingVersion((prev) => prev + 1);
     };
+
+    const showKitchenSendStatusInCart = orderType === EOrderType.DINEIN && parkedOrderStatus === EOrderStatus.PARKED && Boolean(parkedOrderId);
+    const kitchenSendStatusByDisplayOrder = useMemo(() => {
+        // Row-level status map used by the cart UI: index -> "sent" | "unsent".
+        const statusByDisplayOrder: Record<number, "sent" | "unsent"> = {};
+        if (!showKitchenSendStatusInCart || !parkedOrderId || !products || products.length === 0) return statusByDisplayOrder;
+        // Recompute after each kitchen send cycle.
+        void kitchenPrintTrackingVersion;
+
+        // Track remaining sent quantity per product id while walking rows from top to bottom.
+        // This avoids over-marking when the same product appears in multiple rows.
+        const remainingPrintedProductQuantities = { ...getParkedOrderPrintedProductQuantities(parkedOrderId) };
+        products.forEach((product, displayOrder) => {
+            const printedQuantity = remainingPrintedProductQuantities[product.id] || 0;
+            const sentQuantityForThisRow = Math.min(printedQuantity, product.quantity);
+            const unsentQuantityForThisRow = Math.max(product.quantity - sentQuantityForThisRow, 0);
+
+            // Full row quantity covered by previously sent quantity => sent, else unsent.
+            statusByDisplayOrder[displayOrder] = unsentQuantityForThisRow === 0 ? "sent" : "unsent";
+            // Consume this row's quantity so next duplicate row of same product is evaluated correctly.
+            remainingPrintedProductQuantities[product.id] = Math.max(printedQuantity - product.quantity, 0);
+        });
+
+        return statusByDisplayOrder;
+    }, [showKitchenSendStatusInCart, parkedOrderId, products, kitchenPrintTrackingVersion]);
 
     const onPrintOnAccountOrderReceipts = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         register.printers &&
@@ -1099,8 +1140,25 @@ export const Checkout = () => {
             createdOrder.current = newOrder;
             updateOrderDetail(newOrder);
 
-            if (register.printers && register.printers.items.length > 0 && !parkOrder) {
-                await printReceipts(newOrder, { treatAsPreviouslyParked: wasEditingParkedOrder });
+            if (register.printers && register.printers.items.length > 0) {
+                if (parkOrder) {
+                    const localProductsSnapshot = (JSON.parse(JSON.stringify(products || [])) as IGET_RESTAURANT_ORDER_FRAGMENT["products"]) || [];
+                    const savedOrderProducts = (newOrder.products || []) as IGET_RESTAURANT_ORDER_FRAGMENT["products"];
+                    const getTotalQuantity = (orderProducts: IGET_RESTAURANT_ORDER_FRAGMENT["products"]) =>
+                        (orderProducts || []).reduce((totalQuantity, product) => totalQuantity + (product.quantity || 0), 0);
+                    // Prefer saved mutation products so tracking keys match reopened order rows.
+                    // Fallback to local cart snapshot when response lags behind the latest cart edits.
+                    const productsForParkedPrint =
+                        getTotalQuantity(savedOrderProducts) >= getTotalQuantity(localProductsSnapshot) ? savedOrderProducts : localProductsSnapshot;
+                    const orderForParkedPrint: IGET_RESTAURANT_ORDER_FRAGMENT = {
+                        ...newOrder,
+                        products: productsForParkedPrint,
+                    };
+                    // For parked dine-in orders, send only kitchen-delta items and update round tracking.
+                    await onPrintParkedOrderReceipts(orderForParkedPrint);
+                } else {
+                    await printReceipts(newOrder, { treatAsPreviouslyParked: wasEditingParkedOrder });
+                }
             }
 
             if (parkOrder && register.autoPrintParkedOrderKitchenReceipts) {
@@ -1198,16 +1256,29 @@ export const Checkout = () => {
         }
 
         let variables;
+        const selectedOrderType = orderType ? orderType : register.availableOrderTypes[0];
+        const isDineInOrder = selectedOrderType === EOrderType.DINEIN;
+        const orderRefetchQueries = isDineInOrder
+            ? [
+                  {
+                      query: GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT,
+                      variables: {
+                          orderRestaurantId: restaurant.id,
+                          placedAt: toLocalISOString(now).slice(0, 10),
+                      },
+                  },
+              ]
+            : undefined;
 
         try {
             variables = {
                 country: restaurant.country,
                 status: orderStatus,
                 paid: paid,
-                type: orderType ? orderType : register.availableOrderTypes[0],
+                type: selectedOrderType,
                 number: orderNumber,
-                covers: orderType === EOrderType.DINEIN ? covers : undefined,
-                table: tableNumber,
+                covers: isDineInOrder ? covers : undefined,
+                table: isDineInOrder ? tableNumber : undefined,
                 buzzer: buzzerNumber,
                 orderScheduledAt: orderScheduledAt,
                 customerInformation: customerInformation
@@ -1268,10 +1339,10 @@ export const Checkout = () => {
                     country: restaurant.country,
                     status: orderStatus,
                     paid: paid,
-                    type: orderType ? orderType : register.availableOrderTypes[0],
+                    type: selectedOrderType,
                     number: orderNumber,
-                    covers: orderType === EOrderType.DINEIN ? covers : undefined,
-                    table: tableNumber,
+                    covers: isDineInOrder ? covers : undefined,
+                    table: isDineInOrder ? tableNumber : undefined,
                     buzzer: buzzerNumber,
                     orderScheduledAt: orderScheduledAt,
                     customerInformation: customerInformation
@@ -1355,12 +1426,14 @@ export const Checkout = () => {
             if (parkedOrderId) {
                 const res: any = await updateOrderMutation({
                     variables: { orderId: parkedOrderId, ...variables },
+                    refetchQueries: orderRefetchQueries,
+                    awaitRefetchQueries: true,
                 });
 
                 console.log("update order mutation result: ", res);
                 return res.data.updateOrder;
             } else {
-                return await retryCreateOrder(variables);
+                return await retryCreateOrder(variables, orderRefetchQueries);
             }
         } catch (e) {
             console.log("process order mutation error: ", e);
@@ -1370,12 +1443,14 @@ export const Checkout = () => {
         }
     };
 
-    const retryCreateOrder = async (variables) => {
+    const retryCreateOrder = async (variables, refetchQueries?: any[]) => {
         //If the create order fails, retry up to 5 times
         for (let i = 0; i < 5; i++) {
             try {
                 const res: any = await createOrderMutation({
                     variables: variables,
+                    refetchQueries,
+                    awaitRefetchQueries: true,
                 });
 
                 console.log("create order mutation result: ", res);
@@ -1425,7 +1500,7 @@ export const Checkout = () => {
                     }
                 };
 
-                const pollingUrl = await smartpayCreateTransaction(amount, "Card.Purchase");
+                const pollingUrl = await smartpayCreateTransaction(amount);
                 outcome = await smartpayPollForOutcome(pollingUrl, delayed);
             } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
                 outcome = await windcaveCreateTransaction(
@@ -2169,6 +2244,8 @@ export const Checkout = () => {
             onUpdateProductQuantity={onUpdateProductQuantity}
             onApplyProductDiscount={onApplyProductDiscount}
             onRemoveProduct={onRemoveProduct}
+            showKitchenSendStatus={showKitchenSendStatusInCart}
+            kitchenSendStatusByDisplayOrder={kitchenSendStatusByDisplayOrder}
         />
     );
 
@@ -2274,7 +2351,13 @@ export const Checkout = () => {
     );
 
     const clearSaleFooter = (
-        <div className="checkout-feature-button p-2" onClick={() => setProducts([])}>
+        <div
+            className="checkout-feature-button p-2"
+            onClick={() => {
+                setProducts([]);
+                setTableNumber(null);
+            }}
+        >
             {/* <TiCancel size="23px" /> */}
             Clear
         </div>
@@ -2396,11 +2479,7 @@ export const Checkout = () => {
                     {isPOS && <>{customerInformationFooter}</>}
                     {isPOS && <>{clearSaleFooter}</>}
                 </div>
-                {parkedOrderNumber && (
-                    <div className="parked-order-banner">
-                        Updating Parked Order #{parkedOrderNumber}
-                    </div>
-                )}
+                {parkedOrderNumber && <div className="parked-order-banner">Updating Parked Order #{parkedOrderNumber}</div>}
                 <div className="order-wrapper">
                     <div
                         ref={(ref) => setProductsWrapperElement(ref)}

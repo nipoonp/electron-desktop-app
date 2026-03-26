@@ -9,6 +9,7 @@ export const Button = (props: IProps) => {
             style={props.style}
             onClick={props.onClick}
             disabled={props.disabled}
+            title={props.title}
         >
             {props.loading ? <Spinner /> : props.children}
         </button>
@@ -22,4 +23,5 @@ export interface IProps {
     children: React.ReactNode;
     style?: React.CSSProperties;
     className?: string;
+    title?: string;
 }

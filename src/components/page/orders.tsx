@@ -809,7 +809,6 @@ const Order = (props: {
     const [mailPopup, setMailPopup] = useState(false);
     const [emails, setEmails] = useState("");
     const [viewReceipt, setViewReceipt] = useState(false);
-
     const [showOrderDetail, setShowOrderDetail] = useState(false);
     const [mergedModalOpen, setMergedModalOpen] = useState(false);
 

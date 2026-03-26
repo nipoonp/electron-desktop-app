@@ -1,5 +1,5 @@
 import { gql } from "@apollo/client";
-import { EReceiptPrinterPrinterType } from "../model/model";
+import { EReceiptPrinterPrinterType, ISection, ITableNodesAttributes } from "../model/model";
 import { IGET_RESTAURANT_ORDER_FRAGMENT, ORDER_FIELDS_FRAGMENT } from "./customFragments";
 
 export enum EOrderStatus {
@@ -202,6 +202,7 @@ export const GET_RESTAURANT = gql`
             }
             autoCompleteOrders
             enableLoyalty
+            # checkTableFeature
             preparationTimeInMinutes
             delayBetweenOrdersInSeconds
             orderThresholdMessage
@@ -1016,6 +1017,7 @@ export interface IGET_RESTAURANT {
     customStyleSheet?: IS3Object;
     autoCompleteOrders: boolean | null;
     enableLoyalty: boolean | null;
+    checkTableFeature: boolean | true;
     preparationTimeInMinutes: number | null;
     delayBetweenOrdersInSeconds: number | null;
     orderThresholdMessage: string | null;
@@ -2082,6 +2084,49 @@ export const GET_RESTAURANT_PING_DATA = gql`
     }
 `;
 
+export const GET_FLOOR_PLAN = gql`
+    query GetFloorPlan($restaurantId: ID!) {
+        listTablePlansByRestaurantId(restaurantId: $restaurantId, limit: 100) {
+            items {
+                id
+                restaurantId
+                nodes {
+                    id
+                    type
+                    x
+                    y
+                    width
+                    height
+                    rotation
+                    number
+                    seats
+                    sectionId
+                    status
+                    locked
+                    zIndex
+                    floorStyle
+                }
+                sections {
+                    id
+                    name
+                    hidden
+                }
+                createdAt
+                updatedAt
+            }
+        }
+    }
+`;
+
+export interface IGET_FLOOR_PLAN {
+    id: string;
+    restaurantId: string;
+    nodes: ITableNodesAttributes[];
+    sections: ISection[];
+    createdAt?: string | null;
+    updatedAt?: string | null;
+}
+
 export interface IGET_RESTAURANT_PING_DATA {
     id: string;
     preparationTimeInMinutes: number | null;
@@ -2109,6 +2154,96 @@ export const UPDATE_RESTAURANT_PREPARATION_TIME = gql`
             id
             preparationTimeInMinutes
             delayBetweenOrdersInSeconds
+        }
+    }
+`;
+
+
+export enum EReservationStatus {
+    PENDING = "PENDING",
+    CONFIRMED = "CONFIRMED",
+    SEATED = "SEATED",
+    COMPLETED = "COMPLETED",
+    CANCELLED = "CANCELLED",
+    NO_SHOW = "NO_SHOW",
+}
+
+export interface IGET_RESERVATION {
+    id: string;
+    restaurantId: string;
+    date: string;
+    time: string;
+    covers: number;
+    status: EReservationStatus;
+    customerName: string;
+    customerEmail: string | null;
+    customerPhone: string | null;
+    notes: string | null;
+    tableNumber: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+// Slim interface used only for the floor plan overlay (avoids over-fetching).
+export interface IGET_RESERVATION_FOR_TABLE {
+    id: string;
+    tableNumber: string | null;
+    status: string;
+    date: string;
+}
+
+// Slim query for floor plan overlay — only fetches the fields needed to derive reserved table status.
+export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE = gql`
+    query GetReservationsByRestaurantByDate(
+        $restaurantId: ID!
+        $date: ModelStringKeyConditionInput
+        $limit: Int
+    ) {
+        getReservationsByRestaurantByDate(
+            restaurantId: $restaurantId
+            date: $date
+            limit: $limit
+        ) {
+            items {
+                id
+                tableNumber
+                status
+                date
+            }
+        }
+    }
+`;
+
+// Full query used by the reservations management page.
+export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE_FULL = gql`
+    query GetReservationsByRestaurantByDateFull(
+        $restaurantId: ID!
+        $date: ModelStringKeyConditionInput
+        $limit: Int
+        $nextToken: String
+    ) {
+        getReservationsByRestaurantByDate(
+            restaurantId: $restaurantId
+            date: $date
+            limit: $limit
+            nextToken: $nextToken
+        ) {
+            items {
+                id
+                restaurantId
+                date
+                time
+                covers
+                status
+                customerName
+                customerEmail
+                customerPhone
+                notes
+                tableNumber
+                createdAt
+                updatedAt
+            }
+            nextToken
         }
     }
 `;

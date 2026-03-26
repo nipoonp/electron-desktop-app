@@ -12,14 +12,20 @@ export const useGetRestaurantOrdersByBeginWithPlacedAt = (orderRestaurantId: str
             placedAt: placedAt,
         },
         fetchPolicy: "network-only",
+        skip: !orderRestaurantId || !placedAt,
     });
 
-    // pass saved data down when refetching instead of null
+    // Keep the previous list while refetching, but guard the empty-input case before touching nested query data.
     useEffect(() => {
-        if (!error && !loading) {
+        if (!orderRestaurantId || !placedAt) {
+            setSavedData(null);
+            return;
+        }
+
+        if (!error && !loading && _data?.getOrdersByRestaurantByPlacedAt?.items) {
             setSavedData(_data.getOrdersByRestaurantByPlacedAt.items);
         }
-    }, [_data]);
+    }, [_data, error, loading, orderRestaurantId, placedAt]);
 
     return {
         data,
