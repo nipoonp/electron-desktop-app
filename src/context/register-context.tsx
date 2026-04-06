@@ -6,6 +6,16 @@ import { ERegisterType, IGET_RESTAURANT_REGISTER } from "../graphql/customQuerie
 import { getCloudFrontDomainName } from "../private/aws-custom";
 import { useRestaurant } from "./restaurant-context";
 
+export interface INewOnlineOrderInfo {
+    number: string;
+    total: number;
+    customerFirstName: string | null;
+    customerPhoneNumber: string | null;
+    type: string;
+    placedAt: string;
+    orderScheduledAt: string | null;
+}
+
 const initialIsShownNewOnlineOrderReceivedModal = false;
 
 type ContextProps = {
@@ -15,6 +25,8 @@ type ContextProps = {
     disconnectRegister: (key: string) => Promise<any>;
     isShownNewOnlineOrderReceivedModal: boolean;
     setIsShownNewOnlineOrderReceivedModal: (isShownNewOnlineOrderReceivedModal: boolean) => void;
+    newOnlineOrderInfo: INewOnlineOrderInfo[];
+    setNewOnlineOrderInfo: (info: INewOnlineOrderInfo[]) => void;
 };
 
 const RegisterContext = createContext<ContextProps>({
@@ -28,12 +40,15 @@ const RegisterContext = createContext<ContextProps>({
     },
     isShownNewOnlineOrderReceivedModal: initialIsShownNewOnlineOrderReceivedModal,
     setIsShownNewOnlineOrderReceivedModal: () => {},
+    newOnlineOrderInfo: [],
+    setNewOnlineOrderInfo: () => {},
 });
 
 const RegisterProvider = (props: { children: React.ReactNode }) => {
     const [registerKey, _setRegisterKey] = useState<string | null>(null);
     const [register, setRegister] = useState<IGET_RESTAURANT_REGISTER | null>(null);
     const [isShownNewOnlineOrderReceivedModal, _setIsShownNewOnlineOrderReceivedModal] = useState(initialIsShownNewOnlineOrderReceivedModal);
+    const [newOnlineOrderInfo, _setNewOnlineOrderInfo] = useState<INewOnlineOrderInfo[]>([]);
 
     const { restaurant } = useRestaurant();
 
@@ -97,6 +112,10 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
         _setIsShownNewOnlineOrderReceivedModal(isShownNewOnlineOrderReceivedModal);
     };
 
+    const setNewOnlineOrderInfo = (info: INewOnlineOrderInfo[]) => {
+        _setNewOnlineOrderInfo(info);
+    };
+
     return (
         <RegisterContext.Provider
             value={{
@@ -106,6 +125,8 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
                 disconnectRegister: disconnectRegister,
                 isShownNewOnlineOrderReceivedModal: isShownNewOnlineOrderReceivedModal,
                 setIsShownNewOnlineOrderReceivedModal: setIsShownNewOnlineOrderReceivedModal,
+                newOnlineOrderInfo: newOnlineOrderInfo,
+                setNewOnlineOrderInfo: setNewOnlineOrderInfo,
             }}
             children={
                 <>
