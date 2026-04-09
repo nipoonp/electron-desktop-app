@@ -34,6 +34,15 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
     if (!restaurant) return <></>;
     if (!register) return <></>;
 
+    const visibleTabs = props.tabs.filter((tab) => {
+        if (tab.id === "cashup") {
+            // Cash up is only available on POS registers and only when the restaurant has enabled it in Tabin Web.
+            return restaurant.takingsEnable && register.type === ERegisterType.POS;
+        }
+
+        return true;
+    });
+
     const selectTab = (tab: ITab) => {
         if (tab.route) {
             props.onClickMenuRoute(tab.route);
@@ -74,7 +83,7 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
                 {restaurant.name} ({register.name})
             </div>
             <div className="separator-2"></div>
-            {props.tabs.map((tab: ITab) => (
+            {visibleTabs.map((tab: ITab) => (
                 <div key={tab.id} className="menu-tab-wrapper">
                     <div key={tab.id} onClick={() => selectTab(tab)} className="menu-tab">
                         <div className="menu-tab-icon">{tab.icon}</div>

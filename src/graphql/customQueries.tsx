@@ -23,6 +23,17 @@ export enum ERegisterType {
     ONLINE = "ONLINE",
 }
 
+export enum ETakingsScopeType {
+    SITE = "SITE",
+    REGISTER = "REGISTER",
+    STAFF = "STAFF",
+}
+
+export enum ETakingsSessionStatus {
+    OPEN = "OPEN",
+    FINALIZED = "FINALIZED",
+}
+
 export enum ERegisterPrinterType {
     BLUETOOTH = "BLUETOOTH",
     WIFI = "WIFI",
@@ -207,6 +218,12 @@ export const GET_RESTAURANT = gql`
             delayBetweenOrdersInSeconds
             orderThresholdMessage
             surchargePercentage
+            takingsEnable
+            takingsDefaultScope
+            takingsAllowScopeSwitch
+            takingsVarianceReasonThresholdCents
+            takingsCarryForwardFloat
+            takingsBlockIfOpenOrders
             salesReportMailingList
             orderThresholds {
                 enable
@@ -1022,6 +1039,12 @@ export interface IGET_RESTAURANT {
     delayBetweenOrdersInSeconds: number | null;
     orderThresholdMessage: string | null;
     surchargePercentage: number | null;
+    takingsEnable: boolean | null;
+    takingsDefaultScope: ETakingsScopeType | null;
+    takingsAllowScopeSwitch: boolean | null;
+    takingsVarianceReasonThresholdCents: number | null;
+    takingsCarryForwardFloat: boolean | null;
+    takingsBlockIfOpenOrders: boolean | null;
     salesReportMailingList: string | null;
     orderThresholds: {
         enable: boolean;
@@ -1581,6 +1604,40 @@ export interface IGET_RESTAURANT_MODIFIER {
     isAgeRescricted: boolean;
     subModifierGroups: string;
     productModifier?: IGET_RESTAURANT_PRODUCT;
+}
+
+export interface IGET_TAKINGS_SESSION {
+    id: string;
+    restaurantId: string;
+    businessDate: string;
+    scopeType: ETakingsScopeType;
+    scopeId: string;
+    scopeKey: string;
+    sessionNumber: number;
+    status: ETakingsSessionStatus;
+    openedAt: string;
+    finalizedAt: string | null;
+    openedBy: string | null;
+    finalizedBy: string | null;
+    openingFloatCents: number;
+    declaredClosingFloatCents: number | null;
+    cashSalesCents: number | null;
+    cashRefundsCents: number | null;
+    moneyInCents: number | null;
+    moneyOutCents: number | null;
+    cashDropsCents: number | null;
+    tipPayoutsCents: number | null;
+    expectedDrawerCashCents: number;
+    countedDrawerCashCents: number;
+    varianceCents: number;
+    varianceReason: string | null;
+    openOrdersCount: number;
+    unpaidOrdersCount: number;
+    parkedOrdersCount: number;
+    notes: string | null;
+    owner: string | null;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface IS3Object {
@@ -2158,7 +2215,6 @@ export const UPDATE_RESTAURANT_PREPARATION_TIME = gql`
     }
 `;
 
-
 export enum EReservationStatus {
     PENDING = "PENDING",
     CONFIRMED = "CONFIRMED",
@@ -2210,6 +2266,32 @@ export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE = gql`
                 status
                 date
             }
+            nextToken
+        }
+    }
+`;
+
+export const GET_LOYALTY_USER_BY_EMAIL = gql`
+    query GetLoyaltyUserByEmail($email: String!) {
+        getLoyaltyUserByEmail(email: $email) {
+            items {
+                id
+                firstName
+                lastName
+                phoneNumber
+                email
+                loyaltyHistories(limit: 10000) {
+                    items {
+                        id
+                        action
+                        points
+                        createdAt
+                        loyaltyHistoryLoyaltyId
+                    }
+                    nextToken
+                }
+            }
+            nextToken
         }
     }
 `;
@@ -2240,6 +2322,65 @@ export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE_FULL = gql`
                 customerPhone
                 notes
                 tableNumber
+                createdAt
+                updatedAt
+            }
+            nextToken
+        }
+    }
+`;
+
+export interface IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL {
+    id: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+    email: string;
+    loyaltyHistories: {
+        items: {
+            id: string;
+            action: ELOYALTY_ACTION;
+            points: number;
+            createdAt: string;
+            loyaltyHistoryLoyaltyId?: string | null;
+        }[];
+    };
+}
+
+export const GET_TAKINGS_SESSIONS_BY_SCOPE_KEY_BY_OPENED_AT = gql`
+    # Cash up screens use scopeKey to load the active/history sessions for SITE, REGISTER, or STAFF scope.
+    query GetTakingsSessionsByScopeKeyByOpenedAt($scopeKey: String!, $openedAt: ModelStringKeyConditionInput, $limit: Int, $nextToken: String) {
+        getTakingsSessionsByScopeKeyByOpenedAt(scopeKey: $scopeKey, openedAt: $openedAt, limit: $limit, nextToken: $nextToken) {
+            items {
+                id
+                restaurantId
+                businessDate
+                scopeType
+                scopeId
+                scopeKey
+                sessionNumber
+                status
+                openedAt
+                finalizedAt
+                openedBy
+                finalizedBy
+                openingFloatCents
+                declaredClosingFloatCents
+                cashSalesCents
+                cashRefundsCents
+                moneyInCents
+                moneyOutCents
+                cashDropsCents
+                tipPayoutsCents
+                expectedDrawerCashCents
+                countedDrawerCashCents
+                varianceCents
+                varianceReason
+                openOrdersCount
+                unpaidOrdersCount
+                parkedOrdersCount
+                notes
+                owner
                 createdAt
                 updatedAt
             }

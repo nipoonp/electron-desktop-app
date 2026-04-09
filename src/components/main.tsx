@@ -12,7 +12,7 @@ import { useRestaurant } from "../context/restaurant-context";
 import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { useRegister } from "../context/register-context";
 import { ITab } from "../model/model";
-import { FiDollarSign, FiLock, FiMenu } from "react-icons/fi";
+import { FiDollarSign, FiLock, FiMenu, FiCheckSquare } from "react-icons/fi";
 import RequireCustomerInformation from "./page/customerInformation";
 import { sendFailureNotification } from "../util/errorHandling";
 
@@ -34,6 +34,8 @@ const TableNumber = lazy(() => import("./page/tableNumber"));
 const BuzzerNumber = lazy(() => import("./page/buzzerNumber"));
 const PaymentMethod = lazy(() => import("./page/paymentMethod"));
 const Checkout = lazy(() => import("./page/checkout"));
+// Cash up is a dedicated POS page rather than a dashboard iframe screen.
+const CashUp = lazy(() => import("./page/cashUp"));
 const NoMatch = lazy(() => import("./page/error/404"));
 const Unauthorised = lazy(() => import("./page/error/unauthorised"));
 
@@ -65,6 +67,7 @@ export const customerInformationPath = "/customer_information";
 export const paymentMethodPath = "/payment_method";
 export const restaurantPath = "/restaurant";
 export const checkoutPath = "/checkout";
+export const cashUpPath = "/cash_up";
 export const unauthorizedPath = "/unauthorized";
 
 export const tabs: ITab[] = [
@@ -80,6 +83,13 @@ export const tabs: ITab[] = [
         name: "Dashboard",
         icon: <FiMenu height="20px" />,
         route: dashboardPath,
+        showOnMobile: true,
+    },
+    {
+        id: "cashup",
+        name: "Cash Up",
+        icon: <FiCheckSquare height="20px" />,
+        route: cashUpPath,
         showOnMobile: true,
     },
     {
@@ -214,6 +224,7 @@ const AppRoutes = () => {
                 <Route path={checkoutPath} element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}>
                     <Route path=":autoClickCompleteOrderOnLoad" element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}></Route>
                 </Route>
+                <Route path={cashUpPath} element={<RestaurantRegisterPrivateRoute element={<CashUp />} />} />
                 <Route path={unauthorizedPath} element={<Unauthorised />} />
                 <Route path="*" element={<NoMatch />} />
             </Routes>

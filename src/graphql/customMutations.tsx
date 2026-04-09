@@ -387,6 +387,77 @@ export const CREATE_RESERVATION = gql`
     }
 `;
 
+export const CREATE_TAKINGS_SESSION = gql`
+    # First cash-up release only persists the scalar fields needed to open a session from the POS.
+    mutation CreateTakingsSession(
+        $restaurantId: ID!
+        $businessDate: AWSDate!
+        $scopeType: TakingsScopeType!
+        $scopeId: ID!
+        $scopeKey: String!
+        $sessionNumber: Int!
+        $status: TakingsSessionStatus!
+        $openedAt: String!
+        $openedBy: ID
+        $openingFloatCents: Int!
+        $expectedDrawerCashCents: Int!
+        $countedDrawerCashCents: Int!
+        $varianceCents: Int!
+        $openOrdersCount: Int!
+        $unpaidOrdersCount: Int!
+        $parkedOrdersCount: Int!
+        $owner: ID
+    ) {
+        createTakingsSession(
+            input: {
+                restaurantId: $restaurantId
+                businessDate: $businessDate
+                scopeType: $scopeType
+                scopeId: $scopeId
+                scopeKey: $scopeKey
+                sessionNumber: $sessionNumber
+                status: $status
+                openedAt: $openedAt
+                openedBy: $openedBy
+                openingFloatCents: $openingFloatCents
+                expectedDrawerCashCents: $expectedDrawerCashCents
+                countedDrawerCashCents: $countedDrawerCashCents
+                varianceCents: $varianceCents
+                openOrdersCount: $openOrdersCount
+                unpaidOrdersCount: $unpaidOrdersCount
+                parkedOrdersCount: $parkedOrdersCount
+                owner: $owner
+            }
+        ) {
+            id
+            restaurantId
+            businessDate
+            scopeType
+            scopeId
+            scopeKey
+            sessionNumber
+            status
+            openedAt
+            finalizedAt
+            openedBy
+            finalizedBy
+            openingFloatCents
+            declaredClosingFloatCents
+            expectedDrawerCashCents
+            countedDrawerCashCents
+            varianceCents
+            varianceReason
+            openOrdersCount
+            unpaidOrdersCount
+            parkedOrdersCount
+            notes
+            owner
+            createdAt
+            updatedAt
+        }
+    }
+`;
+
 export const UPDATE_RESERVATION = gql`
     mutation UpdateReservation(
         $id: ID!
@@ -425,6 +496,87 @@ export const UPDATE_RESERVATION = gql`
             customerPhone
             notes
             tableNumber
+            createdAt
+            updatedAt
+        }
+    }
+`;
+
+export const UPDATE_TAKINGS_SESSION = gql`
+    # Finalise/update cash up without nested payloads until PaymentEvent and CashMovement are wired in.
+    mutation UpdateTakingsSession(
+        $id: ID!
+        $status: TakingsSessionStatus
+        $finalizedAt: String
+        $finalizedBy: ID
+        $declaredClosingFloatCents: Int
+        $cashSalesCents: Int
+        $cashRefundsCents: Int
+        $moneyInCents: Int
+        $moneyOutCents: Int
+        $cashDropsCents: Int
+        $tipPayoutsCents: Int
+        $expectedDrawerCashCents: Int
+        $countedDrawerCashCents: Int
+        $varianceCents: Int
+        $varianceReason: String
+        $openOrdersCount: Int
+        $unpaidOrdersCount: Int
+        $parkedOrdersCount: Int
+        $notes: String
+    ) {
+        updateTakingsSession(
+            input: {
+                id: $id
+                status: $status
+                finalizedAt: $finalizedAt
+                finalizedBy: $finalizedBy
+                declaredClosingFloatCents: $declaredClosingFloatCents
+                cashSalesCents: $cashSalesCents
+                cashRefundsCents: $cashRefundsCents
+                moneyInCents: $moneyInCents
+                moneyOutCents: $moneyOutCents
+                cashDropsCents: $cashDropsCents
+                tipPayoutsCents: $tipPayoutsCents
+                expectedDrawerCashCents: $expectedDrawerCashCents
+                countedDrawerCashCents: $countedDrawerCashCents
+                varianceCents: $varianceCents
+                varianceReason: $varianceReason
+                openOrdersCount: $openOrdersCount
+                unpaidOrdersCount: $unpaidOrdersCount
+                parkedOrdersCount: $parkedOrdersCount
+                notes: $notes
+            }
+        ) {
+            id
+            restaurantId
+            businessDate
+            scopeType
+            scopeId
+            scopeKey
+            sessionNumber
+            status
+            openedAt
+            finalizedAt
+            openedBy
+            finalizedBy
+            openingFloatCents
+            declaredClosingFloatCents
+            cashSalesCents
+            cashRefundsCents
+            moneyInCents
+            moneyOutCents
+            cashDropsCents
+            tipPayoutsCents
+            expectedDrawerCashCents
+            countedDrawerCashCents
+            varianceCents
+            varianceReason
+            openOrdersCount
+            unpaidOrdersCount
+            parkedOrdersCount
+            notes
+            owner
             createdAt
             updatedAt
         }
