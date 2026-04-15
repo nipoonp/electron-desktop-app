@@ -660,9 +660,11 @@ export const Checkout = () => {
                 customerInformation: customerInformation
                     ? {
                           firstName: customerInformation.firstName,
-                          email: customerInformation.email,
                           phoneNumber: customerInformation.phoneNumber,
                           signature: signatureS3Object,
+                          customFields: customerInformation.email
+                              ? [{ label: "Email", value: customerInformation.email, type: "STRING" }]
+                              : [],
                       }
                     : null,
                 notes: notes,
@@ -710,9 +712,11 @@ export const Checkout = () => {
                     customerInformation: customerInformation
                         ? {
                               firstName: customerInformation.firstName,
-                              email: customerInformation.email,
                               phoneNumber: customerInformation.phoneNumber,
                               signature: signatureS3Object,
+                              customFields: customerInformation.email
+                                  ? [{ label: "Email", value: customerInformation.email, type: "STRING" }]
+                                  : [],
                           }
                         : null,
                     notes: notes,

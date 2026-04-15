@@ -27,13 +27,17 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         orderScheduledAt
         customerInformation {
             firstName
-            email
             phoneNumber
             signature {
                 bucket
                 region
                 key
                 identityPoolId
+            }
+            customFields {
+                label
+                value
+                type
             }
         }
         status
@@ -210,9 +214,9 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     orderScheduledAt: string | null;
     customerInformation: {
         firstName: string | null;
-        email: string | null;
         phoneNumber: string | null;
         signature: IS3Object | null;
+        customFields: { label: string; value: string; type: string }[] | null;
     } | null;
     status: EOrderStatus;
     type: EOrderType;

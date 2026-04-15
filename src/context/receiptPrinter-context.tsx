@@ -111,7 +111,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                             customerInformation: order.customerInformation
                                 ? {
                                       firstName: order.customerInformation.firstName,
-                                      email: order.customerInformation.email,
+                                      email: order.customerInformation.customFields?.find((f) => f.label === "Email")?.value ?? null,
                                       phoneNumber: order.customerInformation.phoneNumber,
                                       signatureBase64: null,
                                   }
