@@ -34,6 +34,21 @@ export enum ETakingsSessionStatus {
     FINALIZED = "FINALIZED",
 }
 
+export enum ECashMovementType {
+    OPENING_FLOAT = "OPENING_FLOAT",
+    MONEY_IN = "MONEY_IN",
+    MONEY_OUT = "MONEY_OUT",
+    CASH_DROP = "CASH_DROP",
+    TIP_PAYOUT = "TIP_PAYOUT",
+    FLOAT_ADJUSTMENT = "FLOAT_ADJUSTMENT",
+}
+
+export enum ECashMovementPaymentMethod {
+    CASH = "CASH",
+    ONLINE = "ONLINE",
+    EFTPOS = "EFTPOS",
+}
+
 export enum ERegisterPrinterType {
     BLUETOOTH = "BLUETOOTH",
     WIFI = "WIFI",
@@ -222,7 +237,6 @@ export const GET_RESTAURANT = gql`
             takingsDefaultScope
             takingsAllowScopeSwitch
             takingsVarianceReasonThresholdCents
-            takingsCarryForwardFloat
             takingsBlockIfOpenOrders
             salesReportMailingList
             orderThresholds {
@@ -1043,7 +1057,6 @@ export interface IGET_RESTAURANT {
     takingsDefaultScope: ETakingsScopeType | null;
     takingsAllowScopeSwitch: boolean | null;
     takingsVarianceReasonThresholdCents: number | null;
-    takingsCarryForwardFloat: boolean | null;
     takingsBlockIfOpenOrders: boolean | null;
     salesReportMailingList: string | null;
     orderThresholds: {
@@ -1640,6 +1653,25 @@ export interface IGET_TAKINGS_SESSION {
     updatedAt: string;
 }
 
+export interface IGET_CASH_MOVEMENT {
+    id: string;
+    restaurantId: string;
+    registerId: string | null;
+    staffId: string | null;
+    takingsSessionId: string | null;
+    scopeKey: string | null;
+    businessDate: string;
+    occurredAt: string;
+    type: ECashMovementType;
+    paymentMethod: ECashMovementPaymentMethod | null;
+    amountCents: number;
+    reason: string | null;
+    createdBy: string | null;
+    owner: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+}
+
 export interface IS3Object {
     key: string;
     bucket: string;
@@ -1807,6 +1839,22 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
             sortDirection: DESC
             orderRestaurantId: $orderRestaurantId
             placedAt: { beginsWith: $placedAt }
+        ) {
+            items {
+                ...OrderFieldsFragment
+            }
+        }
+    }
+`;
+
+export const GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
+    ${ORDER_FIELDS_FRAGMENT}
+    query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAtStartDate: String!, $placedAtEndDate: String!) {
+        getOrdersByRestaurantByPlacedAt(
+            limit: 1000000
+            sortDirection: DESC
+            orderRestaurantId: $orderRestaurantId
+            placedAt: { between: [$placedAtStartDate, $placedAtEndDate] }
         ) {
             items {
                 ...OrderFieldsFragment
@@ -2250,16 +2298,8 @@ export interface IGET_RESERVATION_FOR_TABLE {
 
 // Slim query for floor plan overlay — only fetches the fields needed to derive reserved table status.
 export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE = gql`
-    query GetReservationsByRestaurantByDate(
-        $restaurantId: ID!
-        $date: ModelStringKeyConditionInput
-        $limit: Int
-    ) {
-        getReservationsByRestaurantByDate(
-            restaurantId: $restaurantId
-            date: $date
-            limit: $limit
-        ) {
+    query GetReservationsByRestaurantByDate($restaurantId: ID!, $date: ModelStringKeyConditionInput, $limit: Int) {
+        getReservationsByRestaurantByDate(restaurantId: $restaurantId, date: $date, limit: $limit) {
             items {
                 id
                 tableNumber
@@ -2298,18 +2338,8 @@ export const GET_LOYALTY_USER_BY_EMAIL = gql`
 
 // Full query used by the reservations management page.
 export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE_FULL = gql`
-    query GetReservationsByRestaurantByDateFull(
-        $restaurantId: ID!
-        $date: ModelStringKeyConditionInput
-        $limit: Int
-        $nextToken: String
-    ) {
-        getReservationsByRestaurantByDate(
-            restaurantId: $restaurantId
-            date: $date
-            limit: $limit
-            nextToken: $nextToken
-        ) {
+    query GetReservationsByRestaurantByDateFull($restaurantId: ID!, $date: ModelStringKeyConditionInput, $limit: Int, $nextToken: String) {
+        getReservationsByRestaurantByDate(restaurantId: $restaurantId, date: $date, limit: $limit, nextToken: $nextToken) {
             items {
                 id
                 restaurantId
@@ -2383,6 +2413,56 @@ export const GET_TAKINGS_SESSIONS_BY_SCOPE_KEY_BY_OPENED_AT = gql`
                 owner
                 createdAt
                 updatedAt
+            }
+            nextToken
+        }
+    }
+`;
+
+export const GET_CASH_MOVEMENTS_BY_RESTAURANT_BY_OCCURRED_AT = gql`
+    # Site-scope drawer adjustments used to calculate expected cash for a site cash-up.
+    query GetCashMovementsByRestaurantByOccurredAt($restaurantId: ID!, $occurredAt: ModelStringKeyConditionInput, $limit: Int, $nextToken: String) {
+        getCashMovementsByRestaurantByOccurredAt(restaurantId: $restaurantId, occurredAt: $occurredAt, limit: $limit, nextToken: $nextToken) {
+            items {
+                id
+                restaurantId
+                registerId
+                staffId
+                takingsSessionId
+                scopeKey
+                businessDate
+                occurredAt
+                type
+                paymentMethod
+                amountCents
+                reason
+                createdBy
+                owner
+            }
+            nextToken
+        }
+    }
+`;
+
+export const GET_CASH_MOVEMENTS_BY_TAKINGS_SESSION_BY_OCCURRED_AT = gql`
+    # Preferred Money In/Out history query: movements belong to the exact open takings session.
+    query GetCashMovementsByTakingsSessionByOccurredAt($takingsSessionId: ID!, $occurredAt: ModelStringKeyConditionInput, $limit: Int, $nextToken: String) {
+        getCashMovementsByTakingsSessionByOccurredAt(takingsSessionId: $takingsSessionId, occurredAt: $occurredAt, limit: $limit, nextToken: $nextToken) {
+            items {
+                id
+                restaurantId
+                registerId
+                staffId
+                takingsSessionId
+                scopeKey
+                businessDate
+                occurredAt
+                type
+                paymentMethod
+                amountCents
+                reason
+                createdBy
+                owner
             }
             nextToken
         }

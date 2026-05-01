@@ -400,6 +400,10 @@ export const CREATE_TAKINGS_SESSION = gql`
         $openedAt: String!
         $openedBy: ID
         $openingFloatCents: Int!
+        $moneyInCents: Int
+        $moneyOutCents: Int
+        $cashDropsCents: Int
+        $tipPayoutsCents: Int
         $expectedDrawerCashCents: Int!
         $countedDrawerCashCents: Int!
         $varianceCents: Int!
@@ -420,6 +424,10 @@ export const CREATE_TAKINGS_SESSION = gql`
                 openedAt: $openedAt
                 openedBy: $openedBy
                 openingFloatCents: $openingFloatCents
+                moneyInCents: $moneyInCents
+                moneyOutCents: $moneyOutCents
+                cashDropsCents: $cashDropsCents
+                tipPayoutsCents: $tipPayoutsCents
                 expectedDrawerCashCents: $expectedDrawerCashCents
                 countedDrawerCashCents: $countedDrawerCashCents
                 varianceCents: $varianceCents
@@ -442,6 +450,10 @@ export const CREATE_TAKINGS_SESSION = gql`
             openedBy
             finalizedBy
             openingFloatCents
+            moneyInCents
+            moneyOutCents
+            cashDropsCents
+            tipPayoutsCents
             declaredClosingFloatCents
             expectedDrawerCashCents
             countedDrawerCashCents
@@ -451,6 +463,29 @@ export const CREATE_TAKINGS_SESSION = gql`
             unpaidOrdersCount
             parkedOrdersCount
             notes
+            owner
+            createdAt
+            updatedAt
+        }
+    }
+`;
+
+export const CREATE_CASH_MOVEMENT = gql`
+    mutation CreateCashMovement($input: CreateCashMovementInput!) {
+        createCashMovement(input: $input) {
+            id
+            restaurantId
+            registerId
+            staffId
+            takingsSessionId
+            scopeKey
+            businessDate
+            occurredAt
+            type
+            paymentMethod
+            amountCents
+            reason
+            createdBy
             owner
             createdAt
             updatedAt
@@ -503,9 +538,11 @@ export const UPDATE_RESERVATION = gql`
 `;
 
 export const UPDATE_TAKINGS_SESSION = gql`
-    # Finalise/update cash up without nested payloads until PaymentEvent and CashMovement are wired in.
+    # Finalise/update cash up from the POS. Recorded totals are calculated from orders;
+    # money movement fields remain scalar snapshots for backend compatibility.
     mutation UpdateTakingsSession(
         $id: ID!
+        $openingFloatCents: Int
         $status: TakingsSessionStatus
         $finalizedAt: String
         $finalizedBy: ID
@@ -528,6 +565,7 @@ export const UPDATE_TAKINGS_SESSION = gql`
         updateTakingsSession(
             input: {
                 id: $id
+                openingFloatCents: $openingFloatCents
                 status: $status
                 finalizedAt: $finalizedAt
                 finalizedBy: $finalizedBy

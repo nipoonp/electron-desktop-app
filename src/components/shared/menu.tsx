@@ -35,8 +35,8 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
     if (!register) return <></>;
 
     const visibleTabs = props.tabs.filter((tab) => {
-        if (tab.id === "cashup") {
-            // Cash up is only available on POS registers and only when the restaurant has enabled it in Tabin Web.
+        if (tab.id === "cashup" || tab.id === "moneyInOut") {
+            // Cash management is only available on POS registers and only when the restaurant has enabled cash up in Tabin Web.
             return restaurant.takingsEnable && register.type === ERegisterType.POS;
         }
 

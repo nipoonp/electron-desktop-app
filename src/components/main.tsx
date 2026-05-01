@@ -12,7 +12,7 @@ import { useRestaurant } from "../context/restaurant-context";
 import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { useRegister } from "../context/register-context";
 import { ITab } from "../model/model";
-import { FiDollarSign, FiLock, FiMenu, FiCheckSquare } from "react-icons/fi";
+import { FiDollarSign, FiLock, FiMenu, FiCheckSquare, FiRepeat } from "react-icons/fi";
 import RequireCustomerInformation from "./page/customerInformation";
 import { sendFailureNotification } from "../util/errorHandling";
 
@@ -35,7 +35,8 @@ const BuzzerNumber = lazy(() => import("./page/buzzerNumber"));
 const PaymentMethod = lazy(() => import("./page/paymentMethod"));
 const Checkout = lazy(() => import("./page/checkout"));
 // Cash up is a dedicated POS page rather than a dashboard iframe screen.
-const CashUp = lazy(() => import("./page/cashUp"));
+const CashUp = lazy(() => import("./page/cashManagement/cashUp"));
+const MoneyInOut = lazy(() => import("./page/cashManagement/moneyInOut"));
 const NoMatch = lazy(() => import("./page/error/404"));
 const Unauthorised = lazy(() => import("./page/error/unauthorised"));
 
@@ -68,6 +69,7 @@ export const paymentMethodPath = "/payment_method";
 export const restaurantPath = "/restaurant";
 export const checkoutPath = "/checkout";
 export const cashUpPath = "/cash_up";
+export const moneyInOutPath = "/money_in_out";
 export const unauthorizedPath = "/unauthorized";
 
 export const tabs: ITab[] = [
@@ -90,6 +92,13 @@ export const tabs: ITab[] = [
         name: "Cash Up",
         icon: <FiCheckSquare height="20px" />,
         route: cashUpPath,
+        showOnMobile: true,
+    },
+    {
+        id: "moneyInOut",
+        name: "Money In/Out",
+        icon: <FiRepeat height="20px" />,
+        route: moneyInOutPath,
         showOnMobile: true,
     },
     {
@@ -142,33 +151,36 @@ export default () => {
         if (!restaurant) return;
         if (!register) return;
 
-        const timerId = setInterval(async () => {
-            try {
-                //We are having an issue where we get "NotAuthorizedException: Refresh Token has expired".
-                //To avoid the refresh_token from expiring, we will force it to refresh every 10 minutes.
-                //I can see the access_token and id_token get refreshed. But not sure about the refresh_token.
-                //https://github.com/aws-amplify/amplify-js/issues/2560
-                //Also in AWS Dashboard under Cognito User Pools > App Integration > We set the 'Refresh token expiration' to 365 days.
-                //So monitor the next few weeks howmany of those errors we get rearing "NotAuthorizedException: Refresh Token has expired" issue.
-                //If we don't get such errors then we can try remove this code below.
-                const cognitoUser = await Auth.currentAuthenticatedUser();
-                const currentSession = await Auth.currentSession();
+        const timerId = setInterval(
+            async () => {
+                try {
+                    //We are having an issue where we get "NotAuthorizedException: Refresh Token has expired".
+                    //To avoid the refresh_token from expiring, we will force it to refresh every 10 minutes.
+                    //I can see the access_token and id_token get refreshed. But not sure about the refresh_token.
+                    //https://github.com/aws-amplify/amplify-js/issues/2560
+                    //Also in AWS Dashboard under Cognito User Pools > App Integration > We set the 'Refresh token expiration' to 365 days.
+                    //So monitor the next few weeks howmany of those errors we get rearing "NotAuthorizedException: Refresh Token has expired" issue.
+                    //If we don't get such errors then we can try remove this code below.
+                    const cognitoUser = await Auth.currentAuthenticatedUser();
+                    const currentSession = await Auth.currentSession();
 
-                cognitoUser.refreshSession(currentSession.getRefreshToken(), (err, session) => {
-                    console.log("New session", err, session);
-                    // const { idToken, refreshToken, accessToken } = session;
-                });
+                    cognitoUser.refreshSession(currentSession.getRefreshToken(), (err, session) => {
+                        console.log("New session", err, session);
+                        // const { idToken, refreshToken, accessToken } = session;
+                    });
 
-                //If the above code doesn't refresh the refresh_token then uncomment the below lines and get the user to relog in again.
-                // const email = localStorage.getItem("current_e");
-                // const password = localStorage.getItem("current_p");
+                    //If the above code doesn't refresh the refresh_token then uncomment the below lines and get the user to relog in again.
+                    // const email = localStorage.getItem("current_e");
+                    // const password = localStorage.getItem("current_p");
 
-                // if (email && password) login(email, password);
-            } catch (error) {
-                console.error("Error", error);
-                await sendFailureNotification(error, JSON.stringify({ restaurant: restaurant?.id, register: register?.id }));
-            }
-        }, 10 * 60 * 1000); // 10 minutes
+                    // if (email && password) login(email, password);
+                } catch (error) {
+                    console.error("Error", error);
+                    await sendFailureNotification(error, JSON.stringify({ restaurant: restaurant?.id, register: register?.id }));
+                }
+            },
+            10 * 60 * 1000,
+        ); // 10 minutes
 
         return () => clearInterval(timerId);
     }, [restaurant, register]);
@@ -225,6 +237,7 @@ const AppRoutes = () => {
                     <Route path=":autoClickCompleteOrderOnLoad" element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}></Route>
                 </Route>
                 <Route path={cashUpPath} element={<RestaurantRegisterPrivateRoute element={<CashUp />} />} />
+                <Route path={moneyInOutPath} element={<RestaurantRegisterPrivateRoute element={<MoneyInOut />} />} />
                 <Route path={unauthorizedPath} element={<Unauthorised />} />
                 <Route path="*" element={<NoMatch />} />
             </Routes>

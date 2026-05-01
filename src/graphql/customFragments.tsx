@@ -6,6 +6,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         id
         country
         placedAt
+        settledAt
         parkedAt
         completedAt
         cancelledAt
@@ -63,6 +64,8 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         table
         buzzer
         registerId
+        settledRegisterId
+        orderUserId
         products {
             id
             name
@@ -216,6 +219,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     id: string;
     country: string;
     placedAt: string;
+    settledAt: string | null;
     parkedAt: string | null;
     completedAt: string | null;
     cancelledAt: string | null;
@@ -266,6 +270,8 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     buzzer: string | null;
     covers: number | null;
     registerId: string;
+    settledRegisterId: string | null;
+    orderUserId: string;
     products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[];
 }
 

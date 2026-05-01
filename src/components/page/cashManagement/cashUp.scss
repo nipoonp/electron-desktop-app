@@ -1,0 +1,1270 @@
+.cashup-page {
+    min-height: 100vh;
+    background: var(--background-color);
+    padding: 24px;
+    color: #484848;
+
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        align-items: center;
+        margin-bottom: 14px;
+
+        h1 {
+            margin: 8px 0;
+            font-size: 40px;
+            line-height: 1.1;
+        }
+
+        p {
+            margin: 0;
+            color: #556070;
+            max-width: 720px;
+        }
+    }
+
+    &__back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: transparent;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        color: #484848;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    &__eyebrow {
+        margin-top: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--primary-color);
+    }
+
+    &__refresh {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 130px;
+    }
+
+    &__loading {
+        margin-top: 16px;
+        color: #556070;
+        font-weight: 600;
+    }
+}
+
+.cashup-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+    gap: 24px;
+
+    &__main,
+    &__sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+}
+
+.cashup-layout--simple {
+    display: block;
+    margin-top: 12px;
+
+    .cashup-layout__main {
+        max-width: 640px;
+        margin: 0 auto;
+    }
+}
+
+.cashup-section-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.cashup-view-tabs {
+    display: inline-flex;
+    background: #ffffff;
+    gap: 6px;
+    border: none;
+    border-radius: 30px;
+    padding: 0;
+    margin: 0;
+
+    button {
+        min-width: 178px;
+        border: none;
+        background: transparent;
+        padding: 10px;
+        border-radius: 30px;
+        font-weight: 600;
+        color: #484848;
+        cursor: pointer;
+        font-size: 14px;
+        text-align: center;
+
+        &.active {
+            background: var(--primary-color);
+            color: #ffffff;
+            box-shadow: none;
+        }
+    }
+}
+
+.cashup-stepper {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+
+    &__item {
+        border: 1px solid #dbe2ea;
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 14px;
+        text-align: left;
+        cursor: pointer;
+        color: #334155;
+
+        span {
+            display: inline-flex;
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            align-items: center;
+            justify-content: center;
+            background: #e2e8f0;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        div {
+            font-weight: 700;
+        }
+
+        &.active {
+            border-color: #0f766e;
+            box-shadow: 0 10px 24px rgba(15, 118, 110, 0.08);
+
+            span {
+                background: #0f766e;
+                color: #ffffff;
+            }
+        }
+
+        &.done span {
+            background: #0ea5e9;
+            color: #ffffff;
+        }
+    }
+}
+
+.cashup-card {
+    border-radius: 20px;
+    box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+}
+
+.cashup-banner {
+    margin-bottom: 24px;
+
+    &__content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #92400e;
+        font-weight: 600;
+    }
+}
+
+.cashup-warning-modal {
+    padding: 28px;
+
+    &__header {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 24px;
+
+        svg {
+            color: #c2410c;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        h3 {
+            margin: 0 0 8px;
+            font-size: 28px;
+            line-height: 1.1;
+        }
+
+        p {
+            margin: 0;
+            color: #556070;
+            line-height: 1.5;
+        }
+    }
+
+    &__footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 24px;
+    }
+}
+
+.cashup-session {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.cashup-stat {
+    padding: 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+
+    span {
+        display: block;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #64748b;
+        margin-bottom: 8px;
+    }
+
+    strong {
+        font-size: 18px;
+        line-height: 1.4;
+    }
+}
+
+.cashup-opening,
+.cashup-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.cashup-helper {
+    font-size: 14px;
+    color: #64748b;
+
+    &--error {
+        color: #b91c1c;
+        font-weight: 600;
+    }
+
+    &--warning {
+        color: #9a3412;
+        font-weight: 600;
+        text-align: center;
+    }
+}
+
+.cashup-kounta-copy {
+    color: #556070;
+    margin-bottom: 18px;
+    line-height: 1.5;
+}
+
+.cashup-inline-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.cashup-cash-focus {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+
+    &__metric {
+        padding: 16px;
+        border-radius: 16px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+
+        span {
+            display: block;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+
+        strong {
+            font-size: 22px;
+        }
+
+        &.positive strong {
+            color: #047857;
+        }
+
+        &.negative strong {
+            color: #b91c1c;
+        }
+    }
+}
+
+.cashup-counted-entry {
+    max-width: 280px;
+}
+
+.cashup-warning-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.cashup-warning {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid #dbe2ea;
+    background: #f8fafc;
+
+    strong {
+        display: block;
+        font-size: 22px;
+        line-height: 1;
+    }
+
+    span {
+        display: block;
+        color: #64748b;
+        margin-top: 4px;
+    }
+
+    &.warning {
+        background: #fff7ed;
+        border-color: #fdba74;
+        color: #9a3412;
+    }
+}
+
+.cashup-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 20px;
+    font-size: 14px;
+    color: #475569;
+
+    input {
+        margin-top: 3px;
+    }
+}
+
+.cashup-warning-inline {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    border-radius: 16px;
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+
+    strong,
+    span {
+        display: block;
+    }
+
+    strong {
+        color: #9a3412;
+        margin-bottom: 4px;
+    }
+
+    span {
+        color: #7c2d12;
+        font-size: 14px;
+    }
+
+    &.blocked {
+        background: #fef2f2;
+        border-color: #fca5a5;
+
+        strong,
+        span {
+            color: #991b1b;
+        }
+    }
+}
+
+.cashup-mode-toggle {
+    display: inline-flex;
+    background: #edf2f7;
+    border-radius: 14px;
+    padding: 4px;
+    margin-bottom: 20px;
+
+    button {
+        border: none;
+        background: transparent;
+        padding: 10px 16px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        color: #475569;
+
+        &.active {
+            background: #ffffff;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+            color: #0f172a;
+        }
+    }
+}
+
+.cashup-payment-header,
+.cashup-payment-row {
+    display: grid;
+    grid-template-columns: 230px 160px 116px;
+    column-gap: 56px;
+    align-items: center;
+    max-width: 620px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.cashup-payment-header {
+    padding: 0 0 12px;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 12px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+}
+
+.cashup-payment-row {
+    min-height: 60px;
+    padding: 6px 0;
+    border-bottom: 1px solid #e0e0e0;
+
+    &__label {
+        color: #484848;
+        letter-spacing: 0;
+
+        strong {
+            display: block;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        span {
+            display: block;
+            margin-top: 3px;
+            color: var(--primary-color-gray);
+            font-size: 13px;
+            font-weight: 400;
+        }
+    }
+
+    &__count-label {
+        color: #484848;
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: 0;
+        text-align: left;
+        padding-left: 0;
+    }
+
+    &__input {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    &__pill {
+        display: inline-flex;
+        min-height: 48px;
+        align-items: center;
+        padding: 0 14px;
+        border-radius: 12px;
+        background: #f8fafc;
+        border: 1px solid #dbe2ea;
+        font-weight: 600;
+    }
+
+    &__difference {
+        font-weight: 700;
+
+        &.positive {
+            color: #047857;
+        }
+
+        &.negative {
+            color: #b91c1c;
+        }
+
+        &.neutral {
+            color: #475569;
+        }
+    }
+}
+
+.cashup-denominations {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.cashup-denomination {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr) 100px;
+    gap: 12px;
+    align-items: center;
+    padding: 14px;
+    border-radius: 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+
+    &__label,
+    &__total {
+        font-weight: 600;
+    }
+}
+
+.cashup-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 20px;
+
+    &__row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        font-size: 15px;
+
+        strong {
+            font-size: 18px;
+        }
+
+        &.positive strong {
+            color: #047857;
+        }
+
+        &.negative strong {
+            color: #b91c1c;
+        }
+    }
+}
+
+.cashup-summary--review {
+    margin-top: 24px;
+}
+
+.cashup-review-table {
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    overflow: hidden;
+
+    &__header,
+    &__row {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        padding: 14px 16px;
+        align-items: center;
+    }
+
+    &__header {
+        background: #f8fafc;
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        color: #64748b;
+    }
+
+    &__row {
+        border-top: 1px solid #eef2f7;
+
+        .positive {
+            color: #047857;
+            font-weight: 700;
+        }
+
+        .negative {
+            color: #b91c1c;
+            font-weight: 700;
+        }
+    }
+}
+
+.cashup-history {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    &__item {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px 16px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+
+        strong,
+        span {
+            display: block;
+        }
+
+        span {
+            margin-top: 4px;
+            color: #64748b;
+            font-size: 13px;
+        }
+    }
+
+    &__totals {
+        min-width: 120px;
+        text-align: right;
+
+        div {
+            font-weight: 700;
+            font-size: 18px;
+        }
+    }
+}
+
+.cashup-history-card {
+    margin-top: 8px;
+}
+
+.cashup-history-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 0;
+    height: calc(100vh - 86px);
+    min-height: 420px;
+    margin: 0 -24px -24px;
+    background: var(--background-color);
+    overflow: hidden;
+}
+
+.cashup-history-table {
+    padding: 36px 16px 0;
+    border-right: 1px solid #e0e0e0;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    &__header,
+    &__row {
+        display: grid;
+        grid-template-columns: 90px minmax(180px, 1.2fr) minmax(180px, 1fr) minmax(150px, 1fr) 42px;
+        align-items: center;
+        width: 100%;
+        min-height: 54px;
+        border-bottom: 1px solid #d8dce1;
+        color: #484848;
+        font-size: 14px;
+        letter-spacing: 0;
+        text-align: left;
+    }
+
+    &__header {
+        font-weight: 600;
+    }
+
+    &__row {
+        border-top: none;
+        border-left: none;
+        border-right: none;
+        background: transparent;
+        cursor: pointer;
+        font-family: inherit;
+        padding: 0;
+
+        &:hover,
+        &.selected {
+            background: #f7f7f7;
+            font-weight: 600;
+        }
+
+        svg {
+            justify-self: center;
+            color: #484848;
+            font-size: 20px;
+        }
+    }
+
+    .cashup-helper {
+        padding: 18px 0;
+        border-bottom: 1px solid #d8dce1;
+    }
+}
+
+.cashup-history-detail {
+    padding: 18px;
+    color: #484848;
+    background: var(--background-color);
+    overflow-y: auto;
+
+    &__empty {
+        color: var(--primary-color-gray);
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    &__meta {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid #d8dce1;
+        color: #606060;
+        font-size: 13px;
+        line-height: 1.25;
+    }
+
+    &__summary-title {
+        margin: 16px 0 14px;
+        font-size: 16px;
+        font-weight: 700;
+    }
+
+    &__summary {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        font-size: 12px;
+        color: #606060;
+
+        > div {
+            display: grid;
+            grid-template-columns: minmax(70px, 1.2fr) repeat(3, minmax(55px, 1fr));
+            gap: 10px;
+            align-items: start;
+            min-height: 22px;
+        }
+    }
+
+    &__summary-header,
+    &__summary-total {
+        color: #484848;
+        font-weight: 700;
+    }
+}
+
+.cashup-step-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 24px;
+
+    &__ghost {
+        background: #ffffff;
+        color: var(--primary-color);
+        border: 1px solid var(--primary-color);
+    }
+
+    &--split {
+        justify-content: space-between;
+    }
+}
+
+.cashup-finalize-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.cashup-textarea {
+    width: 100%;
+    min-height: 110px;
+    border-radius: 12px;
+    border: 1px solid #dbe2ea;
+    padding: 12px 14px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 16px;
+    color: #484848;
+}
+
+.cashup-kounta-panel {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 12px 0 8px;
+}
+
+.cashup-taking-card {
+    color: #484848;
+}
+
+.cashup-kounta-copy {
+    max-width: 640px;
+    margin: 0 auto 18px;
+    color: #484848;
+    font-size: 16px;
+    letter-spacing: 0;
+    line-height: 1.3;
+}
+
+.cashup-kounta-title {
+    margin: 0 0 16px;
+    color: #484848;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-align: center;
+}
+
+.cashup-session-strip,
+.cashup-float-breakdown,
+.cashup-finalize-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+
+    div {
+        padding: 12px 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        background: #f8fafc;
+    }
+
+    span {
+        display: block;
+        margin-bottom: 5px;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    strong {
+        color: #0f172a;
+        font-size: 18px;
+        line-height: 1.2;
+    }
+
+    .positive strong {
+        color: #047857;
+    }
+
+    .negative strong {
+        color: #b91c1c;
+    }
+}
+
+.cashup-float-breakdown {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0;
+}
+
+.cashup-finalize-grid {
+    margin-bottom: 20px;
+}
+
+.cashup-payment-header--simple {
+    margin-top: 16px;
+}
+
+.cashup-payment-row__counted {
+    display: inline-flex;
+    width: 116px;
+    height: 46px;
+    min-height: 46px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background: #f7f7f7;
+    color: #484848;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 0 6px;
+    text-align: center;
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    svg {
+        display: none;
+    }
+}
+
+.cashup-float-entry {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin: 8px auto 8px;
+    color: #484848;
+
+    &__label {
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: 0;
+    }
+
+    &__input {
+        width: 112px;
+        height: 46px;
+        min-height: 46px;
+        border-radius: 4px;
+        padding: 0 8px;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    &__save {
+        min-width: 118px;
+    }
+}
+
+.cashup-kounta-totals {
+    width: 100%;
+    max-width: 600px;
+    margin: 28px auto 0;
+    color: #484848;
+
+    &__row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 24px;
+        align-items: center;
+        min-height: 52px;
+        border-bottom: 1px solid #e0e0e0;
+
+        span {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0;
+        }
+
+        strong {
+            min-width: 120px;
+            color: #484848;
+            font-size: 26px;
+            font-weight: 600;
+            letter-spacing: 0;
+            text-align: right;
+        }
+
+        .cashup-kounta-totals__pending {
+            color: var(--primary-color-gray);
+            font-size: 16px;
+        }
+
+        &.positive strong {
+            color: #047857;
+        }
+
+        &.negative strong {
+            color: #484848;
+        }
+    }
+}
+
+.cashup-finalize-inline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.cashup-entry-modal {
+    padding: 26px;
+
+    &__header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        padding-right: 34px;
+
+        span {
+            display: block;
+            color: var(--primary-color-gray);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        h3 {
+            margin: 0;
+            color: #484848;
+            font-size: 24px;
+            line-height: 1.15;
+            font-weight: 600;
+        }
+
+        p {
+            max-width: 430px;
+            margin: 28px 0 0;
+            color: #484848;
+            font-size: 16px;
+            letter-spacing: 0;
+            line-height: 1.45;
+        }
+
+        strong {
+            color: #484848;
+            font-size: 24px;
+            line-height: 1.15;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+    }
+
+    &__amount {
+        max-width: 320px;
+        margin-top: 16px;
+    }
+
+    &__footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 14px;
+        margin-top: 22px;
+
+        &--center {
+            justify-content: center;
+        }
+    }
+
+    &__header--choice {
+        margin-bottom: 92px;
+    }
+}
+
+.cashup-confirm-modal {
+    padding: 32px 36px 34px;
+
+    h3 {
+        margin: 0 0 24px;
+        color: #484848;
+        font-size: 26px;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    p {
+        margin: 0 0 16px;
+        color: #484848;
+        font-size: 18px;
+        line-height: 1.3;
+    }
+
+    &__actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 88px;
+    }
+}
+
+.cashup-mode-toggle--modal {
+    margin-bottom: 16px;
+}
+
+.cashup-choice-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.cashup-denomination-table {
+    margin-top: 4px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 18px;
+    max-height: 360px;
+    overflow: hidden;
+
+    &__row {
+        display: grid;
+        grid-template-columns: minmax(58px, 0.8fr) 72px minmax(86px, 1fr);
+        gap: 8px;
+        align-items: center;
+        min-height: 44px;
+        border-bottom: 1px solid #e0e0e0;
+        color: #484848;
+        font-size: 14px;
+        letter-spacing: 0;
+
+        > div:first-child {
+            font-weight: 600;
+        }
+
+        > div:last-child {
+            text-align: right;
+            font-weight: 600;
+        }
+    }
+
+    &__input {
+        box-sizing: border-box;
+        width: 72px;
+        height: 34px;
+        min-height: 34px;
+        padding: 0 6px;
+        text-align: center;
+        border-radius: 4px;
+        font-size: 14px;
+        line-height: 20px;
+        background: #f7f7f7;
+    }
+}
+
+.cashup-denomination-summary {
+    margin-top: 8px;
+    color: #484848;
+
+    div {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(110px, auto);
+        gap: 18px;
+        align-items: center;
+        min-height: 48px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    strong,
+    span {
+        font-size: 14px;
+        letter-spacing: 0;
+        font-weight: 600;
+    }
+
+    strong:last-child,
+    span:last-child {
+        text-align: right;
+    }
+}
+
+.cashup-denominations--modal {
+    gap: 10px;
+
+    .cashup-denomination {
+        grid-template-columns: 76px minmax(92px, 1fr) 86px;
+        gap: 8px;
+        padding: 9px 10px;
+        border-radius: 12px;
+        font-size: 13px;
+    }
+
+    .cashup-denomination__input {
+        height: 36px;
+        min-height: 36px;
+        padding: 0 8px;
+        font-size: 14px;
+        text-align: center;
+    }
+}
+
+.cashup-finalize-fields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    margin-top: 4px;
+}
+
+@media (max-width: 1100px) {
+    .cashup-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .cashup-history-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .cashup-history-table {
+        border-right: none;
+        overflow: auto;
+    }
+
+    .cashup-history-detail {
+        border-top: 1px solid #e0e0e0;
+    }
+}
+
+@media (max-width: 768px) {
+    .cashup-page {
+        padding: 16px;
+
+        &__header {
+            flex-direction: column;
+        }
+    }
+
+    .cashup-session,
+    .cashup-warning-grid,
+    .cashup-denominations,
+    .cashup-inline-fields,
+    .cashup-cash-focus,
+    .cashup-float-entry,
+    .cashup-session-strip,
+    .cashup-float-breakdown,
+    .cashup-finalize-grid,
+    .cashup-finalize-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .cashup-payment-header,
+    .cashup-payment-row,
+    .cashup-denomination,
+    .cashup-review-table__header,
+    .cashup-review-table__row {
+        grid-template-columns: 1fr;
+    }
+
+    .cashup-step-footer {
+        flex-direction: column;
+    }
+
+    .cashup-warning-modal__footer,
+    .cashup-warning-inline,
+    .cashup-finalize-actions {
+        flex-direction: column;
+    }
+
+    .cashup-denomination-table__row {
+        grid-column: 1 / -1;
+        grid-template-columns: minmax(70px, 1fr) 78px minmax(92px, 1fr);
+        gap: 8px;
+    }
+
+    .cashup-denomination-table__input {
+        width: 78px;
+    }
+
+    .cashup-history-layout {
+        height: calc(100vh - 170px);
+        min-height: 360px;
+        margin: 0 -16px -16px;
+    }
+
+    .cashup-history-table {
+        padding-top: 20px;
+
+        &__header,
+        &__row {
+            grid-template-columns: 56px 132px 140px 130px 34px;
+            min-width: 492px;
+        }
+    }
+}
