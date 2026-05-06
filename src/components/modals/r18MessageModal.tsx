@@ -1,7 +1,6 @@
-import { useEffect } from "react";
 import { Button } from "../../tabin/components/button";
 import { ModalV2 } from "../../tabin/components/modalv2";
-import "./itemAddedUpdatedModal.scss";
+
 interface IPromotionCodeModalProps {
     isOpen: string;
     message: string;
@@ -19,7 +18,7 @@ export const R18MessageModal = (props: IPromotionCodeModalProps) => {
     return (
         <>
             <ModalV2 padding="24px" isOpen={props.isOpen !== ""} disableClose={true} onRequestClose={props.onClose}>
-                <div className="r18-message-modal">
+                <div>
                     <div className="h3 mb-3">
                         Before you can shop from our range of {props.message}, We need you to confirm you are over 18, Cheers!
                     </div>

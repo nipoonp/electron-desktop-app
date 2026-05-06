@@ -1264,7 +1264,7 @@ export const Checkout = () => {
                     }
                 };
 
-                const pollingUrl = await smartpayCreateTransaction(amount, "Card.Purchase");
+                const pollingUrl = await smartpayCreateTransaction(amount);
                 outcome = await smartpayPollForOutcome(pollingUrl, delayed);
             } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
                 outcome = await windcaveCreateTransaction(
