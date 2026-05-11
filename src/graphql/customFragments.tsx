@@ -17,6 +17,13 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         eftposSurcharge
         eftposTip
         discount
+        deliveryProvider
+        deliveryAddress
+        deliveryNotes
+        deliveryDistanceMeters
+        deliveryFeeDiscount
+        deliveryFee
+        deliveryTrackingUrl
         promotionId
         subTotal
         tax
@@ -222,6 +229,13 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     eftposSurcharge: number | null;
     eftposTip: number | null;
     discount: number | null;
+    deliveryProvider: "UBER_DIRECT" | "RESTAURANT_MANAGED" | null;
+    deliveryAddress: string | null;
+    deliveryNotes: string | null;
+    deliveryDistanceMeters: number | null;
+    deliveryFeeDiscount: number | null;
+    deliveryFee: number | null;
+    deliveryTrackingUrl: string | null;
     promotionId: string | null;
     tax: number;
     subTotal: number;
