@@ -8,6 +8,7 @@ import {
     IPrintReceiptOutput,
     IPrintSalesDataInput,
     EOrderStatus,
+    EOrderType,
     IEftposReceiptOutput,
     IPrintReceiptDataInput,
     IEftposReceipt,
@@ -94,10 +95,49 @@ const getProductTotal = (product: ICartProduct) => {
     return price;
 };
 
+const printDeliveryDetails = (printer, order: IOrderReceipt, options: { includeFee: boolean; includeTrackingQr: boolean }) => {
+    if (order.type !== EOrderType.DELIVERY) return;
+    const deliveryProviderLabel =
+        order.deliveryProvider === "RESTAURANT_MANAGED" ? "Restaurant delivery" : order.deliveryProvider === "UBER_DIRECT" ? "Uber delivery" : null;
+
+    printer.newLine();
+    printer.drawLine();
+    printer.alignCenter();
+    printer.bold(true);
+    printer.setTextSize(1, 1);
+    printer.println("DELIVERY");
+    printer.setTextNormal();
+    if (deliveryProviderLabel) printer.println(deliveryProviderLabel);
+    printer.bold(false);
+    printer.alignLeft();
+
+    if (order.deliveryProvider === "RESTAURANT_MANAGED" && order.deliveryAddress) printer.println(`Address: ${order.deliveryAddress}`);
+    if (order.deliveryProvider === "RESTAURANT_MANAGED" && order.deliveryNotes) printer.println(`Instructions: ${order.deliveryNotes}`);
+    if (order.deliveryProvider === "RESTAURANT_MANAGED" && order.deliveryDistanceMeters) {
+        printer.println(`Distance: ${(order.deliveryDistanceMeters / 1000).toFixed(1)} km`);
+    }
+    if (options.includeFee && order.deliveryFee != null) {
+        printer.println(`Delivery Fee: $${convertCentsToDollars(order.deliveryFee)}`);
+    }
+    if (order.deliveryProvider === "UBER_DIRECT" && options.includeTrackingQr) {
+        printer.newLine();
+        printer.alignCenter();
+        if (order.deliveryTrackingUrl) {
+            printer.println("Scan for Uber tracking");
+            printer.printQR(order.deliveryTrackingUrl);
+        } else {
+            printer.println("Uber tracking pending");
+        }
+        printer.alignLeft();
+    }
+
+    printer.drawLine();
+};
+
 export const printCustomerReceipt = async (
     order: IOrderReceipt,
     receiptIndex?: number,
-    receiptTotalNumber?: number
+    receiptTotalNumber?: number,
 ): Promise<IPrintReceiptOutput> => {
     let printer;
 
@@ -201,7 +241,7 @@ export const printCustomerReceipt = async (
 
     if (order.customerInformation) {
         printer.println(
-            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
+            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`,
         );
 
         if (order.customerInformation.signatureBase64) {
@@ -653,7 +693,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
         printer.setTextSize(1, 1);
         printer.bold(true);
 
-        if (isToday(order.orderScheduledAt)) {
+        if (isToday(new Date(order.orderScheduledAt))) {
             printer.println(`Pickup: Today ${format(new Date(order.orderScheduledAt), "HH:mm aa")}`);
         } else {
             printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
@@ -714,6 +754,8 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
         printer.setTextNormal();
         printer.bold(false);
     }
+
+    printDeliveryDetails(printer, order, { includeFee: false, includeTrackingQr: true });
 
     if (order.customerInformation) {
         printer.newLine();
@@ -829,7 +871,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
                                         } else {
                                             printer.print(", ");
                                         }
-                                    }
+                                    },
                                 );
                             });
                         } else {
@@ -944,7 +986,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
 export const printKitchenReceiptSmall = async (
     order: IOrderReceipt,
     receiptIndex?: number,
-    receiptTotalNumber?: number
+    receiptTotalNumber?: number,
 ): Promise<IPrintReceiptOutput> => {
     let printer;
 
@@ -1020,7 +1062,7 @@ export const printKitchenReceiptSmall = async (
         printer.setTextSize(1, 1);
         printer.bold(true);
 
-        if (isToday(order.orderScheduledAt)) {
+        if (isToday(new Date(order.orderScheduledAt))) {
             printer.println(`Pickup: Today ${format(new Date(order.orderScheduledAt), "HH:mm aa")}`);
         } else {
             printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
@@ -1032,7 +1074,7 @@ export const printKitchenReceiptSmall = async (
 
     if (order.customerInformation) {
         printer.println(
-            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
+            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`,
         );
 
         if (order.customerInformation.signatureBase64) {
@@ -1094,6 +1136,8 @@ export const printKitchenReceiptSmall = async (
         printer.println(`Ready in ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "mins" : "min"}`);
         printer.bold(false);
     }
+
+    printDeliveryDetails(printer, order, { includeFee: false, includeTrackingQr: true });
 
     if (order.customerInformation) {
         printer.newLine();
@@ -1207,7 +1251,7 @@ export const printKitchenReceiptSmall = async (
                                         } else {
                                             printer.print(", ");
                                         }
-                                    }
+                                    },
                                 );
                             });
                         } else {
@@ -1333,7 +1377,7 @@ export const printKitchenReceiptSmall = async (
 export const printKitchenReceiptLarge = async (
     order: IOrderReceipt,
     receiptIndex?: number,
-    receiptTotalNumber?: number
+    receiptTotalNumber?: number,
 ): Promise<IPrintReceiptOutput> => {
     let printer;
 
@@ -1410,7 +1454,7 @@ export const printKitchenReceiptLarge = async (
         printer.setTextSize(1, 1);
         printer.bold(true);
 
-        if (isToday(order.orderScheduledAt)) {
+        if (isToday(new Date(order.orderScheduledAt))) {
             printer.println(`Pickup: Today ${format(new Date(order.orderScheduledAt), "HH:mm aa")}`);
         } else {
             printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
@@ -1422,7 +1466,7 @@ export const printKitchenReceiptLarge = async (
 
     if (order.customerInformation) {
         printer.println(
-            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
+            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`,
         );
 
         if (order.customerInformation.signatureBase64) {
@@ -1486,6 +1530,8 @@ export const printKitchenReceiptLarge = async (
         printer.setTextNormal();
         printer.bold(false);
     }
+
+    printDeliveryDetails(printer, order, { includeFee: false, includeTrackingQr: true });
 
     if (order.customerInformation) {
         printer.newLine();
@@ -1609,7 +1655,7 @@ export const printKitchenReceiptLarge = async (
                                         }
                                         printer.setTextNormal();
                                         printer.bold(false);
-                                    }
+                                    },
                                 );
                             });
                         } else {
@@ -1895,11 +1941,11 @@ const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
         runningTotals.totalPaymentAmounts.doordash = addAmounts(runningTotals.totalPaymentAmounts.doordash, day.totalPaymentAmounts.doordash);
         runningTotals.totalPaymentAmounts.delivereasy = addAmounts(
             runningTotals.totalPaymentAmounts.delivereasy,
-            day.totalPaymentAmounts.delivereasy
+            day.totalPaymentAmounts.delivereasy,
         );
         runningTotals.totalPaymentAmounts.eftposSurcharge = addAmounts(
             runningTotals.totalPaymentAmounts.eftposSurcharge,
-            day.totalPaymentAmounts.eftposSurcharge
+            day.totalPaymentAmounts.eftposSurcharge,
         );
     });
 
