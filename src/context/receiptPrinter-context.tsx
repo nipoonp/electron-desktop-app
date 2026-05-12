@@ -76,7 +76,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 const newOrders: IGET_RESTAURANT_ORDER_FRAGMENT[] = res.data.getOrdersByRestaurantByPlacedAt.items;
 
                 const ordersToPrint = newOrders.filter(
-                    (order) => order.onlineOrder || order.thirdPartyIntegrationResult?.platform === "DELIVERECTPOS"
+                    (order) => order.onlineOrder || order.thirdPartyIntegrationResult?.platform === "DELIVERECTPOS",
                 );
 
                 for (var i = 0; i < ordersToPrint.length; i++) {
@@ -90,6 +90,8 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                         if (!printer.printOnlineOrderReceipts) continue;
 
                         const productsToPrint = filterPrintProducts(order.products, printer);
+
+                        if (productsToPrint.length === 0) continue;
 
                         await printReceipt({
                             orderId: order.id,
