@@ -492,6 +492,8 @@ const Orders = () => {
                 } else if (register.printers.items.length === 1) {
                     const productsToPrint = filterPrintProducts(order.products, register.printers.items[0]);
 
+                    if (productsToPrint.length === 0) return;
+
                     await printReceipt({
                         ...reprintOrder,
                         printerType: register.printers.items[0].type,
@@ -521,6 +523,8 @@ const Orders = () => {
     const onSelectPrinter = async (printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
         if (receiptPrinterModalPrintReorderData) {
             const productsToPrint = filterPrintProducts(receiptPrinterModalPrintReorderData.products, printer);
+
+            if (productsToPrint.length === 0) return;
 
             await printReceipt({
                 ...receiptPrinterModalPrintReorderData,

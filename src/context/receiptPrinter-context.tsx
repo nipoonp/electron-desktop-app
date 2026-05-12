@@ -111,6 +111,8 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
                         const productsToPrint = filterPrintProducts(order.products, printer);
 
+                        if (productsToPrint.length === 0) continue;
+
                         showOnlineOrderPromot = true;
                         newOrderInfoList.push({
                             number: order.number,
