@@ -2528,7 +2528,7 @@ export const Checkout = () => {
             {/* <PageWrapper> */}
             <div className="checkout">
                 <div className="pos-order-type-button-wrapper">
-                    {isPOS && (
+                    {isPOS && register.availableOrderTypes.length !== 1 && (
                         <>
                             <div
                                 className={`pos-order-type p-2 ${orderType === EOrderType.DINEIN ? "selected" : ""}`}
