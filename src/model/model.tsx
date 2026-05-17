@@ -449,6 +449,13 @@ export interface IOrderReceipt {
     products: ICartProduct[];
     eftposReceipt: string | null;
     paymentAmounts: IOrderPaymentAmounts | null;
+    deliveryProvider?: "UBER_DIRECT" | "RESTAURANT_MANAGED" | null;
+    deliveryAddress?: string | null;
+    deliveryNotes?: string | null;
+    deliveryDistanceMeters?: number | null;
+    deliveryFeeDiscount?: number | null;
+    deliveryFee?: number | null;
+    deliveryTrackingUrl?: string | null;
     total: number;
     discount: number | null;
     tax: number;

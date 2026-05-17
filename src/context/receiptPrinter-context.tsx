@@ -76,7 +76,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 const newOrders: IGET_RESTAURANT_ORDER_FRAGMENT[] = res.data.getOrdersByRestaurantByPlacedAt.items;
 
                 const ordersToPrint = newOrders.filter(
-                    (order) => order.onlineOrder || order.thirdPartyIntegrationResult?.platform === "DELIVERECTPOS"
+                    (order) => order.onlineOrder || order.thirdPartyIntegrationResult?.platform === "DELIVERECTPOS",
                 );
 
                 for (var i = 0; i < ordersToPrint.length; i++) {
@@ -90,6 +90,8 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                         if (!printer.printOnlineOrderReceipts) continue;
 
                         const productsToPrint = filterPrintProducts(order.products, printer);
+
+                        if (productsToPrint.length === 0) continue;
 
                         await printReceipt({
                             orderId: order.id,
@@ -127,12 +129,19 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                             notes: order.notes,
                             products: convertProductTypesForPrint(productsToPrint),
                             paymentAmounts: order.paymentAmounts,
+                            deliveryProvider: order.deliveryProvider,
+                            deliveryAddress: order.deliveryAddress,
+                            deliveryNotes: order.deliveryNotes,
+                            deliveryDistanceMeters: order.deliveryDistanceMeters,
+                            deliveryFeeDiscount: order.deliveryFeeDiscount,
+                            deliveryFee: order.deliveryFee,
+                            deliveryTrackingUrl: order.deliveryTrackingUrl,
                             total: order.total,
                             surcharge: order.surcharge,
                             orderTypeSurcharge: order.orderTypeSurcharge,
                             eftposSurcharge: order.eftposSurcharge,
                             eftposTip: order.eftposTip,
-                            discount: order.promotionId && order.discount ? order.discount : null,
+                            discount: order.discount || null,
                             tax: order.tax,
                             subTotal: order.subTotal,
                             paid: order.paid,

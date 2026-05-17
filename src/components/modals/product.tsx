@@ -738,7 +738,7 @@ export const ProductModal = (props: {
             name: product.name,
             kitchenName: product.kitchenName,
             price: product.price,
-            totalPrice: totalDisplayPrice / quantity,
+            totalPrice: Math.round(totalDisplayPrice / quantity),
             discount: 0,
             isAgeRescricted: product.isAgeRescricted,
             image: product.image

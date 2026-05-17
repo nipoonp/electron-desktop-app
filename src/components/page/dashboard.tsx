@@ -79,6 +79,8 @@ export default () => {
             } else if (register.printers.items.length === 1) {
                 const productsToPrint = filterPrintProducts(order.products, register.printers.items[0]);
 
+                if (productsToPrint.length === 0) return;
+
                 await printReceipt({
                     ...order,
                     printerType: register.printers.items[0].type,
@@ -423,6 +425,8 @@ export default () => {
             setReceiptPrinterModalPrintSalesData(null);
         } else if (receiptPrinterModalPrintReorderData) {
             const productsToPrint = filterPrintProducts(receiptPrinterModalPrintReorderData.products, printer);
+
+            if (productsToPrint.length === 0) return;
 
             await printReceipt({
                 ...receiptPrinterModalPrintReorderData,
