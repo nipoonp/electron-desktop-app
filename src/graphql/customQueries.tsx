@@ -2043,6 +2043,15 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
     }
 `;
 
+export const GET_ORDER = gql`
+    ${ORDER_FIELDS_FRAGMENT}
+    query getOrderById($id: ID!) {
+        getOrder(id: $id) {
+            ...OrderFieldsFragment
+        }
+    }
+`;
+
 export const GET_THIRD_PARTY_ORDER_RESPONSE = gql`
     query getOrder($id: ID!) {
         getOrder(id: $id) {

@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { useMutation, useQuery } from "@apollo/client";
+import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { checkoutPath, restaurantPath } from "../main";
@@ -34,7 +34,7 @@ import { Stage, Layer } from "react-konva";
 import { BackgroundGrid, TableNode } from "./tableNumber/tableNumberComponent";
 import ReservationsPanel from "./tableNumber/ReservationsPanel";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../graphql/customFragments";
-import { EOrderStatus, EOrderType, GET_RESERVATIONS_BY_RESTAURANT_BY_DATE, IGET_RESERVATION_FOR_TABLE } from "../../graphql/customQueries";
+import { EOrderStatus, EOrderType, GET_ORDER, GET_RESERVATIONS_BY_RESTAURANT_BY_DATE, IGET_RESERVATION_FOR_TABLE } from "../../graphql/customQueries";
 import {
     CategoryType,
     FloorPlanPayload,
@@ -76,12 +76,12 @@ import {
 } from "./tableNumber/orderCartMappers";
 import {
     formatOrderTotal,
-    getParkedOrderPrintedProductStorageKey,
     getElapsedMinutes,
     getServerLabelForOrder,
     initializeRunningOrderPrintedProductTracking,
     isOpenDineInRunningOrder,
 } from "./tableNumber/runningOrderUtils";
+import { printedQuantitiesListToMap, printedQuantitiesToList } from "../../util/util";
 import {
     buildUniqueId,
     createFloorPlanPayload,
@@ -95,7 +95,7 @@ import { useGetRestaurantFloorPlanLazyQuery } from "../../hooks/useGetRestaurant
 import { useGetRestaurantOrdersByBeginWithPlacedAt } from "../../hooks/useGetRestaurantOrdersByBeginWithPlacedAt";
 import { useUpdateRestaurantFloorPlanMutation } from "../../hooks/useUpdateRestaurantFloorPlanMutation";
 import { TableLayoutEditModal, TableLayoutUnsavedChangesModal, TableSectionSettingsModal } from "../modals/tableNumberModals";
-import { UPDATE_ORDER } from "../../graphql/customMutations";
+import { UPDATE_ORDER, UPDATE_ORDER_PRINTED_QUANTITIES } from "../../graphql/customMutations";
 
 import "./tableNumber.scss";
 import { Input } from "../../tabin/components/input";
@@ -228,6 +228,7 @@ const TableNumberFeatureEnabledPage = () => {
         setCovers,
         total,
         tableNumber,
+        setPrintedProductQuantities,
     } = useCart();
     // Load floor plan only after restaurant data is ready.
     const { getRestaurantFloorPlan, data: floorPlanData, loading: floorPlanLoading } = useGetRestaurantFloorPlanLazyQuery();
@@ -245,6 +246,8 @@ const TableNumberFeatureEnabledPage = () => {
     // Unified save mutation decides between create/update based on payload id.
     const { updateRestaurantFloorPlan } = useUpdateRestaurantFloorPlanMutation();
     const [updateOrderMutation] = useMutation(UPDATE_ORDER);
+    const [updateOrderPrintedQuantitiesMutation] = useMutation(UPDATE_ORDER_PRINTED_QUANTITIES);
+    const [getOrder] = useLazyQuery(GET_ORDER, { fetchPolicy: "network-only" });
 
     // State
     const [tables, setTables] = useState<ITableNodesAttributes[]>([]);
@@ -632,8 +635,8 @@ const TableNumberFeatureEnabledPage = () => {
             setProducts(mapOrderProductsToCartProducts(runningOrder.products));
             if (typeof runningOrder.covers === "number" && runningOrder.covers > 0) setCovers(runningOrder.covers);
 
-            // Point 3: enable continuous add-item flow by marking currently loaded items as the printed baseline.
-            initializeRunningOrderPrintedProductTracking(runningOrder);
+            // Point 3: cache backend print tracking in cart state for sent/unsent display.
+            setPrintedProductQuantities(initializeRunningOrderPrintedProductTracking(runningOrder));
             // Point 4: preserve round-based send tracking so each fire cycle prints only still-unsent items.
         } else {
             // Ensure this stays a fresh non-parked session when no running order exists on the selected table.
@@ -1214,38 +1217,37 @@ const TableNumberFeatureEnabledPage = () => {
         return variables;
     };
 
-    // Reads the saved per-product print counters for a parked/running order from local storage.
-    const getPrintedProductQuantities = (orderId: string) => {
-        try {
-            const parsedProductQuantities = JSON.parse(localStorage.getItem(getParkedOrderPrintedProductStorageKey(orderId)) || "{}");
-            if (!parsedProductQuantities) return {} as Record<string, number>;
-
-            return Object.entries(parsedProductQuantities).reduce(
-                (printedProductQuantities, [productId, quantity]) => {
-                    if (typeof quantity === "number" && quantity > 0) printedProductQuantities[productId] = quantity;
-                    return printedProductQuantities;
-                },
-                {} as Record<string, number>,
-            );
-        } catch {
-            return {} as Record<string, number>;
-        }
+    const getFreshOrder = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+        const result = await getOrder({ variables: { id: order.id } });
+        return (result.data?.getOrder || order) as IGET_RESTAURANT_ORDER_FRAGMENT;
     };
 
     // Combines source-order print counters into destination-order counters so kitchen delta printing stays accurate after merge.
-    const mergePrintedProductTracking = (destinationOrderId: string, sourceOrderId: string) => {
-        const destinationPrintedProductQuantities = getPrintedProductQuantities(destinationOrderId);
-        const sourcePrintedProductQuantities = getPrintedProductQuantities(sourceOrderId);
+    const mergePrintedProductTracking = async (
+        destinationOrder: IGET_RESTAURANT_ORDER_FRAGMENT,
+        sourceOrder: IGET_RESTAURANT_ORDER_FRAGMENT,
+    ) => {
+        const destinationPrintedProductQuantities = printedQuantitiesListToMap(destinationOrder.printedQuantities);
+        const sourcePrintedProductQuantities = printedQuantitiesListToMap(sourceOrder.printedQuantities);
 
         const hasSourcePrintedProducts = Object.keys(sourcePrintedProductQuantities).length > 0;
         if (!hasSourcePrintedProducts) return;
 
-        Object.entries(sourcePrintedProductQuantities).forEach(([productId, quantity]) => {
-            destinationPrintedProductQuantities[productId] = (destinationPrintedProductQuantities[productId] || 0) + quantity;
+        Object.entries(sourcePrintedProductQuantities).forEach(([lineKey, quantity]) => {
+            destinationPrintedProductQuantities[lineKey] = (destinationPrintedProductQuantities[lineKey] || 0) + quantity;
         });
 
-        localStorage.setItem(getParkedOrderPrintedProductStorageKey(destinationOrderId), JSON.stringify(destinationPrintedProductQuantities));
-        localStorage.removeItem(getParkedOrderPrintedProductStorageKey(sourceOrderId));
+        try {
+            await Promise.all([
+                updateOrderPrintedQuantitiesMutation({
+                    variables: { orderId: destinationOrder.id, printedQuantities: printedQuantitiesToList(destinationPrintedProductQuantities) },
+                }),
+                updateOrderPrintedQuantitiesMutation({
+                    variables: { orderId: sourceOrder.id, printedQuantities: [] },
+                }),
+            ]);
+            setPrintedProductQuantities(destinationPrintedProductQuantities);
+        } catch {}
     };
 
     // Merges one running dine-in order into the selected table order (destination).
@@ -1262,6 +1264,8 @@ const TableNumberFeatureEnabledPage = () => {
         if (!sourceOrder) throw new Error("Source table does not have an active running order.");
         if (sourceOrder.id === destinationOrder.id) throw new Error("Source and destination orders are the same.");
 
+        const [freshDestinationOrder, freshSourceOrder] = await Promise.all([getFreshOrder(destinationOrder), getFreshOrder(sourceOrder)]);
+
         const endpoint = getCreateMergedOrderEndpoint();
         await axios({
             method: "post",
@@ -1273,7 +1277,7 @@ const TableNumberFeatureEnabledPage = () => {
             },
         });
 
-        mergePrintedProductTracking(destinationOrder.id, sourceOrder.id);
+        await mergePrintedProductTracking(freshDestinationOrder, freshSourceOrder);
 
         const refreshedOrdersResponse: any = await refetchActiveOrders();
         const refreshedOrders = (refreshedOrdersResponse?.data?.getOrdersByRestaurantByPlacedAt?.items || []).filter(Boolean);
@@ -1305,7 +1309,7 @@ const TableNumberFeatureEnabledPage = () => {
             if (typeof refreshedDestinationOrder.covers === "number" && refreshedDestinationOrder.covers > 0) {
                 setCovers(refreshedDestinationOrder.covers);
             }
-            initializeRunningOrderPrintedProductTracking(refreshedDestinationOrder);
+            setPrintedProductQuantities(initializeRunningOrderPrintedProductTracking(refreshedDestinationOrder));
         }
 
         toast.success(`Running order merged into Table ${normalizedDestinationTable}.`);

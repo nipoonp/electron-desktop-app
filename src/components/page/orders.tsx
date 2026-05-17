@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { useMutation } from "@apollo/client";
+import { useLazyQuery, useMutation } from "@apollo/client";
 import axios from "axios";
-import { UPDATE_ORDER_STATUS } from "../../graphql/customMutations";
+import { UPDATE_ORDER_PRINTED_QUANTITIES, UPDATE_ORDER_STATUS } from "../../graphql/customMutations";
 import {
     EOrderStatus,
     ERegisterPrinterType,
+    GET_ORDER,
     GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT,
     IGET_RESTAURANT_REGISTER_PRINTER,
     UPDATE_RESTAURANT_PREPARATION_TIME,
@@ -33,6 +34,7 @@ import {
     isItemSoldOut,
     isModifierQuantityAvailable,
     isProductQuantityAvailable,
+    printedQuantitiesListToMap,
     toLocalISOString,
 } from "../../util/util";
 import { convertCentsToDollars } from "../../util/util";
@@ -75,6 +77,7 @@ const Orders = () => {
         setProducts,
         cartProductQuantitiesById,
         setCustomerInformation,
+        setPrintedProductQuantities,
     } = useCart();
     const [eOrderStatus, setEOrderStatus] = useState(restaurant?.autoCompleteOrders ? EOrderStatus.COMPLETED : EOrderStatus.NEW);
 
@@ -90,6 +93,7 @@ const Orders = () => {
     const [selectedMergeOrderIds, setSelectedMergeOrderIds] = useState<string[]>([]);
 
     const { data: orders, error, loading, refetch } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant ? restaurant.id : "", date);
+    const [getOrder] = useLazyQuery(GET_ORDER, { fetchPolicy: "network-only" });
 
     const { getRestaurant } = useGetRestaurantLazyQuery();
 
@@ -119,6 +123,7 @@ const Orders = () => {
     const [updateOrderStatusMutation] = useMutation(UPDATE_ORDER_STATUS, {
         refetchQueries: refetchOrders,
     });
+    const [updateOrderPrintedQuantitiesMutation] = useMutation(UPDATE_ORDER_PRINTED_QUANTITIES);
 
     if (!restaurant) return <div>Please select a restaurant.</div>;
     if (loading) return <FullScreenSpinner show={true} text="Loading restaurant" />;
@@ -343,65 +348,51 @@ const Orders = () => {
 
     const onOpenParkedOrder = async (parkedOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         try {
-            const pOrder = {
-                id: parkedOrder.id,
-                status: parkedOrder.status,
-                notes: parkedOrder.notes,
-                products: parkedOrder.products,
-                total: parkedOrder.total,
-                subTotal: parkedOrder.subTotal,
-                type: parkedOrder.type,
-                number: parkedOrder.number,
-                table: parkedOrder.table,
-                buzzer: parkedOrder.buzzer,
-                covers: parkedOrder.covers,
-                customerInformation: parkedOrder.customerInformation,
-            };
-
             if (!restaurant) return;
 
-            const getPrintedProductQuantities = (orderId: string) => {
-                try {
-                    const parsedProductQuantities = JSON.parse(localStorage.getItem(`parkedOrderPrintedProductIds:${orderId}`) || "{}");
-                    if (!parsedProductQuantities) return {} as Record<string, number>;
+            // Fetch the single order fresh so printedQuantities is up to date across POS terminals.
+            const freshResult = await getOrder({ variables: { id: parkedOrder.id } });
+            const pOrder: IGET_RESTAURANT_ORDER_FRAGMENT = freshResult.data?.getOrder ?? parkedOrder;
 
-                    return Object.entries(parsedProductQuantities).reduce(
-                        (printedProductQuantities, [productId, quantity]) => {
-                            if (typeof quantity === "number" && quantity > 0) printedProductQuantities[productId] = quantity;
+            const mergedPrintedProductQuantities = printedQuantitiesListToMap(pOrder.printedQuantities);
+            let hasMergedPrintedProducts = Object.keys(mergedPrintedProductQuantities).length > 0;
 
-                            return printedProductQuantities;
-                        },
-                        {} as Record<string, number>,
-                    );
-                } catch {
-                    return {} as Record<string, number>;
-                }
-            };
+            const mergedOrders = await Promise.all(
+                orders
+                    .filter((order) => order.orderMergeId === pOrder.id)
+                    .map(async (order) => {
+                        const mergedResult = await getOrder({ variables: { id: order.id } });
+                        return (mergedResult.data?.getOrder ?? order) as IGET_RESTAURANT_ORDER_FRAGMENT;
+                    }),
+            );
 
-            const mergedPrintedProductQuantities = getPrintedProductQuantities(pOrder.id);
-            let hasMergedPrintedProducts = false;
+            for (const mergedOrder of mergedOrders) {
+                const printedProductQuantities = printedQuantitiesListToMap(mergedOrder.printedQuantities);
 
-            orders
-                .filter((order) => order.orderMergeId === pOrder.id)
-                .forEach((mergedOrder) => {
-                    const printedProductQuantities = getPrintedProductQuantities(mergedOrder.id);
-                    if (Object.keys(printedProductQuantities).length === 0) return;
+                if (Object.keys(printedProductQuantities).length === 0) continue;
 
-                    Object.entries(printedProductQuantities).forEach(([productId, quantity]) => {
-                        mergedPrintedProductQuantities[productId] = (mergedPrintedProductQuantities[productId] || 0) + quantity;
-                    });
-
-                    localStorage.removeItem(`parkedOrderPrintedProductIds:${mergedOrder.id}`);
-                    hasMergedPrintedProducts = true;
+                Object.entries(printedProductQuantities).forEach(([lineKey, quantity]) => {
+                    mergedPrintedProductQuantities[lineKey] = (mergedPrintedProductQuantities[lineKey] || 0) + quantity;
                 });
 
-            if (hasMergedPrintedProducts) {
-                localStorage.setItem(`parkedOrderPrintedProductIds:${pOrder.id}`, JSON.stringify(mergedPrintedProductQuantities));
+                hasMergedPrintedProducts = true;
+
+                try {
+                    await updateOrderPrintedQuantitiesMutation({
+                        variables: { orderId: mergedOrder.id, printedQuantities: [] },
+                    });
+                } catch {}
             }
 
             navigate(restaurantPath + "/" + restaurant.id);
 
             clearCart();
+
+            if (hasMergedPrintedProducts) {
+                setPrintedProductQuantities(mergedPrintedProductQuantities);
+            } else {
+                setPrintedProductQuantities({});
+            }
 
             setParkedOrderId(pOrder.id);
             setParkedOrderNumber(pOrder.number);
@@ -906,7 +897,7 @@ const Order = (props: {
                     )}
                 </div>
                 {order.status === EOrderStatus.PARKED ? (
-                    <div className="mb-1">Order parked: {format(new Date(order.placedAt), "dd MMM h:mm:ss aa")}</div>
+                    <div className="mb-1">Order parked: {format(new Date(order.parkedAt || order.placedAt), "dd MMM h:mm:ss aa")}</div>
                 ) : (
                     <div className="mb-1">Order placed: {format(new Date(order.placedAt), "dd MMM h:mm:ss aa")}</div>
                 )}

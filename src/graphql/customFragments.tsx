@@ -7,6 +7,10 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         country
         placedAt
         parkedAt
+        printedQuantities {
+            lineKey
+            quantity
+        }
         completedAt
         cancelledAt
         refundedAt
@@ -224,6 +228,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     country: string;
     placedAt: string;
     parkedAt: string | null;
+    printedQuantities: { lineKey: string; quantity: number }[] | null;
     completedAt: string | null;
     cancelledAt: string | null;
     refundedAt: string | null;
