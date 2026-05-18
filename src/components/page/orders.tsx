@@ -740,14 +740,16 @@ const Orders = () => {
                 <div className="orders-wrapper">
                     {(() => {
                         const mergedChildrenMap: Record<string, IGET_RESTAURANT_ORDER_FRAGMENT[]> = {};
-                        orders.forEach((o) => {
+                        const visibleOrders = orders.filter((o) => o.cancellationReason?.includes("ONLINE_PAYMENT_FAILED") !== true);
+
+                        visibleOrders.forEach((o) => {
                             if (o.orderMergeId) {
                                 if (!mergedChildrenMap[o.orderMergeId]) mergedChildrenMap[o.orderMergeId] = [];
                                 mergedChildrenMap[o.orderMergeId].push(o);
                             }
                         });
 
-                        const displayOrders = orders.filter((o) => !o.orderMergeId);
+                        const displayOrders = visibleOrders.filter((o) => !o.orderMergeId);
 
                         return displayOrders.map(
                             (order) =>

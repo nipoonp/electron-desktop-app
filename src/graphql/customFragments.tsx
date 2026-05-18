@@ -36,6 +36,8 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         subTotal
         tax
         paid
+        paymentInProgress
+        cancellationReason
         paymentAmounts {
             cash
             eftpos
@@ -255,6 +257,8 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     tax: number;
     subTotal: number;
     paid: boolean;
+    paymentInProgress: boolean | null;
+    cancellationReason: string | null;
     paymentAmounts: IOrderPaymentAmounts | null;
     thirdPartyIntegrationResult: {
         shift8IsSuccess: boolean | null;
