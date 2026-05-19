@@ -27,6 +27,11 @@ type TResolvedTakingsScope = {
     scopeKey: string;
 };
 
+export type TPaymentSummarySnapshot = Record<
+    TPaymentKey,
+    { recordedCents: number; countedCents: number; differenceCents: number; moneyInCents?: number; moneyOutCents?: number }
+>;
+
 const BUSINESS_TIME_ZONE = "Pacific/Auckland";
 const LEGACY_PAYMENT_REASON_PREFIX = /^\[Payment: ([^\]]+)\]\s*/;
 
@@ -164,18 +169,54 @@ export const toCents = (value?: string) => {
     return Number.isFinite(parsed) ? convertDollarsToCentsReturnInt(parsed) : 0;
 };
 
-// Identifies movements that should affect physical drawer cash rather than non-cash payment totals.
-export const isCashDrawerMovement = (movement: IGET_CASH_MOVEMENT) => {
-    // Old CashMovement rows do not have paymentMethod; treat them as cash so existing history remains usable.
-    return !movement.paymentMethod || movement.paymentMethod === ECashMovementPaymentMethod.CASH;
+// Maps a cash-movement payment method into the payment-summary key used by cash-up reconciliation.
+export const getCashMovementPaymentKey = (paymentMethod?: ECashMovementPaymentMethod | null): TPaymentKey | null => {
+    switch (paymentMethod) {
+        case ECashMovementPaymentMethod.EFTPOS:
+            return "eftpos";
+        case ECashMovementPaymentMethod.ONLINE:
+            return "online";
+        case ECashMovementPaymentMethod.CASH:
+        case null:
+        case undefined:
+            return "cash";
+        default:
+            return null;
+    }
+};
+
+// Limits automatic business-date roll-forward to untouched placeholder sessions only.
+export const isReusableOpenTakingsSession = (session: IGET_TAKINGS_SESSION | null | undefined, linkedMovements: IGET_CASH_MOVEMENT[] = []) => {
+    if (!session || session.status !== ETakingsSessionStatus.OPEN) return false;
+    if (linkedMovements.some((movement) => movement.takingsSessionId === session.id)) return false;
+
+    return (
+        (session.cashSalesCents || 0) === 0 &&
+        (session.cashRefundsCents || 0) === 0 &&
+        (session.moneyInCents || 0) === 0 &&
+        (session.moneyOutCents || 0) === 0 &&
+        (session.cashDropsCents || 0) === 0 &&
+        (session.tipPayoutsCents || 0) === 0 &&
+        (session.recordedTotalCents || 0) === 0 &&
+        (session.countedTotalCents || 0) === 0 &&
+        (session.paymentVarianceCents || 0) === 0 &&
+        (session.openOrdersCount || 0) === 0 &&
+        (session.unpaidOrdersCount || 0) === 0 &&
+        (session.parkedOrdersCount || 0) === 0 &&
+        !session.paymentSummaryJson &&
+        !session.varianceReason &&
+        !session.notes
+    );
+};
+
+// Uses the audit-close time for finalized sessions and the activity/display time for open sessions.
+export const getTakingsSessionDisplayTimestamp = (session: IGET_TAKINGS_SESSION) => {
+    if (session.status === ETakingsSessionStatus.FINALIZED) return session.finalizedAt || session.lastActivityAt || session.openedAt;
+    return session.lastActivityAt || session.openedAt;
 };
 
 // Filters order rows down to the active takings scope so site and register cash-up views reconcile correctly.
-export const orderMatchesTakingsScope = (
-    order: IGET_RESTAURANT_ORDER_FRAGMENT,
-    scopeType: ETakingsScopeType,
-    scopeId: string
-) => {
+export const orderMatchesTakingsScope = (order: IGET_RESTAURANT_ORDER_FRAGMENT, scopeType: ETakingsScopeType, scopeId: string) => {
     switch (scopeType) {
         case ETakingsScopeType.REGISTER:
             return order.settledRegisterId === scopeId || order.registerId === scopeId;
@@ -188,29 +229,67 @@ export const orderMatchesTakingsScope = (
 };
 
 // Aggregates order paymentAmounts into the recorded totals shown in the cash-up payment rows.
-export const buildRecordedTotals = (orders: IGET_RESTAURANT_ORDER_FRAGMENT[] | null): TPaymentTotals => {
+const addPaymentAmounts = (totals: TPaymentTotals, amounts: IGET_RESTAURANT_ORDER_FRAGMENT["paymentAmounts"], multiplier = 1) => {
+    if (!amounts) return;
+
+    totals.cash += (amounts.cash || 0) * multiplier;
+    totals.eftpos += (amounts.eftpos || 0) * multiplier;
+    totals.online += (amounts.online || 0) * multiplier;
+    totals.uberEats += (amounts.uberEats || 0) * multiplier;
+    totals.menulog += (amounts.menulog || 0) * multiplier;
+    totals.doordash += (amounts.doordash || 0) * multiplier;
+    totals.delivereasy += (amounts.delivereasy || 0) * multiplier;
+};
+
+// Uses UTC settlement timestamps only so reconciliation matches the UTC session boundary.
+const getOrderSettlementTimestamp = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+    if (!order.paid || !order.paymentAmounts) return null;
+    return order.settledAtUtc;
+};
+
+const getOrderRefundTimestamp = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => order.refundedAtUtc;
+const getOrderParkedTimestamp = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => order.parkedAtUtc;
+const getOrderPlacedTimestamp = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => order.placedAtUtc;
+
+export const buildRecordedTotals = (orders: IGET_RESTAURANT_ORDER_FRAGMENT[] | null, sessionOpenedAt: string | null | undefined): TPaymentTotals => {
     const totals = createPaymentTotals();
 
     orders?.forEach((order) => {
-        // Recorded takings only include orders that were actually paid and not later cancelled/refunded.
-        if (order.status === EOrderStatus.CANCELLED || order.status === EOrderStatus.REFUNDED) return;
-        if (!order.paid || !order.paymentAmounts) return;
-
-        totals.cash += order.paymentAmounts.cash || 0;
-        totals.eftpos += order.paymentAmounts.eftpos || 0;
-        totals.online += order.paymentAmounts.online || 0;
-        totals.uberEats += order.paymentAmounts.uberEats || 0;
-        totals.menulog += order.paymentAmounts.menulog || 0;
-        totals.doordash += order.paymentAmounts.doordash || 0;
-        totals.delivereasy += order.paymentAmounts.delivereasy || 0;
+        // Reconciliation follows payment events inside the session window:
+        // settled payments add to recorded totals and refunds subtract from them.
+        if (isTimestampWithinSessionWindow(getOrderSettlementTimestamp(order), sessionOpenedAt)) addPaymentAmounts(totals, order.paymentAmounts, 1);
+        if (isTimestampWithinSessionWindow(getOrderRefundTimestamp(order), sessionOpenedAt)) {
+            addPaymentAmounts(totals, order.refundPaymentAmounts || order.paymentAmounts, -1);
+        }
     });
 
     return totals;
 };
 
-// Sorts takings sessions so the newest opened session is handled first in active and history views.
+// Uses any payment-related event in the current session window to decide whether an order affects takings.
+export const orderHasTakingsActivityInSession = (order: IGET_RESTAURANT_ORDER_FRAGMENT, sessionOpenedAt: string | null | undefined) =>
+    isTimestampWithinSessionWindow(getOrderSettlementTimestamp(order), sessionOpenedAt) ||
+    isTimestampWithinSessionWindow(getOrderRefundTimestamp(order), sessionOpenedAt) ||
+    isTimestampWithinSessionWindow(getOrderParkedTimestamp(order), sessionOpenedAt) ||
+    isTimestampWithinSessionWindow(getOrderPlacedTimestamp(order), sessionOpenedAt);
+
+// Checks whether a timestamp belongs to the current takings session window.
+export const isTimestampWithinSessionWindow = (value: string | null | undefined, sessionOpenedAt: string | null | undefined) => {
+    if (!sessionOpenedAt) return false;
+
+    const valueTime = value ? new Date(value).getTime() : Number.NaN;
+    const sessionStartTime = new Date(sessionOpenedAt).getTime();
+
+    if (!Number.isFinite(valueTime) || !Number.isFinite(sessionStartTime)) return false;
+
+    return valueTime >= sessionStartTime;
+};
+
+// Sorts takings sessions so the newest visible session activity is handled first in active and history views.
 export const sortSessions = (sessions: IGET_TAKINGS_SESSION[]) =>
-    [...sessions].sort((left, right) => new Date(right.openedAt).getTime() - new Date(left.openedAt).getTime());
+    [...sessions].sort(
+        (left, right) => new Date(getTakingsSessionDisplayTimestamp(right)).getTime() - new Date(getTakingsSessionDisplayTimestamp(left)).getTime(),
+    );
 
 // Maps a payment key to the user-facing label shown in the cash-up payment list.
 export const getPaymentLabel = (key: TPaymentKey) => {
@@ -245,7 +324,8 @@ export const formatHistoryDate = (value: string) => {
 };
 
 // Converts takings session status values into the exact history labels expected by the UI.
-export const getHistoryStatusLabel = (status: ETakingsSessionStatus) => (status === ETakingsSessionStatus.FINALIZED ? "Finalised" : "Not yet finalised");
+export const getHistoryStatusLabel = (status: ETakingsSessionStatus) =>
+    status === ETakingsSessionStatus.FINALIZED ? "Finalised" : "Not yet finalised";
 
 // Maps the active scope into the main takings heading shown above the payment rows.
 export const getTakingsScopeTitle = (scopeType: ETakingsScopeType) => {
@@ -303,3 +383,6 @@ export const getMovementPaymentLabel = (paymentMethod?: ECashMovementPaymentMeth
 
 // Removes the old payment-method prefix from legacy reasons so history notes remain readable.
 export const getMovementReasonText = (reason?: string | null) => reason?.replace(LEGACY_PAYMENT_REASON_PREFIX, "").trim() || "-";
+
+export const buildTakingsScopeStorageKey = (restaurantId?: string | null, registerId?: string | null) =>
+    `takingsScopePreference:${restaurantId || "none"}:${registerId || "none"}`;

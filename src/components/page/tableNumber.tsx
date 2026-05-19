@@ -9,6 +9,7 @@ import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { Button } from "../../tabin/components/button";
 import { useRestaurant } from "../../context/restaurant-context";
 import { useUser } from "../../context/user-context";
+import { usePosUser } from "../../context/pos-user-context";
 import {
     FiX,
     FiEdit2,
@@ -211,6 +212,8 @@ const TableNumberFeatureEnabledPage = () => {
     const { restaurant } = useRestaurant();
     const { register, isPOS } = useRegister();
     const { user } = useUser();
+    const { selectedPosUser } = usePosUser();
+    const effectiveOrderUserId = selectedPosUser?.userId || user?.id;
     const {
         clearCart,
         parkedOrderId,
@@ -1176,6 +1179,7 @@ const TableNumberFeatureEnabledPage = () => {
         const subTotal = options?.preserveFinancials ? order.subTotal : total;
         const tableValue = options?.tableOverride !== undefined ? `${options.tableOverride || ""}`.trim() : `${order.table || ""}`.trim();
         const sanitizedProducts = cloneAndSanitizeCartProducts(nextProducts);
+        if (!effectiveOrderUserId) throw new Error("Cannot perform this action because user context is missing.");
 
         const variables: Record<string, any> = {
             orderId: order.id,
@@ -1200,7 +1204,7 @@ const TableNumberFeatureEnabledPage = () => {
             parkedAtUtc: status === EOrderStatus.PARKED ? now.toISOString() : undefined,
             completedAt: status === EOrderStatus.COMPLETED ? order.completedAt || toLocalISOString(now) : undefined,
             completedAtUtc: status === EOrderStatus.COMPLETED ? now.toISOString() : undefined,
-            orderUserId: user.id,
+            orderUserId: effectiveOrderUserId,
             orderRestaurantId: restaurant.id,
         };
 

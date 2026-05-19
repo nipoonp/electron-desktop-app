@@ -86,6 +86,9 @@ export const GET_USER = gql`
             }
             userRestaurants(limit: 1000) {
                 items {
+                    posPinEnabled
+                    posPin
+                    posPinUpdatedAt
                     restaurant {
                         id
                         name
@@ -110,9 +113,7 @@ export interface IGET_USER {
         items: IGET_USER_RESTAURANT[];
     };
     userRestaurants: {
-        items: {
-            restaurant: IGET_USER_RESTAURANT;
-        }[];
+        items: IGET_USER_RESTAURANT_LINK[];
     };
 }
 
@@ -123,6 +124,32 @@ export interface IGET_USER_RESTAURANT {
     address: {
         formattedAddress: string;
     };
+    posPinEnabled?: boolean | null;
+    posPin?: string | null;
+    posPinUpdatedAt?: string | null;
+}
+
+export interface IGET_USER_RESTAURANT_LINK {
+    posPinEnabled?: boolean | null;
+    posPin?: string | null;
+    posPinUpdatedAt?: string | null;
+    restaurant: IGET_USER_RESTAURANT;
+}
+
+export interface IGET_RESTAURANT_USER {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    image?: IS3Object | null;
+}
+
+export interface IGET_RESTAURANT_USER_LINK {
+    id: string;
+    posPinEnabled?: boolean | null;
+    posPin?: string | null;
+    posPinUpdatedAt?: string | null;
+    user: IGET_RESTAURANT_USER;
 }
 
 export interface IGET_USER_REGISTER_PRINTER {
@@ -239,6 +266,26 @@ export const GET_RESTAURANT = gql`
             takingsVarianceReasonThresholdCents
             takingsBlockIfOpenOrders
             salesReportMailingList
+            users {
+                items {
+                    id
+                    posPinEnabled
+                    posPin
+                    posPinUpdatedAt
+                    user {
+                        id
+                        firstName
+                        lastName
+                        email
+                        image {
+                            key
+                            bucket
+                            region
+                            identityPoolId
+                        }
+                    }
+                }
+            }
             orderThresholds {
                 enable
             }
@@ -329,6 +376,7 @@ export const GET_RESTAURANT = gql`
                     id
                     active
                     name
+                    enablePosPinFeature
                     enableTableFlags
                     enableCovers
                     enableBuzzerNumbersForTakeaway
@@ -1059,6 +1107,9 @@ export interface IGET_RESTAURANT {
     takingsVarianceReasonThresholdCents: number | null;
     takingsBlockIfOpenOrders: boolean | null;
     salesReportMailingList: string | null;
+    users: {
+        items: IGET_RESTAURANT_USER_LINK[];
+    };
     orderThresholds: {
         enable: boolean;
     } | null;
@@ -1133,6 +1184,7 @@ export interface IGET_RESTAURANT_REGISTER {
     id: string;
     active: boolean;
     name: string;
+    enablePosPinFeature?: boolean;
     enableTableFlags: boolean;
     enableCovers: boolean;
     enableBuzzerNumbersForTakeaway: boolean;
@@ -1629,6 +1681,8 @@ export interface IGET_TAKINGS_SESSION {
     sessionNumber: number;
     status: ETakingsSessionStatus;
     openedAt: string;
+    openedAtUtc: string | null;
+    lastActivityAt: string | null;
     finalizedAt: string | null;
     openedBy: string | null;
     finalizedBy: string | null;
@@ -1643,6 +1697,10 @@ export interface IGET_TAKINGS_SESSION {
     expectedDrawerCashCents: number;
     countedDrawerCashCents: number;
     varianceCents: number;
+    recordedTotalCents: number | null;
+    countedTotalCents: number | null;
+    paymentVarianceCents: number | null;
+    paymentSummaryJson: string | null;
     varianceReason: string | null;
     openOrdersCount: number;
     unpaidOrdersCount: number;
@@ -1678,6 +1736,50 @@ export interface IS3Object {
     region: string;
     identityPoolId: string;
 }
+
+export const GET_TAKINGS_SESSION = gql`
+    query GetTakingsSession($id: ID!) {
+        getTakingsSession(id: $id) {
+            id
+            restaurantId
+            businessDate
+            scopeType
+            scopeId
+            scopeKey
+            sessionNumber
+            status
+            openedAt
+            openedAtUtc
+            lastActivityAt
+            finalizedAt
+            openedBy
+            finalizedBy
+            openingFloatCents
+            declaredClosingFloatCents
+            cashSalesCents
+            cashRefundsCents
+            moneyInCents
+            moneyOutCents
+            cashDropsCents
+            tipPayoutsCents
+            expectedDrawerCashCents
+            countedDrawerCashCents
+            varianceCents
+            recordedTotalCents
+            countedTotalCents
+            paymentVarianceCents
+            paymentSummaryJson
+            varianceReason
+            openOrdersCount
+            unpaidOrdersCount
+            parkedOrdersCount
+            notes
+            owner
+            createdAt
+            updatedAt
+        }
+    }
+`;
 
 export const GET_PROMOTION_BY_CODE = gql`
     query getPromotionsByCode($code: String!, $promotionRestaurantId: ID!) {
@@ -2391,6 +2493,8 @@ export const GET_TAKINGS_SESSIONS_BY_SCOPE_KEY_BY_OPENED_AT = gql`
                 sessionNumber
                 status
                 openedAt
+                openedAtUtc
+                lastActivityAt
                 finalizedAt
                 openedBy
                 finalizedBy
@@ -2405,6 +2509,10 @@ export const GET_TAKINGS_SESSIONS_BY_SCOPE_KEY_BY_OPENED_AT = gql`
                 expectedDrawerCashCents
                 countedDrawerCashCents
                 varianceCents
+                recordedTotalCents
+                countedTotalCents
+                paymentVarianceCents
+                paymentSummaryJson
                 varianceReason
                 openOrdersCount
                 unpaidOrdersCount

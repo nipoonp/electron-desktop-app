@@ -9,6 +9,7 @@ import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
 import { useAuth, AuthenticationStatus } from "../context/auth-context";
 import { useUser } from "../context/user-context";
 import { useRestaurant } from "../context/restaurant-context";
+import { usePosUser } from "../context/pos-user-context";
 import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { useRegister } from "../context/register-context";
 import { ITab } from "../model/model";
@@ -25,6 +26,8 @@ const CustomerDisplay = lazy(() => import("./page/customerDisplay"));
 const Restaurant = lazy(() => import("./page/restaurant"));
 const RestaurantList = lazy(() => import("./page/restaurantList"));
 const RegisterList = lazy(() => import("./page/registerList"));
+const PosUserList = lazy(() => import("./page/posUserList"));
+const PosPin = lazy(() => import("./page/posPin"));
 const Orders = lazy(() => import("./page/orders"));
 const Dashboard = lazy(() => import("./page/dashboard"));
 const BeginOrder = lazy(() => import("./page/beginOrder"));
@@ -58,6 +61,8 @@ export const customerDisplayPath = "/customer_display";
 export const restaurantListPath = "/restaurant_list";
 export const registerListPath = "/register_list";
 export const ordersPath = "/orders";
+export const posUserListPath = "/pos_user_list";
+export const posPinPath = "/pos_pin";
 export const dashboardPath = "/dashboard";
 export const configureNewEftposPath = "/configure_new_eftpos";
 export const beginOrderPath = "/begin_order";
@@ -121,6 +126,11 @@ export const tabs: ITab[] = [
                 id: "configureRegister",
                 name: "Configure Register",
                 route: registerListPath,
+            },
+            {
+                id: "selectPosUser",
+                name: "Select POS User",
+                route: posUserListPath,
             },
             {
                 id: "logout",
@@ -217,27 +227,29 @@ const AppRoutes = () => {
                 <Route path={customerDisplayPath} element={<CustomerDisplay />} />
                 <Route path={restaurantListPath} element={<PrivateRoute element={<RestaurantList />} />} />
                 <Route path={registerListPath} element={<PrivateRoute element={<RegisterList />} />} />
-                <Route path={ordersPath} element={<RestaurantRegisterPrivateRoute element={<Orders />} />}>
-                    <Route path=":date" element={<RestaurantRegisterPrivateRoute element={<Orders />} />} />
+                <Route path={posUserListPath} element={<RestaurantRegisterPosSetupPrivateRoute element={<PosUserList />} />} />
+                <Route path={posPinPath} element={<RestaurantRegisterPosSetupPrivateRoute element={<PosPin />} />} />
+                <Route path={ordersPath} element={<RestaurantRegisterPosPrivateRoute element={<Orders />} />}>
+                    <Route path=":date" element={<RestaurantRegisterPosPrivateRoute element={<Orders />} />} />
                 </Route>
-                <Route path={dashboardPath} element={<RestaurantRegisterPrivateRoute element={<Dashboard />} />} />
-                <Route path={configureNewEftposPath} element={<RestaurantRegisterPrivateRoute element={<ConfigureNewEftpos />} />} />
-                <Route path={beginOrderPath} element={<RestaurantRegisterPrivateRoute element={<BeginOrder />} />} />
-                <Route path={`${restaurantPath}/:restaurantId`} element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />}>
-                    <Route path=":selectedCategoryId" element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />}>
-                        <Route path=":selectedProductId" element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />} />
+                <Route path={dashboardPath} element={<RestaurantRegisterPosPrivateRoute element={<Dashboard />} />} />
+                <Route path={configureNewEftposPath} element={<RestaurantRegisterPosPrivateRoute element={<ConfigureNewEftpos />} />} />
+                <Route path={beginOrderPath} element={<RestaurantRegisterSalePrivateRoute element={<BeginOrder />} />} />
+                <Route path={`${restaurantPath}/:restaurantId`} element={<RestaurantRegisterSalePrivateRoute element={<Restaurant />} />}>
+                    <Route path=":selectedCategoryId" element={<RestaurantRegisterSalePrivateRoute element={<Restaurant />} />}>
+                        <Route path=":selectedProductId" element={<RestaurantRegisterSalePrivateRoute element={<Restaurant />} />} />
                     </Route>
                 </Route>
-                <Route path={orderTypePath} element={<RestaurantRegisterPrivateRoute element={<OrderType />} />} />
-                <Route path={tableNumberPath} element={<RestaurantRegisterPrivateRoute element={<TableNumber />} />} />
-                <Route path={buzzerNumberPath} element={<RestaurantRegisterPrivateRoute element={<BuzzerNumber />} />} />
-                <Route path={customerInformationPath} element={<RestaurantRegisterPrivateRoute element={<RequireCustomerInformation />} />} />
-                <Route path={paymentMethodPath} element={<RestaurantRegisterPrivateRoute element={<PaymentMethod />} />} />
-                <Route path={checkoutPath} element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}>
-                    <Route path=":autoClickCompleteOrderOnLoad" element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}></Route>
+                <Route path={orderTypePath} element={<RestaurantRegisterSalePrivateRoute element={<OrderType />} />} />
+                <Route path={tableNumberPath} element={<RestaurantRegisterSalePrivateRoute element={<TableNumber />} />} />
+                <Route path={buzzerNumberPath} element={<RestaurantRegisterSalePrivateRoute element={<BuzzerNumber />} />} />
+                <Route path={customerInformationPath} element={<RestaurantRegisterSalePrivateRoute element={<RequireCustomerInformation />} />} />
+                <Route path={paymentMethodPath} element={<RestaurantRegisterSalePrivateRoute element={<PaymentMethod />} />} />
+                <Route path={checkoutPath} element={<RestaurantRegisterSalePrivateRoute element={<Checkout />} />}>
+                    <Route path=":autoClickCompleteOrderOnLoad" element={<RestaurantRegisterSalePrivateRoute element={<Checkout />} />}></Route>
                 </Route>
-                <Route path={cashUpPath} element={<RestaurantRegisterPrivateRoute element={<CashUp />} />} />
-                <Route path={moneyInOutPath} element={<RestaurantRegisterPrivateRoute element={<MoneyInOut />} />} />
+                <Route path={cashUpPath} element={<RestaurantRegisterPosPrivateRoute element={<CashUp />} />} />
+                <Route path={moneyInOutPath} element={<RestaurantRegisterPosPrivateRoute element={<MoneyInOut />} />} />
                 <Route path={unauthorizedPath} element={<Unauthorised />} />
                 <Route path="*" element={<NoMatch />} />
             </Routes>
@@ -298,4 +310,50 @@ const RestaurantRegisterPrivateRoute = ({ element }) => {
 
     // Route to original path
     return element;
+};
+
+const PosUserPrivateRoute = ({ element }) => {
+    const { selectedPosUser, isUnlocked, availableUsers, isPosPinFeatureEnabled, hasSkippedPosUserSelection } = usePosUser();
+
+    if (!isPosPinFeatureEnabled) return element;
+
+    if (availableUsers.length === 0) {
+        if (hasSkippedPosUserSelection) return element;
+        return <Navigate to={posUserListPath} />;
+    }
+
+    if (!selectedPosUser) return <Navigate to={posUserListPath} />;
+    if (!isUnlocked) return <Navigate to={posPinPath} />;
+
+    return element;
+};
+
+const RestaurantRegisterPosPrivateRoute = ({ element }) => {
+    const { isPOS, isPosPinFeatureEnabled } = useRegister();
+
+    // POS user selection and PIN screens should never appear for kiosk-style flows.
+    if (isPOS === false) return <Navigate to={beginOrderPath} replace />;
+
+    if (!isPosPinFeatureEnabled) return <RestaurantRegisterPrivateRoute element={element} />;
+
+    return <RestaurantRegisterPrivateRoute element={<PosUserPrivateRoute element={element} />} />;
+};
+
+const RestaurantRegisterSalePrivateRoute = ({ element }) => {
+    const { isPOS, isPosPinFeatureEnabled } = useRegister();
+
+    // Shared sales pages work for every register. Only POS registers require the staff selection gate.
+    if (isPOS === false || !isPosPinFeatureEnabled) return <RestaurantRegisterPrivateRoute element={element} />;
+
+    return <RestaurantRegisterPrivateRoute element={<PosUserPrivateRoute element={element} />} />;
+};
+
+const RestaurantRegisterPosSetupPrivateRoute = ({ element }) => {
+    const { isPOS, isPosPinFeatureEnabled } = useRegister();
+
+    // Non-POS registers should skip the POS user selection flow completely.
+    if (isPOS === false) return <Navigate to={beginOrderPath} replace />;
+    if (!isPosPinFeatureEnabled) return <Navigate to={beginOrderPath} replace />;
+
+    return <RestaurantRegisterPrivateRoute element={element} />;
 };

@@ -75,6 +75,7 @@ import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
 import { useRestaurant } from "../../context/restaurant-context";
+import { usePosUser } from "../../context/pos-user-context";
 import { UpSellProductModal } from "../modals/upSellProduct";
 import { Link } from "../../tabin/components/link";
 import { TextArea } from "../../tabin/components/textArea";
@@ -259,7 +260,9 @@ export const Checkout = () => {
     const { register, isPOS } = useRegister();
     const { printReceipt, printEftposReceipt, printLabel, printNoSaleReceipt } = useReceiptPrinter();
     const { user } = useUser();
+    const { selectedPosUser } = usePosUser();
     const { logError } = useErrorLogging();
+    const effectiveOrderUserId = selectedPosUser?.userId || user?.id;
 
     const transactionEftposReceipts = useRef<string>("");
 
@@ -1271,6 +1274,8 @@ export const Checkout = () => {
             : undefined;
 
         try {
+            if (!effectiveOrderUserId) throw new Error("Cannot create order because user context is missing.");
+
             variables = {
                 country: restaurant.country,
                 status: orderStatus,
@@ -1315,7 +1320,10 @@ export const Checkout = () => {
                 products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
                 placedAt: toLocalISOString(now),
                 placedAtUtc: now.toISOString(),
-                orderUserId: user.id,
+                settledAt: paid ? toLocalISOString(now) : undefined,
+                settledAtUtc: paid ? now.toISOString() : undefined,
+                settledRegisterId: paid ? register.id : undefined,
+                orderUserId: effectiveOrderUserId,
                 orderRestaurantId: restaurant.id,
             };
 
@@ -1379,7 +1387,7 @@ export const Checkout = () => {
                     products: JSON.stringify(products), // copy obj so we can mutate it later
                     placedAt: toLocalISOString(now),
                     placedAtUtc: now.toISOString(),
-                    orderUserId: user.id,
+                    orderUserId: effectiveOrderUserId,
                     orderRestaurantId: restaurant.id,
                 }),
             );

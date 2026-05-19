@@ -99,6 +99,9 @@ export const CREATE_ORDER = gql`
         $products: [OrderProductInput!]
         $placedAt: String
         $placedAtUtc: String
+        $settledAt: String
+        $settledAtUtc: String
+        $settledRegisterId: ID
         $completedAt: String
         $completedAtUtc: String
         $parkedAt: String
@@ -139,6 +142,9 @@ export const CREATE_ORDER = gql`
                 products: $products
                 placedAt: $placedAt
                 placedAtUtc: $placedAtUtc
+                settledAt: $settledAt
+                settledAtUtc: $settledAtUtc
+                settledRegisterId: $settledRegisterId
                 completedAt: $completedAt
                 completedAtUtc: $completedAtUtc
                 parkedAt: $parkedAt
@@ -175,6 +181,9 @@ export const UPDATE_ORDER = gql`
         $products: [OrderProductInput!]
         $placedAt: String
         $placedAtUtc: String
+        $settledAt: String
+        $settledAtUtc: String
+        $settledRegisterId: ID
         $completedAt: String
         $completedAtUtc: String
         $parkedAt: String
@@ -204,6 +213,9 @@ export const UPDATE_ORDER = gql`
                 products: $products
                 placedAt: $placedAt
                 placedAtUtc: $placedAtUtc
+                settledAt: $settledAt
+                settledAtUtc: $settledAtUtc
+                settledRegisterId: $settledRegisterId
                 completedAt: $completedAt
                 completedAtUtc: $completedAtUtc
                 parkedAt: $parkedAt
@@ -398,6 +410,8 @@ export const CREATE_TAKINGS_SESSION = gql`
         $sessionNumber: Int!
         $status: TakingsSessionStatus!
         $openedAt: String!
+        $openedAtUtc: String
+        $lastActivityAt: String
         $openedBy: ID
         $openingFloatCents: Int!
         $moneyInCents: Int
@@ -422,6 +436,8 @@ export const CREATE_TAKINGS_SESSION = gql`
                 sessionNumber: $sessionNumber
                 status: $status
                 openedAt: $openedAt
+                openedAtUtc: $openedAtUtc
+                lastActivityAt: $lastActivityAt
                 openedBy: $openedBy
                 openingFloatCents: $openingFloatCents
                 moneyInCents: $moneyInCents
@@ -446,6 +462,8 @@ export const CREATE_TAKINGS_SESSION = gql`
             sessionNumber
             status
             openedAt
+            openedAtUtc
+            lastActivityAt
             finalizedAt
             openedBy
             finalizedBy
@@ -458,6 +476,10 @@ export const CREATE_TAKINGS_SESSION = gql`
             expectedDrawerCashCents
             countedDrawerCashCents
             varianceCents
+            recordedTotalCents
+            countedTotalCents
+            paymentVarianceCents
+            paymentSummaryJson
             varianceReason
             openOrdersCount
             unpaidOrdersCount
@@ -542,8 +564,14 @@ export const UPDATE_TAKINGS_SESSION = gql`
     # money movement fields remain scalar snapshots for backend compatibility.
     mutation UpdateTakingsSession(
         $id: ID!
+        $businessDate: AWSDate
+        $sessionNumber: Int
         $openingFloatCents: Int
         $status: TakingsSessionStatus
+        $openedAt: String
+        $openedAtUtc: String
+        $lastActivityAt: String
+        $openedBy: ID
         $finalizedAt: String
         $finalizedBy: ID
         $declaredClosingFloatCents: Int
@@ -556,6 +584,10 @@ export const UPDATE_TAKINGS_SESSION = gql`
         $expectedDrawerCashCents: Int
         $countedDrawerCashCents: Int
         $varianceCents: Int
+        $recordedTotalCents: Int
+        $countedTotalCents: Int
+        $paymentVarianceCents: Int
+        $paymentSummaryJson: AWSJSON
         $varianceReason: String
         $openOrdersCount: Int
         $unpaidOrdersCount: Int
@@ -565,8 +597,14 @@ export const UPDATE_TAKINGS_SESSION = gql`
         updateTakingsSession(
             input: {
                 id: $id
+                businessDate: $businessDate
+                sessionNumber: $sessionNumber
                 openingFloatCents: $openingFloatCents
                 status: $status
+                openedAt: $openedAt
+                openedAtUtc: $openedAtUtc
+                lastActivityAt: $lastActivityAt
+                openedBy: $openedBy
                 finalizedAt: $finalizedAt
                 finalizedBy: $finalizedBy
                 declaredClosingFloatCents: $declaredClosingFloatCents
@@ -579,6 +617,10 @@ export const UPDATE_TAKINGS_SESSION = gql`
                 expectedDrawerCashCents: $expectedDrawerCashCents
                 countedDrawerCashCents: $countedDrawerCashCents
                 varianceCents: $varianceCents
+                recordedTotalCents: $recordedTotalCents
+                countedTotalCents: $countedTotalCents
+                paymentVarianceCents: $paymentVarianceCents
+                paymentSummaryJson: $paymentSummaryJson
                 varianceReason: $varianceReason
                 openOrdersCount: $openOrdersCount
                 unpaidOrdersCount: $unpaidOrdersCount
@@ -595,6 +637,8 @@ export const UPDATE_TAKINGS_SESSION = gql`
             sessionNumber
             status
             openedAt
+            openedAtUtc
+            lastActivityAt
             finalizedAt
             openedBy
             finalizedBy
@@ -609,6 +653,10 @@ export const UPDATE_TAKINGS_SESSION = gql`
             expectedDrawerCashCents
             countedDrawerCashCents
             varianceCents
+            recordedTotalCents
+            countedTotalCents
+            paymentVarianceCents
+            paymentSummaryJson
             varianceReason
             openOrdersCount
             unpaidOrdersCount

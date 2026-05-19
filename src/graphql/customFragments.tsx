@@ -6,11 +6,16 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         id
         country
         placedAt
+        placedAtUtc
         settledAt
+        settledAtUtc
         parkedAt
+        parkedAtUtc
         completedAt
+        completedAtUtc
         cancelledAt
         refundedAt
+        refundedAtUtc
         notes
         eftposReceipt
         orderBatchable
@@ -27,6 +32,16 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         tax
         paid
         paymentAmounts {
+            cash
+            eftpos
+            online
+            onAccount
+            uberEats
+            menulog
+            doordash
+            delivereasy
+        }
+        refundPaymentAmounts {
             cash
             eftpos
             online
@@ -219,11 +234,16 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     id: string;
     country: string;
     placedAt: string;
+    placedAtUtc: string | null;
     settledAt: string | null;
+    settledAtUtc: string | null;
     parkedAt: string | null;
+    parkedAtUtc: string | null;
     completedAt: string | null;
+    completedAtUtc: string | null;
     cancelledAt: string | null;
     refundedAt: string | null;
+    refundedAtUtc: string | null;
     notes: string | null;
     eftposReceipt: string | null;
     orderBatchable: number | null;
@@ -241,6 +261,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     subTotal: number;
     paid: boolean;
     paymentAmounts: IOrderPaymentAmounts | null;
+    refundPaymentAmounts: IOrderPaymentAmounts | null;
     thirdPartyIntegrationResult: {
         shift8IsSuccess: boolean | null;
         shift8ErrorMessage: string | null;

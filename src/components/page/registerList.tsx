@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "../../tabin/components/toast";
 import { useRegister } from "../../context/register-context";
 import { useNavigate } from "react-router-dom";
-import { beginOrderPath } from "../main";
+import { beginOrderPath, posUserListPath } from "../main";
 import { useRestaurant } from "../../context/restaurant-context";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { Button } from "../../tabin/components/button";
@@ -25,10 +25,16 @@ export default () => {
         try {
             setShowFullScreenSpinner(true);
 
+            const selectedRegister = restaurant.registers.items.find((reg) => reg.id === key) || null;
+
             await connectRegister(key);
 
             setShowFullScreenSpinner(false);
-            navigate(beginOrderPath, { replace: true });
+            // Only POS registers use the staff selection + PIN gate. Kiosk-style registers
+            // continue directly into the shared begin-order flow.
+            navigate(selectedRegister?.type === ERegisterType.POS && selectedRegister?.enablePosPinFeature ? posUserListPath : beginOrderPath, {
+                replace: true,
+            });
         } catch (e) {
             setShowFullScreenSpinner(false);
             toast.error(e);

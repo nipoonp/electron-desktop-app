@@ -1,32 +1,36 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
-import { FiArrowLeft, FiChevronRight } from "react-icons/fi";
+import { FiAlertTriangle, FiArrowLeft, FiChevronRight } from "react-icons/fi";
 import { useNavigate } from "react-router";
+import { usePosUser } from "../../../context/pos-user-context";
 import { useRegister } from "../../../context/register-context";
 import { useRestaurant } from "../../../context/restaurant-context";
 import { useUser } from "../../../context/user-context";
-import { CREATE_CASH_MOVEMENT, CREATE_TAKINGS_SESSION } from "../../../graphql/customMutations";
+import { CREATE_CASH_MOVEMENT, CREATE_TAKINGS_SESSION, UPDATE_TAKINGS_SESSION } from "../../../graphql/customMutations";
 import {
     ECashMovementType,
     ETakingsScopeType,
     ETakingsSessionStatus,
     GET_CASH_MOVEMENTS_BY_RESTAURANT_BY_OCCURRED_AT,
+    GET_TAKINGS_SESSION,
     GET_TAKINGS_SESSIONS_BY_SCOPE_KEY_BY_OPENED_AT,
     IGET_CASH_MOVEMENT,
     IGET_TAKINGS_SESSION,
 } from "../../../graphql/customQueries";
 import { Button } from "../../../tabin/components/button";
+import { Card } from "../../../tabin/components/card";
 import { Input } from "../../../tabin/components/input";
 import { ModalV2 } from "../../../tabin/components/modalv2";
 import { PageWrapper } from "../../../tabin/components/pageWrapper";
 import { toast } from "../../../tabin/components/toast";
-import { getDollarString } from "../../../util/util";
+import { getDollarString, toLocalISOString } from "../../../util/util";
 import { beginOrderPath } from "../../main";
 import {
     MONEY_MOVEMENT_PAYMENT_METHODS,
     TMoneyInOutView,
     TMoneyMovementDirection,
     TMoneyMovementPaymentMethod,
+    buildTakingsScopeStorageKey,
     formatHistoryDate,
     getBusinessDate,
     getMovementDateRange,
@@ -34,39 +38,61 @@ import {
     getMovementReasonText,
     getMovementTypeLabel,
     getPaymentMethodValue,
+    isReusableOpenTakingsSession,
     resolveTakingsScope,
+    sortSessions,
     toCents,
 } from "./cashManagementSupport";
 
 import "./moneyInOut.scss";
 
 export default () => {
+    // Money In/Out page: records cash movements against the active takings session
+    // and exposes a history view for the current business date.
+    // This component maintains the current session state, validates movement entry,
+    // and refreshes session data while the page is visible.
     const navigate = useNavigate();
     const { restaurant } = useRestaurant();
     const { register, isPOS } = useRegister();
     const { user } = useUser();
+    const { selectedPosUser } = usePosUser();
+    const effectiveCashUserId = selectedPosUser?.userId || user?.id;
+    const effectiveCashUserName = selectedPosUser
+        ? `${selectedPosUser.firstName} ${selectedPosUser.lastName}`.trim()
+        : user
+          ? `${user.firstName} ${user.lastName}`.trim()
+          : "";
     const [activeView, setActiveView] = useState<TMoneyInOutView>("entry");
     const [amountInput, setAmountInput] = useState("");
     const [reason, setReason] = useState("");
     const [pendingDirection, setPendingDirection] = useState<TMoneyMovementDirection | null>(null);
     const [selectedMovementId, setSelectedMovementId] = useState<string | null>(null);
     const [createdSession, setCreatedSession] = useState<IGET_TAKINGS_SESSION | null>(null);
+    const lastActivityTouchRef = useRef<number>(0);
 
     const businessDate = getBusinessDate();
+    const takingsScopeStorageKey = useMemo(() => buildTakingsScopeStorageKey(restaurant?.id, register?.id), [register?.id, restaurant?.id]);
+    const persistedScopeType = useMemo(() => {
+        if (!isPOS || !restaurant?.takingsAllowScopeSwitch) return null;
+        const storedScopeType = localStorage.getItem(takingsScopeStorageKey) as ETakingsScopeType | null;
+        return storedScopeType;
+    }, [isPOS, restaurant?.takingsAllowScopeSwitch, takingsScopeStorageKey]);
     const resolvedScope = useMemo(
         () =>
             resolveTakingsScope({
                 restaurantId: restaurant?.id,
                 registerId: register?.id,
-                staffId: user?.id,
-                defaultScope: restaurant?.takingsDefaultScope,
+                staffId: effectiveCashUserId,
+                defaultScope: persistedScopeType || restaurant?.takingsDefaultScope,
             }),
-        [register?.id, restaurant?.id, restaurant?.takingsDefaultScope, user?.id]
+        [effectiveCashUserId, persistedScopeType, register?.id, restaurant?.id, restaurant?.takingsDefaultScope],
     );
     const scopeType = resolvedScope?.scopeType || ETakingsScopeType.SITE;
     const scopeId = resolvedScope?.scopeId || "";
     const scopeKey = resolvedScope?.scopeKey || "";
 
+    // Load any open takings sessions for the resolved scope so the page can
+    // determine the active session and create a new one when necessary.
     const {
         data: takingsSessionsData,
         loading: takingsSessionsLoading,
@@ -83,11 +109,7 @@ export default () => {
 
     const queriedCurrentSession: IGET_TAKINGS_SESSION | null = useMemo(() => {
         const items: IGET_TAKINGS_SESSION[] = takingsSessionsData?.getTakingsSessionsByScopeKeyByOpenedAt?.items || [];
-        return (
-            items
-                .filter((session) => session.scopeKey === scopeKey && session.status === ETakingsSessionStatus.OPEN)
-                .sort((left, right) => new Date(right.openedAt).getTime() - new Date(left.openedAt).getTime())[0] || null
-        );
+        return sortSessions(items.filter((session) => session.scopeKey === scopeKey && session.status === ETakingsSessionStatus.OPEN))[0] || null;
     }, [scopeKey, takingsSessionsData]);
 
     const currentSession = useMemo(() => {
@@ -95,6 +117,7 @@ export default () => {
         if (createdSession?.scopeKey === scopeKey && createdSession.status === ETakingsSessionStatus.OPEN) return createdSession;
         return null;
     }, [createdSession, queriedCurrentSession, scopeKey]);
+    const hasPreviousBusinessDateOpenSession = !!currentSession && currentSession.businessDate !== businessDate;
     const activeBusinessDate = currentSession?.businessDate || businessDate;
     const movementDateRange = useMemo(() => getMovementDateRange(activeBusinessDate), [activeBusinessDate]);
 
@@ -115,10 +138,13 @@ export default () => {
 
     const [createCashMovement, { loading: savingMovement }] = useMutation(CREATE_CASH_MOVEMENT);
     const [createTakingsSession, { loading: creatingSession }] = useMutation(CREATE_TAKINGS_SESSION);
+    const [updateTakingsSession, { loading: rollingSessionForward }] = useMutation(UPDATE_TAKINGS_SESSION);
 
-    const cashMovementLoading = takingsSessionsLoading || restaurantCashMovementLoading;
+    const cashMovementLoading = takingsSessionsLoading || restaurantCashMovementLoading || rollingSessionForward;
     const cashMovementError = takingsSessionsError || restaurantCashMovementError;
 
+    // Build the money movement history list for the active business date and scope.
+    // This includes legacy site-only rows and excludes movements from other scopes.
     const movements: IGET_CASH_MOVEMENT[] = useMemo(() => {
         const items: IGET_CASH_MOVEMENT[] = restaurantCashMovementData?.getCashMovementsByRestaurantByOccurredAt?.items || [];
 
@@ -130,6 +156,18 @@ export default () => {
             })
             .sort((left, right) => new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime());
     }, [activeBusinessDate, restaurantCashMovementData, scopeKey, scopeType]);
+    const currentSessionMovements = useMemo(
+        () => (currentSession ? movements.filter((movement) => movement.takingsSessionId === currentSession.id) : []),
+        [currentSession, movements],
+    );
+    const canRefreshOpenSessionTimestamp = useMemo(
+        () => !!currentSession && isReusableOpenTakingsSession(currentSession, currentSessionMovements),
+        [currentSession, currentSessionMovements],
+    );
+    const canReusePreviousBusinessDateOpenSession = useMemo(
+        () => hasPreviousBusinessDateOpenSession && canRefreshOpenSessionTimestamp,
+        [canRefreshOpenSessionTimestamp, hasPreviousBusinessDateOpenSession],
+    );
 
     // Reloads sessions and money history.
     const refetchCashMovements = async () => {
@@ -137,12 +175,51 @@ export default () => {
         await refetchRestaurantCashMovements();
     };
 
+    const touchCurrentSessionActivity = useCallback(async () => {
+        if (!currentSession || currentSession.status !== ETakingsSessionStatus.OPEN) return;
+        if (currentSession.businessDate !== businessDate) return;
+        if (rollingSessionForward || creatingSession) return;
+
+        const now = Date.now();
+        if (now - lastActivityTouchRef.current < 30_000) return;
+
+        try {
+            const activityAt = new Date(now).toISOString();
+            await updateTakingsSession({
+                variables: {
+                    id: currentSession.id,
+                    lastActivityAt: activityAt,
+                },
+            });
+            lastActivityTouchRef.current = now;
+            await refetchTakingsSessions();
+        } catch (error) {
+            console.error(error);
+        }
+    }, [businessDate, creatingSession, currentSession, refetchTakingsSessions, rollingSessionForward, updateTakingsSession]);
+
+    useEffect(() => {
+        const refreshVisibleMoneyData = async () => {
+            if (document.visibilityState === "visible") {
+                await touchCurrentSessionActivity();
+                await refetchCashMovements();
+            }
+        };
+
+        window.addEventListener("focus", refreshVisibleMoneyData);
+        document.addEventListener("visibilitychange", refreshVisibleMoneyData);
+
+        return () => {
+            window.removeEventListener("focus", refreshVisibleMoneyData);
+            document.removeEventListener("visibilitychange", refreshVisibleMoneyData);
+        };
+    }, [refetchCashMovements, touchCurrentSessionActivity]);
+
     const selectedMovement = movements.find((movement) => movement.id === selectedMovementId) || movements[0] || null;
 
     // Builds the user label for history.
     const getMovementUserLabel = (movement: IGET_CASH_MOVEMENT) => {
-        const currentUserName = user ? `${user.firstName} ${user.lastName}`.trim() : "";
-        if (movement.createdBy && movement.createdBy === user?.id && currentUserName) return currentUserName;
+        if (movement.createdBy && movement.createdBy === effectiveCashUserId && effectiveCashUserName) return effectiveCashUserName;
         return movement.createdBy || "-";
     };
 
@@ -154,14 +231,86 @@ export default () => {
         return label.slice(0, 2).toUpperCase();
     };
 
-    // Returns the current session or creates one if needed.
+    // Ensures there is an active takings session for the current scope.
+    // If an open session already exists, it may refresh the session timestamp or
+    // roll it forward to the current business date before returning it.
+    // If no open session exists, this helper creates a new placeholder session.
     const ensureCurrentSession = async (): Promise<IGET_TAKINGS_SESSION | null> => {
-        if (currentSession) return currentSession;
-        if (!restaurant || !user || !scopeType || !scopeId || !scopeKey) return null;
+        if (currentSession) {
+            if (!effectiveCashUserId) return null;
+            const shouldRefreshOpenSession =
+                currentSession.businessDate !== businessDate ? canReusePreviousBusinessDateOpenSession : canRefreshOpenSessionTimestamp;
+
+            if (!shouldRefreshOpenSession) {
+                return currentSession.businessDate === businessDate ? currentSession : null;
+            }
+
+            try {
+                const sessions: IGET_TAKINGS_SESSION[] = takingsSessionsData?.getTakingsSessionsByScopeKeyByOpenedAt?.items || [];
+                const shouldMoveToCurrentBusinessDate = currentSession.businessDate !== businessDate;
+                const sameDaySessions = shouldMoveToCurrentBusinessDate
+                    ? sessions.filter(
+                          (session) => session.scopeKey === scopeKey && session.businessDate === businessDate && session.id !== currentSession.id,
+                      )
+                    : [];
+                const sessionNumber = shouldMoveToCurrentBusinessDate
+                    ? sameDaySessions.reduce((max, session) => Math.max(max, session.sessionNumber), 0) + 1
+                    : currentSession.sessionNumber;
+                const now = new Date();
+                const refreshedActivityAt = now.toISOString();
+                const refreshedOpenedAt = toLocalISOString(now);
+
+                const result = await updateTakingsSession({
+                    variables: {
+                        id: currentSession.id,
+                        businessDate,
+                        sessionNumber,
+                        lastActivityAt: refreshedActivityAt,
+                        ...(shouldMoveToCurrentBusinessDate
+                            ? {
+                                  openedAt: refreshedOpenedAt,
+                                  openedAtUtc: refreshedActivityAt,
+                                  openedBy: effectiveCashUserId,
+                              }
+                            : {}),
+                    },
+                });
+
+                // Use the sessions list refetch to obtain the refreshed session state.
+                const refreshedTakingsResult = await refetchTakingsSessions();
+                const refreshedSessions: IGET_TAKINGS_SESSION[] = refreshedTakingsResult.data?.getTakingsSessionsByScopeKeyByOpenedAt?.items || [];
+                const refreshedSession = refreshedSessions.find((s) => s.id === currentSession.id) || null;
+
+                const sameDayRefreshAccepted =
+                    !shouldMoveToCurrentBusinessDate && refreshedSession?.id === currentSession.id && refreshedSession?.businessDate === businessDate;
+
+                if (
+                    sameDayRefreshAccepted ||
+                    (refreshedSession?.businessDate === businessDate &&
+                        refreshedSession?.lastActivityAt === refreshedActivityAt &&
+                        (!shouldMoveToCurrentBusinessDate || refreshedSession?.openedAtUtc === refreshedActivityAt))
+                ) {
+                    if (refreshedSession) setCreatedSession(refreshedSession);
+                    await refetchTakingsSessions();
+                    return result.data?.updateTakingsSession || refreshedSession;
+                }
+
+                await refetchTakingsSessions();
+                return null;
+            } catch (error) {
+                throw error;
+            }
+        }
+        if (takingsSessionsError) return null;
+        if (!restaurant || !restaurant.takingsEnable || !user || !effectiveCashUserId || !scopeType || !scopeId || !scopeKey) return null;
 
         const sessions: IGET_TAKINGS_SESSION[] = takingsSessionsData?.getTakingsSessionsByScopeKeyByOpenedAt?.items || [];
         const sameDaySessions = sessions.filter((session) => session.businessDate === businessDate);
         const sessionNumber = sameDaySessions.reduce((max, session) => Math.max(max, session.sessionNumber), 0) + 1;
+
+        const now = new Date();
+        const openedAt = toLocalISOString(now);
+        const openedAtUtc = now.toISOString();
 
         const result = await createTakingsSession({
             variables: {
@@ -172,8 +321,10 @@ export default () => {
                 scopeKey,
                 sessionNumber,
                 status: ETakingsSessionStatus.OPEN,
-                openedAt: new Date().toISOString(),
-                openedBy: user.id,
+                openedAt,
+                openedAtUtc,
+                lastActivityAt: openedAtUtc,
+                openedBy: effectiveCashUserId,
                 openingFloatCents: 0,
                 moneyInCents: 0,
                 moneyOutCents: 0,
@@ -195,11 +346,21 @@ export default () => {
         return session;
     };
 
-    // Checks the entry and opens the payment-method modal.
+    // Validates amount and session state before opening the payment-method modal.
+    // This ensures a valid active cash-up session exists before recording a money in/out event.
     const openMethodModal = async (direction: TMoneyMovementDirection) => {
-        if (!restaurant || !register || !user || !isPOS) return;
-        if (takingsSessionsLoading || creatingSession) {
+        if (!restaurant || !restaurant.takingsEnable || !register || !user || !effectiveCashUserId || !isPOS) return;
+        if (takingsSessionsLoading || creatingSession || rollingSessionForward) {
             toast.error("Cash-up session is still loading. Try again.");
+            return;
+        }
+        if (takingsSessionsError) {
+            toast.error("Unable to load the active cash-up session.");
+            return;
+        }
+
+        if (hasPreviousBusinessDateOpenSession && !canReusePreviousBusinessDateOpenSession) {
+            toast.error("Finalise the previous cash-up session before recording money in or out for today.");
             return;
         }
 
@@ -221,9 +382,10 @@ export default () => {
         }
     };
 
-    // Saves the money movement and refreshes history.
+    // Persists a money movement and updates the current session activity timestamp.
+    // After saving, it refreshes the movement history and switches to the history view.
     const saveCashMovement = async (paymentMethod: TMoneyMovementPaymentMethod) => {
-        if (!restaurant || !register || !user || !pendingDirection || !currentSession) return;
+        if (!restaurant || !register || !user || !effectiveCashUserId || !pendingDirection || !currentSession) return;
 
         const amountCents = toCents(amountInput);
         if (amountCents <= 0) {
@@ -232,23 +394,32 @@ export default () => {
         }
 
         try {
+            const occurredAt = new Date().toISOString();
+
             await createCashMovement({
                 variables: {
                     input: {
                         restaurantId: restaurant.id,
                         registerId: register.id,
-                        staffId: user.id,
+                        staffId: effectiveCashUserId,
                         takingsSessionId: currentSession.id,
                         scopeKey,
                         businessDate: activeBusinessDate,
-                        occurredAt: new Date().toISOString(),
+                        occurredAt,
                         type: pendingDirection,
                         paymentMethod: getPaymentMethodValue(paymentMethod),
                         amountCents,
                         reason: reason.trim() || null,
-                        createdBy: user.id,
+                        createdBy: effectiveCashUserId,
                         owner: user.id,
                     },
+                },
+            });
+
+            await updateTakingsSession({
+                variables: {
+                    id: currentSession.id,
+                    lastActivityAt: occurredAt,
                 },
             });
 
@@ -265,7 +436,8 @@ export default () => {
         }
     };
 
-    // Renders the payment-method modal.
+    // Renders the modal asking the user to choose the payment method for the current money movement.
+    // Once selected, the payment is stored and history is refreshed.
     const renderMethodModal = () => {
         if (!pendingDirection) return null;
 
@@ -280,7 +452,11 @@ export default () => {
                     <div className="money-movement-method-modal__grid">
                         {MONEY_MOVEMENT_PAYMENT_METHODS.map((method, index) => (
                             <Button
-                                className={index === 0 ? "money-movement-method-modal__option" : "money-movement-method-modal__option money-movement-method-modal__option--ghost"}
+                                className={
+                                    index === 0
+                                        ? "money-movement-method-modal__option"
+                                        : "money-movement-method-modal__option money-movement-method-modal__option--ghost"
+                                }
                                 disabled={savingMovement}
                                 key={method.key}
                                 loading={savingMovement && index === 0}
@@ -318,10 +494,42 @@ export default () => {
                     <div className="money-movement-page__spacer" />
                 </div>
 
+                {!restaurant?.takingsEnable && (
+                    <Card className="cashup-banner">
+                        <div className="cashup-banner__content">
+                            <FiAlertTriangle />
+                            <div>Cash up is disabled for this restaurant in Tabin Web.</div>
+                        </div>
+                    </Card>
+                )}
+
+                {isPOS === false && (
+                    <Card className="cashup-banner">
+                        <div className="cashup-banner__content">
+                            <FiAlertTriangle />
+                            <div>This screen is designed for POS registers.</div>
+                        </div>
+                    </Card>
+                )}
+
+                {hasPreviousBusinessDateOpenSession && !canReusePreviousBusinessDateOpenSession && (
+                    <Card className="cashup-banner">
+                        <div className="cashup-banner__content">
+                            <FiAlertTriangle />
+                            <div>
+                                An earlier taking session for {currentSession?.businessDate} is still open. Finalise that session before starting
+                                today&apos;s taking.
+                            </div>
+                        </div>
+                    </Card>
+                )}
+
                 {activeView === "entry" && (
                     <div className="money-movement-entry">
                         <div className="money-movement-panel">
-                            <div className="money-movement-copy">Float management, petty cash, cash refunds and cash on delivery for your suppliers.</div>
+                            <div className="money-movement-copy">
+                                Float management, petty cash, cash refunds and cash on delivery for your suppliers.
+                            </div>
                             <div className="money-movement-title">Money In/Out</div>
 
                             <div className="money-movement-form">
@@ -338,15 +546,25 @@ export default () => {
                                 </div>
                                 <div className="money-movement-form__row money-movement-form__row--reason">
                                     <div className="money-movement-form__label">Reason (optional)</div>
-                                    <Input className="money-movement-form__input" value={reason} onChange={(event) => setReason(event.target.value)} />
+                                    <Input
+                                        className="money-movement-form__input"
+                                        value={reason}
+                                        onChange={(event) => setReason(event.target.value)}
+                                    />
                                 </div>
                             </div>
 
                             <div className="money-movement-actions">
-                                <Button onClick={() => openMethodModal(ECashMovementType.MONEY_IN)} disabled={!restaurant || !register || !isPOS || creatingSession}>
+                                <Button
+                                    onClick={() => openMethodModal(ECashMovementType.MONEY_IN)}
+                                    disabled={!restaurant?.takingsEnable || !restaurant || !register || !isPOS || creatingSession}
+                                >
                                     Save Money In
                                 </Button>
-                                <Button onClick={() => openMethodModal(ECashMovementType.MONEY_OUT)} disabled={!restaurant || !register || !isPOS || creatingSession}>
+                                <Button
+                                    onClick={() => openMethodModal(ECashMovementType.MONEY_OUT)}
+                                    disabled={!restaurant?.takingsEnable || !restaurant || !register || !isPOS || creatingSession}
+                                >
                                     Save Money Out
                                 </Button>
                             </div>
@@ -366,9 +584,15 @@ export default () => {
                                 <span />
                             </div>
 
-                            {cashMovementError && <div className="money-movement-history__empty">Unable to load money history. Check the AppSync environment and CashMovement index.</div>}
+                            {cashMovementError && (
+                                <div className="money-movement-history__empty">
+                                    Unable to load money history. Check the AppSync environment and CashMovement index.
+                                </div>
+                            )}
                             {cashMovementLoading && <div className="money-movement-history__empty">Loading money history...</div>}
-                            {!cashMovementError && !cashMovementLoading && movements.length === 0 && <div className="money-movement-history__empty">No money movements recorded today.</div>}
+                            {!cashMovementError && !cashMovementLoading && movements.length === 0 && (
+                                <div className="money-movement-history__empty">No money movements recorded today.</div>
+                            )}
                             {!cashMovementError &&
                                 !cashMovementLoading &&
                                 movements.map((movement) => {

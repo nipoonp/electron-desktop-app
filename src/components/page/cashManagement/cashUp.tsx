@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
-import { FiAlertTriangle, FiArrowLeft, FiCheckCircle, FiChevronRight, FiClock, FiEdit2, FiRefreshCw } from "react-icons/fi";
+import { FiAlertTriangle, FiArrowLeft, FiCheckCircle, FiChevronRight, FiEdit2, FiRefreshCw } from "react-icons/fi";
 import { useNavigate } from "react-router";
 import { useRegister } from "../../../context/register-context";
+import { usePosUser } from "../../../context/pos-user-context";
 import { useRestaurant } from "../../../context/restaurant-context";
 import { useUser } from "../../../context/user-context";
 import {
@@ -12,6 +13,7 @@ import {
     ETakingsSessionStatus,
     GET_CASH_MOVEMENTS_BY_RESTAURANT_BY_OCCURRED_AT,
     GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT,
+    GET_TAKINGS_SESSION,
     GET_TAKINGS_SESSIONS_BY_SCOPE_KEY_BY_OPENED_AT,
     IGET_CASH_MOVEMENT,
     IGET_TAKINGS_SESSION,
@@ -23,8 +25,8 @@ import { Input } from "../../../tabin/components/input";
 import { ModalV2 } from "../../../tabin/components/modalv2";
 import { toast } from "../../../tabin/components/toast";
 import { PageWrapper } from "../../../tabin/components/pageWrapper";
-import { convertCentsToDollars, getDollarString } from "../../../util/util";
-import { beginOrderPath, dashboardPath } from "../../main";
+import { convertCentsToDollars, getDollarString, toLocalISOString } from "../../../util/util";
+import { beginOrderPath, ordersPath } from "../../main";
 import {
     DENOMINATIONS,
     PAYMENT_KEYS,
@@ -41,26 +43,41 @@ import {
     formatHistoryDate,
     getBusinessDate,
     getCashMovementDateRange,
+    getCashMovementPaymentKey,
     getHistoryStatusLabel,
     getOrderDateRange,
+    orderHasTakingsActivityInSession,
     getPaymentLabel,
+    getTakingsSessionDisplayTimestamp,
     getTakingsScopeHistoryLabel,
     getTakingsScopeTitle,
-    isCashDrawerMovement,
+    isReusableOpenTakingsSession,
+    isTimestampWithinSessionWindow,
     orderMatchesTakingsScope,
     resolveTakingsScope,
     sortSessions,
     toCents,
     toWholeNumber,
+    TPaymentSummarySnapshot,
 } from "./cashManagementSupport";
 
 import "./cashUp.scss";
 
 export default () => {
+    // Cash-up page: reconciles payment totals, opening float, and money movements
+    // against the active takings session. It supports session creation, draft saving,
+    // finalisation, and history exploration for the current scope.
     const navigate = useNavigate();
     const { restaurant } = useRestaurant();
     const { register, isPOS } = useRegister();
     const { user } = useUser();
+    const { selectedPosUser } = usePosUser();
+    const effectiveCashUserId = selectedPosUser?.userId || user?.id;
+    const effectiveCashUserName = selectedPosUser
+        ? `${selectedPosUser.firstName} ${selectedPosUser.lastName}`.trim()
+        : user
+          ? `${user.firstName} ${user.lastName}`.trim()
+          : "";
 
     const [countMode, setCountMode] = useState<TCountMode>("counted");
     const [cashEntryStep, setCashEntryStep] = useState<TCashEntryStep>("choice");
@@ -77,28 +94,42 @@ export default () => {
     const [reviewedOpeningFloatSessionIds, setReviewedOpeningFloatSessionIds] = useState<string[]>([]);
     const [showFinalizeModal, setShowFinalizeModal] = useState(false);
     const [showWarningModal, setShowWarningModal] = useState(false);
-    const [warningModalDismissed, setWarningModalDismissed] = useState(false);
-    const autoCreateKeyRef = useRef<string | null>(null);
-    const hydratedSessionIdRef = useRef<string | null>(null);
 
+    const autoCreateKeyRef = useRef<string | null>(null);
+    const suppressAutoCreateRef = useRef(false);
+    const hydratedSessionIdRef = useRef<string | null>(null);
+    const draftSyncSignatureRef = useRef<string | null>(null);
+    const lastActivityTouchRef = useRef<number>(0);
+
+    // The current business date, as used by cash-up queries and session lifetime.
     const businessDate = getBusinessDate();
     const resolvedScope = useMemo(
         () =>
             resolveTakingsScope({
                 restaurantId: restaurant?.id,
                 registerId: register?.id,
-                staffId: user?.id,
+                staffId: effectiveCashUserId,
                 defaultScope: restaurant?.takingsDefaultScope,
             }),
-        [register?.id, restaurant?.id, restaurant?.takingsDefaultScope, user?.id],
+        [effectiveCashUserId, register?.id, restaurant?.id],
     );
+
     const scopeType = resolvedScope?.scopeType || ETakingsScopeType.SITE;
     const scopeId = resolvedScope?.scopeId || "";
     const scopeKey = resolvedScope?.scopeKey || "";
 
+    useEffect(() => {
+        setSelectedHistorySessionId(null);
+        hydratedSessionIdRef.current = null;
+        draftSyncSignatureRef.current = null;
+    }, [scopeKey]);
+
+    // Load takings sessions for the selected scope so the page can identify the
+    // current open session and build the history list.
     const {
         data: takingsData,
         loading: takingsLoading,
+        error: takingsError,
         refetch: refetchTakingsSessions,
     } = useQuery(GET_TAKINGS_SESSIONS_BY_SCOPE_KEY_BY_OPENED_AT, {
         variables: {
@@ -111,7 +142,9 @@ export default () => {
 
     const [createTakingsSession, { loading: creatingSession }] = useMutation(CREATE_TAKINGS_SESSION);
     const [updateTakingsSession, { loading: finalizingSession }] = useMutation(UPDATE_TAKINGS_SESSION);
+    const [rollForwardTakingsSession, { loading: rollingSessionForward }] = useMutation(UPDATE_TAKINGS_SESSION);
     const [updateDraftTakingsSession, { loading: savingOpeningFloat }] = useMutation(UPDATE_TAKINGS_SESSION);
+    const [syncDraftTakingsSession] = useMutation(UPDATE_TAKINGS_SESSION);
 
     // Keeps only sessions for the current scope.
     const allSessions = useMemo(() => {
@@ -172,11 +205,13 @@ export default () => {
             })
             .slice(0, 8);
     }, [allSessions]);
+
     // Tracks the selected history row.
     const selectedHistorySession = useMemo(
         () => sessionHistory.find((session) => session.id === selectedHistorySessionId) || null,
         [selectedHistorySessionId, sessionHistory],
     );
+
     // Filters orders to the active scope.
     const activeBusinessDateOrders = useMemo(
         () =>
@@ -185,60 +220,158 @@ export default () => {
             ),
         [ordersData, scopeId, scopeType],
     );
+
+    // Keeps only the orders that belong to the current open session window.
+    const activeSessionOrders = useMemo(() => {
+        if (!currentSession?.openedAtUtc) return [];
+
+        return activeBusinessDateOrders.filter((order) => orderHasTakingsActivityInSession(order, currentSession.openedAtUtc));
+    }, [activeBusinessDateOrders, currentSession?.openedAtUtc]);
+
     // Filters cash movements to the active date, session, and scope.
     const activeBusinessDateCashMovements: IGET_CASH_MOVEMENT[] = useMemo(
         () =>
             (cashMovementsData?.getCashMovementsByRestaurantByOccurredAt?.items || []).filter((movement) => {
-                const belongsToSession = currentSession?.id ? !movement.takingsSessionId || movement.takingsSessionId === currentSession.id : true;
+                const belongsToSession =
+                    !!currentSession?.id &&
+                    (!movement.takingsSessionId || movement.takingsSessionId === currentSession.id) &&
+                    isTimestampWithinSessionWindow(movement.occurredAt, currentSession.openedAtUtc);
                 const belongsToScope = movement.scopeKey ? movement.scopeKey === scopeKey : scopeType === ETakingsScopeType.SITE;
                 return movement.businessDate === activeBusinessDate && belongsToSession && belongsToScope;
             }),
-        [activeBusinessDate, cashMovementsData, currentSession?.id, scopeKey, scopeType],
+        [activeBusinessDate, cashMovementsData, currentSession?.id, currentSession?.openedAtUtc, scopeKey, scopeType],
     );
 
-    // Sums the cash movements used in reconciliation.
-    const recordedTotals = useMemo(() => buildRecordedTotals(activeBusinessDateOrders), [activeBusinessDateOrders]);
-    const cashMovementTotals = useMemo(() => {
-        const totals = {
-            moneyInCents: 0,
-            moneyOutCents: 0,
-            cashDropsCents: 0,
-            tipPayoutsCents: 0,
-        };
+    const currentSessionCashMovements = useMemo(
+        () => (currentSession ? activeBusinessDateCashMovements.filter((movement) => movement.takingsSessionId === currentSession.id) : []),
+        [activeBusinessDateCashMovements, currentSession],
+    );
 
-        activeBusinessDateCashMovements.filter(isCashDrawerMovement).forEach((movement) => {
+    const currentSessionPaymentSnapshot = useMemo(() => {
+        if (!currentSession?.paymentSummaryJson) return null;
+
+        try {
+            return JSON.parse(currentSession.paymentSummaryJson) as TPaymentSummarySnapshot;
+        } catch (error) {
+            console.error("Unable to parse takings payment summary.", error);
+            return null;
+        }
+    }, [currentSession?.paymentSummaryJson]);
+
+    const openingFloatCents = toCents(openingFloatInput);
+    const persistedOpeningFloatCents = currentSession?.openingFloatCents || 0;
+
+    const canRefreshOpenSessionTimestamp = useMemo(
+        () => !!currentSession && isReusableOpenTakingsSession(currentSession, currentSessionCashMovements),
+        [currentSession, currentSessionCashMovements],
+    );
+
+    const canReusePreviousBusinessDateOpenSession = useMemo(
+        () => !!currentSession && currentSession.businessDate !== businessDate && canRefreshOpenSessionTimestamp,
+        [businessDate, canRefreshOpenSessionTimestamp, currentSession],
+    );
+
+    // Sums the recorded order payments before money-in/out adjustments are applied.
+    const baseRecordedTotals = useMemo(
+        () => buildRecordedTotals(activeSessionOrders, currentSession?.openedAtUtc),
+        [activeSessionOrders, currentSession?.openedAtUtc],
+    );
+
+    // Build adjustment totals for money-in/out transactions so each payment channel
+    // is reconciled with its recorded order totals.
+    const paymentMovementTotals = useMemo(() => {
+        const moneyInTotals = createPaymentTotals();
+        const moneyOutTotals = createPaymentTotals();
+
+        activeBusinessDateCashMovements.forEach((movement) => {
+            if (movement.type !== ECashMovementType.MONEY_IN && movement.type !== ECashMovementType.MONEY_OUT) return;
+
+            const paymentKey = getCashMovementPaymentKey(movement.paymentMethod);
+            if (!paymentKey) return;
+
             const amountCents = movement.amountCents || 0;
-
-            if (movement.type === ECashMovementType.MONEY_IN) totals.moneyInCents += amountCents;
-            if (movement.type === ECashMovementType.MONEY_OUT) totals.moneyOutCents += amountCents;
-            if (movement.type === ECashMovementType.CASH_DROP) totals.cashDropsCents += amountCents;
-            if (movement.type === ECashMovementType.TIP_PAYOUT) totals.tipPayoutsCents += amountCents;
+            if (movement.type === ECashMovementType.MONEY_IN) moneyInTotals[paymentKey] += amountCents;
+            if (movement.type === ECashMovementType.MONEY_OUT) moneyOutTotals[paymentKey] += amountCents;
         });
 
-        return totals;
+        return {
+            moneyInTotals,
+            moneyOutTotals,
+        };
     }, [activeBusinessDateCashMovements]);
 
+    // Builds the recorded reconciliation amount for each payment type.
+    const recordedTotals = useMemo(
+        () =>
+            PAYMENT_KEYS.reduce((totals, key) => {
+                totals[key] =
+                    baseRecordedTotals[key] +
+                    paymentMovementTotals.moneyInTotals[key] -
+                    paymentMovementTotals.moneyOutTotals[key] +
+                    (key === "cash" ? openingFloatCents : 0);
+
+                return totals;
+            }, createPaymentTotals()),
+        [baseRecordedTotals, openingFloatCents, paymentMovementTotals],
+    );
+
+    const cashMovementTotals = useMemo(() => {
+        return {
+            moneyInCents: paymentMovementTotals.moneyInTotals.cash,
+            moneyOutCents: paymentMovementTotals.moneyOutTotals.cash,
+        };
+    }, [paymentMovementTotals]);
+
+    const persistedRecordedTotals = useMemo(
+        () =>
+            PAYMENT_KEYS.reduce((totals, key) => {
+                totals[key] =
+                    baseRecordedTotals[key] +
+                    paymentMovementTotals.moneyInTotals[key] -
+                    paymentMovementTotals.moneyOutTotals[key] +
+                    (key === "cash" ? persistedOpeningFloatCents : 0);
+
+                return totals;
+            }, createPaymentTotals()),
+        [baseRecordedTotals, paymentMovementTotals, persistedOpeningFloatCents],
+    );
+
+    // Counts only unresolved orders that belong to the current open session window.
     const orderWarnings = useMemo(() => {
         const initial = {
             openOrdersCount: 0,
             parkedOrdersCount: 0,
             unpaidOrdersCount: 0,
+            paidOpenOrdersCount: 0,
         };
 
-        activeBusinessDateOrders?.forEach((order) => {
+        activeSessionOrders?.forEach((order) => {
             if (order.status === EOrderStatus.CANCELLED || order.status === EOrderStatus.REFUNDED) return;
 
-            if (order.status === EOrderStatus.NEW) initial.openOrdersCount += 1;
-            if (order.status === EOrderStatus.PARKED) initial.parkedOrdersCount += 1;
-            if (!order.paid) initial.unpaidOrdersCount += 1;
+            // Keep the warning flow aligned with reconciliation: only orders that are still
+            // financially unresolved should block or warn during takings finalisation.
+            if (order.status === EOrderStatus.PARKED) {
+                initial.parkedOrdersCount += 1;
+                return;
+            }
+
+            if (!order.paid) {
+                if (order.status === EOrderStatus.NEW) initial.openOrdersCount += 1;
+                else initial.unpaidOrdersCount += 1;
+                return;
+            }
+
+            if (order.status === EOrderStatus.NEW) initial.paidOpenOrdersCount += 1;
         });
 
         return initial;
-    }, [activeBusinessDateOrders]);
+    }, [activeSessionOrders]);
 
     // Loads the form from the current session without resetting it on every refetch.
     useEffect(() => {
-        const hydrationKey = currentSession?.id || `new:${scopeKey}:${businessDate}`;
+        const hydrationKey = currentSession
+            ? `${currentSession.id}:${currentSession.businessDate}:${currentSession.openedAtUtc}`
+            : `new:${scopeKey}:${businessDate}`;
         if (hydratedSessionIdRef.current === hydrationKey) return;
 
         hydratedSessionIdRef.current = hydrationKey;
@@ -253,12 +386,24 @@ export default () => {
             return;
         }
 
+        setCountMode("counted");
         setOpeningFloatInput(convertCentsToDollars(currentSession.openingFloatCents));
-        setCountedPaymentInputs(createPaymentInputs({ cash: currentSession.countedDrawerCashCents }));
+        setCountedPaymentInputs(
+            currentSessionPaymentSnapshot
+                ? createPaymentInputs(
+                      PAYMENT_KEYS.reduce((totals, key) => {
+                          totals[key] = currentSessionPaymentSnapshot[key]?.countedCents || 0;
+                          return totals;
+                      }, createPaymentTotals()),
+                  )
+                : createPaymentInputs({ cash: currentSession.countedDrawerCashCents }),
+        );
+        setDenominationInputs(createDenominationInputs());
+        setDraftDenominationInputs(createDenominationInputs());
         setVarianceReason(currentSession.varianceReason || "");
         setNotes(currentSession.notes || "");
         setAcknowledgedWarnings(false);
-    }, [businessDate, currentSession, scopeKey]);
+    }, [businessDate, currentSession, currentSessionPaymentSnapshot, scopeKey]);
 
     // Totals the cash from note and coin quantities.
     const countedCashFromDenominationsCents = DENOMINATIONS.reduce((total, denomination) => {
@@ -275,34 +420,164 @@ export default () => {
         return accumulator;
     }, createPaymentTotals());
 
-    const openingFloatCents = toCents(openingFloatInput);
-
-    // Expected cash = opening float + cash sales + cash movements.
-    const expectedDrawerCashCents =
-        openingFloatCents +
-        recordedTotals.cash +
-        cashMovementTotals.moneyInCents -
-        cashMovementTotals.moneyOutCents -
-        cashMovementTotals.cashDropsCents -
-        cashMovementTotals.tipPayoutsCents;
+    // Cash expected value still represents physical drawer cash only.
+    const expectedDrawerCashCents = recordedTotals.cash;
 
     const countedDrawerCashCents = countedTotals.cash;
     const cashVarianceCents = countedDrawerCashCents - expectedDrawerCashCents;
+    const totalRecordedCents = PAYMENT_KEYS.reduce((total, key) => total + recordedTotals[key], 0);
+    const totalCountedCents = PAYMENT_KEYS.reduce((total, key) => total + countedTotals[key], 0);
+    const totalExpectedCents = totalRecordedCents;
+    const totalVarianceCents = totalCountedCents - totalExpectedCents;
+
+    const paymentSummary = PAYMENT_KEYS.reduce((accumulator, key) => {
+        const recordedCents = recordedTotals[key];
+        const countedCents = countedTotals[key];
+
+        accumulator[key] = {
+            recordedCents,
+            countedCents,
+            differenceCents: countedCents - recordedCents,
+            moneyInCents: paymentMovementTotals.moneyInTotals[key],
+            moneyOutCents: paymentMovementTotals.moneyOutTotals[key],
+        };
+
+        return accumulator;
+    }, {} as TPaymentSummarySnapshot);
+
+    const persistedPaymentSummary = useMemo(
+        () =>
+            PAYMENT_KEYS.reduce((accumulator, key) => {
+                const recordedCents = persistedRecordedTotals[key];
+                const countedCents = countedTotals[key];
+
+                accumulator[key] = {
+                    recordedCents,
+                    countedCents,
+                    differenceCents: countedCents - recordedCents,
+                    moneyInCents: paymentMovementTotals.moneyInTotals[key],
+                    moneyOutCents: paymentMovementTotals.moneyOutTotals[key],
+                };
+
+                return accumulator;
+            }, {} as TPaymentSummarySnapshot),
+        [countedTotals, paymentMovementTotals, persistedRecordedTotals],
+    );
+
     const unresolvedOrdersCount = orderWarnings.openOrdersCount + orderWarnings.parkedOrdersCount + orderWarnings.unpaidOrdersCount;
     const varianceThresholdCents = restaurant?.takingsVarianceReasonThresholdCents ?? 5000;
+
     // Variance reason is required only when the variance passes the threshold.
-    const requiresVarianceReason = Math.abs(cashVarianceCents) > varianceThresholdCents;
+    const requiresVarianceReason = Math.abs(totalVarianceCents) > varianceThresholdCents;
     const blocksFinalize = !!restaurant?.takingsBlockIfOpenOrders && unresolvedOrdersCount > 0;
+
     // New sessions need the opening float to be saved once.
     const openingFloatRequiresReview =
         !!currentSession && currentSession.openingFloatCents === 0 && !reviewedOpeningFloatSessionIds.includes(currentSession.id);
+    const persistedExpectedDrawerCashCents = persistedRecordedTotals.cash;
+    const persistedCashVarianceCents = countedDrawerCashCents - persistedExpectedDrawerCashCents;
+    const persistedRecordedTotalCents = PAYMENT_KEYS.reduce((total, key) => total + persistedRecordedTotals[key], 0);
+    const persistedTotalVarianceCents = totalCountedCents - persistedRecordedTotalCents;
+    const persistedVarianceReason = varianceReason.trim() || null;
+    const persistedNotes = notes.trim() || null;
+    const persistedPaymentSummaryJson = JSON.stringify(persistedPaymentSummary);
+    const draftSessionUpdateInput = useMemo(
+        () =>
+            currentSession
+                ? {
+                      id: currentSession.id,
+                      openingFloatCents: persistedOpeningFloatCents,
+                      cashSalesCents: baseRecordedTotals.cash,
+                      cashRefundsCents: 0,
+                      moneyInCents: cashMovementTotals.moneyInCents,
+                      moneyOutCents: cashMovementTotals.moneyOutCents,
+                      cashDropsCents: 0,
+                      tipPayoutsCents: 0,
+                      expectedDrawerCashCents: persistedExpectedDrawerCashCents,
+                      countedDrawerCashCents,
+                      varianceCents: persistedCashVarianceCents,
+                      recordedTotalCents: persistedRecordedTotalCents,
+                      countedTotalCents: totalCountedCents,
+                      paymentVarianceCents: persistedTotalVarianceCents,
+                      paymentSummaryJson: persistedPaymentSummaryJson,
+                      varianceReason: persistedVarianceReason,
+                      openOrdersCount: orderWarnings.openOrdersCount,
+                      unpaidOrdersCount: orderWarnings.unpaidOrdersCount,
+                      parkedOrdersCount: orderWarnings.parkedOrdersCount,
+                      notes: persistedNotes,
+                  }
+                : null,
+        [
+            baseRecordedTotals.cash,
+            cashMovementTotals.moneyInCents,
+            cashMovementTotals.moneyOutCents,
+            countedDrawerCashCents,
+            currentSession,
+            orderWarnings.openOrdersCount,
+            orderWarnings.parkedOrdersCount,
+            orderWarnings.unpaidOrdersCount,
+            persistedCashVarianceCents,
+            persistedExpectedDrawerCashCents,
+            persistedNotes,
+            persistedOpeningFloatCents,
+            persistedPaymentSummaryJson,
+            persistedRecordedTotalCents,
+            persistedTotalVarianceCents,
+            persistedVarianceReason,
+            totalCountedCents,
+        ],
+    );
+
+    // Keeps the current open session alive by periodically touching its activity timestamp.
+    // This avoids stale open-session placeholders while the user is on the cash-up page.
+    const touchCurrentSessionActivity = useCallback(async () => {
+        if (!currentSession || currentSession.status !== ETakingsSessionStatus.OPEN) return;
+        if (currentSession.businessDate !== businessDate) return;
+        if (rollingSessionForward || finalizingSession || creatingSession) return;
+
+        const now = Date.now();
+        if (now - lastActivityTouchRef.current < 30_000) return;
+
+        try {
+            const activityAt = new Date(now).toISOString();
+            await updateDraftTakingsSession({
+                variables: {
+                    id: currentSession.id,
+                    lastActivityAt: activityAt,
+                },
+            });
+            lastActivityTouchRef.current = now;
+            await refetchTakingsSessions();
+        } catch (error) {
+            console.error(error);
+        }
+    }, [businessDate, creatingSession, currentSession, finalizingSession, refetchTakingsSessions, rollingSessionForward, updateDraftTakingsSession]);
 
     // Reloads all cash-up data.
     const handleRefresh = useCallback(async () => {
         await Promise.allSettled([refetchTakingsSessions(), refetchOrders(), refetchCashMovements()]);
     }, [refetchCashMovements, refetchOrders, refetchTakingsSessions]);
 
-    // Creates a new open session for the current scope.
+    useEffect(() => {
+        const refreshVisibleCashUpData = async () => {
+            if (document.visibilityState === "visible") {
+                await touchCurrentSessionActivity();
+                handleRefresh();
+            }
+        };
+
+        window.addEventListener("focus", refreshVisibleCashUpData);
+        document.addEventListener("visibilitychange", refreshVisibleCashUpData);
+
+        return () => {
+            window.removeEventListener("focus", refreshVisibleCashUpData);
+            document.removeEventListener("visibilitychange", refreshVisibleCashUpData);
+        };
+    }, [handleRefresh, touchCurrentSessionActivity]);
+
+    // Creates a new open takings session for the current scope.
+    // This is used when the page loads and there is no active open session,
+    // or when the previous session was finalised and a fresh session is required.
     const handleCreateCurrentSession = useCallback(
         async ({
             sessionBusinessDate = businessDate,
@@ -313,11 +588,15 @@ export default () => {
             initialOpeningFloatCents?: number;
             requireOpeningFloatReview?: boolean;
         } = {}) => {
-            if (!restaurant || !user || !scopeType || !scopeId || !scopeKey) return null;
+            if (!restaurant || !user || !effectiveCashUserId || !scopeType || !scopeId || !scopeKey) return null;
 
             try {
                 const sameDaySessions = allSessions.filter((session) => session.businessDate === sessionBusinessDate);
                 const sessionNumber = sameDaySessions.reduce((max, session) => Math.max(max, session.sessionNumber), 0) + 1;
+
+                const now = new Date();
+                const openedAt = toLocalISOString(now);
+                const openedAtUtc = now.toISOString();
 
                 const result = await createTakingsSession({
                     variables: {
@@ -328,8 +607,10 @@ export default () => {
                         scopeKey,
                         sessionNumber,
                         status: ETakingsSessionStatus.OPEN,
-                        openedAt: new Date().toISOString(),
-                        openedBy: user.id,
+                        openedAt,
+                        openedAtUtc,
+                        lastActivityAt: openedAtUtc,
+                        openedBy: effectiveCashUserId,
                         openingFloatCents: initialOpeningFloatCents,
                         expectedDrawerCashCents: initialOpeningFloatCents,
                         countedDrawerCashCents: 0,
@@ -361,17 +642,96 @@ export default () => {
                 return null;
             }
         },
-        [allSessions, businessDate, createTakingsSession, refetchTakingsSessions, restaurant, scopeId, scopeKey, scopeType, user],
+        [
+            allSessions,
+            businessDate,
+            createTakingsSession,
+            effectiveCashUserId,
+            refetchTakingsSessions,
+            restaurant,
+            scopeId,
+            scopeKey,
+            scopeType,
+            user,
+        ],
+    );
+
+    // Refreshes an existing open session to keep it valid for the current business date.
+    // If the session belongs to a prior business date, it can be rolled forward into today.
+    // Otherwise it simply updates the displayed activity time for an untouched open session.
+    const handleRollForwardCurrentSession = useCallback(
+        async (session: IGET_TAKINGS_SESSION) => {
+            if (!effectiveCashUserId) return null;
+
+            try {
+                const shouldMoveToCurrentBusinessDate = session.businessDate !== businessDate;
+                const sameDaySessions = shouldMoveToCurrentBusinessDate
+                    ? allSessions.filter((item) => item.businessDate === businessDate && item.id !== session.id)
+                    : [];
+                const sessionNumber = shouldMoveToCurrentBusinessDate
+                    ? sameDaySessions.reduce((max, item) => Math.max(max, item.sessionNumber), 0) + 1
+                    : session.sessionNumber;
+                const now = new Date();
+                const refreshedActivityAt = now.toISOString();
+                const refreshedOpenedAt = toLocalISOString(now);
+
+                const result = await rollForwardTakingsSession({
+                    variables: {
+                        id: session.id,
+                        businessDate,
+                        sessionNumber,
+                        lastActivityAt: refreshedActivityAt,
+                        ...(shouldMoveToCurrentBusinessDate
+                            ? {
+                                  openedAt: refreshedOpenedAt,
+                                  openedAtUtc: refreshedActivityAt,
+                                  openedBy: effectiveCashUserId,
+                              }
+                            : {}),
+                    },
+                });
+
+                setReviewedOpeningFloatSessionIds((previous) => previous.filter((sessionId) => sessionId !== session.id));
+                hydratedSessionIdRef.current = null;
+                // Use the existing sessions list refetch to obtain an up-to-date session
+                const refreshedTakingsResult = await refetchTakingsSessions();
+                const refreshedSessions: IGET_TAKINGS_SESSION[] = refreshedTakingsResult.data?.getTakingsSessionsByScopeKeyByOpenedAt?.items || [];
+                const refreshedSession = refreshedSessions.find((s) => s.id === session.id) || null;
+
+                const sameDayRefreshAccepted =
+                    !shouldMoveToCurrentBusinessDate && refreshedSession?.id === session.id && refreshedSession?.businessDate === businessDate;
+
+                if (
+                    sameDayRefreshAccepted ||
+                    (refreshedSession?.businessDate === businessDate &&
+                        refreshedSession?.lastActivityAt === refreshedActivityAt &&
+                        (!shouldMoveToCurrentBusinessDate || refreshedSession?.openedAtUtc === refreshedActivityAt))
+                ) {
+                    await refetchTakingsSessions();
+                    return result.data?.updateTakingsSession || refreshedSession;
+                }
+
+                await refetchTakingsSessions();
+                if (shouldMoveToCurrentBusinessDate) {
+                    toast.error("Unable to refresh the blank cash-up session time.");
+                }
+                return null;
+            } catch (error) {
+                console.error(error);
+                if (session.businessDate !== businessDate) {
+                    toast.error("Unable to refresh the blank cash-up session time.");
+                }
+                return null;
+            }
+        },
+        [allSessions, businessDate, effectiveCashUserId, refetchTakingsSessions, rollForwardTakingsSession],
     );
 
     useEffect(() => {
         // Auto-creates a session when cash up opens and none exists yet.
-        if (!restaurant?.takingsEnable || !restaurant?.id || !user || !isPOS || !scopeType || !scopeId || !scopeKey) return;
-        if (takingsLoading || creatingSession) return;
-        if (currentSession) {
-            autoCreateKeyRef.current = `${scopeKey}:${businessDate}`;
-            return;
-        }
+        if (!restaurant?.takingsEnable || !restaurant?.id || !user || !effectiveCashUserId || !isPOS || !scopeType || !scopeId || !scopeKey) return;
+        if (takingsLoading || takingsError || creatingSession || finalizingSession || suppressAutoCreateRef.current) return;
+        if (currentSession) return;
 
         const autoCreateKey = `${scopeKey}:${businessDate}`;
         if (autoCreateKeyRef.current === autoCreateKey) return;
@@ -390,34 +750,109 @@ export default () => {
         scopeKey,
         scopeType,
         takingsLoading,
+        takingsError,
         user,
+        finalizingSession,
     ]);
 
-    // Resets the warning modal when the session changes.
+    // Resets unresolved-order acknowledgement when the session or unresolved counts change.
     useEffect(() => {
-        setWarningModalDismissed(false);
         if (unresolvedOrdersCount === 0) setShowWarningModal(false);
     }, [currentSession?.id, unresolvedOrdersCount]);
 
     useEffect(() => {
-        if (activeView !== "finalize") return;
-        if (unresolvedOrdersCount === 0 || warningModalDismissed) return;
+        if (!currentSession || currentSession.status !== ETakingsSessionStatus.OPEN || !draftSessionUpdateInput) return;
+        if (rollingSessionForward || finalizingSession || creatingSession) return;
 
-        // Shows the unresolved-order warning modal.
-        setShowWarningModal(true);
-    }, [activeView, unresolvedOrdersCount, warningModalDismissed]);
+        const hasDraftChanges =
+            currentSession.openingFloatCents !== draftSessionUpdateInput.openingFloatCents ||
+            (currentSession.cashSalesCents || 0) !== draftSessionUpdateInput.cashSalesCents ||
+            (currentSession.cashRefundsCents || 0) !== draftSessionUpdateInput.cashRefundsCents ||
+            (currentSession.moneyInCents || 0) !== draftSessionUpdateInput.moneyInCents ||
+            (currentSession.moneyOutCents || 0) !== draftSessionUpdateInput.moneyOutCents ||
+            (currentSession.cashDropsCents || 0) !== draftSessionUpdateInput.cashDropsCents ||
+            (currentSession.tipPayoutsCents || 0) !== draftSessionUpdateInput.tipPayoutsCents ||
+            currentSession.expectedDrawerCashCents !== draftSessionUpdateInput.expectedDrawerCashCents ||
+            currentSession.countedDrawerCashCents !== draftSessionUpdateInput.countedDrawerCashCents ||
+            currentSession.varianceCents !== draftSessionUpdateInput.varianceCents ||
+            (currentSession.recordedTotalCents || 0) !== draftSessionUpdateInput.recordedTotalCents ||
+            (currentSession.countedTotalCents || 0) !== draftSessionUpdateInput.countedTotalCents ||
+            (currentSession.paymentVarianceCents || 0) !== draftSessionUpdateInput.paymentVarianceCents ||
+            (currentSession.paymentSummaryJson || null) !== draftSessionUpdateInput.paymentSummaryJson ||
+            (currentSession.varianceReason || null) !== draftSessionUpdateInput.varianceReason ||
+            currentSession.openOrdersCount !== draftSessionUpdateInput.openOrdersCount ||
+            currentSession.unpaidOrdersCount !== draftSessionUpdateInput.unpaidOrdersCount ||
+            currentSession.parkedOrdersCount !== draftSessionUpdateInput.parkedOrdersCount ||
+            (currentSession.notes || null) !== draftSessionUpdateInput.notes;
 
-    // Finalises the current session and opens the next one.
-    const handleFinalizeSession = async () => {
-        if (!currentSession || !user) return;
-
-        if (openingFloatRequiresReview) {
-            toast.error("Confirm and save the opening float for this session before finalising.");
+        if (!hasDraftChanges) {
+            draftSyncSignatureRef.current = null;
             return;
         }
 
-        if (blocksFinalize) {
-            toast.error("Resolve open, parked, or unpaid orders before finalising.");
+        const draftSignature = JSON.stringify(draftSessionUpdateInput);
+        if (draftSyncSignatureRef.current === draftSignature) return;
+
+        const timeoutId = window.setTimeout(async () => {
+            draftSyncSignatureRef.current = draftSignature;
+
+            try {
+                await syncDraftTakingsSession({
+                    variables: {
+                        ...draftSessionUpdateInput,
+                        lastActivityAt: new Date().toISOString(),
+                    },
+                });
+                await refetchTakingsSessions();
+            } catch (error) {
+                console.error(error);
+                draftSyncSignatureRef.current = null;
+            }
+        }, 700);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [
+        creatingSession,
+        currentSession,
+        draftSessionUpdateInput,
+        finalizingSession,
+        refetchTakingsSessions,
+        rollingSessionForward,
+        syncDraftTakingsSession,
+    ]);
+
+    // Refreshes the blank open session timestamp before switching views.
+    const handleChangeView = useCallback(
+        async (nextView: TCashUpView) => {
+            if (nextView === activeView) return;
+
+            if (currentSession && canRefreshOpenSessionTimestamp && !rollingSessionForward && !creatingSession) {
+                await handleRollForwardCurrentSession(currentSession);
+            }
+
+            await touchCurrentSessionActivity();
+            await handleRefresh();
+            setActiveView(nextView);
+        },
+        [
+            activeView,
+            canRefreshOpenSessionTimestamp,
+            creatingSession,
+            currentSession,
+            handleRefresh,
+            handleRollForwardCurrentSession,
+            rollingSessionForward,
+            touchCurrentSessionActivity,
+        ],
+    );
+
+    // Finalises the active open takings session and opens a new placeholder session if needed.
+    // This includes reconciliation validation, variance reason checks, and unresolved order handling.
+    const handleFinalizeSession = async () => {
+        if (!currentSession || !user || !effectiveCashUserId) return;
+
+        if (openingFloatRequiresReview) {
+            toast.error("Confirm and save the opening float for this session before finalising.");
             return;
         }
 
@@ -431,6 +866,7 @@ export default () => {
             return;
         }
 
+        suppressAutoCreateRef.current = true;
         try {
             const finalizedSessionId = currentSession.id;
 
@@ -440,16 +876,20 @@ export default () => {
                     openingFloatCents,
                     status: ETakingsSessionStatus.FINALIZED,
                     finalizedAt: new Date().toISOString(),
-                    finalizedBy: user.id,
-                    cashSalesCents: recordedTotals.cash,
+                    finalizedBy: effectiveCashUserId,
+                    cashSalesCents: baseRecordedTotals.cash,
                     cashRefundsCents: 0,
                     moneyInCents: cashMovementTotals.moneyInCents,
                     moneyOutCents: cashMovementTotals.moneyOutCents,
-                    cashDropsCents: cashMovementTotals.cashDropsCents,
-                    tipPayoutsCents: cashMovementTotals.tipPayoutsCents,
+                    cashDropsCents: 0,
+                    tipPayoutsCents: 0,
                     expectedDrawerCashCents,
                     countedDrawerCashCents,
                     varianceCents: cashVarianceCents,
+                    recordedTotalCents: totalRecordedCents,
+                    countedTotalCents: totalCountedCents,
+                    paymentVarianceCents: totalVarianceCents,
+                    paymentSummaryJson: JSON.stringify(paymentSummary),
                     varianceReason: varianceReason.trim() || null,
                     openOrdersCount: orderWarnings.openOrdersCount,
                     unpaidOrdersCount: orderWarnings.unpaidOrdersCount,
@@ -458,12 +898,20 @@ export default () => {
                 },
             });
 
-            // Creates the next open session right after finalising.
-            await handleCreateCurrentSession({
-                sessionBusinessDate: businessDate,
-                initialOpeningFloatCents: 0,
-                requireOpeningFloatReview: true,
-            });
+            const refreshedTakingsResult = await refetchTakingsSessions();
+            const refreshedSessions: IGET_TAKINGS_SESSION[] = refreshedTakingsResult.data?.getTakingsSessionsByScopeKeyByOpenedAt?.items || [];
+            const existingOpenSession =
+                sortSessions(
+                    refreshedSessions.filter((session) => session.scopeKey === scopeKey && session.status === ETakingsSessionStatus.OPEN),
+                )[0] || null;
+
+            if (!existingOpenSession) {
+                await handleCreateCurrentSession({
+                    sessionBusinessDate: businessDate,
+                    initialOpeningFloatCents: 0,
+                    requireOpeningFloatReview: true,
+                });
+            }
 
             toast.success("Takings finalised.");
             setActiveView("history");
@@ -474,14 +922,21 @@ export default () => {
         } catch (error) {
             console.error(error);
             toast.error("Unable to finalise takings.");
+        } finally {
+            suppressAutoCreateRef.current = false;
         }
     };
 
     // Opens the finalise modal after basic checks pass.
     const handleOpenFinalizeModal = () => {
-        if (!currentSession || blocksFinalize || !restaurant?.takingsEnable || !isPOS) return;
+        if (!currentSession || !restaurant?.takingsEnable || !isPOS) return;
         if (openingFloatRequiresReview) {
             toast.error("Confirm and save the opening float for this session before finalising.");
+            return;
+        }
+
+        if (unresolvedOrdersCount > 0) {
+            setShowWarningModal(true);
             return;
         }
 
@@ -497,17 +952,17 @@ export default () => {
     // Closes the warning modal.
     const handleCloseWarningModal = () => {
         setShowWarningModal(false);
-        setWarningModalDismissed(true);
     };
 
-    // Accepts the warnings and lets finalising continue.
+    // Accepts unresolved-order warnings and continues to the final confirmation step.
     const handleContinueFromWarningModal = () => {
         setAcknowledgedWarnings(true);
         setShowWarningModal(false);
-        setWarningModalDismissed(true);
+        setShowFinalizeModal(true);
     };
 
-    // Saves the opening float on the current session.
+    // Persists the reviewed opening float on the current session.
+    // This is required before finalising if the session started with zero float.
     const handleSaveOpeningFloat = async () => {
         if (!currentSession) return;
 
@@ -517,6 +972,7 @@ export default () => {
                 variables: {
                     id: currentSession.id,
                     openingFloatCents,
+                    lastActivityAt: new Date().toISOString(),
                 },
             });
 
@@ -569,27 +1025,49 @@ export default () => {
     // Picks the user label for a history row.
     const getHistoryUserLabel = (session: IGET_TAKINGS_SESSION) => {
         const sessionUserId = session.finalizedBy || session.openedBy;
-        const currentUserName = user ? `${user.firstName} ${user.lastName}`.trim() : "";
 
-        if (sessionUserId && user?.id === sessionUserId && currentUserName) return currentUserName;
+        if (sessionUserId && effectiveCashUserId === sessionUserId && effectiveCashUserName) return effectiveCashUserName;
         return sessionUserId || "-";
+    };
+
+    // Reads the saved payment summary and falls back for older sessions.
+    const getPaymentSummarySnapshot = (session: IGET_TAKINGS_SESSION): TPaymentSummarySnapshot | null => {
+        if (!session.paymentSummaryJson) return null;
+
+        try {
+            return JSON.parse(session.paymentSummaryJson) as TPaymentSummarySnapshot;
+        } catch (error) {
+            console.error("Unable to parse takings payment summary.", error);
+            return null;
+        }
     };
 
     // Builds the history summary rows for one session.
     const getHistorySummaryRows = (session: IGET_TAKINGS_SESSION) => {
-        const cashRecordedCents = session.expectedDrawerCashCents || 0;
-        const cashCountedCents = session.countedDrawerCashCents || 0;
+        const isActiveOpenSession = currentSession?.id === session.id && session.status === ETakingsSessionStatus.OPEN;
+        const paymentSnapshot = isActiveOpenSession ? persistedPaymentSummary : getPaymentSummarySnapshot(session);
+        const legacyCashRecordedCents = isActiveOpenSession ? persistedExpectedDrawerCashCents : session.expectedDrawerCashCents || 0;
+        const legacyCashCountedCents = isActiveOpenSession ? countedDrawerCashCents : session.countedDrawerCashCents || 0;
+        const paymentRecordedTotalCents =
+            (isActiveOpenSession ? persistedRecordedTotalCents : session.recordedTotalCents) ??
+            (paymentSnapshot ? PAYMENT_KEYS.reduce((total, key) => total + (paymentSnapshot[key]?.recordedCents || 0), 0) : legacyCashRecordedCents);
+        const countedTotalCents =
+            (isActiveOpenSession ? totalCountedCents : session.countedTotalCents) ??
+            (paymentSnapshot ? PAYMENT_KEYS.reduce((total, key) => total + (paymentSnapshot[key]?.countedCents || 0), 0) : legacyCashCountedCents);
+        const paymentVarianceCents =
+            (isActiveOpenSession ? persistedTotalVarianceCents : session.paymentVarianceCents) ?? countedTotalCents - paymentRecordedTotalCents;
         const rows: Array<{ key: string; label: string; countedCents: number; recordedCents: number; differenceCents: number }> = PAYMENT_KEYS.map(
             (key) => {
-                const recordedCents = key === "cash" ? cashRecordedCents : 0;
-                const countedCents = key === "cash" ? cashCountedCents : 0;
+                const recordedCents = paymentSnapshot?.[key]?.recordedCents ?? (key === "cash" ? legacyCashRecordedCents : 0);
+                const countedCents = paymentSnapshot?.[key]?.countedCents ?? (key === "cash" ? legacyCashCountedCents : 0);
+                const differenceCents = paymentSnapshot?.[key]?.differenceCents ?? countedCents - recordedCents;
 
                 return {
                     key,
                     label: getPaymentLabel(key),
                     countedCents,
                     recordedCents,
-                    differenceCents: key === "cash" ? (session.varianceCents ?? countedCents - recordedCents) : countedCents - recordedCents,
+                    differenceCents,
                 };
             },
         );
@@ -597,15 +1075,42 @@ export default () => {
         rows.push({
             key: "total",
             label: "Total",
-            countedCents: cashCountedCents,
-            recordedCents: cashRecordedCents,
-            differenceCents: session.varianceCents ?? cashCountedCents - cashRecordedCents,
+            countedCents: countedTotalCents,
+            recordedCents: paymentRecordedTotalCents,
+            differenceCents: paymentVarianceCents,
         });
 
         return rows;
     };
 
-    // Renders the payment count modal.
+    // Shows the saved money movement summary for the selected session.
+    const getHistoryDrawerRows = (session: IGET_TAKINGS_SESSION) => {
+        const isActiveOpenSession = currentSession?.id === session.id && session.status === ETakingsSessionStatus.OPEN;
+        const paymentSnapshot = isActiveOpenSession ? persistedPaymentSummary : getPaymentSummarySnapshot(session);
+        const cashMoneyInCents = isActiveOpenSession
+            ? paymentMovementTotals.moneyInTotals.cash
+            : (paymentSnapshot?.cash?.moneyInCents ?? session.moneyInCents ?? 0);
+        const cashMoneyOutCents = isActiveOpenSession
+            ? paymentMovementTotals.moneyOutTotals.cash
+            : (paymentSnapshot?.cash?.moneyOutCents ?? session.moneyOutCents ?? 0);
+        const onlineMoneyInCents = isActiveOpenSession ? paymentMovementTotals.moneyInTotals.online : (paymentSnapshot?.online?.moneyInCents ?? 0);
+        const onlineMoneyOutCents = isActiveOpenSession ? paymentMovementTotals.moneyOutTotals.online : (paymentSnapshot?.online?.moneyOutCents ?? 0);
+        const eftposMoneyInCents = isActiveOpenSession ? paymentMovementTotals.moneyInTotals.eftpos : (paymentSnapshot?.eftpos?.moneyInCents ?? 0);
+        const eftposMoneyOutCents = isActiveOpenSession ? paymentMovementTotals.moneyOutTotals.eftpos : (paymentSnapshot?.eftpos?.moneyOutCents ?? 0);
+
+        return [
+            { label: "Opening Float", valueCents: isActiveOpenSession ? persistedOpeningFloatCents : session.openingFloatCents || 0 },
+            { label: "Cash Money In", valueCents: cashMoneyInCents },
+            { label: "Cash Money Out", valueCents: cashMoneyOutCents },
+            { label: "Online Money In", valueCents: onlineMoneyInCents },
+            { label: "Online Money Out", valueCents: onlineMoneyOutCents },
+            { label: "Eftpos Money In", valueCents: eftposMoneyInCents },
+            { label: "Eftpos Money Out", valueCents: eftposMoneyOutCents },
+        ];
+    };
+
+    // Renders the modal used to enter counted payment totals for each payment method.
+    // Cash entries can be entered directly or via denomination breakdown.
     const renderCountEntryModal = () => {
         if (!entryPaymentKey) return null;
 
@@ -719,7 +1224,8 @@ export default () => {
         );
     };
 
-    // Renders one payment row.
+    // Renders one payment row in the cash-up totals table.
+    // Each row shows the recorded total and opens the entry modal for counted values.
     const renderPaymentRow = (key: TPaymentKey, label: string) => {
         const counted = countedTotals[key];
         const recorded = recordedTotals[key];
@@ -743,30 +1249,24 @@ export default () => {
 
     if (!restaurant) return <></>;
 
+    // Page render: top-level cash-up layout with warnings, counts, finalise actions, and history.
     return (
         <PageWrapper>
             <div className="cashup-page">
-                <ModalV2 padding="0" width="560px" isOpen={showWarningModal} disableClose={false} onRequestClose={handleCloseWarningModal}>
+                <ModalV2 padding="0" width="500px" isOpen={showWarningModal} disableClose={false} onRequestClose={handleCloseWarningModal}>
                     <div className="cashup-warning-modal">
                         <div className="cashup-warning-modal__header">
                             <FiAlertTriangle />
                             <div>
                                 <h3>Open orders need attention</h3>
                                 <p>
-                                    Resolve open, parked, or unpaid orders before finalising takings. If you continue, those orders may sit outside
-                                    the final reconciliation.
+                                    Resolve parked or unpaid orders before finalising takings. If you continue, those orders may sit outside the final
+                                    reconciliation.
                                 </p>
                             </div>
                         </div>
 
                         <div className="cashup-warning-grid">
-                            <div className={`cashup-warning ${orderWarnings.openOrdersCount > 0 ? "warning" : ""}`}>
-                                <FiClock />
-                                <div>
-                                    <strong>{orderWarnings.openOrdersCount}</strong>
-                                    <span>Open Orders</span>
-                                </div>
-                            </div>
                             <div className={`cashup-warning ${orderWarnings.parkedOrdersCount > 0 ? "warning" : ""}`}>
                                 <FiAlertTriangle />
                                 <div>
@@ -792,12 +1292,24 @@ export default () => {
                                 You can continue to count takings, but finalising means you accept these unresolved order warnings.
                             </div>
                         )}
+                        {orderWarnings.paidOpenOrdersCount > 0 && (
+                            <div className="cashup-helper">
+                                {orderWarnings.paidOpenOrdersCount} paid order{orderWarnings.paidOpenOrdersCount === 1 ? "" : "s"} still remain open.
+                                They are already included in recorded takings, but staff should still complete them operationally.
+                            </div>
+                        )}
 
                         <div className="cashup-warning-modal__footer">
-                            <Button className="cashup-step-footer__ghost" onClick={() => navigate(dashboardPath)}>
+                            <Button className="cashup-step-footer__ghost" onClick={() => navigate(ordersPath)}>
                                 Go To Orders
                             </Button>
-                            {!blocksFinalize && <Button onClick={handleContinueFromWarningModal}>Continue To Cash Up</Button>}
+                            {blocksFinalize ? (
+                                <Button className="cashup-step-footer__ghost" onClick={handleCloseWarningModal}>
+                                    Close
+                                </Button>
+                            ) : (
+                                <Button onClick={handleContinueFromWarningModal}>Continue To Finalise</Button>
+                            )}
                         </div>
                     </div>
                 </ModalV2>
@@ -829,10 +1341,10 @@ export default () => {
                     </div>
 
                     <div className="cashup-view-tabs">
-                        <button className={activeView === "finalize" ? "active" : ""} onClick={() => setActiveView("finalize")}>
+                        <button className={activeView === "finalize" ? "active" : ""} onClick={() => handleChangeView("finalize")}>
                             Cash Up
                         </button>
-                        <button className={activeView === "history" ? "active" : ""} onClick={() => setActiveView("history")}>
+                        <button className={activeView === "history" ? "active" : ""} onClick={() => handleChangeView("history")}>
                             History
                         </button>
                     </div>
@@ -861,7 +1373,7 @@ export default () => {
                     </Card>
                 )}
 
-                {hasPreviousBusinessDateOpenSession && (
+                {hasPreviousBusinessDateOpenSession && !canReusePreviousBusinessDateOpenSession && (
                     <Card className="cashup-banner">
                         <div className="cashup-banner__content">
                             <FiAlertTriangle />
@@ -873,6 +1385,7 @@ export default () => {
                     </Card>
                 )}
 
+                {/* Cash Up view: active reconciliation and finalisation screen */}
                 {activeView === "finalize" && (
                     <div className="cashup-layout cashup-layout--simple">
                         <div className="cashup-layout__main">
@@ -918,33 +1431,17 @@ export default () => {
                                 <div className="cashup-kounta-totals">
                                     <div className="cashup-kounta-totals__row">
                                         <span>Total Counted</span>
-                                        <strong>{getDollarString(countedDrawerCashCents)}</strong>
+                                        <strong>{getDollarString(totalCountedCents)}</strong>
                                     </div>
                                     <div
-                                        className={`cashup-kounta-totals__row ${cashVarianceCents === 0 ? "" : cashVarianceCents > 0 ? "positive" : "negative"}`}
+                                        className={`cashup-kounta-totals__row ${totalVarianceCents === 0 ? "" : totalVarianceCents > 0 ? "positive" : "negative"}`}
                                     >
-                                        <span>Difference ({getDollarString(expectedDrawerCashCents)})</span>
-                                        <strong>{getDollarString(cashVarianceCents)}</strong>
+                                        <span>Difference ({getDollarString(totalExpectedCents)})</span>
+                                        <strong>{getDollarString(totalVarianceCents)}</strong>
                                     </div>
                                 </div>
 
                                 <div className="cashup-finalize-inline">
-                                    {unresolvedOrdersCount > 0 && (
-                                        <div className={`cashup-warning-inline ${blocksFinalize ? "blocked" : ""}`}>
-                                            <div>
-                                                <strong>{unresolvedOrdersCount} unresolved orders</strong>
-                                                <span>
-                                                    {blocksFinalize
-                                                        ? "Finalising is blocked until open, parked, or unpaid orders are resolved."
-                                                        : "You have continued with unresolved order warnings for this takings run."}
-                                                </span>
-                                            </div>
-                                            <Button className="cashup-step-footer__ghost" onClick={() => navigate(dashboardPath)}>
-                                                Go To Orders
-                                            </Button>
-                                        </div>
-                                    )}
-
                                     {requiresVarianceReason && (
                                         <div className="cashup-finalize-fields">
                                             <Input
@@ -960,7 +1457,7 @@ export default () => {
                                         <Button
                                             onClick={handleOpenFinalizeModal}
                                             loading={finalizingSession}
-                                            disabled={!currentSession || blocksFinalize || !restaurant.takingsEnable || !isPOS}
+                                            disabled={!currentSession || !restaurant.takingsEnable || !isPOS}
                                         >
                                             <FiCheckCircle />
                                             <span>Finalise Takings</span>
@@ -972,6 +1469,7 @@ export default () => {
                     </div>
                 )}
 
+                {/* History view: past sessions list and selected session detail */}
                 {activeView === "history" && (
                     <div className={`cashup-history-layout ${selectedHistorySession ? "cashup-history-layout--with-detail" : ""}`}>
                         <div className="cashup-history-table">
@@ -994,7 +1492,7 @@ export default () => {
                                         onClick={() => setSelectedHistorySessionId(session.id)}
                                     >
                                         <span>{session.status === ETakingsSessionStatus.OPEN ? "" : session.sessionNumber}</span>
-                                        <span>{formatHistoryDate(session.finalizedAt || session.openedAt)}</span>
+                                        <span>{formatHistoryDate(getTakingsSessionDisplayTimestamp(session))}</span>
                                         <span>{getHistoryUserLabel(session)}</span>
                                         <span>{getHistoryStatusLabel(session.status)}</span>
                                         <FiChevronRight />
@@ -1010,28 +1508,41 @@ export default () => {
                                         <div>Business Number: {selectedHistorySession.sessionNumber || "-"}</div>
                                         <div>End Of Day {getHistoryStatusLabel(selectedHistorySession.status)} Takings</div>
                                         <div>
-                                            {formatHistoryDate(selectedHistorySession.finalizedAt || selectedHistorySession.openedAt)}{" "}
-                                            {restaurant.name}
+                                            {formatHistoryDate(getTakingsSessionDisplayTimestamp(selectedHistorySession))} {restaurant.name}
                                         </div>
                                         <div>{getTakingsScopeHistoryLabel(selectedHistorySession.scopeType)}</div>
                                     </div>
 
-                                    <div className="cashup-history-detail__summary-title">Summary</div>
-                                    <div className="cashup-history-detail__summary">
-                                        <div className="cashup-history-detail__summary-header">
-                                            <span>Payment Type</span>
-                                            <span>Counted</span>
-                                            <span>Recorded</span>
-                                            <span>Diff.</span>
-                                        </div>
-                                        {getHistorySummaryRows(selectedHistorySession).map((row) => (
-                                            <div className={row.key === "total" ? "cashup-history-detail__summary-total" : ""} key={row.key}>
-                                                <span>{row.label}</span>
-                                                <span>{convertCentsToDollars(row.countedCents)}</span>
-                                                <span>{convertCentsToDollars(row.recordedCents)}</span>
-                                                <span>{convertCentsToDollars(row.differenceCents)}</span>
+                                    <div className="cashup-history-detail__section">
+                                        <div className="cashup-history-detail__section-title">Summary</div>
+                                        <div className="cashup-history-detail__summary">
+                                            <div className="cashup-history-detail__summary-header">
+                                                <span>Payment Type</span>
+                                                <span>Counted</span>
+                                                <span>Recorded</span>
+                                                <span>Diff.</span>
                                             </div>
-                                        ))}
+                                            {getHistorySummaryRows(selectedHistorySession).map((row) => (
+                                                <div className={row.key === "total" ? "cashup-history-detail__summary-total" : ""} key={row.key}>
+                                                    <span>{row.label}</span>
+                                                    <span>{convertCentsToDollars(row.countedCents)}</span>
+                                                    <span>{convertCentsToDollars(row.recordedCents)}</span>
+                                                    <span>{convertCentsToDollars(row.differenceCents)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="cashup-history-detail__section">
+                                        <div className="cashup-history-detail__section-title">Drawer & Money Movements</div>
+                                        <div className="cashup-history-detail__line-list">
+                                            {getHistoryDrawerRows(selectedHistorySession).map((row) => (
+                                                <div key={row.label}>
+                                                    <span>{row.label}</span>
+                                                    <strong>{convertCentsToDollars(row.valueCents)}</strong>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </>
                             ) : (
@@ -1041,7 +1552,9 @@ export default () => {
                     </div>
                 )}
 
-                {(takingsLoading || ordersLoading || cashMovementsLoading) && <div className="cashup-page__loading">Loading cash up data...</div>}
+                {(takingsLoading || ordersLoading || cashMovementsLoading || rollingSessionForward) && (
+                    <div className="cashup-page__loading">Loading cash up data...</div>
+                )}
                 {ordersError && <div className="cashup-page__loading">Unable to load orders for the active cash-up business date.</div>}
             </div>
         </PageWrapper>

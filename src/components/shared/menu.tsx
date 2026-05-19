@@ -34,14 +34,29 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
     if (!restaurant) return <></>;
     if (!register) return <></>;
 
-    const visibleTabs = props.tabs.filter((tab) => {
-        if (tab.id === "cashup" || tab.id === "moneyInOut") {
-            // Cash management is only available on POS registers and only when the restaurant has enabled cash up in Tabin Web.
-            return restaurant.takingsEnable && register.type === ERegisterType.POS;
-        }
+    const visibleTabs = props.tabs
+        .filter((tab) => {
+            if (tab.id === "cashup" || tab.id === "moneyInOut") {
+                // Cash management is only available on POS registers and only when the restaurant has enabled cash up in Tabin Web.
+                return restaurant.takingsEnable && register.type === ERegisterType.POS;
+            }
 
-        return true;
-    });
+            return true;
+        })
+        .map((tab) => {
+            if (tab.id !== "admin" || !tab.subTabs) return tab;
+
+            return {
+                ...tab,
+                subTabs: tab.subTabs.filter((subTab) => {
+                    if (subTab.id === "selectPosUser") {
+                        return register.type === ERegisterType.POS && !!register.enablePosPinFeature;
+                    }
+
+                    return true;
+                }),
+            };
+        });
 
     const selectTab = (tab: ITab) => {
         if (tab.route) {
