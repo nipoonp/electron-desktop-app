@@ -28,6 +28,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         subTotal
         tax
         paid
+        paymentInProgress
         paymentAmounts {
             cash
             eftpos
@@ -240,6 +241,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     tax: number;
     subTotal: number;
     paid: boolean;
+    paymentInProgress: boolean | null;
     paymentAmounts: IOrderPaymentAmounts | null;
     thirdPartyIntegrationResult:
         | {
