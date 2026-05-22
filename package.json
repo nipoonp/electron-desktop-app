@@ -2,7 +2,7 @@
     "name": "Tabin",
     "description": "Tabin Self Service Kiosk",
     "author": "Tabin",
-    "version": "1.4.589",
+    "version": "1.4.590",
     "repository": "https://github.com/zeal-ltd/electron-desktop-app",
     "main": "public/electron.ts",
     "dependencies": {
