@@ -84,9 +84,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
                     if (printedOrders[order.id] !== undefined) continue;
 
-                    // Skip cancelled or mid-payment orders. Once all apps are on this version,
-                    // remove the TEMP onlineOrder workaround in the confirm lambdas.
-                    if (order.status === "CANCELLED" || order.paymentInProgress) continue;
+                    if (order.status === "CANCELLED" || order.status === "REFUNDED") continue;
 
                     for (var j = 0; j < register.printers.items.length; j++) {
                         const printer = register.printers.items[j];
