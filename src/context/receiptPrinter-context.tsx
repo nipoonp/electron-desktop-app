@@ -106,6 +106,8 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
                     if (order.status === "CANCELLED" || order.status === "REFUNDED") continue;
 
+                    if (order.cancellationReason?.includes("ONLINE_PAYMENT_FAILED")) continue;
+
                     for (var j = 0; j < register.printers.items.length; j++) {
                         const printer = register.printers.items[j];
 
