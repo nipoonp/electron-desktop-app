@@ -1741,6 +1741,7 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
             sortDirection: DESC
             orderRestaurantId: $orderRestaurantId
             placedAt: { beginsWith: $placedAt }
+            filter: { paymentInProgress: { ne: true } }
         ) {
             items {
                 ...OrderFieldsFragment
@@ -1756,6 +1757,7 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
             limit: 1000000
             orderRestaurantId: $orderRestaurantId
             placedAt: { between: [$placedAtStartDate, $placedAtEndDate] }
+            filter: { paymentInProgress: { ne: true } }
         ) {
             items {
                 ...OrderFieldsFragment
@@ -1772,7 +1774,7 @@ export const GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
             sortDirection: DESC
             orderRestaurantId: $orderRestaurantId
             placedAt: { beginsWith: $placedAt }
-            filter: { onlineOrder: { eq: true } }
+            filter: { and: [{ onlineOrder: { eq: true } }, { paymentInProgress: { ne: true } }] }
         ) {
             items {
                 ...OrderFieldsFragment
