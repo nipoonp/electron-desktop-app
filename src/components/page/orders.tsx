@@ -714,22 +714,13 @@ const Orders = () => {
                     <div className={`tab ${eOrderStatus == EOrderStatus.NEW ? "selected" : ""}`} onClick={() => onClickTab(EOrderStatus.NEW)}>
                         New
                     </div>
-                    <div
-                        className={`tab ${eOrderStatus == EOrderStatus.COMPLETED ? "selected" : ""}`}
-                        onClick={() => onClickTab(EOrderStatus.COMPLETED)}
-                    >
+                    <div className={`tab ${eOrderStatus == EOrderStatus.COMPLETED ? "selected" : ""}`} onClick={() => onClickTab(EOrderStatus.COMPLETED)}>
                         Completed
                     </div>
-                    <div
-                        className={`tab ${eOrderStatus == EOrderStatus.CANCELLED ? "selected" : ""}`}
-                        onClick={() => onClickTab(EOrderStatus.CANCELLED)}
-                    >
+                    <div className={`tab ${eOrderStatus == EOrderStatus.CANCELLED ? "selected" : ""}`} onClick={() => onClickTab(EOrderStatus.CANCELLED)}>
                         Cancelled
                     </div>
-                    <div
-                        className={`tab ${eOrderStatus == EOrderStatus.REFUNDED ? "selected" : ""}`}
-                        onClick={() => onClickTab(EOrderStatus.REFUNDED)}
-                    >
+                    <div className={`tab ${eOrderStatus == EOrderStatus.REFUNDED ? "selected" : ""}`} onClick={() => onClickTab(EOrderStatus.REFUNDED)}>
                         Refunded
                     </div>
                     <div className={`tab ${eOrderStatus == EOrderStatus.PARKED ? "selected" : ""}`} onClick={() => onClickTab(EOrderStatus.PARKED)}>
@@ -903,9 +894,7 @@ const Order = (props: {
                 ) : (
                     <div className="mb-1">Order placed: {format(new Date(order.placedAt), "dd MMM h:mm:ss aa")}</div>
                 )}
-                {order.orderScheduledAt && (
-                    <div className="mb-1">Order scheduled: {format(new Date(order.orderScheduledAt), "dd MMM h:mm:ss aa")}</div>
-                )}
+                {order.orderScheduledAt && <div className="mb-1">Order scheduled: {format(new Date(order.orderScheduledAt), "dd MMM h:mm:ss aa")}</div>}
                 {order.completedAt && <div className="mb-1">Order completed: {format(new Date(order.completedAt), "dd MMM h:mm:ss aa")}</div>}
                 {order.cancelledAt && <div className="mb-1">Order cancelled: {format(new Date(order.cancelledAt), "dd MMM h:mm:ss aa")}</div>}
                 {order.refundedAt && <div className="mb-1">Order refundedAt: {format(new Date(order.refundedAt), "dd MMM h:mm:ss aa")}</div>}
@@ -1001,11 +990,7 @@ const Order = (props: {
 
                     <div className="separator-2"></div>
                     {order.surcharge ? <div className="mb-1">Surcharge: ${convertCentsToDollars(order.surcharge)}</div> : <></>}
-                    {order.orderTypeSurcharge ? (
-                        <div className="mb-1">Order Type Surcharge: ${convertCentsToDollars(order.orderTypeSurcharge)}</div>
-                    ) : (
-                        <></>
-                    )}
+                    {order.orderTypeSurcharge ? <div className="mb-1">Order Type Surcharge: ${convertCentsToDollars(order.orderTypeSurcharge)}</div> : <></>}
                     {order.eftposSurcharge ? <div className="mb-1">Card Surcharge: ${convertCentsToDollars(order.eftposSurcharge)}</div> : <></>}
                     {order.eftposTip ? <div className="mb-1">Eftpos Tip: ${convertCentsToDollars(order.eftposTip)}</div> : <></>}
                     {order.discount ? <div className="mb-1">Discount: -${convertCentsToDollars(order.discount)}</div> : <></>}
@@ -1072,15 +1057,9 @@ const Order = (props: {
 
                     {!hideActionButtons && (
                         <div className="order-action-buttons-container mt-2">
-                            {order.status !== EOrderStatus.PARKED && order.status !== EOrderStatus.COMPLETED && (
-                                <Button onClick={() => onOrderComplete(order)}>Complete</Button>
-                            )}
-                            {order.status !== EOrderStatus.PARKED && order.status !== EOrderStatus.REFUNDED && (
-                                <Button onClick={() => onOrderRefund(order)}>Refund</Button>
-                            )}
-                            {order.status !== EOrderStatus.PARKED && order.status !== EOrderStatus.CANCELLED && (
-                                <Button onClick={() => onOrderCancel(order)}>Cancel</Button>
-                            )}
+                            {order.status !== EOrderStatus.COMPLETED && <Button onClick={() => onOrderComplete(order)}>Complete</Button>}
+                            {order.status !== EOrderStatus.REFUNDED && <Button onClick={() => onOrderRefund(order)}>Refund</Button>}
+                            {order.status !== EOrderStatus.CANCELLED && <Button onClick={() => onOrderCancel(order)}>Cancel</Button>}
                             {(order.status === EOrderStatus.PARKED ||
                                 (order.paymentAmounts &&
                                     !order.paymentAmounts.cash &&
@@ -1182,12 +1161,8 @@ const OrderItemDetails = (props: {
                                                     <div>
                                                         <div className="mt-2"></div>
                                                         <ProductModifier
-                                                            selectionIndex={
-                                                                m.productModifiers && m.productModifiers.length > 1 ? index + 1 : undefined
-                                                            }
-                                                            showNoExtraSelectionsMade={
-                                                                m.productModifiers?.some((pm) => pm.modifierGroups?.length) || false
-                                                            }
+                                                            selectionIndex={m.productModifiers && m.productModifiers.length > 1 ? index + 1 : undefined}
+                                                            showNoExtraSelectionsMade={m.productModifiers?.some((pm) => pm.modifierGroups?.length) || false}
                                                             product={productModifier}
                                                         />
                                                     </div>
@@ -1253,8 +1228,7 @@ const MergedOrdersModal = (props: {
                                             <div className="h4">{o.type}</div>
                                         </div>
                                         <div className="text-grey mt-2">
-                                            {format(new Date(o.placedAt), "dd MMM h:mm aa")} • {itemsCount(o)} items • $
-                                            {convertCentsToDollars(o.subTotal || 0)}
+                                            {format(new Date(o.placedAt), "dd MMM h:mm aa")} • {itemsCount(o)} items • ${convertCentsToDollars(o.subTotal || 0)}
                                         </div>
                                     </div>
                                 )}
