@@ -333,7 +333,14 @@ const Restaurant = () => {
 
     useEffect(() => {
         if (!isPOS || !register || orderType !== null) return;
-        const { availableOrderTypes } = register;
+        const { availableOrderTypes, defaultPreSelectedOrderType } = register;
+
+        // Use the configured preselected order type when it is still an available option
+        if (defaultPreSelectedOrderType && availableOrderTypes.includes(defaultPreSelectedOrderType)) {
+            setOrderType(defaultPreSelectedOrderType);
+            return;
+        }
+
         const defaultType =
             availableOrderTypes.length === 1 && availableOrderTypes.includes(EOrderType.DINEIN)
                 ? EOrderType.DINEIN

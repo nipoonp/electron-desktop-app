@@ -315,6 +315,7 @@ export const GET_RESTAURANT = gql`
                     enableDoordashPayments
                     enableDelivereasyPayments
                     availableOrderTypes
+                    defaultPreSelectedOrderType
                     orderTypeSurcharge {
                         dinein
                         takeaway
@@ -1114,6 +1115,7 @@ export interface IGET_RESTAURANT_REGISTER {
     enableDoordashPayments: boolean;
     enableDelivereasyPayments: boolean;
     availableOrderTypes: EOrderType[];
+    defaultPreSelectedOrderType?: EOrderType | null;
     orderTypeSurcharge: OrderTypeSurchargeType;
     type: ERegisterType;
     requestCustomerInformation?: RequestCustomerInformationType;
