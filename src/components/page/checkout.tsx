@@ -303,9 +303,7 @@ export const Checkout = () => {
 
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
     const [paymentOutcomeOrderNumber, setPaymentOutcomeOrderNumber] = useState<string | null>(null);
-    const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(
-        restaurant?.delayBetweenOrdersInSeconds || 10,
-    );
+    const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(restaurant?.delayBetweenOrdersInSeconds || 10);
     let transactionCompleteRedirectTime = restaurant?.delayBetweenOrdersInSeconds || 10;
 
     const [showPromotionCodeModal, setShowPromotionCodeModal] = useState(false);
@@ -639,9 +637,7 @@ export const Checkout = () => {
 
                 for (const modifierGroupItem of product.modifierGroups.items) {
                     const modifierGroup = modifierGroupItem.modifierGroup;
-                    const modifiersById = new Map(
-                        modifierGroup.modifiers.items.map((modifierItem) => [modifierItem.modifier.id, modifierItem.modifier]),
-                    );
+                    const modifiersById = new Map(modifierGroup.modifiers.items.map((modifierItem) => [modifierItem.modifier.id, modifierItem.modifier]));
 
                     modifierGroupsById.set(modifierGroup.id, {
                         modifiersById,
@@ -1173,8 +1169,7 @@ export const Checkout = () => {
         const wasEditingParkedOrder = Boolean(parkedOrderId);
         const keepParkedStatus = wasEditingParkedOrder && parkOrder && Boolean(parkedOrderStatus);
         //If parked order do not generate order number
-        const orderNumber =
-            parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
+        const orderNumber = parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
         const orderStatus = keepParkedStatus ? parkedOrderStatus! : EOrderStatus.NEW;
 
         setPaymentOutcomeOrderNumber(orderNumber);
@@ -1187,11 +1182,7 @@ export const Checkout = () => {
                 const filename = `${date}-signature`;
                 const fileExtension = "png";
 
-                const signatureFile = await convertBase64ToFile(
-                    customerInformation.signatureBase64,
-                    `${filename}.${fileExtension}`,
-                    `image/${fileExtension}`,
-                );
+                const signatureFile = await convertBase64ToFile(customerInformation.signatureBase64, `${filename}.${fileExtension}`, `image/${fileExtension}`);
 
                 const uploadedObject: any = await Storage.put(`${filename}.${fileExtension}`, signatureFile, {
                     contentType: `image/${fileExtension}`, //signature image png, png required to print to receipt printer
@@ -1224,17 +1215,14 @@ export const Checkout = () => {
             if (register.printers && register.printers.items.length > 0) {
                 if (parkOrder) {
                     if (register.autoPrintParkedOrderKitchenReceipts) {
-                        const localProductsSnapshot =
-                            (JSON.parse(JSON.stringify(products || [])) as IGET_RESTAURANT_ORDER_FRAGMENT["products"]) || [];
+                        const localProductsSnapshot = (JSON.parse(JSON.stringify(products || [])) as IGET_RESTAURANT_ORDER_FRAGMENT["products"]) || [];
                         const savedOrderProducts = (newOrder.products || []) as IGET_RESTAURANT_ORDER_FRAGMENT["products"];
                         const getTotalQuantity = (orderProducts: IGET_RESTAURANT_ORDER_FRAGMENT["products"]) =>
                             (orderProducts || []).reduce((totalQuantity, product) => totalQuantity + (product.quantity || 0), 0);
                         // Prefer saved mutation products so tracking keys match reopened order rows.
                         // Fallback to local cart snapshot when response lags behind the latest cart edits.
                         const productsForParkedPrint =
-                            getTotalQuantity(savedOrderProducts) >= getTotalQuantity(localProductsSnapshot)
-                                ? savedOrderProducts
-                                : localProductsSnapshot;
+                            getTotalQuantity(savedOrderProducts) >= getTotalQuantity(localProductsSnapshot) ? savedOrderProducts : localProductsSnapshot;
                         const orderForParkedPrint: IGET_RESTAURANT_ORDER_FRAGMENT = {
                             ...newOrder,
                             products: productsForParkedPrint,
@@ -1248,11 +1236,7 @@ export const Checkout = () => {
             }
 
             // If using third party integration. Poll for resposne
-            if (
-                restaurant.thirdPartyIntegrations &&
-                restaurant.thirdPartyIntegrations.enable &&
-                restaurant.thirdPartyIntegrations.awaitThirdPartyResponse
-            ) {
+            if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.enable && restaurant.thirdPartyIntegrations.awaitThirdPartyResponse) {
                 setPaymentModalState(EPaymentModalState.ThirdPartyIntegrationAwaitingResponse);
 
                 await pollForThirdPartyResponse(newOrder.id);
@@ -1595,24 +1579,12 @@ export const Checkout = () => {
             } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
 
-                outcome = await verifoneCreateTransaction(
-                    amount,
-                    register.eftposIpAddress,
-                    register.eftposPortNumber,
-                    restaurant.id,
-                    setEftposMessage,
-                );
+                outcome = await verifoneCreateTransaction(amount, register.eftposIpAddress, register.eftposPortNumber, restaurant.id, setEftposMessage);
             } else if (register.eftposProvider == EEftposProvider.TYRO) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
                 const setEftposQuestion = (question: ITyroEftposQuestion) => setEftposTransactionProcessQuestion(question);
 
-                outcome = await tyroCreateTransaction(
-                    amount.toString(),
-                    register.tyroMerchantId,
-                    register.tyroTerminalId,
-                    setEftposMessage,
-                    setEftposQuestion,
-                );
+                outcome = await tyroCreateTransaction(amount.toString(), register.tyroMerchantId, register.tyroTerminalId, setEftposMessage, setEftposQuestion);
             } else if (register.eftposProvider == EEftposProvider.MX51) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
                 const setCustomerSignature = (question: IMX51EftposQuestion | null) => {
@@ -1709,15 +1681,7 @@ export const Checkout = () => {
 
                 if (newTotalPaymentAmounts >= subTotal) {
                     //Passing paymentAmounts, payments via params so we send the most updated values
-                    await onSubmitOrder(
-                        true,
-                        false,
-                        newPaymentAmounts,
-                        newPayments,
-                        outcome.eftposCardType,
-                        outcome.eftposSurcharge,
-                        outcome.eftposTip,
-                    );
+                    await onSubmitOrder(true, false, newPaymentAmounts, newPayments, outcome.eftposCardType, outcome.eftposSurcharge, outcome.eftposTip);
 
                     setPaymentModalState(EPaymentModalState.EftposResult);
                 } else {
@@ -1942,22 +1906,10 @@ export const Checkout = () => {
     const onParkOrder = async () => {
         setShowPaymentModal(true);
 
-        const newPaymentAmounts: ICartPaymentAmounts = {
-            cash: 0,
-            eftpos: 0,
-            online: 0,
-            onAccount: 0,
-            uberEats: 0,
-            menulog: 0,
-            doordash: 0,
-            delivereasy: 0,
-        };
-        const newPayments: ICartPayment[] = [];
-
         setPaymentModalState(EPaymentModalState.Park);
 
         try {
-            await onSubmitOrder(false, true, newPaymentAmounts, newPayments);
+            await onSubmitOrder(false, true, paymentAmounts, payments);
         } catch (e) {
             setCreateOrderError(e);
         }
@@ -2117,13 +2069,7 @@ export const Checkout = () => {
     };
 
     const itemUpdatedModal = () => {
-        return (
-            <>
-                {showItemUpdatedModal && (
-                    <ItemAddedUpdatedModal isOpen={showItemUpdatedModal} onClose={onCloseItemUpdatedModal} isProductUpdate={true} />
-                )}
-            </>
-        );
+        return <>{showItemUpdatedModal && <ItemAddedUpdatedModal isOpen={showItemUpdatedModal} onClose={onCloseItemUpdatedModal} isProductUpdate={true} />}</>;
     };
 
     const promotionCodeModal = () => {
@@ -2459,9 +2405,7 @@ export const Checkout = () => {
             <div className="mb-2"></div> */}
             {promotion ? (
                 <div className="text-center mb-1">
-                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
-                        promotion.discountedAmount,
-                    )}`}{" "}
+                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(promotion.discountedAmount)}`}{" "}
                     {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
                 </div>
             ) : (
@@ -2469,11 +2413,7 @@ export const Checkout = () => {
             )}
             {surcharge ? <div className="text-center mb-1">Surcharge: ${convertCentsToDollars(surcharge)}</div> : <></>}
             {paidSoFar > 0 ? <div className="text-center mb-1">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : <></>}
-            {orderTypeSurcharge > 0 ? (
-                <div className="text-center mb-1">Order Type Surcharge: ${convertCentsToDollars(orderTypeSurcharge)}</div>
-            ) : (
-                <></>
-            )}
+            {orderTypeSurcharge > 0 ? <div className="text-center mb-1">Order Type Surcharge: ${convertCentsToDollars(orderTypeSurcharge)}</div> : <></>}
 
             {staticDiscount ? (
                 <div className={`text-center ${isPOS ? "mb-1" : "mb-4"}`}>
@@ -2498,11 +2438,7 @@ export const Checkout = () => {
                             Order More
                         </Button>
                     )}
-                    <Button
-                        onClick={onClickOrderButton}
-                        className="button complete-order-button"
-                        disabled={products && products.length ? false : true}
-                    >
+                    <Button onClick={onClickOrderButton} className="button complete-order-button" disabled={products && products.length ? false : true}>
                         Complete Order
                     </Button>
                 </div>
@@ -2557,11 +2493,7 @@ export const Checkout = () => {
                 </div>
                 {parkedOrderNumber && <div className="parked-order-banner">Updating Parked Order #{parkedOrderNumber}</div>}
                 <div className="order-wrapper">
-                    <div
-                        ref={(ref) => setProductsWrapperElement(ref)}
-                        className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`}
-                        id="productsWrapperScroll"
-                    >
+                    <div ref={(ref) => setProductsWrapperElement(ref)} className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`} id="productsWrapperScroll">
                         {(!products || products.length == 0) && cartEmptyDisplay}
                         {products && products.length > 0 && order}
                         {isScrollable ? (
@@ -2575,7 +2507,7 @@ export const Checkout = () => {
                 </div>
                 <div className="extra-footer-button">
                     {isPOS && payments.length === 0 && <>{promoCodeFooter}</>}
-                    {isPOS && payments.length === 0 && <>{parkOrderFooter}</>}
+                    {isPOS && <>{parkOrderFooter}</>}
                     {isPOS && <>{noSaleFooter}</>}
                     {isPOS && <>{discountSaleFooter}</>}
                 </div>

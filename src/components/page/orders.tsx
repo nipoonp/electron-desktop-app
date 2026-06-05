@@ -54,7 +54,7 @@ import { useRegister } from "../../context/register-context";
 import { IoIosArrowBack } from "react-icons/io";
 import { beginOrderPath, restaurantPath } from "../main";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
-import { ICartModifier, ICartModifierGroup, ICartProduct, IOrderReceipt } from "../../model/model";
+import { ICartModifier, ICartModifierGroup, ICartPaymentAmounts, ICartProduct, IOrderReceipt } from "../../model/model";
 import { SelectReceiptPrinterModal } from "../modals/selectReceiptPrinterModal";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { useCart } from "../../context/cart-context";
@@ -78,6 +78,8 @@ const Orders = () => {
         cartProductQuantitiesById,
         setCustomerInformation,
         setPrintedProductQuantities,
+        setPaymentAmounts,
+        setPayments,
     } = useCart();
     const [eOrderStatus, setEOrderStatus] = useState(restaurant?.autoCompleteOrders ? EOrderStatus.COMPLETED : EOrderStatus.NEW);
 
@@ -398,6 +400,17 @@ const Orders = () => {
             setParkedOrderNumber(pOrder.number);
             setParkedOrderStatus(pOrder.status);
             setOrderType(pOrder.type);
+            setPaymentAmounts({
+                cash: pOrder.paymentAmounts?.cash || 0,
+                eftpos: pOrder.paymentAmounts?.eftpos || 0,
+                online: pOrder.paymentAmounts?.online || 0,
+                onAccount: pOrder.paymentAmounts?.onAccount || 0,
+                uberEats: pOrder.paymentAmounts?.uberEats || 0,
+                menulog: pOrder.paymentAmounts?.menulog || 0,
+                doordash: pOrder.paymentAmounts?.doordash || 0,
+                delivereasy: pOrder.paymentAmounts?.delivereasy || 0,
+            } as ICartPaymentAmounts);
+            setPayments([]);
             if (pOrder.table) setTableNumber(pOrder.table);
             if (pOrder.buzzer) setBuzzerNumber(pOrder.buzzer);
             if (pOrder.notes) setNotes(pOrder.notes);
