@@ -262,7 +262,7 @@ export const GET_RESTAURANT = gql`
             surchargePercentage
             takingsEnable
             takingsDefaultScope
-            takingsAllowScopeSwitch
+            # takingsAllowScopeSwitch
             takingsVarianceReasonThresholdCents
             takingsBlockIfOpenOrders
             salesReportMailingList
@@ -1103,7 +1103,7 @@ export interface IGET_RESTAURANT {
     surchargePercentage: number | null;
     takingsEnable: boolean | null;
     takingsDefaultScope: ETakingsScopeType | null;
-    takingsAllowScopeSwitch: boolean | null;
+    // takingsAllowScopeSwitch: boolean | null;
     takingsVarianceReasonThresholdCents: number | null;
     takingsBlockIfOpenOrders: boolean | null;
     salesReportMailingList: string | null;
@@ -2554,8 +2554,18 @@ export const GET_CASH_MOVEMENTS_BY_RESTAURANT_BY_OCCURRED_AT = gql`
 
 export const GET_CASH_MOVEMENTS_BY_TAKINGS_SESSION_BY_OCCURRED_AT = gql`
     # Preferred Money In/Out history query: movements belong to the exact open takings session.
-    query GetCashMovementsByTakingsSessionByOccurredAt($takingsSessionId: ID!, $occurredAt: ModelStringKeyConditionInput, $limit: Int, $nextToken: String) {
-        getCashMovementsByTakingsSessionByOccurredAt(takingsSessionId: $takingsSessionId, occurredAt: $occurredAt, limit: $limit, nextToken: $nextToken) {
+    query GetCashMovementsByTakingsSessionByOccurredAt(
+        $takingsSessionId: ID!
+        $occurredAt: ModelStringKeyConditionInput
+        $limit: Int
+        $nextToken: String
+    ) {
+        getCashMovementsByTakingsSessionByOccurredAt(
+            takingsSessionId: $takingsSessionId
+            occurredAt: $occurredAt
+            limit: $limit
+            nextToken: $nextToken
+        ) {
             items {
                 id
                 restaurantId

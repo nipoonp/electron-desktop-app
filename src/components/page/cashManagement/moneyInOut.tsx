@@ -72,20 +72,20 @@ export default () => {
 
     const businessDate = getBusinessDate();
     const takingsScopeStorageKey = useMemo(() => buildTakingsScopeStorageKey(restaurant?.id, register?.id), [register?.id, restaurant?.id]);
-    const persistedScopeType = useMemo(() => {
-        if (!isPOS || !restaurant?.takingsAllowScopeSwitch) return null;
-        const storedScopeType = localStorage.getItem(takingsScopeStorageKey) as ETakingsScopeType | null;
-        return storedScopeType;
-    }, [isPOS, restaurant?.takingsAllowScopeSwitch, takingsScopeStorageKey]);
+    // const persistedScopeType = useMemo(() => {
+    //     if (!isPOS || !restaurant?.takingsAllowScopeSwitch) return null;
+    //     const storedScopeType = localStorage.getItem(takingsScopeStorageKey) as ETakingsScopeType | null;
+    //     return storedScopeType;
+    // }, [isPOS, restaurant?.takingsAllowScopeSwitch, takingsScopeStorageKey]);
     const resolvedScope = useMemo(
         () =>
             resolveTakingsScope({
                 restaurantId: restaurant?.id,
                 registerId: register?.id,
                 staffId: effectiveCashUserId,
-                defaultScope: persistedScopeType || restaurant?.takingsDefaultScope,
+                defaultScope: restaurant?.takingsDefaultScope,
             }),
-        [effectiveCashUserId, persistedScopeType, register?.id, restaurant?.id, restaurant?.takingsDefaultScope],
+        [effectiveCashUserId, register?.id, restaurant?.id, restaurant?.takingsDefaultScope],
     );
     const scopeType = resolvedScope?.scopeType || ETakingsScopeType.SITE;
     const scopeId = resolvedScope?.scopeId || "";
