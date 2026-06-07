@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { useParams } from "react-router-dom";
 import { useGetRestaurantQuery } from "../../hooks/useGetRestaurantQuery";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
-import { checkoutPath, beginOrderPath, orderTypePath, tableNumberPath } from "../main";
+import { checkoutPath, beginOrderPath, tableNumberPath } from "../main";
 import {
     convertCentsToDollars,
     getContrastTextColor,
@@ -331,15 +331,40 @@ const Restaurant = () => {
         }
     }, [showProductModal]);
 
+    useEffect(() => {
+        if (!isPOS || !register || orderType !== null) return;
+        const { availableOrderTypes, defaultPreSelectedOrderType } = register;
+
+        // Use the configured preselected order type when it is still an available option
+        if (defaultPreSelectedOrderType && availableOrderTypes.includes(defaultPreSelectedOrderType)) {
+            setOrderType(defaultPreSelectedOrderType);
+            return;
+        }
+
+        const defaultType =
+            availableOrderTypes.length === 1 && availableOrderTypes.includes(EOrderType.DINEIN)
+                ? EOrderType.DINEIN
+                : EOrderType.TAKEAWAY;
+        setOrderType(defaultType);
+    }, [isPOS, register, orderType]);
+
     // callbacks
     const onClickCart = () => {
-        if (register && register.availableOrderTypes.length > 1 && orderType == null) {
-            navigate(orderTypePath);
-        } else if (register && register.availableOrderTypes.length == 1) {
-            setOrderType(register.availableOrderTypes[0]);
+        if (register && orderType == null) {
+            const { availableOrderTypes } = register;
+            const defaultType = availableOrderTypes.includes(EOrderType.TAKEAWAY)
+                ? EOrderType.TAKEAWAY
+                : availableOrderTypes.includes(EOrderType.DINEIN)
+                ? EOrderType.DINEIN
+                : null;
 
-            if (register.availableOrderTypes[0] === EOrderType.DINEIN && (register.enableTableFlags || register.enableCovers)) {
-                navigate(tableNumberPath);
+            if (defaultType) {
+                setOrderType(defaultType);
+                if (defaultType === EOrderType.DINEIN && (register.enableTableFlags || register.enableCovers)) {
+                    navigate(tableNumberPath);
+                } else {
+                    navigate(checkoutPath);
+                }
             } else {
                 navigate(checkoutPath);
             }

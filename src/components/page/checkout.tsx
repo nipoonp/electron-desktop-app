@@ -9,16 +9,20 @@ import {
     convertProductTypesForPrint,
     filterPrintProducts,
     getCartProductUnitTotalPrice,
+    getOrderLineSignature,
     getOrderNumber,
     isItemSoldOut,
     isProductQuantityAvailable,
+    printedQuantitiesListToMap,
+    printedQuantitiesToList,
     toLocalISOString,
 } from "../../util/util";
-import { useMutation } from "@apollo/client";
-import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
+import { useLazyQuery, useMutation } from "@apollo/client";
+import { CREATE_ORDER, UPDATE_ORDER, UPDATE_ORDER_PRINTED_QUANTITIES } from "../../graphql/customMutations";
 import { FiArrowDownCircle } from "react-icons/fi";
 import {
     GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT,
+    GET_ORDER,
     IGET_RESTAURANT_CATEGORY,
     IGET_RESTAURANT_PRODUCT,
     EPromotionType,
@@ -137,14 +141,12 @@ type AvailabilityCategoryIndex = {
     productsById: Map<string, AvailabilityProductIndex>;
 };
 
-// Storage key used to keep round-based kitchen print counters per order.
-export const getParkedOrderPrintedProductStorageKey = (orderId: string) => `parkedOrderPrintedProductIds:${orderId}`;
-
-// Builds a productId -> quantity map from order products.
+// Builds a lineKey -> quantity map from order products.
 export const getProductQuantities = (products: IGET_RESTAURANT_ORDER_FRAGMENT["products"]) =>
     (products || []).reduce(
         (productQuantities, product) => {
-            productQuantities[product.id] = (productQuantities[product.id] || 0) + product.quantity;
+            const key = getOrderLineSignature(product);
+            productQuantities[key] = (productQuantities[key] || 0) + product.quantity;
 
             return productQuantities;
         },
@@ -158,40 +160,17 @@ export const mergeProductQuantities = (target: Record<string, number>, source: R
     });
 };
 
-// Reads saved printed quantities for an order.
-export const getParkedOrderPrintedProductQuantities = (orderId: string) => {
-    try {
-        const parsedProductQuantities = JSON.parse(localStorage.getItem(getParkedOrderPrintedProductStorageKey(orderId)) || "{}");
-        if (!parsedProductQuantities) return {} as Record<string, number>;
-
-        return Object.entries(parsedProductQuantities).reduce(
-            (printedProductQuantities, [productId, quantity]) => {
-                if (typeof quantity === "number" && quantity > 0) printedProductQuantities[productId] = quantity;
-
-                return printedProductQuantities;
-            },
-            {} as Record<string, number>,
-        );
-    } catch {
-        return {} as Record<string, number>;
-    }
-};
-
-// Saves printed quantities for an order.
-export const setParkedOrderPrintedProductQuantities = (orderId: string, printedProductQuantities: Record<string, number>) => {
-    localStorage.setItem(getParkedOrderPrintedProductStorageKey(orderId), JSON.stringify(printedProductQuantities));
-};
-
 // Returns only quantities that have not been sent to kitchen yet.
 export const getUnprintedParkedOrderProducts = (order: IGET_RESTAURANT_ORDER_FRAGMENT, printedProductQuantities: Record<string, number>) => {
     const remainingPrintedProductQuantities = { ...printedProductQuantities };
 
     return order.products.reduce(
         (productsToPrint, product) => {
-            const printedQuantity = remainingPrintedProductQuantities[product.id] || 0;
+            const key = getOrderLineSignature(product);
+            const printedQuantity = remainingPrintedProductQuantities[key] || 0;
             const quantityToPrint = Math.max(product.quantity - printedQuantity, 0);
 
-            remainingPrintedProductQuantities[product.id] = Math.max(printedQuantity - product.quantity, 0);
+            remainingPrintedProductQuantities[key] = Math.max(printedQuantity - product.quantity, 0);
 
             if (quantityToPrint > 0) productsToPrint.push({ ...product, quantity: quantityToPrint });
 
@@ -211,6 +190,9 @@ export const Checkout = () => {
         parkedOrderId,
         parkedOrderNumber,
         parkedOrderStatus,
+        setParkedOrderId,
+        setParkedOrderNumber,
+        setParkedOrderStatus,
         orderType,
         setOrderType,
         products,
@@ -220,7 +202,13 @@ export const Checkout = () => {
         customerInformation,
         paymentMethod,
         setPaymentMethod,
+        setCovers,
         setTableNumber,
+        setBuzzerNumber,
+        setCustomerInformation,
+        setOnAccountOrders,
+        setLoyaltyUserAggregates,
+        setCustomerLoyaltyPoints,
         setNotes,
         covers,
         tableNumber,
@@ -247,6 +235,7 @@ export const Checkout = () => {
         userAppliedPromotionCode,
         removeUserAppliedPromotion,
         userAppliedLoyaltyId,
+        setUserAppliedLoyaltyId,
         isShownUpSellCrossSellModal,
         setIsShownUpSellCrossSellModal,
         isShownOrderThresholdMessageModal,
@@ -255,6 +244,10 @@ export const Checkout = () => {
         updateOrderScheduledAt,
         orderDetail,
         updateOrderDetail,
+        printedProductQuantities,
+        setPrintedProductQuantities,
+        setPaidItemCounts,
+        setSplitPaymentByPeople,
     } = useCart();
     const { restaurant, restaurantBase64Logo } = useRestaurant();
     const { register, isPOS } = useRegister();
@@ -283,6 +276,8 @@ export const Checkout = () => {
             logger.debug("update order mutation result: ", mutationResult);
         },
     });
+    const [updateOrderPrintedQuantitiesMutation] = useMutation(UPDATE_ORDER_PRINTED_QUANTITIES);
+    const [getOrder] = useLazyQuery(GET_ORDER, { fetchPolicy: "network-only" });
     const { getRestaurantDataAvailability } = useGetRestaurantAvailabilityLazyQuery();
 
     const { getThirdPartyOrderResponse } = useGetThirdPartyOrderResponseLazyQuery();
@@ -311,9 +306,7 @@ export const Checkout = () => {
 
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
     const [paymentOutcomeOrderNumber, setPaymentOutcomeOrderNumber] = useState<string | null>(null);
-    const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(
-        restaurant?.delayBetweenOrdersInSeconds || 10,
-    );
+    const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(restaurant?.delayBetweenOrdersInSeconds || 10);
     let transactionCompleteRedirectTime = restaurant?.delayBetweenOrdersInSeconds || 10;
 
     const [showPromotionCodeModal, setShowPromotionCodeModal] = useState(false);
@@ -433,6 +426,62 @@ export const Checkout = () => {
             );
         } else {
             cancelOrder();
+        }
+    };
+
+    const resetCurrentSale = () => {
+        const emptyPaymentAmounts: ICartPaymentAmounts = {
+            cash: 0,
+            eftpos: 0,
+            online: 0,
+            onAccount: 0,
+            uberEats: 0,
+            menulog: 0,
+            doordash: 0,
+            delivereasy: 0,
+        };
+
+        setProducts([]);
+        setParkedOrderId(null);
+        setParkedOrderNumber(null);
+        setParkedOrderStatus(null);
+        setCovers(null);
+        setTableNumber(null);
+        setBuzzerNumber(null);
+        setCustomerInformation(null);
+        setOnAccountOrders([]);
+        setLoyaltyUserAggregates([]);
+        setCustomerLoyaltyPoints(0);
+        setNotes("");
+        removeUserAppliedPromotion();
+        setUserAppliedLoyaltyId(null);
+        setStaticDiscount(0);
+        setPercentageDiscount(0);
+        setPaymentAmounts(emptyPaymentAmounts);
+        setPaidItemCounts({});
+        setSplitPaymentByPeople({ count: 0, paid: 0 });
+        setPayments([]);
+        setIsShownUpSellCrossSellModal(false);
+        setIsShownOrderThresholdMessageModal(false);
+        updateOrderScheduledAt(null);
+        updateOrderDetail(null);
+        setPrintedProductQuantities({});
+    };
+
+    const onClearSale = () => {
+        if (payments.length > 0 || paidSoFar > 0) {
+            showAlert(
+                "Incomplete Payments",
+                "There have been partial payments made on this order. Are you sure you would like to clear this sale?",
+                null,
+                () => {
+                    resetCurrentSale();
+                },
+                "No",
+                "Yes",
+            );
+        } else {
+            resetCurrentSale();
         }
     };
 
@@ -591,9 +640,7 @@ export const Checkout = () => {
 
                 for (const modifierGroupItem of product.modifierGroups.items) {
                     const modifierGroup = modifierGroupItem.modifierGroup;
-                    const modifiersById = new Map(
-                        modifierGroup.modifiers.items.map((modifierItem) => [modifierItem.modifier.id, modifierItem.modifier]),
-                    );
+                    const modifiersById = new Map(modifierGroup.modifiers.items.map((modifierItem) => [modifierItem.modifier.id, modifierItem.modifier]));
 
                     modifierGroupsById.set(modifierGroup.id, {
                         modifiersById,
@@ -920,12 +967,19 @@ export const Checkout = () => {
                 products: convertProductTypesForPrint(productsToPrint),
                 eftposReceipt: order.eftposReceipt,
                 paymentAmounts: order.paymentAmounts,
+                deliveryProvider: order.deliveryProvider,
+                deliveryAddress: order.deliveryAddress,
+                deliveryNotes: order.deliveryNotes,
+                deliveryDistanceMeters: order.deliveryDistanceMeters,
+                deliveryFeeDiscount: order.deliveryFeeDiscount,
+                deliveryFee: order.deliveryFee,
+                deliveryTrackingUrl: order.deliveryTrackingUrl,
                 total: order.total,
                 surcharge: order.surcharge,
                 orderTypeSurcharge: order.orderTypeSurcharge,
                 eftposSurcharge: order.eftposSurcharge,
                 eftposTip: order.eftposTip,
-                discount: order.promotionId && order.discount ? order.discount : null,
+                discount: order.discount || null,
                 tax: order.tax,
                 subTotal: order.subTotal,
                 paid: order.paid,
@@ -1016,16 +1070,26 @@ export const Checkout = () => {
             });
     };
 
+    const getLatestPrintedProductQuantities = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+        const latestOrderResult = await getOrder({ variables: { id: order.id } });
+        const latestOrder: IGET_RESTAURANT_ORDER_FRAGMENT = latestOrderResult.data?.getOrder || order;
+        return printedQuantitiesListToMap(latestOrder.printedQuantities);
+    };
+
     const onPrintParkedOrderReceipts = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         if (!register.printers) return;
 
-        const printedProductQuantities = getParkedOrderPrintedProductQuantities(order.id);
+        const printedProductQuantities = await getLatestPrintedProductQuantities(order);
         const unprintedProducts = getUnprintedParkedOrderProducts(order, printedProductQuantities);
         const unprintedProductQuantities = getProductQuantities(unprintedProducts);
 
-        if (unprintedProducts.length === 0) return;
+        if (unprintedProducts.length === 0) {
+            setPrintedProductQuantities(printedProductQuantities);
+            setKitchenPrintTrackingVersion((prev) => prev + 1);
+            return;
+        }
         const printedProductQuantitiesThisRun: Record<string, number> = {};
-        let hasTrackedKitchenSendThisRun = false;
+        let hasApplicableKitchenPrinter = false;
 
         for (const printer of register.printers.items) {
             if (!isKitchenReceiptPrinter(printer)) continue;
@@ -1034,47 +1098,60 @@ export const Checkout = () => {
 
             if (printerProducts.length === 0) continue;
 
+            hasApplicableKitchenPrinter = true;
+
             try {
                 await sendReceiptPrint({ ...order, products: printerProducts }, getReceiptPrinter(printer, "kitchen"));
                 mergeProductQuantities(printedProductQuantitiesThisRun, getProductQuantities(printerProducts), "max");
-                hasTrackedKitchenSendThisRun = true;
             } catch (error) {
                 logger.error("unable to print parked order receipt", error);
             }
         }
 
-        // Keep cart send-state aligned with a completed park cycle even when no kitchen printer send succeeds.
-        if (!hasTrackedKitchenSendThisRun) mergeProductQuantities(printedProductQuantitiesThisRun, unprintedProductQuantities, "max");
+        // No kitchen printers are configured for these products — treat all as sent so they don't block the park cycle.
+        if (!hasApplicableKitchenPrinter) mergeProductQuantities(printedProductQuantitiesThisRun, unprintedProductQuantities, "max");
 
-        mergeProductQuantities(printedProductQuantities, printedProductQuantitiesThisRun, "add");
-        setParkedOrderPrintedProductQuantities(order.id, printedProductQuantities);
-        setKitchenPrintTrackingVersion((prev) => prev + 1);
+        const latestPrintedProductQuantities = await getLatestPrintedProductQuantities(order);
+
+        Object.entries(printedProductQuantitiesThisRun).forEach(([lineKey, quantity]) => {
+            const targetQuantity = (printedProductQuantities[lineKey] || 0) + quantity;
+            latestPrintedProductQuantities[lineKey] = Math.max(latestPrintedProductQuantities[lineKey] || 0, targetQuantity);
+        });
+
+        try {
+            await updateOrderPrintedQuantitiesMutation({
+                variables: { orderId: order.id, printedQuantities: printedQuantitiesToList(latestPrintedProductQuantities) },
+            });
+            setPrintedProductQuantities(latestPrintedProductQuantities);
+            setKitchenPrintTrackingVersion((prev) => prev + 1);
+        } catch (error) {
+            logger.error("unable to persist printed quantities to backend", error);
+        }
     };
 
-    const showKitchenSendStatusInCart = orderType === EOrderType.DINEIN && parkedOrderStatus === EOrderStatus.PARKED && Boolean(parkedOrderId);
+    const showKitchenSendStatusInCart = parkedOrderStatus === EOrderStatus.PARKED && Boolean(parkedOrderId);
     const kitchenSendStatusByDisplayOrder = useMemo(() => {
         // Row-level status map used by the cart UI: index -> "sent" | "unsent".
         const statusByDisplayOrder: Record<number, "sent" | "unsent"> = {};
         if (!showKitchenSendStatusInCart || !parkedOrderId || !products || products.length === 0) return statusByDisplayOrder;
-        // Recompute after each kitchen send cycle.
-        void kitchenPrintTrackingVersion;
 
         // Track remaining sent quantity per product id while walking rows from top to bottom.
         // This avoids over-marking when the same product appears in multiple rows.
-        const remainingPrintedProductQuantities = { ...getParkedOrderPrintedProductQuantities(parkedOrderId) };
+        const remainingPrintedProductQuantities = { ...printedProductQuantities };
         products.forEach((product, displayOrder) => {
-            const printedQuantity = remainingPrintedProductQuantities[product.id] || 0;
+            const key = getOrderLineSignature(product);
+            const printedQuantity = remainingPrintedProductQuantities[key] || 0;
             const sentQuantityForThisRow = Math.min(printedQuantity, product.quantity);
             const unsentQuantityForThisRow = Math.max(product.quantity - sentQuantityForThisRow, 0);
 
             // Full row quantity covered by previously sent quantity => sent, else unsent.
             statusByDisplayOrder[displayOrder] = unsentQuantityForThisRow === 0 ? "sent" : "unsent";
             // Consume this row's quantity so next duplicate row of same product is evaluated correctly.
-            remainingPrintedProductQuantities[product.id] = Math.max(printedQuantity - product.quantity, 0);
+            remainingPrintedProductQuantities[key] = Math.max(printedQuantity - product.quantity, 0);
         });
 
         return statusByDisplayOrder;
-    }, [showKitchenSendStatusInCart, parkedOrderId, products, kitchenPrintTrackingVersion]);
+    }, [showKitchenSendStatusInCart, parkedOrderId, products, kitchenPrintTrackingVersion, printedProductQuantities]);
 
     const onPrintOnAccountOrderReceipts = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         register.printers &&
@@ -1095,8 +1172,7 @@ export const Checkout = () => {
         const wasEditingParkedOrder = Boolean(parkedOrderId);
         const keepParkedStatus = wasEditingParkedOrder && parkOrder && Boolean(parkedOrderStatus);
         //If parked order do not generate order number
-        const orderNumber =
-            parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
+        const orderNumber = parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
         const orderStatus = keepParkedStatus ? parkedOrderStatus! : EOrderStatus.NEW;
 
         setPaymentOutcomeOrderNumber(orderNumber);
@@ -1109,11 +1185,7 @@ export const Checkout = () => {
                 const filename = `${date}-signature`;
                 const fileExtension = "png";
 
-                const signatureFile = await convertBase64ToFile(
-                    customerInformation.signatureBase64,
-                    `${filename}.${fileExtension}`,
-                    `image/${fileExtension}`,
-                );
+                const signatureFile = await convertBase64ToFile(customerInformation.signatureBase64, `${filename}.${fileExtension}`, `image/${fileExtension}`);
 
                 const uploadedObject: any = await Storage.put(`${filename}.${fileExtension}`, signatureFile, {
                     contentType: `image/${fileExtension}`, //signature image png, png required to print to receipt printer
@@ -1145,41 +1217,35 @@ export const Checkout = () => {
 
             if (register.printers && register.printers.items.length > 0) {
                 if (parkOrder) {
-                    const localProductsSnapshot = (JSON.parse(JSON.stringify(products || [])) as IGET_RESTAURANT_ORDER_FRAGMENT["products"]) || [];
-                    const savedOrderProducts = (newOrder.products || []) as IGET_RESTAURANT_ORDER_FRAGMENT["products"];
-                    const getTotalQuantity = (orderProducts: IGET_RESTAURANT_ORDER_FRAGMENT["products"]) =>
-                        (orderProducts || []).reduce((totalQuantity, product) => totalQuantity + (product.quantity || 0), 0);
-                    // Prefer saved mutation products so tracking keys match reopened order rows.
-                    // Fallback to local cart snapshot when response lags behind the latest cart edits.
-                    const productsForParkedPrint =
-                        getTotalQuantity(savedOrderProducts) >= getTotalQuantity(localProductsSnapshot) ? savedOrderProducts : localProductsSnapshot;
-                    const orderForParkedPrint: IGET_RESTAURANT_ORDER_FRAGMENT = {
-                        ...newOrder,
-                        products: productsForParkedPrint,
-                    };
-                    // For parked dine-in orders, send only kitchen-delta items and update round tracking.
-                    await onPrintParkedOrderReceipts(orderForParkedPrint);
+                    if (register.autoPrintParkedOrderKitchenReceipts) {
+                        const localProductsSnapshot = (JSON.parse(JSON.stringify(products || [])) as IGET_RESTAURANT_ORDER_FRAGMENT["products"]) || [];
+                        const savedOrderProducts = (newOrder.products || []) as IGET_RESTAURANT_ORDER_FRAGMENT["products"];
+                        const getTotalQuantity = (orderProducts: IGET_RESTAURANT_ORDER_FRAGMENT["products"]) =>
+                            (orderProducts || []).reduce((totalQuantity, product) => totalQuantity + (product.quantity || 0), 0);
+                        // Prefer saved mutation products so tracking keys match reopened order rows.
+                        // Fallback to local cart snapshot when response lags behind the latest cart edits.
+                        const productsForParkedPrint =
+                            getTotalQuantity(savedOrderProducts) >= getTotalQuantity(localProductsSnapshot) ? savedOrderProducts : localProductsSnapshot;
+                        const orderForParkedPrint: IGET_RESTAURANT_ORDER_FRAGMENT = {
+                            ...newOrder,
+                            products: productsForParkedPrint,
+                        };
+                        await onPrintParkedOrderReceipts(orderForParkedPrint);
+                    }
+                    // else: AskToPrintParkedOrderReceipts modal lets the user decide
                 } else {
                     await printReceipts(newOrder, { treatAsPreviouslyParked: wasEditingParkedOrder });
                 }
             }
 
-            if (parkOrder && register.autoPrintParkedOrderKitchenReceipts) {
-                await onPrintParkedOrderReceipts(newOrder);
-            }
-
             // If using third party integration. Poll for resposne
-            if (
-                restaurant.thirdPartyIntegrations &&
-                restaurant.thirdPartyIntegrations.enable &&
-                restaurant.thirdPartyIntegrations.awaitThirdPartyResponse
-            ) {
+            if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.enable && restaurant.thirdPartyIntegrations.awaitThirdPartyResponse) {
                 setPaymentModalState(EPaymentModalState.ThirdPartyIntegrationAwaitingResponse);
 
                 await pollForThirdPartyResponse(newOrder.id);
             }
 
-            if (parkedOrderId && !parkOrder) localStorage.removeItem(getParkedOrderPrintedProductStorageKey(parkedOrderId));
+            if (parkedOrderId && !parkOrder) setPrintedProductQuantities({});
 
             beginTransactionCompleteTimeout();
         } catch (e) {
@@ -1521,24 +1587,12 @@ export const Checkout = () => {
             } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
 
-                outcome = await verifoneCreateTransaction(
-                    amount,
-                    register.eftposIpAddress,
-                    register.eftposPortNumber,
-                    restaurant.id,
-                    setEftposMessage,
-                );
+                outcome = await verifoneCreateTransaction(amount, register.eftposIpAddress, register.eftposPortNumber, restaurant.id, setEftposMessage);
             } else if (register.eftposProvider == EEftposProvider.TYRO) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
                 const setEftposQuestion = (question: ITyroEftposQuestion) => setEftposTransactionProcessQuestion(question);
 
-                outcome = await tyroCreateTransaction(
-                    amount.toString(),
-                    register.tyroMerchantId,
-                    register.tyroTerminalId,
-                    setEftposMessage,
-                    setEftposQuestion,
-                );
+                outcome = await tyroCreateTransaction(amount.toString(), register.tyroMerchantId, register.tyroTerminalId, setEftposMessage, setEftposQuestion);
             } else if (register.eftposProvider == EEftposProvider.MX51) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
                 const setCustomerSignature = (question: IMX51EftposQuestion | null) => {
@@ -1635,15 +1689,7 @@ export const Checkout = () => {
 
                 if (newTotalPaymentAmounts >= subTotal) {
                     //Passing paymentAmounts, payments via params so we send the most updated values
-                    await onSubmitOrder(
-                        true,
-                        false,
-                        newPaymentAmounts,
-                        newPayments,
-                        outcome.eftposCardType,
-                        outcome.eftposSurcharge,
-                        outcome.eftposTip,
-                    );
+                    await onSubmitOrder(true, false, newPaymentAmounts, newPayments, outcome.eftposCardType, outcome.eftposSurcharge, outcome.eftposTip);
 
                     setPaymentModalState(EPaymentModalState.EftposResult);
                 } else {
@@ -1868,22 +1914,10 @@ export const Checkout = () => {
     const onParkOrder = async () => {
         setShowPaymentModal(true);
 
-        const newPaymentAmounts: ICartPaymentAmounts = {
-            cash: 0,
-            eftpos: 0,
-            online: 0,
-            onAccount: 0,
-            uberEats: 0,
-            menulog: 0,
-            doordash: 0,
-            delivereasy: 0,
-        };
-        const newPayments: ICartPayment[] = [];
-
         setPaymentModalState(EPaymentModalState.Park);
 
         try {
-            await onSubmitOrder(false, true, newPaymentAmounts, newPayments);
+            await onSubmitOrder(false, true, paymentAmounts, payments);
         } catch (e) {
             setCreateOrderError(e);
         }
@@ -2043,13 +2077,7 @@ export const Checkout = () => {
     };
 
     const itemUpdatedModal = () => {
-        return (
-            <>
-                {showItemUpdatedModal && (
-                    <ItemAddedUpdatedModal isOpen={showItemUpdatedModal} onClose={onCloseItemUpdatedModal} isProductUpdate={true} />
-                )}
-            </>
-        );
+        return <>{showItemUpdatedModal && <ItemAddedUpdatedModal isOpen={showItemUpdatedModal} onClose={onCloseItemUpdatedModal} isProductUpdate={true} />}</>;
     };
 
     const promotionCodeModal = () => {
@@ -2359,13 +2387,7 @@ export const Checkout = () => {
     );
 
     const clearSaleFooter = (
-        <div
-            className="checkout-feature-button p-2"
-            onClick={() => {
-                setProducts([]);
-                setTableNumber(null);
-            }}
-        >
+        <div className="checkout-feature-button p-2" onClick={onClearSale}>
             {/* <TiCancel size="23px" /> */}
             Clear
         </div>
@@ -2391,9 +2413,7 @@ export const Checkout = () => {
             <div className="mb-2"></div> */}
             {promotion ? (
                 <div className="text-center mb-1">
-                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
-                        promotion.discountedAmount,
-                    )}`}{" "}
+                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(promotion.discountedAmount)}`}{" "}
                     {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
                 </div>
             ) : (
@@ -2401,11 +2421,7 @@ export const Checkout = () => {
             )}
             {surcharge ? <div className="text-center mb-1">Surcharge: ${convertCentsToDollars(surcharge)}</div> : <></>}
             {paidSoFar > 0 ? <div className="text-center mb-1">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : <></>}
-            {orderTypeSurcharge > 0 ? (
-                <div className="text-center mb-1">Order Type Surcharge: ${convertCentsToDollars(orderTypeSurcharge)}</div>
-            ) : (
-                <></>
-            )}
+            {orderTypeSurcharge > 0 ? <div className="text-center mb-1">Order Type Surcharge: ${convertCentsToDollars(orderTypeSurcharge)}</div> : <></>}
 
             {staticDiscount ? (
                 <div className={`text-center ${isPOS ? "mb-1" : "mb-4"}`}>
@@ -2430,11 +2446,7 @@ export const Checkout = () => {
                             Order More
                         </Button>
                     )}
-                    <Button
-                        onClick={onClickOrderButton}
-                        className="button complete-order-button"
-                        disabled={products && products.length ? false : true}
-                    >
+                    <Button onClick={onClickOrderButton} className="button complete-order-button" disabled={products && products.length ? false : true}>
                         Complete Order
                     </Button>
                 </div>
@@ -2460,7 +2472,7 @@ export const Checkout = () => {
             {/* <PageWrapper> */}
             <div className="checkout">
                 <div className="pos-order-type-button-wrapper">
-                    {isPOS && (
+                    {isPOS && register.availableOrderTypes.length !== 1 && (
                         <>
                             <div
                                 className={`pos-order-type p-2 ${orderType === EOrderType.DINEIN ? "selected" : ""}`}
@@ -2489,11 +2501,7 @@ export const Checkout = () => {
                 </div>
                 {parkedOrderNumber && <div className="parked-order-banner">Updating Parked Order #{parkedOrderNumber}</div>}
                 <div className="order-wrapper">
-                    <div
-                        ref={(ref) => setProductsWrapperElement(ref)}
-                        className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`}
-                        id="productsWrapperScroll"
-                    >
+                    <div ref={(ref) => setProductsWrapperElement(ref)} className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`} id="productsWrapperScroll">
                         {(!products || products.length == 0) && cartEmptyDisplay}
                         {products && products.length > 0 && order}
                         {isScrollable ? (
@@ -2507,7 +2515,7 @@ export const Checkout = () => {
                 </div>
                 <div className="extra-footer-button">
                     {isPOS && payments.length === 0 && <>{promoCodeFooter}</>}
-                    {isPOS && payments.length === 0 && <>{parkOrderFooter}</>}
+                    {isPOS && <>{parkOrderFooter}</>}
                     {isPOS && <>{noSaleFooter}</>}
                     {isPOS && <>{discountSaleFooter}</>}
                 </div>

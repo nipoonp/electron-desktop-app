@@ -257,6 +257,18 @@ export const EMAIL_SALES_REPORTS = gql`
 //     }
 // `;
 
+export const UPDATE_ORDER_PRINTED_QUANTITIES = gql`
+    mutation updateOrderPrintedQuantities($orderId: ID!, $printedQuantities: [OrderPrintedQuantityInput]) {
+        updateOrder(input: { id: $orderId, printedQuantities: $printedQuantities }) {
+            id
+            printedQuantities {
+                lineKey
+                quantity
+            }
+        }
+    }
+`;
+
 export const UPDATE_ORDER_STATUS = gql`
     mutation updateOrder(
         $orderId: ID!

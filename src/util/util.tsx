@@ -1,6 +1,6 @@
 import { eachMinuteOfInterval, format, getDay, isAfter, isBefore, isWithinInterval, startOfDay } from "date-fns";
 import { addDays, isEqual } from "date-fns";
-import { IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
+import { IGET_RESTAURANT_ORDER_FRAGMENT, IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
 import {
     ELOYALTY_ACTION,
     EDiscountType,
@@ -1054,3 +1054,41 @@ export const getContrastTextColor = (backgroundColor?: string | null, lightColor
 
     return luminance > 0.5 ? darkColor : lightColor;
 };
+
+// Produces a stable string key that uniquely identifies an order line by its full
+// configuration: product id, free-text notes, and the entire selected modifier tree.
+// Using this as the print-tracking key means a "Burger" and a "Burger + extra cheese"
+// are tracked independently, even though they share the same menu product id.
+export const getOrderLineSignature = (product: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT): string => {
+    const modifierSig = (product.modifierGroups || [])
+        .flatMap((g) =>
+            (g.modifiers || [])
+                .filter((m) => m.quantity > 0)
+                .map((m) => {
+                    const nestedSig = (m.productModifiers || [])
+                        .map(getOrderLineSignature)
+                        .sort()
+                        .join(";");
+                    return `${m.id}:${m.quantity}${nestedSig ? `(${nestedSig})` : ""}`;
+                }),
+        )
+        .sort()
+        .join(";");
+    return `${product.id}|${product.notes ?? ""}|${modifierSig}`;
+};
+
+export const printedQuantitiesToList = (map: Record<string, number>): { lineKey: string; quantity: number }[] =>
+    Object.entries(map)
+        .filter(([, qty]) => qty > 0)
+        .map(([lineKey, quantity]) => ({ lineKey, quantity }));
+
+export const printedQuantitiesListToMap = (printedQuantities: IGET_RESTAURANT_ORDER_FRAGMENT["printedQuantities"]) =>
+    (printedQuantities || []).reduce(
+        (printedQuantityMap, printedQuantity) => {
+            if (printedQuantity.lineKey && printedQuantity.quantity > 0) {
+                printedQuantityMap[printedQuantity.lineKey] = Math.max(printedQuantityMap[printedQuantity.lineKey] || 0, printedQuantity.quantity);
+            }
+            return printedQuantityMap;
+        },
+        {} as Record<string, number>,
+    );

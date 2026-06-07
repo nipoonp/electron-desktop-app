@@ -1,36 +1,10 @@
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../../graphql/customFragments";
 import { EOrderStatus, EOrderType } from "../../../graphql/customQueries";
-import { convertCentsToDollars } from "../../../util/util";
-import { getParkedOrderPrintedProductStorageKey, getProductQuantities } from "../checkout";
+import { convertCentsToDollars, printedQuantitiesListToMap } from "../../../util/util";
 
-// Reuse checkout helper so both screens follow the same kitchen round-tracking key format.
-export { getParkedOrderPrintedProductStorageKey };
-
-// Set print tracking only once, so previous unsent-item data is kept.
-export const initializeRunningOrderPrintedProductTracking = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
-    const storageKey = getParkedOrderPrintedProductStorageKey(order.id);
-    const currentQuantities = getProductQuantities(order.products);
-    // Save current items as the starting baseline.
-    const writeCurrentQuantities = () => localStorage.setItem(storageKey, JSON.stringify(currentQuantities));
-
-    let existing: unknown = null;
-    try {
-        existing = JSON.parse(localStorage.getItem(storageKey) || "{}");
-    } catch {
-        writeCurrentQuantities();
-        return;
-    }
-
-    const hasTrackedQuantities =
-        typeof existing === "object" &&
-        existing !== null &&
-        Object.values(existing as Record<string, unknown>).some((quantity) => typeof quantity === "number" && quantity > 0);
-
-    // Keep existing tracking if it already has valid values.
-    if (hasTrackedQuantities) return;
-
-    writeCurrentQuantities();
-};
+// Cache backend print tracking locally for cart display. The database remains the source of truth.
+export const initializeRunningOrderPrintedProductTracking = (order: IGET_RESTAURANT_ORDER_FRAGMENT) =>
+    printedQuantitiesListToMap(order.printedQuantities);
 
 // Returns whole minutes since order open time; guards invalid/future timestamps.
 export const getElapsedMinutes = (placedAt: string, nowMs: number) => {

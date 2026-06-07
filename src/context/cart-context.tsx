@@ -80,6 +80,7 @@ const initialIsShownOrderThresholdMessageModal = false;
 const initialOrderScheduledAt = null;
 const initialOrderDetail = null;
 const initialIsCustomerDisplayOpen = false;
+const initialPrintedProductQuantities: Record<string, number> = {};
 
 type ContextProps = {
     // restaurant: IGET_RESTAURANT | null;
@@ -150,9 +151,11 @@ type ContextProps = {
     orderScheduledAt: string | null;
     updateOrderScheduledAt: (orderScheduledAt: string | null) => void;
     orderDetail: IGET_RESTAURANT_ORDER_FRAGMENT | null;
-    updateOrderDetail: (orderDetail: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
+    updateOrderDetail: (orderDetail: IGET_RESTAURANT_ORDER_FRAGMENT | null) => void;
     isCustomerDisplayOpen: boolean;
     setIsCustomerDisplayOpen: (isCustomerDisplayOpen: boolean) => void;
+    printedProductQuantities: Record<string, number>;
+    setPrintedProductQuantities: (printedProductQuantities: Record<string, number>) => void;
 };
 
 const CartContext = createContext<ContextProps>({
@@ -224,9 +227,11 @@ const CartContext = createContext<ContextProps>({
     orderScheduledAt: initialOrderScheduledAt,
     updateOrderScheduledAt: (orderScheduledAt: string | null) => {},
     orderDetail: initialOrderDetail,
-    updateOrderDetail: (orderDetail: object) => {},
+    updateOrderDetail: (_orderDetail: IGET_RESTAURANT_ORDER_FRAGMENT | null) => {},
     isCustomerDisplayOpen: initialIsCustomerDisplayOpen,
     setIsCustomerDisplayOpen: () => {},
+    printedProductQuantities: initialPrintedProductQuantities,
+    setPrintedProductQuantities: () => {},
 });
 
 const CartProvider = (props: { children: React.ReactNode }) => {
@@ -273,6 +278,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
     const [orderScheduledAt, _setOrderScheduledAt] = useState<string | null>(initialOrderScheduledAt);
     const [orderDetail, _setOrderDetail] = useState<IGET_RESTAURANT_ORDER_FRAGMENT | null>(initialOrderDetail);
+    const [printedProductQuantities, _setPrintedProductQuantities] = useState<Record<string, number>>(initialPrintedProductQuantities);
     const [splitPaymentByPeople, _setSplitPaymentByPeople] = useState<ISplitPaymentByPeopleState>(initialSplitPaymentByPeopleState);
 
     // useEffect(() => {
@@ -729,8 +735,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setOrderScheduledAt(orderScheduledAt);
     };
 
-    const updateOrderDetail = (orderDetail: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+    const updateOrderDetail = (orderDetail: IGET_RESTAURANT_ORDER_FRAGMENT | null) => {
         _setOrderDetail(orderDetail);
+    };
+
+    const setPrintedProductQuantities = (printedProductQuantities: Record<string, number>) => {
+        _setPrintedProductQuantities(printedProductQuantities);
     };
 
     const clearCart = () => {
@@ -767,6 +777,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setIsShownUpSellCrossSellModal(initialIsShownUpSellCrossSellModal);
         _setIsShownOrderThresholdMessageModal(initialIsShownOrderThresholdMessageModal);
         _setOrderScheduledAt(initialOrderScheduledAt);
+        _setOrderDetail(initialOrderDetail);
+        _setPrintedProductQuantities(initialPrintedProductQuantities);
     };
 
     return (
@@ -851,6 +863,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 updateOrderDetail: updateOrderDetail,
                 isCustomerDisplayOpen: isCustomerDisplayOpen,
                 setIsCustomerDisplayOpen: _setIsCustomerDisplayOpen,
+                printedProductQuantities: printedProductQuantities,
+                setPrintedProductQuantities: setPrintedProductQuantities,
             }}
             children={props.children}
         />

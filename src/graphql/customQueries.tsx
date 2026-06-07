@@ -394,6 +394,7 @@ export const GET_RESTAURANT = gql`
                     enableDoordashPayments
                     enableDelivereasyPayments
                     availableOrderTypes
+                    defaultPreSelectedOrderType
                     orderTypeSurcharge {
                         dinein
                         takeaway
@@ -1202,6 +1203,7 @@ export interface IGET_RESTAURANT_REGISTER {
     enableDoordashPayments: boolean;
     enableDelivereasyPayments: boolean;
     availableOrderTypes: EOrderType[];
+    defaultPreSelectedOrderType?: EOrderType | null;
     orderTypeSurcharge: OrderTypeSurchargeType;
     type: ERegisterType;
     requestCustomerInformation?: RequestCustomerInformationType;
@@ -1941,6 +1943,7 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
             sortDirection: DESC
             orderRestaurantId: $orderRestaurantId
             placedAt: { beginsWith: $placedAt }
+            filter: { paymentInProgress: { ne: true } }
         ) {
             items {
                 ...OrderFieldsFragment
@@ -1973,7 +1976,7 @@ export const GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
             sortDirection: DESC
             orderRestaurantId: $orderRestaurantId
             placedAt: { beginsWith: $placedAt }
-            filter: { onlineOrder: { eq: true } }
+            filter: { and: [{ onlineOrder: { eq: true } }, { paymentInProgress: { ne: true } }] }
         ) {
             items {
                 ...OrderFieldsFragment
@@ -1990,7 +1993,7 @@ export const GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_ORDERSCHEDULEDAT = gq
             sortDirection: DESC
             orderRestaurantId: $orderRestaurantId
             orderscheduledAt: { beginsWith: $orderscheduledAt }
-            filter: { onlineOrder: { eq: true } }
+            filter: { and: [{ onlineOrder: { eq: true } }, { paymentInProgress: { ne: true } }] }
         ) {
             items {
                 ...OrderFieldsFragment
@@ -2246,6 +2249,15 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                     }
                 }
             }
+        }
+    }
+`;
+
+export const GET_ORDER = gql`
+    ${ORDER_FIELDS_FRAGMENT}
+    query getOrderById($id: ID!) {
+        getOrder(id: $id) {
+            ...OrderFieldsFragment
         }
     }
 `;

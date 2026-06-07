@@ -11,6 +11,10 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         settledAtUtc
         parkedAt
         parkedAtUtc
+        printedQuantities {
+            lineKey
+            quantity
+        }
         completedAt
         completedAtUtc
         cancelledAt
@@ -27,10 +31,19 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         eftposSurcharge
         eftposTip
         discount
+        deliveryProvider
+        deliveryAddress
+        deliveryNotes
+        deliveryDistanceMeters
+        deliveryFeeDiscount
+        deliveryFee
+        deliveryTrackingUrl
         promotionId
         subTotal
         tax
         paid
+        paymentInProgress
+        cancellationReason
         paymentAmounts {
             cash
             eftpos
@@ -239,6 +252,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     settledAtUtc: string | null;
     parkedAt: string | null;
     parkedAtUtc: string | null;
+    printedQuantities: { lineKey: string; quantity: number }[] | null;
     completedAt: string | null;
     completedAtUtc: string | null;
     cancelledAt: string | null;
@@ -256,10 +270,19 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     eftposSurcharge: number | null;
     eftposTip: number | null;
     discount: number | null;
+    deliveryProvider: "UBER_DIRECT" | "RESTAURANT_MANAGED" | null;
+    deliveryAddress: string | null;
+    deliveryNotes: string | null;
+    deliveryDistanceMeters: number | null;
+    deliveryFeeDiscount: number | null;
+    deliveryFee: number | null;
+    deliveryTrackingUrl: string | null;
     promotionId: string | null;
     tax: number;
     subTotal: number;
     paid: boolean;
+    paymentInProgress: boolean | null;
+    cancellationReason: string | null;
     paymentAmounts: IOrderPaymentAmounts | null;
     refundPaymentAmounts: IOrderPaymentAmounts | null;
     thirdPartyIntegrationResult: {

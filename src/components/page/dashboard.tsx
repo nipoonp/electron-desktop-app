@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useLazyQuery } from "@apollo/client";
 import { FiArrowLeft, FiArrowRight, FiRotateCw, FiX } from "react-icons/fi";
 import { useNavigate } from "react-router";
 import {
@@ -17,7 +18,7 @@ import { useSmartpay } from "../../context/smartpay-context";
 import { useWindcave } from "../../context/windcave-context";
 import { useVerifone } from "../../context/verifone-context";
 import { IGET_RESTAURANT_ORDER_FRAGMENT, IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../../graphql/customFragments";
-import { IGET_RESTAURANT_REGISTER_PRINTER } from "../../graphql/customQueries";
+import { GET_ORDER, IGET_RESTAURANT_REGISTER_PRINTER } from "../../graphql/customQueries";
 import { ERegisterPrinterType, IOrderReceipt, IPrintSalesData } from "../../model/model";
 import { toast } from "../../tabin/components/toast";
 import {
@@ -27,6 +28,7 @@ import {
     isItemSoldOut,
     isModifierQuantityAvailable,
     isProductQuantityAvailable,
+    printedQuantitiesListToMap,
 } from "../../util/util";
 import { beginOrderPath, restaurantPath } from "../main";
 import { SelectReceiptPrinterModal } from "../modals/selectReceiptPrinterModal";
@@ -39,6 +41,7 @@ export default () => {
         clearCart,
         setParkedOrderId,
         setParkedOrderNumber,
+        setParkedOrderStatus,
         setOrderType,
         setTableNumber,
         setBuzzerNumber,
@@ -46,6 +49,7 @@ export default () => {
         setCustomerInformation,
         setProducts,
         cartProductQuantitiesById,
+        setPrintedProductQuantities,
     } = useCart();
     const { register } = useRegister();
     const { printSalesData } = useReceiptPrinter();
@@ -54,6 +58,7 @@ export default () => {
     const { refundTransaction: windcaveRefundTransaction } = useWindcave();
     const { refundTransaction: verifoneRefundTransaction } = useVerifone();
     const navigate = useNavigate();
+    const [getOrder] = useLazyQuery(GET_ORDER, { fetchPolicy: "network-only" });
 
     const [showSelectReceiptPrinterModal, setShowSelectReceiptPrinterModal] = useState(false);
     const [receiptPrinterModalPrintSalesData, setReceiptPrinterModalPrintSalesData] = useState<IPrintSalesData | null>(null);
@@ -79,6 +84,8 @@ export default () => {
                 setShowSelectReceiptPrinterModal(true);
             } else if (register.printers.items.length === 1) {
                 const productsToPrint = filterPrintProducts(order.products, register.printers.items[0]);
+
+                if (productsToPrint.length === 0) return;
 
                 await printReceipt({
                     ...order,
@@ -254,29 +261,33 @@ export default () => {
         return { newCartProducts, invalidItemsFound };
     };
 
-    const onOpenParkedOrder = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+    const onOpenParkedOrder = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         if (!restaurant) return;
+        const freshResult = await getOrder({ variables: { id: order.id } });
+        const pOrder: IGET_RESTAURANT_ORDER_FRAGMENT = freshResult.data?.getOrder ?? order;
 
         navigate(restaurantPath + "/" + restaurant.id);
 
         clearCart();
+        setPrintedProductQuantities(printedQuantitiesListToMap(pOrder.printedQuantities));
 
-        setParkedOrderId(order.id);
-        setParkedOrderNumber(order.number);
-        setOrderType(order.type);
-        if (order.table) setTableNumber(order.table);
-        if (order.buzzer) setBuzzerNumber(order.buzzer);
-        if (order.notes) setNotes(order.notes);
-        if (order.customerInformation)
+        setParkedOrderId(pOrder.id);
+        setParkedOrderNumber(pOrder.number);
+        setParkedOrderStatus(pOrder.status);
+        setOrderType(pOrder.type);
+        if (pOrder.table) setTableNumber(pOrder.table);
+        if (pOrder.buzzer) setBuzzerNumber(pOrder.buzzer);
+        if (pOrder.notes) setNotes(pOrder.notes);
+        if (pOrder.customerInformation)
             setCustomerInformation({
-                firstName: order.customerInformation.firstName || "",
-                email: order.customerInformation.email || "",
-                phoneNumber: order.customerInformation.phoneNumber || "",
+                firstName: pOrder.customerInformation.firstName || "",
+                email: pOrder.customerInformation.email || "",
+                phoneNumber: pOrder.customerInformation.phoneNumber || "",
                 signatureBase64: "",
                 customFields: [],
             });
 
-        const orderedProducts = getParkedOrderProducts(order.products, 0);
+        const orderedProducts = getParkedOrderProducts(pOrder.products, 0);
 
         setProducts(orderedProducts.newCartProducts);
 
@@ -304,7 +315,7 @@ export default () => {
             }
         } else if (data.action === "orderOpenParked") {
             try {
-                onOpenParkedOrder(data.order);
+                await onOpenParkedOrder(data.order);
             } catch (e) {
                 console.error(e);
                 toast.error("There was an error opening your parked order.");
@@ -432,6 +443,8 @@ export default () => {
             setReceiptPrinterModalPrintSalesData(null);
         } else if (receiptPrinterModalPrintReorderData) {
             const productsToPrint = filterPrintProducts(receiptPrinterModalPrintReorderData.products, printer);
+
+            if (productsToPrint.length === 0) return;
 
             await printReceipt({
                 ...receiptPrinterModalPrintReorderData,

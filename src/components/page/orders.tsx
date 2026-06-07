@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { useMutation } from "@apollo/client";
+import { useLazyQuery, useMutation } from "@apollo/client";
 import axios from "axios";
-import { UPDATE_ORDER_STATUS } from "../../graphql/customMutations";
+import { UPDATE_ORDER_PRINTED_QUANTITIES, UPDATE_ORDER_STATUS } from "../../graphql/customMutations";
 import {
     EOrderStatus,
     ERegisterPrinterType,
+    GET_ORDER,
     GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT,
     IGET_RESTAURANT_REGISTER_PRINTER,
     UPDATE_RESTAURANT_PREPARATION_TIME,
@@ -33,6 +34,7 @@ import {
     isItemSoldOut,
     isModifierQuantityAvailable,
     isProductQuantityAvailable,
+    printedQuantitiesListToMap,
     toLocalISOString,
 } from "../../util/util";
 import { convertCentsToDollars } from "../../util/util";
@@ -52,7 +54,7 @@ import { useRegister } from "../../context/register-context";
 import { IoIosArrowBack } from "react-icons/io";
 import { beginOrderPath, restaurantPath } from "../main";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
-import { ICartModifier, ICartModifierGroup, ICartProduct, IOrderReceipt } from "../../model/model";
+import { ICartModifier, ICartModifierGroup, ICartPaymentAmounts, ICartProduct, IOrderReceipt } from "../../model/model";
 import { SelectReceiptPrinterModal } from "../modals/selectReceiptPrinterModal";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { useCart } from "../../context/cart-context";
@@ -75,6 +77,9 @@ const Orders = () => {
         setProducts,
         cartProductQuantitiesById,
         setCustomerInformation,
+        setPrintedProductQuantities,
+        setPaymentAmounts,
+        setPayments,
     } = useCart();
     const [eOrderStatus, setEOrderStatus] = useState(restaurant?.autoCompleteOrders ? EOrderStatus.COMPLETED : EOrderStatus.NEW);
 
@@ -90,6 +95,7 @@ const Orders = () => {
     const [selectedMergeOrderIds, setSelectedMergeOrderIds] = useState<string[]>([]);
 
     const { data: orders, error, loading, refetch } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant ? restaurant.id : "", date);
+    const [getOrder] = useLazyQuery(GET_ORDER, { fetchPolicy: "network-only" });
 
     const { getRestaurant } = useGetRestaurantLazyQuery();
 
@@ -119,6 +125,7 @@ const Orders = () => {
     const [updateOrderStatusMutation] = useMutation(UPDATE_ORDER_STATUS, {
         refetchQueries: refetchOrders,
     });
+    const [updateOrderPrintedQuantitiesMutation] = useMutation(UPDATE_ORDER_PRINTED_QUANTITIES);
 
     if (!restaurant) return <div>Please select a restaurant.</div>;
     if (loading) return <FullScreenSpinner show={true} text="Loading restaurant" />;
@@ -343,70 +350,67 @@ const Orders = () => {
 
     const onOpenParkedOrder = async (parkedOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         try {
-            const pOrder = {
-                id: parkedOrder.id,
-                status: parkedOrder.status,
-                notes: parkedOrder.notes,
-                products: parkedOrder.products,
-                total: parkedOrder.total,
-                subTotal: parkedOrder.subTotal,
-                type: parkedOrder.type,
-                number: parkedOrder.number,
-                table: parkedOrder.table,
-                buzzer: parkedOrder.buzzer,
-                covers: parkedOrder.covers,
-                customerInformation: parkedOrder.customerInformation,
-            };
-
             if (!restaurant) return;
 
-            const getPrintedProductQuantities = (orderId: string) => {
-                try {
-                    const parsedProductQuantities = JSON.parse(localStorage.getItem(`parkedOrderPrintedProductIds:${orderId}`) || "{}");
-                    if (!parsedProductQuantities) return {} as Record<string, number>;
+            // Fetch the single order fresh so printedQuantities is up to date across POS terminals.
+            const freshResult = await getOrder({ variables: { id: parkedOrder.id } });
+            const pOrder: IGET_RESTAURANT_ORDER_FRAGMENT = freshResult.data?.getOrder ?? parkedOrder;
 
-                    return Object.entries(parsedProductQuantities).reduce(
-                        (printedProductQuantities, [productId, quantity]) => {
-                            if (typeof quantity === "number" && quantity > 0) printedProductQuantities[productId] = quantity;
+            const mergedPrintedProductQuantities = printedQuantitiesListToMap(pOrder.printedQuantities);
+            let hasMergedPrintedProducts = Object.keys(mergedPrintedProductQuantities).length > 0;
 
-                            return printedProductQuantities;
-                        },
-                        {} as Record<string, number>,
-                    );
-                } catch {
-                    return {} as Record<string, number>;
-                }
-            };
+            const mergedOrders = await Promise.all(
+                orders
+                    .filter((order) => order.orderMergeId === pOrder.id)
+                    .map(async (order) => {
+                        const mergedResult = await getOrder({ variables: { id: order.id } });
+                        return (mergedResult.data?.getOrder ?? order) as IGET_RESTAURANT_ORDER_FRAGMENT;
+                    }),
+            );
 
-            const mergedPrintedProductQuantities = getPrintedProductQuantities(pOrder.id);
-            let hasMergedPrintedProducts = false;
+            for (const mergedOrder of mergedOrders) {
+                const printedProductQuantities = printedQuantitiesListToMap(mergedOrder.printedQuantities);
 
-            orders
-                .filter((order) => order.orderMergeId === pOrder.id)
-                .forEach((mergedOrder) => {
-                    const printedProductQuantities = getPrintedProductQuantities(mergedOrder.id);
-                    if (Object.keys(printedProductQuantities).length === 0) return;
+                if (Object.keys(printedProductQuantities).length === 0) continue;
 
-                    Object.entries(printedProductQuantities).forEach(([productId, quantity]) => {
-                        mergedPrintedProductQuantities[productId] = (mergedPrintedProductQuantities[productId] || 0) + quantity;
-                    });
-
-                    localStorage.removeItem(`parkedOrderPrintedProductIds:${mergedOrder.id}`);
-                    hasMergedPrintedProducts = true;
+                Object.entries(printedProductQuantities).forEach(([lineKey, quantity]) => {
+                    mergedPrintedProductQuantities[lineKey] = (mergedPrintedProductQuantities[lineKey] || 0) + quantity;
                 });
 
-            if (hasMergedPrintedProducts) {
-                localStorage.setItem(`parkedOrderPrintedProductIds:${pOrder.id}`, JSON.stringify(mergedPrintedProductQuantities));
+                hasMergedPrintedProducts = true;
+
+                try {
+                    await updateOrderPrintedQuantitiesMutation({
+                        variables: { orderId: mergedOrder.id, printedQuantities: [] },
+                    });
+                } catch {}
             }
 
             navigate(restaurantPath + "/" + restaurant.id);
 
             clearCart();
 
+            if (hasMergedPrintedProducts) {
+                setPrintedProductQuantities(mergedPrintedProductQuantities);
+            } else {
+                setPrintedProductQuantities({});
+            }
+
             setParkedOrderId(pOrder.id);
             setParkedOrderNumber(pOrder.number);
             setParkedOrderStatus(pOrder.status);
             setOrderType(pOrder.type);
+            setPaymentAmounts({
+                cash: pOrder.paymentAmounts?.cash || 0,
+                eftpos: pOrder.paymentAmounts?.eftpos || 0,
+                online: pOrder.paymentAmounts?.online || 0,
+                onAccount: pOrder.paymentAmounts?.onAccount || 0,
+                uberEats: pOrder.paymentAmounts?.uberEats || 0,
+                menulog: pOrder.paymentAmounts?.menulog || 0,
+                doordash: pOrder.paymentAmounts?.doordash || 0,
+                delivereasy: pOrder.paymentAmounts?.delivereasy || 0,
+            } as ICartPaymentAmounts);
+            setPayments([]);
             if (pOrder.table) setTableNumber(pOrder.table);
             if (pOrder.buzzer) setBuzzerNumber(pOrder.buzzer);
             if (pOrder.notes) setNotes(pOrder.notes);
@@ -461,12 +465,20 @@ const Orders = () => {
                 products: order.products,
                 eftposReceipt: order.eftposReceipt,
                 paymentAmounts: order.paymentAmounts,
+                deliveryProvider: order.deliveryProvider,
+                deliveryAddress: order.deliveryAddress,
+                deliveryNotes: order.deliveryNotes,
+                deliveryDistanceMeters: order.deliveryDistanceMeters,
+                deliveryFeeDiscount: order.deliveryFeeDiscount,
+                deliveryFee: order.deliveryFee,
+                deliveryTrackingUrl: order.deliveryTrackingUrl,
                 total: order.total,
                 surcharge: order.surcharge || null,
                 orderTypeSurcharge: order.orderTypeSurcharge || null,
                 eftposSurcharge: order.eftposSurcharge || null,
                 eftposTip: order.eftposTip || null,
-                discount: order.promotionId && order.discount ? order.discount : null,
+                discount: order.discount || null,
+                tax: order.tax,
                 subTotal: order.subTotal,
                 paid: order.paid,
                 type: order.type,
@@ -484,6 +496,8 @@ const Orders = () => {
                     setShowSelectReceiptPrinterModal(true);
                 } else if (register.printers.items.length === 1) {
                     const productsToPrint = filterPrintProducts(order.products, register.printers.items[0]);
+
+                    if (productsToPrint.length === 0) return;
 
                     await printReceipt({
                         ...reprintOrder,
@@ -514,6 +528,8 @@ const Orders = () => {
     const onSelectPrinter = async (printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
         if (receiptPrinterModalPrintReorderData) {
             const productsToPrint = filterPrintProducts(receiptPrinterModalPrintReorderData.products, printer);
+
+            if (productsToPrint.length === 0) return;
 
             await printReceipt({
                 ...receiptPrinterModalPrintReorderData,
@@ -711,22 +727,13 @@ const Orders = () => {
                     <div className={`tab ${eOrderStatus == EOrderStatus.NEW ? "selected" : ""}`} onClick={() => onClickTab(EOrderStatus.NEW)}>
                         New
                     </div>
-                    <div
-                        className={`tab ${eOrderStatus == EOrderStatus.COMPLETED ? "selected" : ""}`}
-                        onClick={() => onClickTab(EOrderStatus.COMPLETED)}
-                    >
+                    <div className={`tab ${eOrderStatus == EOrderStatus.COMPLETED ? "selected" : ""}`} onClick={() => onClickTab(EOrderStatus.COMPLETED)}>
                         Completed
                     </div>
-                    <div
-                        className={`tab ${eOrderStatus == EOrderStatus.CANCELLED ? "selected" : ""}`}
-                        onClick={() => onClickTab(EOrderStatus.CANCELLED)}
-                    >
+                    <div className={`tab ${eOrderStatus == EOrderStatus.CANCELLED ? "selected" : ""}`} onClick={() => onClickTab(EOrderStatus.CANCELLED)}>
                         Cancelled
                     </div>
-                    <div
-                        className={`tab ${eOrderStatus == EOrderStatus.REFUNDED ? "selected" : ""}`}
-                        onClick={() => onClickTab(EOrderStatus.REFUNDED)}
-                    >
+                    <div className={`tab ${eOrderStatus == EOrderStatus.REFUNDED ? "selected" : ""}`} onClick={() => onClickTab(EOrderStatus.REFUNDED)}>
                         Refunded
                     </div>
                     <div className={`tab ${eOrderStatus == EOrderStatus.PARKED ? "selected" : ""}`} onClick={() => onClickTab(EOrderStatus.PARKED)}>
@@ -737,14 +744,16 @@ const Orders = () => {
                 <div className="orders-wrapper">
                     {(() => {
                         const mergedChildrenMap: Record<string, IGET_RESTAURANT_ORDER_FRAGMENT[]> = {};
-                        orders.forEach((o) => {
+                        const visibleOrders = orders.filter((o) => o.cancellationReason?.includes("ONLINE_PAYMENT_FAILED") !== true);
+
+                        visibleOrders.forEach((o) => {
                             if (o.orderMergeId) {
                                 if (!mergedChildrenMap[o.orderMergeId]) mergedChildrenMap[o.orderMergeId] = [];
                                 mergedChildrenMap[o.orderMergeId].push(o);
                             }
                         });
 
-                        const displayOrders = orders.filter((o) => !o.orderMergeId);
+                        const displayOrders = visibleOrders.filter((o) => !o.orderMergeId);
 
                         return displayOrders.map(
                             (order) =>
@@ -894,13 +903,11 @@ const Order = (props: {
                     )}
                 </div>
                 {order.status === EOrderStatus.PARKED ? (
-                    <div className="mb-1">Order parked: {format(new Date(order.placedAt), "dd MMM h:mm:ss aa")}</div>
+                    <div className="mb-1">Order parked: {format(new Date(order.parkedAt || order.placedAt), "dd MMM h:mm:ss aa")}</div>
                 ) : (
                     <div className="mb-1">Order placed: {format(new Date(order.placedAt), "dd MMM h:mm:ss aa")}</div>
                 )}
-                {order.orderScheduledAt && (
-                    <div className="mb-1">Order scheduled: {format(new Date(order.orderScheduledAt), "dd MMM h:mm:ss aa")}</div>
-                )}
+                {order.orderScheduledAt && <div className="mb-1">Order scheduled: {format(new Date(order.orderScheduledAt), "dd MMM h:mm:ss aa")}</div>}
                 {order.completedAt && <div className="mb-1">Order completed: {format(new Date(order.completedAt), "dd MMM h:mm:ss aa")}</div>}
                 {order.cancelledAt && <div className="mb-1">Order cancelled: {format(new Date(order.cancelledAt), "dd MMM h:mm:ss aa")}</div>}
                 {order.refundedAt && <div className="mb-1">Order refundedAt: {format(new Date(order.refundedAt), "dd MMM h:mm:ss aa")}</div>}
@@ -996,11 +1003,7 @@ const Order = (props: {
 
                     <div className="separator-2"></div>
                     {order.surcharge ? <div className="mb-1">Surcharge: ${convertCentsToDollars(order.surcharge)}</div> : <></>}
-                    {order.orderTypeSurcharge ? (
-                        <div className="mb-1">Order Type Surcharge: ${convertCentsToDollars(order.orderTypeSurcharge)}</div>
-                    ) : (
-                        <></>
-                    )}
+                    {order.orderTypeSurcharge ? <div className="mb-1">Order Type Surcharge: ${convertCentsToDollars(order.orderTypeSurcharge)}</div> : <></>}
                     {order.eftposSurcharge ? <div className="mb-1">Card Surcharge: ${convertCentsToDollars(order.eftposSurcharge)}</div> : <></>}
                     {order.eftposTip ? <div className="mb-1">Eftpos Tip: ${convertCentsToDollars(order.eftposTip)}</div> : <></>}
                     {order.discount ? <div className="mb-1">Discount: -${convertCentsToDollars(order.discount)}</div> : <></>}
@@ -1067,15 +1070,9 @@ const Order = (props: {
 
                     {!hideActionButtons && (
                         <div className="order-action-buttons-container mt-2">
-                            {order.status !== EOrderStatus.PARKED && order.status !== EOrderStatus.COMPLETED && (
-                                <Button onClick={() => onOrderComplete(order)}>Complete</Button>
-                            )}
-                            {order.status !== EOrderStatus.PARKED && order.status !== EOrderStatus.REFUNDED && (
-                                <Button onClick={() => onOrderRefund(order)}>Refund</Button>
-                            )}
-                            {order.status !== EOrderStatus.PARKED && order.status !== EOrderStatus.CANCELLED && (
-                                <Button onClick={() => onOrderCancel(order)}>Cancel</Button>
-                            )}
+                            {order.status !== EOrderStatus.COMPLETED && <Button onClick={() => onOrderComplete(order)}>Complete</Button>}
+                            {order.status !== EOrderStatus.REFUNDED && <Button onClick={() => onOrderRefund(order)}>Refund</Button>}
+                            {order.status !== EOrderStatus.CANCELLED && <Button onClick={() => onOrderCancel(order)}>Cancel</Button>}
                             {(order.status === EOrderStatus.PARKED ||
                                 (order.paymentAmounts &&
                                     !order.paymentAmounts.cash &&
@@ -1177,12 +1174,8 @@ const OrderItemDetails = (props: {
                                                     <div>
                                                         <div className="mt-2"></div>
                                                         <ProductModifier
-                                                            selectionIndex={
-                                                                m.productModifiers && m.productModifiers.length > 1 ? index + 1 : undefined
-                                                            }
-                                                            showNoExtraSelectionsMade={
-                                                                m.productModifiers?.some((pm) => pm.modifierGroups?.length) || false
-                                                            }
+                                                            selectionIndex={m.productModifiers && m.productModifiers.length > 1 ? index + 1 : undefined}
+                                                            showNoExtraSelectionsMade={m.productModifiers?.some((pm) => pm.modifierGroups?.length) || false}
                                                             product={productModifier}
                                                         />
                                                     </div>
@@ -1248,8 +1241,7 @@ const MergedOrdersModal = (props: {
                                             <div className="h4">{o.type}</div>
                                         </div>
                                         <div className="text-grey mt-2">
-                                            {format(new Date(o.placedAt), "dd MMM h:mm aa")} • {itemsCount(o)} items • $
-                                            {convertCentsToDollars(o.subTotal || 0)}
+                                            {format(new Date(o.placedAt), "dd MMM h:mm aa")} • {itemsCount(o)} items • ${convertCentsToDollars(o.subTotal || 0)}
                                         </div>
                                     </div>
                                 )}

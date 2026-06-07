@@ -47,7 +47,7 @@ const ReceiptPrinterContext = createContext<ContextProps>({
 
 const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     const { restaurant, restaurantBase64Logo } = useRestaurant();
-    const { register, setIsShownNewOnlineOrderReceivedModal } = useRegister();
+    const { register, setIsShownNewOnlineOrderReceivedModal, setNewOnlineOrderInfo } = useRegister();
     const { logError } = useErrorLogging();
     const { checkParentView, sendParentAsync } = useElectron();
 
@@ -72,6 +72,15 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         const ordersFetchTimer = setInterval(async () => {
             try {
                 let showOnlineOrderPromot = false;
+                const newOrderInfoList: {
+                    number: string;
+                    total: number;
+                    customerFirstName: string | null;
+                    customerPhoneNumber: string | null;
+                    type: string;
+                    placedAt: string;
+                    orderScheduledAt: string | null;
+                }[] = [];
                 const storedPrintedOrders = localStorage.getItem("printedOnlineOrders");
                 const printedOrders: {
                     [orderId: string]: boolean;
@@ -87,13 +96,17 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 const newOrders: IGET_RESTAURANT_ORDER_FRAGMENT[] = res.data.getOrdersByRestaurantByPlacedAt.items;
 
                 const ordersToPrint = newOrders.filter(
-                    (order) => order.onlineOrder || order.thirdPartyIntegrationResult?.platform === "DELIVERECTPOS"
+                    (order) => order.onlineOrder || order.thirdPartyIntegrationResult?.platform === "DELIVERECTPOS",
                 );
 
                 for (var i = 0; i < ordersToPrint.length; i++) {
                     const order = ordersToPrint[i];
 
                     if (printedOrders[order.id] !== undefined) continue;
+
+                    if (order.status === "CANCELLED" || order.status === "REFUNDED") continue;
+
+                    if (order.cancellationReason?.includes("ONLINE_PAYMENT_FAILED")) continue;
 
                     for (var j = 0; j < register.printers.items.length; j++) {
                         const printer = register.printers.items[j];
@@ -102,7 +115,18 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
                         const productsToPrint = filterPrintProducts(order.products, printer);
 
+                        if (productsToPrint.length === 0) continue;
+
                         showOnlineOrderPromot = true;
+                        newOrderInfoList.push({
+                            number: order.number,
+                            total: order.total,
+                            customerFirstName: order.customerInformation?.firstName || null,
+                            customerPhoneNumber: order.customerInformation?.phoneNumber || null,
+                            type: order.type,
+                            placedAt: order.placedAt,
+                            orderScheduledAt: order.orderScheduledAt,
+                        });
 
                         await printReceipt({
                             orderId: order.id,
@@ -142,12 +166,19 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                             notes: order.notes,
                             products: convertProductTypesForPrint(productsToPrint),
                             paymentAmounts: order.paymentAmounts,
+                            deliveryProvider: order.deliveryProvider,
+                            deliveryAddress: order.deliveryAddress,
+                            deliveryNotes: order.deliveryNotes,
+                            deliveryDistanceMeters: order.deliveryDistanceMeters,
+                            deliveryFeeDiscount: order.deliveryFeeDiscount,
+                            deliveryFee: order.deliveryFee,
+                            deliveryTrackingUrl: order.deliveryTrackingUrl,
                             total: order.total,
                             surcharge: order.surcharge,
                             orderTypeSurcharge: order.orderTypeSurcharge,
                             eftposSurcharge: order.eftposSurcharge,
                             eftposTip: order.eftposTip,
-                            discount: order.promotionId && order.discount ? order.discount : null,
+                            discount: order.discount || null,
                             tax: order.tax,
                             subTotal: order.subTotal,
                             paid: order.paid,
@@ -166,7 +197,10 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                     printedOrders[order.id] = true;
                 }
 
-                if (showOnlineOrderPromot) setIsShownNewOnlineOrderReceivedModal(true);
+                if (showOnlineOrderPromot) {
+                    setNewOnlineOrderInfo(newOrderInfoList);
+                    setIsShownNewOnlineOrderReceivedModal(true);
+                }
 
                 localStorage.setItem("printedOnlineOrders", JSON.stringify(printedOrders));
             } catch (e) {
