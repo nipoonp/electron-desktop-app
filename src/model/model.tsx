@@ -615,6 +615,11 @@ export type LoyaltyUserAggregate = {
     };
 };
 
+export type LoyaltyBalance = {
+    loyaltyId: string | null;
+    points: number;
+};
+
 export type LoyaltyUserLinkInfo = {
     id: string;
     favourite: boolean;
@@ -622,6 +627,7 @@ export type LoyaltyUserLinkInfo = {
     lastName?: string | null;
     email?: string | null;
     phoneNumber?: string | null;
+    loyaltyBalances: LoyaltyBalance[];
 };
 
 // Floor plan and the table management.

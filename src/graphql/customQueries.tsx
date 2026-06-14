@@ -1414,6 +1414,10 @@ export const GET_LOYALTY_USER_LINKS_BY_RESTAURANT = gql`
                         lastName
                         email
                         phoneNumber
+                        loyaltyBalances {
+                            loyaltyId
+                            points
+                        }
                     }
                 }
             }
@@ -1430,6 +1434,7 @@ export interface IGET_LOYALTY_USER_LINK {
         lastName: string | null;
         email: string | null;
         phoneNumber: string | null;
+        loyaltyBalances?: ({ loyaltyId: string | null; points: number } | null)[] | null;
     } | null;
 }
 
@@ -1438,43 +1443,6 @@ export interface IGET_LOYALTY_USER_LINKS_BY_RESTAURANT {
         loyaltyUsers?: {
             nextToken?: string | null;
             items?: (IGET_LOYALTY_USER_LINK | null)[] | null;
-        } | null;
-    } | null;
-}
-
-export const GET_LOYALTY_HISTORY_BY_LOYALTY_ID = gql`
-    query GetLoyaltyHistoryByLoyaltyId($id: ID!, $nextToken: String) {
-        getLoyalty(id: $id) {
-            id
-            loyaltyHistories(limit: 1000, nextToken: $nextToken) {
-                items {
-                    id
-                    action
-                    points
-                    createdAt
-                    loyaltyHistoryOrderId
-                    loyaltyHistoryLoyaltyId
-                    loyaltyHistoryLoyaltyUserId
-                    loyaltyUser {
-                        id
-                        firstName
-                        lastName
-                        email
-                        phoneNumber
-                    }
-                }
-                nextToken
-            }
-        }
-    }
-`;
-
-export interface IGET_LOYALTY_HISTORY_BY_LOYALTY_ID {
-    getLoyalty?: {
-        id: string;
-        loyaltyHistories?: {
-            items?: IGET_RESTAURANT_LOYALTY_HISTORY[] | null;
-            nextToken?: string | null;
         } | null;
     } | null;
 }
