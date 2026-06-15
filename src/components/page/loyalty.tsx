@@ -1,18 +1,41 @@
 import { useNavigate } from "react-router";
 import { useState } from "react";
+import axios from "axios";
 import { Button } from "../../tabin/components/button";
 import { Input } from "../../tabin/components/input";
 import { useRestaurant } from "../../context/restaurant-context";
 import { useCart } from "../../context/cart-context";
-import { useGetLoyaltyUsersByPhoneNumberLazyQuery } from "../../hooks/useGetLoyaltyUsersByPhoneNumberLazyQuery";
-import { useGetLoyaltyUsersByEmailLazyQuery } from "../../hooks/useGetLoyaltyUsersByEmailLazyQuery";
-import { useGetLoyaltiesByGroupIdLazyQuery } from "../../hooks/useGetLoyaltiesByGroupIdLazyQuery";
-import { IGET_LOYALTIES_BY_GROUP_ID_ITEM, IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL, IGET_RESTAURANT_LOYALTY } from "../../graphql/customQueries";
+import { IGET_RESTAURANT_LOYALTY } from "../../graphql/customQueries";
 import "./loyalty.scss";
 import { restaurantPath } from "../main";
 import { toast } from "../../tabin/components/toast";
 import * as yup from "yup";
-import { calculateTotalLoyaltyPoints } from "../../util/util";
+import { getGetLoyaltyPointsEndpoint } from "../../private/aws-custom";
+
+interface IGetLoyaltyPointsResponse {
+    totalPoints: number;
+    loyaltyUserId: string | null;
+    firstName: string | null;
+    email: string | null;
+    phoneNumber: string | null;
+}
+
+// Centralised loyalty points calculation now lives in the get-loyalty-points lambda. This just calls it.
+const fetchLoyaltyPoints = async (params: {
+    loyaltyGroupId?: string | null;
+    email?: string | null;
+    phoneNumber?: string | null;
+}): Promise<IGetLoyaltyPointsResponse> => {
+    const response = await axios.get(getGetLoyaltyPointsEndpoint(), {
+        params: {
+            loyaltyGroupId: params.loyaltyGroupId || undefined,
+            email: params.email || undefined,
+            phoneNumber: params.phoneNumber || undefined,
+        },
+    });
+
+    return response.data;
+};
 
 enum LoyaltyPageState {
     Index,
@@ -47,12 +70,8 @@ export default () => {
                     onSkip={onSkip}
                 />
             )}
-            {state === LoyaltyPageState.Login && (
-                <LoyaltyLogin onBack={() => handleStateChange(LoyaltyPageState.Index)} restaurantId={restaurant.id} />
-            )}
-            {state === LoyaltyPageState.JoinNow && (
-                <LoyaltyJoinNow onBack={() => handleStateChange(LoyaltyPageState.Index)} restaurantId={restaurant.id} />
-            )}
+            {state === LoyaltyPageState.Login && <LoyaltyLogin onBack={() => handleStateChange(LoyaltyPageState.Index)} restaurantId={restaurant.id} />}
+            {state === LoyaltyPageState.JoinNow && <LoyaltyJoinNow onBack={() => handleStateChange(LoyaltyPageState.Index)} restaurantId={restaurant.id} />}
         </>
     );
 };
@@ -80,46 +99,9 @@ const LoyaltyLogin = (props: { onBack: () => void; restaurantId: string }) => {
     const [rewardsIdentifier, setRewardsIdentifier] = useState("");
     const [rewardsIdentifierError, setRewardsIdentifierError] = useState("");
 
-    const { getLoyaltyUsersByPhoneNumberLazyQuery } = useGetLoyaltyUsersByPhoneNumberLazyQuery(rewardsIdentifier, props.restaurantId);
-    const { getLoyaltyUsersByEmailLazyQuery } = useGetLoyaltyUsersByEmailLazyQuery(rewardsIdentifier, props.restaurantId);
-    const { getLoyaltiesByGroupIdLazyQuery } = useGetLoyaltiesByGroupIdLazyQuery();
-
     if (!restaurant) return <div>Restaurant not found</div>;
 
     const onChangeRewardsIdentifier = (event: React.ChangeEvent<HTMLInputElement>) => setRewardsIdentifier(event.target.value.toLocaleLowerCase());
-
-    const searchLoyaltyUser = async (): Promise<IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL | null> => {
-        const resPhoneNumber = await getLoyaltyUsersByPhoneNumberLazyQuery({
-            variables: { phoneNumber: rewardsIdentifier },
-        });
-
-        if (resPhoneNumber?.data.getLoyaltyUserByPhoneNumber.items.length > 0) {
-            return resPhoneNumber.data.getLoyaltyUserByPhoneNumber.items[0];
-        }
-
-        const resEmail = await getLoyaltyUsersByEmailLazyQuery({
-            variables: { email: rewardsIdentifier },
-        });
-
-        return resEmail?.data.getLoyaltyUserByEmail.items.length > 0 ? resEmail.data.getLoyaltyUserByEmail.items[0] : null;
-    };
-
-    const buildLoyaltyGroupList = async (loyaltyGroupId: string) => {
-        const result = await getLoyaltiesByGroupIdLazyQuery({
-            variables: { loyaltyGroupId },
-        });
-
-        const loyaltyGroupLoyalties: IGET_LOYALTIES_BY_GROUP_ID_ITEM[] | undefined = result?.data?.getLoyaltiesByGroupId?.items;
-        const loyaltyGroupList: string[] = [];
-
-        if (loyaltyGroupLoyalties) {
-            loyaltyGroupLoyalties.forEach((loyalty) => {
-                loyaltyGroupList.push(loyalty.id);
-            });
-        }
-
-        return loyaltyGroupList;
-    };
 
     const onLogin = async () => {
         try {
@@ -128,24 +110,23 @@ const LoyaltyLogin = (props: { onBack: () => void; restaurantId: string }) => {
                 return;
             }
 
-            const loyaltyUser = await searchLoyaltyUser();
+            const loyaltyGroupId = restaurant.loyalties.items.length > 0 ? restaurant.loyalties.items[0].loyaltyGroupId : null;
 
-            console.log("loyaltyUser", loyaltyUser);
+            // The identifier can be either an email or a mobile number; the endpoint searches both.
+            const result = await fetchLoyaltyPoints({
+                loyaltyGroupId,
+                email: rewardsIdentifier,
+                phoneNumber: rewardsIdentifier,
+            });
 
-            if (loyaltyUser) {
-                let loyaltyGroupList: string[] = [];
+            console.log("loyaltyPoints", result);
 
-                if (restaurant.loyalties.items.length > 0 && restaurant.loyalties.items[0].loyaltyGroupId) {
-                    loyaltyGroupList = await buildLoyaltyGroupList(restaurant.loyalties.items[0].loyaltyGroupId);
-                }
-
-                const totalPoints = calculateTotalLoyaltyPoints(loyaltyUser.loyaltyHistories.items, loyaltyGroupList);
-
-                setCustomerLoyaltyPoints(totalPoints);
+            if (result.loyaltyUserId) {
+                setCustomerLoyaltyPoints(result.totalPoints);
                 setCustomerInformation({
-                    firstName: loyaltyUser.firstName,
-                    email: loyaltyUser.email,
-                    phoneNumber: loyaltyUser.phoneNumber,
+                    firstName: result.firstName || "",
+                    email: result.email || "",
+                    phoneNumber: result.phoneNumber || "",
                     signatureBase64: "",
                     customFields: [],
                 });
@@ -154,7 +135,8 @@ const LoyaltyLogin = (props: { onBack: () => void; restaurantId: string }) => {
                 setRewardsIdentifierError("Could not find a loyalty user with that email or mobile number.");
             }
         } catch (error) {
-            console.error("Error searching loyalty user:", error);
+            console.error("Error fetching loyalty points:", error);
+            setRewardsIdentifierError("Something went wrong. Please try again.");
         }
     };
 
@@ -186,7 +168,6 @@ const LoyaltyJoinNow = (props: { onBack: () => void; restaurantId: string }) => 
     const { setCustomerLoyaltyPoints, setCustomerInformation } = useCart();
     const navigate = useNavigate();
     const { restaurant } = useRestaurant();
-    const { getLoyaltiesByGroupIdLazyQuery } = useGetLoyaltiesByGroupIdLazyQuery();
 
     const [firstName, setFirstName] = useState("");
     const [email, setEmail] = useState("");
@@ -195,9 +176,6 @@ const LoyaltyJoinNow = (props: { onBack: () => void; restaurantId: string }) => 
     const [firstNameError, setFirstNameError] = useState("");
     const [emailError, setEmailError] = useState("");
     const [phoneNumberError, setPhoneNumberError] = useState("");
-
-    const { getLoyaltyUsersByPhoneNumberLazyQuery } = useGetLoyaltyUsersByPhoneNumberLazyQuery(phoneNumber, props.restaurantId);
-    const { getLoyaltyUsersByEmailLazyQuery } = useGetLoyaltyUsersByEmailLazyQuery(email, props.restaurantId);
 
     if (!restaurant) return <div>Restaurant not found</div>;
 
@@ -216,65 +194,37 @@ const LoyaltyJoinNow = (props: { onBack: () => void; restaurantId: string }) => 
         setPhoneNumberError("");
     };
 
-    const searchLoyaltyUser = async (): Promise<IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL | null> => {
-        const resPhoneNumber = await getLoyaltyUsersByPhoneNumberLazyQuery({
-            variables: { phoneNumber: phoneNumber },
-        });
-
-        if (resPhoneNumber?.data.getLoyaltyUserByPhoneNumber.items.length > 0) {
-            return resPhoneNumber.data.getLoyaltyUserByPhoneNumber.items[0];
-        }
-
-        const resEmail = await getLoyaltyUsersByEmailLazyQuery({
-            variables: { email: email },
-        });
-
-        return resEmail?.data.getLoyaltyUserByEmail.items.length > 0 ? resEmail.data.getLoyaltyUserByEmail.items[0] : null;
-    };
-
-    const buildLoyaltyGroupList = async (loyaltyGroupId: string) => {
-        const result = await getLoyaltiesByGroupIdLazyQuery({
-            variables: { loyaltyGroupId },
-        });
-
-        const loyaltyGroupLoyalties: IGET_LOYALTIES_BY_GROUP_ID_ITEM[] | undefined = result?.data?.getLoyaltiesByGroupId?.items;
-        const loyaltyGroupList: string[] = [];
-
-        if (loyaltyGroupLoyalties) {
-            loyaltyGroupLoyalties.forEach((loyalty) => {
-                loyaltyGroupList.push(loyalty.id);
-            });
-        }
-
-        return loyaltyGroupList;
-    };
-
     const onJoinNow = async () => {
-        const loyaltyUser = await searchLoyaltyUser();
+        try {
+            const loyaltyGroupId = restaurant.loyalties.items.length > 0 ? restaurant.loyalties.items[0].loyaltyGroupId : null;
 
-        console.log("loyaltyUser", loyaltyUser);
+            // Only look the customer up if they've entered something to search by.
+            if (email || phoneNumber) {
+                const result = await fetchLoyaltyPoints({
+                    loyaltyGroupId,
+                    email: email || null,
+                    phoneNumber: phoneNumber || null,
+                });
 
-        if (loyaltyUser) {
-            let loyaltyGroupList: string[] = [];
+                console.log("loyaltyPoints", result);
 
-            if (restaurant.loyalties.items.length > 0 && restaurant.loyalties.items[0].loyaltyGroupId) {
-                loyaltyGroupList = await buildLoyaltyGroupList(restaurant.loyalties.items[0].loyaltyGroupId);
+                if (result.loyaltyUserId) {
+                    setCustomerLoyaltyPoints(result.totalPoints);
+                    setCustomerInformation({
+                        firstName: result.firstName || "",
+                        email: result.email || "",
+                        phoneNumber: result.phoneNumber || "",
+                        signatureBase64: "",
+                        customFields: [],
+                    });
+                    navigate(`${restaurantPath}/${props.restaurantId}`);
+
+                    toast.success("Loyalty user already exists.");
+                    return;
+                }
             }
 
-            const totalPoints = calculateTotalLoyaltyPoints(loyaltyUser.loyaltyHistories.items, loyaltyGroupList);
-
-            setCustomerLoyaltyPoints(totalPoints);
-            setCustomerInformation({
-                firstName: loyaltyUser.firstName,
-                email: loyaltyUser.email,
-                phoneNumber: loyaltyUser.phoneNumber,
-                signatureBase64: "",
-                customFields: [],
-            });
-            navigate(`${restaurantPath}/${props.restaurantId}`);
-
-            toast.success("Loyalty user already exists.");
-        } else {
+            // No existing loyalty user — validate the form and continue as a new customer.
             let invalid = false;
 
             try {
@@ -313,6 +263,8 @@ const LoyaltyJoinNow = (props: { onBack: () => void; restaurantId: string }) => 
                 });
                 navigate(`${restaurantPath}/${props.restaurantId}`);
             }
+        } catch (error) {
+            console.error("Error fetching loyalty points:", error);
         }
     };
 

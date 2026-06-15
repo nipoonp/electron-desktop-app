@@ -22,3 +22,14 @@ export const getCloudFrontDomainName = () => {
 export const getPublicCloudFrontDomainName = () => {
     return "https://d30m4xw3xm7tyf.cloudfront.net";
 };
+
+export const getGetLoyaltyPointsEndpoint = () => {
+    const endpoints = {
+        dev: "https://nvlxf2xh9e.execute-api.ap-southeast-2.amazonaws.com/dev/points",
+        prod: "https://iz9b2zub1k.execute-api.ap-southeast-2.amazonaws.com/prod/points",
+    };
+    const envStart = awsconfig.aws_user_files_s3_bucket.lastIndexOf("-");
+    const env = awsconfig.aws_user_files_s3_bucket.slice(envStart + 1);
+
+    return endpoints[env];
+};
