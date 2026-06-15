@@ -670,6 +670,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         const productAtIndex = newProducts[index];
 
         productAtIndex.discount = discount;
+        //Mark this as a manual price override so processPromotions/applyDiscountToCartProducts does not reset it to 0
+        productAtIndex.isPriceEdited = discount !== 0;
         newProducts[index] = productAtIndex;
 
         const newTotal = recalculateTotal(newProducts);

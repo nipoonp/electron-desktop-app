@@ -534,7 +534,8 @@ const getMatchingPromotionProducts = (
 };
 
 export const applyDiscountToCartProducts = (promotion: ICartPromotion | null, cartProducts: ICartProduct[]) => {
-    const cartProductsCpy = cartProducts.map((p) => ({ ...p, discount: 0 }));
+    //Reset promotion discounts to 0, but keep manual POS price overrides (isPriceEdited) intact
+    const cartProductsCpy = cartProducts.map((p) => ({ ...p, discount: p.isPriceEdited ? p.discount : 0 }));
 
     promotion?.matchingProducts.forEach((matchingProduct) => {
         if (matchingProduct.index !== undefined) {

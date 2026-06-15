@@ -1485,6 +1485,9 @@ export const Checkout = () => {
                 // if (product.isAgeRescricted == null) {
                 delete product.isAgeRescricted;
                 // }
+
+                //isPriceEdited is cart-only state (marks a manual price override); not part of OrderProductInput
+                delete product.isPriceEdited;
             });
 
             console.log("Order variables: ", variables);
