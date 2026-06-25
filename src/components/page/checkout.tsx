@@ -227,9 +227,7 @@ export const Checkout = () => {
 
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
     const [paymentOutcomeOrderNumber, setPaymentOutcomeOrderNumber] = useState<string | null>(null);
-    const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(
-        restaurant?.delayBetweenOrdersInSeconds || 10,
-    );
+    const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(restaurant?.delayBetweenOrdersInSeconds || 10);
     let transactionCompleteRedirectTime = restaurant?.delayBetweenOrdersInSeconds || 10;
 
     const [showPromotionCodeModal, setShowPromotionCodeModal] = useState(false);
@@ -504,9 +502,7 @@ export const Checkout = () => {
 
                 for (const modifierGroupItem of product.modifierGroups.items) {
                     const modifierGroup = modifierGroupItem.modifierGroup;
-                    const modifiersById = new Map(
-                        modifierGroup.modifiers.items.map((modifierItem) => [modifierItem.modifier.id, modifierItem.modifier]),
-                    );
+                    const modifiersById = new Map(modifierGroup.modifiers.items.map((modifierItem) => [modifierItem.modifier.id, modifierItem.modifier]));
 
                     modifierGroupsById.set(modifierGroup.id, {
                         modifiersById,
@@ -653,8 +649,7 @@ export const Checkout = () => {
             if (register.requestCustomerInformation.email && (!customerInformation || !customerInformation.email)) invalid = true;
             if (register.requestCustomerInformation.phoneNumber && (!customerInformation || !customerInformation.phoneNumber)) invalid = true;
             if (register.requestCustomerInformation.signature && (!customerInformation || !customerInformation.signatureBase64)) invalid = true;
-            if (register.requestCustomerInformation.customFields?.length && (!customerInformation || !customerInformation.customFields.length))
-                invalid = true;
+            if (register.requestCustomerInformation.customFields?.length && (!customerInformation || !customerInformation.customFields.length)) invalid = true;
             //    if(register.) orderScheduledAt
 
             if (invalid) {
@@ -900,8 +895,7 @@ export const Checkout = () => {
         eftposTip?: number,
     ) => {
         //If parked order do not generate order number
-        let orderNumber =
-            parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
+        let orderNumber = parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
 
         setPaymentOutcomeOrderNumber(orderNumber);
 
@@ -913,11 +907,7 @@ export const Checkout = () => {
                 const filename = `${date}-signature`;
                 const fileExtension = "png";
 
-                const signatureFile = await convertBase64ToFile(
-                    customerInformation.signatureBase64,
-                    `${filename}.${fileExtension}`,
-                    `image/${fileExtension}`,
-                );
+                const signatureFile = await convertBase64ToFile(customerInformation.signatureBase64, `${filename}.${fileExtension}`, `image/${fileExtension}`);
 
                 const uploadedObject: any = await Storage.put(`${filename}.${fileExtension}`, signatureFile, {
                     contentType: `image/${fileExtension}`, //signature image png, png required to print to receipt printer
@@ -951,11 +941,7 @@ export const Checkout = () => {
             }
 
             // If using third party integration. Poll for resposne
-            if (
-                restaurant.thirdPartyIntegrations &&
-                restaurant.thirdPartyIntegrations.enable &&
-                restaurant.thirdPartyIntegrations.awaitThirdPartyResponse
-            ) {
+            if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.enable && restaurant.thirdPartyIntegrations.awaitThirdPartyResponse) {
                 setPaymentModalState(EPaymentModalState.ThirdPartyIntegrationAwaitingResponse);
 
                 await pollForThirdPartyResponse(newOrder.id);
@@ -1039,274 +1025,113 @@ export const Checkout = () => {
 
         const updatedProducts: ICartProduct[] = JSON.parse(JSON.stringify(products));
 
-        const modifierCombosList = [
-            "4533751c-0c66-43cf-8c37-7bdac1e464a6", //BANH MI COMBO modifier
-            "bf6cdefc-f762-4227-897b-bf9b025e0e0e", //CURRY COMBO modifier
-            "21953181-14e1-456d-8316-77f1ec1eea0b", //LAKSA COMBO modifier
-            "90d534e3-af07-4f18-b222-f0f0b7f3e407", //NASI GORENG COMBO modifier
-            "89ec22a3-9d80-4eb8-a4f9-9263c36cb1f9", //NOODLE SALAD COMBO modifier
-            "72ce6d73-122e-40b7-825b-c3d169f08ef7", //PAD THAI COMBO modifier
-            "8686953d-0e30-4603-8cd5-19fe10a7f546", //PHO COMBO modifier
-            "0fe39a49-5cd4-4352-9f98-6683f547c80f", //RICE SALAD COMBO modifier
-        ];
+        const modifierToProductMapping: { [modifierId: string]: { productId: string; productName: string } } = {
+            "9b250056-7ad4-452e-be0e-f6528b8cd888": {
+                productId: "2576e931-396d-4cf0-8443-7e4d5bd08276_187",
+                productName: "SPRING ROLLS (3)",
+            },
+            "50542f30-da76-4794-bb50-a336625fc689": {
+                productId: "d4c24aaf-9367-410b-8212-7160cfeabbc5_189",
+                productName: "CHICKEN SKEWERS (2)",
+            },
+            "708c7990-7d9c-4848-b0de-ea727ea882e5": {
+                productId: "e2d1481c-057d-4284-89c1-441d85978dd4_190",
+                productName: "GREEN RICE PRAWNS (3)",
+            },
+            "87716ec4-2014-4912-8d03-d5d1e94c6af9": {
+                productId: "2fdc4487-5c1d-44a3-a14c-85190f2735bf_132",
+                productName: "COKE",
+            },
+            "60d48a0d-8f95-4e62-a4a2-01d48b961291": {
+                productId: "7fdc6c64-6d80-4e60-a40b-fe05ae94b262_134",
+                productName: "COKE ZERO",
+            },
+            "04987870-e9d1-4978-85e0-010ffdba6729": {
+                productId: "2e002067-c3f4-4e37-8f6d-5ef346d9aef5_133",
+                productName: "SPRITE",
+            },
+            "97ed87a6-cd2b-4737-a52e-8463a2f6d6ac": {
+                productId: "14e89ed9-3ca5-45fc-a528-5836ad46a2ff_58",
+                productName: "ICED VIETNAMESE COFFEE",
+            },
+            "a4d189a4-dfea-4ed4-a087-2e7aae57d85b": {
+                productId: "f8b80cc7-4541-4d53-b03d-7ea33e606a84_233",
+                productName: "GREEN APPLE FRTY TEA",
+            },
+            "d7276767-d0df-4162-93ed-151dfcbbb061": {
+                productId: "65594fa8-ffbf-41c7-a900-8321cd3cfec8_234",
+                productName: "LYCHEE FRTY TEA",
+            },
+            "12cc2667-ea93-438d-ace7-30881bcc7fbf": {
+                productId: "8aaf2b9f-8ea1-4703-a0a6-7a537c15563c_230",
+                productName: "CREAMY MANGO TEA",
+            },
+            "b4436de6-bcca-46d2-9bec-4c88b197f580": {
+                productId: "d306d550-77a6-4a14-a89a-ba984e3a6e08_231",
+                productName: "TARO TEA",
+            },
+            "7575fd7b-cfbc-4a11-8744-1ec2cca9115b": {
+                productId: "6c9513a2-ab5e-4a3e-ab0c-08620a4c96ba_229",
+                productName: "BROWN SUGAR TEA",
+            },
+            "2fdda1f2-1535-4033-ba16-37ff51191ff4": {
+                productId: "b1fb8472-ff23-412f-b7ae-66213e0631b2_228",
+                productName: "ORIGINAL BUBBLE TEA",
+            },
+            "eb9b52d7-9707-4530-926e-59cb36fd025c": {
+                productId: "707d9802-a3d0-4e89-b612-490750ab6c99_235",
+                productName: "PASSION FRUIT TEA",
+            },
+        };
+
+        const buildUpgradeProduct = (modifier: ICartModifier, match: { productId: string; productName: string }, parentQuantity: number): ICartProduct => ({
+            id: match.productId,
+            name: match.productName,
+            kitchenName: null,
+            image: null,
+            notes: null,
+            price: modifier.price,
+            totalPrice: modifier.price,
+            discount: 0,
+            isAgeRescricted: false,
+            quantity: modifier.quantity * parentQuantity,
+            category: null,
+            modifierGroups: [],
+        });
+
+        const upgradeProducts: ICartProduct[] = [];
 
         updatedProducts.forEach((product) => {
             product.modifierGroups.forEach((modifierGroup) => {
-                const cleanedModifiers: ICartModifier[] = [];
                 modifierGroup.modifiers.forEach((modifier) => {
-                    if (!modifierCombosList.includes(modifier.id)) {
-                        //COMBO modifier
-                        cleanedModifiers.push(modifier);
-                    } else if (modifierCombosList.includes(modifier.id)) {
-                        //COMBO modifier
-                        modifier.productModifiers?.forEach((prodMod) => {
-                            prodMod.modifierGroups.forEach((prodModGroup) => {
-                                if (prodModGroup.id === "f3335268-87e2-4711-8356-e55a9d86902e") {
-                                    //SELECT YOUR SNACK modifier group
-                                    prodModGroup.modifiers.forEach((prodModGroupMod) => {
-                                        if (prodModGroupMod.price === 0) {
-                                            if (prodModGroupMod.productModifiers && prodModGroupMod.productModifiers.length > 0) {
-                                                updatedProducts.push({
-                                                    id: prodModGroupMod.productModifiers[0].id,
-                                                    name: prodModGroupMod.productModifiers[0].name,
-                                                    kitchenName: null,
-                                                    image: null,
-                                                    notes: null,
-                                                    price: 0,
-                                                    totalPrice: 0,
-                                                    discount: 0,
-                                                    isAgeRescricted: false,
-                                                    quantity: product.quantity,
-                                                    category: null,
-                                                    modifierGroups: [],
-                                                });
-                                            }
-                                        } else {
-                                            updatedProducts.push({
-                                                id: "b65546fc-6f74-498f-9aee-7b75f8085e38_94", //"UPGRADE SNACK" Product
-                                                name: "UPGRADE SNACK",
-                                                kitchenName: null,
-                                                image: null,
-                                                notes: null,
-                                                price: 0,
-                                                totalPrice: 0,
-                                                discount: 0,
-                                                isAgeRescricted: false,
-                                                quantity: product.quantity,
-                                                category: null,
-                                                modifierGroups: [
-                                                    {
-                                                        id: "45511723-3b84-4ab5-a1e0-0a90837cf5bc_1",
-                                                        name: "UPGRADE SNACK", //"UPGRADE SNACK" Modifier Group
-                                                        kitchenName: "",
-                                                        choiceDuplicate: 1,
-                                                        choiceMin: 1,
-                                                        choiceMax: 1,
-                                                        hideForCustomer: false,
-                                                        modifiers: [
-                                                            {
-                                                                id: prodModGroupMod.id,
-                                                                name: prodModGroupMod.name,
-                                                                kitchenName: "",
-                                                                price: prodModGroupMod.price,
-                                                                preSelectedQuantity: 0,
-                                                                quantity: 1,
-                                                                productModifiers: null,
-                                                                image: null,
-                                                            },
-                                                        ],
-                                                    },
-                                                ],
-                                            });
-                                        }
-                                    });
-                                }
+                    const match = modifierToProductMapping[modifier.id];
 
-                                if (prodModGroup.id === "a8155eef-c46f-49a1-99b9-fea20a99aebe") {
-                                    //SELECT YOUR DRINK modifier group
-                                    prodModGroup.modifiers.forEach((prodModGroupMod) => {
-                                        if (prodModGroupMod.price === 0) {
-                                            if (prodModGroupMod.productModifiers && prodModGroupMod.productModifiers.length > 0) {
-                                                updatedProducts.push({
-                                                    id: prodModGroupMod.productModifiers[0].id,
-                                                    name: prodModGroupMod.productModifiers[0].name,
-                                                    kitchenName: null,
-                                                    image: null,
-                                                    notes: null,
-                                                    price: 0,
-                                                    totalPrice: 0,
-                                                    discount: 0,
-                                                    isAgeRescricted: false,
-                                                    quantity: product.quantity,
-                                                    category: null,
-                                                    modifierGroups: [],
-                                                });
-                                            }
-                                        } else {
-                                            const mapping = {
-                                                "f5328a5b-22f0-4419-8cba-5254e0edaf19_17": {
-                                                    //U/G TO VIET COFFEE
-                                                    productId: "68e66936-7dc2-4bed-ae4c-6c76e8d1a487_93",
-                                                    productName: "UPGRAD TO VIET COFFEE",
-                                                },
-                                                "458b473f-031f-4cbc-a2d3-a7701968f028_29": {
-                                                    //U/G TO GREEN APPLE TEA
-                                                    productId: "230361e8-d7a9-4d1d-9438-6c2cac2e1691_95",
-                                                    productName: "UPGRADE TO FRUITY TEA",
-                                                },
-                                                "173c5008-ab22-4f5d-8b60-3babd766f285_30": {
-                                                    //U/G TO LYCHEE TEA
-                                                    productId: "230361e8-d7a9-4d1d-9438-6c2cac2e1691_95",
-                                                    productName: "UPGRADE TO FRUITY TEA",
-                                                },
-                                                "9564c0b6-2555-4035-8e0e-8df3e1b84e56_31": {
-                                                    //U/G TO STAW BLUE TEA
-                                                    productId: "230361e8-d7a9-4d1d-9438-6c2cac2e1691_95",
-                                                    productName: "UPGRADE TO FRUITY TEA",
-                                                },
-                                                "7c772604-fccc-4066-aca0-209fa8772f28_32": {
-                                                    //U/G TO GRAPEFRUIT TEA
-                                                    productId: "230361e8-d7a9-4d1d-9438-6c2cac2e1691_95",
-                                                    productName: "UPGRADE TO FRUITY TEA",
-                                                },
-                                                "69412d01-39bb-4ceb-940d-e2f2be2038d2_33": {
-                                                    //U/G TO PASSIONFRUIT TEA
-                                                    productId: "230361e8-d7a9-4d1d-9438-6c2cac2e1691_95",
-                                                    productName: "UPGRADE TO FRUITY TEA",
-                                                },
-                                                "041b9314-a9d3-479e-b4a6-400eb33f2f4b_34": {
-                                                    //U/G TO LEMON TEA
-                                                    productId: "230361e8-d7a9-4d1d-9438-6c2cac2e1691_95",
-                                                    productName: "UPGRADE TO FRUITY TEA",
-                                                },
-                                                "8358aae6-cdb9-4ea2-bf82-850f608651dc_23": {
-                                                    //U/G TO ORIGINAL TEA
-                                                    productId: "ea8ce11c-1ec9-45d0-9821-7c2a604e6bbd_96",
-                                                    productName: "UPGRADE TO BUBBLE TEA",
-                                                },
-                                                "8d5f5574-6989-4e64-88b3-976fa3b00f8f_24": {
-                                                    //U/G TO BROWN SUGAR TEA
-                                                    productId: "ea8ce11c-1ec9-45d0-9821-7c2a604e6bbd_96",
-                                                    productName: "UPGRADE TO BUBBLE TEA",
-                                                },
-                                                "c9bd2be8-6e45-4d1e-8254-91d6f0ff8423_25": {
-                                                    //U/G TO CREAMY MANGO TEA
-                                                    productId: "ea8ce11c-1ec9-45d0-9821-7c2a604e6bbd_96",
-                                                    productName: "UPGRADE TO BUBBLE TEA",
-                                                },
-                                                "64d557b6-212a-42c1-b57e-8766453b5463_26": {
-                                                    //U/G TO  GREEN MATCHA TE
-                                                    productId: "ea8ce11c-1ec9-45d0-9821-7c2a604e6bbd_96",
-                                                    productName: "UPGRADE TO BUBBLE TEA",
-                                                },
-                                                "1c9b3b90-3e1b-415c-bca0-0f04afb8f69b_27": {
-                                                    //U/G TO TIRAMISU TEA
-                                                    productId: "ea8ce11c-1ec9-45d0-9821-7c2a604e6bbd_96",
-                                                    productName: "UPGRADE TO BUBBLE TEA",
-                                                },
-                                                "2b099dc5-c85c-41a8-aa2a-0e48d25058dd_28": {
-                                                    //U/G TO TARO TEA
-                                                    productId: "ea8ce11c-1ec9-45d0-9821-7c2a604e6bbd_96",
-                                                    productName: "UPGRADE TO BUBBLE TEA",
-                                                },
-                                                "7c4c43cb-5308-4c50-83d8-0179a5eb2445_18": {
-                                                    //U/G TO LIME LEMONADE
-                                                    productId: "0a6985cd-3d65-483a-90ac-f824775d8cd6_97",
-                                                    productName: "UPGRADE TO FRUIT DRINK",
-                                                },
-                                                "fdb4ea77-0d09-4c01-8072-0649425ae953_19": {
-                                                    //U/G TO HONEY LEMONADE
-                                                    productId: "0a6985cd-3d65-483a-90ac-f824775d8cd6_97",
-                                                    productName: "UPGRADE TO FRUIT DRINK",
-                                                },
-                                                "a1ea9d83-269f-441b-8bec-97a1fa0affc5_22": {
-                                                    //U/G TO PASSION LEMONADE
-                                                    productId: "0a6985cd-3d65-483a-90ac-f824775d8cd6_97",
-                                                    productName: "UPGRADE TO FRUIT DRINK",
-                                                },
-                                                "20d63e44-4353-408b-b747-a61f8d8f84e6_21": {
-                                                    //U/G TO MANGO LEMONADE
-                                                    productId: "0a6985cd-3d65-483a-90ac-f824775d8cd6_97",
-                                                    productName: "UPGRADE TO FRUIT DRINK",
-                                                },
-                                                "b3e3e667-561b-40ca-89ad-2179d23398b7_35": {
-                                                    //U/G TO VIET BEER
-                                                    productId: "6f1a0fd6-6b7e-4dae-a69d-a465405830ee_98",
-                                                    productName: "UPGRADE TO BEER / WINE",
-                                                },
-                                                "a301b66b-ac75-40c6-9365-d2eabe798501_36": {
-                                                    //U/G TO THAI BEER
-                                                    productId: "6f1a0fd6-6b7e-4dae-a69d-a465405830ee_98",
-                                                    productName: "UPGRADE TO BEER / WINE",
-                                                },
-                                                "7cc97746-9abe-4716-86f2-61eeeeccd71a_37": {
-                                                    //U/G TO LIGHT BEER
-                                                    productId: "6f1a0fd6-6b7e-4dae-a69d-a465405830ee_98",
-                                                    productName: "UPGRADE TO BEER / WINE",
-                                                },
-                                                "ad5393c5-0293-48d1-af04-0e4799042b93_38": {
-                                                    //U/G TO CHARDONNAY
-                                                    productId: "6f1a0fd6-6b7e-4dae-a69d-a465405830ee_98",
-                                                    productName: "UPGRADE TO BEER / WINE",
-                                                },
-                                                "df2f5e20-12b5-4569-9127-679cba06d1f8_39": {
-                                                    //U/G TO SAUVIGNON BLANC
-                                                    productId: "6f1a0fd6-6b7e-4dae-a69d-a465405830ee_98",
-                                                    productName: "UPGRADE TO BEER / WINE",
-                                                },
-                                                "6b8f7c87-5d36-461a-ae26-b2f6963e180f_40": {
-                                                    //U/G TO PINOT NOIR
-                                                    productId: "6f1a0fd6-6b7e-4dae-a69d-a465405830ee_98",
-                                                    productName: "UPGRADE TO BEER / WINE",
-                                                },
-                                            };
+                    if (match) {
+                        // Top-level modifier match: add the mapped product, don't descend further.
+                        upgradeProducts.push(buildUpgradeProduct(modifier, match, product.quantity));
+                        return;
+                    }
 
-                                            updatedProducts.push({
-                                                id: mapping[prodModGroupMod.id].productId,
-                                                name: mapping[prodModGroupMod.id].productName,
-                                                kitchenName: null,
-                                                image: null,
-                                                notes: null,
-                                                price: 0,
-                                                totalPrice: 0,
-                                                discount: 0,
-                                                isAgeRescricted: false,
-                                                quantity: product.quantity,
-                                                category: null,
-                                                modifierGroups: [
-                                                    {
-                                                        id: mapping[prodModGroupMod.id].productId,
-                                                        name: mapping[prodModGroupMod.id].productName,
-                                                        kitchenName: "",
-                                                        choiceDuplicate: 1,
-                                                        choiceMin: 1,
-                                                        choiceMax: 1,
-                                                        hideForCustomer: false,
-                                                        modifiers: [
-                                                            {
-                                                                id: prodModGroupMod.id,
-                                                                name: prodModGroupMod.name,
-                                                                kitchenName: "",
-                                                                price: prodModGroupMod.price,
-                                                                preSelectedQuantity: 0,
-                                                                quantity: 1,
-                                                                productModifiers: null,
-                                                                image: null,
-                                                            },
-                                                        ],
-                                                    },
-                                                ],
-                                            });
-                                        }
-                                    });
+                    // Otherwise descend into nested product-modifier-modifier groups.
+                    modifier.productModifiers?.forEach((productModifier) => {
+                        productModifier.modifierGroups.forEach((nestedGroup) => {
+                            nestedGroup.modifiers.forEach((nestedModifier) => {
+                                const nestedMatch = modifierToProductMapping[nestedModifier.id];
+
+                                if (nestedMatch) {
+                                    upgradeProducts.push(buildUpgradeProduct(nestedModifier, nestedMatch, product.quantity));
                                 }
                             });
                         });
-                    }
+                    });
                 });
-                modifierGroup.modifiers = cleanedModifiers;
             });
+
+            // No modifier groups should remain on any product in the order.
+            product.modifierGroups = [];
         });
+
+        updatedProducts.push(...upgradeProducts);
 
         let variables;
 
@@ -1549,24 +1374,12 @@ export const Checkout = () => {
             } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
 
-                outcome = await verifoneCreateTransaction(
-                    amount,
-                    register.eftposIpAddress,
-                    register.eftposPortNumber,
-                    restaurant.id,
-                    setEftposMessage,
-                );
+                outcome = await verifoneCreateTransaction(amount, register.eftposIpAddress, register.eftposPortNumber, restaurant.id, setEftposMessage);
             } else if (register.eftposProvider == EEftposProvider.TYRO) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
                 const setEftposQuestion = (question: ITyroEftposQuestion) => setEftposTransactionProcessQuestion(question);
 
-                outcome = await tyroCreateTransaction(
-                    amount.toString(),
-                    register.tyroMerchantId,
-                    register.tyroTerminalId,
-                    setEftposMessage,
-                    setEftposQuestion,
-                );
+                outcome = await tyroCreateTransaction(amount.toString(), register.tyroMerchantId, register.tyroTerminalId, setEftposMessage, setEftposQuestion);
             } else if (register.eftposProvider == EEftposProvider.MX51) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
                 const setCustomerSignature = (question: IMX51EftposQuestion | null) => {
@@ -1663,15 +1476,7 @@ export const Checkout = () => {
 
                 if (newTotalPaymentAmounts >= subTotal) {
                     //Passing paymentAmounts, payments via params so we send the most updated values
-                    await onSubmitOrder(
-                        true,
-                        false,
-                        newPaymentAmounts,
-                        newPayments,
-                        outcome.eftposCardType,
-                        outcome.eftposSurcharge,
-                        outcome.eftposTip,
-                    );
+                    await onSubmitOrder(true, false, newPaymentAmounts, newPayments, outcome.eftposCardType, outcome.eftposSurcharge, outcome.eftposTip);
 
                     setPaymentModalState(EPaymentModalState.EftposResult);
                 } else {
@@ -2045,13 +1850,7 @@ export const Checkout = () => {
     };
 
     const itemUpdatedModal = () => {
-        return (
-            <>
-                {showItemUpdatedModal && (
-                    <ItemAddedUpdatedModal isOpen={showItemUpdatedModal} onClose={onCloseItemUpdatedModal} isProductUpdate={true} />
-                )}
-            </>
-        );
+        return <>{showItemUpdatedModal && <ItemAddedUpdatedModal isOpen={showItemUpdatedModal} onClose={onCloseItemUpdatedModal} isProductUpdate={true} />}</>;
     };
 
     const promotionCodeModal = () => {
@@ -2317,9 +2116,7 @@ export const Checkout = () => {
                 </div>
             ) : promotion ? (
                 <div className="h3 text-center mb-2">
-                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
-                        promotion.discountedAmount,
-                    )}`}{" "}
+                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(promotion.discountedAmount)}`}{" "}
                     {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
                 </div>
             ) : (
@@ -2327,11 +2124,7 @@ export const Checkout = () => {
             )}
             {surcharge ? <div className="h3 text-center mb-2">Surcharge: ${convertCentsToDollars(surcharge)}</div> : <></>}
             {paidSoFar > 0 ? <div className="h3 text-center mb-2">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : <></>}
-            {orderTypeSurcharge > 0 ? (
-                <div className="h3 text-center mb-2">Order Type Surcharge: ${convertCentsToDollars(orderTypeSurcharge)}</div>
-            ) : (
-                <></>
-            )}
+            {orderTypeSurcharge > 0 ? <div className="h3 text-center mb-2">Order Type Surcharge: ${convertCentsToDollars(orderTypeSurcharge)}</div> : <></>}
             <div className={`h1 text-center checkout-total-price ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
             <div className={`${isPOS ? "mb-0" : "mb-4"}`}>
                 <div className="checkout-buttons-container">
