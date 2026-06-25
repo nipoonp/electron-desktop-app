@@ -65,7 +65,7 @@ jobs:
             - name: Build desktop
               run: npm run build:desktop
             - name: Release Electron app
-              run: electron-builder -w -p 'onTagOrDraft'
+              run: npm run release:windows
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
     # macos:

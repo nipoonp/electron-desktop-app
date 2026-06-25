@@ -2,7 +2,7 @@
     "name": "Tabin",
     "description": "Tabin Self Service Kiosk",
     "author": "Tabin",
-    "version": "1.4.630",
+    "version": "1.4.631",
     "repository": "https://github.com/zeal-ltd/electron-desktop-app",
     "main": "public/electron.ts",
     "dependencies": {
@@ -72,8 +72,8 @@
         "build:web": "cross-env PUBLIC_URL=./ react-scripts build",
         "start:desktop": "npm run build:desktop && electron ./build/electron.js",
         "build:desktop": "tsc -p electron/tsconfig.json",
-        "release:windows": "electron-builder -w -p 'onTagOrDraft'",
-        "release:macos": "electron-builder -m -p 'onTagOrDraft'",
+        "release:windows": "electron-builder -w -p onTagOrDraft",
+        "release:macos": "electron-builder -m -p onTagOrDraft",
         "window-cert": "electron-builder create-self-signed-cert -p tabinWindowsCertificate"
     },
     "eslintConfig": {
