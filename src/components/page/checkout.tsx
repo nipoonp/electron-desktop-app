@@ -1030,6 +1030,10 @@ export const Checkout = () => {
                 productId: "2576e931-396d-4cf0-8443-7e4d5bd08276_187",
                 productName: "SPRING ROLLS (3)",
             },
+            "8efc59e4-dae1-4ad5-8158-5972776fdab4": {
+                productId: "66d109c5-f347-4b66-ad7e-ce32761f176b_188",
+                productName: "RICE PAPER ROLLS (2)",
+            },
             "50542f30-da76-4794-bb50-a336625fc689": {
                 productId: "d4c24aaf-9367-410b-8212-7160cfeabbc5_189",
                 productName: "CHICKEN SKEWERS (2)",
