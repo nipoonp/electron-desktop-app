@@ -73,6 +73,7 @@ import { useUser } from "../../context/user-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { useSmartpay } from "../../context/smartpay-context";
 import { Button } from "../../tabin/components/button";
+import { toast } from "../../tabin/components/toast";
 import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
 import { useVerifone } from "../../context/verifone-context";
 import { useRegister } from "../../context/register-context";
@@ -249,7 +250,7 @@ export const Checkout = () => {
         setSplitPaymentByPeople,
     } = useCart();
     const { restaurant, restaurantBase64Logo } = useRestaurant();
-    const { register, isPOS } = useRegister();
+    const { register, isPOS, isEftposMerchantNameLocked, lockEftposMerchantName } = useRegister();
     const { printReceipt, printEftposReceipt, printLabel, printNoSaleReceipt } = useReceiptPrinter();
     const { user } = useUser();
     const { logError } = useErrorLogging();
@@ -1559,6 +1560,10 @@ export const Checkout = () => {
         try {
             let outcome: IEftposTransactionOutcome | null = null;
 
+            if (register.eftposProvider == EEftposProvider.VERIFONE && isEftposMerchantNameLocked()) {
+                throw "This register is locked because the EFTPOS merchant name did not match the receipt. Please update the merchant name and restart the app.";
+            }
+
             if (register.eftposProvider == EEftposProvider.SMARTPAY) {
                 let delayedShown = false;
 
@@ -1583,6 +1588,18 @@ export const Checkout = () => {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
 
                 outcome = await verifoneCreateTransaction(amount, register.eftposIpAddress, register.eftposPortNumber, restaurant.id, setEftposMessage);
+
+                if (
+                    outcome.transactionOutcome === EEftposTransactionOutcome.Success &&
+                    outcome.eftposReceipt &&
+                    register.eftposMerchantName &&
+                    !outcome.eftposReceipt.includes(register.eftposMerchantName)
+                ) {
+                    lockEftposMerchantName();
+                    toast.error(
+                        "The EFTPOS merchant name does not match the receipt. This register has been locked. Please update the merchant name and restart the app.",
+                    );
+                }
             } else if (register.eftposProvider == EEftposProvider.TYRO) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
                 const setEftposQuestion = (question: ITyroEftposQuestion) => setEftposTransactionProcessQuestion(question);
