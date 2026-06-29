@@ -59,14 +59,7 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
     useEffect(() => {
         const storedRegisterKey = localStorage.getItem("registerKey");
 
-        let matchingRegister: IGET_RESTAURANT_REGISTER | null = null;
-
-        restaurant &&
-            restaurant.registers.items.forEach((r) => {
-                if (storedRegisterKey == r.id && r.active == true) {
-                    matchingRegister = r;
-                }
-            });
+        const matchingRegister = restaurant?.registers.items.find((r) => storedRegisterKey == r.id && r.active == true) ?? null;
 
         if (matchingRegister) {
             const key = `eftposMerchantMismatch:${matchingRegister.id}`;
@@ -157,9 +150,7 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
                         <link
                             rel="stylesheet"
                             type="text/css"
-                            href={`${getCloudFrontDomainName()}/protected/${register.customStyleSheet.identityPoolId}/${
-                                register.customStyleSheet.key
-                            }`}
+                            href={`${getCloudFrontDomainName()}/protected/${register.customStyleSheet.identityPoolId}/${register.customStyleSheet.key}`}
                         />
                     )}
                 </>
