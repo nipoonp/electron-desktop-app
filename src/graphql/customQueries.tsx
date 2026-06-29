@@ -118,6 +118,7 @@ export const GET_USER = gql`
                             windcaveStationId
                             windcaveStationUser
                             windcaveStationKey
+                            eftposMerchantName
                             tyroMerchantId
                             tyroTerminalId
                             skipEftposReceiptSignature
@@ -432,6 +433,7 @@ export const GET_RESTAURANT = gql`
                     windcaveStationId
                     windcaveStationUser
                     windcaveStationKey
+                    eftposMerchantName
                     tyroMerchantId
                     tyroTerminalId
                     skipEftposReceiptSignature
@@ -1225,6 +1227,7 @@ export interface IGET_RESTAURANT_REGISTER {
     windcaveStationId: string;
     windcaveStationUser: string;
     windcaveStationKey: string;
+    eftposMerchantName: string | null;
     tyroMerchantId: number;
     tyroTerminalId: number;
     skipEftposReceiptSignature: boolean;
