@@ -1592,8 +1592,7 @@ export const Checkout = () => {
                 if (
                     outcome.transactionOutcome === EEftposTransactionOutcome.Success &&
                     outcome.eftposReceipt &&
-                    register.eftposMerchantName &&
-                    !outcome.eftposReceipt.includes(register.eftposMerchantName)
+                    (!register.eftposMerchantName || !outcome.eftposReceipt.includes(register.eftposMerchantName))
                 ) {
                     lockEftposMerchantName();
                     toast.error(
