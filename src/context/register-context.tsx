@@ -11,6 +11,8 @@ type ContextProps = {
     isPOS: boolean | null;
     connectRegister: (key: string) => Promise<any>;
     disconnectRegister: (key: string) => Promise<any>;
+    isEftposMerchantNameLocked: () => boolean;
+    lockEftposMerchantName: () => void;
 };
 
 const RegisterContext = createContext<ContextProps>({
@@ -22,6 +24,8 @@ const RegisterContext = createContext<ContextProps>({
     disconnectRegister: (key: string) => {
         return new Promise(() => {});
     },
+    isEftposMerchantNameLocked: () => false,
+    lockEftposMerchantName: () => {},
 });
 
 const RegisterProvider = (props: { children: React.ReactNode }) => {
@@ -33,6 +37,14 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
         const storedRegisterKey = localStorage.getItem("registerKey");
 
         const matchingRegister = restaurant?.registers.items.find((r) => storedRegisterKey == r.id && r.active == true) ?? null;
+
+        if (matchingRegister) {
+            const key = `eftposMerchantMismatch:${matchingRegister.id}`;
+            const failedName = localStorage.getItem(key);
+            if (failedName != null && failedName !== (matchingRegister.eftposMerchantName || "")) {
+                localStorage.removeItem(key);
+            }
+        }
 
         setRegister(matchingRegister);
     }, [restaurant, registerKey]);
@@ -78,6 +90,14 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
         });
     };
 
+    const isEftposMerchantNameLocked = () => {
+        return register ? localStorage.getItem(`eftposMerchantMismatch:${register.id}`) != null : false;
+    };
+
+    const lockEftposMerchantName = () => {
+        if (register) localStorage.setItem(`eftposMerchantMismatch:${register.id}`, register.eftposMerchantName || "");
+    };
+
     return (
         <RegisterContext.Provider
             value={{
@@ -85,6 +105,8 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
                 isPOS: register ? register.type == ERegisterType.POS : null,
                 connectRegister: connectRegister,
                 disconnectRegister: disconnectRegister,
+                isEftposMerchantNameLocked: isEftposMerchantNameLocked,
+                lockEftposMerchantName: lockEftposMerchantName,
             }}
             children={
                 <>
