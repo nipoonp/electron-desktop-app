@@ -13,6 +13,7 @@ import {
     isItemAvailable,
     isItemSoldOut,
     isProductQuantityAvailable,
+    isThemePreviewMode,
     toLocalISOString,
 } from "../../util/util";
 import { useMutation } from "@apollo/client";
@@ -227,9 +228,7 @@ export const Checkout = () => {
 
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
     const [paymentOutcomeOrderNumber, setPaymentOutcomeOrderNumber] = useState<string | null>(null);
-    const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(
-        restaurant?.delayBetweenOrdersInSeconds || 10,
-    );
+    const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(restaurant?.delayBetweenOrdersInSeconds || 10);
     let transactionCompleteRedirectTime = restaurant?.delayBetweenOrdersInSeconds || 10;
 
     const [showPromotionCodeModal, setShowPromotionCodeModal] = useState(false);
@@ -504,9 +503,7 @@ export const Checkout = () => {
 
                 for (const modifierGroupItem of product.modifierGroups.items) {
                     const modifierGroup = modifierGroupItem.modifierGroup;
-                    const modifiersById = new Map(
-                        modifierGroup.modifiers.items.map((modifierItem) => [modifierItem.modifier.id, modifierItem.modifier]),
-                    );
+                    const modifiersById = new Map(modifierGroup.modifiers.items.map((modifierItem) => [modifierItem.modifier.id, modifierItem.modifier]));
 
                     modifierGroupsById.set(modifierGroup.id, {
                         modifiersById,
@@ -631,6 +628,11 @@ export const Checkout = () => {
     };
 
     const onClickOrderButton = async () => {
+        if (isThemePreviewMode()) {
+            toast.error("Ordering is disabled in theme preview mode.");
+            return;
+        }
+
         if (restaurant.orderThresholds?.enable && restaurant.orderThresholdMessage && !isShownOrderThresholdMessageModal) {
             setShowOrderThresholdMessageModal(true);
             return;
@@ -653,8 +655,7 @@ export const Checkout = () => {
             if (register.requestCustomerInformation.email && (!customerInformation || !customerInformation.email)) invalid = true;
             if (register.requestCustomerInformation.phoneNumber && (!customerInformation || !customerInformation.phoneNumber)) invalid = true;
             if (register.requestCustomerInformation.signature && (!customerInformation || !customerInformation.signatureBase64)) invalid = true;
-            if (register.requestCustomerInformation.customFields?.length && (!customerInformation || !customerInformation.customFields.length))
-                invalid = true;
+            if (register.requestCustomerInformation.customFields?.length && (!customerInformation || !customerInformation.customFields.length)) invalid = true;
             //    if(register.) orderScheduledAt
 
             if (invalid) {
@@ -907,8 +908,7 @@ export const Checkout = () => {
         eftposTip?: number,
     ) => {
         //If parked order do not generate order number
-        let orderNumber =
-            parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
+        let orderNumber = parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
 
         setPaymentOutcomeOrderNumber(orderNumber);
 
@@ -920,11 +920,7 @@ export const Checkout = () => {
                 const filename = `${date}-signature`;
                 const fileExtension = "png";
 
-                const signatureFile = await convertBase64ToFile(
-                    customerInformation.signatureBase64,
-                    `${filename}.${fileExtension}`,
-                    `image/${fileExtension}`,
-                );
+                const signatureFile = await convertBase64ToFile(customerInformation.signatureBase64, `${filename}.${fileExtension}`, `image/${fileExtension}`);
 
                 const uploadedObject: any = await Storage.put(`${filename}.${fileExtension}`, signatureFile, {
                     contentType: `image/${fileExtension}`, //signature image png, png required to print to receipt printer
@@ -958,11 +954,7 @@ export const Checkout = () => {
             }
 
             // If using third party integration. Poll for resposne
-            if (
-                restaurant.thirdPartyIntegrations &&
-                restaurant.thirdPartyIntegrations.enable &&
-                restaurant.thirdPartyIntegrations.awaitThirdPartyResponse
-            ) {
+            if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.enable && restaurant.thirdPartyIntegrations.awaitThirdPartyResponse) {
                 setPaymentModalState(EPaymentModalState.ThirdPartyIntegrationAwaitingResponse);
 
                 await pollForThirdPartyResponse(newOrder.id);
@@ -1024,6 +1016,10 @@ export const Checkout = () => {
         eftposTip?: number,
     ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
         const now = new Date();
+        if (isThemePreviewMode()) {
+            throw "Ordering is disabled in theme preview mode";
+        }
+
         if (!user) {
             await logError("Invalid user", JSON.stringify({ user: user }));
             throw "Invalid user";
@@ -1289,13 +1285,7 @@ export const Checkout = () => {
             } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
 
-                outcome = await verifoneCreateTransaction(
-                    amount,
-                    register.eftposIpAddress,
-                    register.eftposPortNumber,
-                    restaurant.id,
-                    setEftposMessage,
-                );
+                outcome = await verifoneCreateTransaction(amount, register.eftposIpAddress, register.eftposPortNumber, restaurant.id, setEftposMessage);
 
                 if (
                     outcome.transactionOutcome === EEftposTransactionOutcome.Success &&
@@ -1311,13 +1301,7 @@ export const Checkout = () => {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
                 const setEftposQuestion = (question: ITyroEftposQuestion) => setEftposTransactionProcessQuestion(question);
 
-                outcome = await tyroCreateTransaction(
-                    amount.toString(),
-                    register.tyroMerchantId,
-                    register.tyroTerminalId,
-                    setEftposMessage,
-                    setEftposQuestion,
-                );
+                outcome = await tyroCreateTransaction(amount.toString(), register.tyroMerchantId, register.tyroTerminalId, setEftposMessage, setEftposQuestion);
             } else if (register.eftposProvider == EEftposProvider.MX51) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
                 const setCustomerSignature = (question: IMX51EftposQuestion | null) => {
@@ -1414,15 +1398,7 @@ export const Checkout = () => {
 
                 if (newTotalPaymentAmounts >= subTotal) {
                     //Passing paymentAmounts, payments via params so we send the most updated values
-                    await onSubmitOrder(
-                        true,
-                        false,
-                        newPaymentAmounts,
-                        newPayments,
-                        outcome.eftposCardType,
-                        outcome.eftposSurcharge,
-                        outcome.eftposTip,
-                    );
+                    await onSubmitOrder(true, false, newPaymentAmounts, newPayments, outcome.eftposCardType, outcome.eftposSurcharge, outcome.eftposTip);
 
                     setPaymentModalState(EPaymentModalState.EftposResult);
                 } else {
@@ -1796,13 +1772,7 @@ export const Checkout = () => {
     };
 
     const itemUpdatedModal = () => {
-        return (
-            <>
-                {showItemUpdatedModal && (
-                    <ItemAddedUpdatedModal isOpen={showItemUpdatedModal} onClose={onCloseItemUpdatedModal} isProductUpdate={true} />
-                )}
-            </>
-        );
+        return <>{showItemUpdatedModal && <ItemAddedUpdatedModal isOpen={showItemUpdatedModal} onClose={onCloseItemUpdatedModal} isProductUpdate={true} />}</>;
     };
 
     const promotionCodeModal = () => {
@@ -2068,9 +2038,7 @@ export const Checkout = () => {
                 </div>
             ) : promotion ? (
                 <div className="h3 text-center mb-2">
-                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
-                        promotion.discountedAmount,
-                    )}`}{" "}
+                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(promotion.discountedAmount)}`}{" "}
                     {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
                 </div>
             ) : (
@@ -2078,11 +2046,7 @@ export const Checkout = () => {
             )}
             {surcharge ? <div className="h3 text-center mb-2">Surcharge: ${convertCentsToDollars(surcharge)}</div> : <></>}
             {paidSoFar > 0 ? <div className="h3 text-center mb-2">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : <></>}
-            {orderTypeSurcharge > 0 ? (
-                <div className="h3 text-center mb-2">Order Type Surcharge: ${convertCentsToDollars(orderTypeSurcharge)}</div>
-            ) : (
-                <></>
-            )}
+            {orderTypeSurcharge > 0 ? <div className="h3 text-center mb-2">Order Type Surcharge: ${convertCentsToDollars(orderTypeSurcharge)}</div> : <></>}
             <div className={`h1 text-center checkout-total-price ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
             <div className={`${isPOS ? "mb-0" : "mb-4"}`}>
                 <div className="checkout-buttons-container">

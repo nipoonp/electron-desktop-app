@@ -24,6 +24,8 @@ import { sendFailureNotification } from "./util/errorHandling";
 import { ErrorBoundaryFallback } from "./tabin/components/errorBoundryFallback";
 import { ErrorInfo } from "react";
 import { MX51Provider } from "./context/mx51-context";
+import { ThemePreviewListener } from "./components/themePreviewListener";
+import { isThemePreviewMode } from "./util/util";
 
 Amplify.configure(awsconfig);
 Amplify.Logger.LOG_LEVEL = process.env.REACT_APP_LOG_LEVEL;
@@ -129,6 +131,40 @@ const App = () => {
         );
     };
 
+    //Theme preview mode: driven by the dashboard theme editor. No login required, the restaurant is
+    //fetched with the unauthenticated IAM client (same access level as customer online ordering).
+    if (isThemePreviewMode()) {
+        return (
+            <ApolloProvider client={iamClient}>
+                <ErrorLoggingProvider>
+                    <UserProvider userId={null}>
+                        <VerifoneProvider>
+                            <RestaurantProvider>
+                                <RegisterProvider>
+                                    <ReceiptPrinterProvider>
+                                        <CartProvider>
+                                            <SmartpayProvider>
+                                                <WindcaveProvider>
+                                                    <TyroProvider>
+                                                        <MX51Provider>
+                                                            <ErrorBoundary FallbackComponent={ErrorBoundaryFallback} onError={logFailureNotification}>
+                                                                <Main />
+                                                            </ErrorBoundary>
+                                                        </MX51Provider>
+                                                    </TyroProvider>
+                                                </WindcaveProvider>
+                                            </SmartpayProvider>
+                                        </CartProvider>
+                                    </ReceiptPrinterProvider>
+                                </RegisterProvider>
+                            </RestaurantProvider>
+                        </VerifoneProvider>
+                    </UserProvider>
+                </ErrorLoggingProvider>
+            </ApolloProvider>
+        );
+    }
+
     switch (status) {
         case AuthenticationStatus.Loading:
             return <h1>App: Loading user</h1>;
@@ -186,6 +222,7 @@ export default () => {
         <ElectronProvider>
             <AuthProvider>
                 <App />
+                <ThemePreviewListener />
             </AuthProvider>
         </ElectronProvider>
     );

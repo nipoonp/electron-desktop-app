@@ -11,7 +11,7 @@ import {
 } from "../graphql/customQueries";
 import { useGetRestaurantQuery } from "../hooks/useGetRestaurantQuery";
 import { getCloudFrontDomainName } from "../private/aws-custom";
-import { getBase64FromUrlImage } from "../util/util";
+import { getBase64FromUrlImage, getThemePreviewRestaurantId } from "../util/util";
 
 interface IMENU_CATEGORIES {
     [index: string]: IGET_RESTAURANT_CATEGORY;
@@ -86,7 +86,7 @@ const C = (props: {
             getBase64FromUrlImage(
                 `${getCloudFrontDomainName()}/protected/${getRestaurantData.receiptLogo.identityPoolId}/${getRestaurantData.receiptLogo.key}`,
                 250,
-                "image/png"
+                "image/png",
             )
                 .then((base64Logo) => setRestaurantBase64Logo(base64Logo))
                 .catch((e) => console.error("Error getting logo base64", e));
@@ -163,9 +163,8 @@ const C = (props: {
                         <link
                             rel="stylesheet"
                             type="text/css"
-                            href={`${getCloudFrontDomainName()}/protected/${restaurant.customStyleSheet.identityPoolId}/${
-                                restaurant.customStyleSheet.key
-                            }`}
+                            data-custom-style-sheet="restaurant"
+                            href={`${getCloudFrontDomainName()}/protected/${restaurant.customStyleSheet.identityPoolId}/${restaurant.customStyleSheet.key}`}
                         />
                     )}
                 </>
@@ -213,6 +212,13 @@ const RestaurantProvider = (props: { children: React.ReactNode }) => {
                 }
             });
     };
+
+    //In theme preview mode the restaurant comes from the url instead of the logged in user's restaurant list.
+    const themePreviewRestaurantId = getThemePreviewRestaurantId();
+
+    if (themePreviewRestaurantId) {
+        return <C restaurantId={themePreviewRestaurantId} userRestaurants={null} selectRestaurant={() => {}} {...props} />;
+    }
 
     if (selectedRestaurantId) {
         return <C restaurantId={selectedRestaurantId} userRestaurants={userRestaurants} selectRestaurant={selectRestaurant} {...props} />;
