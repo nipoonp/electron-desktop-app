@@ -1,8 +1,17 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery } from "@apollo/client";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
+import { CREATE_ATTENDANCE, UPDATE_ATTENDANCE } from "../graphql/customMutations";
+import {
+    EAttendanceAdjustmentStatus,
+    EAttendanceRecordStatus,
+    IGET_ATTENDANCE,
+    IGET_ATTENDANCE_BREAK,
+    LIST_ATTENDANCES_BY_USER,
+} from "../graphql/customQueries";
 
-type TPosUser = {
+export type TPosUser = {
     id: string;
     userId: string;
     firstName: string;
@@ -12,6 +21,9 @@ type TPosUser = {
     imageIdentityPoolId: string | null;
     posPinEnabled: boolean;
     posPin: string | null;
+    attendanceEnabled: boolean;
+    breakTrackingEnabled: boolean;
+    defaultBreakDurationMinutes: number | null;
 };
 
 type ContextProps = {
@@ -20,11 +32,21 @@ type ContextProps = {
     isUnlocked: boolean;
     isPosPinFeatureEnabled: boolean;
     hasSkippedPosUserSelection: boolean;
+    activeAttendance: IGET_ATTENDANCE | null;
+    activeAttendanceBreak: IGET_ATTENDANCE_BREAK | null;
+    attendanceHistory: IGET_ATTENDANCE[];
+    attendanceLoading: boolean;
+    attendanceActionLoading: boolean;
+    refetchAttendance: () => Promise<void>;
     selectPosUser: (posUserId: string) => void;
     skipPosUserSelection: () => void;
     unlockPosUser: (pin: string) => Promise<boolean>;
     lockPosUser: () => void;
     clearSelectedPosUser: () => void;
+    startShift: () => Promise<boolean>;
+    endShift: () => Promise<boolean>;
+    startBreak: () => Promise<boolean>;
+    resumeShift: () => Promise<boolean>;
 };
 
 const PosUserContext = createContext<ContextProps>({
@@ -33,11 +55,21 @@ const PosUserContext = createContext<ContextProps>({
     isUnlocked: false,
     isPosPinFeatureEnabled: false,
     hasSkippedPosUserSelection: false,
+    activeAttendance: null,
+    activeAttendanceBreak: null,
+    attendanceHistory: [],
+    attendanceLoading: false,
+    attendanceActionLoading: false,
+    refetchAttendance: async () => {},
     selectPosUser: () => {},
     skipPosUserSelection: () => {},
     unlockPosUser: async () => false,
     lockPosUser: () => {},
     clearSelectedPosUser: () => {},
+    startShift: async () => false,
+    endShift: async () => false,
+    startBreak: async () => false,
+    resumeShift: async () => false,
 });
 
 // Saves the selected POS user for the current restaurant and register.
@@ -51,6 +83,56 @@ const buildUnlockedStorageKey = (restaurantId?: string | null, registerId?: stri
 // Marks that the operator intentionally skipped POS user selection because no active staff were available.
 const buildSkippedSelectionStorageKey = (restaurantId?: string | null, registerId?: string | null) =>
     `selectedPosUserSkipped:${restaurantId || "none"}:${registerId || "none"}`;
+
+export const getBusinessDate = (date = new Date()) =>
+    new Intl.DateTimeFormat("en-CA").format(date);
+
+export const calculateDurationMinutes = (startTime?: string | null, endTime = new Date().toISOString()) => {
+    if (!startTime) return 0;
+
+    const start = new Date(startTime).getTime();
+    const end = new Date(endTime).getTime();
+    if (Number.isNaN(start) || Number.isNaN(end)) return 0;
+
+    return Math.max(0, Math.round((end - start) / 60000));
+};
+
+export const getTotalBreakMinutes = (attendance: IGET_ATTENDANCE, openBreakEnd?: string) =>
+    (attendance.breaks || []).reduce((total, attendanceBreak) => {
+        if (!attendanceBreak.breakEnd) {
+            return openBreakEnd ? total + calculateDurationMinutes(attendanceBreak.breakStart, openBreakEnd) : total;
+        }
+        if (attendanceBreak.durationMinutes !== undefined && attendanceBreak.durationMinutes !== null) {
+            return total + attendanceBreak.durationMinutes;
+        }
+        return total + calculateDurationMinutes(attendanceBreak.breakStart, attendanceBreak.breakEnd);
+    }, 0);
+
+export const toAttendanceAdjustmentInput = (adjustment: any) => ({
+    status: adjustment.status,
+    changedByUserId: adjustment.changedByUserId || null,
+    changedByUserName: adjustment.changedByUserName || null,
+    changedAt: adjustment.changedAt || null,
+});
+
+export const getAdjustmentHistoryForUpdate = (
+    existingHistory: any[] | null | undefined,
+    status: EAttendanceAdjustmentStatus,
+    userId: string,
+    userName: string,
+    timestamp: string,
+) => {
+    const history = existingHistory || [];
+    return [
+        ...history.map(toAttendanceAdjustmentInput),
+        toAttendanceAdjustmentInput({
+            status,
+            changedByUserId: userId,
+            changedByUserName: userName,
+            changedAt: timestamp,
+        }),
+    ];
+};
 
 export const PosUserProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
@@ -78,6 +160,9 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
                           imageIdentityPoolId: userLink.user.image?.identityPoolId || null,
                           posPinEnabled: !!userLink.posPinEnabled,
                           posPin: userLink.posPin || null,
+                          attendanceEnabled: !!userLink.attendanceEnabled,
+                          breakTrackingEnabled: !!userLink.breakTrackingEnabled,
+                          defaultBreakDurationMinutes: userLink.defaultBreakDurationMinutes ?? null,
                       }))
                       .sort((left, right) => `${left.firstName} ${left.lastName}`.localeCompare(`${right.firstName} ${right.lastName}`)),
         [isPOS, restaurant],
@@ -87,9 +172,52 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
     const unlockedStorageKey = buildUnlockedStorageKey(restaurant?.id, register?.id);
     const skippedSelectionStorageKey = buildSkippedSelectionStorageKey(restaurant?.id, register?.id);
 
+    const {
+        data: attendanceData,
+        loading: attendanceLoading,
+        refetch: refetchAttendanceQuery,
+    } = useQuery(LIST_ATTENDANCES_BY_USER, {
+        variables: {
+            employeeUserId: selectedPosUser?.userId || "",
+            limit: 20,
+        },
+        skip: !isPOS || !selectedPosUser?.attendanceEnabled || !selectedPosUser?.userId,
+        fetchPolicy: "network-only",
+    });
+
+    const [createAttendance, { loading: creatingAttendance }] = useMutation(CREATE_ATTENDANCE);
+    const [updateAttendance, { loading: updatingAttendance }] = useMutation(UPDATE_ATTENDANCE);
+
+    const attendanceHistory = useMemo<IGET_ATTENDANCE[]>(() => {
+        return attendanceData?.listAttendancesByUserId?.items || [];
+    }, [attendanceData]);
+
+    const activeAttendance = useMemo<IGET_ATTENDANCE | null>(() => {
+        return (
+            attendanceHistory.find(
+                (attendance) =>
+                    attendance.attendanceRestaurantId === restaurant?.id &&
+                    attendance.status !== EAttendanceRecordStatus.COMPLETED &&
+                    !attendance.clockOut,
+            ) || null
+        );
+    }, [attendanceHistory, restaurant?.id]);
+
+    const activeAttendanceBreak = useMemo<IGET_ATTENDANCE_BREAK | null>(() => {
+        if (!activeAttendance) return null;
+        return (activeAttendance.breaks || []).find((attendanceBreak) => !attendanceBreak.breakEnd) || null;
+    }, [activeAttendance]);
+
+    const attendanceActionLoading = creatingAttendance || updatingAttendance;
+
+    const refetchAttendance = useCallback(async () => {
+        if (!selectedPosUser?.attendanceEnabled) return;
+        await refetchAttendanceQuery();
+    }, [refetchAttendanceQuery, selectedPosUser?.attendanceEnabled]);
+
     // Restores the selected cashier and unlock state whenever restaurant/register context changes.
     useEffect(() => {
-        if (!isPOS || !isPosPinFeatureEnabled || !restaurant?.id || !register?.id) {
+        if (!isPOS || !restaurant?.id || !register?.id) {
             setSelectedPosUser(null);
             setIsUnlocked(false);
             setHasSkippedPosUserSelection(false);
@@ -121,10 +249,11 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
         unlockedStorageKey,
     ]);
 
-    // Selects a cashier for the current register and skips PIN only when that user has no PIN enabled.
+    // Selects a cashier for the current register and skips PIN when register-level POS PIN is disabled
+    // or when the selected user does not require a PIN.
     const selectPosUser = (posUserId: string) => {
         const matchedUser = availableUsers.find((availableUser) => availableUser.id === posUserId) || null;
-        const shouldUnlockWithoutPin = !!matchedUser && !matchedUser.posPinEnabled;
+        const shouldUnlockWithoutPin = !!matchedUser && (!isPosPinFeatureEnabled || !matchedUser.posPinEnabled);
 
         setSelectedPosUser(matchedUser);
         setIsUnlocked(shouldUnlockWithoutPin);
@@ -188,6 +317,145 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
         localStorage.removeItem(skippedSelectionStorageKey);
     };
 
+    const startShift = async () => {
+        if (!restaurant?.id || !selectedPosUser || activeAttendance) return false;
+
+        const now = new Date();
+        const timestamp = now.toISOString();
+        const userName = `${selectedPosUser.firstName} ${selectedPosUser.lastName}`.trim();
+        await createAttendance({
+            variables: {
+                employeeName: userName,
+                employeeUserId: selectedPosUser.userId,
+                status: EAttendanceRecordStatus.ACTIVE,
+                businessDate: getBusinessDate(),
+                clockIn: timestamp,
+                totalBreakMinutes: 0,
+                workedMinutes: 0,
+                manualEntry: false,
+                adjustedByUserId: selectedPosUser.userId,
+                adjustedByUserName: userName,
+                adjustedAt: timestamp,
+                adjustmentHistory: [
+                    toAttendanceAdjustmentInput({
+                        status: EAttendanceAdjustmentStatus.CREATED,
+                        changedByUserId: selectedPosUser.userId,
+                        changedByUserName: userName,
+                        changedAt: timestamp,
+                    }),
+                ],
+                attendanceRestaurantId: restaurant.id,
+                owner: selectedPosUser.userId,
+            },
+        });
+        await refetchAttendance();
+        return true;
+    };
+
+    const endShift = async () => {
+        if (!activeAttendance) return false;
+
+        const endedAt = new Date().toISOString();
+        const totalBreakMinutes = getTotalBreakMinutes(activeAttendance, endedAt);
+        const workedMinutes = Math.max(0, calculateDurationMinutes(activeAttendance.clockIn, endedAt) - totalBreakMinutes);
+
+        const updatedBreaks = (activeAttendance.breaks || []).map((b) =>
+            b.breakEnd
+                ? { breakStart: b.breakStart, breakEnd: b.breakEnd, durationMinutes: b.durationMinutes ?? null }
+                : { breakStart: b.breakStart, breakEnd: endedAt, durationMinutes: calculateDurationMinutes(b.breakStart, endedAt) },
+        );
+
+        const userName = selectedPosUser ? `${selectedPosUser.firstName} ${selectedPosUser.lastName}`.trim() : "";
+        await updateAttendance({
+            variables: {
+                id: activeAttendance.id,
+                status: EAttendanceRecordStatus.COMPLETED,
+                clockOut: endedAt,
+                breaks: updatedBreaks.length > 0 ? updatedBreaks : undefined,
+                totalBreakMinutes,
+                workedMinutes,
+                adjustedByUserId: selectedPosUser?.userId || null,
+                adjustedByUserName: userName || null,
+                adjustedAt: endedAt,
+                adjustmentHistory: getAdjustmentHistoryForUpdate(
+                    activeAttendance.adjustmentHistory,
+                    EAttendanceAdjustmentStatus.UPDATED,
+                    selectedPosUser?.userId || "",
+                    userName,
+                    endedAt,
+                ),
+            },
+        });
+        await refetchAttendance();
+        return true;
+    };
+
+    const startBreak = async () => {
+        if (!selectedPosUser?.breakTrackingEnabled || !activeAttendance || activeAttendanceBreak) return false;
+
+        const startedAt = new Date().toISOString();
+        const userName = selectedPosUser ? `${selectedPosUser.firstName} ${selectedPosUser.lastName}`.trim() : "";
+        const existingBreaks = (activeAttendance.breaks || []).map((b) => ({
+            breakStart: b.breakStart,
+            breakEnd: b.breakEnd ?? null,
+            durationMinutes: b.durationMinutes ?? null,
+        }));
+        await updateAttendance({
+            variables: {
+                id: activeAttendance.id,
+                status: EAttendanceRecordStatus.ON_BREAK,
+                breaks: [...existingBreaks, { breakStart: startedAt, breakEnd: null, durationMinutes: null }],
+                adjustedByUserId: selectedPosUser?.userId || null,
+                adjustedByUserName: userName || null,
+                adjustedAt: startedAt,
+                adjustmentHistory: getAdjustmentHistoryForUpdate(
+                    activeAttendance.adjustmentHistory,
+                    EAttendanceAdjustmentStatus.UPDATED,
+                    selectedPosUser?.userId || "",
+                    userName,
+                    startedAt,
+                ),
+            },
+        });
+        await refetchAttendance();
+        return true;
+    };
+
+    const resumeShift = async () => {
+        if (!activeAttendance || !activeAttendanceBreak) return false;
+
+        const resumedAt = new Date().toISOString();
+        const breakDurationMinutes = calculateDurationMinutes(activeAttendanceBreak.breakStart, resumedAt);
+        const updatedBreaks = (activeAttendance.breaks || []).map((b) =>
+            b.breakEnd
+                ? { breakStart: b.breakStart, breakEnd: b.breakEnd, durationMinutes: b.durationMinutes ?? null }
+                : { breakStart: b.breakStart, breakEnd: resumedAt, durationMinutes: breakDurationMinutes },
+        );
+        const totalBreakMinutes = updatedBreaks.reduce((total, b) => total + (b.durationMinutes ?? 0), 0);
+
+        const userName = selectedPosUser ? `${selectedPosUser.firstName} ${selectedPosUser.lastName}`.trim() : "";
+        await updateAttendance({
+            variables: {
+                id: activeAttendance.id,
+                status: EAttendanceRecordStatus.ACTIVE,
+                breaks: updatedBreaks,
+                totalBreakMinutes,
+                adjustedByUserId: selectedPosUser?.userId || null,
+                adjustedByUserName: userName || null,
+                adjustedAt: resumedAt,
+                adjustmentHistory: getAdjustmentHistoryForUpdate(
+                    activeAttendance.adjustmentHistory,
+                    EAttendanceAdjustmentStatus.UPDATED,
+                    selectedPosUser?.userId || "",
+                    userName,
+                    resumedAt,
+                ),
+            },
+        });
+        await refetchAttendance();
+        return true;
+    };
+
     return (
         <PosUserContext.Provider
             value={{
@@ -196,11 +464,21 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
                 isUnlocked,
                 isPosPinFeatureEnabled,
                 hasSkippedPosUserSelection,
+                activeAttendance,
+                activeAttendanceBreak,
+                attendanceHistory,
+                attendanceLoading,
+                attendanceActionLoading,
+                refetchAttendance,
                 selectPosUser,
                 skipPosUserSelection,
                 unlockPosUser,
                 lockPosUser,
                 clearSelectedPosUser,
+                startShift,
+                endShift,
+                startBreak,
+                resumeShift,
             }}
         >
             {props.children}

@@ -13,7 +13,7 @@ import { usePosUser } from "../context/pos-user-context";
 import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { useRegister } from "../context/register-context";
 import { ITab } from "../model/model";
-import { FiDollarSign, FiLock, FiMenu, FiCheckSquare, FiRepeat } from "react-icons/fi";
+import { FiDollarSign, FiLock, FiMenu, FiCheckSquare, FiRepeat, FiUsers } from "react-icons/fi";
 import RequireCustomerInformation from "./page/customerInformation";
 import { sendFailureNotification } from "../util/errorHandling";
 
@@ -28,6 +28,7 @@ const RestaurantList = lazy(() => import("./page/restaurantList"));
 const RegisterList = lazy(() => import("./page/registerList"));
 const PosUserList = lazy(() => import("./page/posUserList"));
 const PosPin = lazy(() => import("./page/posPin"));
+const PosTimeclock = lazy(() => import("./page/posTimeclock"));
 const Orders = lazy(() => import("./page/orders"));
 const Dashboard = lazy(() => import("./page/dashboard"));
 const BeginOrder = lazy(() => import("./page/beginOrder"));
@@ -75,6 +76,7 @@ export const restaurantPath = "/restaurant";
 export const checkoutPath = "/checkout";
 export const cashUpPath = "/cash_up";
 export const moneyInOutPath = "/money_in_out";
+export const posTimeclockPath = "/pos_timeclock";
 export const unauthorizedPath = "/unauthorized";
 
 export const tabs: ITab[] = [
@@ -104,6 +106,13 @@ export const tabs: ITab[] = [
         name: "Money In/Out",
         icon: <FiRepeat height="20px" />,
         route: moneyInOutPath,
+        showOnMobile: true,
+    },
+    {
+        id: "timeclock",
+        name: "Timeclock",
+        icon: <FiUsers height="20px" />,
+        route: posTimeclockPath,
         showOnMobile: true,
     },
     {
@@ -229,6 +238,7 @@ const AppRoutes = () => {
                 <Route path={registerListPath} element={<PrivateRoute element={<RegisterList />} />} />
                 <Route path={posUserListPath} element={<RestaurantRegisterPosSetupPrivateRoute element={<PosUserList />} />} />
                 <Route path={posPinPath} element={<RestaurantRegisterPosSetupPrivateRoute element={<PosPin />} />} />
+                <Route path={posTimeclockPath} element={<RestaurantRegisterPosSetupPrivateRoute element={<PosTimeclock />} />} />
                 <Route path={ordersPath} element={<RestaurantRegisterPosPrivateRoute element={<Orders />} />}>
                     <Route path=":date" element={<RestaurantRegisterPosPrivateRoute element={<Orders />} />} />
                 </Route>
@@ -313,47 +323,64 @@ const RestaurantRegisterPrivateRoute = ({ element }) => {
 };
 
 const PosUserPrivateRoute = ({ element }) => {
-    const { selectedPosUser, isUnlocked, availableUsers, isPosPinFeatureEnabled, hasSkippedPosUserSelection } = usePosUser();
+    const {
+        selectedPosUser,
+        isUnlocked,
+        availableUsers,
+        isPosPinFeatureEnabled,
+        hasSkippedPosUserSelection,
+        activeAttendance,
+        activeAttendanceBreak,
+        attendanceLoading,
+    } = usePosUser();
 
-    if (!isPosPinFeatureEnabled) return element;
+    if (!isPosPinFeatureEnabled) {
+        if (selectedPosUser?.attendanceEnabled) {
+            if (attendanceLoading) return <FullScreenSpinner show={true} text="Loading shift..." />;
+            if (!activeAttendance || activeAttendanceBreak) return <Navigate to={posTimeclockPath} />;
+        }
+
+        return element;
+    }
 
     if (availableUsers.length === 0) {
         if (hasSkippedPosUserSelection) return element;
-        return <Navigate to={posUserListPath} />;
+        return <Navigate to={posTimeclockPath} />;
     }
 
-    if (!selectedPosUser) return <Navigate to={posUserListPath} />;
-    if (!isUnlocked) return <Navigate to={posPinPath} />;
+    if (!selectedPosUser) return <Navigate to={posTimeclockPath} />;
+    if (!isUnlocked) return <Navigate to={posTimeclockPath} />;
+    if (selectedPosUser.attendanceEnabled) {
+        if (attendanceLoading) return <FullScreenSpinner show={true} text="Loading shift..." />;
+        if (!activeAttendance || activeAttendanceBreak) return <Navigate to={posTimeclockPath} />;
+    }
 
     return element;
 };
 
 const RestaurantRegisterPosPrivateRoute = ({ element }) => {
-    const { isPOS, isPosPinFeatureEnabled } = useRegister();
+    const { isPOS } = useRegister();
 
     // POS user selection and PIN screens should never appear for kiosk-style flows.
     if (isPOS === false) return <Navigate to={beginOrderPath} replace />;
-
-    if (!isPosPinFeatureEnabled) return <RestaurantRegisterPrivateRoute element={element} />;
 
     return <RestaurantRegisterPrivateRoute element={<PosUserPrivateRoute element={element} />} />;
 };
 
 const RestaurantRegisterSalePrivateRoute = ({ element }) => {
-    const { isPOS, isPosPinFeatureEnabled } = useRegister();
+    const { isPOS } = useRegister();
 
     // Shared sales pages work for every register. Only POS registers require the staff selection gate.
-    if (isPOS === false || !isPosPinFeatureEnabled) return <RestaurantRegisterPrivateRoute element={element} />;
+    if (isPOS === false) return <RestaurantRegisterPrivateRoute element={element} />;
 
     return <RestaurantRegisterPrivateRoute element={<PosUserPrivateRoute element={element} />} />;
 };
 
 const RestaurantRegisterPosSetupPrivateRoute = ({ element }) => {
-    const { isPOS, isPosPinFeatureEnabled } = useRegister();
+    const { isPOS } = useRegister();
 
     // Non-POS registers should skip the POS user selection flow completely.
     if (isPOS === false) return <Navigate to={beginOrderPath} replace />;
-    if (!isPosPinFeatureEnabled) return <Navigate to={beginOrderPath} replace />;
 
     return <RestaurantRegisterPrivateRoute element={element} />;
 };

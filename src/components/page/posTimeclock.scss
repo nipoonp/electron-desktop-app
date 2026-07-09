@@ -1,0 +1,306 @@
+.pos-timeclock {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    color: #484848;
+    overflow: hidden;
+
+    // ── Left sidebar ──────────────────────────────────────────────────────────
+
+    &__sidebar {
+        display: flex;
+        flex-direction: column;
+        width: 360px;
+        flex-shrink: 0;
+        border-right: 1px solid #e4e7eb;
+        background: #fff;
+    }
+
+    &__search {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 18px 20px 14px;
+        border-bottom: 1px solid #e4e7eb;
+    }
+
+    &__search-icon {
+        color: #9aa3ae;
+        font-size: 17px;
+        flex-shrink: 0;
+    }
+
+    &__search-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 15px;
+        color: #2d3742;
+        background: transparent;
+
+        &::placeholder {
+            color: #9aa3ae;
+        }
+    }
+
+    &__list {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    &__staff-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 18px 20px;
+        border: none;
+        border-bottom: 1px solid #e4e7eb;
+        background: #fff;
+        cursor: pointer;
+        text-align: left;
+        transition: background 0.12s ease;
+
+        &:hover:not(.selected) {
+            background: #f5f7fa;
+        }
+
+        &.selected {
+            background: var(--primary-color);
+            color: #fff;
+            border-bottom-color: var(--primary-color);
+        }
+    }
+
+    &__staff-name {
+        font-size: 16px;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+    }
+
+    &__chevron {
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+    &__empty {
+        padding: 32px 20px;
+        color: #9aa3ae;
+        font-size: 14px;
+        text-align: center;
+    }
+
+    &__register {
+        padding: 12px 20px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #9aa3ae;
+        border-top: 1px solid #e4e7eb;
+        text-align: right;
+    }
+
+    // ── Right panel ───────────────────────────────────────────────────────────
+
+    &__panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 32px;
+        background: #fff;
+        gap: 24px;
+        overflow-y: auto;
+    }
+
+    // ── Clock ─────────────────────────────────────────────────────────────────
+
+    &__clock {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        line-height: 1;
+    }
+
+    &__clock-digits {
+        font-size: 96px;
+        font-weight: 700;
+        color: #1a2029;
+        letter-spacing: -2px;
+    }
+
+    &__clock-period {
+        font-size: 28px;
+        font-weight: 600;
+        color: #1a2029;
+        margin-top: 20px;
+    }
+
+    // ── Idle prompt ───────────────────────────────────────────────────────────
+
+    &__prompt {
+        font-size: 22px;
+        color: #6b7280;
+        text-align: center;
+        max-width: 380px;
+        line-height: 1.45;
+        margin: 0;
+    }
+
+    // ── Actions panel (post-unlock) ───────────────────────────────────────────
+
+    &__panel-employee {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a2029;
+        text-align: center;
+        letter-spacing: 0.01em;
+    }
+
+    &__actions {
+        display: flex;
+        flex-direction: row;
+        gap: 16px;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+        max-width: 480px;
+    }
+
+    &__btn-primary {
+        flex: 1;
+        min-width: 180px;
+        min-height: 58px;
+        font-size: 18px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    &__btn-outline {
+        flex: 1;
+        min-width: 180px;
+        min-height: 58px;
+        font-size: 18px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: #fff;
+        color: #404955;
+        border: 1px solid #d4d9df;
+    }
+
+    &__loading {
+        color: #9aa3ae;
+        font-size: 15px;
+    }
+
+    &__btn-continue {
+        width: 100%;
+        max-width: 480px;
+        min-height: 52px;
+        font-size: 16px;
+    }
+
+    &__last-action {
+        font-size: 14px;
+        color: #6b7280;
+        text-align: center;
+        margin: 0;
+    }
+
+    // ── Inline PIN panel ──────────────────────────────────────────────────────
+
+    &__pin-panel {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        width: 100%;
+        max-width: 360px;
+    }
+
+    &__pin-dots {
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+        margin-top: 4px;
+
+        span {
+            width: 14px;
+            height: 14px;
+            border-radius: 999px;
+            border: 1px solid #666;
+        }
+
+        .filled {
+            background: #666;
+        }
+    }
+}
+
+// Reuse the pin pad button styles from posPin.scss via the same class names
+// (.pos-pin-pad, .pos-pin-pad__key, etc. are already declared in posPin.scss
+//  which is loaded whenever posPin page renders — but to be safe we declare
+//  them here too so the timeclock page is fully self-contained.)
+.pos-timeclock .pos-pin-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 76px);
+    gap: 14px;
+    justify-content: center;
+    margin-top: 4px;
+
+    &__key,
+    &__delete {
+        width: 76px;
+        height: 76px;
+        padding: 0;
+        background: white;
+        color: #515862;
+        border: 1px solid #d3d7dd;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+    }
+
+    &__delete {
+        font-size: 22px;
+    }
+
+    &__spacer {
+        width: 76px;
+        height: 76px;
+    }
+}
+
+@media (max-width: 760px) {
+    .pos-timeclock {
+        flex-direction: column;
+
+        &__sidebar {
+            width: 100%;
+            border-right: none;
+            border-bottom: 1px solid #e4e7eb;
+            max-height: 40vh;
+        }
+
+        &__clock-digits {
+            font-size: 64px;
+        }
+
+        &__clock-period {
+            font-size: 20px;
+            margin-top: 12px;
+        }
+
+        &__prompt {
+            font-size: 18px;
+        }
+    }
+}

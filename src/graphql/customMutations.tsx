@@ -680,3 +680,142 @@ export const UPDATE_TAKINGS_SESSION = gql`
         }
     }
 `;
+
+export const CREATE_ATTENDANCE = gql`
+    mutation CreateAttendance(
+        $employeeName: String!
+        $employeeUserId: ID!
+        $status: AttendanceRecordStatus!
+        $businessDate: AWSDate
+        $clockIn: String!
+        $clockOut: String
+        $totalBreakMinutes: Int
+        $workedMinutes: Int
+        $manualEntry: Boolean
+        $adjustmentReason: String
+        $adjustedByUserId: ID
+        $adjustedByUserName: String
+        $adjustedAt: String
+        $adjustmentHistory: [AttendanceAdjustmentInput]
+        $attendanceRestaurantId: ID!
+        $owner: ID
+        $deleted: Boolean
+    ) {
+        createAttendance(
+            input: {
+                employeeName: $employeeName
+                employeeUserId: $employeeUserId
+                status: $status
+                businessDate: $businessDate
+                clockIn: $clockIn
+                clockOut: $clockOut
+                totalBreakMinutes: $totalBreakMinutes
+                workedMinutes: $workedMinutes
+                manualEntry: $manualEntry
+                adjustmentReason: $adjustmentReason
+                adjustedByUserId: $adjustedByUserId
+                adjustedByUserName: $adjustedByUserName
+                adjustedAt: $adjustedAt
+                adjustmentHistory: $adjustmentHistory
+                attendanceRestaurantId: $attendanceRestaurantId
+                owner: $owner
+                deleted: $deleted
+            }
+        ) {
+            id
+            employeeName
+            employeeUserId
+            status
+            businessDate
+            clockIn
+            clockOut
+            totalBreakMinutes
+            workedMinutes
+            manualEntry
+            adjustmentReason
+            adjustedByUserId
+            adjustedByUserName
+            adjustedAt
+            adjustmentHistory {
+                status
+                changedByUserId
+                changedByUserName
+                changedAt
+            }
+            attendanceRestaurantId
+            deleted
+        }
+    }
+`;
+
+export const UPDATE_ATTENDANCE = gql`
+    mutation UpdateAttendance(
+        $id: ID!
+        $employeeName: String
+        $employeeUserId: ID
+        $businessDate: AWSDate
+        $status: AttendanceRecordStatus
+        $clockIn: String
+        $clockOut: String
+        $totalBreakMinutes: Int
+        $workedMinutes: Int
+        $manualEntry: Boolean
+        $adjustmentReason: String
+        $adjustedByUserId: ID
+        $adjustedByUserName: String
+        $adjustedAt: String
+        $adjustmentHistory: [AttendanceAdjustmentInput]
+        $breaks: [AttendanceBreakInput]
+        $deleted: Boolean
+    ) {
+        updateAttendance(
+            input: {
+                id: $id
+                employeeName: $employeeName
+                employeeUserId: $employeeUserId
+                businessDate: $businessDate
+                status: $status
+                clockIn: $clockIn
+                clockOut: $clockOut
+                totalBreakMinutes: $totalBreakMinutes
+                workedMinutes: $workedMinutes
+                manualEntry: $manualEntry
+                adjustmentReason: $adjustmentReason
+                adjustedByUserId: $adjustedByUserId
+                adjustedByUserName: $adjustedByUserName
+                adjustedAt: $adjustedAt
+                adjustmentHistory: $adjustmentHistory
+                breaks: $breaks
+                deleted: $deleted
+            }
+        ) {
+            id
+            employeeName
+            employeeUserId
+            status
+            businessDate
+            clockIn
+            clockOut
+            totalBreakMinutes
+            workedMinutes
+            manualEntry
+            adjustmentReason
+            adjustedByUserId
+            adjustedByUserName
+            adjustedAt
+            adjustmentHistory {
+                status
+                changedByUserId
+                changedByUserName
+                changedAt
+            }
+            breaks {
+                breakStart
+                breakEnd
+                durationMinutes
+            }
+            attendanceRestaurantId
+            deleted
+        }
+    }
+`;

@@ -5,7 +5,7 @@ import { usePosUser } from "../../context/pos-user-context";
 import { Button } from "../../tabin/components/button";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { toast } from "../../tabin/components/toast";
-import { beginOrderPath, posUserListPath } from "../main";
+import { beginOrderPath, posTimeclockPath } from "../main";
 
 import "./posPin.scss";
 
@@ -24,12 +24,12 @@ export default () => {
         }
 
         if (!selectedPosUser) {
-            navigate(posUserListPath, { replace: true });
+            navigate(posTimeclockPath, { replace: true });
             return;
         }
 
         if (isUnlocked || !selectedPosUser.posPinEnabled) {
-            navigate(beginOrderPath, { replace: true });
+            navigate(selectedPosUser.attendanceEnabled ? posTimeclockPath : beginOrderPath, { replace: true });
         }
     }, [hasSkippedPosUserSelection, isPosPinFeatureEnabled, isUnlocked, navigate, selectedPosUser]);
 
@@ -46,7 +46,7 @@ export default () => {
             return;
         }
 
-        navigate(beginOrderPath, { replace: true });
+        navigate(selectedPosUser?.attendanceEnabled ? posTimeclockPath : beginOrderPath, { replace: true });
     };
 
     const handleDigit = async (digit: string) => {
@@ -70,7 +70,7 @@ export default () => {
                         className="pos-pin-page__back"
                         onClick={() => {
                             clearSelectedPosUser();
-                            navigate(posUserListPath, { replace: true });
+                            navigate(posTimeclockPath, { replace: true });
                         }}
                     >
                         <FiArrowLeft />
