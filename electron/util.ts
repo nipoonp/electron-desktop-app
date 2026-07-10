@@ -197,11 +197,11 @@ export const printCustomerReceipt = async (order: IOrderReceipt, receiptIndex?: 
 
     printer.println(order.restaurant.address);
     printer.newLine();
-    printer.println(`Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
+    printer.println(`Placed: ${format(new Date(order.placedAt), "dd MMM yyyy HH:mm aa")}`);
 
     if (order.orderScheduledAt) {
         printer.bold(true);
-        printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+        printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM yyyy HH:mm aa")}`);
         printer.bold(false);
     }
 
@@ -612,16 +612,16 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
     printer.bold(false);
     printer.newLine();
 
-    printer.println(`Placed: ${format(new Date(order.placedAt), "dd MMM yyyy HH:mm aa")}`);
+    printer.println(`Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
 
     if (order.orderScheduledAt) {
         printer.setTextSize(1, 1);
         printer.bold(true);
 
         if (isToday(new Date(order.orderScheduledAt))) {
-            printer.println(`Pickup: Today ${format(new Date(order.orderScheduledAt), "dd MMM yyyy HH:mm aa")}`);
+            printer.println(`Pickup: Today ${format(new Date(order.orderScheduledAt), "HH:mm aa")}`);
         } else {
-            printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM yyyy HH:mm aa")}`);
+            printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
         }
 
         printer.bold(false);
