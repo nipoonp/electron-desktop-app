@@ -207,7 +207,6 @@ export const Checkout = () => {
         setBuzzerNumber,
         setCustomerInformation,
         setOnAccountOrders,
-        setLoyaltyUserAggregates,
         setCustomerLoyaltyPoints,
         setNotes,
         covers,
@@ -448,7 +447,7 @@ export const Checkout = () => {
         setBuzzerNumber(null);
         setCustomerInformation(null);
         setOnAccountOrders([]);
-        setLoyaltyUserAggregates([]);
+        //loyaltyUserAggregates is intentionally not cleared; it is a session-long cache in restaurant-context.
         setCustomerLoyaltyPoints(0);
         setNotes("");
         removeUserAppliedPromotion();

@@ -1,4 +1,5 @@
 import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { format } from "date-fns";
 import { useLazyQuery, useMutation } from "@apollo/client";
 import { useNavigate } from "react-router";
 import { checkoutPath, restaurantPath } from "../main";
@@ -17,11 +18,14 @@ import { FaRegStar, FaStar } from "react-icons/fa";
 import { calculateLoyaltyPointsForGroup, convertCentsToDollars, resizeBase64ImageToWidth } from "../../util/util";
 import {
     ECustomCustomerFieldType,
+    GET_LOYALTY_USER_BALANCES,
     GET_LOYALTY_USER_LINKS_BY_RESTAURANT,
     IGET_LOYALTIES_BY_GROUP_ID_ITEM,
+    IGET_LOYALTY_USER_BALANCES,
     IGET_LOYALTY_USER_LINK,
     IGET_LOYALTY_USER_LINKS_BY_RESTAURANT,
 } from "../../graphql/customQueries";
+import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { UPDATE_LOYALTY_USER_RESTAURANT_LINK } from "../../graphql/customMutations";
 import { useGetLoyaltiesByGroupIdLazyQuery } from "../../hooks/useGetLoyaltiesByGroupIdLazyQuery";
 import { ICustomerInformation, LoyaltyUserAggregate, LoyaltyUserLinkInfo, LoyaltyUserSearchResult } from "../../model/model";
@@ -73,10 +77,7 @@ const filterAggregatedUsers = (aggregates: LoyaltyUserAggregate[], identifier: s
     return sortUsersByFavourite(filtered.map((aggregate) => aggregate.result));
 };
 
-const buildLoyaltyUserAggregates = (
-    loyaltyUserLinks: Record<string, LoyaltyUserLinkInfo>,
-    loyaltyGroupIds: string[]
-): LoyaltyUserAggregate[] =>
+const buildLoyaltyUserAggregates = (loyaltyUserLinks: Record<string, LoyaltyUserLinkInfo>, loyaltyGroupIds: string[]): LoyaltyUserAggregate[] =>
     Object.entries(loyaltyUserLinks).map(([loyaltyUserId, linkInfo]) => {
         const points = calculateLoyaltyPointsForGroup(linkInfo.loyaltyBalances, loyaltyGroupIds);
 
@@ -112,16 +113,10 @@ export default function CustomerInformation() {
 
 const CustomerSearch = ({ onDisableSearchView }: { onDisableSearchView: () => void }) => {
     const navigate = useNavigate();
-    const { restaurant } = useRestaurant();
+    const { restaurant, loyaltyUserAggregates, setLoyaltyUserAggregates, loyaltyUserAggregatesFetchedDate, setLoyaltyUserAggregatesFetchedDate } =
+        useRestaurant();
     const { isPOS } = useRegister();
-    const {
-        customerInformation,
-        setCustomerInformation,
-        setCustomerLoyaltyPoints,
-        setOnAccountOrders,
-        loyaltyUserAggregates,
-        setLoyaltyUserAggregates,
-    } = useCart();
+    const { customerInformation, setCustomerInformation, setCustomerLoyaltyPoints, setOnAccountOrders } = useCart();
 
     const [customerIdentifier, setCustomerIdentifier] = useState("");
     const [favouriteMutationIds, setFavouriteMutationIds] = useState<string[]>([]);
@@ -131,81 +126,125 @@ const CustomerSearch = ({ onDisableSearchView }: { onDisableSearchView: () => vo
     const [getLoyaltyUserLinksByRestaurantLazyQuery] = useLazyQuery<IGET_LOYALTY_USER_LINKS_BY_RESTAURANT>(GET_LOYALTY_USER_LINKS_BY_RESTAURANT, {
         fetchPolicy: "network-only",
     });
+    const [getLoyaltyUserBalancesLazyQuery] = useLazyQuery<IGET_LOYALTY_USER_BALANCES>(GET_LOYALTY_USER_BALANCES, {
+        fetchPolicy: "network-only",
+    });
+    const [isFetchingSelectedUserPoints, setIsFetchingSelectedUserPoints] = useState(false);
 
-    const fetchLoyaltyGroupIds = useCallback(
+    const fetchGroupLoyalties = useCallback(
         async (loyaltyGroupId: string) => {
             const response = await getLoyaltiesByGroupIdLazyQuery({ variables: { loyaltyGroupId } });
             const items = response?.data?.getLoyaltiesByGroupId?.items ?? [];
-            return items
-                .filter(Boolean)
-                .map((item: IGET_LOYALTIES_BY_GROUP_ID_ITEM) => item.id)
-                .filter(Boolean) as string[];
+            return items.filter(Boolean) as IGET_LOYALTIES_BY_GROUP_ID_ITEM[];
         },
-        [getLoyaltiesByGroupIdLazyQuery]
+        [getLoyaltiesByGroupIdLazyQuery],
     );
 
-    const fetchLoyaltyUserLinks = useCallback(async () => {
-        if (!restaurant?.id) return {};
+    const fetchAllGroupLoyalties = useCallback(async () => {
+        const loyaltyItems = restaurant?.loyalties?.items ?? [];
 
-        const linkMap: Record<string, LoyaltyUserLinkInfo> = {};
-        let nextToken: string | null | undefined = null;
+        const loyaltyGroupIds = loyaltyItems
+            .map((loyalty) => loyalty.loyaltyGroupId)
+            .filter((id, index, ids): id is string => Boolean(id) && ids.indexOf(id) === index);
 
-        do {
-            const response = await getLoyaltyUserLinksByRestaurantLazyQuery({
-                variables: {
-                    restaurantId: restaurant.id,
-                    nextToken,
-                },
-            });
+        return (await Promise.all(loyaltyGroupIds.map((id) => fetchGroupLoyalties(id)))).flat();
+    }, [fetchGroupLoyalties, restaurant]);
 
-            const connection = response.data?.getRestaurant?.loyaltyUsers;
-            const items = connection?.items ?? [];
+    const fetchLoyaltyUserLinks = useCallback(
+        async (restaurantId?: string) => {
+            const targetRestaurantId = restaurantId ?? restaurant?.id;
+            if (!targetRestaurantId) return {};
 
-            items.forEach((item) => {
-                const link = item as IGET_LOYALTY_USER_LINK | null;
-                const loyaltyUser = link?.loyaltyUser;
-                const loyaltyUserId = loyaltyUser?.id;
-                if (!link?.id || !loyaltyUserId) return;
+            const linkMap: Record<string, LoyaltyUserLinkInfo> = {};
+            let nextToken: string | null | undefined = null;
 
-                linkMap[loyaltyUserId] = {
-                    id: link.id,
-                    favourite: Boolean(link.favourite),
-                    firstName: loyaltyUser.firstName,
-                    lastName: loyaltyUser.lastName,
-                    email: loyaltyUser.email,
-                    phoneNumber: loyaltyUser.phoneNumber,
-                    loyaltyBalances: (loyaltyUser.loyaltyBalances ?? []).filter(
-                        (balance): balance is { loyaltyId: string | null; points: number } => Boolean(balance)
-                    ),
-                };
-            });
+            do {
+                const response = await getLoyaltyUserLinksByRestaurantLazyQuery({
+                    variables: {
+                        restaurantId: targetRestaurantId,
+                        nextToken,
+                    },
+                });
 
-            nextToken = connection?.nextToken ?? null;
-        } while (nextToken);
+                const connection = response.data?.getRestaurant?.loyaltyUsers;
+                const items = connection?.items ?? [];
 
-        return linkMap;
-    }, [getLoyaltyUserLinksByRestaurantLazyQuery, restaurant?.id]);
+                items.forEach((item) => {
+                    const link = item as IGET_LOYALTY_USER_LINK | null;
+                    const loyaltyUser = link?.loyaltyUser;
+                    const loyaltyUserId = loyaltyUser?.id;
+                    if (!link?.id || !loyaltyUserId) return;
+
+                    linkMap[loyaltyUserId] = {
+                        id: link.id,
+                        favourite: Boolean(link.favourite),
+                        firstName: loyaltyUser.firstName,
+                        lastName: loyaltyUser.lastName,
+                        email: loyaltyUser.email,
+                        phoneNumber: loyaltyUser.phoneNumber,
+                        loyaltyBalances: (loyaltyUser.loyaltyBalances ?? []).filter((balance): balance is { loyaltyId: string | null; points: number } =>
+                            Boolean(balance),
+                        ),
+                    };
+                });
+
+                nextToken = connection?.nextToken ?? null;
+            } while (nextToken);
+
+            return linkMap;
+        },
+        [getLoyaltyUserLinksByRestaurantLazyQuery, restaurant?.id],
+    );
+
+    const loadedForRestaurantId = useRef<string | null>(null);
 
     useEffect(() => {
         if (!restaurant) return;
-        if (loyaltyUserAggregates.length > 0) return;
+        // Fetched on the first customer search of each day, cached in restaurant-context.
+        if (loyaltyUserAggregates !== null && loyaltyUserAggregatesFetchedDate === format(new Date(), "yyyy-MM-dd")) return;
+        // Guard against a duplicate fetch while the first is still in flight.
+        if (loadedForRestaurantId.current === restaurant.id) return;
+        loadedForRestaurantId.current = restaurant.id;
 
         let cancelled = false;
 
         const load = async () => {
-            const loyaltyItems = restaurant.loyalties?.items ?? [];
-            const loyaltyGroupId = loyaltyItems[0]?.loyaltyGroupId;
+            try {
+                // Customers are linked to the restaurant they registered at, so gather users from every restaurant in every group.
+                const groupLoyalties = await fetchAllGroupLoyalties();
+                if (cancelled) return;
 
-            // Points come from each user's materialised loyaltyBalances; the group ids scope which loyalties count.
-            const [loyaltyUserLinks, loyaltyGroupIds] = await Promise.all([
-                fetchLoyaltyUserLinks(),
-                loyaltyGroupId ? fetchLoyaltyGroupIds(loyaltyGroupId) : Promise.resolve<string[]>([]),
-            ]);
+                // The group loyalty ids scope which of a user's materialised balances count towards points.
+                const loyaltyGroupIds = groupLoyalties.map((loyalty) => loyalty.id).filter(Boolean);
 
-            if (cancelled) return;
+                // Fetch loyalty users for every restaurant in the group (plus the current one).
+                const otherRestaurantIds = groupLoyalties
+                    .map((loyalty) => loyalty.loyaltyRestaurantId)
+                    .filter((id, index, ids) => id && id !== restaurant.id && ids.indexOf(id) === index);
+                const linkMapsByRestaurant = await Promise.all(otherRestaurantIds.map((id) => fetchLoyaltyUserLinks(id)));
+                const currentRestaurantLinkMap = await fetchLoyaltyUserLinks(restaurant.id);
+                if (cancelled) return;
 
-            const aggregates = buildLoyaltyUserAggregates(loyaltyUserLinks, loyaltyGroupIds);
-            setLoyaltyUserAggregates(aggregates);
+                // Favourites (and the link used to toggle them) are per restaurant: only the current
+                // restaurant's link counts. Users from other restaurants are searchable but not favourites.
+                const loyaltyUserLinks: Record<string, LoyaltyUserLinkInfo> = {};
+                linkMapsByRestaurant.forEach((linkMap) =>
+                    Object.entries(linkMap).forEach(([loyaltyUserId, linkInfo]) => {
+                        loyaltyUserLinks[loyaltyUserId] = { ...linkInfo, id: "", favourite: false };
+                    }),
+                );
+                Object.assign(loyaltyUserLinks, currentRestaurantLinkMap);
+
+                const aggregates = buildLoyaltyUserAggregates(loyaltyUserLinks, loyaltyGroupIds);
+                setLoyaltyUserAggregates(aggregates);
+                setLoyaltyUserAggregatesFetchedDate(format(new Date(), "yyyy-MM-dd"));
+            } catch (error) {
+                console.error("Error loading loyalty users", error);
+                // Allow a retry on the next render since this attempt did not populate.
+                if (loadedForRestaurantId.current === restaurant.id) {
+                    loadedForRestaurantId.current = null;
+                }
+            }
         };
 
         void load();
@@ -213,13 +252,21 @@ const CustomerSearch = ({ onDisableSearchView }: { onDisableSearchView: () => vo
         return () => {
             cancelled = true;
         };
-    }, [fetchLoyaltyGroupIds, fetchLoyaltyUserLinks, loyaltyUserAggregates.length, restaurant, setLoyaltyUserAggregates]);
+    }, [
+        fetchAllGroupLoyalties,
+        fetchLoyaltyUserLinks,
+        restaurant,
+        loyaltyUserAggregates,
+        setLoyaltyUserAggregates,
+        loyaltyUserAggregatesFetchedDate,
+        setLoyaltyUserAggregatesFetchedDate,
+    ]);
 
     if (!restaurant) {
         throw new Error("Restaurant is invalid!");
     }
 
-    const favouriteUsers = useMemo(() => deriveFavouriteUsers(loyaltyUserAggregates), [loyaltyUserAggregates]);
+    const favouriteUsers = useMemo(() => deriveFavouriteUsers(loyaltyUserAggregates ?? []), [loyaltyUserAggregates]);
     const trimmedCustomerIdentifier = customerIdentifier.trim();
     const hasMinimumIdentifier = trimmedCustomerIdentifier.length >= MIN_IDENTIFIER_LENGTH;
 
@@ -228,7 +275,7 @@ const CustomerSearch = ({ onDisableSearchView }: { onDisableSearchView: () => vo
             return favouriteUsers.slice(0, MAX_DISPLAYED_USERS);
         }
 
-        return filterAggregatedUsers(loyaltyUserAggregates, trimmedCustomerIdentifier).slice(0, MAX_DISPLAYED_USERS);
+        return filterAggregatedUsers(loyaltyUserAggregates ?? [], trimmedCustomerIdentifier).slice(0, MAX_DISPLAYED_USERS);
     }, [favouriteUsers, hasMinimumIdentifier, loyaltyUserAggregates, trimmedCustomerIdentifier]);
 
     const handleCustomerIdentifierChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -243,7 +290,9 @@ const CustomerSearch = ({ onDisableSearchView }: { onDisableSearchView: () => vo
         }
     };
 
-    const handleSelectUser = (loyaltyUser: LoyaltyUserSearchResult) => {
+    const handleSelectUser = async (loyaltyUser: LoyaltyUserSearchResult) => {
+        if (isFetchingSelectedUserPoints) return;
+
         const baseInformation = customerInformation ? { ...customerInformation } : { ...EMPTY_CUSTOMER_INFORMATION };
 
         setCustomerInformation({
@@ -253,7 +302,39 @@ const CustomerSearch = ({ onDisableSearchView }: { onDisableSearchView: () => vo
             phoneNumber: loyaltyUser.phoneNumber,
         });
 
-        setCustomerLoyaltyPoints(loyaltyUser.points);
+        // Refetch the latest balances so redemption never uses stale cached points.
+        let points = loyaltyUser.points;
+
+        setIsFetchingSelectedUserPoints(true);
+
+        try {
+            const [groupLoyalties, balancesResponse] = await Promise.all([
+                fetchAllGroupLoyalties(),
+                getLoyaltyUserBalancesLazyQuery({ variables: { loyaltyUserId: loyaltyUser.loyaltyUserId } }),
+            ]);
+
+            const loyaltyGroupIds = groupLoyalties.map((loyalty) => loyalty.id).filter(Boolean);
+            const balances = (balancesResponse.data?.getLoyaltyUser?.loyaltyBalances ?? []).filter(
+                (balance): balance is { loyaltyId: string | null; points: number } => Boolean(balance),
+            );
+
+            points = calculateLoyaltyPointsForGroup(balances, loyaltyGroupIds);
+
+            setLoyaltyUserAggregates(
+                (previous) =>
+                    previous &&
+                    previous.map((aggregate) =>
+                        aggregate.result.loyaltyUserId === loyaltyUser.loyaltyUserId ? { ...aggregate, result: { ...aggregate.result, points } } : aggregate,
+                    ),
+            );
+        } catch (error) {
+            console.error("Error refetching loyalty points", error);
+            toast.error("Could not refresh loyalty points, using last known balance.");
+        } finally {
+            setIsFetchingSelectedUserPoints(false);
+        }
+
+        setCustomerLoyaltyPoints(points);
         setOnAccountOrders(loyaltyUser.onAccountOrders);
         handleClose();
     };
@@ -278,12 +359,14 @@ const CustomerSearch = ({ onDisableSearchView }: { onDisableSearchView: () => vo
 
             linkId = linkInfo.id;
 
-            setLoyaltyUserAggregates((previous) =>
-                previous.map((aggregate) =>
-                    aggregate.result.loyaltyUserId === loyaltyUser.loyaltyUserId
-                        ? { ...aggregate, result: { ...aggregate.result, linkId: linkInfo.id, favourite: linkInfo.favourite } }
-                        : aggregate
-                )
+            setLoyaltyUserAggregates(
+                (previous) =>
+                    previous &&
+                    previous.map((aggregate) =>
+                        aggregate.result.loyaltyUserId === loyaltyUser.loyaltyUserId
+                            ? { ...aggregate, result: { ...aggregate.result, linkId: linkInfo.id, favourite: linkInfo.favourite } }
+                            : aggregate,
+                    ),
             );
         }
 
@@ -301,10 +384,12 @@ const CustomerSearch = ({ onDisableSearchView }: { onDisableSearchView: () => vo
                 },
             });
 
-            setLoyaltyUserAggregates((previous) =>
-                previous.map((aggregate) =>
-                    aggregate.result.linkId === linkId ? { ...aggregate, result: { ...aggregate.result, favourite: updatedFavourite } } : aggregate
-                )
+            setLoyaltyUserAggregates(
+                (previous) =>
+                    previous &&
+                    previous.map((aggregate) =>
+                        aggregate.result.linkId === linkId ? { ...aggregate, result: { ...aggregate.result, favourite: updatedFavourite } } : aggregate,
+                    ),
             );
         } catch (error) {
             console.error("Error updating favourite loyalty user", error);
@@ -315,6 +400,7 @@ const CustomerSearch = ({ onDisableSearchView }: { onDisableSearchView: () => vo
 
     return (
         <div className="customer-information">
+            <FullScreenSpinner show={isFetchingSelectedUserPoints} text="Fetching latest loyalty points..." />
             <div className="close-button-wrapper">
                 <FiX className="close-button" size={36} onClick={handleClose} />
             </div>
@@ -345,9 +431,7 @@ const CustomerSearch = ({ onDisableSearchView }: { onDisableSearchView: () => vo
                                         className={`loyalty-user-favourite ${loyaltyUser.favourite ? "active" : ""}`}
                                         onClick={(event) => handleToggleFavourite(event, loyaltyUser)}
                                         disabled={isUpdatingFavourite}
-                                        aria-label={`${loyaltyUser.favourite ? "Remove" : "Mark"} ${
-                                            loyaltyUser.firstName || "customer"
-                                        } as favourite`}
+                                        aria-label={`${loyaltyUser.favourite ? "Remove" : "Mark"} ${loyaltyUser.firstName || "customer"} as favourite`}
                                     >
                                         {loyaltyUser.favourite ? <FaStar /> : <FaRegStar />}
                                     </button>
@@ -379,14 +463,8 @@ const UserInformationFields = () => {
     const { register, isPOS } = useRegister();
     const { restaurant } = useRestaurant();
 
-    const {
-        customerInformation,
-        setCustomerInformation,
-        setCustomerLoyaltyPoints,
-        setUserAppliedLoyaltyId,
-        removeUserAppliedPromotion,
-        setOnAccountOrders,
-    } = useCart();
+    const { customerInformation, setCustomerInformation, setCustomerLoyaltyPoints, setUserAppliedLoyaltyId, removeUserAppliedPromotion, setOnAccountOrders } =
+        useCart();
 
     const [firstName, setFirstName] = useState(customerInformation ? customerInformation.firstName : "");
     const [email, setEmail] = useState(customerInformation ? customerInformation.email : "");

@@ -1391,6 +1391,7 @@ export const GET_LOYALTIES_BY_GROUP_ID = gql`
         getLoyaltiesByGroupId(loyaltyGroupId: $loyaltyGroupId, limit: 10000) {
             items {
                 id
+                loyaltyRestaurantId
             }
             nextToken
         }
@@ -1399,6 +1400,26 @@ export const GET_LOYALTIES_BY_GROUP_ID = gql`
 
 export interface IGET_LOYALTIES_BY_GROUP_ID_ITEM {
     id: string;
+    loyaltyRestaurantId: string;
+}
+
+export const GET_LOYALTY_USER_BALANCES = gql`
+    query GetLoyaltyUserBalances($loyaltyUserId: ID!) {
+        getLoyaltyUser(id: $loyaltyUserId) {
+            id
+            loyaltyBalances {
+                loyaltyId
+                points
+            }
+        }
+    }
+`;
+
+export interface IGET_LOYALTY_USER_BALANCES {
+    getLoyaltyUser?: {
+        id: string;
+        loyaltyBalances?: ({ loyaltyId: string | null; points: number } | null)[] | null;
+    } | null;
 }
 
 export const GET_LOYALTY_USER_LINKS_BY_RESTAURANT = gql`
