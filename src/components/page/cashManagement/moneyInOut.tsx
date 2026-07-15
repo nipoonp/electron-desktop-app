@@ -302,7 +302,7 @@ export default () => {
             }
         }
         if (takingsSessionsError) return null;
-        if (!restaurant || !restaurant.takingsEnable || !user || !effectiveCashUserId || !scopeType || !scopeId || !scopeKey) return null;
+        if (!restaurant || !restaurant.enableTakings || !user || !effectiveCashUserId || !scopeType || !scopeId || !scopeKey) return null;
 
         const sessions: IGET_TAKINGS_SESSION[] = takingsSessionsData?.getTakingsSessionsByScopeKeyByOpenedAt?.items || [];
         const sameDaySessions = sessions.filter((session) => session.businessDate === businessDate);
@@ -349,7 +349,7 @@ export default () => {
     // Validates amount and session state before opening the payment-method modal.
     // This ensures a valid active cash-up session exists before recording a money in/out event.
     const openMethodModal = async (direction: TMoneyMovementDirection) => {
-        if (!restaurant || !restaurant.takingsEnable || !register || !user || !effectiveCashUserId || !isPOS) return;
+        if (!restaurant || !restaurant.enableTakings || !register || !user || !effectiveCashUserId || !isPOS) return;
         if (takingsSessionsLoading || creatingSession || rollingSessionForward) {
             toast.error("Cash-up session is still loading. Try again.");
             return;
@@ -494,7 +494,7 @@ export default () => {
                     <div className="money-movement-page__spacer" />
                 </div>
 
-                {!restaurant?.takingsEnable && (
+                {!restaurant?.enableTakings && (
                     <Card className="cashup-banner">
                         <div className="cashup-banner__content">
                             <FiAlertTriangle />
@@ -557,13 +557,13 @@ export default () => {
                             <div className="money-movement-actions">
                                 <Button
                                     onClick={() => openMethodModal(ECashMovementType.MONEY_IN)}
-                                    disabled={!restaurant?.takingsEnable || !restaurant || !register || !isPOS || creatingSession}
+                                    disabled={!restaurant?.enableTakings || !restaurant || !register || !isPOS || creatingSession}
                                 >
                                     Save Money In
                                 </Button>
                                 <Button
                                     onClick={() => openMethodModal(ECashMovementType.MONEY_OUT)}
-                                    disabled={!restaurant?.takingsEnable || !restaurant || !register || !isPOS || creatingSession}
+                                    disabled={!restaurant?.enableTakings || !restaurant || !register || !isPOS || creatingSession}
                                 >
                                     Save Money Out
                                 </Button>

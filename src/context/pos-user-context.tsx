@@ -10,7 +10,7 @@ type TPosUser = {
     email: string;
     imageKey: string | null;
     imageIdentityPoolId: string | null;
-    posPinEnabled: boolean;
+    enablePosPin: boolean;
     posPin: string | null;
 };
 
@@ -76,7 +76,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
                           email: userLink.user.email,
                           imageKey: userLink.user.image?.key || null,
                           imageIdentityPoolId: userLink.user.image?.identityPoolId || null,
-                          posPinEnabled: !!userLink.posPinEnabled,
+                          enablePosPin: !!userLink.enablePosPin,
                           posPin: userLink.posPin || null,
                       }))
                       .sort((left, right) => `${left.firstName} ${left.lastName}`.localeCompare(`${right.firstName} ${right.lastName}`)),
@@ -124,7 +124,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
     // Selects a cashier for the current register and skips PIN only when that user has no PIN enabled.
     const selectPosUser = (posUserId: string) => {
         const matchedUser = availableUsers.find((availableUser) => availableUser.id === posUserId) || null;
-        const shouldUnlockWithoutPin = !!matchedUser && !matchedUser.posPinEnabled;
+        const shouldUnlockWithoutPin = !!matchedUser && !matchedUser.enablePosPin;
 
         setSelectedPosUser(matchedUser);
         setIsUnlocked(shouldUnlockWithoutPin);
@@ -159,7 +159,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
     const unlockPosUser = async (pin: string) => {
         if (!selectedPosUser) return false;
 
-        if (!selectedPosUser.posPinEnabled) {
+        if (!selectedPosUser.enablePosPin) {
             setIsUnlocked(true);
             localStorage.setItem(unlockedStorageKey, "true");
             return true;

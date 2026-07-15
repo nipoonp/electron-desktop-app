@@ -729,7 +729,7 @@ export default () => {
 
     useEffect(() => {
         // Auto-creates a session when cash up opens and none exists yet.
-        if (!restaurant?.takingsEnable || !restaurant?.id || !user || !effectiveCashUserId || !isPOS || !scopeType || !scopeId || !scopeKey) return;
+        if (!restaurant?.enableTakings || !restaurant?.id || !user || !effectiveCashUserId || !isPOS || !scopeType || !scopeId || !scopeKey) return;
         if (takingsLoading || takingsError || creatingSession || finalizingSession || suppressAutoCreateRef.current) return;
         if (currentSession) return;
 
@@ -745,7 +745,7 @@ export default () => {
         handleCreateCurrentSession,
         isPOS,
         restaurant?.id,
-        restaurant?.takingsEnable,
+        restaurant?.enableTakings,
         scopeId,
         scopeKey,
         scopeType,
@@ -929,7 +929,7 @@ export default () => {
 
     // Opens the finalise modal after basic checks pass.
     const handleOpenFinalizeModal = () => {
-        if (!currentSession || !restaurant?.takingsEnable || !isPOS) return;
+        if (!currentSession || !restaurant?.enableTakings || !isPOS) return;
         if (openingFloatRequiresReview) {
             toast.error("Confirm and save the opening float for this session before finalising.");
             return;
@@ -1355,7 +1355,7 @@ export default () => {
                     </Button>
                 </div>
 
-                {!restaurant.takingsEnable && (
+                {!restaurant.enableTakings && (
                     <Card className="cashup-banner">
                         <div className="cashup-banner__content">
                             <FiAlertTriangle />
@@ -1457,7 +1457,7 @@ export default () => {
                                         <Button
                                             onClick={handleOpenFinalizeModal}
                                             loading={finalizingSession}
-                                            disabled={!currentSession || !restaurant.takingsEnable || !isPOS}
+                                            disabled={!currentSession || !restaurant.enableTakings || !isPOS}
                                         >
                                             <FiCheckCircle />
                                             <span>Finalise Takings</span>

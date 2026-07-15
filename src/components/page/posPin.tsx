@@ -28,7 +28,7 @@ export default () => {
             return;
         }
 
-        if (isUnlocked || !selectedPosUser.posPinEnabled) {
+        if (isUnlocked || !selectedPosUser.enablePosPin) {
             navigate(beginOrderPath, { replace: true });
         }
     }, [hasSkippedPosUserSelection, isPosPinFeatureEnabled, isUnlocked, navigate, selectedPosUser]);

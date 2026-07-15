@@ -123,7 +123,7 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
             value={{
                 register: register,
                 isPOS: register ? register.type == ERegisterType.POS : null,
-                isPosPinFeatureEnabled: !!register?.enablePosPinFeature,
+                isPosPinFeatureEnabled: !!register?.enablePosUserPin,
                 connectRegister: connectRegister,
                 disconnectRegister: disconnectRegister,
                 isShownNewOnlineOrderReceivedModal: isShownNewOnlineOrderReceivedModal,

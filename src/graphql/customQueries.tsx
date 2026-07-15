@@ -86,7 +86,7 @@ export const GET_USER = gql`
             }
             userRestaurants(limit: 1000) {
                 items {
-                    posPinEnabled
+                    enablePosPin
                     posPin
                     posPinUpdatedAt
                     restaurant {
@@ -124,13 +124,13 @@ export interface IGET_USER_RESTAURANT {
     address: {
         formattedAddress: string;
     };
-    posPinEnabled?: boolean | null;
+    enablePosPin?: boolean | null;
     posPin?: string | null;
     posPinUpdatedAt?: string | null;
 }
 
 export interface IGET_USER_RESTAURANT_LINK {
-    posPinEnabled?: boolean | null;
+    enablePosPin?: boolean | null;
     posPin?: string | null;
     posPinUpdatedAt?: string | null;
     restaurant: IGET_USER_RESTAURANT;
@@ -146,7 +146,7 @@ export interface IGET_RESTAURANT_USER {
 
 export interface IGET_RESTAURANT_USER_LINK {
     id: string;
-    posPinEnabled?: boolean | null;
+    enablePosPin?: boolean | null;
     posPin?: string | null;
     posPinUpdatedAt?: string | null;
     user: IGET_RESTAURANT_USER;
@@ -260,7 +260,7 @@ export const GET_RESTAURANT = gql`
             delayBetweenOrdersInSeconds
             orderThresholdMessage
             surchargePercentage
-            takingsEnable
+            enableTakings
             takingsDefaultScope
             # takingsAllowScopeSwitch
             takingsVarianceReasonThreshold
@@ -269,7 +269,7 @@ export const GET_RESTAURANT = gql`
             users {
                 items {
                     id
-                    posPinEnabled
+                    enablePosPin
                     posPin
                     posPinUpdatedAt
                     user {
@@ -376,7 +376,7 @@ export const GET_RESTAURANT = gql`
                     id
                     active
                     name
-                    enablePosPinFeature
+                    enablePosUserPin
                     enableTableFlags
                     enableCovers
                     enableBuzzerNumbersForTakeaway
@@ -1102,7 +1102,7 @@ export interface IGET_RESTAURANT {
     delayBetweenOrdersInSeconds: number | null;
     orderThresholdMessage: string | null;
     surchargePercentage: number | null;
-    takingsEnable: boolean | null;
+    enableTakings: boolean | null;
     takingsDefaultScope: ETakingsScopeType | null;
     // takingsAllowScopeSwitch: boolean | null;
     takingsVarianceReasonThreshold: number | null;
@@ -1185,7 +1185,7 @@ export interface IGET_RESTAURANT_REGISTER {
     id: string;
     active: boolean;
     name: string;
-    enablePosPinFeature?: boolean;
+    enablePosUserPin?: boolean;
     enableTableFlags: boolean;
     enableCovers: boolean;
     enableBuzzerNumbersForTakeaway: boolean;

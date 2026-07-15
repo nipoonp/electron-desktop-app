@@ -32,7 +32,7 @@ export default () => {
             setShowFullScreenSpinner(false);
             // Only POS registers use the staff selection + PIN gate. Kiosk-style registers
             // continue directly into the shared begin-order flow.
-            navigate(selectedRegister?.type === ERegisterType.POS && selectedRegister?.enablePosPinFeature ? posUserListPath : beginOrderPath, {
+            navigate(selectedRegister?.type === ERegisterType.POS && selectedRegister?.enablePosUserPin ? posUserListPath : beginOrderPath, {
                 replace: true,
             });
         } catch (e) {
