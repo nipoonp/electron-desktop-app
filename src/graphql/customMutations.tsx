@@ -425,14 +425,14 @@ export const CREATE_TAKINGS_SESSION = gql`
         $openedAtUtc: String
         $lastActivityAt: String
         $openedBy: ID
-        $openingFloatCents: Int!
-        $moneyInCents: Int
-        $moneyOutCents: Int
-        $cashDropsCents: Int
-        $tipPayoutsCents: Int
-        $expectedDrawerCashCents: Int!
-        $countedDrawerCashCents: Int!
-        $varianceCents: Int!
+        $openingFloat: Int!
+        $moneyIn: Int
+        $moneyOut: Int
+        $cashDrops: Int
+        $tipPayouts: Int
+        $expectedDrawerCash: Int!
+        $countedDrawerCash: Int!
+        $variance: Int!
         $openOrdersCount: Int!
         $unpaidOrdersCount: Int!
         $parkedOrdersCount: Int!
@@ -451,14 +451,14 @@ export const CREATE_TAKINGS_SESSION = gql`
                 openedAtUtc: $openedAtUtc
                 lastActivityAt: $lastActivityAt
                 openedBy: $openedBy
-                openingFloatCents: $openingFloatCents
-                moneyInCents: $moneyInCents
-                moneyOutCents: $moneyOutCents
-                cashDropsCents: $cashDropsCents
-                tipPayoutsCents: $tipPayoutsCents
-                expectedDrawerCashCents: $expectedDrawerCashCents
-                countedDrawerCashCents: $countedDrawerCashCents
-                varianceCents: $varianceCents
+                openingFloat: $openingFloat
+                moneyIn: $moneyIn
+                moneyOut: $moneyOut
+                cashDrops: $cashDrops
+                tipPayouts: $tipPayouts
+                expectedDrawerCash: $expectedDrawerCash
+                countedDrawerCash: $countedDrawerCash
+                variance: $variance
                 openOrdersCount: $openOrdersCount
                 unpaidOrdersCount: $unpaidOrdersCount
                 parkedOrdersCount: $parkedOrdersCount
@@ -479,18 +479,18 @@ export const CREATE_TAKINGS_SESSION = gql`
             finalizedAt
             openedBy
             finalizedBy
-            openingFloatCents
-            moneyInCents
-            moneyOutCents
-            cashDropsCents
-            tipPayoutsCents
-            declaredClosingFloatCents
-            expectedDrawerCashCents
-            countedDrawerCashCents
-            varianceCents
-            recordedTotalCents
-            countedTotalCents
-            paymentVarianceCents
+            openingFloat
+            moneyIn
+            moneyOut
+            cashDrops
+            tipPayouts
+            declaredClosingFloat
+            expectedDrawerCash
+            countedDrawerCash
+            variance
+            recordedTotal
+            countedTotal
+            paymentVariance
             paymentSummaryJson
             varianceReason
             openOrdersCount
@@ -517,7 +517,7 @@ export const CREATE_CASH_MOVEMENT = gql`
             occurredAt
             type
             paymentMethod
-            amountCents
+            amount
             reason
             createdBy
             owner
@@ -578,7 +578,7 @@ export const UPDATE_TAKINGS_SESSION = gql`
         $id: ID!
         $businessDate: AWSDate
         $sessionNumber: Int
-        $openingFloatCents: Int
+        $openingFloat: Int
         $status: TakingsSessionStatus
         $openedAt: String
         $openedAtUtc: String
@@ -586,19 +586,19 @@ export const UPDATE_TAKINGS_SESSION = gql`
         $openedBy: ID
         $finalizedAt: String
         $finalizedBy: ID
-        $declaredClosingFloatCents: Int
-        $cashSalesCents: Int
-        $cashRefundsCents: Int
-        $moneyInCents: Int
-        $moneyOutCents: Int
-        $cashDropsCents: Int
-        $tipPayoutsCents: Int
-        $expectedDrawerCashCents: Int
-        $countedDrawerCashCents: Int
-        $varianceCents: Int
-        $recordedTotalCents: Int
-        $countedTotalCents: Int
-        $paymentVarianceCents: Int
+        $declaredClosingFloat: Int
+        $cashSales: Int
+        $cashRefunds: Int
+        $moneyIn: Int
+        $moneyOut: Int
+        $cashDrops: Int
+        $tipPayouts: Int
+        $expectedDrawerCash: Int
+        $countedDrawerCash: Int
+        $variance: Int
+        $recordedTotal: Int
+        $countedTotal: Int
+        $paymentVariance: Int
         $paymentSummaryJson: AWSJSON
         $varianceReason: String
         $openOrdersCount: Int
@@ -611,7 +611,7 @@ export const UPDATE_TAKINGS_SESSION = gql`
                 id: $id
                 businessDate: $businessDate
                 sessionNumber: $sessionNumber
-                openingFloatCents: $openingFloatCents
+                openingFloat: $openingFloat
                 status: $status
                 openedAt: $openedAt
                 openedAtUtc: $openedAtUtc
@@ -619,19 +619,19 @@ export const UPDATE_TAKINGS_SESSION = gql`
                 openedBy: $openedBy
                 finalizedAt: $finalizedAt
                 finalizedBy: $finalizedBy
-                declaredClosingFloatCents: $declaredClosingFloatCents
-                cashSalesCents: $cashSalesCents
-                cashRefundsCents: $cashRefundsCents
-                moneyInCents: $moneyInCents
-                moneyOutCents: $moneyOutCents
-                cashDropsCents: $cashDropsCents
-                tipPayoutsCents: $tipPayoutsCents
-                expectedDrawerCashCents: $expectedDrawerCashCents
-                countedDrawerCashCents: $countedDrawerCashCents
-                varianceCents: $varianceCents
-                recordedTotalCents: $recordedTotalCents
-                countedTotalCents: $countedTotalCents
-                paymentVarianceCents: $paymentVarianceCents
+                declaredClosingFloat: $declaredClosingFloat
+                cashSales: $cashSales
+                cashRefunds: $cashRefunds
+                moneyIn: $moneyIn
+                moneyOut: $moneyOut
+                cashDrops: $cashDrops
+                tipPayouts: $tipPayouts
+                expectedDrawerCash: $expectedDrawerCash
+                countedDrawerCash: $countedDrawerCash
+                variance: $variance
+                recordedTotal: $recordedTotal
+                countedTotal: $countedTotal
+                paymentVariance: $paymentVariance
                 paymentSummaryJson: $paymentSummaryJson
                 varianceReason: $varianceReason
                 openOrdersCount: $openOrdersCount
@@ -654,20 +654,20 @@ export const UPDATE_TAKINGS_SESSION = gql`
             finalizedAt
             openedBy
             finalizedBy
-            openingFloatCents
-            declaredClosingFloatCents
-            cashSalesCents
-            cashRefundsCents
-            moneyInCents
-            moneyOutCents
-            cashDropsCents
-            tipPayoutsCents
-            expectedDrawerCashCents
-            countedDrawerCashCents
-            varianceCents
-            recordedTotalCents
-            countedTotalCents
-            paymentVarianceCents
+            openingFloat
+            declaredClosingFloat
+            cashSales
+            cashRefunds
+            moneyIn
+            moneyOut
+            cashDrops
+            tipPayouts
+            expectedDrawerCash
+            countedDrawerCash
+            variance
+            recordedTotal
+            countedTotal
+            paymentVariance
             paymentSummaryJson
             varianceReason
             openOrdersCount

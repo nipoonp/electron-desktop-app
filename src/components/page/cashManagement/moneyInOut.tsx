@@ -325,14 +325,14 @@ export default () => {
                 openedAtUtc,
                 lastActivityAt: openedAtUtc,
                 openedBy: effectiveCashUserId,
-                openingFloatCents: 0,
-                moneyInCents: 0,
-                moneyOutCents: 0,
-                cashDropsCents: 0,
-                tipPayoutsCents: 0,
-                expectedDrawerCashCents: 0,
-                countedDrawerCashCents: 0,
-                varianceCents: 0,
+                openingFloat: 0,
+                moneyIn: 0,
+                moneyOut: 0,
+                cashDrops: 0,
+                tipPayouts: 0,
+                expectedDrawerCash: 0,
+                countedDrawerCash: 0,
+                variance: 0,
                 openOrdersCount: 0,
                 unpaidOrdersCount: 0,
                 parkedOrdersCount: 0,
@@ -387,8 +387,8 @@ export default () => {
     const saveCashMovement = async (paymentMethod: TMoneyMovementPaymentMethod) => {
         if (!restaurant || !register || !user || !effectiveCashUserId || !pendingDirection || !currentSession) return;
 
-        const amountCents = toCents(amountInput);
-        if (amountCents <= 0) {
+        const amount = toCents(amountInput);
+        if (amount <= 0) {
             toast.error("Enter a valid amount before saving.");
             return;
         }
@@ -408,7 +408,7 @@ export default () => {
                         occurredAt,
                         type: pendingDirection,
                         paymentMethod: getPaymentMethodValue(paymentMethod),
-                        amountCents,
+                        amount,
                         reason: reason.trim() || null,
                         createdBy: effectiveCashUserId,
                         owner: user.id,
@@ -636,7 +636,7 @@ export default () => {
 
                                     <div className="money-movement-history-detail__line">
                                         <span>{getMovementPaymentLabel(selectedMovement.paymentMethod, selectedMovement.reason)}</span>
-                                        <strong>{getDollarString(selectedMovement.amountCents)}</strong>
+                                        <strong>{getDollarString(selectedMovement.amount)}</strong>
                                     </div>
 
                                     <div className="money-movement-history-detail__powered">Powered by Tabin</div>

@@ -29,7 +29,7 @@ type TResolvedTakingsScope = {
 
 export type TPaymentSummarySnapshot = Record<
     TPaymentKey,
-    { recordedCents: number; countedCents: number; differenceCents: number; moneyInCents?: number; moneyOutCents?: number }
+    { recordedCents: number; countedCents: number; differenceCents: number; moneyIn?: number; moneyOut?: number }
 >;
 
 const BUSINESS_TIME_ZONE = "Pacific/Auckland";
@@ -191,15 +191,15 @@ export const isReusableOpenTakingsSession = (session: IGET_TAKINGS_SESSION | nul
     if (linkedMovements.some((movement) => movement.takingsSessionId === session.id)) return false;
 
     return (
-        (session.cashSalesCents || 0) === 0 &&
-        (session.cashRefundsCents || 0) === 0 &&
-        (session.moneyInCents || 0) === 0 &&
-        (session.moneyOutCents || 0) === 0 &&
-        (session.cashDropsCents || 0) === 0 &&
-        (session.tipPayoutsCents || 0) === 0 &&
-        (session.recordedTotalCents || 0) === 0 &&
-        (session.countedTotalCents || 0) === 0 &&
-        (session.paymentVarianceCents || 0) === 0 &&
+        (session.cashSales || 0) === 0 &&
+        (session.cashRefunds || 0) === 0 &&
+        (session.moneyIn || 0) === 0 &&
+        (session.moneyOut || 0) === 0 &&
+        (session.cashDrops || 0) === 0 &&
+        (session.tipPayouts || 0) === 0 &&
+        (session.recordedTotal || 0) === 0 &&
+        (session.countedTotal || 0) === 0 &&
+        (session.paymentVariance || 0) === 0 &&
         (session.openOrdersCount || 0) === 0 &&
         (session.unpaidOrdersCount || 0) === 0 &&
         (session.parkedOrdersCount || 0) === 0 &&

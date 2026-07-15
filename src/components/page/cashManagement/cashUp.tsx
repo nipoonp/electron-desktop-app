@@ -258,8 +258,8 @@ export default () => {
         }
     }, [currentSession?.paymentSummaryJson]);
 
-    const openingFloatCents = toCents(openingFloatInput);
-    const persistedOpeningFloatCents = currentSession?.openingFloatCents || 0;
+    const openingFloat = toCents(openingFloatInput);
+    const persistedOpeningFloatCents = currentSession?.openingFloat || 0;
 
     const canRefreshOpenSessionTimestamp = useMemo(
         () => !!currentSession && isReusableOpenTakingsSession(currentSession, currentSessionCashMovements),
@@ -289,9 +289,9 @@ export default () => {
             const paymentKey = getCashMovementPaymentKey(movement.paymentMethod);
             if (!paymentKey) return;
 
-            const amountCents = movement.amountCents || 0;
-            if (movement.type === ECashMovementType.MONEY_IN) moneyInTotals[paymentKey] += amountCents;
-            if (movement.type === ECashMovementType.MONEY_OUT) moneyOutTotals[paymentKey] += amountCents;
+            const amount = movement.amount || 0;
+            if (movement.type === ECashMovementType.MONEY_IN) moneyInTotals[paymentKey] += amount;
+            if (movement.type === ECashMovementType.MONEY_OUT) moneyOutTotals[paymentKey] += amount;
         });
 
         return {
@@ -308,17 +308,17 @@ export default () => {
                     baseRecordedTotals[key] +
                     paymentMovementTotals.moneyInTotals[key] -
                     paymentMovementTotals.moneyOutTotals[key] +
-                    (key === "cash" ? openingFloatCents : 0);
+                    (key === "cash" ? openingFloat : 0);
 
                 return totals;
             }, createPaymentTotals()),
-        [baseRecordedTotals, openingFloatCents, paymentMovementTotals],
+        [baseRecordedTotals, openingFloat, paymentMovementTotals],
     );
 
     const cashMovementTotals = useMemo(() => {
         return {
-            moneyInCents: paymentMovementTotals.moneyInTotals.cash,
-            moneyOutCents: paymentMovementTotals.moneyOutTotals.cash,
+            moneyIn: paymentMovementTotals.moneyInTotals.cash,
+            moneyOut: paymentMovementTotals.moneyOutTotals.cash,
         };
     }, [paymentMovementTotals]);
 
@@ -387,7 +387,7 @@ export default () => {
         }
 
         setCountMode("counted");
-        setOpeningFloatInput(convertCentsToDollars(currentSession.openingFloatCents));
+        setOpeningFloatInput(convertCentsToDollars(currentSession.openingFloat));
         setCountedPaymentInputs(
             currentSessionPaymentSnapshot
                 ? createPaymentInputs(
@@ -396,7 +396,7 @@ export default () => {
                           return totals;
                       }, createPaymentTotals()),
                   )
-                : createPaymentInputs({ cash: currentSession.countedDrawerCashCents }),
+                : createPaymentInputs({ cash: currentSession.countedDrawerCash }),
         );
         setDenominationInputs(createDenominationInputs());
         setDraftDenominationInputs(createDenominationInputs());
@@ -421,10 +421,10 @@ export default () => {
     }, createPaymentTotals());
 
     // Cash expected value still represents physical drawer cash only.
-    const expectedDrawerCashCents = recordedTotals.cash;
+    const expectedDrawerCash = recordedTotals.cash;
 
-    const countedDrawerCashCents = countedTotals.cash;
-    const cashVarianceCents = countedDrawerCashCents - expectedDrawerCashCents;
+    const countedDrawerCash = countedTotals.cash;
+    const cashVarianceCents = countedDrawerCash - expectedDrawerCash;
     const totalRecordedCents = PAYMENT_KEYS.reduce((total, key) => total + recordedTotals[key], 0);
     const totalCountedCents = PAYMENT_KEYS.reduce((total, key) => total + countedTotals[key], 0);
     const totalExpectedCents = totalRecordedCents;
@@ -438,8 +438,8 @@ export default () => {
             recordedCents,
             countedCents,
             differenceCents: countedCents - recordedCents,
-            moneyInCents: paymentMovementTotals.moneyInTotals[key],
-            moneyOutCents: paymentMovementTotals.moneyOutTotals[key],
+            moneyIn: paymentMovementTotals.moneyInTotals[key],
+            moneyOut: paymentMovementTotals.moneyOutTotals[key],
         };
 
         return accumulator;
@@ -455,8 +455,8 @@ export default () => {
                     recordedCents,
                     countedCents,
                     differenceCents: countedCents - recordedCents,
-                    moneyInCents: paymentMovementTotals.moneyInTotals[key],
-                    moneyOutCents: paymentMovementTotals.moneyOutTotals[key],
+                    moneyIn: paymentMovementTotals.moneyInTotals[key],
+                    moneyOut: paymentMovementTotals.moneyOutTotals[key],
                 };
 
                 return accumulator;
@@ -465,7 +465,7 @@ export default () => {
     );
 
     const unresolvedOrdersCount = orderWarnings.openOrdersCount + orderWarnings.parkedOrdersCount + orderWarnings.unpaidOrdersCount;
-    const varianceThresholdCents = restaurant?.takingsVarianceReasonThresholdCents ?? 5000;
+    const varianceThresholdCents = restaurant?.takingsVarianceReasonThreshold ?? 5000;
 
     // Variance reason is required only when the variance passes the threshold.
     const requiresVarianceReason = Math.abs(totalVarianceCents) > varianceThresholdCents;
@@ -473,9 +473,9 @@ export default () => {
 
     // New sessions need the opening float to be saved once.
     const openingFloatRequiresReview =
-        !!currentSession && currentSession.openingFloatCents === 0 && !reviewedOpeningFloatSessionIds.includes(currentSession.id);
+        !!currentSession && currentSession.openingFloat === 0 && !reviewedOpeningFloatSessionIds.includes(currentSession.id);
     const persistedExpectedDrawerCashCents = persistedRecordedTotals.cash;
-    const persistedCashVarianceCents = countedDrawerCashCents - persistedExpectedDrawerCashCents;
+    const persistedCashVarianceCents = countedDrawerCash - persistedExpectedDrawerCashCents;
     const persistedRecordedTotalCents = PAYMENT_KEYS.reduce((total, key) => total + persistedRecordedTotals[key], 0);
     const persistedTotalVarianceCents = totalCountedCents - persistedRecordedTotalCents;
     const persistedVarianceReason = varianceReason.trim() || null;
@@ -486,19 +486,19 @@ export default () => {
             currentSession
                 ? {
                       id: currentSession.id,
-                      openingFloatCents: persistedOpeningFloatCents,
-                      cashSalesCents: baseRecordedTotals.cash,
-                      cashRefundsCents: 0,
-                      moneyInCents: cashMovementTotals.moneyInCents,
-                      moneyOutCents: cashMovementTotals.moneyOutCents,
-                      cashDropsCents: 0,
-                      tipPayoutsCents: 0,
-                      expectedDrawerCashCents: persistedExpectedDrawerCashCents,
-                      countedDrawerCashCents,
-                      varianceCents: persistedCashVarianceCents,
-                      recordedTotalCents: persistedRecordedTotalCents,
-                      countedTotalCents: totalCountedCents,
-                      paymentVarianceCents: persistedTotalVarianceCents,
+                      openingFloat: persistedOpeningFloatCents,
+                      cashSales: baseRecordedTotals.cash,
+                      cashRefunds: 0,
+                      moneyIn: cashMovementTotals.moneyIn,
+                      moneyOut: cashMovementTotals.moneyOut,
+                      cashDrops: 0,
+                      tipPayouts: 0,
+                      expectedDrawerCash: persistedExpectedDrawerCashCents,
+                      countedDrawerCash,
+                      variance: persistedCashVarianceCents,
+                      recordedTotal: persistedRecordedTotalCents,
+                      countedTotal: totalCountedCents,
+                      paymentVariance: persistedTotalVarianceCents,
                       paymentSummaryJson: persistedPaymentSummaryJson,
                       varianceReason: persistedVarianceReason,
                       openOrdersCount: orderWarnings.openOrdersCount,
@@ -509,9 +509,9 @@ export default () => {
                 : null,
         [
             baseRecordedTotals.cash,
-            cashMovementTotals.moneyInCents,
-            cashMovementTotals.moneyOutCents,
-            countedDrawerCashCents,
+            cashMovementTotals.moneyIn,
+            cashMovementTotals.moneyOut,
+            countedDrawerCash,
             currentSession,
             orderWarnings.openOrdersCount,
             orderWarnings.parkedOrdersCount,
@@ -611,10 +611,10 @@ export default () => {
                         openedAtUtc,
                         lastActivityAt: openedAtUtc,
                         openedBy: effectiveCashUserId,
-                        openingFloatCents: initialOpeningFloatCents,
-                        expectedDrawerCashCents: initialOpeningFloatCents,
-                        countedDrawerCashCents: 0,
-                        varianceCents: 0,
+                        openingFloat: initialOpeningFloatCents,
+                        expectedDrawerCash: initialOpeningFloatCents,
+                        countedDrawerCash: 0,
+                        variance: 0,
                         openOrdersCount: 0,
                         unpaidOrdersCount: 0,
                         parkedOrdersCount: 0,
@@ -765,19 +765,19 @@ export default () => {
         if (rollingSessionForward || finalizingSession || creatingSession) return;
 
         const hasDraftChanges =
-            currentSession.openingFloatCents !== draftSessionUpdateInput.openingFloatCents ||
-            (currentSession.cashSalesCents || 0) !== draftSessionUpdateInput.cashSalesCents ||
-            (currentSession.cashRefundsCents || 0) !== draftSessionUpdateInput.cashRefundsCents ||
-            (currentSession.moneyInCents || 0) !== draftSessionUpdateInput.moneyInCents ||
-            (currentSession.moneyOutCents || 0) !== draftSessionUpdateInput.moneyOutCents ||
-            (currentSession.cashDropsCents || 0) !== draftSessionUpdateInput.cashDropsCents ||
-            (currentSession.tipPayoutsCents || 0) !== draftSessionUpdateInput.tipPayoutsCents ||
-            currentSession.expectedDrawerCashCents !== draftSessionUpdateInput.expectedDrawerCashCents ||
-            currentSession.countedDrawerCashCents !== draftSessionUpdateInput.countedDrawerCashCents ||
-            currentSession.varianceCents !== draftSessionUpdateInput.varianceCents ||
-            (currentSession.recordedTotalCents || 0) !== draftSessionUpdateInput.recordedTotalCents ||
-            (currentSession.countedTotalCents || 0) !== draftSessionUpdateInput.countedTotalCents ||
-            (currentSession.paymentVarianceCents || 0) !== draftSessionUpdateInput.paymentVarianceCents ||
+            currentSession.openingFloat !== draftSessionUpdateInput.openingFloat ||
+            (currentSession.cashSales || 0) !== draftSessionUpdateInput.cashSales ||
+            (currentSession.cashRefunds || 0) !== draftSessionUpdateInput.cashRefunds ||
+            (currentSession.moneyIn || 0) !== draftSessionUpdateInput.moneyIn ||
+            (currentSession.moneyOut || 0) !== draftSessionUpdateInput.moneyOut ||
+            (currentSession.cashDrops || 0) !== draftSessionUpdateInput.cashDrops ||
+            (currentSession.tipPayouts || 0) !== draftSessionUpdateInput.tipPayouts ||
+            currentSession.expectedDrawerCash !== draftSessionUpdateInput.expectedDrawerCash ||
+            currentSession.countedDrawerCash !== draftSessionUpdateInput.countedDrawerCash ||
+            currentSession.variance !== draftSessionUpdateInput.variance ||
+            (currentSession.recordedTotal || 0) !== draftSessionUpdateInput.recordedTotal ||
+            (currentSession.countedTotal || 0) !== draftSessionUpdateInput.countedTotal ||
+            (currentSession.paymentVariance || 0) !== draftSessionUpdateInput.paymentVariance ||
             (currentSession.paymentSummaryJson || null) !== draftSessionUpdateInput.paymentSummaryJson ||
             (currentSession.varianceReason || null) !== draftSessionUpdateInput.varianceReason ||
             currentSession.openOrdersCount !== draftSessionUpdateInput.openOrdersCount ||
@@ -873,22 +873,22 @@ export default () => {
             await updateTakingsSession({
                 variables: {
                     id: finalizedSessionId,
-                    openingFloatCents,
+                    openingFloat,
                     status: ETakingsSessionStatus.FINALIZED,
                     finalizedAt: new Date().toISOString(),
                     finalizedBy: effectiveCashUserId,
-                    cashSalesCents: baseRecordedTotals.cash,
-                    cashRefundsCents: 0,
-                    moneyInCents: cashMovementTotals.moneyInCents,
-                    moneyOutCents: cashMovementTotals.moneyOutCents,
-                    cashDropsCents: 0,
-                    tipPayoutsCents: 0,
-                    expectedDrawerCashCents,
-                    countedDrawerCashCents,
-                    varianceCents: cashVarianceCents,
-                    recordedTotalCents: totalRecordedCents,
-                    countedTotalCents: totalCountedCents,
-                    paymentVarianceCents: totalVarianceCents,
+                    cashSales: baseRecordedTotals.cash,
+                    cashRefunds: 0,
+                    moneyIn: cashMovementTotals.moneyIn,
+                    moneyOut: cashMovementTotals.moneyOut,
+                    cashDrops: 0,
+                    tipPayouts: 0,
+                    expectedDrawerCash,
+                    countedDrawerCash,
+                    variance: cashVarianceCents,
+                    recordedTotal: totalRecordedCents,
+                    countedTotal: totalCountedCents,
+                    paymentVariance: totalVarianceCents,
                     paymentSummaryJson: JSON.stringify(paymentSummary),
                     varianceReason: varianceReason.trim() || null,
                     openOrdersCount: orderWarnings.openOrdersCount,
@@ -971,7 +971,7 @@ export default () => {
             await updateDraftTakingsSession({
                 variables: {
                     id: currentSession.id,
-                    openingFloatCents,
+                    openingFloat,
                     lastActivityAt: new Date().toISOString(),
                 },
             });
@@ -1046,16 +1046,16 @@ export default () => {
     const getHistorySummaryRows = (session: IGET_TAKINGS_SESSION) => {
         const isActiveOpenSession = currentSession?.id === session.id && session.status === ETakingsSessionStatus.OPEN;
         const paymentSnapshot = isActiveOpenSession ? persistedPaymentSummary : getPaymentSummarySnapshot(session);
-        const legacyCashRecordedCents = isActiveOpenSession ? persistedExpectedDrawerCashCents : session.expectedDrawerCashCents || 0;
-        const legacyCashCountedCents = isActiveOpenSession ? countedDrawerCashCents : session.countedDrawerCashCents || 0;
+        const legacyCashRecordedCents = isActiveOpenSession ? persistedExpectedDrawerCashCents : session.expectedDrawerCash || 0;
+        const legacyCashCountedCents = isActiveOpenSession ? countedDrawerCash : session.countedDrawerCash || 0;
         const paymentRecordedTotalCents =
-            (isActiveOpenSession ? persistedRecordedTotalCents : session.recordedTotalCents) ??
+            (isActiveOpenSession ? persistedRecordedTotalCents : session.recordedTotal) ??
             (paymentSnapshot ? PAYMENT_KEYS.reduce((total, key) => total + (paymentSnapshot[key]?.recordedCents || 0), 0) : legacyCashRecordedCents);
-        const countedTotalCents =
-            (isActiveOpenSession ? totalCountedCents : session.countedTotalCents) ??
+        const countedTotal =
+            (isActiveOpenSession ? totalCountedCents : session.countedTotal) ??
             (paymentSnapshot ? PAYMENT_KEYS.reduce((total, key) => total + (paymentSnapshot[key]?.countedCents || 0), 0) : legacyCashCountedCents);
-        const paymentVarianceCents =
-            (isActiveOpenSession ? persistedTotalVarianceCents : session.paymentVarianceCents) ?? countedTotalCents - paymentRecordedTotalCents;
+        const paymentVariance =
+            (isActiveOpenSession ? persistedTotalVarianceCents : session.paymentVariance) ?? countedTotal - paymentRecordedTotalCents;
         const rows: Array<{ key: string; label: string; countedCents: number; recordedCents: number; differenceCents: number }> = PAYMENT_KEYS.map(
             (key) => {
                 const recordedCents = paymentSnapshot?.[key]?.recordedCents ?? (key === "cash" ? legacyCashRecordedCents : 0);
@@ -1075,9 +1075,9 @@ export default () => {
         rows.push({
             key: "total",
             label: "Total",
-            countedCents: countedTotalCents,
+            countedCents: countedTotal,
             recordedCents: paymentRecordedTotalCents,
-            differenceCents: paymentVarianceCents,
+            differenceCents: paymentVariance,
         });
 
         return rows;
@@ -1089,17 +1089,17 @@ export default () => {
         const paymentSnapshot = isActiveOpenSession ? persistedPaymentSummary : getPaymentSummarySnapshot(session);
         const cashMoneyInCents = isActiveOpenSession
             ? paymentMovementTotals.moneyInTotals.cash
-            : (paymentSnapshot?.cash?.moneyInCents ?? session.moneyInCents ?? 0);
+            : (paymentSnapshot?.cash?.moneyIn ?? session.moneyIn ?? 0);
         const cashMoneyOutCents = isActiveOpenSession
             ? paymentMovementTotals.moneyOutTotals.cash
-            : (paymentSnapshot?.cash?.moneyOutCents ?? session.moneyOutCents ?? 0);
-        const onlineMoneyInCents = isActiveOpenSession ? paymentMovementTotals.moneyInTotals.online : (paymentSnapshot?.online?.moneyInCents ?? 0);
-        const onlineMoneyOutCents = isActiveOpenSession ? paymentMovementTotals.moneyOutTotals.online : (paymentSnapshot?.online?.moneyOutCents ?? 0);
-        const eftposMoneyInCents = isActiveOpenSession ? paymentMovementTotals.moneyInTotals.eftpos : (paymentSnapshot?.eftpos?.moneyInCents ?? 0);
-        const eftposMoneyOutCents = isActiveOpenSession ? paymentMovementTotals.moneyOutTotals.eftpos : (paymentSnapshot?.eftpos?.moneyOutCents ?? 0);
+            : (paymentSnapshot?.cash?.moneyOut ?? session.moneyOut ?? 0);
+        const onlineMoneyInCents = isActiveOpenSession ? paymentMovementTotals.moneyInTotals.online : (paymentSnapshot?.online?.moneyIn ?? 0);
+        const onlineMoneyOutCents = isActiveOpenSession ? paymentMovementTotals.moneyOutTotals.online : (paymentSnapshot?.online?.moneyOut ?? 0);
+        const eftposMoneyInCents = isActiveOpenSession ? paymentMovementTotals.moneyInTotals.eftpos : (paymentSnapshot?.eftpos?.moneyIn ?? 0);
+        const eftposMoneyOutCents = isActiveOpenSession ? paymentMovementTotals.moneyOutTotals.eftpos : (paymentSnapshot?.eftpos?.moneyOut ?? 0);
 
         return [
-            { label: "Opening Float", valueCents: isActiveOpenSession ? persistedOpeningFloatCents : session.openingFloatCents || 0 },
+            { label: "Opening Float", valueCents: isActiveOpenSession ? persistedOpeningFloatCents : session.openingFloat || 0 },
             { label: "Cash Money In", valueCents: cashMoneyInCents },
             { label: "Cash Money Out", valueCents: cashMoneyOutCents },
             { label: "Online Money In", valueCents: onlineMoneyInCents },
@@ -1117,7 +1117,7 @@ export default () => {
         const isCashEntry = entryPaymentKey === "cash";
         const label = getPaymentLabel(entryPaymentKey);
         const entryValueCents = countedTotals[entryPaymentKey];
-        const draftCashDifferenceCents = draftCountedCashFromDenominationsCents - expectedDrawerCashCents;
+        const draftCashDifferenceCents = draftCountedCashFromDenominationsCents - expectedDrawerCash;
 
         return (
             <ModalV2
@@ -1196,7 +1196,7 @@ export default () => {
                                     <strong>{getDollarString(draftCountedCashFromDenominationsCents)}</strong>
                                 </div>
                                 <div>
-                                    <span>Difference ({getDollarString(expectedDrawerCashCents)})</span>
+                                    <span>Difference ({getDollarString(expectedDrawerCash)})</span>
                                     <span>{getDollarString(draftCashDifferenceCents)}</span>
                                 </div>
                             </div>
@@ -1422,7 +1422,7 @@ export default () => {
                                         disabled={
                                             !currentSession ||
                                             savingOpeningFloat ||
-                                            (!openingFloatRequiresReview && openingFloatCents === currentSession?.openingFloatCents)
+                                            (!openingFloatRequiresReview && openingFloat === currentSession?.openingFloat)
                                         }
                                     >
                                         Save Float

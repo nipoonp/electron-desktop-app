@@ -263,7 +263,7 @@ export const GET_RESTAURANT = gql`
             takingsEnable
             takingsDefaultScope
             # takingsAllowScopeSwitch
-            takingsVarianceReasonThresholdCents
+            takingsVarianceReasonThreshold
             takingsBlockIfOpenOrders
             salesReportMailingList
             users {
@@ -1105,7 +1105,7 @@ export interface IGET_RESTAURANT {
     takingsEnable: boolean | null;
     takingsDefaultScope: ETakingsScopeType | null;
     // takingsAllowScopeSwitch: boolean | null;
-    takingsVarianceReasonThresholdCents: number | null;
+    takingsVarianceReasonThreshold: number | null;
     takingsBlockIfOpenOrders: boolean | null;
     salesReportMailingList: string | null;
     users: {
@@ -1688,20 +1688,20 @@ export interface IGET_TAKINGS_SESSION {
     finalizedAt: string | null;
     openedBy: string | null;
     finalizedBy: string | null;
-    openingFloatCents: number;
-    declaredClosingFloatCents: number | null;
-    cashSalesCents: number | null;
-    cashRefundsCents: number | null;
-    moneyInCents: number | null;
-    moneyOutCents: number | null;
-    cashDropsCents: number | null;
-    tipPayoutsCents: number | null;
-    expectedDrawerCashCents: number;
-    countedDrawerCashCents: number;
-    varianceCents: number;
-    recordedTotalCents: number | null;
-    countedTotalCents: number | null;
-    paymentVarianceCents: number | null;
+    openingFloat: number;
+    declaredClosingFloat: number | null;
+    cashSales: number | null;
+    cashRefunds: number | null;
+    moneyIn: number | null;
+    moneyOut: number | null;
+    cashDrops: number | null;
+    tipPayouts: number | null;
+    expectedDrawerCash: number;
+    countedDrawerCash: number;
+    variance: number;
+    recordedTotal: number | null;
+    countedTotal: number | null;
+    paymentVariance: number | null;
     paymentSummaryJson: string | null;
     varianceReason: string | null;
     openOrdersCount: number;
@@ -1724,7 +1724,7 @@ export interface IGET_CASH_MOVEMENT {
     occurredAt: string;
     type: ECashMovementType;
     paymentMethod: ECashMovementPaymentMethod | null;
-    amountCents: number;
+    amount: number;
     reason: string | null;
     createdBy: string | null;
     owner: string | null;
@@ -1756,20 +1756,20 @@ export const GET_TAKINGS_SESSION = gql`
             finalizedAt
             openedBy
             finalizedBy
-            openingFloatCents
-            declaredClosingFloatCents
-            cashSalesCents
-            cashRefundsCents
-            moneyInCents
-            moneyOutCents
-            cashDropsCents
-            tipPayoutsCents
-            expectedDrawerCashCents
-            countedDrawerCashCents
-            varianceCents
-            recordedTotalCents
-            countedTotalCents
-            paymentVarianceCents
+            openingFloat
+            declaredClosingFloat
+            cashSales
+            cashRefunds
+            moneyIn
+            moneyOut
+            cashDrops
+            tipPayouts
+            expectedDrawerCash
+            countedDrawerCash
+            variance
+            recordedTotal
+            countedTotal
+            paymentVariance
             paymentSummaryJson
             varianceReason
             openOrdersCount
@@ -2510,20 +2510,20 @@ export const GET_TAKINGS_SESSIONS_BY_SCOPE_KEY_BY_OPENED_AT = gql`
                 finalizedAt
                 openedBy
                 finalizedBy
-                openingFloatCents
-                declaredClosingFloatCents
-                cashSalesCents
-                cashRefundsCents
-                moneyInCents
-                moneyOutCents
-                cashDropsCents
-                tipPayoutsCents
-                expectedDrawerCashCents
-                countedDrawerCashCents
-                varianceCents
-                recordedTotalCents
-                countedTotalCents
-                paymentVarianceCents
+                openingFloat
+                declaredClosingFloat
+                cashSales
+                cashRefunds
+                moneyIn
+                moneyOut
+                cashDrops
+                tipPayouts
+                expectedDrawerCash
+                countedDrawerCash
+                variance
+                recordedTotal
+                countedTotal
+                paymentVariance
                 paymentSummaryJson
                 varianceReason
                 openOrdersCount
@@ -2554,7 +2554,7 @@ export const GET_CASH_MOVEMENTS_BY_RESTAURANT_BY_OCCURRED_AT = gql`
                 occurredAt
                 type
                 paymentMethod
-                amountCents
+                amount
                 reason
                 createdBy
                 owner
@@ -2589,7 +2589,7 @@ export const GET_CASH_MOVEMENTS_BY_TAKINGS_SESSION_BY_OCCURRED_AT = gql`
                 occurredAt
                 type
                 paymentMethod
-                amountCents
+                amount
                 reason
                 createdBy
                 owner
