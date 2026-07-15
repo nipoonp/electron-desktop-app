@@ -89,6 +89,8 @@ export const sanitizeCartProductForMutationInput = (product: any) => {
     if (product.notes == null || product.notes === "") delete product.notes;
     if (product.category && product.category.image == null) delete product.category.image;
     delete product.isAgeRescricted;
+    //isPriceEdited is cart-only state (marks a manual price override); not part of OrderProductInput
+    delete product.isPriceEdited;
 
     (product.modifierGroups || []).forEach((modifierGroup: any) => {
         (modifierGroup.modifiers || []).forEach((modifier: any) => {

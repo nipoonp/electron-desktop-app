@@ -335,6 +335,7 @@ export interface ICartProduct {
     price: number;
     totalPrice: number;
     discount: number;
+    isPriceEdited?: boolean; //true when the discount is a manual POS price override (not a promotion), so promotion reprocessing does not wipe it
     isAgeRescricted: boolean;
     image: IS3Object | null;
     quantity: number;
@@ -615,6 +616,11 @@ export type LoyaltyUserAggregate = {
     };
 };
 
+export type LoyaltyBalance = {
+    loyaltyId: string | null;
+    points: number;
+};
+
 export type LoyaltyUserLinkInfo = {
     id: string;
     favourite: boolean;
@@ -622,6 +628,7 @@ export type LoyaltyUserLinkInfo = {
     lastName?: string | null;
     email?: string | null;
     phoneNumber?: string | null;
+    loyaltyBalances: LoyaltyBalance[];
 };
 
 // Floor plan and the table management.
