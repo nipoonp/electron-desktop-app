@@ -18,6 +18,7 @@ import { sendFailureNotification } from "../util/errorHandling";
 
 import "react-toastify/dist/ReactToastify.min.css";
 import { useElectron } from "../context/electron-context";
+import { isThemePreviewMode } from "../util/util";
 
 const Login = lazy(() => import("./page/auth/login"));
 const Logout = lazy(() => import("./page/auth/logout"));
@@ -129,6 +130,7 @@ export default () => {
     useEffect(() => {
         if (!restaurant) return;
         if (!register) return;
+        if (isThemePreviewMode()) return; //No cognito session to refresh in theme preview mode.
 
         const timerId = setInterval(async () => {
             try {
@@ -181,6 +183,9 @@ const AppRoutes = () => {
 
     // This is for electron, as it doesn't start at '/' route for some reason.
     useEffect(() => {
+        //In theme preview mode keep the route the dashboard requested (e.g. the restaurant menu page).
+        if (isThemePreviewMode() && window.location.hash && window.location.hash !== "#/") return;
+
         navigate(beginOrderPath);
     }, []);
 
@@ -241,9 +246,19 @@ const PrivateRoute = ({ element }) => {
 const RestaurantRegisterPrivateRoute = ({ element }) => {
     const { user } = useUser();
     const { restaurant, isLoading, isError } = useRestaurant();
+    const { register } = useRegister();
 
-    if (user && isLoading) return <FullScreenSpinner show={true} text="Loading restaurant..." />;
+    const themePreview = isThemePreviewMode();
+
+    if ((user || themePreview) && isLoading) return <FullScreenSpinner show={true} text="Loading restaurant..." />;
     if (isError) return <div>There was an error loading your restaurant.</div>;
+
+    //In theme preview mode there is no login or connected register, the restaurant/register come from the url.
+    if (themePreview) {
+        if (!restaurant || !register) return <FullScreenSpinner show={true} text="Loading preview..." />;
+        return element;
+    }
+
     if (!restaurant) return <Navigate to={restaurantListPath} />;
     if (restaurant?.isAcceptingOrders === false)
         return (

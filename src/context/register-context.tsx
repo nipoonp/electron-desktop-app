@@ -5,6 +5,7 @@ import { UPDATE_REGISTER_KEY } from "../graphql/customMutations";
 import { ERegisterType, IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { getCloudFrontDomainName } from "../private/aws-custom";
 import { useRestaurant } from "./restaurant-context";
+import { getThemePreviewRegisterId, isThemePreviewMode } from "../util/util";
 
 type ContextProps = {
     register: IGET_RESTAURANT_REGISTER | null;
@@ -34,6 +35,17 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
 
     useEffect(() => {
+        //In theme preview mode the register comes from the url and does not need to be actively connected.
+        //Nothing is mutated so real kiosk connections are unaffected.
+        if (isThemePreviewMode()) {
+            const themePreviewRegisterId = getThemePreviewRegisterId();
+            const previewRegister =
+                restaurant?.registers.items.find((r) => r.id === themePreviewRegisterId) ?? restaurant?.registers.items[0] ?? null;
+
+            setRegister(previewRegister);
+            return;
+        }
+
         const storedRegisterKey = localStorage.getItem("registerKey");
 
         const matchingRegister = restaurant?.registers.items.find((r) => storedRegisterKey == r.id && r.active == true) ?? null;
@@ -115,6 +127,7 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
                         <link
                             rel="stylesheet"
                             type="text/css"
+                            data-custom-style-sheet="register"
                             href={`${getCloudFrontDomainName()}/protected/${register.customStyleSheet.identityPoolId}/${register.customStyleSheet.key}`}
                         />
                     )}

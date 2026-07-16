@@ -130,11 +130,7 @@ const printDeliveryDetails = (printer, order: IOrderReceipt, options: { includeF
     printer.drawLine();
 };
 
-export const printCustomerReceipt = async (
-    order: IOrderReceipt,
-    receiptIndex?: number,
-    receiptTotalNumber?: number,
-): Promise<IPrintReceiptOutput> => {
+export const printCustomerReceipt = async (order: IOrderReceipt, receiptIndex?: number, receiptTotalNumber?: number): Promise<IPrintReceiptOutput> => {
     let printer;
 
     if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -201,18 +197,16 @@ export const printCustomerReceipt = async (
 
     printer.println(order.restaurant.address);
     printer.newLine();
-    printer.println(`Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
+    printer.println(`Placed: ${format(new Date(order.placedAt), "dd MMM yyyy HH:mm aa")}`);
 
     if (order.orderScheduledAt) {
         printer.bold(true);
-        printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+        printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM yyyy HH:mm aa")}`);
         printer.bold(false);
     }
 
     if (order.customerInformation) {
-        printer.println(
-            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`,
-        );
+        printer.println(`Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`);
 
         if (order.customerInformation.signatureBase64) {
             const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
@@ -347,9 +341,7 @@ export const printCustomerReceipt = async (
                                     let mStr = "";
 
                                     if (changedQuantity < 0 && Math.abs(changedQuantity) == productModifier_modifier.preSelectedQuantity) {
-                                        mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${
-                                            productModifier_modifier.name
-                                        }`;
+                                        mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${productModifier_modifier.name}`;
                                     } else {
                                         mStr = `${productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""}${
                                             productModifier_modifier.name
@@ -916,11 +908,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
     }
 };
 
-export const printKitchenReceiptSmall = async (
-    order: IOrderReceipt,
-    receiptIndex?: number,
-    receiptTotalNumber?: number,
-): Promise<IPrintReceiptOutput> => {
+export const printKitchenReceiptSmall = async (order: IOrderReceipt, receiptIndex?: number, receiptTotalNumber?: number): Promise<IPrintReceiptOutput> => {
     let printer;
 
     if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -980,9 +968,7 @@ export const printKitchenReceiptSmall = async (
     }
 
     if (order.customerInformation) {
-        printer.println(
-            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`,
-        );
+        printer.println(`Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`);
 
         if (order.customerInformation.signatureBase64) {
             const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
@@ -1281,11 +1267,7 @@ export const printKitchenReceiptSmall = async (
     }
 };
 
-export const printKitchenReceiptLarge = async (
-    order: IOrderReceipt,
-    receiptIndex?: number,
-    receiptTotalNumber?: number,
-): Promise<IPrintReceiptOutput> => {
+export const printKitchenReceiptLarge = async (order: IOrderReceipt, receiptIndex?: number, receiptTotalNumber?: number): Promise<IPrintReceiptOutput> => {
     let printer;
 
     if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -1346,9 +1328,7 @@ export const printKitchenReceiptLarge = async (
     }
 
     if (order.customerInformation) {
-        printer.println(
-            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`,
-        );
+        printer.println(`Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`);
 
         if (order.customerInformation.signatureBase64) {
             const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
@@ -1820,10 +1800,7 @@ const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
         runningTotals.totalPaymentAmounts.uberEats = addAmounts(runningTotals.totalPaymentAmounts.uberEats, day.totalPaymentAmounts.uberEats);
         runningTotals.totalPaymentAmounts.menulog = addAmounts(runningTotals.totalPaymentAmounts.menulog, day.totalPaymentAmounts.menulog);
         runningTotals.totalPaymentAmounts.doordash = addAmounts(runningTotals.totalPaymentAmounts.doordash, day.totalPaymentAmounts.doordash);
-        runningTotals.totalPaymentAmounts.delivereasy = addAmounts(
-            runningTotals.totalPaymentAmounts.delivereasy,
-            day.totalPaymentAmounts.delivereasy,
-        );
+        runningTotals.totalPaymentAmounts.delivereasy = addAmounts(runningTotals.totalPaymentAmounts.delivereasy, day.totalPaymentAmounts.delivereasy);
         runningTotals.totalPaymentAmounts.eftposSurcharge = addAmounts(
             runningTotals.totalPaymentAmounts.eftposSurcharge,
             day.totalPaymentAmounts.eftposSurcharge,
