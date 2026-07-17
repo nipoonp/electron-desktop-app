@@ -26,8 +26,6 @@ const CustomerDisplay = lazy(() => import("./page/customerDisplay"));
 const Restaurant = lazy(() => import("./page/restaurant"));
 const RestaurantList = lazy(() => import("./page/restaurantList"));
 const RegisterList = lazy(() => import("./page/registerList"));
-const PosUserList = lazy(() => import("./page/posUserList"));
-const PosPin = lazy(() => import("./page/posPin"));
 const PosTimeclock = lazy(() => import("./page/posTimeclock"));
 const Orders = lazy(() => import("./page/orders"));
 const Dashboard = lazy(() => import("./page/dashboard"));
@@ -62,8 +60,6 @@ export const customerDisplayPath = "/customer_display";
 export const restaurantListPath = "/restaurant_list";
 export const registerListPath = "/register_list";
 export const ordersPath = "/orders";
-export const posUserListPath = "/pos_user_list";
-export const posPinPath = "/pos_pin";
 export const dashboardPath = "/dashboard";
 export const configureNewEftposPath = "/configure_new_eftpos";
 export const beginOrderPath = "/begin_order";
@@ -135,11 +131,6 @@ export const tabs: ITab[] = [
                 id: "configureRegister",
                 name: "Configure Register",
                 route: registerListPath,
-            },
-            {
-                id: "selectPosUser",
-                name: "Select POS User",
-                route: posUserListPath,
             },
             {
                 id: "logout",
@@ -236,8 +227,6 @@ const AppRoutes = () => {
                 <Route path={customerDisplayPath} element={<CustomerDisplay />} />
                 <Route path={restaurantListPath} element={<PrivateRoute element={<RestaurantList />} />} />
                 <Route path={registerListPath} element={<PrivateRoute element={<RegisterList />} />} />
-                <Route path={posUserListPath} element={<RestaurantRegisterPosSetupPrivateRoute element={<PosUserList />} />} />
-                <Route path={posPinPath} element={<RestaurantRegisterPosSetupPrivateRoute element={<PosPin />} />} />
                 <Route path={posTimeclockPath} element={<RestaurantRegisterPosSetupPrivateRoute element={<PosTimeclock />} />} />
                 <Route path={ordersPath} element={<RestaurantRegisterPosPrivateRoute element={<Orders />} />}>
                     <Route path=":date" element={<RestaurantRegisterPosPrivateRoute element={<Orders />} />} />
