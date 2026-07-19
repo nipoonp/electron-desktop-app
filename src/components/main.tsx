@@ -13,7 +13,7 @@ import { usePosUser } from "../context/pos-user-context";
 import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { useRegister } from "../context/register-context";
 import { ITab } from "../model/model";
-import { FiDollarSign, FiLock, FiMenu, FiCheckSquare, FiRepeat } from "react-icons/fi";
+import { FiDollarSign, FiLock, FiMenu, FiCheckSquare, FiUsers } from "react-icons/fi";
 import RequireCustomerInformation from "./page/customerInformation";
 import { sendFailureNotification } from "../util/errorHandling";
 
@@ -27,7 +27,6 @@ const Restaurant = lazy(() => import("./page/restaurant"));
 const RestaurantList = lazy(() => import("./page/restaurantList"));
 const RegisterList = lazy(() => import("./page/registerList"));
 const PosUserList = lazy(() => import("./page/posUserList"));
-const PosPin = lazy(() => import("./page/posPin"));
 const Orders = lazy(() => import("./page/orders"));
 const Dashboard = lazy(() => import("./page/dashboard"));
 const BeginOrder = lazy(() => import("./page/beginOrder"));
@@ -39,7 +38,6 @@ const PaymentMethod = lazy(() => import("./page/paymentMethod"));
 const Checkout = lazy(() => import("./page/checkout"));
 // Cash up is a dedicated POS page rather than a dashboard iframe screen.
 const CashUp = lazy(() => import("./page/cashManagement/cashUp"));
-const MoneyInOut = lazy(() => import("./page/cashManagement/moneyInOut"));
 const NoMatch = lazy(() => import("./page/error/404"));
 const Unauthorised = lazy(() => import("./page/error/unauthorised"));
 
@@ -62,7 +60,6 @@ export const restaurantListPath = "/restaurant_list";
 export const registerListPath = "/register_list";
 export const ordersPath = "/orders";
 export const posUserListPath = "/pos_user_list";
-export const posPinPath = "/pos_pin";
 export const dashboardPath = "/dashboard";
 export const configureNewEftposPath = "/configure_new_eftpos";
 export const beginOrderPath = "/begin_order";
@@ -74,7 +71,6 @@ export const paymentMethodPath = "/payment_method";
 export const restaurantPath = "/restaurant";
 export const checkoutPath = "/checkout";
 export const cashUpPath = "/cash_up";
-export const moneyInOutPath = "/money_in_out";
 export const unauthorizedPath = "/unauthorized";
 
 export const tabs: ITab[] = [
@@ -100,10 +96,10 @@ export const tabs: ITab[] = [
         showOnMobile: true,
     },
     {
-        id: "moneyInOut",
-        name: "Money In/Out",
-        icon: <FiRepeat height="20px" />,
-        route: moneyInOutPath,
+        id: "selectPosUser",
+        name: "Select POS User",
+        icon: <FiUsers height="20px" />,
+        route: posUserListPath,
         showOnMobile: true,
     },
     {
@@ -126,11 +122,6 @@ export const tabs: ITab[] = [
                 id: "configureRegister",
                 name: "Configure Register",
                 route: registerListPath,
-            },
-            {
-                id: "selectPosUser",
-                name: "Select POS User",
-                route: posUserListPath,
             },
             {
                 id: "logout",
@@ -228,7 +219,6 @@ const AppRoutes = () => {
                 <Route path={restaurantListPath} element={<PrivateRoute element={<RestaurantList />} />} />
                 <Route path={registerListPath} element={<PrivateRoute element={<RegisterList />} />} />
                 <Route path={posUserListPath} element={<RestaurantRegisterPosSetupPrivateRoute element={<PosUserList />} />} />
-                <Route path={posPinPath} element={<RestaurantRegisterPosSetupPrivateRoute element={<PosPin />} />} />
                 <Route path={ordersPath} element={<RestaurantRegisterPosPrivateRoute element={<Orders />} />}>
                     <Route path=":date" element={<RestaurantRegisterPosPrivateRoute element={<Orders />} />} />
                 </Route>
@@ -249,7 +239,6 @@ const AppRoutes = () => {
                     <Route path=":autoClickCompleteOrderOnLoad" element={<RestaurantRegisterSalePrivateRoute element={<Checkout />} />}></Route>
                 </Route>
                 <Route path={cashUpPath} element={<RestaurantRegisterPosPrivateRoute element={<CashUp />} />} />
-                <Route path={moneyInOutPath} element={<RestaurantRegisterPosPrivateRoute element={<MoneyInOut />} />} />
                 <Route path={unauthorizedPath} element={<Unauthorised />} />
                 <Route path="*" element={<NoMatch />} />
             </Routes>
@@ -323,7 +312,7 @@ const PosUserPrivateRoute = ({ element }) => {
     }
 
     if (!selectedPosUser) return <Navigate to={posUserListPath} />;
-    if (!isUnlocked) return <Navigate to={posPinPath} />;
+    if (!isUnlocked) return <Navigate to={posUserListPath} />;
 
     return element;
 };

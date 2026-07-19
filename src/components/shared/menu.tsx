@@ -8,6 +8,7 @@ import { BsDisplay } from "react-icons/bs";
 
 import "./menu.scss";
 import { useCart } from "../../context/cart-context";
+import { usePosUser } from "../../context/pos-user-context";
 
 let electron: any;
 let ipcRenderer: any;
@@ -20,6 +21,7 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
     const { setIsCustomerDisplayOpen } = useCart();
+    const { clearSelectedPosUser } = usePosUser();
     const [selectedTabId, setSelectedTabId] = useState<string>("");
     const [subTabs, setSubTabs] = useState<ITab[] | null>(null);
 
@@ -34,32 +36,24 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
     if (!restaurant) return <></>;
     if (!register) return <></>;
 
-    const visibleTabs = props.tabs
-        .filter((tab) => {
-            if (tab.id === "cashup" || tab.id === "moneyInOut") {
-                // Cash management is only available on POS registers and only when the restaurant has enabled cash up in Tabin Web.
-                return restaurant.enableTakings && register.type === ERegisterType.POS;
-            }
+    const visibleTabs = props.tabs.filter((tab) => {
+        if (tab.id === "cashup") {
+            // Cash management is only available on POS registers and only when the restaurant has enabled cash up in Tabin Web.
+            return restaurant.enableCashup && register.type === ERegisterType.POS;
+        }
 
-            return true;
-        })
-        .map((tab) => {
-            if (tab.id !== "admin" || !tab.subTabs) return tab;
+        if (tab.id === "selectPosUser") {
+            return register.type === ERegisterType.POS && !!register.enablePosUserPin;
+        }
 
-            return {
-                ...tab,
-                subTabs: tab.subTabs.filter((subTab) => {
-                    if (subTab.id === "selectPosUser") {
-                        return register.type === ERegisterType.POS && !!register.enablePosUserPin;
-                    }
-
-                    return true;
-                }),
-            };
-        });
+        return true;
+    });
 
     const selectTab = (tab: ITab) => {
         if (tab.route) {
+            if (tab.id === "selectPosUser") {
+                clearSelectedPosUser();
+            }
             props.onClickMenuRoute(tab.route);
         } else if (subTabs && tab.subTabs) {
             setSelectedTabId("");

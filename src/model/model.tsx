@@ -577,6 +577,24 @@ export interface IPrintSalesData {
     mostSoldProducts: IMostSoldItems;
 }
 
+export interface IPrintCashUpData {
+    restaurantName: string;
+    cashupSessionDate: string;
+    scopeLabel: string;
+    finalisedAt: string | null;
+    finalisedByName: string | null;
+    summaryRows: { label: string; countedCents: number; recordedCents: number; differenceCents: number }[];
+    drawerRows: { label: string; valueCents: number }[];
+    varianceReason: string | null;
+}
+
+export interface IPrintCashUpDataInput extends IPrintCashUpData {
+    printer: {
+        printerType: ERegisterPrinterType;
+        printerAddress: string;
+    };
+}
+
 export interface IMatchingUpSellCrossSellCategoryItem {
     category: IGET_RESTAURANT_CATEGORY;
 }

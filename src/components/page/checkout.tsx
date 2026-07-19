@@ -1387,7 +1387,6 @@ export const Checkout = () => {
                 placedAt: toLocalISOString(now),
                 placedAtUtc: now.toISOString(),
                 settledAt: paid ? toLocalISOString(now) : undefined,
-                settledAtUtc: paid ? now.toISOString() : undefined,
                 settledRegisterId: paid ? register.id : undefined,
                 orderUserId: effectiveOrderUserId,
                 orderRestaurantId: restaurant.id,
@@ -1396,7 +1395,6 @@ export const Checkout = () => {
             if (parkOrder) {
                 variables.status = "PARKED";
                 variables.parkedAt = toLocalISOString(now);
-                variables.parkedAtUtc = now.toISOString();
                 variables.discount = undefined;
                 variables.promotionId = undefined;
                 variables.subTotal = total; //Set subTotal to total because we do not want to add any discount or promotions. Also product.discount is set to 0 in dashboard.tsx

@@ -100,12 +100,10 @@ export const CREATE_ORDER = gql`
         $placedAt: String
         $placedAtUtc: String
         $settledAt: String
-        $settledAtUtc: String
         $settledRegisterId: ID
         $completedAt: String
         $completedAtUtc: String
         $parkedAt: String
-        $parkedAtUtc: String
         $orderUserId: ID!
         $orderRestaurantId: ID!
     ) {
@@ -143,12 +141,10 @@ export const CREATE_ORDER = gql`
                 placedAt: $placedAt
                 placedAtUtc: $placedAtUtc
                 settledAt: $settledAt
-                settledAtUtc: $settledAtUtc
                 settledRegisterId: $settledRegisterId
                 completedAt: $completedAt
                 completedAtUtc: $completedAtUtc
                 parkedAt: $parkedAt
-                parkedAtUtc: $parkedAtUtc
                 orderUserId: $orderUserId
                 orderRestaurantId: $orderRestaurantId
             }
@@ -182,12 +178,10 @@ export const UPDATE_ORDER = gql`
         $placedAt: String
         $placedAtUtc: String
         $settledAt: String
-        $settledAtUtc: String
         $settledRegisterId: ID
         $completedAt: String
         $completedAtUtc: String
         $parkedAt: String
-        $parkedAtUtc: String
         $orderUserId: ID!
         $orderRestaurantId: ID!
     ) {
@@ -214,12 +208,10 @@ export const UPDATE_ORDER = gql`
                 placedAt: $placedAt
                 placedAtUtc: $placedAtUtc
                 settledAt: $settledAt
-                settledAtUtc: $settledAtUtc
                 settledRegisterId: $settledRegisterId
                 completedAt: $completedAt
                 completedAtUtc: $completedAtUtc
                 parkedAt: $parkedAt
-                parkedAtUtc: $parkedAtUtc
                 orderUserId: $orderUserId
                 orderRestaurantId: $orderRestaurantId
             }
@@ -370,7 +362,7 @@ export const UPDATE_REGISTER_TYRO = gql`
 export const CREATE_RESERVATION = gql`
     mutation CreateReservation(
         $restaurantId: ID!
-        $date: AWSDate!
+        $date: String!
         $time: AWSTime!
         $covers: Int!
         $status: ReservationStatus!
@@ -411,118 +403,68 @@ export const CREATE_RESERVATION = gql`
     }
 `;
 
-export const CREATE_TAKINGS_SESSION = gql`
-    # First cash-up release only persists the scalar fields needed to open a session from the POS.
-    mutation CreateTakingsSession(
-        $restaurantId: ID!
-        $businessDate: AWSDate!
-        $scopeType: TakingsScopeType!
-        $scopeId: ID!
+export const CREATE_CASHUP_SESSION = gql`
+    mutation CreateCashupSession(
+        $id: ID!
+        $cashupRestaurantId: ID!
+        $cashupSessionDate: String!
+        $scopeType: CashupScopeType!
         $scopeKey: String!
-        $sessionNumber: Int!
-        $status: TakingsSessionStatus!
+        $status: CashupSessionStatus!
         $openedAt: String!
-        $openedAtUtc: String
-        $lastActivityAt: String
-        $openedBy: ID
         $openingFloat: Int!
-        $moneyIn: Int
-        $moneyOut: Int
-        $cashDrops: Int
-        $tipPayouts: Int
-        $expectedDrawerCash: Int!
-        $countedDrawerCash: Int!
-        $variance: Int!
-        $openOrdersCount: Int!
-        $unpaidOrdersCount: Int!
-        $parkedOrdersCount: Int!
         $owner: ID
     ) {
-        createTakingsSession(
+        createCashupSession(
             input: {
-                restaurantId: $restaurantId
-                businessDate: $businessDate
+                id: $id
+                cashupRestaurantId: $cashupRestaurantId
+                cashupSessionDate: $cashupSessionDate
                 scopeType: $scopeType
-                scopeId: $scopeId
                 scopeKey: $scopeKey
-                sessionNumber: $sessionNumber
                 status: $status
                 openedAt: $openedAt
-                openedAtUtc: $openedAtUtc
-                lastActivityAt: $lastActivityAt
-                openedBy: $openedBy
                 openingFloat: $openingFloat
-                moneyIn: $moneyIn
-                moneyOut: $moneyOut
-                cashDrops: $cashDrops
-                tipPayouts: $tipPayouts
-                expectedDrawerCash: $expectedDrawerCash
-                countedDrawerCash: $countedDrawerCash
-                variance: $variance
-                openOrdersCount: $openOrdersCount
-                unpaidOrdersCount: $unpaidOrdersCount
-                parkedOrdersCount: $parkedOrdersCount
                 owner: $owner
             }
         ) {
             id
-            restaurantId
-            businessDate
+            cashupRestaurantId
+            cashupSessionDate
             scopeType
-            scopeId
             scopeKey
-            sessionNumber
             status
             openedAt
-            openedAtUtc
-            lastActivityAt
-            finalizedAt
-            openedBy
-            finalizedBy
+            finalisedAt
+            finalisedUserId
+            finalisedByName
             openingFloat
-            moneyIn
-            moneyOut
-            cashDrops
-            tipPayouts
-            declaredClosingFloat
-            expectedDrawerCash
-            countedDrawerCash
-            variance
             recordedTotal
             countedTotal
-            paymentVariance
-            paymentSummaryJson
+            paymentSummary
             varianceReason
-            openOrdersCount
-            unpaidOrdersCount
-            parkedOrdersCount
-            notes
             owner
-            createdAt
-            updatedAt
         }
     }
 `;
 
-export const CREATE_CASH_MOVEMENT = gql`
-    mutation CreateCashMovement($input: CreateCashMovementInput!) {
-        createCashMovement(input: $input) {
+export const CREATE_MONEY_MOVEMENT = gql`
+    mutation CreateMoneyMovement($input: CreateMoneyMovementInput!) {
+        createMoneyMovement(input: $input) {
             id
-            restaurantId
-            registerId
-            staffId
-            takingsSessionId
+            moneyMovementRestaurantId
+            moneyMovementRegisterId
+            cashupSessionId
             scopeKey
-            businessDate
-            occurredAt
+            moneyMovementDate
+            recordedAt
             type
             paymentMethod
             amount
             reason
-            createdBy
+            createdUserId
+            createdByName
             owner
-            createdAt
-            updatedAt
         }
     }
 `;
@@ -530,7 +472,7 @@ export const CREATE_CASH_MOVEMENT = gql`
 export const UPDATE_RESERVATION = gql`
     mutation UpdateReservation(
         $id: ID!
-        $date: AWSDate
+        $date: String
         $time: AWSTime
         $covers: Int
         $status: ReservationStatus
@@ -571,112 +513,51 @@ export const UPDATE_RESERVATION = gql`
     }
 `;
 
-export const UPDATE_TAKINGS_SESSION = gql`
-    # Finalise/update cash up from the POS. Recorded totals are calculated from orders;
-    # money movement fields remain scalar snapshots for backend compatibility.
-    mutation UpdateTakingsSession(
+export const UPDATE_CASHUP_SESSION = gql`
+    mutation UpdateCashupSession(
         $id: ID!
-        $businessDate: AWSDate
-        $sessionNumber: Int
+        $status: CashupSessionStatus
+        $finalisedAt: String
+        $finalisedUserId: ID
+        $finalisedByName: String
         $openingFloat: Int
-        $status: TakingsSessionStatus
-        $openedAt: String
-        $openedAtUtc: String
-        $lastActivityAt: String
-        $openedBy: ID
-        $finalizedAt: String
-        $finalizedBy: ID
-        $declaredClosingFloat: Int
-        $cashSales: Int
-        $cashRefunds: Int
-        $moneyIn: Int
-        $moneyOut: Int
-        $cashDrops: Int
-        $tipPayouts: Int
-        $expectedDrawerCash: Int
-        $countedDrawerCash: Int
-        $variance: Int
         $recordedTotal: Int
         $countedTotal: Int
-        $paymentVariance: Int
-        $paymentSummaryJson: AWSJSON
+        $paymentSummary: AWSJSON
         $varianceReason: String
-        $openOrdersCount: Int
-        $unpaidOrdersCount: Int
-        $parkedOrdersCount: Int
-        $notes: String
+        $condition: ModelCashupSessionConditionInput
     ) {
-        updateTakingsSession(
+        updateCashupSession(
             input: {
                 id: $id
-                businessDate: $businessDate
-                sessionNumber: $sessionNumber
-                openingFloat: $openingFloat
                 status: $status
-                openedAt: $openedAt
-                openedAtUtc: $openedAtUtc
-                lastActivityAt: $lastActivityAt
-                openedBy: $openedBy
-                finalizedAt: $finalizedAt
-                finalizedBy: $finalizedBy
-                declaredClosingFloat: $declaredClosingFloat
-                cashSales: $cashSales
-                cashRefunds: $cashRefunds
-                moneyIn: $moneyIn
-                moneyOut: $moneyOut
-                cashDrops: $cashDrops
-                tipPayouts: $tipPayouts
-                expectedDrawerCash: $expectedDrawerCash
-                countedDrawerCash: $countedDrawerCash
-                variance: $variance
+                finalisedAt: $finalisedAt
+                finalisedUserId: $finalisedUserId
+                finalisedByName: $finalisedByName
+                openingFloat: $openingFloat
                 recordedTotal: $recordedTotal
                 countedTotal: $countedTotal
-                paymentVariance: $paymentVariance
-                paymentSummaryJson: $paymentSummaryJson
+                paymentSummary: $paymentSummary
                 varianceReason: $varianceReason
-                openOrdersCount: $openOrdersCount
-                unpaidOrdersCount: $unpaidOrdersCount
-                parkedOrdersCount: $parkedOrdersCount
-                notes: $notes
             }
+            condition: $condition
         ) {
             id
-            restaurantId
-            businessDate
+            cashupRestaurantId
+            cashupSessionDate
             scopeType
-            scopeId
             scopeKey
-            sessionNumber
             status
             openedAt
-            openedAtUtc
-            lastActivityAt
-            finalizedAt
-            openedBy
-            finalizedBy
+            finalisedAt
+            finalisedUserId
+            finalisedByName
             openingFloat
-            declaredClosingFloat
-            cashSales
-            cashRefunds
-            moneyIn
-            moneyOut
-            cashDrops
-            tipPayouts
-            expectedDrawerCash
-            countedDrawerCash
-            variance
             recordedTotal
             countedTotal
-            paymentVariance
-            paymentSummaryJson
+            paymentSummary
             varianceReason
-            openOrdersCount
-            unpaidOrdersCount
-            parkedOrdersCount
-            notes
             owner
-            createdAt
-            updatedAt
         }
     }
 `;
