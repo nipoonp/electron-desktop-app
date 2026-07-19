@@ -7,11 +7,28 @@ import { getCloudFrontDomainName } from "../private/aws-custom";
 import { useRestaurant } from "./restaurant-context";
 import { getThemePreviewRegisterId, isThemePreviewMode } from "../util/util";
 
+export interface INewOnlineOrderInfo {
+    number: string;
+    total: number;
+    customerFirstName: string | null;
+    customerPhoneNumber: string | null;
+    type: string;
+    placedAt: string;
+    orderScheduledAt: string | null;
+}
+
+const initialIsShownNewOnlineOrderReceivedModal = false;
+
 type ContextProps = {
     register: IGET_RESTAURANT_REGISTER | null;
     isPOS: boolean | null;
+    isPosPinFeatureEnabled: boolean;
     connectRegister: (key: string) => Promise<any>;
     disconnectRegister: (key: string) => Promise<any>;
+    isShownNewOnlineOrderReceivedModal: boolean;
+    setIsShownNewOnlineOrderReceivedModal: (isShownNewOnlineOrderReceivedModal: boolean) => void;
+    newOnlineOrderInfo: INewOnlineOrderInfo[];
+    setNewOnlineOrderInfo: (info: INewOnlineOrderInfo[]) => void;
     isEftposMerchantNameLocked: () => boolean;
     lockEftposMerchantName: () => void;
 };
@@ -19,12 +36,17 @@ type ContextProps = {
 const RegisterContext = createContext<ContextProps>({
     register: null,
     isPOS: false,
+    isPosPinFeatureEnabled: false,
     connectRegister: (key: string) => {
         return new Promise(() => {});
     },
     disconnectRegister: (key: string) => {
         return new Promise(() => {});
     },
+    isShownNewOnlineOrderReceivedModal: initialIsShownNewOnlineOrderReceivedModal,
+    setIsShownNewOnlineOrderReceivedModal: () => {},
+    newOnlineOrderInfo: [],
+    setNewOnlineOrderInfo: () => {},
     isEftposMerchantNameLocked: () => false,
     lockEftposMerchantName: () => {},
 });
@@ -32,6 +54,9 @@ const RegisterContext = createContext<ContextProps>({
 const RegisterProvider = (props: { children: React.ReactNode }) => {
     const [registerKey, _setRegisterKey] = useState<string | null>(null);
     const [register, setRegister] = useState<IGET_RESTAURANT_REGISTER | null>(null);
+    const [isShownNewOnlineOrderReceivedModal, _setIsShownNewOnlineOrderReceivedModal] = useState(initialIsShownNewOnlineOrderReceivedModal);
+    const [newOnlineOrderInfo, _setNewOnlineOrderInfo] = useState<INewOnlineOrderInfo[]>([]);
+
     const { restaurant } = useRestaurant();
 
     useEffect(() => {
@@ -102,6 +127,14 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
         });
     };
 
+    const setIsShownNewOnlineOrderReceivedModal = (isShownNewOnlineOrderReceivedModal: boolean) => {
+        _setIsShownNewOnlineOrderReceivedModal(isShownNewOnlineOrderReceivedModal);
+    };
+
+    const setNewOnlineOrderInfo = (info: INewOnlineOrderInfo[]) => {
+        _setNewOnlineOrderInfo(info);
+    };
+
     const isEftposMerchantNameLocked = () => {
         return register ? localStorage.getItem(`eftposMerchantMismatch:${register.id}`) != null : false;
     };
@@ -115,8 +148,13 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
             value={{
                 register: register,
                 isPOS: register ? register.type == ERegisterType.POS : null,
+                isPosPinFeatureEnabled: !!register?.enablePosUserPin,
                 connectRegister: connectRegister,
                 disconnectRegister: disconnectRegister,
+                isShownNewOnlineOrderReceivedModal: isShownNewOnlineOrderReceivedModal,
+                setIsShownNewOnlineOrderReceivedModal: setIsShownNewOnlineOrderReceivedModal,
+                newOnlineOrderInfo: newOnlineOrderInfo,
+                setNewOnlineOrderInfo: setNewOnlineOrderInfo,
                 isEftposMerchantNameLocked: isEftposMerchantNameLocked,
                 lockEftposMerchantName: lockEftposMerchantName,
             }}

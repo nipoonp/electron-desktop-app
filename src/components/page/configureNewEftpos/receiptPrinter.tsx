@@ -199,6 +199,8 @@ export const ReceiptPrinter = () => {
             await printReceipt({
                 orderId: "123",
                 country: ECountry.nz,
+                futureOrder: true,
+                orderReminder: true,
                 status: EOrderStatus.NEW,
                 printerType: printerType,
                 printerAddress: printerAddress1,
@@ -247,7 +249,7 @@ export const ReceiptPrinter = () => {
                 placedAt: new Date().toISOString(),
                 orderScheduledAt: new Date().toISOString(),
                 preparationTimeInMinutes: 20,
-                enableLoyalty: false,
+                enableLoyalty: true,
             });
         }
 
@@ -255,6 +257,8 @@ export const ReceiptPrinter = () => {
             await printReceipt({
                 orderId: "456",
                 country: ECountry.nz,
+                futureOrder: false,
+                orderReminder: false,
                 status: EOrderStatus.NEW,
                 printerType: printerType,
                 printerAddress: printerAddress2,
@@ -305,6 +309,8 @@ export const ReceiptPrinter = () => {
             await printReceipt({
                 orderId: "789",
                 country: ECountry.nz,
+                futureOrder: false,
+                orderReminder: false,
                 status: EOrderStatus.NEW,
                 printerType: printerType,
                 printerAddress: printerAddress3,
@@ -347,7 +353,7 @@ export const ReceiptPrinter = () => {
                 placedAt: new Date().toISOString(),
                 orderScheduledAt: null,
                 preparationTimeInMinutes: null,
-                enableLoyalty: false,
+                enableLoyalty: true,
             });
         }
 

@@ -3,6 +3,7 @@ name: Tabin CI/CD NEW
 on:
     push:
         branches: [main]
+    workflow_dispatch:
 
 jobs:
     slack_message_start:

@@ -1,0 +1,247 @@
+.checkout {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+
+    .pos-order-type-button-wrapper {
+        display: flex;
+        width: 100%;
+
+        .pos-order-type {
+            display: flex;
+            justify-content: center;
+            border: 1px solid #e0e0e0;
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        .selected {
+            background-color: var(--primary-color);
+            color: var(--background-color);
+            border: 1px solid var(--primary-color);
+        }
+    }
+
+    .parked-order-banner {
+        width: 100%;
+        background-color: var(--primary-color);
+        color: var(--background-color);
+        text-align: center;
+        padding: 6px 12px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .order-wrapper {
+        display: flex;
+        flex: 1;
+        overflow: scroll;
+
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .order::-webkit-scrollbar {
+            display: none;
+        }
+
+        .cart-empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            margin-top: 48px;
+
+            .icon {
+                color: hsl(0, 0%, 80%);
+            }
+        }
+
+        .order {
+            position: relative;
+            width: 100%;
+
+            /* Hide scrollbar for IE, Edge and Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none; /* Firefox */
+
+            .title {
+                display: flex;
+                align-items: center;
+
+                .image {
+                    height: 72px;
+                }
+            }
+
+            .checkout-order-type {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                align-items: center;
+            }
+
+            .checkout-promotion-information {
+                background-color: var(--primary-color);
+                color: white;
+                border-radius: 10px;
+            }
+
+            .checkout-promotion-information-heading {
+                display: flex;
+                justify-content: space-between;
+            }
+
+            .checkout-covers {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                align-items: center;
+            }
+
+            .checkout-table-number {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                align-items: center;
+            }
+
+            .checkout-buzzer-number {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                align-items: center;
+            }
+
+            .checkout-customer-details {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                align-items: center;
+            }
+
+            .checkout-payment-method {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                align-items: center;
+            }
+
+            .fixed-button {
+                position: fixed;
+                bottom: 26rem;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background-color: var(--background-color);
+
+                @keyframes fadeIn {
+                    from {
+                        opacity: 0;
+                    }
+                    to {
+                        opacity: 1;
+                    }
+                }
+
+                @keyframes fadeIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px); /* Start slightly below */
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+
+                @keyframes fadeOut {
+                    from {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                    to {
+                        opacity: 0;
+                        transform: translateY(20px); /* End slightly below */
+                    }
+                }
+
+                .arrow-container {
+                    animation-duration: 0.5s;
+                    animation-timing-function: ease-in-out;
+                    opacity: 0; /* Start with arrow hidden */
+                    pointer-events: none; /* Make the arrow not clickable while hidden */
+                }
+
+                .fade-in {
+                    animation-name: fadeIn;
+                    opacity: 1;
+                    pointer-events: auto; /* Enable pointer events when visible */
+                }
+
+                .fade-out {
+                    animation-name: fadeOut;
+                    pointer-events: none; /* Disable pointer events when hidden */
+                }
+            }
+
+            .mr-btm {
+                display: none;
+            }
+        }
+    }
+
+    .extra-footer-button {
+        display: flex;
+        width: 100%;
+    }
+
+    .checkout-feature-button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid #e0e0e0;
+        flex-grow: 1;
+        text-align: center;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .order-schedule-date-time-wrapper {
+        margin: 0 auto;
+        max-width: 400px;
+        text-align: center;
+        margin-bottom: 36px;
+    }
+
+    .footer {
+        border-top: 1px solid #e0e0e0;
+
+        .checkout-buttons-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .order-more-button {
+            background-color: #ffffff;
+            color: #484848;
+            border: 1px solid #e0e0e0;
+            width: 350px;
+            font-size: 22px;
+        }
+
+        .complete-order-button {
+            width: 350px;
+        }
+
+        .cancel-button {
+            background-color: var(--background-color);
+            color: #484848;
+            border: 1px solid #e0e0e0;
+            padding: 16px 30px;
+            font-weight: 300;
+        }
+
+        .pay-later-link {
+            display: flex;
+            justify-content: center;
+        }
+
+        .apply-promo-code-link {
+            display: flex;
+            justify-content: center;
+        }
+    }
+}

@@ -3,8 +3,15 @@ import { format } from "date-fns";
 import { useEffect, createContext, useContext } from "react";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
 import { useGetRestaurantOnlineOrdersByBeginWithPlacedAtLazyQuery } from "../hooks/useGetRestaurantOnlineOrdersByBeginWithPlacedAtLazyQuery";
-import { useGetRestaurantOrdersByBetweenPlacedAtLazyQuery } from "../hooks/useGetRestaurantOrdersByBetweenPlacedAtLazyQuery";
-import { IPrintReceiptDataOutput, IOrderReceipt, IPrintSalesDataInput, IOrderLabel, IPrintReceiptDataInput } from "../model/model";
+import {
+    IPrintReceiptDataOutput,
+    IOrderReceipt,
+    IPrintCashUpDataInput,
+    IPrintSalesDataInput,
+    IOrderLabel,
+    IPrintReceiptDataInput,
+    IPrintNoSaleReceiptDataInput,
+} from "../model/model";
 import { toast } from "../tabin/components/toast";
 import { convertProductTypesForPrint, filterPrintProducts, toLocalISOString } from "../util/util";
 import { useErrorLogging } from "./errorLogging-context";
@@ -17,7 +24,9 @@ type ContextProps = {
     printReceipt: (payload: IOrderReceipt) => Promise<any>;
     printEftposReceipt: (eftposReceipt: IPrintReceiptDataInput) => Promise<any>;
     printLabel: (payload: IOrderLabel) => Promise<any>;
+    printNoSaleReceipt: (noSaleReceipt: IPrintNoSaleReceiptDataInput) => Promise<any>;
     printSalesData: (printSalesDataInput: IPrintSalesDataInput) => Promise<any>;
+    printCashUpData: (printCashUpDataInput: IPrintCashUpDataInput) => Promise<any>;
 };
 
 const ReceiptPrinterContext = createContext<ContextProps>({
@@ -30,14 +39,20 @@ const ReceiptPrinterContext = createContext<ContextProps>({
     printLabel: (payload: IOrderLabel) => {
         return new Promise(() => {});
     },
+    printNoSaleReceipt: (eftposReceipt: IPrintNoSaleReceiptDataInput) => {
+        return new Promise(() => {});
+    },
     printSalesData: (printSalesDataInput: IPrintSalesDataInput) => {
+        return new Promise(() => {});
+    },
+    printCashUpData: (printCashUpDataInput: IPrintCashUpDataInput) => {
         return new Promise(() => {});
     },
 });
 
 const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     const { restaurant, restaurantBase64Logo } = useRestaurant();
-    const { register } = useRegister();
+    const { register, setIsShownNewOnlineOrderReceivedModal, setNewOnlineOrderInfo } = useRegister();
     const { logError } = useErrorLogging();
     const { checkParentView, sendParentAsync } = useElectron();
 
@@ -61,6 +76,16 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
         const ordersFetchTimer = setInterval(async () => {
             try {
+                let showOnlineOrderPromot = false;
+                const newOrderInfoList: {
+                    number: string;
+                    total: number;
+                    customerFirstName: string | null;
+                    customerPhoneNumber: string | null;
+                    type: string;
+                    placedAt: string;
+                    orderScheduledAt: string | null;
+                }[] = [];
                 const storedPrintedOrders = localStorage.getItem("printedOnlineOrders");
                 const printedOrders: {
                     [orderId: string]: boolean;
@@ -86,6 +111,8 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
                     if (order.status === "CANCELLED" || order.status === "REFUNDED") continue;
 
+                    if (order.cancellationReason?.includes("ONLINE_PAYMENT_FAILED")) continue;
+
                     for (var j = 0; j < register.printers.items.length; j++) {
                         const printer = register.printers.items[j];
 
@@ -95,9 +122,22 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
                         if (productsToPrint.length === 0) continue;
 
+                        showOnlineOrderPromot = true;
+                        newOrderInfoList.push({
+                            number: order.number,
+                            total: order.total,
+                            customerFirstName: order.customerInformation?.firstName || null,
+                            customerPhoneNumber: order.customerInformation?.phoneNumber || null,
+                            type: order.type,
+                            placedAt: order.placedAt,
+                            orderScheduledAt: order.orderScheduledAt,
+                        });
+
                         await printReceipt({
                             orderId: order.id,
                             country: order.country,
+                            futureOrder: false,
+                            orderReminder: false,
                             status: order.status,
                             printerType: printer.type,
                             printerAddress: printer.address,
@@ -160,6 +200,11 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                     }
 
                     printedOrders[order.id] = true;
+                }
+
+                if (showOnlineOrderPromot) {
+                    setNewOnlineOrderInfo(newOrderInfoList);
+                    setIsShownNewOnlineOrderReceivedModal(true);
                 }
 
                 localStorage.setItem("printedOnlineOrders", JSON.stringify(printedOrders));
@@ -234,6 +279,20 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         if (checkParentView()) {
             try {
                 const result: IEftposReceiptOutput = await sendParentAsync("RECEIPT_PRINTER_EFTPOS_DATA", eftposReceipt);
+
+                console.log("result", result);
+            } catch (e) {
+                console.error(e);
+                toast.error("There was an error printing your order");
+                // await logError("There was an error printing your order", JSON.stringify({ error: e, order: order }));
+            }
+        }
+    };
+
+    const printNoSaleReceipt = async (noSaleReceipt: IPrintNoSaleReceiptDataInput) => {
+        if (checkParentView()) {
+            try {
+                const result: IEftposReceiptOutput = await sendParentAsync("RECEIPT_NO_SALE_DATA", noSaleReceipt);
 
                 console.log("result", result);
             } catch (e) {
@@ -403,6 +462,19 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         }
     };
 
+    const printCashUpData = async (printCashUpDataInput: IPrintCashUpDataInput) => {
+        if (checkParentView()) {
+            try {
+                const result: IPrintReceiptDataOutput = await sendParentAsync("RECEIPT_CASH_UP_DATA", printCashUpDataInput);
+
+                if (result.error) toast.error("There was an error printing your report");
+            } catch (e) {
+                console.error(e);
+                toast.error("There was an error printing your report");
+            }
+        }
+    };
+
     const storeFailedPrint = (failedPrintOrder: IPrintReceiptDataOutput) => {
         const currentFailedPrintQueue = localStorage.getItem("failedPrintQueue");
         const currentFailedPrintQueueOrders: IPrintReceiptDataOutput[] = currentFailedPrintQueue ? JSON.parse(currentFailedPrintQueue) : [];
@@ -435,7 +507,9 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 printReceipt: printReceipt,
                 printEftposReceipt: printEftposReceipt,
                 printLabel: printLabel,
+                printNoSaleReceipt: printNoSaleReceipt,
                 printSalesData: printSalesData,
+                printCashUpData: printCashUpData,
             }}
             children={props.children}
         />

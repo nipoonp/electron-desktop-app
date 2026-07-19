@@ -1,6 +1,6 @@
 import { gql } from "@apollo/client";
-import { EReceiptPrinterPrinterType } from "../model/model";
-import { ORDER_FIELDS_FRAGMENT } from "./customFragments";
+import { EReceiptPrinterPrinterType, ISection, ITableNodesAttributes } from "../model/model";
+import { IGET_RESTAURANT_ORDER_FRAGMENT, ORDER_FIELDS_FRAGMENT } from "./customFragments";
 
 export enum EOrderStatus {
     NEW = "NEW",
@@ -23,21 +23,41 @@ export enum ERegisterType {
     ONLINE = "ONLINE",
 }
 
+export enum ECashupScopeType {
+    SITE = "SITE",
+    REGISTER = "REGISTER",
+    STAFF = "STAFF",
+}
+
+export enum ECashupSessionStatus {
+    OPEN = "OPEN",
+    FINALISED = "FINALISED",
+}
+
+export enum EMoneyMovementType {
+    MONEY_IN = "MONEY_IN",
+    MONEY_OUT = "MONEY_OUT",
+}
+
+export enum EMoneyMovementPaymentMethod {
+    CASH = "CASH",
+}
+
 export enum ERegisterPrinterType {
     BLUETOOTH = "BLUETOOTH",
     WIFI = "WIFI",
     USB = "USB",
 }
 
-export enum ELOYALTY_ACTION {
-    EARN = "EARN",
-    REDEEM = "REDEEM",
-}
-
 export enum ECustomCustomerFieldType {
     STRING = "STRING",
     NUMBER = "NUMBER",
     DROPDOWN = "DROPDOWN",
+}
+
+export enum ELOYALTY_ACTION {
+    EARN = "EARN",
+    REDEEM = "REDEEM",
 }
 
 export const GET_USER = gql`
@@ -48,18 +68,6 @@ export const GET_USER = gql`
             firstName
             lastName
             email
-            userRestaurants(limit: 1000) {
-                items {
-                    restaurant {
-                        id
-                        name
-                        verified
-                        address {
-                            formattedAddress
-                        }
-                    }
-                }
-            }
             restaurants(limit: 1000) {
                 items {
                     id
@@ -68,101 +76,19 @@ export const GET_USER = gql`
                     address {
                         formattedAddress
                     }
-                    advertisements {
-                        items {
-                            id
-                            name
-                            content {
-                                key
-                                bucket
-                                region
-                                identityPoolId
-                            }
-                        }
-                    }
-                    registers(limit: 50) {
-                        items {
-                            id
-                            active
-                            name
-                            enableTableFlags
-                            enableCovers
-                            enableBuzzerNumbersForTakeaway
-                            enableBuzzerNumbersForDineIn
-                            enableSkuScanner
-                            enablePayLater
-                            enableCashPayments
-                            enableEftposPayments
-                            enableUberEatsPayments
-                            enableMenulogPayments
-                            enableDoordashPayments
-                            enableDelivereasyPayments
-                            availableOrderTypes
-                            type
-                            requestCustomerInformation {
-                                firstName
-                                email
-                                phoneNumber
-                                signature
-                                customFields {
-                                    label
-                                    value
-                                    type
-                                }
-                            }
-                            hideMostPopularCategory
-                            disableKioskLoyaltyScreen
-                            eftposProvider
-                            eftposIpAddress
-                            eftposPortNumber
-                            windcaveStationId
-                            windcaveStationUser
-                            windcaveStationKey
-                            eftposMerchantName
-                            tyroMerchantId
-                            tyroTerminalId
-                            skipEftposReceiptSignature
-                            askToPrintCustomerReceipt
-                            orderNumberSuffix
-                            orderNumberStart
-                            surchargePercentage
-                            defaultCategoryView
-                            preSelectedProducts
-                            customStyleSheet {
-                                key
-                                bucket
-                                region
-                                identityPoolId
-                            }
-                            printers {
-                                items {
-                                    id
-                                    name
-                                    type
-                                    printerType
-                                    address
-                                    receiptFooterText
-                                    customerPrinter
-                                    kitchenPrinter
-                                    kitchenPrinterSmall
-                                    kitchenPrinterLarge
-                                    hidePreparationTime
-                                    hideModifierGroupName
-                                    skipReceiptCutCommand
-                                    printReceiptForEachProduct
-                                    printAllOrderReceipts
-                                    printOnlineOrderReceipts
-                                    ignoreCategories(limit: 500) {
-                                        items {
-                                            id
-                                            category {
-                                                id
-                                                name
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                }
+            }
+            userRestaurants(limit: 1000) {
+                items {
+                    enablePosPin
+                    posPin
+                    posPinUpdatedAt
+                    restaurant {
+                        id
+                        name
+                        verified
+                        address {
+                            formattedAddress
                         }
                     }
                 }
@@ -181,9 +107,7 @@ export interface IGET_USER {
         items: IGET_USER_RESTAURANT[];
     };
     userRestaurants: {
-        items: {
-            restaurant: IGET_USER_RESTAURANT;
-        }[];
+        items: IGET_USER_RESTAURANT_LINK[];
     };
 }
 
@@ -194,6 +118,32 @@ export interface IGET_USER_RESTAURANT {
     address: {
         formattedAddress: string;
     };
+    enablePosPin?: boolean | null;
+    posPin?: string | null;
+    posPinUpdatedAt?: string | null;
+}
+
+export interface IGET_USER_RESTAURANT_LINK {
+    enablePosPin?: boolean | null;
+    posPin?: string | null;
+    posPinUpdatedAt?: string | null;
+    restaurant: IGET_USER_RESTAURANT;
+}
+
+export interface IGET_RESTAURANT_USER {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    image?: IS3Object | null;
+}
+
+export interface IGET_RESTAURANT_USER_LINK {
+    id: string;
+    enablePosPin?: boolean | null;
+    posPin?: string | null;
+    posPinUpdatedAt?: string | null;
+    user: IGET_RESTAURANT_USER;
 }
 
 export interface IGET_USER_REGISTER_PRINTER {
@@ -299,11 +249,36 @@ export const GET_RESTAURANT = gql`
             }
             autoCompleteOrders
             enableLoyalty
+            # checkTableFeature
             preparationTimeInMinutes
             delayBetweenOrdersInSeconds
             orderThresholdMessage
             surchargePercentage
+            enableCashup
+            cashupDefaultScope
+            # cashupAllowScopeSwitch
+            cashupVarianceReasonThreshold
             salesReportMailingList
+            users {
+                items {
+                    id
+                    enablePosPin
+                    posPin
+                    posPinUpdatedAt
+                    user {
+                        id
+                        firstName
+                        lastName
+                        email
+                        image {
+                            key
+                            bucket
+                            region
+                            identityPoolId
+                        }
+                    }
+                }
+            }
             orderThresholds {
                 enable
             }
@@ -394,21 +369,26 @@ export const GET_RESTAURANT = gql`
                     id
                     active
                     name
+                    enablePosUserPin
                     enableTableFlags
                     enableCovers
                     enableBuzzerNumbersForTakeaway
                     enableBuzzerNumbersForDineIn
                     enableSkuScanner
+                    hideMostPopularCategory
+                    disableKioskLoyaltyScreen
                     enableFeedback
                     checkConditionsBeforeCreateOrder
                     enablePayLater
                     enableCashPayments
                     enableEftposPayments
+                    enableOnAccountPayments
                     enableUberEatsPayments
                     enableMenulogPayments
                     enableDoordashPayments
                     enableDelivereasyPayments
                     availableOrderTypes
+                    defaultPreSelectedOrderType
                     orderTypeSurcharge {
                         dinein
                         takeaway
@@ -425,8 +405,6 @@ export const GET_RESTAURANT = gql`
                             type
                         }
                     }
-                    hideMostPopularCategory
-                    disableKioskLoyaltyScreen
                     eftposProvider
                     eftposIpAddress
                     eftposPortNumber
@@ -438,6 +416,7 @@ export const GET_RESTAURANT = gql`
                     tyroTerminalId
                     skipEftposReceiptSignature
                     askToPrintCustomerReceipt
+                    autoPrintParkedOrderKitchenReceipts
                     orderNumberSuffix
                     orderNumberStart
                     surchargePercentage
@@ -637,6 +616,8 @@ export const GET_RESTAURANT = gql`
                                 availablePlatforms
                                 availableOrderTypes
                                 isAgeRescricted
+                                backgroundColor
+                                borderColor
                                 availability {
                                     monday {
                                         startTime
@@ -721,6 +702,7 @@ export const GET_RESTAURANT = gql`
                                     items {
                                         id
                                         displaySequence
+                                        hideForCustomer
                                         modifierGroup {
                                             id
                                             name
@@ -737,6 +719,7 @@ export const GET_RESTAURANT = gql`
                                                 items {
                                                     id
                                                     displaySequence
+                                                    preSelectedQuantity
                                                     modifier {
                                                         id
                                                         name
@@ -778,6 +761,8 @@ export const GET_RESTAURANT = gql`
                                                                 region
                                                                 identityPoolId
                                                             }
+                                                            backgroundColor
+                                                            borderColor
                                                             availableOrderTypes
                                                             categories {
                                                                 items {
@@ -829,6 +814,7 @@ export const GET_RESTAURANT = gql`
                                                                 items {
                                                                     id
                                                                     displaySequence
+                                                                    hideForCustomer
                                                                     modifierGroup {
                                                                         id
                                                                         name
@@ -843,6 +829,7 @@ export const GET_RESTAURANT = gql`
                                                                             items {
                                                                                 id
                                                                                 displaySequence
+                                                                                preSelectedQuantity
                                                                                 modifier {
                                                                                     id
                                                                                     name
@@ -876,6 +863,8 @@ export const GET_RESTAURANT = gql`
                                                                                             region
                                                                                             identityPoolId
                                                                                         }
+                                                                                        backgroundColor
+                                                                                        borderColor
                                                                                         availableOrderTypes
                                                                                         categories {
                                                                                             items {
@@ -1112,7 +1101,7 @@ export interface IGET_RESTAURANT {
     isAcceptingOrders: boolean;
     verified: boolean;
     address: {
-        receiptAddress?: string | null;
+        receiptAddress: string | null;
         formattedAddress: string;
     };
     operatingHours: IGET_RESTAURANT_OPERATING_HOURS;
@@ -1122,11 +1111,19 @@ export interface IGET_RESTAURANT {
     customStyleSheet?: IS3Object;
     autoCompleteOrders: boolean | null;
     enableLoyalty: boolean | null;
+    checkTableFeature: boolean | true;
     preparationTimeInMinutes: number | null;
     delayBetweenOrdersInSeconds: number | null;
     orderThresholdMessage: string | null;
     surchargePercentage: number | null;
+    enableCashup: boolean | null;
+    cashupDefaultScope: ECashupScopeType | null;
+    // cashupAllowScopeSwitch: boolean | null;
+    cashupVarianceReasonThreshold: number | null;
     salesReportMailingList: string | null;
+    users: {
+        items: IGET_RESTAURANT_USER_LINK[];
+    };
     orderThresholds: {
         enable: boolean;
     } | null;
@@ -1201,26 +1198,29 @@ export interface IGET_RESTAURANT_REGISTER {
     id: string;
     active: boolean;
     name: string;
+    enablePosUserPin?: boolean;
     enableTableFlags: boolean;
     enableCovers: boolean;
     enableBuzzerNumbersForTakeaway: boolean;
     enableBuzzerNumbersForDineIn: boolean;
     enableSkuScanner: boolean;
+    hideMostPopularCategory: boolean;
+    disableKioskLoyaltyScreen?: boolean;
     enableFeedback: boolean;
     checkConditionsBeforeCreateOrder?: boolean;
     enablePayLater: boolean;
     enableCashPayments: boolean;
     enableEftposPayments: boolean;
+    enableOnAccountPayments: boolean;
     enableUberEatsPayments: boolean;
     enableMenulogPayments: boolean;
     enableDoordashPayments: boolean;
     enableDelivereasyPayments: boolean;
     availableOrderTypes: EOrderType[];
+    defaultPreSelectedOrderType?: EOrderType | null;
     orderTypeSurcharge: OrderTypeSurchargeType;
     type: ERegisterType;
     requestCustomerInformation?: RequestCustomerInformationType;
-    hideMostPopularCategory?: boolean;
-    disableKioskLoyaltyScreen?: boolean;
     eftposProvider: string;
     eftposIpAddress: string;
     eftposPortNumber: string;
@@ -1232,6 +1232,7 @@ export interface IGET_RESTAURANT_REGISTER {
     tyroTerminalId: number;
     skipEftposReceiptSignature: boolean;
     askToPrintCustomerReceipt: boolean;
+    autoPrintParkedOrderKitchenReceipts?: boolean;
     orderNumberSuffix: string;
     orderNumberStart: number;
     surchargePercentage: number;
@@ -1435,6 +1436,9 @@ export interface IGET_RESTAURANT_LOYALTY {
     loyaltyHistories: {
         items: IGET_RESTAURANT_LOYALTY_HISTORY[];
     };
+    onAccountOrders: {
+        items: IGET_RESTAURANT_ORDER_FRAGMENT[];
+    };
 }
 
 export interface IGET_RESTAURANT_LOYALTY_CATEGORY {
@@ -1452,19 +1456,119 @@ export interface IGET_RESTAURANT_LOYALTY_REWARD {
     promotionId: string;
 }
 
+export interface IGET_RESTAURANT_LOYALTY_USER {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    phoneNumber: string | null;
+    email: string | null;
+    loyaltyHistories: {
+        items: IGET_RESTAURANT_LOYALTY_HISTORY[];
+    };
+    onAccountOrders: {
+        items: IGET_RESTAURANT_ORDER_FRAGMENT[];
+    };
+}
+
 export interface IGET_RESTAURANT_LOYALTY_HISTORY {
     id: string;
-    action: ELOYALTY_ACTION;
+    action: string;
     points: number;
     createdAt: string;
-    loyaltyHistoryOrderId: string;
-    loyaltyUser: {
+    loyaltyHistoryOrderId?: string | null;
+    loyaltyHistoryLoyaltyId?: string | null;
+    loyaltyHistoryLoyaltyUserId?: string | null;
+    loyaltyUser?: {
         id: string;
         firstName: string;
         lastName: string;
         email: string;
         phoneNumber: string;
     };
+}
+
+export const GET_LOYALTIES_BY_GROUP_ID = gql`
+    query GetLoyaltiesByGroupId($loyaltyGroupId: String!) {
+        getLoyaltiesByGroupId(loyaltyGroupId: $loyaltyGroupId, limit: 10000) {
+            items {
+                id
+                loyaltyRestaurantId
+            }
+            nextToken
+        }
+    }
+`;
+
+export interface IGET_LOYALTIES_BY_GROUP_ID_ITEM {
+    id: string;
+    loyaltyRestaurantId: string;
+}
+
+export const GET_LOYALTY_USER_BALANCES = gql`
+    query GetLoyaltyUserBalances($loyaltyUserId: ID!) {
+        getLoyaltyUser(id: $loyaltyUserId) {
+            id
+            loyaltyBalances {
+                loyaltyId
+                points
+            }
+        }
+    }
+`;
+
+export interface IGET_LOYALTY_USER_BALANCES {
+    getLoyaltyUser?: {
+        id: string;
+        loyaltyBalances?: ({ loyaltyId: string | null; points: number } | null)[] | null;
+    } | null;
+}
+
+export const GET_LOYALTY_USER_LINKS_BY_RESTAURANT = gql`
+    query GetLoyaltyUserLinksByRestaurant($restaurantId: ID!, $nextToken: String, $limit: Int = 1000) {
+        getRestaurant(id: $restaurantId) {
+            id
+            loyaltyUsers(limit: $limit, nextToken: $nextToken) {
+                nextToken
+                items {
+                    id
+                    favourite
+                    loyaltyUser {
+                        id
+                        firstName
+                        lastName
+                        email
+                        phoneNumber
+                        loyaltyBalances {
+                            loyaltyId
+                            points
+                        }
+                    }
+                }
+            }
+        }
+    }
+`;
+
+export interface IGET_LOYALTY_USER_LINK {
+    id: string;
+    favourite: boolean | null;
+    loyaltyUser?: {
+        id: string;
+        firstName: string | null;
+        lastName: string | null;
+        email: string | null;
+        phoneNumber: string | null;
+        loyaltyBalances?: ({ loyaltyId: string | null; points: number } | null)[] | null;
+    } | null;
+}
+
+export interface IGET_LOYALTY_USER_LINKS_BY_RESTAURANT {
+    getRestaurant?: {
+        loyaltyUsers?: {
+            nextToken?: string | null;
+            items?: (IGET_LOYALTY_USER_LINK | null)[] | null;
+        } | null;
+    } | null;
 }
 
 export enum ELoyaltyType {
@@ -1520,6 +1624,8 @@ export interface IGET_RESTAURANT_PRODUCT {
     availablePlatforms: ERegisterType[];
     availableOrderTypes: EOrderType[];
     isAgeRescricted: boolean;
+    backgroundColor?: string | null;
+    borderColor?: string | null;
     availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
     subCategories?: string;
     categories: { items: IGET_RESTAURANT_CATEGORY_LINK[] };
@@ -1531,6 +1637,7 @@ export interface IGET_RESTAURANT_PRODUCT {
 export interface IGET_RESTAURANT_MODIFIER_GROUP_LINK {
     id: string;
     displaySequence: number;
+    hideForCustomer: boolean | null;
     modifierGroup: IGET_RESTAURANT_MODIFIER_GROUP;
 }
 
@@ -1554,6 +1661,7 @@ export interface IGET_RESTAURANT_MODIFIER_GROUP {
 export interface IGET_RESTAURANT_MODIFIER_LINK {
     id: string;
     displaySequence: number;
+    preSelectedQuantity: number;
     modifier: IGET_RESTAURANT_MODIFIER;
 }
 
@@ -1575,6 +1683,67 @@ export interface IGET_RESTAURANT_MODIFIER {
     subModifierGroups: string;
     preSelectedQuantity: number;
     productModifier?: IGET_RESTAURANT_PRODUCT;
+}
+
+export interface IGET_CASHUP_ORDER_PAYMENT_AMOUNTS {
+    cash: number | null;
+    eftpos: number | null;
+    online: number | null;
+    uberEats: number | null;
+    menulog: number | null;
+    doordash: number | null;
+    delivereasy: number | null;
+}
+
+export interface IGET_CASHUP_ORDER {
+    id: string;
+    status: EOrderStatus;
+    paid: boolean | null;
+    placedAt: string;
+    settledAt: string | null;
+    refundedAt: string | null;
+    parkedAt: string | null;
+    registerId: string;
+    settledRegisterId: string | null;
+    orderUserId: string | null;
+    paymentAmounts: IGET_CASHUP_ORDER_PAYMENT_AMOUNTS | null;
+    refundPaymentAmounts: IGET_CASHUP_ORDER_PAYMENT_AMOUNTS | null;
+}
+
+export interface IGET_CASHUP_SESSION {
+    id: string;
+    cashupRestaurantId: string;
+    cashupSessionDate: string;
+    scopeType: ECashupScopeType;
+    scopeKey: string;
+    status: ECashupSessionStatus;
+    openedAt: string;
+    finalisedAt: string | null;
+    finalisedUserId: string | null;
+    finalisedByName: string | null;
+    openingFloat: number;
+    recordedTotal: number | null;
+    countedTotal: number | null;
+    paymentSummary: string | null;
+    varianceReason: string | null;
+    owner: string | null;
+}
+
+export interface IGET_MONEY_MOVEMENT {
+    id: string;
+    moneyMovementRestaurantId: string;
+    moneyMovementRegisterId: string;
+    cashupSessionId: string | null;
+    scopeKey: string;
+    moneyMovementDate: string;
+    recordedAt: string;
+    type: EMoneyMovementType;
+    paymentMethod: EMoneyMovementPaymentMethod | null;
+    amount: number;
+    reason: string | null;
+    createdUserId: string | null;
+    createdByName: string | null;
+    owner: string | null;
 }
 
 export interface IS3Object {
@@ -1758,12 +1927,55 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
     query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAtStartDate: String!, $placedAtEndDate: String!) {
         getOrdersByRestaurantByPlacedAt(
             limit: 1000000
+            sortDirection: DESC
+            orderRestaurantId: $orderRestaurantId
+            placedAt: { between: [$placedAtStartDate, $placedAtEndDate] }
+        ) {
+            items {
+                ...OrderFieldsFragment
+            }
+        }
+    }
+`;
+
+export const GET_CASHUP_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
+    query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAtStartDate: String!, $placedAtEndDate: String!) {
+        getOrdersByRestaurantByPlacedAt(
+            limit: 1000000
+            sortDirection: DESC
             orderRestaurantId: $orderRestaurantId
             placedAt: { between: [$placedAtStartDate, $placedAtEndDate] }
             filter: { paymentInProgress: { ne: true } }
         ) {
             items {
-                ...OrderFieldsFragment
+                id
+                status
+                paid
+                placedAt
+                settledAt
+                refundedAt
+                parkedAt
+                registerId
+                settledRegisterId
+                orderUserId
+                paymentAmounts {
+                    cash
+                    eftpos
+                    online
+                    uberEats
+                    menulog
+                    doordash
+                    delivereasy
+                }
+                refundPaymentAmounts {
+                    cash
+                    eftpos
+                    online
+                    uberEats
+                    menulog
+                    doordash
+                    delivereasy
+                }
             }
         }
     }
@@ -1777,6 +1989,23 @@ export const GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
             sortDirection: DESC
             orderRestaurantId: $orderRestaurantId
             placedAt: { beginsWith: $placedAt }
+            filter: { and: [{ onlineOrder: { eq: true } }, { paymentInProgress: { ne: true } }] }
+        ) {
+            items {
+                ...OrderFieldsFragment
+            }
+        }
+    }
+`;
+
+export const GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_ORDERSCHEDULEDAT = gql`
+    ${ORDER_FIELDS_FRAGMENT}
+    query GetOrdersByRestaurantByOrderScheduledAt($orderRestaurantId: ID!, $orderscheduledAt: String!) {
+        getOrdersByRestaurantByOrderScheduledAt(
+            limit: 1000000
+            sortDirection: DESC
+            orderRestaurantId: $orderRestaurantId
+            orderscheduledAt: { beginsWith: $orderscheduledAt }
             filter: { and: [{ onlineOrder: { eq: true } }, { paymentInProgress: { ne: true } }] }
         ) {
             items {
@@ -1809,6 +2038,8 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                     identityPoolId
                 }
                 availablePlatforms
+                backgroundColor
+                borderColor
                 availability {
                     monday {
                         startTime
@@ -1891,6 +2122,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                     items {
                         id
                         displaySequence
+                        hideForCustomer
                         modifierGroup {
                             id
                             name
@@ -1904,6 +2136,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                 items {
                                     id
                                     displaySequence
+                                    preSelectedQuantity
                                     modifier {
                                         id
                                         name
@@ -1940,6 +2173,8 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                 region
                                                 identityPoolId
                                             }
+                                            backgroundColor
+                                            borderColor
                                             categories {
                                                 items {
                                                     category {
@@ -1989,6 +2224,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                 items {
                                                     id
                                                     displaySequence
+                                                    hideForCustomer
                                                     modifierGroup {
                                                         id
                                                         name
@@ -2002,6 +2238,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                             items {
                                                                 id
                                                                 displaySequence
+                                                                preSelectedQuantity
                                                                 modifier {
                                                                     id
                                                                     name
@@ -2035,6 +2272,15 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                     }
                 }
             }
+        }
+    }
+`;
+
+export const GET_ORDER = gql`
+    ${ORDER_FIELDS_FRAGMENT}
+    query getOrderById($id: ID!) {
+        getOrder(id: $id) {
+            ...OrderFieldsFragment
         }
     }
 `;
@@ -2080,6 +2326,49 @@ export const GET_RESTAURANT_PING_DATA = gql`
     }
 `;
 
+export const GET_FLOOR_PLAN = gql`
+    query GetFloorPlan($restaurantId: ID!) {
+        listTablePlansByRestaurantId(restaurantId: $restaurantId, limit: 100) {
+            items {
+                id
+                restaurantId
+                nodes {
+                    id
+                    type
+                    x
+                    y
+                    width
+                    height
+                    rotation
+                    number
+                    seats
+                    sectionId
+                    status
+                    locked
+                    zIndex
+                    floorStyle
+                }
+                sections {
+                    id
+                    name
+                    hidden
+                }
+                createdAt
+                updatedAt
+            }
+        }
+    }
+`;
+
+export interface IGET_FLOOR_PLAN {
+    id: string;
+    restaurantId: string;
+    nodes: ITableNodesAttributes[];
+    sections: ISection[];
+    createdAt?: string | null;
+    updatedAt?: string | null;
+}
+
 export interface IGET_RESTAURANT_PING_DATA {
     id: string;
     preparationTimeInMinutes: number | null;
@@ -2098,6 +2387,66 @@ export interface IGET_FEEDBACK_BY_RESTAURANT_COMMENT {
     rating: number;
     orderId: string;
 }
+
+export const UPDATE_RESTAURANT_PREPARATION_TIME = gql`
+    mutation UpdateRestaurant($id: ID!, $preparationTimeInMinutes: Int, $delayBetweenOrdersInSeconds: Int) {
+        updateRestaurant(
+            input: { id: $id, preparationTimeInMinutes: $preparationTimeInMinutes, delayBetweenOrdersInSeconds: $delayBetweenOrdersInSeconds }
+        ) {
+            id
+            preparationTimeInMinutes
+            delayBetweenOrdersInSeconds
+        }
+    }
+`;
+
+export enum EReservationStatus {
+    PENDING = "PENDING",
+    CONFIRMED = "CONFIRMED",
+    SEATED = "SEATED",
+    COMPLETED = "COMPLETED",
+    CANCELLED = "CANCELLED",
+    NO_SHOW = "NO_SHOW",
+}
+
+export interface IGET_RESERVATION {
+    id: string;
+    restaurantId: string;
+    date: string;
+    time: string;
+    covers: number;
+    status: EReservationStatus;
+    customerName: string;
+    customerEmail: string | null;
+    customerPhone: string | null;
+    notes: string | null;
+    tableNumber: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+// Slim interface used only for the floor plan overlay (avoids over-fetching).
+export interface IGET_RESERVATION_FOR_TABLE {
+    id: string;
+    tableNumber: string | null;
+    status: string;
+    date: string;
+}
+
+// Slim query for floor plan overlay — only fetches the fields needed to derive reserved table status.
+export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE = gql`
+    query GetReservationsByRestaurantByDate($restaurantId: ID!, $date: ModelStringKeyConditionInput, $limit: Int) {
+        getReservationsByRestaurantByDate(restaurantId: $restaurantId, date: $date, limit: $limit) {
+            items {
+                id
+                tableNumber
+                status
+                date
+            }
+            nextToken
+        }
+    }
+`;
 
 export const GET_LOYALTY_USER_BY_PHONE_NUMBER = gql`
     query GetLoyaltyUserByPhoneNumber($phoneNumber: String!) {
@@ -2149,6 +2498,30 @@ export const GET_LOYALTY_USER_BY_EMAIL = gql`
     }
 `;
 
+// Full query used by the reservations management page.
+export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE_FULL = gql`
+    query GetReservationsByRestaurantByDateFull($restaurantId: ID!, $date: ModelStringKeyConditionInput, $limit: Int, $nextToken: String) {
+        getReservationsByRestaurantByDate(restaurantId: $restaurantId, date: $date, limit: $limit, nextToken: $nextToken) {
+            items {
+                id
+                restaurantId
+                date
+                time
+                covers
+                status
+                customerName
+                customerEmail
+                customerPhone
+                notes
+                tableNumber
+                createdAt
+                updatedAt
+            }
+            nextToken
+        }
+    }
+`;
+
 export interface IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL {
     id: string;
     firstName: string;
@@ -2166,17 +2539,58 @@ export interface IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL {
     };
 }
 
-export const GET_LOYALTIES_BY_GROUP_ID = gql`
-    query GetLoyaltiesByGroupId($loyaltyGroupId: String!) {
-        getLoyaltiesByGroupId(loyaltyGroupId: $loyaltyGroupId, limit: 10000) {
+export const GET_CASHUP_SESSIONS_BY_SCOPE_KEY_BY_OPENED_AT = gql`
+    query GetCashupSessionsByScopeKeyByOpenedAt($scopeKey: String!, $openedAt: ModelStringKeyConditionInput, $limit: Int, $nextToken: String) {
+        getCashupSessionsByScopeKeyByOpenedAt(
+            scopeKey: $scopeKey
+            openedAt: $openedAt
+            sortDirection: DESC
+            limit: $limit
+            nextToken: $nextToken
+        ) {
             items {
                 id
+                cashupRestaurantId
+                cashupSessionDate
+                scopeType
+                scopeKey
+                status
+                openedAt
+                finalisedAt
+                finalisedUserId
+                finalisedByName
+                openingFloat
+                recordedTotal
+                countedTotal
+                paymentSummary
+                varianceReason
+                owner
             }
             nextToken
         }
     }
 `;
 
-export interface IGET_LOYALTIES_BY_GROUP_ID_ITEM {
-    id: string;
-}
+export const GET_MONEY_MOVEMENTS_BY_SCOPE_KEY_BY_RECORDED_AT = gql`
+    query GetMoneyMovementsByScopeKeyByRecordedAt($scopeKey: String!, $recordedAt: ModelStringKeyConditionInput, $limit: Int, $nextToken: String) {
+        getMoneyMovementsByScopeKeyByRecordedAt(scopeKey: $scopeKey, recordedAt: $recordedAt, limit: $limit, nextToken: $nextToken) {
+            items {
+                id
+                moneyMovementRestaurantId
+                moneyMovementRegisterId
+                cashupSessionId
+                scopeKey
+                moneyMovementDate
+                recordedAt
+                type
+                paymentMethod
+                amount
+                reason
+                createdUserId
+                createdByName
+                owner
+            }
+            nextToken
+        }
+    }
+`;

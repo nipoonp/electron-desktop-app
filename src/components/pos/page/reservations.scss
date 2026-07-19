@@ -1,0 +1,357 @@
+// ─── Page container ───────────────────────────────────────────────────────────
+
+.res-container {
+    padding: 24px;
+    overflow: auto;
+    max-width: 960px;
+}
+
+// ─── Header ──────────────────────────────────────────────────────────────────
+
+.res-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid #dddddd;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    color: #555;
+    white-space: nowrap;
+
+    &:hover {
+        background: #f5f5f5;
+    }
+}
+
+.res-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    @media screen and (max-width: 768px) {
+        flex-wrap: wrap;
+    }
+
+    .res-header-title {
+        flex: 1;
+    }
+}
+
+// ─── Stats bar ────────────────────────────────────────────────────────────────
+
+.res-stats {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.res-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 20px;
+    border: 1px solid #eeeeee;
+    border-radius: 10px;
+    min-width: 80px;
+
+    .res-stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #222;
+        line-height: 1.2;
+    }
+
+    .res-stat-label {
+        font-size: 12px;
+        color: #888;
+        margin-top: 2px;
+    }
+}
+
+// ─── Status filter tabs ───────────────────────────────────────────────────────
+
+.res-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+
+    .tab {
+        padding: 6px 14px;
+        border-radius: 20px;
+        border: 1px solid #dddddd;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        color: #555;
+        background: white;
+        transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+        &:hover {
+            background: #f5f5f5;
+        }
+
+        &.selected {
+            background: var(--primary-color, #333);
+            color: white;
+            border-color: var(--primary-color, #333);
+        }
+    }
+}
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
+
+.res-empty {
+    padding: 48px 0;
+    text-align: center;
+    color: #aaa;
+    font-size: 15px;
+}
+
+// ─── Timeline ─────────────────────────────────────────────────────────────────
+
+.res-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.res-slot {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+
+    @media screen and (max-width: 640px) {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+.res-slot-time {
+    font-size: 14px;
+    font-weight: 700;
+    color: #555;
+    min-width: 72px;
+    padding-top: 14px;
+
+    @media screen and (max-width: 640px) {
+        padding-top: 0;
+        padding-bottom: 4px;
+        border-bottom: 1px solid #eee;
+        width: 100%;
+    }
+}
+
+.res-slot-cards {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+// ─── Reservation card ─────────────────────────────────────────────────────────
+
+.res-card {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 16px;
+    border: 1px solid #eeeeee;
+    border-radius: 10px;
+    background: white;
+    border-left-width: 4px;
+
+    @media screen and (max-width: 640px) {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    &--pending {
+        border-left-color: #f59e0b;
+    }
+
+    &--confirmed {
+        border-left-color: #3b82f6;
+    }
+
+    &--seated {
+        border-left-color: #8b5cf6;
+    }
+
+    &--completed {
+        border-left-color: #10b981;
+        opacity: 0.7;
+    }
+
+    &--cancelled {
+        border-left-color: #9ca3af;
+        opacity: 0.6;
+    }
+
+    &--no_show {
+        border-left-color: #ef4444;
+        opacity: 0.6;
+    }
+}
+
+.res-card-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.res-card-name {
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.res-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    font-size: 13px;
+    color: #666;
+}
+
+.res-card-dot {
+    color: #ccc;
+}
+
+.res-card-notes {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #999;
+    font-style: italic;
+}
+
+.res-card-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+
+    @media screen and (max-width: 640px) {
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+}
+
+.res-card-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+// ─── Status badge ─────────────────────────────────────────────────────────────
+
+.res-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    &--pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    &--confirmed {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    &--seated {
+        background: #ede9fe;
+        color: #5b21b6;
+    }
+
+    &--completed {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    &--cancelled {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    &--no_show {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+}
+
+// ─── Card action buttons ──────────────────────────────────────────────────────
+
+.res-action-btn {
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: opacity 0.15s;
+
+    &:hover {
+        opacity: 0.8;
+    }
+
+    &--primary {
+        background: var(--primary-color, #333);
+        color: white;
+    }
+
+    &--danger {
+        background: #fee2e2;
+        color: #991b1b;
+        border-color: #fecaca;
+    }
+
+    &--neutral {
+        background: #f3f4f6;
+        color: #374151;
+        border-color: #e5e7eb;
+    }
+}
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
+
+.res-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+
+    @media screen and (max-width: 480px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.res-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+}
+
+.res-cancel-btn {
+    background: none;
+    border: 1px solid #dddddd;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 14px;
+    cursor: pointer;
+    color: #555;
+
+    &:hover {
+        background: #f5f5f5;
+    }
+}

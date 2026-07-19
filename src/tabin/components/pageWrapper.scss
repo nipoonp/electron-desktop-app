@@ -1,0 +1,53 @@
+.new-online-orders-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.new-online-orders-list,
+.new-online-orders-single {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.online-order-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #f7f7f7;
+    padding: 16px;
+}
+
+.online-order-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.online-order-card-schedule {
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.online-order-card-schedule-time {
+    font-size: 20px;
+}
+
+.online-order-card-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+}
+
+.online-order-card-meta-item {
+    min-width: 0;
+}
+
+.new-online-orders-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+}

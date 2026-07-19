@@ -8,7 +8,7 @@ export const ModalV2 = (
         padding?: string;
         disableClose?: boolean;
         children: React.ReactNode;
-    }
+    },
 ) => {
     return (
         <>
@@ -35,7 +35,7 @@ export const ModalV2 = (
                         backgroundColor: "rgb(255, 255, 255)",
                         overflow: "auto",
                         borderRadius: "10px",
-                        padding: props.padding || "0",
+                        padding: props.padding || "24px",
                         margin: "40px",
                         inset: "auto",
                         width: props.width || "450px",

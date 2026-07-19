@@ -1,0 +1,19 @@
+.discount-field-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    .discount-field-type {
+        height: 50px;
+        min-width: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+
+        &.selected {
+            background-color: var(--primary-color);
+            color: #ffffff;
+        }
+    }
+}

@@ -10,13 +10,20 @@ import {
     printKitchenReceiptSmall,
     printKitchenReceiptLarge,
     printEftposReceipt,
+    printNoSaleDataReceipt,
+    printCashUpDataReceipt,
 } from "./util";
 import {
     IEftposReceipt,
     IEftposReceiptOutput,
     IOrderReceipt,
+    IPrintNoSaleDataOutput,
+    IPrintNoSaleOutput,
+    IPrintNoSaleReceiptDataInput,
     IPrintReceiptDataOutput,
     IPrintReceiptOutput,
+    IPrintCashUpDataInput,
+    IPrintCashUpDataOutput,
     IPrintSalesDataInput,
     IPrintSalesDataOutput,
 } from "./model";
@@ -278,7 +285,7 @@ ipcMain.on("OPEN_CUSTOMER_DISPLAY", (event) => {
         });
     }
 
-    customerDisplayWindow.loadFile(path.join(__dirname, "../build/index.html"));
+    customerDisplayWindow.loadFile(path.join(__dirname, "../build/index.html"), { hash: "/customer_display" });
 
     customerDisplayWindow.on("closed", () => {
         customerDisplayWindow = null;
@@ -374,6 +381,33 @@ ipcMain.handle("RECEIPT_SALES_DATA", async (event: any, printSalesDataInput: IPr
     }
 });
 
+ipcMain.handle("RECEIPT_CASH_UP_DATA", async (event: any, printCashUpDataInput: IPrintCashUpDataInput): Promise<IPrintCashUpDataOutput> => {
+    try {
+        const result: IPrintReceiptOutput = await printCashUpDataReceipt(printCashUpDataInput);
+
+        if (result.error) return { error: result.error, printCashUpDataInput: printCashUpDataInput };
+
+        return { error: null, printCashUpDataInput: printCashUpDataInput };
+    } catch (e) {
+        return { error: e, printCashUpDataInput: printCashUpDataInput };
+    }
+});
+
+ipcMain.handle(
+    "RECEIPT_NO_SALE_DATA",
+    async (event: any, printNoSaleSalesDataInput: IPrintNoSaleReceiptDataInput): Promise<IPrintNoSaleDataOutput> => {
+        try {
+            const result: IPrintNoSaleOutput = await printNoSaleDataReceipt(printNoSaleSalesDataInput);
+
+            if (result.error) return { error: result.error };
+
+            return { error: null };
+        } catch (e) {
+            return { error: e };
+        }
+    }
+);
+
 ipcMain.on("SENTRY_CURRENT_USER", (event: any, data: any) => {
     Sentry.setUser({ email: `${data.email} ${data.register}` });
 });
@@ -409,4 +443,10 @@ verifoneClient.on("error", (error: Error) => {
 
 verifoneClient.on("close", (had_error: boolean) => {
     mainWindow.webContents.send("EFTPOS_CLOSE", "Connection with Verifone Eftpos ended!");
+});
+
+ipcMain.on("SEND_CUSTOMER_DISPLAY_DATA", (event, customerDisplayData) => {
+    if (customerDisplayWindow && customerDisplayWindow.webContents) {
+        customerDisplayWindow.webContents.send("RECEIVE_CUSTOMER_DISPLAY_DATA", customerDisplayData);
+    }
 });

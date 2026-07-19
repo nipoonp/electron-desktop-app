@@ -10,7 +10,9 @@ import {
     IGET_USER_RESTAURANT,
 } from "../graphql/customQueries";
 import { useGetRestaurantQuery } from "../hooks/useGetRestaurantQuery";
+import { LoyaltyUserAggregate } from "../model/model";
 import { getCloudFrontDomainName } from "../private/aws-custom";
+import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
 import { getBase64FromUrlImage, getThemePreviewRestaurantId } from "../util/util";
 
 interface IMENU_CATEGORIES {
@@ -42,6 +44,10 @@ type ContextProps = {
     menuModifiers: IMENU_MODIFIERS;
     isLoading: boolean;
     isError: boolean;
+    loyaltyUserAggregates: LoyaltyUserAggregate[] | null;
+    setLoyaltyUserAggregates: React.Dispatch<React.SetStateAction<LoyaltyUserAggregate[] | null>>;
+    loyaltyUserAggregatesFetchedDate: string | null;
+    setLoyaltyUserAggregatesFetchedDate: React.Dispatch<React.SetStateAction<string | null>>;
 };
 
 const RestaurantContext = createContext<ContextProps>({
@@ -57,6 +63,10 @@ const RestaurantContext = createContext<ContextProps>({
     menuModifiers: {},
     isLoading: true,
     isError: false,
+    loyaltyUserAggregates: null,
+    setLoyaltyUserAggregates: () => {},
+    loyaltyUserAggregatesFetchedDate: null,
+    setLoyaltyUserAggregatesFetchedDate: () => {},
 });
 
 const C = (props: {
@@ -73,8 +83,16 @@ const C = (props: {
     const [menuModifiers, setMenuModifiers] = useState<IMENU_MODIFIERS>({});
     const [restaurantLoading, setRestaurantLoading] = useState<boolean>(false);
     const [restaurantError, setRestaurantError] = useState<boolean>(false);
+    const [loyaltyUserAggregates, setLoyaltyUserAggregates] = useState<LoyaltyUserAggregate[] | null>(null);
+    const [loyaltyUserAggregatesFetchedDate, setLoyaltyUserAggregatesFetchedDate] = useState<string | null>(null);
     const { data: getRestaurantData, error: getRestaurantError, loading: getRestaurantLoading } = useGetRestaurantQuery(props.restaurantId);
     const restaurantProductImages = {};
+
+    //Clear cached loyalty users when the restaurant changes.
+    useEffect(() => {
+        setLoyaltyUserAggregates(null);
+        setLoyaltyUserAggregatesFetchedDate(null);
+    }, [props.restaurantId]);
 
     useEffect(() => {
         setRestaurant(getRestaurantData);
@@ -155,6 +173,10 @@ const C = (props: {
                 menuModifiers: menuModifiers,
                 isLoading: restaurantLoading,
                 isError: restaurantError,
+                loyaltyUserAggregates: loyaltyUserAggregates,
+                setLoyaltyUserAggregates: setLoyaltyUserAggregates,
+                loyaltyUserAggregatesFetchedDate: loyaltyUserAggregatesFetchedDate,
+                setLoyaltyUserAggregatesFetchedDate: setLoyaltyUserAggregatesFetchedDate,
             }}
             children={
                 <>
@@ -238,6 +260,10 @@ const RestaurantProvider = (props: { children: React.ReactNode }) => {
                     menuModifiers: {},
                     isLoading: false,
                     isError: false,
+                    loyaltyUserAggregates: null,
+                    setLoyaltyUserAggregates: () => {},
+                    loyaltyUserAggregatesFetchedDate: null,
+                    setLoyaltyUserAggregatesFetchedDate: () => {},
                 }}
                 children={props.children}
             />

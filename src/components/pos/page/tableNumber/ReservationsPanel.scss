@@ -1,0 +1,247 @@
+// ─── Panel container ──────────────────────────────────────────────────────────
+
+.res-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+// ─── Header ──────────────────────────────────────────────────────────────────
+
+.res-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+
+    .res-panel-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #212529;
+    }
+
+    .res-panel-close {
+        cursor: pointer;
+        color: #adb5bd;
+
+        &:hover {
+            color: #495057;
+        }
+    }
+}
+
+// ─── Date + stats ────────────────────────────────────────────────────────────
+
+.res-panel-date-row {
+    margin-bottom: 12px;
+}
+
+.res-panel-stats {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #868e96;
+    margin-bottom: 12px;
+}
+
+// ─── Highlighted table callout ────────────────────────────────────────────────
+
+.res-panel-highlight-bar {
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #d0ebff;
+    border: 1px solid #74c0fc;
+    color: #1c7ed6;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+// ─── List ─────────────────────────────────────────────────────────────────────
+
+.res-panel-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.res-panel-empty {
+    padding: 32px 0;
+    text-align: center;
+    color: #868e96;
+    font-size: 13px;
+}
+
+// ─── Footer ──────────────────────────────────────────────────────────────────
+
+.res-panel-footer {
+    padding-top: 16px;
+    border-top: 1px solid #e9ecef;
+    margin-top: 12px;
+}
+
+// ─── Reservation card ─────────────────────────────────────────────────────────
+
+.res-panel-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    &--highlighted {
+        background: #e7f5ff;
+        border-color: #74c0fc;
+    }
+
+    &--completed,
+    &--cancelled,
+    &--no_show {
+        opacity: 0.65;
+    }
+}
+
+.res-panel-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.res-panel-card-time {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #868e96;
+}
+
+.res-panel-card-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #212529;
+}
+
+.res-panel-card-meta {
+    font-size: 12px;
+    color: #868e96;
+}
+
+.res-panel-card-notes {
+    font-size: 11px;
+    color: #adb5bd;
+    font-style: italic;
+}
+
+.res-panel-card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-top: 4px;
+    border-top: 1px solid #e9ecef;
+    margin-top: 2px;
+}
+
+// ─── Status badge — matches project's status-pill pattern ─────────────────────
+
+.res-panel-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    white-space: nowrap;
+
+    &--pending {
+        background: #ffd8a8;
+        border-color: #e8590c;
+        color: #d9480f;
+    }
+
+    &--confirmed {
+        background: #d0ebff;
+        border-color: #228be6;
+        color: #1c7ed6;
+    }
+
+    &--seated {
+        background: #fff3bf;
+        border-color: #f59f00;
+        color: #e67700;
+    }
+
+    &--completed {
+        background: #ebfbee;
+        border-color: #2f9e44;
+        color: #2f9e44;
+    }
+
+    &--cancelled {
+        background: #f8f9fa;
+        border-color: #ced4da;
+        color: #868e96;
+    }
+
+    &--no_show {
+        background: #fff5f5;
+        border-color: #ffa8a8;
+        color: #c92a2a;
+    }
+}
+
+// ─── Action buttons — identical to .status-action in tableNumber.scss ────────
+
+.res-panel-action-btn {
+    border: 1px solid #dee2e6;
+    background: #fff;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+        border-color: #a5d8ff;
+        color: #1c7ed6;
+        background: #e7f5ff;
+    }
+}
+
+// ─── Modal overlay — must be above the floor-plan z-index: 1000 ──────────────
+
+.res-panel-modal-overlay {
+    z-index: 2200 !important;
+}
+
+// ─── Add / Edit modal content ─────────────────────────────────────────────────
+
+.res-reservation-modal {
+    .modal-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-start;
+
+        button {
+            min-width: 100px;
+
+            &.secondary {
+                background-color: #f1f3f5;
+                color: #495057;
+
+                &:hover {
+                    background-color: #e9ecef;
+                }
+            }
+        }
+    }
+}

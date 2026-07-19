@@ -33,3 +33,15 @@ export const getGetLoyaltyPointsEndpoint = () => {
 
     return endpoints[env];
 };
+
+export const getCreateMergedOrderEndpoint = () => {
+    const endpoints = {
+        dev: "https://gaij0oobvc.execute-api.ap-southeast-2.amazonaws.com/dev/merge-order",
+        test: "",
+        prod: "https://redxcueb0i.execute-api.ap-southeast-2.amazonaws.com/prod/merge-order",
+    };
+    const envStart = awsconfig.aws_user_files_s3_bucket.lastIndexOf("-");
+    const env = awsconfig.aws_user_files_s3_bucket.slice(envStart + 1);
+
+    return endpoints[env];
+};

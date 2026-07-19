@@ -1,0 +1,2551 @@
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Logger } from "aws-amplify";
+import { useCart } from "../../../context/cart-context";
+import { useNavigate } from "react-router-dom";
+import {
+    calculateTaxAmount,
+    convertBase64ToFile,
+    convertCentsToDollars,
+    convertProductTypesForPrint,
+    filterPrintProducts,
+    getCartProductUnitTotalPrice,
+    getOrderLineSignature,
+    getOrderNumber,
+    isItemSoldOut,
+    isProductQuantityAvailable,
+    printedQuantitiesListToMap,
+    printedQuantitiesToList,
+    toLocalISOString,
+} from "../../../util/util";
+import { useLazyQuery, useMutation } from "@apollo/client";
+import { CREATE_ORDER, UPDATE_ORDER, UPDATE_ORDER_PRINTED_QUANTITIES } from "../../../graphql/customMutations";
+import { FiArrowDownCircle } from "react-icons/fi";
+import {
+    GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT,
+    GET_ORDER,
+    IGET_RESTAURANT_CATEGORY,
+    IGET_RESTAURANT_PRODUCT,
+    EPromotionType,
+    IS3Object,
+    IGET_THIRD_PARTY_ORDER_RESPONSE,
+    IGET_RESTAURANT_REGISTER_PRINTER,
+    EOrderStatus,
+    IGET_RESTAURANT_AVAILABILITY_RESTAURANT,
+    IGET_RESTAURANT_AVAILABILITY_MODIFIER,
+    IGET_RESTAURANT_AVAILABILITY_PRODUCT,
+    IGET_RESTAURANT_AVAILABILITY_CATEGORY,
+} from "../../../graphql/customQueries";
+import {
+    restaurantPath,
+    beginOrderPath,
+    tableNumberPath,
+    orderTypePath,
+    buzzerNumberPath,
+    paymentMethodPath,
+    customerInformationPath,
+    dashboardPath,
+    ordersPath,
+    checkoutPath,
+} from "../../main";
+import { ShoppingBasketIcon } from "../../../tabin/components/icons/shoppingBasketIcon";
+import { ProductModal } from "../modals/product";
+import {
+    ICartProduct,
+    IPreSelectedModifiers,
+    IMatchingUpSellCrossSellProductItem,
+    IMatchingUpSellCrossSellCategoryItem,
+    EEftposTransactionOutcome,
+    IEftposTransactionOutcome,
+    EPaymentModalState,
+    EEftposProvider,
+    ICartPaymentAmounts,
+    ICartPayment,
+    EReceiptPrinterPrinterType,
+    EPaymentMethod,
+    EVerifoneTransactionOutcome,
+    ERegisterType,
+    EEftposTransactionOutcomeCardType,
+    EOrderType,
+    ITyroEftposQuestion,
+    IMX51EftposQuestion,
+} from "../../../model/model";
+import { useUser } from "../../../context/user-context";
+import { PageWrapper } from "../../../tabin/components/pageWrapper";
+import { useSmartpay } from "../../../context/smartpay-context";
+import { Button } from "../../../tabin/components/button";
+import { toast } from "../../../tabin/components/toast";
+import { ItemAddedUpdatedModal } from "../../modals/itemAddedUpdatedModal";
+import { useVerifone } from "../../../context/verifone-context";
+import { useRegister } from "../../../context/register-context";
+import { useReceiptPrinter } from "../../../context/receiptPrinter-context";
+import { getPublicCloudFrontDomainName } from "../../../private/aws-custom";
+import { useRestaurant } from "../../../context/restaurant-context";
+import { usePosUser } from "../../../context/pos-user-context";
+import { UpSellProductModal } from "../modals/upSellProduct";
+import { Link } from "../../../tabin/components/link";
+import { TextArea } from "../../../tabin/components/textArea";
+import { useWindcave } from "../../../context/windcave-context";
+import { CachedImage } from "../../../tabin/components/cachedImage";
+import { UpSellCategoryModal } from "../../modals/upSellCategory";
+import { useErrorLogging } from "../../../context/errorLogging-context";
+import { PromotionCodeModal } from "../modals/promotionCodeModal";
+import { OrderThresholdMessageModal } from "../../modals/orderThresholdMessageModal";
+import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../../graphql/customFragments";
+import { OrderSummary } from "./checkout/orderSummary";
+import { PaymentModal } from "../modals/paymentModal";
+import { useAlert } from "../../../tabin/components/alert";
+import { useParams } from "react-router-dom";
+import { format } from "date-fns";
+import { simpleDateTimeFormatUTC } from "../../../util/dateFormat";
+import { Storage } from "aws-amplify";
+import awsconfig from "../../../aws-exports";
+import { OrderScheduleDateTime } from "../../../tabin/components/orderScheduleDateTime";
+import { useGetThirdPartyOrderResponseLazyQuery } from "../../../hooks/useGetThirdPartyOrderResponseLazyQuery";
+import { IGET_RESTAURANT_AVAILABILITY } from "../../../graphql/customQueries";
+import { useGetRestaurantAvailabilityLazyQuery } from "../../../hooks/useGetRestaurantAvailabilityLazyQuery";
+
+import "./checkout.scss";
+import axios from "axios";
+import { R18MessageModal } from "../modals/r18MessageModal";
+import { useTyro } from "../../../context/tyro-context";
+import { useMX51 } from "../../../context/mx51-context";
+import { DiscountModal } from "../modals/discountModal";
+import { TbFlag2Filled } from "react-icons/tb";
+import { TbHexagon4Filled } from "react-icons/tb";
+import { MdAccountCircle, MdDiscount, MdFeaturedPlayList, MdSettings } from "react-icons/md";
+import { TiCancel } from "react-icons/ti";
+import { HiCurrencyDollar } from "react-icons/hi2";
+import { RiTimer2Fill } from "react-icons/ri";
+import { FaCashRegister } from "react-icons/fa";
+import { FaRectangleList } from "react-icons/fa6";
+import { FullScreenSpinner } from "../../../tabin/components/fullScreenSpinner";
+
+const logger = new Logger("checkout");
+
+type AvailabilityCheckResult = {
+    soldOutItems: string[];
+    productsToRemove: number[];
+    productsToUpdate: { index: number; product: ICartProduct }[];
+};
+
+type AvailabilityModifierGroupIndex = {
+    modifiersById: Map<string, IGET_RESTAURANT_AVAILABILITY_MODIFIER>;
+};
+
+type AvailabilityProductIndex = {
+    product: IGET_RESTAURANT_AVAILABILITY_PRODUCT;
+    modifierGroupsById: Map<string, AvailabilityModifierGroupIndex>;
+};
+
+type AvailabilityCategoryIndex = {
+    category: IGET_RESTAURANT_AVAILABILITY_CATEGORY;
+    productsById: Map<string, AvailabilityProductIndex>;
+};
+
+// Builds a lineKey -> quantity map from order products.
+export const getProductQuantities = (products: IGET_RESTAURANT_ORDER_FRAGMENT["products"]) =>
+    (products || []).reduce(
+        (productQuantities, product) => {
+            const key = getOrderLineSignature(product);
+            productQuantities[key] = (productQuantities[key] || 0) + product.quantity;
+
+            return productQuantities;
+        },
+        {} as Record<string, number>,
+    );
+
+// Merges product quantities into a target map using add or max strategy.
+export const mergeProductQuantities = (target: Record<string, number>, source: Record<string, number>, strategy: "add" | "max") => {
+    Object.entries(source).forEach(([productId, quantity]) => {
+        target[productId] = strategy === "add" ? (target[productId] || 0) + quantity : Math.max(target[productId] || 0, quantity);
+    });
+};
+
+// Returns only quantities that have not been sent to kitchen yet.
+export const getUnprintedParkedOrderProducts = (order: IGET_RESTAURANT_ORDER_FRAGMENT, printedProductQuantities: Record<string, number>) => {
+    const remainingPrintedProductQuantities = { ...printedProductQuantities };
+
+    return order.products.reduce(
+        (productsToPrint, product) => {
+            const key = getOrderLineSignature(product);
+            const printedQuantity = remainingPrintedProductQuantities[key] || 0;
+            const quantityToPrint = Math.max(product.quantity - printedQuantity, 0);
+
+            remainingPrintedProductQuantities[key] = Math.max(printedQuantity - product.quantity, 0);
+
+            if (quantityToPrint > 0) productsToPrint.push({ ...product, quantity: quantityToPrint });
+
+            return productsToPrint;
+        },
+        [] as IGET_RESTAURANT_ORDER_FRAGMENT["products"],
+    );
+};
+
+// Component
+export const Checkout = () => {
+    // context
+    const navigate = useNavigate();
+    const { autoClickCompleteOrderOnLoad } = useParams();
+    const { showAlert } = useAlert();
+    const {
+        parkedOrderId,
+        parkedOrderNumber,
+        parkedOrderStatus,
+        setParkedOrderId,
+        setParkedOrderNumber,
+        setParkedOrderStatus,
+        orderType,
+        setOrderType,
+        products,
+        setProducts,
+        notes,
+        buzzerNumber,
+        customerInformation,
+        paymentMethod,
+        setPaymentMethod,
+        setCovers,
+        setTableNumber,
+        setBuzzerNumber,
+        setCustomerInformation,
+        setOnAccountOrders,
+        setCustomerLoyaltyPoints,
+        setNotes,
+        covers,
+        tableNumber,
+        clearCart,
+        promotion,
+        total,
+        staticDiscount,
+        setStaticDiscount,
+        percentageDiscount,
+        setPercentageDiscount,
+        surcharge,
+        subTotal,
+        paidSoFar,
+        orderTypeSurcharge,
+        paymentAmounts,
+        setPaymentAmounts,
+        payments,
+        setPayments,
+        updateProduct,
+        updateProductQuantity,
+        applyProductDiscount,
+        deleteProduct,
+        addProduct,
+        userAppliedPromotionCode,
+        removeUserAppliedPromotion,
+        userAppliedLoyaltyId,
+        setUserAppliedLoyaltyId,
+        isShownUpSellCrossSellModal,
+        setIsShownUpSellCrossSellModal,
+        isShownOrderThresholdMessageModal,
+        setIsShownOrderThresholdMessageModal,
+        orderScheduledAt,
+        updateOrderScheduledAt,
+        orderDetail,
+        updateOrderDetail,
+        printedProductQuantities,
+        setPrintedProductQuantities,
+        setPaidItemCounts,
+        setSplitPaymentByPeople,
+    } = useCart();
+    const { restaurant, restaurantBase64Logo } = useRestaurant();
+    const { register, isPOS, isEftposMerchantNameLocked, lockEftposMerchantName } = useRegister();
+    const { printReceipt, printEftposReceipt, printLabel, printNoSaleReceipt } = useReceiptPrinter();
+    const { user } = useUser();
+    const { selectedPosUser } = usePosUser();
+    const { logError } = useErrorLogging();
+    const effectiveOrderUserId = selectedPosUser?.userId || user?.id;
+
+    const transactionEftposReceipts = useRef<string>("");
+
+    const { createTransaction: smartpayCreateTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
+    const { createTransaction: verifoneCreateTransaction } = useVerifone();
+    const { createTransaction: windcaveCreateTransaction } = useWindcave();
+    const { createTransaction: tyroCreateTransaction, cancelTransaction: tyroCancelTransaction } = useTyro();
+    const { createTransaction: mx51CreateTransaction, cancelTransaction: mx51CancelTransaction } = useMX51();
+    const [isScrollable, setIsScrollable] = useState(false);
+    const [createOrderMutation] = useMutation(CREATE_ORDER, {
+        update: (proxy, mutationResult) => {
+            logger.debug("create order mutation result: ", mutationResult);
+        },
+    });
+
+    const [updateOrderMutation] = useMutation(UPDATE_ORDER, {
+        update: (proxy, mutationResult) => {
+            logger.debug("update order mutation result: ", mutationResult);
+        },
+    });
+    const [updateOrderPrintedQuantitiesMutation] = useMutation(UPDATE_ORDER_PRINTED_QUANTITIES);
+    const [getOrder] = useLazyQuery(GET_ORDER, { fetchPolicy: "network-only" });
+    const { getRestaurantDataAvailability } = useGetRestaurantAvailabilityLazyQuery();
+
+    const { getThirdPartyOrderResponse } = useGetThirdPartyOrderResponseLazyQuery();
+
+    // state
+    const [selectedCategoryForProductModal, setSelectedCategoryForProductModal] = useState<IGET_RESTAURANT_CATEGORY | null>(null);
+    const [selectedProductForProductModal, setSelectedProductForProductModal] = useState<IGET_RESTAURANT_PRODUCT | null>(null);
+    const [productToEdit, setProductToEdit] = useState<{
+        product: ICartProduct;
+        displayOrder: number;
+    } | null>(null);
+    const [showProductModal, setShowProductModal] = useState(false);
+    const [showEditProductModal, setShowEditProductModal] = useState(false);
+    const [showItemUpdatedModal, setShowItemUpdatedModal] = useState(false);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+    const [paymentModalState, setPaymentModalState] = useState<EPaymentModalState>(EPaymentModalState.None);
+
+    const [eftposTransactionProcessMessage, setEftposTransactionProcessMessage] = useState<string | null>(null);
+    const [eftposTransactionProcessQuestion, setEftposTransactionProcessQuestion] = useState<ITyroEftposQuestion | null>(null);
+    const [eftposSignatureRequiredQuestion, setEftposSignatureRequiredQuestion] = useState<IMX51EftposQuestion | null>(null);
+    const [eftposTransactionOutcome, setEftposTransactionOutcome] = useState<IEftposTransactionOutcome | null>(null);
+    const [cashTransactionChangeAmount, setCashTransactionChangeAmount] = useState<number | null>(null);
+
+    const createdOrder = useRef<IGET_RESTAURANT_ORDER_FRAGMENT | undefined>();
+
+    const [createOrderError, setCreateOrderError] = useState<string | null>(null);
+    const [paymentOutcomeOrderNumber, setPaymentOutcomeOrderNumber] = useState<string | null>(null);
+    const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(restaurant?.delayBetweenOrdersInSeconds || 10);
+    let transactionCompleteRedirectTime = restaurant?.delayBetweenOrdersInSeconds || 10;
+
+    const [showPromotionCodeModal, setShowPromotionCodeModal] = useState(false);
+    const [showUpSellCategoryModal, setShowUpSellCategoryModal] = useState(false);
+    const [showUpSellProductModal, setShowUpSellProductModal] = useState(false);
+    const [showOrderThresholdMessageModal, setShowOrderThresholdMessageModal] = useState(false);
+    const [showDiscountModal, setShowDiscountModal] = useState(false);
+
+    const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
+    const [showModal, setShowModal] = useState<string>("");
+    const [showFullScreenSpinner, setShowFullScreenSpinner] = useState(false);
+    const [kitchenPrintTrackingVersion, setKitchenPrintTrackingVersion] = useState(0);
+
+    useEffect(() => {
+        const checkDivScrollable = () => {
+            const scrollableDiv = document.getElementById("productsWrapperScroll");
+            const arrowContainer = document.querySelector(".arrow-container");
+            const footer = document.getElementById("footer");
+            if (scrollableDiv) {
+                const isDivScrollable = scrollableDiv.scrollHeight + (footer?.scrollHeight || 0) > scrollableDiv.clientHeight;
+                setIsScrollable(isDivScrollable);
+                if (isDivScrollable) {
+                    arrowContainer?.classList.remove("fade-out");
+                    arrowContainer?.classList.add("fade-in");
+                } else {
+                    arrowContainer?.classList.remove("fade-in");
+                    arrowContainer?.classList.add("fade-out");
+                }
+            }
+        };
+
+        window.addEventListener("resize", checkDivScrollable);
+
+        checkDivScrollable();
+
+        return () => {
+            window.removeEventListener("resize", checkDivScrollable);
+        };
+    }, []);
+
+    const [productsWrapperElement, setProductsWrapperElement] = useState<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const scrollableDiv = document.getElementById("productsWrapperScroll");
+            const arrowContainer = document.querySelector(".arrow-container");
+
+            if (scrollableDiv) {
+                const isAtBottom = scrollableDiv.scrollTop + scrollableDiv.clientHeight === scrollableDiv.scrollHeight;
+
+                if (!isAtBottom) {
+                    arrowContainer?.classList.remove("fade-out");
+                    arrowContainer?.classList.add("fade-in");
+                } else {
+                    arrowContainer?.classList.remove("fade-in");
+                    arrowContainer?.classList.add("fade-out");
+                }
+            }
+        };
+
+        const productsWrapperScroll = document.getElementById("productsWrapperScroll");
+        if (productsWrapperScroll) {
+            productsWrapperScroll.addEventListener("scroll", handleScroll);
+            return () => {
+                productsWrapperScroll.removeEventListener("scroll", handleScroll);
+            };
+        }
+    }, [productsWrapperElement]);
+
+    useEffect(() => {
+        if (autoClickCompleteOrderOnLoad) onClickOrderButton();
+
+        const ageRestrictedProducts = products && products.filter((product) => product.isAgeRescricted).map((product) => product.name);
+
+        if (ageRestrictedProducts && ageRestrictedProducts.length > 0) {
+            setShowModal(ageRestrictedProducts.toString());
+        } else {
+            setShowModal("");
+        }
+    }, []);
+
+    useEffect(() => {
+        if (isShownUpSellCrossSellModal || isPOS) return;
+
+        setTimeout(() => {
+            setShowUpSellProductModal(true);
+            setIsShownUpSellCrossSellModal(true);
+        }, 1000);
+    }, []);
+
+    if (!register) throw "Register is not valid";
+    if (!restaurant) navigate(beginOrderPath);
+    if (!restaurant) throw "Restaurant is invalid";
+
+    const incrementRedirectTimer = (time: number) => {
+        setPaymentOutcomeApprovedRedirectTimeLeft(time);
+        transactionCompleteRedirectTime = time;
+        beginTransactionCompleteTimeout();
+    };
+
+    const onCancelOrder = () => {
+        const cancelOrder = () => {
+            clearCart();
+            navigate(beginOrderPath);
+        };
+
+        if (payments.length > 0) {
+            showAlert(
+                "Incomplete Payments",
+                "There have been partial payments made on this order. Are you sure you would like to cancel this order?",
+                null,
+                () => {
+                    cancelOrder();
+                },
+                "No",
+                "Yes",
+            );
+        } else {
+            cancelOrder();
+        }
+    };
+
+    const resetCurrentSale = () => {
+        const emptyPaymentAmounts: ICartPaymentAmounts = {
+            cash: 0,
+            eftpos: 0,
+            online: 0,
+            onAccount: 0,
+            uberEats: 0,
+            menulog: 0,
+            doordash: 0,
+            delivereasy: 0,
+        };
+
+        setProducts([]);
+        setParkedOrderId(null);
+        setParkedOrderNumber(null);
+        setParkedOrderStatus(null);
+        setCovers(null);
+        setTableNumber(null);
+        setBuzzerNumber(null);
+        setCustomerInformation(null);
+        setOnAccountOrders([]);
+        //loyaltyUserAggregates is intentionally not cleared; it is a session-long cache in restaurant-context.
+        setCustomerLoyaltyPoints(0);
+        setNotes("");
+        removeUserAppliedPromotion();
+        setUserAppliedLoyaltyId(null);
+        setStaticDiscount(0);
+        setPercentageDiscount(0);
+        setPaymentAmounts(emptyPaymentAmounts);
+        setPaidItemCounts({});
+        setSplitPaymentByPeople({ count: 0, paid: 0 });
+        setPayments([]);
+        setIsShownUpSellCrossSellModal(false);
+        setIsShownOrderThresholdMessageModal(false);
+        updateOrderScheduledAt(null);
+        updateOrderDetail(null);
+        setPrintedProductQuantities({});
+    };
+
+    const onClearSale = () => {
+        if (payments.length > 0 || paidSoFar > 0) {
+            showAlert(
+                "Incomplete Payments",
+                "There have been partial payments made on this order. Are you sure you would like to clear this sale?",
+                null,
+                () => {
+                    resetCurrentSale();
+                },
+                "No",
+                "Yes",
+            );
+        } else {
+            resetCurrentSale();
+        }
+    };
+
+    // Modal callbacks
+    const onCloseProductModal = () => {
+        setShowProductModal(false);
+    };
+
+    const onClosePromotionCodeModal = () => {
+        setShowPromotionCodeModal(false);
+    };
+
+    const onCloseDiscountModal = () => {
+        setShowDiscountModal(false);
+    };
+
+    const onCloseOrderThresholdMessageModal = () => {
+        setShowOrderThresholdMessageModal(false);
+    };
+    const onCloseR18MessageModal = () => {
+        setShowModal("");
+        navigate(beginOrderPath);
+        clearCart();
+    };
+    const onCloseEditProductModal = () => {
+        setProductToEdit(null);
+        setShowEditProductModal(false);
+    };
+
+    const onCloseUpSellCategoryModal = () => {
+        setShowUpSellCategoryModal(false);
+    };
+
+    const onCloseUpSellProductModal = () => {
+        setShowUpSellProductModal(false);
+    };
+
+    const onCloseItemUpdatedModal = () => {
+        setShowItemUpdatedModal(false);
+    };
+
+    // Callbacks
+    const onUpdateTableNumber = () => {
+        navigate(tableNumberPath);
+    };
+
+    const onUpdateCovers = () => {
+        navigate(tableNumberPath);
+    };
+
+    const onUpdateBuzzerNumber = () => {
+        navigate(buzzerNumberPath);
+    };
+
+    const onUpdateCustomerInformation = () => {
+        navigate(customerInformationPath);
+    };
+
+    const onUpdateOrderType = () => {
+        navigate(orderTypePath);
+    };
+
+    const onNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setNotes(e.target.value);
+    };
+
+    const onAddProduct = (product: ICartProduct) => {
+        addProduct(product);
+    };
+
+    const onSelectUpSellCrossSellCategory = (category: IGET_RESTAURANT_CATEGORY) => {
+        navigate(`${restaurantPath}/${restaurant.id}/${category.id}`);
+    };
+
+    const onSelectUpSellCrossSellProduct = (category: IGET_RESTAURANT_CATEGORY, product: IGET_RESTAURANT_PRODUCT) => {
+        if (product.modifierGroups && product.modifierGroups.items.length > 0) {
+            setSelectedCategoryForProductModal(category);
+            setSelectedProductForProductModal(product);
+
+            setShowProductModal(true);
+        } else {
+            addProduct({
+                id: product.id,
+                name: product.name,
+                kitchenName: product.kitchenName,
+                price: product.price,
+                totalPrice: product.price,
+                discount: 0,
+                isAgeRescricted: product.isAgeRescricted,
+                image: product.image
+                    ? {
+                          key: product.image.key,
+                          region: product.image.region,
+                          bucket: product.image.bucket,
+                          identityPoolId: product.image.identityPoolId,
+                      }
+                    : null,
+                quantity: 1,
+                notes: null,
+                category: {
+                    id: category.id,
+                    name: category.name,
+                    kitchenName: category.kitchenName,
+                    image: category.image
+                        ? {
+                              key: category.image.key,
+                              region: category.image.region,
+                              bucket: category.image.bucket,
+                              identityPoolId: category.image.identityPoolId,
+                          }
+                        : null,
+                },
+                modifierGroups: [],
+            });
+        }
+
+        setShowUpSellProductModal(false);
+    };
+
+    const onEditProduct = (product: ICartProduct, displayOrder: number) => {
+        setProductToEdit({ product, displayOrder });
+        setShowEditProductModal(true);
+    };
+
+    const onUpdateProductQuantity = (displayOrder: number, productQuantity: number) => {
+        updateProductQuantity(displayOrder, productQuantity);
+    };
+
+    const onApplyProductDiscount = (displayOrder: number, discount: number) => {
+        applyProductDiscount(displayOrder, discount);
+    };
+
+    const onRemoveProduct = (displayOrder: number) => {
+        deleteProduct(displayOrder);
+    };
+
+    const checkConditionsBeforeCreateOrder = (
+        latestRestaurant: IGET_RESTAURANT_AVAILABILITY_RESTAURANT | null | undefined,
+        cartProducts: ICartProduct[] | null,
+    ): AvailabilityCheckResult => {
+        if (!latestRestaurant || !cartProducts) {
+            return { soldOutItems: [], productsToRemove: [], productsToUpdate: [] };
+        }
+
+        const soldOutItems = new Set<string>();
+        const productsToRemove = new Set<number>();
+        const productsToUpdate: { index: number; product: ICartProduct }[] = [];
+
+        const categoriesById = new Map<string, AvailabilityCategoryIndex>();
+        for (const category of latestRestaurant.categories.items) {
+            const productsById = new Map<string, AvailabilityProductIndex>();
+
+            for (const productItem of category.products.items) {
+                const product = productItem.product;
+                const modifierGroupsById = new Map<string, AvailabilityModifierGroupIndex>();
+
+                for (const modifierGroupItem of product.modifierGroups.items) {
+                    const modifierGroup = modifierGroupItem.modifierGroup;
+                    const modifiersById = new Map(modifierGroup.modifiers.items.map((modifierItem) => [modifierItem.modifier.id, modifierItem.modifier]));
+
+                    modifierGroupsById.set(modifierGroup.id, {
+                        modifiersById,
+                    });
+                }
+
+                productsById.set(product.id, {
+                    product,
+                    modifierGroupsById,
+                });
+            }
+
+            categoriesById.set(category.id, {
+                category,
+                productsById,
+            });
+        }
+
+        for (let index = 0; index < cartProducts.length; index++) {
+            const cartProduct = cartProducts[index];
+            let updatedProduct: ICartProduct | null = null;
+
+            const addSoldOutItem = (name: string) => {
+                soldOutItems.add(name);
+            };
+
+            const markProductForRemoval = (name: string) => {
+                addSoldOutItem(name);
+                productsToRemove.add(index);
+            };
+
+            const ensureUpdatedProduct = (): ICartProduct => {
+                if (!updatedProduct) {
+                    updatedProduct = JSON.parse(JSON.stringify(cartProduct)) as ICartProduct;
+                }
+                return updatedProduct;
+            };
+
+            const removeModifierGroupFromProduct = (modifierGroupId: string) => {
+                const productCopy = ensureUpdatedProduct();
+                productCopy.modifierGroups = productCopy.modifierGroups.filter((group) => group.id !== modifierGroupId);
+            };
+
+            if (!cartProduct.category) {
+                markProductForRemoval(cartProduct.name);
+                continue;
+            }
+
+            const categoryIndex = categoriesById.get(cartProduct.category.id);
+            if (!categoryIndex) {
+                markProductForRemoval(cartProduct.name);
+                continue;
+            }
+
+            const isCategorySoldOut = isItemSoldOut(categoryIndex.category.soldOut ?? undefined, categoryIndex.category.soldOutDate ?? undefined);
+            if (isCategorySoldOut) {
+                markProductForRemoval(cartProduct.name);
+                continue;
+            }
+
+            const productIndex = categoryIndex.productsById.get(cartProduct.id);
+            if (!productIndex) {
+                markProductForRemoval(cartProduct.name);
+                continue;
+            }
+
+            const product = productIndex.product;
+            const isProductSoldOut = isItemSoldOut(product.soldOut ?? undefined, product.soldOutDate ?? undefined);
+            const productAvailableQuantity = isProductSoldOut ? 0 : product.totalQuantityAvailable;
+            if (isProductSoldOut || (productAvailableQuantity !== null && productAvailableQuantity < cartProduct.quantity)) {
+                addSoldOutItem(product.name);
+                if (productAvailableQuantity !== null && productAvailableQuantity > 0) {
+                    const productCopy = ensureUpdatedProduct();
+                    productCopy.quantity = productAvailableQuantity;
+                } else {
+                    productsToRemove.add(index);
+                    continue;
+                }
+            }
+
+            for (const mg of cartProduct.modifierGroups) {
+                const modifierGroupIndex = productIndex.modifierGroupsById.get(mg.id);
+                if (!modifierGroupIndex) {
+                    removeModifierGroupFromProduct(mg.id);
+                    continue;
+                }
+
+                let shouldRemoveModifierGroup = false;
+                for (const m of mg.modifiers) {
+                    const modifier = modifierGroupIndex.modifiersById.get(m.id);
+                    if (!modifier) {
+                        addSoldOutItem(m.name);
+                        shouldRemoveModifierGroup = true;
+                        continue;
+                    }
+
+                    const isModifierSoldOut = isItemSoldOut(modifier.soldOut ?? undefined, modifier.soldOutDate ?? undefined);
+                    const modifierAvailableQuantity = isModifierSoldOut ? 0 : modifier.totalQuantityAvailable;
+                    if (isModifierSoldOut || (modifierAvailableQuantity !== null && modifierAvailableQuantity < m.quantity)) {
+                        addSoldOutItem(modifier.name);
+                        shouldRemoveModifierGroup = true;
+                    }
+                }
+
+                if (shouldRemoveModifierGroup) {
+                    removeModifierGroupFromProduct(mg.id);
+                }
+            }
+
+            const productToUpdate = !productsToRemove.has(index) ? (updatedProduct as ICartProduct | null) : null;
+            if (productToUpdate) {
+                productToUpdate.totalPrice = getCartProductUnitTotalPrice(productToUpdate);
+                productsToUpdate.push({ index, product: productToUpdate });
+            }
+        }
+
+        return {
+            soldOutItems: Array.from(soldOutItems),
+            productsToRemove: Array.from(productsToRemove),
+            productsToUpdate,
+        };
+    };
+
+    const onClickOrderButton = async () => {
+        // if (restaurant.orderThresholds?.enable && restaurant.orderThresholdMessage && !isShownOrderThresholdMessageModal) {
+        //     setShowOrderThresholdMessageModal(true);
+        //     return;
+        // }
+
+        // if (register && buzzerNumber === null && orderType) {
+        //     if (
+        //         (register.enableBuzzerNumbersForTakeaway && orderType === EOrderType.TAKEAWAY) ||
+        //         (register.enableBuzzerNumbersForDineIn && orderType === EOrderType.DINEIN)
+        //     ) {
+        //         navigate(buzzerNumberPath);
+        //         return;
+        //     }
+        // }
+
+        // if (register && register.requestCustomerInformation) {
+        //     let invalid = false;
+
+        //     if (register.requestCustomerInformation.firstName && (!customerInformation || !customerInformation.firstName)) invalid = true;
+        //     if (register.requestCustomerInformation.email && (!customerInformation || !customerInformation.email)) invalid = true;
+        //     if (register.requestCustomerInformation.phoneNumber && (!customerInformation || !customerInformation.phoneNumber)) invalid = true;
+        //     if (register.requestCustomerInformation.signature && (!customerInformation || !customerInformation.signatureBase64)) invalid = true;
+        //     if (register.requestCustomerInformation.customFields?.length && (!customerInformation || !customerInformation.customFields.length))
+        //         invalid = true;
+        //     //    if(register.) orderScheduledAt
+
+        //     if (invalid) {
+        //         navigate(customerInformationPath);
+        //         return;
+        //     }
+        // }
+
+        console.log("on submit order called with: ", register, register.checkConditionsBeforeCreateOrder);
+        // Check backend quantities before creating order
+        if (register.checkConditionsBeforeCreateOrder) {
+            setShowFullScreenSpinner(true);
+
+            const { data: restaurantData } = await getRestaurantDataAvailability({
+                variables: { restaurantId: restaurant.id },
+                fetchPolicy: "no-cache", //This is to stop the GetRestaurant API get double called. I think its somehting to do with useGetRestaurantQuery "cache-first" and "netowrk-first" fetchPolicy.
+            });
+            const { soldOutItems, productsToRemove, productsToUpdate } = checkConditionsBeforeCreateOrder(restaurantData?.getRestaurant, products);
+
+            setShowFullScreenSpinner(false);
+
+            if (soldOutItems.length > 0) {
+                setShowPaymentModal(false);
+                setPaymentModalState(EPaymentModalState.None);
+                setPaymentOutcomeOrderNumber(null);
+                showAlert(
+                    "Items Unavailable",
+                    `The following items are no longer available:\n${soldOutItems.join("\n")}`,
+                    null,
+                    () => {
+                        const removeIndexes = productsToRemove.slice().sort((a, b) => b - a);
+                        for (let i = 0; i < productsToUpdate.length; i++) {
+                            const update = productsToUpdate[i];
+                            if (removeIndexes.includes(update.index)) continue;
+                            updateProduct(update.index, update.product);
+                        }
+                        removeIndexes.forEach((removeIndex) => {
+                            deleteProduct(removeIndex);
+                        });
+                    },
+                    null,
+                    "Review Order",
+                );
+                return;
+            }
+        }
+
+        if (!isPOS && register.enableEftposPayments && register.enableCashPayments && paymentMethod === null) {
+            navigate(paymentMethodPath);
+            return;
+        }
+
+        setShowPaymentModal(true);
+
+        if (isPOS) {
+            setPaymentModalState(EPaymentModalState.POSScreen);
+        } else {
+            if ((paymentMethod === null && register.enableEftposPayments) || paymentMethod === EPaymentMethod.EFTPOS) {
+                await onConfirmTotalOrRetryEftposTransaction(subTotal);
+            } else if ((paymentMethod === null && register.enableCashPayments) || paymentMethod === EPaymentMethod.CASH) {
+                await onConfirmCashTransaction(subTotal);
+            } else if ((paymentMethod === null && register.enablePayLater) || paymentMethod === EPaymentMethod.LATER) {
+                await onClickPayLater();
+            }
+        }
+    };
+
+    const onClosePaymentModal = () => {
+        // if (isPOS) {
+        //     navigate(`${restaurantPath}/${restaurant.id}`);
+        // } else {
+        setShowPaymentModal(false);
+        // }
+    };
+
+    const onCancelPayment = () => {
+        if (isPOS) {
+            setPaymentModalState(EPaymentModalState.POSScreen);
+        } else {
+            onClosePaymentModal();
+            setPaymentMethod(null);
+        }
+    };
+
+    const beginTransactionCompleteTimeout = () => {
+        clearInterval(transactionCompleteTimeoutIntervalId.current);
+        let timeLeft = transactionCompleteRedirectTime;
+
+        transactionCompleteTimeoutIntervalId.current = setInterval(() => {
+            setPaymentOutcomeApprovedRedirectTimeLeft((prevPaymentOutcomeApprovedRedirectTimeLeft) => prevPaymentOutcomeApprovedRedirectTimeLeft - 1);
+            timeLeft = timeLeft - 1;
+
+            if (timeLeft == 0) {
+                //@ts-ignore
+                transactionCompleteTimeoutIntervalId.current && clearInterval(transactionCompleteTimeoutIntervalId.current);
+
+                navigate(beginOrderPath);
+                //     if (isPOS) {
+                //     navigate(restaurantPath + "/" + restaurant.id);
+                // } else {
+                //     navigate(beginOrderPath);
+                // }
+                clearCart();
+            }
+        }, 1000);
+    };
+
+    const clearTransactionCompleteTimeout = () => {
+        //@ts-ignore
+        transactionCompleteTimeoutIntervalId.current && clearInterval(transactionCompleteTimeoutIntervalId.current);
+        navigate(beginOrderPath);
+        //     if (isPOS) {
+        //     navigate(restaurantPath + "/" + restaurant.id);
+        // } else {
+        //     navigate(beginOrderPath);
+        // }
+        clearCart();
+    };
+
+    const sendReceiptPrint = async (order: IGET_RESTAURANT_ORDER_FRAGMENT, printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
+        const productsToPrint = filterPrintProducts(order.products, printer);
+
+        if (productsToPrint.length === 0) return;
+
+        if (printer.printerType === EReceiptPrinterPrinterType.LABEL) {
+            await printLabel({
+                orderId: order.id,
+                printerName: printer.name, //For label printer name is important
+                printerType: printer.type,
+                printerAddress: printer.address,
+                products: convertProductTypesForPrint(productsToPrint),
+                number: order.number,
+                placedAt: format(new Date(order.placedAt), "dd/MM HH:mm"),
+            });
+        } else {
+            //Not checking if its printerType receipt
+            await printReceipt({
+                orderId: order.id,
+                country: order.country,
+                futureOrder: false,
+                orderReminder: false,
+                status: order.status,
+                printerType: printer.type,
+                printerAddress: printer.address,
+                receiptFooterText: printer.receiptFooterText,
+                customerPrinter: printer.customerPrinter,
+                kitchenPrinter: printer.kitchenPrinter,
+                kitchenPrinterSmall: printer.kitchenPrinterSmall,
+                kitchenPrinterLarge: printer.kitchenPrinterLarge,
+                hidePreparationTime: printer.hidePreparationTime,
+                hideModifierGroupName: printer.hideModifierGroupName,
+                skipReceiptCutCommand: printer.skipReceiptCutCommand,
+                printReceiptForEachProduct: printer.printReceiptForEachProduct,
+                hideOrderType: register.availableOrderTypes.length === 1, //Don't show order type if only 1 is available
+                hideModifierGroupsForCustomer: false,
+                restaurant: {
+                    name: restaurant.name,
+                    address: restaurant.address.receiptAddress || restaurant.address.formattedAddress,
+                    gstNumber: restaurant.gstNumber,
+                },
+                restaurantLogoBase64: restaurantBase64Logo,
+                customerInformation: customerInformation
+                    ? {
+                          firstName: customerInformation.firstName,
+                          email: customerInformation.email,
+                          phoneNumber: customerInformation.phoneNumber,
+                          signatureBase64: customerInformation.signatureBase64,
+                          customFields: customerInformation.customFields.map((field) => ({
+                              label: field.label,
+                              value: field.value,
+                              type: field.type,
+                          })),
+                      }
+                    : null,
+                notes: order.notes,
+                products: convertProductTypesForPrint(productsToPrint),
+                eftposReceipt: order.eftposReceipt,
+                paymentAmounts: order.paymentAmounts,
+                deliveryProvider: order.deliveryProvider,
+                deliveryAddress: order.deliveryAddress,
+                deliveryNotes: order.deliveryNotes,
+                deliveryDistanceMeters: order.deliveryDistanceMeters,
+                deliveryFeeDiscount: order.deliveryFeeDiscount,
+                deliveryFee: order.deliveryFee,
+                deliveryTrackingUrl: order.deliveryTrackingUrl,
+                total: order.total,
+                surcharge: order.surcharge,
+                orderTypeSurcharge: order.orderTypeSurcharge,
+                eftposSurcharge: order.eftposSurcharge,
+                eftposTip: order.eftposTip,
+                discount: order.discount || null,
+                tax: order.tax,
+                subTotal: order.subTotal,
+                paid: order.paid,
+                //display payment required message if kiosk and paid cash
+                displayPaymentRequiredMessage:
+                    !order.paid || (!isPOS && order.paid && order.paymentAmounts && order.paymentAmounts.cash === order.subTotal) ? true : false,
+                type: order.type,
+                number: order.number,
+                table: order.table,
+                buzzer: order.buzzer,
+                placedAt: order.placedAt,
+                orderScheduledAt: order.orderScheduledAt,
+                preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
+                enableLoyalty: restaurant.enableLoyalty,
+            });
+        }
+    };
+
+    const isKitchenReceiptPrinter = (printer: IGET_RESTAURANT_REGISTER_PRINTER) =>
+        printer.kitchenPrinter === true || printer.kitchenPrinterSmall === true || printer.kitchenPrinterLarge === true;
+
+    const getReceiptPrinter = (printer: IGET_RESTAURANT_REGISTER_PRINTER, receiptType: "customer" | "kitchen"): IGET_RESTAURANT_REGISTER_PRINTER => ({
+        ...printer,
+        customerPrinter: receiptType === "customer",
+        kitchenPrinter: receiptType === "kitchen" ? printer.kitchenPrinter : false,
+        kitchenPrinterSmall: receiptType === "kitchen" ? printer.kitchenPrinterSmall : false,
+        kitchenPrinterLarge: receiptType === "kitchen" ? printer.kitchenPrinterLarge : false,
+    });
+
+    const printReceipts = async (
+        order: IGET_RESTAURANT_ORDER_FRAGMENT,
+        options?: {
+            treatAsPreviouslyParked?: boolean;
+        },
+    ) => {
+        if (!register.printers) return;
+
+        const treatAsPreviouslyParked = options?.treatAsPreviouslyParked ?? Boolean(order.parkedAt);
+        const shouldPromptForCustomerReceipt = register.askToPrintCustomerReceipt === true;
+        let hasPrintedParkedOrderReceipts = false;
+
+        for (const printer of register.printers.items) {
+            //Open cash drawer if paid by cash, even if we don't print a receipt
+            if (order.paymentAmounts && order.paymentAmounts.cash > 0) {
+                await printNoSaleReceipt({ printer: { printerType: printer.type, printerAddress: printer.address } });
+            }
+
+            // If an order was parked before, print only newly added kitchen items, but still allow a full customer copy.
+            if (treatAsPreviouslyParked && isKitchenReceiptPrinter(printer)) {
+                if (!hasPrintedParkedOrderReceipts) {
+                    hasPrintedParkedOrderReceipts = true;
+                    await onPrintParkedOrderReceipts(order);
+                }
+
+                if (printer.customerPrinter === true && !shouldPromptForCustomerReceipt) {
+                    await sendReceiptPrint(order, getReceiptPrinter(printer, "customer"));
+                }
+
+                continue;
+            }
+
+            if (printer.customerPrinter === true && shouldPromptForCustomerReceipt) {
+                if (!isKitchenReceiptPrinter(printer)) continue;
+
+                await sendReceiptPrint(order, getReceiptPrinter(printer, "kitchen"));
+                continue;
+            }
+
+            await sendReceiptPrint(order, printer);
+        }
+    };
+
+    const printEftposReceipts = (eftposReceipt: string) => {
+        register.printers &&
+            register.printers.items.forEach((printer) => {
+                if (printer.customerPrinter !== true) return;
+
+                printEftposReceipt({ eftposReceipt: eftposReceipt, printer: { printerType: printer.type, printerAddress: printer.address } });
+            });
+    };
+
+    const onPrintCustomerReceipt = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+        register.printers &&
+            register.printers.items.forEach((printer) => {
+                if (printer.customerPrinter !== true || register.askToPrintCustomerReceipt !== true) return;
+
+                sendReceiptPrint(order, getReceiptPrinter(printer, "customer"));
+            });
+    };
+
+    const getLatestPrintedProductQuantities = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+        const latestOrderResult = await getOrder({ variables: { id: order.id } });
+        const latestOrder: IGET_RESTAURANT_ORDER_FRAGMENT = latestOrderResult.data?.getOrder || order;
+        return printedQuantitiesListToMap(latestOrder.printedQuantities);
+    };
+
+    const onPrintParkedOrderReceipts = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+        if (!register.printers) return;
+
+        const printedProductQuantities = await getLatestPrintedProductQuantities(order);
+        const unprintedProducts = getUnprintedParkedOrderProducts(order, printedProductQuantities);
+        const unprintedProductQuantities = getProductQuantities(unprintedProducts);
+
+        if (unprintedProducts.length === 0) {
+            setPrintedProductQuantities(printedProductQuantities);
+            setKitchenPrintTrackingVersion((prev) => prev + 1);
+            return;
+        }
+        const printedProductQuantitiesThisRun: Record<string, number> = {};
+        let hasApplicableKitchenPrinter = false;
+
+        for (const printer of register.printers.items) {
+            if (!isKitchenReceiptPrinter(printer)) continue;
+
+            const printerProducts = filterPrintProducts([...unprintedProducts], printer);
+
+            if (printerProducts.length === 0) continue;
+
+            hasApplicableKitchenPrinter = true;
+
+            try {
+                await sendReceiptPrint({ ...order, products: printerProducts }, getReceiptPrinter(printer, "kitchen"));
+                mergeProductQuantities(printedProductQuantitiesThisRun, getProductQuantities(printerProducts), "max");
+            } catch (error) {
+                logger.error("unable to print parked order receipt", error);
+            }
+        }
+
+        // No kitchen printers are configured for these products — treat all as sent so they don't block the park cycle.
+        if (!hasApplicableKitchenPrinter) mergeProductQuantities(printedProductQuantitiesThisRun, unprintedProductQuantities, "max");
+
+        const latestPrintedProductQuantities = await getLatestPrintedProductQuantities(order);
+
+        Object.entries(printedProductQuantitiesThisRun).forEach(([lineKey, quantity]) => {
+            const targetQuantity = (printedProductQuantities[lineKey] || 0) + quantity;
+            latestPrintedProductQuantities[lineKey] = Math.max(latestPrintedProductQuantities[lineKey] || 0, targetQuantity);
+        });
+
+        try {
+            await updateOrderPrintedQuantitiesMutation({
+                variables: { orderId: order.id, printedQuantities: printedQuantitiesToList(latestPrintedProductQuantities) },
+            });
+            setPrintedProductQuantities(latestPrintedProductQuantities);
+            setKitchenPrintTrackingVersion((prev) => prev + 1);
+        } catch (error) {
+            logger.error("unable to persist printed quantities to backend", error);
+        }
+    };
+
+    const showKitchenSendStatusInCart = parkedOrderStatus === EOrderStatus.PARKED && Boolean(parkedOrderId);
+    const kitchenSendStatusByDisplayOrder = useMemo(() => {
+        // Row-level status map used by the cart UI: index -> "sent" | "unsent".
+        const statusByDisplayOrder: Record<number, "sent" | "unsent"> = {};
+        if (!showKitchenSendStatusInCart || !parkedOrderId || !products || products.length === 0) return statusByDisplayOrder;
+
+        // Track remaining sent quantity per product id while walking rows from top to bottom.
+        // This avoids over-marking when the same product appears in multiple rows.
+        const remainingPrintedProductQuantities = { ...printedProductQuantities };
+        products.forEach((product, displayOrder) => {
+            const key = getOrderLineSignature(product);
+            const printedQuantity = remainingPrintedProductQuantities[key] || 0;
+            const sentQuantityForThisRow = Math.min(printedQuantity, product.quantity);
+            const unsentQuantityForThisRow = Math.max(product.quantity - sentQuantityForThisRow, 0);
+
+            // Full row quantity covered by previously sent quantity => sent, else unsent.
+            statusByDisplayOrder[displayOrder] = unsentQuantityForThisRow === 0 ? "sent" : "unsent";
+            // Consume this row's quantity so next duplicate row of same product is evaluated correctly.
+            remainingPrintedProductQuantities[key] = Math.max(printedQuantity - product.quantity, 0);
+        });
+
+        return statusByDisplayOrder;
+    }, [showKitchenSendStatusInCart, parkedOrderId, products, kitchenPrintTrackingVersion, printedProductQuantities]);
+
+    const onPrintOnAccountOrderReceipts = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+        register.printers &&
+            register.printers.items.forEach((printer) => {
+                sendReceiptPrint(order, printer);
+            });
+    };
+
+    const onSubmitOrder = async (
+        paid: boolean,
+        parkOrder: boolean,
+        newPaymentAmounts: ICartPaymentAmounts,
+        newPayments: ICartPayment[],
+        eftposCardType?: EEftposTransactionOutcomeCardType,
+        eftposSurcharge?: number,
+        eftposTip?: number,
+    ) => {
+        const wasEditingParkedOrder = Boolean(parkedOrderId);
+        const keepParkedStatus = wasEditingParkedOrder && parkOrder && Boolean(parkedOrderStatus);
+        //If parked order do not generate order number
+        const orderNumber = parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
+        const orderStatus = keepParkedStatus ? parkedOrderStatus! : EOrderStatus.NEW;
+
+        setPaymentOutcomeOrderNumber(orderNumber);
+
+        try {
+            let signatureS3Object: IS3Object | null = null;
+
+            if (customerInformation && customerInformation.signatureBase64) {
+                const date = simpleDateTimeFormatUTC(new Date());
+                const filename = `${date}-signature`;
+                const fileExtension = "png";
+
+                const signatureFile = await convertBase64ToFile(customerInformation.signatureBase64, `${filename}.${fileExtension}`, `image/${fileExtension}`);
+
+                const uploadedObject: any = await Storage.put(`${filename}.${fileExtension}`, signatureFile, {
+                    contentType: `image/${fileExtension}`, //signature image png, png required to print to receipt printer
+                });
+
+                signatureS3Object = {
+                    key: uploadedObject.key,
+                    bucket: awsconfig.aws_user_files_s3_bucket,
+                    region: awsconfig.aws_project_region,
+                    identityPoolId: user ? user.identityPoolId : "",
+                };
+            }
+
+            const newOrder: IGET_RESTAURANT_ORDER_FRAGMENT = await createOrder(
+                orderNumber,
+                orderStatus,
+                paid,
+                parkOrder,
+                newPaymentAmounts,
+                newPayments,
+                signatureS3Object,
+                eftposCardType,
+                eftposSurcharge,
+                eftposTip,
+            );
+
+            createdOrder.current = newOrder;
+            updateOrderDetail(newOrder);
+
+            if (register.printers && register.printers.items.length > 0) {
+                if (parkOrder) {
+                    if (register.autoPrintParkedOrderKitchenReceipts) {
+                        const localProductsSnapshot = (JSON.parse(JSON.stringify(products || [])) as IGET_RESTAURANT_ORDER_FRAGMENT["products"]) || [];
+                        const savedOrderProducts = (newOrder.products || []) as IGET_RESTAURANT_ORDER_FRAGMENT["products"];
+                        const getTotalQuantity = (orderProducts: IGET_RESTAURANT_ORDER_FRAGMENT["products"]) =>
+                            (orderProducts || []).reduce((totalQuantity, product) => totalQuantity + (product.quantity || 0), 0);
+                        // Prefer saved mutation products so tracking keys match reopened order rows.
+                        // Fallback to local cart snapshot when response lags behind the latest cart edits.
+                        const productsForParkedPrint =
+                            getTotalQuantity(savedOrderProducts) >= getTotalQuantity(localProductsSnapshot) ? savedOrderProducts : localProductsSnapshot;
+                        const orderForParkedPrint: IGET_RESTAURANT_ORDER_FRAGMENT = {
+                            ...newOrder,
+                            products: productsForParkedPrint,
+                        };
+                        await onPrintParkedOrderReceipts(orderForParkedPrint);
+                    }
+                    // else: AskToPrintParkedOrderReceipts modal lets the user decide
+                } else {
+                    await printReceipts(newOrder, { treatAsPreviouslyParked: wasEditingParkedOrder });
+                }
+            }
+
+            // If using third party integration. Poll for resposne
+            if (restaurant.thirdPartyIntegrations && restaurant.thirdPartyIntegrations.enable && restaurant.thirdPartyIntegrations.awaitThirdPartyResponse) {
+                setPaymentModalState(EPaymentModalState.ThirdPartyIntegrationAwaitingResponse);
+
+                await pollForThirdPartyResponse(newOrder.id);
+            }
+
+            if (parkedOrderId && !parkOrder) setPrintedProductQuantities({});
+
+            beginTransactionCompleteTimeout();
+        } catch (e) {
+            throw e;
+        }
+    };
+
+    const pollForThirdPartyResponse = (orderId) => {
+        const interval = 2 * 1000; // 2 seconds
+        const timeout = 30 * 1000; // 20 seconds
+
+        const endTime = Number(new Date()) + timeout;
+
+        var checkCondition = async (resolve: any, reject: any) => {
+            try {
+                const thirdPartyOrderResponseRes = await getThirdPartyOrderResponse({
+                    variables: {
+                        id: orderId,
+                    },
+                });
+
+                const thirdPartyOrderResponse: IGET_THIRD_PARTY_ORDER_RESPONSE = thirdPartyOrderResponseRes.data.getOrder;
+
+                if (thirdPartyOrderResponse.thirdPartyIntegrationResult) {
+                    if (thirdPartyOrderResponse.thirdPartyIntegrationResult.isSuccess === true) {
+                        resolve();
+                    } else {
+                        reject(thirdPartyOrderResponse.thirdPartyIntegrationResult.errorMessage);
+                    }
+                } else if (Number(new Date()) < endTime) {
+                    setTimeout(checkCondition, interval, resolve, reject);
+                    return;
+                } else {
+                    // Didn't match and too much time, reject!
+                    reject("Third Party Result Polling timed out. Please contact support staff.");
+                    return;
+                }
+            } catch (error) {
+                reject(error);
+            }
+        };
+
+        return new Promise(checkCondition);
+    };
+
+    const createOrder = async (
+        orderNumber: string,
+        orderStatus: EOrderStatus,
+        paid: boolean,
+        parkOrder: boolean,
+        newPaymentAmounts: ICartPaymentAmounts,
+        newPayments: ICartPayment[],
+        signatureS3Object: IS3Object | null,
+        eftposCardType?: EEftposTransactionOutcomeCardType,
+        eftposSurcharge?: number,
+        eftposTip?: number,
+    ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
+        const now = new Date();
+        if (!user) {
+            await logError("Invalid user", JSON.stringify({ user: user }));
+            throw "Invalid user";
+        }
+
+        if (register.availableOrderTypes.length === 0) {
+            await logError("Invalid available order types", JSON.stringify({ register: register }));
+            throw "Invalid available order types";
+        }
+
+        if (!restaurant) {
+            await logError("Invalid restaurant", JSON.stringify({ restaurant: restaurant }));
+            throw "Invalid restaurant";
+        }
+
+        if (!products || products.length == 0) {
+            await logError("No products have been selected", JSON.stringify({ products: products }));
+            throw "No products have been selected";
+        }
+
+        let variables;
+        const selectedOrderType = orderType ? orderType : register.availableOrderTypes[0];
+        const isDineInOrder = selectedOrderType === EOrderType.DINEIN;
+        const orderRefetchQueries = isDineInOrder
+            ? [
+                  {
+                      query: GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT,
+                      variables: {
+                          orderRestaurantId: restaurant.id,
+                          placedAt: toLocalISOString(now).slice(0, 10),
+                      },
+                  },
+              ]
+            : undefined;
+
+        try {
+            if (!effectiveOrderUserId) throw new Error("Cannot create order because user context is missing.");
+
+            variables = {
+                country: restaurant.country,
+                status: orderStatus,
+                paid: paid,
+                type: selectedOrderType,
+                number: orderNumber,
+                covers: isDineInOrder ? covers : undefined,
+                table: isDineInOrder ? tableNumber : undefined,
+                buzzer: buzzerNumber,
+                orderScheduledAt: orderScheduledAt,
+                customerInformation: customerInformation
+                    ? {
+                          firstName: customerInformation.firstName,
+                          email: customerInformation.email,
+                          phoneNumber: customerInformation.phoneNumber,
+                          signature: signatureS3Object,
+                          customFields: customerInformation.customFields.map((field) => ({
+                              label: field.label,
+                              value: field.value,
+                              type: field.type,
+                          })),
+                      }
+                    : null,
+                notes: notes,
+                eftposReceipt: transactionEftposReceipts.current,
+                paymentAmounts: newPaymentAmounts,
+                payments: newPayments,
+                total: total,
+                surcharge: surcharge || undefined,
+                orderTypeSurcharge: orderTypeSurcharge || undefined,
+                eftposCardType: eftposCardType || undefined,
+                eftposSurcharge: eftposSurcharge || undefined,
+                eftposTip: eftposTip || undefined,
+                discount: promotion ? promotion.discountedAmount : staticDiscount + percentageDiscount,
+                promotionId: promotion ? promotion.promotion.id : undefined,
+                promotionType: promotion ? promotion.promotion.type : undefined,
+                loyaltyId: userAppliedLoyaltyId || undefined,
+                tax: Math.round(calculateTaxAmount(restaurant.country, subTotal + (eftposSurcharge || 0) + (eftposTip || 0))),
+                subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0),
+                preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
+                registerId: register.id,
+                products: JSON.parse(JSON.stringify(products)) as ICartProduct[], // copy obj so we can mutate it later
+                placedAt: toLocalISOString(now),
+                placedAtUtc: now.toISOString(),
+                settledAt: paid ? toLocalISOString(now) : undefined,
+                settledRegisterId: paid ? register.id : undefined,
+                orderUserId: effectiveOrderUserId,
+                orderRestaurantId: restaurant.id,
+            };
+
+            if (parkOrder) {
+                variables.status = "PARKED";
+                variables.parkedAt = toLocalISOString(now);
+                variables.discount = undefined;
+                variables.promotionId = undefined;
+                variables.subTotal = total; //Set subTotal to total because we do not want to add any discount or promotions. Also product.discount is set to 0 in dashboard.tsx
+            } else if (restaurant.autoCompleteOrders) {
+                variables.status = "COMPLETED";
+                variables.completedAt = toLocalISOString(now);
+                variables.completedAtUtc = now.toISOString();
+                // variables.paid = true; //Comment out because if you set paid = true then "Payment Required" does not come up on the receipt.
+            }
+        } catch (e) {
+            await logError(
+                "Error in createOrderMutation input",
+                JSON.stringify({
+                    country: restaurant.country,
+                    status: orderStatus,
+                    paid: paid,
+                    type: selectedOrderType,
+                    number: orderNumber,
+                    covers: isDineInOrder ? covers : undefined,
+                    table: isDineInOrder ? tableNumber : undefined,
+                    buzzer: buzzerNumber,
+                    orderScheduledAt: orderScheduledAt,
+                    customerInformation: customerInformation
+                        ? {
+                              firstName: customerInformation.firstName,
+                              email: customerInformation.email,
+                              phoneNumber: customerInformation.phoneNumber,
+                              signature: signatureS3Object,
+                              customFields: customerInformation.customFields.map((field) => ({
+                                  label: field.label,
+                                  value: field.value,
+                                  type: field.type,
+                              })),
+                          }
+                        : null,
+                    notes: notes,
+                    eftposReceipt: transactionEftposReceipts.current,
+                    paymentAmounts: newPaymentAmounts,
+                    payments: newPayments,
+                    total: total,
+                    surcharge: surcharge || undefined,
+                    orderTypeSurcharge: orderTypeSurcharge || undefined,
+                    eftposCardType: eftposCardType,
+                    eftposSurcharge: eftposSurcharge,
+                    eftposTip: eftposTip,
+                    discount: promotion ? promotion.discountedAmount : staticDiscount + percentageDiscount,
+                    promotionId: promotion ? promotion.promotion.id : undefined,
+                    promotionType: promotion ? promotion.promotion.type : undefined,
+                    loyaltyId: userAppliedLoyaltyId || undefined,
+                    tax: Math.round(calculateTaxAmount(restaurant.country, subTotal + (eftposSurcharge || 0) + (eftposTip || 0))),
+                    subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0),
+                    preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
+                    registerId: register.id,
+                    products: JSON.stringify(products), // copy obj so we can mutate it later
+                    placedAt: toLocalISOString(now),
+                    placedAtUtc: now.toISOString(),
+                    orderUserId: effectiveOrderUserId,
+                    orderRestaurantId: restaurant.id,
+                }),
+            );
+            throw "Error in createOrderMutation input";
+        }
+
+        try {
+            if (tableNumber == null || tableNumber == "") {
+                delete variables.table;
+            }
+
+            if (buzzerNumber == null || buzzerNumber == "") {
+                delete variables.buzzer;
+            }
+
+            if (notes == null || notes == "") {
+                delete variables.notes;
+            }
+
+            variables.products.forEach((product) => {
+                if (product.modifierGroups.length == 0) {
+                    delete product.modifierGroups;
+                }
+
+                if (product.image == null) {
+                    delete product.image;
+                }
+
+                if (product.notes == null || product.notes == "") {
+                    delete product.notes;
+                }
+
+                if (product.category.image == null) {
+                    delete product.category.image;
+                }
+
+                // if (product.isAgeRescricted == null) {
+                delete product.isAgeRescricted;
+                // }
+
+                //isPriceEdited is cart-only state (marks a manual price override); not part of OrderProductInput
+                delete product.isPriceEdited;
+            });
+
+            console.log("Order variables: ", variables);
+
+            if (parkedOrderId) {
+                const res: any = await updateOrderMutation({
+                    variables: { orderId: parkedOrderId, ...variables },
+                    refetchQueries: orderRefetchQueries,
+                    awaitRefetchQueries: true,
+                });
+
+                console.log("update order mutation result: ", res);
+                return res.data.updateOrder;
+            } else {
+                return await retryCreateOrder(variables, orderRefetchQueries);
+            }
+        } catch (e) {
+            console.log("process order mutation error: ", e);
+
+            await logError(e, JSON.stringify({ error: e, variables: variables }));
+            throw e;
+        }
+    };
+
+    const retryCreateOrder = async (variables, refetchQueries?: any[]) => {
+        //If the create order fails, retry up to 5 times
+        for (let i = 0; i < 5; i++) {
+            try {
+                const res: any = await createOrderMutation({
+                    variables: variables,
+                    refetchQueries,
+                    awaitRefetchQueries: true,
+                });
+
+                console.log("create order mutation result: ", res);
+
+                return res.data.createOrder;
+            } catch (error) {
+                await logError(`Attempt ${i + 1} failed: ${error}`, variables);
+                console.log(`Attempt ${i + 1} failed: ${error}`, variables);
+
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
+        }
+
+        console.log("xxx...creating order via backup method");
+
+        for (let i = 0; i < 5; i++) {
+            try {
+                const result = await axios.post(`https://36p0xwo1cl.execute-api.ap-southeast-2.amazonaws.com/prod`, variables);
+                const newBackupOrder: IGET_RESTAURANT_ORDER_FRAGMENT = result.data;
+
+                console.log("backup method result", newBackupOrder);
+
+                return newBackupOrder;
+            } catch (error) {
+                await logError(`Backup: Attempt ${i + 1} failed: ${error}`, variables);
+                console.log(`Backup: Attempt ${i + 1} failed: ${error}`, variables);
+
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
+        }
+
+        await logError(`Maximum retry attempts reached. Unable to create order`, variables);
+        throw new Error(`Maximum retry attempts reached. Unable to create order`);
+    };
+
+    const performEftposTransaction = async (amount: number): Promise<IEftposTransactionOutcome> => {
+        try {
+            let outcome: IEftposTransactionOutcome | null = null;
+
+            if (register.eftposProvider == EEftposProvider.VERIFONE && isEftposMerchantNameLocked()) {
+                throw "This register is locked because the EFTPOS merchant name did not match the receipt. Please update the merchant name and restart the app.";
+            }
+
+            if (register.eftposProvider == EEftposProvider.SMARTPAY) {
+                let delayedShown = false;
+
+                const delayed = () => {
+                    if (!delayedShown) {
+                        delayedShown = true;
+                        setEftposTransactionProcessMessage("This transaction is delayed. Please wait...");
+                    }
+                };
+
+                const pollingUrl = await smartpayCreateTransaction(amount);
+                outcome = await smartpayPollForOutcome(pollingUrl, delayed);
+            } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
+                outcome = await windcaveCreateTransaction(
+                    register.windcaveStationId,
+                    register.windcaveStationUser,
+                    register.windcaveStationKey,
+                    amount,
+                    "Purchase",
+                );
+            } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
+                const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
+
+                outcome = await verifoneCreateTransaction(amount, register.eftposIpAddress, register.eftposPortNumber, restaurant.id, setEftposMessage);
+
+                if (
+                    outcome.transactionOutcome === EEftposTransactionOutcome.Success &&
+                    outcome.eftposReceipt &&
+                    (!register.eftposMerchantName || !outcome.eftposReceipt.includes(register.eftposMerchantName))
+                ) {
+                    lockEftposMerchantName();
+                    toast.error(
+                        "The EFTPOS merchant name does not match the receipt. This register has been locked. Please update the merchant name and restart the app.",
+                    );
+                }
+            } else if (register.eftposProvider == EEftposProvider.TYRO) {
+                const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
+                const setEftposQuestion = (question: ITyroEftposQuestion) => setEftposTransactionProcessQuestion(question);
+
+                outcome = await tyroCreateTransaction(amount.toString(), register.tyroMerchantId, register.tyroTerminalId, setEftposMessage, setEftposQuestion);
+            } else if (register.eftposProvider == EEftposProvider.MX51) {
+                const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
+                const setCustomerSignature = (question: IMX51EftposQuestion | null) => {
+                    if (isPOS) {
+                        setEftposSignatureRequiredQuestion(question);
+                    } else {
+                        question?.answerCallback(false);
+                    }
+                };
+
+                outcome = await mx51CreateTransaction(amount, 0, 0, setEftposMessage, setCustomerSignature);
+            }
+
+            if (!outcome) throw "Invalid Eftpos Transaction outcome.";
+
+            return outcome;
+        } catch (errorMessage) {
+            return {
+                platformTransactionOutcome: null,
+                transactionOutcome: EEftposTransactionOutcome.Fail,
+                message: errorMessage,
+                eftposReceipt: null,
+                eftposCardType: EEftposTransactionOutcomeCardType.EFTPOS,
+                eftposSurcharge: 0,
+                eftposTip: 0,
+            };
+        } finally {
+            setEftposTransactionProcessMessage(null);
+        }
+    };
+
+    const onUpdateProduct = (index: number, product: ICartProduct) => {
+        updateProduct(index, product);
+
+        if (!isPOS) setShowItemUpdatedModal(true);
+    };
+
+    const onClickApplyPromotionCode = async () => {
+        setShowPromotionCodeModal(true);
+    };
+
+    const onCancelEftposTransaction = () => {
+        if (register.eftposProvider == EEftposProvider.SMARTPAY) {
+            //Not implemented
+        } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
+            //Not implemented
+        } else if (register.eftposProvider == EEftposProvider.VERIFONE) {
+            //Not implemented
+        } else if (register.eftposProvider == EEftposProvider.TYRO) {
+            tyroCancelTransaction();
+        } else if (register.eftposProvider == EEftposProvider.MX51) {
+            mx51CancelTransaction();
+        }
+    };
+
+    const onConfirmTotalOrRetryEftposTransaction = async (amount: number) => {
+        setPaymentModalState(EPaymentModalState.AwaitingCard);
+
+        let outcome: IEftposTransactionOutcome | null = null;
+
+        if (amount === 0) {
+            //If amount is 0 then bypass the eftpos transaction
+            outcome = {
+                platformTransactionOutcome: EVerifoneTransactionOutcome.Approved, //Using verifone transactoin approved here, but this field is not really used here so doesnt matter
+                transactionOutcome: EEftposTransactionOutcome.Success,
+                message: "Transaction Approved!",
+                eftposReceipt: null,
+                eftposCardType: EEftposTransactionOutcomeCardType.EFTPOS,
+                eftposSurcharge: 0,
+                eftposTip: 0,
+            };
+        } else {
+            outcome = await performEftposTransaction(amount);
+        }
+
+        setEftposTransactionOutcome(outcome);
+
+        if (outcome.eftposReceipt) transactionEftposReceipts.current = outcome.eftposReceipt;
+
+        //If paid for everything
+        if (outcome.transactionOutcome === EEftposTransactionOutcome.Success) {
+            try {
+                const newEftposPaymentAmounts = paymentAmounts.eftpos + amount;
+                const newTotalPaymentAmounts = newEftposPaymentAmounts + paymentAmounts.cash;
+
+                const newPaymentAmounts: ICartPaymentAmounts = {
+                    ...paymentAmounts,
+                    eftpos: newEftposPaymentAmounts,
+                };
+                const newPayments: ICartPayment[] = [...payments, { type: register.eftposProvider, amount: amount }];
+
+                setPaymentAmounts(newPaymentAmounts);
+                setPayments(newPayments);
+
+                if (newTotalPaymentAmounts >= subTotal) {
+                    //Passing paymentAmounts, payments via params so we send the most updated values
+                    await onSubmitOrder(true, false, newPaymentAmounts, newPayments, outcome.eftposCardType, outcome.eftposSurcharge, outcome.eftposTip);
+
+                    setPaymentModalState(EPaymentModalState.EftposResult);
+                } else {
+                    //Payment pending
+                    if (isPOS) setPaymentModalState(EPaymentModalState.POSScreen);
+                }
+            } catch (e) {
+                setCreateOrderError(e);
+            }
+        } else if (outcome.transactionOutcome === EEftposTransactionOutcome.Fail) {
+            setPaymentModalState(EPaymentModalState.EftposResult);
+
+            // if (outcome.eftposReceipt) printEftposReceipts(outcome.eftposReceipt);
+        }
+    };
+
+    const calculateCashChangeAmount = (totalCashAmount: number, subTotal: number): number => {
+        const netAmount = totalCashAmount - subTotal;
+        const floorToNearestTen = Math.floor(netAmount / 10) * 10; //Floor to nearest 10.
+
+        return floorToNearestTen;
+    };
+
+    const onConfirmCashTransaction = async (amount: number) => {
+        try {
+            const nonCashPayments = paidSoFar - paymentAmounts.cash;
+            const newCashPaymentAmounts = paymentAmounts.cash + amount;
+            const newTotalPaymentAmounts = nonCashPayments + newCashPaymentAmounts;
+
+            const newPaymentAmounts: ICartPaymentAmounts = {
+                ...paymentAmounts,
+                cash: newTotalPaymentAmounts >= subTotal ? subTotal - nonCashPayments : newCashPaymentAmounts, //Cannot pay more than subTotal amount
+            };
+            const newPayments: ICartPayment[] = [...payments, { type: "CASH", amount: amount }];
+
+            setPaymentAmounts(newPaymentAmounts);
+            setPayments(newPayments);
+
+            //If paid for everything
+            if (newTotalPaymentAmounts >= subTotal) {
+                const changeAmount = calculateCashChangeAmount(newTotalPaymentAmounts, subTotal);
+
+                setCashTransactionChangeAmount(changeAmount);
+
+                //Passing paymentAmounts, payments via params so we send the most updated values
+                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.CashResult);
+            }
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
+    const onConfirmOnAccountTransaction = async (amount: number) => {
+        try {
+            const nonOnAccountPayments = paidSoFar - paymentAmounts.onAccount;
+            const newOnAccountPaymentAmounts = paymentAmounts.onAccount + amount;
+            const newTotalPaymentAmounts = nonOnAccountPayments + newOnAccountPaymentAmounts;
+
+            const newPaymentAmounts: ICartPaymentAmounts = {
+                ...paymentAmounts,
+                onAccount: newTotalPaymentAmounts >= subTotal ? subTotal - nonOnAccountPayments : newOnAccountPaymentAmounts, //Cannot pay more than subTotal amount
+            };
+            const newPayments: ICartPayment[] = [...payments, { type: "ONACCOUNT", amount: amount }];
+
+            setPaymentAmounts(newPaymentAmounts);
+            setPayments(newPayments);
+
+            //If paid for everything
+            if (newTotalPaymentAmounts >= subTotal) {
+                //Passing paymentAmounts, payments via params so we send the most updated values
+                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.OnAccountResult);
+            }
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
+    const onConfirmUberEatsTransaction = async (amount: number) => {
+        try {
+            const nonUberEatsPayments = paidSoFar - paymentAmounts.uberEats;
+            const newUberEatsPaymentAmounts = paymentAmounts.uberEats + amount;
+            const newTotalPaymentAmounts = nonUberEatsPayments + newUberEatsPaymentAmounts;
+
+            const newPaymentAmounts: ICartPaymentAmounts = {
+                ...paymentAmounts,
+                uberEats: newTotalPaymentAmounts >= subTotal ? subTotal - nonUberEatsPayments : newUberEatsPaymentAmounts, //Cannot pay more than subTotal amount
+            };
+            const newPayments: ICartPayment[] = [...payments, { type: "UBEREATS", amount: amount }];
+
+            setPaymentAmounts(newPaymentAmounts);
+            setPayments(newPayments);
+
+            //If paid for everything
+            if (newTotalPaymentAmounts >= subTotal) {
+                //Passing paymentAmounts, payments via params so we send the most updated values
+                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.UberEatsResult);
+            }
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
+    const onConfirmMenulogTransaction = async (amount: number) => {
+        try {
+            const nonMenulogPayments = paidSoFar - paymentAmounts.menulog;
+            const newMenulogPaymentAmounts = paymentAmounts.menulog + amount;
+            const newTotalPaymentAmounts = nonMenulogPayments + newMenulogPaymentAmounts;
+
+            const newPaymentAmounts: ICartPaymentAmounts = {
+                ...paymentAmounts,
+                menulog: newTotalPaymentAmounts >= subTotal ? subTotal - nonMenulogPayments : newMenulogPaymentAmounts, //Cannot pay more than subTotal amount
+            };
+            const newPayments: ICartPayment[] = [...payments, { type: "MENULOG", amount: amount }];
+
+            setPaymentAmounts(newPaymentAmounts);
+            setPayments(newPayments);
+
+            //If paid for everything
+            if (newTotalPaymentAmounts >= subTotal) {
+                //Passing paymentAmounts, payments via params so we send the most updated values
+                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.MenulogResult);
+            }
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
+    const onConfirmDoordashTransaction = async (amount: number) => {
+        try {
+            const nonDoordashPayments = paidSoFar - paymentAmounts.doordash;
+            const newDoordashPaymentAmounts = paymentAmounts.doordash + amount;
+            const newTotalPaymentAmounts = nonDoordashPayments + newDoordashPaymentAmounts;
+
+            const newPaymentAmounts: ICartPaymentAmounts = {
+                ...paymentAmounts,
+                doordash: newTotalPaymentAmounts >= subTotal ? subTotal - nonDoordashPayments : newDoordashPaymentAmounts, //Cannot pay more than subTotal amount
+            };
+            const newPayments: ICartPayment[] = [...payments, { type: "DOORDASH", amount: amount }];
+
+            setPaymentAmounts(newPaymentAmounts);
+            setPayments(newPayments);
+
+            //If paid for everything
+            if (newTotalPaymentAmounts >= subTotal) {
+                //Passing paymentAmounts, payments via params so we send the most updated values
+                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.DoordashResult);
+            }
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
+    const onConfirmDelivereasyTransaction = async (amount: number) => {
+        try {
+            const nonDelivereasyPayments = paidSoFar - paymentAmounts.delivereasy;
+            const newDelivereasyPaymentAmounts = paymentAmounts.delivereasy + amount;
+            const newTotalPaymentAmounts = nonDelivereasyPayments + newDelivereasyPaymentAmounts;
+
+            const newPaymentAmounts: ICartPaymentAmounts = {
+                ...paymentAmounts,
+                delivereasy: newTotalPaymentAmounts >= subTotal ? subTotal - nonDelivereasyPayments : newDelivereasyPaymentAmounts, //Cannot pay more than subTotal amount
+            };
+            const newPayments: ICartPayment[] = [...payments, { type: "DELIVEREASY", amount: amount }];
+
+            setPaymentAmounts(newPaymentAmounts);
+            setPayments(newPayments);
+
+            //If paid for everything
+            if (newTotalPaymentAmounts >= subTotal) {
+                //Passing paymentAmounts, payments via params so we send the most updated values
+                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+
+                setPaymentModalState(EPaymentModalState.DelivereasyResult);
+            }
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
+    const onContinueToNextOrder = () => {
+        clearTransactionCompleteTimeout();
+    };
+
+    const onContinueToNextPayment = () => {
+        setPaymentModalState(EPaymentModalState.POSScreen);
+    };
+
+    const onClickPayLater = async () => {
+        setShowPaymentModal(true);
+
+        const newPaymentAmounts: ICartPaymentAmounts = {
+            cash: 0,
+            eftpos: 0,
+            online: 0,
+            onAccount: 0,
+            uberEats: 0,
+            menulog: 0,
+            doordash: 0,
+            delivereasy: 0,
+        };
+        const newPayments: ICartPayment[] = [];
+
+        try {
+            await onSubmitOrder(false, false, newPaymentAmounts, newPayments);
+
+            setPaymentModalState(EPaymentModalState.PayLater);
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
+    const onParkOrder = async () => {
+        setShowPaymentModal(true);
+
+        setPaymentModalState(EPaymentModalState.Park);
+
+        try {
+            await onSubmitOrder(false, true, paymentAmounts, payments);
+        } catch (e) {
+            setCreateOrderError(e);
+        }
+    };
+
+    const onNoSale = () => {
+        register.printers &&
+            register.printers.items.forEach(async (printer) => {
+                if (printer.customerPrinter !== true) return;
+
+                await printNoSaleReceipt({ printer: { printerType: printer.type, printerAddress: printer.address } });
+            });
+    };
+
+    // Modals
+    const upSellCategoryModal = () => {
+        if (
+            restaurant &&
+            restaurant.upSellCrossSell &&
+            restaurant.upSellCrossSell.customCategories &&
+            restaurant.upSellCrossSell.customCategories.items.length > 0
+        ) {
+            const upSellCrossSaleCategoryItems: IMatchingUpSellCrossSellCategoryItem[] = [];
+
+            const menuCategories = restaurant.categories.items;
+            const upSellCrossSellCategories = restaurant.upSellCrossSell.customCategories.items;
+
+            menuCategories.forEach((category) => {
+                if (category.availablePlatforms && !category.availablePlatforms.includes(register.type)) return;
+
+                upSellCrossSellCategories.forEach((upSellCategory) => {
+                    if (category.id === upSellCategory.id) {
+                        upSellCrossSaleCategoryItems.push({ category: category });
+                    }
+                });
+            });
+
+            return (
+                <UpSellCategoryModal
+                    isOpen={showUpSellCategoryModal}
+                    onClose={onCloseUpSellCategoryModal}
+                    upSellCrossSaleCategoryItems={upSellCrossSaleCategoryItems}
+                    onSelectUpSellCrossSellCategory={onSelectUpSellCrossSellCategory}
+                />
+            );
+        }
+    };
+
+    const upSellProductModal = () => {
+        if (
+            restaurant &&
+            restaurant.upSellCrossSell &&
+            restaurant.upSellCrossSell.customProducts &&
+            restaurant.upSellCrossSell.customProducts.items.length > 0
+        ) {
+            const upSellCrossSaleProductItems: IMatchingUpSellCrossSellProductItem[] = [];
+
+            const menuCategories = restaurant.categories.items;
+            const upSellCrossSellProducts = restaurant.upSellCrossSell.customProducts.items;
+
+            menuCategories.forEach((category) => {
+                if (category.availablePlatforms && !category.availablePlatforms.includes(register.type)) return;
+
+                category.products?.items.forEach((p) => {
+                    if (p.product.availablePlatforms && !p.product.availablePlatforms.includes(register.type)) return;
+
+                    const matchingProduct = upSellCrossSellProducts.find((upSellProduct) => p.product.id === upSellProduct.id);
+
+                    if (matchingProduct) {
+                        const isAlreadyAdded = upSellCrossSaleProductItems.some((item) => item.product.id === matchingProduct.id);
+
+                        if (!isAlreadyAdded) {
+                            upSellCrossSaleProductItems.push({
+                                category: category,
+                                product: p.product,
+                            });
+                        }
+                    }
+                });
+            });
+
+            if (upSellCrossSaleProductItems.length === 0) return <></>;
+
+            return (
+                <UpSellProductModal
+                    isOpen={showUpSellProductModal}
+                    onClose={onCloseUpSellProductModal}
+                    upSellCrossSaleProductItems={upSellCrossSaleProductItems}
+                    onSelectUpSellCrossSellProduct={onSelectUpSellCrossSellProduct}
+                />
+            );
+        }
+    };
+
+    const editProductModal = () => {
+        let category: IGET_RESTAURANT_CATEGORY | null = null;
+        let product: IGET_RESTAURANT_PRODUCT | null = null;
+
+        if (!productToEdit) {
+            return <></>;
+        }
+
+        restaurant.categories.items.forEach((c) => {
+            if (productToEdit.product.category && productToEdit.product.category.id === c.id) {
+                category = c;
+            }
+
+            c.products &&
+                c.products.items.forEach((p) => {
+                    if (p.product.id == productToEdit.product.id) {
+                        product = p.product;
+                    }
+                });
+        });
+
+        if (!product || !category) {
+            return <></>;
+        }
+
+        let orderedModifiers: IPreSelectedModifiers = {};
+
+        productToEdit.product.modifierGroups.forEach((mg) => {
+            orderedModifiers[mg.id] = mg.modifiers;
+        });
+
+        console.log("orderedModifiers", orderedModifiers);
+
+        return (
+            <ProductModal
+                isOpen={showEditProductModal}
+                onClose={onCloseEditProductModal}
+                category={category}
+                product={product}
+                onUpdateProduct={onUpdateProduct}
+                editProduct={{
+                    orderedModifiers: orderedModifiers,
+                    quantity: productToEdit.product.quantity,
+                    notes: productToEdit.product.notes,
+                    productCartIndex: productToEdit.displayOrder,
+                }}
+            />
+        );
+    };
+
+    const productModal = () => {
+        if (selectedCategoryForProductModal && selectedProductForProductModal && showProductModal) {
+            return (
+                <ProductModal
+                    isOpen={showProductModal}
+                    onClose={onCloseProductModal}
+                    category={selectedCategoryForProductModal}
+                    product={selectedProductForProductModal}
+                    onAddProduct={onAddProduct}
+                />
+            );
+        }
+    };
+
+    const itemUpdatedModal = () => {
+        return <>{showItemUpdatedModal && <ItemAddedUpdatedModal isOpen={showItemUpdatedModal} onClose={onCloseItemUpdatedModal} isProductUpdate={true} />}</>;
+    };
+
+    const promotionCodeModal = () => {
+        return <>{showPromotionCodeModal && <PromotionCodeModal isOpen={showPromotionCodeModal} onClose={onClosePromotionCodeModal} />}</>;
+    };
+
+    const discountModal = () => {
+        return <>{showDiscountModal && <DiscountModal isOpen={showDiscountModal} onClose={onCloseDiscountModal} />}</>;
+    };
+
+    const thresholdMessageModal = () => {
+        return (
+            <>
+                {showOrderThresholdMessageModal && (
+                    <OrderThresholdMessageModal
+                        isOpen={showOrderThresholdMessageModal}
+                        onClose={onCloseOrderThresholdMessageModal}
+                        onContinue={() => setIsShownOrderThresholdMessageModal(true)}
+                    />
+                )}
+            </>
+        );
+    };
+
+    const r18MessageModal = () => {
+        return (
+            <>
+                {showModal && (
+                    <R18MessageModal
+                        isOpen={showModal}
+                        message={showModal}
+                        onClose={onCloseR18MessageModal}
+                        onContinue={() => setShowModal("")}
+                        paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                        incrementRedirectTimer={incrementRedirectTimer}
+                    />
+                )}
+            </>
+        );
+    };
+
+    const paymentModal = () => {
+        return (
+            <>
+                {showPaymentModal && (
+                    <PaymentModal
+                        isOpen={showPaymentModal}
+                        onClose={onClosePaymentModal}
+                        paymentModalState={paymentModalState}
+                        eftposTransactionProcessMessage={eftposTransactionProcessMessage}
+                        eftposTransactionProcessQuestion={eftposTransactionProcessQuestion}
+                        eftposSignatureRequiredQuestion={eftposSignatureRequiredQuestion}
+                        eftposTransactionOutcome={eftposTransactionOutcome}
+                        cashTransactionChangeAmount={cashTransactionChangeAmount}
+                        onPrintCustomerReceipt={() => createdOrder.current && onPrintCustomerReceipt(createdOrder.current)}
+                        onPrintParkedOrderReceipts={() => createdOrder.current && onPrintParkedOrderReceipts(createdOrder.current)}
+                        onPrintOnAccountOrderReceipts={() => createdOrder.current && onPrintOnAccountOrderReceipts(createdOrder.current)}
+                        paymentOutcomeOrderNumber={paymentOutcomeOrderNumber}
+                        incrementRedirectTimer={incrementRedirectTimer}
+                        paymentOutcomeApprovedRedirectTimeLeft={paymentOutcomeApprovedRedirectTimeLeft}
+                        onContinueToNextOrder={onContinueToNextOrder}
+                        createOrderError={createOrderError}
+                        onConfirmTotalOrRetryEftposTransaction={onConfirmTotalOrRetryEftposTransaction}
+                        onCancelEftposTransaction={onCancelEftposTransaction}
+                        onConfirmCashTransaction={onConfirmCashTransaction}
+                        onConfirmOnAccountTransaction={onConfirmOnAccountTransaction}
+                        onConfirmUberEatsTransaction={onConfirmUberEatsTransaction}
+                        onConfirmMenulogTransaction={onConfirmMenulogTransaction}
+                        onConfirmDoordashTransaction={onConfirmDoordashTransaction}
+                        onConfirmDelivereasyTransaction={onConfirmDelivereasyTransaction}
+                        onContinueToNextPayment={onContinueToNextPayment}
+                        onCancelPayment={onCancelPayment}
+                        onCancelOrder={onCancelOrder}
+                    />
+                )}
+            </>
+        );
+    };
+
+    const modalsAndSpinners = (
+        <>
+            {showFullScreenSpinner && <FullScreenSpinner show={true} text="Processing your order..." />}
+
+            {upSellCategoryModal()}
+            {upSellProductModal()}
+            {productModal()}
+            {editProductModal()}
+            {itemUpdatedModal()}
+            {promotionCodeModal()}
+            {discountModal()}
+            {thresholdMessageModal()}
+            {paymentModal()}
+        </>
+    );
+
+    const cartEmptyDisplay = (
+        <>
+            <div className="cart-empty">
+                <div className="icon mb-3">
+                    <ShoppingBasketIcon height="64px"></ShoppingBasketIcon>
+                </div>
+                <div className="text-bold center mb-3">Empty cart</div>
+                {/* <div className="h3 center mb-6">Show some love and start ordering!</div>
+                <Button
+                    onClick={() => {
+                        navigate(restaurantPath + "/" + restaurant!.id);
+                    }}
+                >
+                    Back To Menu
+                </Button> */}
+            </div>
+        </>
+    );
+
+    const onOrderMore = () => {
+        navigate(`/restaurant/${restaurant.id}`);
+    };
+
+    const title = (
+        <div className="title mb-6">
+            <CachedImage className="image mr-2" url={`${getPublicCloudFrontDomainName()}/images/shopping-bag-icon.png`} alt="shopping-bag-icon" />
+            <div className="h1">Your Order</div>
+        </div>
+    );
+
+    const restaurantOrderType = (
+        <div className="checkout-order-type mb-2">
+            <div className="h4">Order Type: {orderType}</div>
+            <Link onClick={onUpdateOrderType}>Change</Link>
+        </div>
+    );
+
+    const promotionInformation = (
+        <>
+            {promotion && (
+                <div className="checkout-promotion-information mb-2 pt-3 pr-3 pb-4 pl-3">
+                    <div>
+                        <div className="checkout-promotion-information-heading h3 mb-1">
+                            <div>Promotion Applied!</div>
+                            <div>-${convertCentsToDollars(promotion.discountedAmount)}</div>
+                        </div>
+                        {promotion.promotion.type !== EPromotionType.ENTIREORDER ? (
+                            <div>
+                                {promotion.promotion.name}:{" "}
+                                {Object.values(promotion.matchingProducts).map((p, index) => (
+                                    <>
+                                        {index !== 0 && ", "}
+                                        {p.name}
+                                    </>
+                                ))}
+                            </div>
+                        ) : (
+                            <div>Entire Order</div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </>
+    );
+
+    const restaurantTableNumber = (
+        <div className="checkout-table-number">
+            <div className="h3">Table Number: {tableNumber}</div>
+            <Link onClick={onUpdateTableNumber}>Change</Link>
+        </div>
+    );
+
+    const restaurantBuzzerNumber = (
+        <div className="checkout-buzzer-number">
+            <div className="h3">Buzzer Number: {buzzerNumber}</div>
+            <Link onClick={onUpdateBuzzerNumber}>Change</Link>
+        </div>
+    );
+
+    const restaurantCovers = (
+        <div className="checkout-covers">
+            <div className="h3">Number Of Diners: {covers}</div>
+            <Link onClick={onUpdateCovers}>Change</Link>
+        </div>
+    );
+
+    const restaurantCustomerInformation = (
+        <div className="checkout-customer-details">
+            <div className="h3">
+                Customer Details: {`${customerInformation?.firstName} ${customerInformation?.email} ${customerInformation?.phoneNumber}`}
+                {customerInformation?.customFields.map((customField) => (
+                    <div>
+                        {customField.label}: {customField.value}
+                    </div>
+                ))}
+            </div>
+            <Link onClick={onUpdateCustomerInformation}>Change</Link>
+        </div>
+    );
+
+    const orderSummary = (
+        <OrderSummary
+            products={products || []}
+            onEditProduct={onEditProduct}
+            onUpdateProductQuantity={onUpdateProductQuantity}
+            onApplyProductDiscount={onApplyProductDiscount}
+            onRemoveProduct={onRemoveProduct}
+            showKitchenSendStatus={showKitchenSendStatusInCart}
+            kitchenSendStatusByDisplayOrder={kitchenSendStatusByDisplayOrder}
+        />
+    );
+
+    const orderScheduleTitle = (
+        <div className="title mb-1 mb-2">
+            <div className="h2">Order Time</div>
+        </div>
+    );
+
+    const onChangeScheduleDateTime = (dateTimeLocalISO: string | null) => {
+        updateOrderScheduledAt(dateTimeLocalISO);
+    };
+
+    const restaurantNotes = (
+        <>
+            <div className="h2 mb-3">Special Instructions</div>
+            <TextArea placeholder={"Leave a note for the restaurant"} value={notes} onChange={onNotesChange} />
+        </>
+    );
+
+    const scrollDown = () => {
+        const scrollableDiv = document.getElementById("productsWrapperScroll");
+        if (scrollableDiv) {
+            scrollableDiv.scrollTop += 100;
+        }
+    };
+
+    const order = (
+        <>
+            <div className={isPOS ? "mt-2" : "mt-10"}></div>
+            {/* {title} */}
+            {/* {register && register.availableOrderTypes.length > 1 && restaurantOrderType} */}
+            {/* {buzzerNumber && <div className="mb-2">{restaurantBuzzerNumber}</div>} */}
+            {/* {tableNumber && <div className="mb-2">{restaurantTableNumber}</div>} */}
+            {/* {covers && <div className="mb-2">{restaurantCovers}</div>} */}
+            {/* {customerInformation && <div className="mb-2">{restaurantCustomerInformation}</div>} */}
+            {/* {promotionInformation} */}
+            {/* <div className="separator-6"></div> */}
+            {orderSummary}
+            {/* <div className="restaurant-notes-wrapper">{restaurantNotes}</div> */}
+            <div className={isPOS ? "mb-4" : "mb-10"}></div>
+        </>
+    );
+
+    const onDiscount = () => {
+        setShowDiscountModal(true);
+    };
+
+    const ordersFooter = (
+        <div className="checkout-feature-button p-2" onClick={() => navigate(ordersPath)}>
+            <FaRectangleList size="20px" />
+            Orders
+        </div>
+    );
+
+    const dashboardFooter = (
+        <div className="checkout-feature-button p-2" onClick={() => navigate(dashboardPath)}>
+            <MdSettings size="22px" />
+            Dashboard
+        </div>
+    );
+
+    const promoCodeFooter = (
+        <div className="checkout-feature-button p-2" onClick={onClickApplyPromotionCode}>
+            {/* <MdDiscount size="20px" /> */}
+            Promo
+        </div>
+    );
+
+    const parkOrderFooter = (
+        <div className="checkout-feature-button p-2" onClick={() => products && products.length > 0 && onParkOrder()}>
+            {/* <RiTimer2Fill size="20px" /> */}
+            Park Order
+        </div>
+    );
+
+    const buzzerNumberFooter = (
+        <div className="checkout-feature-button p-2" onClick={() => navigate(buzzerNumberPath)}>
+            {/* <TbHexagon4Filled size="20px" /> */}
+            {buzzerNumber ? `Buzzer (${buzzerNumber})` : "Buzzer"}
+        </div>
+    );
+
+    const tableFlagFooter = (
+        <div className="checkout-feature-button p-2" onClick={() => navigate(tableNumberPath)}>
+            {/* <TbFlag2Filled size="20px" /> */}
+            {tableNumber ? `Table (${tableNumber})` : "Table"}
+        </div>
+    );
+
+    const customerInformationFooter = (
+        <div className="checkout-feature-button p-2" onClick={() => navigate(customerInformationPath)}>
+            {/* <MdAccountCircle size="20px" /> */}
+            {customerInformation ? `Customer (Edit)` : "Customer"}
+        </div>
+    );
+
+    const noSaleFooter = (
+        <div className="checkout-feature-button p-2" onClick={onNoSale}>
+            {/* <FaCashRegister size="20px" /> */}
+            No Sale
+        </div>
+    );
+
+    const clearSaleFooter = (
+        <div className="checkout-feature-button p-2" onClick={onClearSale}>
+            {/* <TiCancel size="23px" /> */}
+            Clear
+        </div>
+    );
+
+    const discountSaleFooter = (
+        <div className="checkout-feature-button p-2" onClick={() => products && products.length > 0 && onDiscount()}>
+            {/* <HiCurrencyDollar size="20px" /> */}
+            Discount
+        </div>
+    );
+
+    const checkoutFooter = (
+        <div>
+            {/* <div className="order-schedule-date-time-wrapper">
+                {orderScheduleTitle}
+                <OrderScheduleDateTime
+                    onChange={onChangeScheduleDateTime}
+                    operatingHours={restaurant.operatingHours}
+                    preparationTimeInMinutes={restaurant.preparationTimeInMinutes || 10}
+                />
+            </div>
+            <div className="mb-2"></div> */}
+            {promotion ? (
+                <div className="text-center mb-1">
+                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(promotion.discountedAmount)}`}{" "}
+                    {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
+                </div>
+            ) : (
+                <></>
+            )}
+            {surcharge ? <div className="text-center mb-1">Surcharge: ${convertCentsToDollars(surcharge)}</div> : <></>}
+            {paidSoFar > 0 ? <div className="text-center mb-1">Paid So Far: ${convertCentsToDollars(paidSoFar)}</div> : <></>}
+            {orderTypeSurcharge > 0 ? <div className="text-center mb-1">Order Type Surcharge: ${convertCentsToDollars(orderTypeSurcharge)}</div> : <></>}
+
+            {staticDiscount ? (
+                <div className={`text-center ${isPOS ? "mb-1" : "mb-4"}`}>
+                    Fixed Discount: ${convertCentsToDollars(staticDiscount)} <Link onClick={() => setStaticDiscount(0)}>(Remove)</Link>
+                </div>
+            ) : (
+                <></>
+            )}
+
+            {percentageDiscount ? (
+                <div className={`text-center ${isPOS ? "mb-1" : "mb-4"}`}>
+                    Percentage Discount: ${convertCentsToDollars(percentageDiscount)} <Link onClick={() => setPercentageDiscount(0)}>(Remove)</Link>
+                </div>
+            ) : (
+                <></>
+            )}
+            <div className={`h3 text-center checkout-total-price ${isPOS ? "mb-2" : "mb-4"}`}>Total: ${convertCentsToDollars(subTotal)}</div>
+            <div className={`${isPOS ? "mb-0" : "mb-4"}`}>
+                <div className="checkout-buttons-container">
+                    {!isPOS && (
+                        <Button onClick={onOrderMore} className="button large mr-3 order-more-button">
+                            Order More
+                        </Button>
+                    )}
+                    <Button onClick={onClickOrderButton} className="button complete-order-button" disabled={products && products.length ? false : true}>
+                        Complete Order
+                    </Button>
+                </div>
+                {/* {payments.length === 0 && register.enablePayLater && (
+                    <div className={`pay-later-link ${isPOS ? "mt-3" : "mt-4"}`}>
+                        <Link onClick={onClickPayLater}>Pay later at counter...</Link>
+                    </div>
+                )} */}
+                {/* <div className={`apply-promo-code-link ${isPOS ? "mt-3" : "mt-4"}`}>
+                    <Link onClick={onClickApplyPromotionCode}>Apply promo code</Link>
+                </div> */}
+            </div>
+            {!isPOS && (
+                <Button className="cancel-button" onClick={onCancelOrder}>
+                    Cancel Order
+                </Button>
+            )}
+        </div>
+    );
+
+    return (
+        <>
+            {/* <PageWrapper> */}
+            <div className="checkout">
+                <div className="pos-order-type-button-wrapper">
+                    {isPOS && register.availableOrderTypes.length !== 1 && (
+                        <>
+                            <div
+                                className={`pos-order-type p-2 ${orderType === EOrderType.DINEIN ? "selected" : ""}`}
+                                onClick={() => setOrderType(EOrderType.DINEIN)}
+                            >
+                                Dine In
+                            </div>
+                            <div
+                                className={`pos-order-type p-2 ${orderType === EOrderType.TAKEAWAY ? "selected" : ""}`}
+                                onClick={() => setOrderType(EOrderType.TAKEAWAY)}
+                            >
+                                Takeaway
+                            </div>
+                        </>
+                    )}
+                </div>
+                <div className="pos-order-type-button-wrapper">
+                    {isPOS && <>{ordersFooter}</>}
+                    {isPOS && <>{dashboardFooter}</>}
+                </div>
+                <div className="pos-order-type-button-wrapper">
+                    {isPOS && <>{buzzerNumberFooter}</>}
+                    {isPOS && <>{tableFlagFooter}</>}
+                    {isPOS && <>{customerInformationFooter}</>}
+                    {isPOS && <>{clearSaleFooter}</>}
+                </div>
+                {parkedOrderNumber && <div className="parked-order-banner">Updating Parked Order #{parkedOrderNumber}</div>}
+                <div className="order-wrapper">
+                    <div ref={(ref) => setProductsWrapperElement(ref)} className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`} id="productsWrapperScroll">
+                        {(!products || products.length == 0) && cartEmptyDisplay}
+                        {products && products.length > 0 && order}
+                        {isScrollable ? (
+                            <div className={register.type === "POS" ? "mr-btm fixed-button" : "fixed-button"} onClick={scrollDown}>
+                                <div className={`arrow-container ${isScrollable ? "fade-in" : "fade-out"}`}>
+                                    <FiArrowDownCircle size="46" />
+                                </div>
+                            </div>
+                        ) : null}
+                    </div>
+                </div>
+                <div className="extra-footer-button">
+                    {isPOS && payments.length === 0 && <>{promoCodeFooter}</>}
+                    {isPOS && <>{parkOrderFooter}</>}
+                    {isPOS && <>{noSaleFooter}</>}
+                    {isPOS && <>{discountSaleFooter}</>}
+                </div>
+                {/* {products && products.length > 0 && ( */}
+                <div className="footer p-2" id="footer">
+                    {checkoutFooter}
+                </div>
+                {/* )} */}
+            </div>
+            {r18MessageModal()}
+            {modalsAndSpinners}
+            {/* </PageWrapper> */}
+        </>
+    );
+};
+
+export default Checkout;

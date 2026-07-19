@@ -9,7 +9,12 @@ import {
     IPrintSalesDataInput,
     EOrderStatus,
     EOrderType,
+    IEftposReceiptOutput,
+    IPrintReceiptDataInput,
     IEftposReceipt,
+    IPrintNoSaleOutput,
+    IPrintCashUpDataInput,
+    IPrintNoSaleReceiptDataInput,
     ECountry,
 } from "./model";
 import usbPrinter from "@thiagoelg/node-printer";
@@ -150,7 +155,33 @@ export const printCustomerReceipt = async (order: IOrderReceipt, receiptIndex?: 
 
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
-    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
+    if (order.openCashDrawer) printer.openCashDrawer();
+
+    if (order.futureOrder) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Future Order");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
+
+    if (order.orderReminder) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Upcoming Order Reminder");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
 
     if (order.displayPaymentRequiredMessage) {
         printer.alignCenter();
@@ -465,6 +496,17 @@ export const printCustomerReceipt = async (order: IOrderReceipt, receiptIndex?: 
             },
         ]);
     order.paymentAmounts &&
+        order.paymentAmounts.onAccount &&
+        printer.tableCustom([
+            { text: "On Account", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.paymentAmounts.onAccount)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
+    order.paymentAmounts &&
         order.paymentAmounts.uberEats &&
         printer.tableCustom([
             { text: "Uber Eats", align: "LEFT", width: 0.75, bold: true },
@@ -589,7 +631,33 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
 
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
-    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
+    if (order.openCashDrawer) printer.openCashDrawer();
+
+    if (order.futureOrder) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Future Order");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
+
+    if (order.orderReminder) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Upcoming Order Reminder");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
 
     if (order.displayPaymentRequiredMessage) {
         printer.alignCenter();
@@ -928,7 +996,33 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt, receiptInde
 
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
-    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
+    if (order.openCashDrawer) printer.openCashDrawer();
+
+    if (order.futureOrder) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Future Order");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
+
+    if (order.orderReminder) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Upcoming Order Reminder");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
 
     if (order.displayPaymentRequiredMessage) {
         printer.alignCenter();
@@ -1288,7 +1382,33 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt, receiptInde
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
 
-    if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
+    if (order.openCashDrawer) printer.openCashDrawer();
+
+    if (order.futureOrder) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Future Order");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
+
+    if (order.orderReminder) {
+        printer.alignCenter();
+        printer.setTextSize(1, 1);
+        printer.invert(true);
+        printer.bold(true);
+        printer.println("Upcoming Order Reminder");
+        printer.bold(false);
+        printer.invert(false);
+        printer.setTextNormal();
+        printer.alignLeft();
+        printer.newLine();
+    }
 
     if (order.displayPaymentRequiredMessage) {
         printer.alignCenter();
@@ -1976,6 +2096,129 @@ export const printSalesDataReceipt = async (printSalesDataInput: IPrintSalesData
     }
 
     printer.partialCut();
+
+    try {
+        if (printSalesDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
+            await printer.execute();
+        } else if (printSalesDataInput.printer.printerType == ERegisterPrinterType.USB) {
+            await usbPrinterExecute(printSalesDataInput.printer.printerAddress, printer.getBuffer());
+            printer.clear();
+        } else {
+            //Bluetooth
+        }
+
+        return { error: null };
+    } catch (e) {
+        return { error: e };
+    }
+};
+
+export const printCashUpDataReceipt = async (printCashUpDataInput: IPrintCashUpDataInput): Promise<IPrintReceiptOutput> => {
+    let printer;
+
+    if (printCashUpDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            interface: `tcp://${printCashUpDataInput.printer.printerAddress}`,
+        });
+    } else if (printCashUpDataInput.printer.printerType == ERegisterPrinterType.USB) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+        });
+    } else {
+        //Bluetooth
+    }
+
+    printer.alignCenter();
+    printer.bold(true);
+    printer.setTextSize(1, 1);
+    printer.println("End Of Day Takings");
+    printer.setTextNormal();
+    printer.bold(false);
+    printer.println(printCashUpDataInput.restaurantName);
+
+    printer.alignLeft();
+    printer.newLine();
+    printer.println(`Business Date: ${format(new Date(printCashUpDataInput.cashupSessionDate), "dd MMM yyyy")}`);
+    printer.println(printCashUpDataInput.scopeLabel);
+    if (printCashUpDataInput.finalisedAt) {
+        printer.println(`Finalised: ${format(new Date(printCashUpDataInput.finalisedAt), "dd MMM yyyy HH:mm")}`);
+    }
+    if (printCashUpDataInput.finalisedByName) printer.println(`Finalised By: ${printCashUpDataInput.finalisedByName}`);
+    printer.drawLine();
+
+    printer.tableCustom([
+        { text: "Payment Type", width: 0.4, align: "LEFT", bold: true },
+        { text: "Counted", width: 0.2, align: "RIGHT", bold: true },
+        { text: "Recorded", width: 0.2, align: "RIGHT", bold: true },
+        { text: "Diff", width: 0.2, align: "RIGHT", bold: true },
+    ]);
+
+    printCashUpDataInput.summaryRows.forEach((row) => {
+        printer.tableCustom([
+            { text: row.label, width: 0.4, align: "LEFT", bold: row.label === "Total" },
+            { text: `$${convertCentsToDollars(row.countedCents)}`, width: 0.2, align: "RIGHT", bold: row.label === "Total" },
+            { text: `$${convertCentsToDollars(row.recordedCents)}`, width: 0.2, align: "RIGHT", bold: row.label === "Total" },
+            { text: `$${convertCentsToDollars(row.differenceCents)}`, width: 0.2, align: "RIGHT", bold: row.label === "Total" },
+        ]);
+    });
+
+    printer.drawLine();
+    printer.bold(true);
+    printer.println("Drawer & Money Movement");
+    printer.bold(false);
+
+    printCashUpDataInput.drawerRows.forEach((row) => {
+        printer.tableCustom([
+            { text: row.label, width: 0.75, align: "LEFT" },
+            { text: `$${convertCentsToDollars(row.valueCents)}`, width: 0.25, align: "RIGHT" },
+        ]);
+    });
+
+    if (printCashUpDataInput.varianceReason) {
+        printer.newLine();
+        printer.println(`Variance Reason: ${printCashUpDataInput.varianceReason}`);
+    }
+
+    printer.partialCut();
+
+    try {
+        if (printCashUpDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
+            await printer.execute();
+        } else if (printCashUpDataInput.printer.printerType == ERegisterPrinterType.USB) {
+            await usbPrinterExecute(printCashUpDataInput.printer.printerAddress, printer.getBuffer());
+            printer.clear();
+        } else {
+            //Bluetooth
+        }
+
+        return { error: null };
+    } catch (e) {
+        return { error: e };
+    }
+};
+
+export const printNoSaleDataReceipt = async (printSalesDataInput: IPrintNoSaleReceiptDataInput): Promise<IPrintNoSaleOutput> => {
+    let printer;
+
+    if (printSalesDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            interface: `tcp://${printSalesDataInput.printer.printerAddress}`,
+        });
+    } else if (printSalesDataInput.printer.printerType == ERegisterPrinterType.USB) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+        });
+    } else {
+        //Bluetooth
+    }
+
+    printer.openCashDrawer();
 
     try {
         if (printSalesDataInput.printer.printerType == ERegisterPrinterType.WIFI) {

@@ -1,0 +1,97 @@
+.customer-information {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    margin-top: 48px;
+
+    .customer-search-wrapper {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .customer-search-new-customer {
+        width: 210px;
+    }
+
+    .loyalty-users-wrapper {
+        display: grid;
+        grid-gap: 16px;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        width: 100%;
+        margin-top: 24px;
+
+        .loyalty-user-wrapper {
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+
+            .loyalty-user-favourite {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                border: none;
+                background: transparent;
+                padding: 4px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #b0b0b0;
+                cursor: pointer;
+
+                &:hover {
+                    color: #f5b301;
+                }
+
+                &.active {
+                    color: #f5b301;
+                }
+
+                &:disabled {
+                    opacity: 0.6;
+                    cursor: default;
+                }
+            }
+        }
+    }
+
+    .close-button-wrapper {
+        position: absolute;
+        top: 32px;
+        right: 32px;
+        cursor: pointer;
+
+        .close-button {
+            color: #484848;
+        }
+    }
+
+    .customer-information-buttons {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .customer-signature-canvas {
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        width: 400px;
+        height: 200px;
+
+        &.error {
+            border: 1px solid var(--error-color);
+            background-color: hsl(var(--error-hue), var(--error-saturation), 98%);
+        }
+    }
+
+    .customer-signature-clear-button {
+        background-color: #e0e0e0;
+        border: 1px solid #484848;
+        color: #484848;
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+}

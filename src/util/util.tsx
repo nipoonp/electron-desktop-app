@@ -1,6 +1,6 @@
 import { eachMinuteOfInterval, format, getDay, isAfter, isBefore, isWithinInterval, startOfDay } from "date-fns";
 import { addDays, isEqual } from "date-fns";
-import { IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
+import { IGET_RESTAURANT_ORDER_FRAGMENT, IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
 import {
     EDiscountType,
     EOrderType,
@@ -211,13 +211,26 @@ export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY
     return isWithinTimeSlot;
 };
 
+// Sums a loyalty user's materialised per-loyalty balances, scoped to the loyalties in the active group.
+export const calculateLoyaltyPointsForGroup = (
+    loyaltyBalances: { loyaltyId?: string | null; points: number }[],
+    loyaltyGroupIds: string[],
+): number => {
+    const groupLoyaltyIds = new Set(loyaltyGroupIds);
+
+    return loyaltyBalances.reduce(
+        (total, { loyaltyId, points }) => (loyaltyId && groupLoyaltyIds.has(loyaltyId) ? total + (points || 0) : total),
+        0,
+    );
+};
+
 export const getProductQuantityAvailable = (
     menuProductItem: {
         id: string;
         totalQuantityAvailable: number;
     },
     cartProducts: ICartItemQuantitiesById,
-    maxQuantityPerOrder: number | undefined,
+    maxQuantityPerOrder?: number | undefined,
 ) => {
     let quantityAvailable = menuProductItem.totalQuantityAvailable;
 
@@ -238,7 +251,7 @@ export const isProductQuantityAvailable = (
         totalQuantityAvailable?: number;
     },
     cartProducts: ICartItemQuantitiesById,
-    maxQuantityPerOrder: number | undefined,
+    maxQuantityPerOrder?: number | undefined,
 ) => {
     if (!menuProductItem.totalQuantityAvailable) return true;
 
@@ -312,7 +325,8 @@ export const getCartProductUnitTotalPrice = (cartProduct: ICartProduct): number 
                 modifier.productModifiers.forEach((productModifier) => {
                     productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
                         orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
-                            const nestedChangedQuantity = orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
+                            const nestedChangedQuantity =
+                                orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
                             if (nestedChangedQuantity > 0) {
                                 price += orderedProductModifierModifier.price * nestedChangedQuantity;
                             }
@@ -531,7 +545,8 @@ const getMatchingPromotionProducts = (
 };
 
 export const applyDiscountToCartProducts = (promotion: ICartPromotion | null, cartProducts: ICartProduct[]) => {
-    const cartProductsCpy = cartProducts.map((p) => ({ ...p, discount: 0 }));
+    //Reset promotion discounts to 0, but keep manual POS price overrides (isPriceEdited) intact
+    const cartProductsCpy = cartProducts.map((p) => ({ ...p, discount: p.isPriceEdited ? p.discount : 0 }));
 
     promotion?.matchingProducts.forEach((matchingProduct) => {
         if (matchingProduct.index !== undefined) {
@@ -943,8 +958,20 @@ export const getRestaurantTimings = (operatingHours: IGET_RESTAURANT_OPERATING_H
             try {
                 const newIntervals = eachMinuteOfInterval(
                     {
-                        start: new Date(date.getFullYear(), date.getMonth(), date.getDate(), parseInt(openingTimeSlotHour), parseInt(openingTimeSlotMinute)),
-                        end: new Date(date.getFullYear(), date.getMonth(), date.getDate(), parseInt(closingTimeSlotHour), parseInt(closingTimeSlotMinute)),
+                        start: new Date(
+                            date.getFullYear(),
+                            date.getMonth(),
+                            date.getDate(),
+                            parseInt(openingTimeSlotHour),
+                            parseInt(openingTimeSlotMinute),
+                        ),
+                        end: new Date(
+                            date.getFullYear(),
+                            date.getMonth(),
+                            date.getDate(),
+                            parseInt(closingTimeSlotHour),
+                            parseInt(closingTimeSlotMinute),
+                        ),
                     },
                     { step: timeInterval },
                 );
@@ -995,3 +1022,88 @@ export const getThemePreviewRestaurantId = () => themePreviewSearchParams.get("t
 export const getThemePreviewRegisterId = () => themePreviewSearchParams.get("themePreviewRegisterId");
 
 export const isThemePreviewMode = () => !!getThemePreviewRestaurantId();
+
+// Ensures hex strings are valid and expanded to six characters for consistent processing.
+const normalizeHexColor = (value: string): string | null => {
+    if (!value) return null;
+
+    const trimmed = value.trim();
+    const match = trimmed.match(/^#?([a-fA-F0-9]{3}|[a-fA-F0-9]{6})$/);
+
+    if (!match) return null;
+
+    const hex = match[1];
+    const expanded =
+        hex.length === 3
+            ? hex
+                  .split("")
+                  .map((char) => char + char)
+                  .join("")
+            : hex;
+
+    return `#${expanded.toUpperCase()}`;
+};
+
+// Converts a normalized hex color string to its RGB components.
+const hexToRgb = (hex: string) => {
+    const normalized = hex.replace("#", "");
+    const bigint = parseInt(normalized, 16);
+
+    return {
+        r: (bigint >> 16) & 255,
+        g: (bigint >> 8) & 255,
+        b: bigint & 255,
+    };
+};
+
+// Chooses a legible light or dark text color based on the background luminance.
+export const getContrastTextColor = (backgroundColor?: string | null, lightColor: string = "#FFFFFF", darkColor: string = "#000000") => {
+    if (!backgroundColor) return darkColor;
+
+    const normalizedHex = normalizeHexColor(backgroundColor);
+
+    if (!normalizedHex) return darkColor;
+
+    const { r, g, b } = hexToRgb(normalizedHex);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+    return luminance > 0.5 ? darkColor : lightColor;
+};
+
+// Produces a stable string key that uniquely identifies an order line by its full
+// configuration: product id, free-text notes, and the entire selected modifier tree.
+// Using this as the print-tracking key means a "Burger" and a "Burger + extra cheese"
+// are tracked independently, even though they share the same menu product id.
+export const getOrderLineSignature = (product: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT): string => {
+    const modifierSig = (product.modifierGroups || [])
+        .flatMap((g) =>
+            (g.modifiers || [])
+                .filter((m) => m.quantity > 0)
+                .map((m) => {
+                    const nestedSig = (m.productModifiers || [])
+                        .map(getOrderLineSignature)
+                        .sort()
+                        .join(";");
+                    return `${m.id}:${m.quantity}${nestedSig ? `(${nestedSig})` : ""}`;
+                }),
+        )
+        .sort()
+        .join(";");
+    return `${product.id}|${product.notes ?? ""}|${modifierSig}`;
+};
+
+export const printedQuantitiesToList = (map: Record<string, number>): { lineKey: string; quantity: number }[] =>
+    Object.entries(map)
+        .filter(([, qty]) => qty > 0)
+        .map(([lineKey, quantity]) => ({ lineKey, quantity }));
+
+export const printedQuantitiesListToMap = (printedQuantities: IGET_RESTAURANT_ORDER_FRAGMENT["printedQuantities"]) =>
+    (printedQuantities || []).reduce(
+        (printedQuantityMap, printedQuantity) => {
+            if (printedQuantity.lineKey && printedQuantity.quantity > 0) {
+                printedQuantityMap[printedQuantity.lineKey] = Math.max(printedQuantityMap[printedQuantity.lineKey] || 0, printedQuantity.quantity);
+            }
+            return printedQuantityMap;
+        },
+        {} as Record<string, number>,
+    );

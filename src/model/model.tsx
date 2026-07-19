@@ -39,6 +39,13 @@ export interface IPrintReceiptDataInput {
     eftposReceipt: string;
 }
 
+export interface IPrintNoSaleReceiptDataInput {
+    printer: {
+        printerType: ERegisterPrinterType;
+        printerAddress: string;
+    };
+}
+
 export interface ICognitoUser {
     attributes: {
         email: string;
@@ -156,6 +163,7 @@ export enum EPaymentModalState {
     AwaitingCard,
     EftposResult,
     CashResult,
+    OnAccountResult,
     UberEatsResult,
     MenulogResult,
     DoordashResult,
@@ -328,6 +336,7 @@ export interface ICartProduct {
     price: number;
     totalPrice: number;
     discount: number;
+    isPriceEdited?: boolean; //true when the discount is a manual POS price override (not a promotion), so promotion reprocessing does not wipe it
     isAgeRescricted: boolean;
     image: IS3Object | null;
     quantity: number;
@@ -387,6 +396,7 @@ export interface ICartPaymentAmounts {
     cash: number;
     eftpos: number;
     online: number;
+    onAccount: number;
     uberEats: number;
     menulog: number;
     doordash: number;
@@ -396,6 +406,7 @@ export interface ICartPaymentAmounts {
 export interface ICartPayment {
     type: string;
     amount: number;
+    splitAllocation?: Record<string, number>;
 }
 
 export enum ERegisterPrinterType {
@@ -412,6 +423,9 @@ export enum EReceiptPrinterPrinterType {
 export interface IOrderReceipt {
     orderId: string;
     country: string;
+    futureOrder: boolean;
+    orderReminder: boolean;
+    openCashDrawer?: boolean;
     status: EOrderStatus;
     printerType: ERegisterPrinterType;
     printerAddress: string;
@@ -567,6 +581,24 @@ export interface IPrintSalesData {
     mostSoldProducts: IMostSoldItems;
 }
 
+export interface IPrintCashUpData {
+    restaurantName: string;
+    cashupSessionDate: string;
+    scopeLabel: string;
+    finalisedAt: string | null;
+    finalisedByName: string | null;
+    summaryRows: { label: string; countedCents: number; recordedCents: number; differenceCents: number }[];
+    drawerRows: { label: string; valueCents: number }[];
+    varianceReason: string | null;
+}
+
+export interface IPrintCashUpDataInput extends IPrintCashUpData {
+    printer: {
+        printerType: ERegisterPrinterType;
+        printerAddress: string;
+    };
+}
+
 export interface IMatchingUpSellCrossSellCategoryItem {
     category: IGET_RESTAURANT_CATEGORY;
 }
@@ -582,3 +614,123 @@ export enum CheckIfPromotionValidResponse {
     EXPIRED = "EXPIRED",
     INVALID_PLATFORM = "INVALID_PLATFORM",
 }
+
+export type LoyaltyUserSearchResult = {
+    loyaltyUserId: string;
+    linkId: string;
+    favourite: boolean;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber: string;
+    points: number;
+    onAccountOrders: IGET_RESTAURANT_ORDER_FRAGMENT[];
+    onAccountOrdersBalance: number;
+};
+
+export type LoyaltyUserAggregate = {
+    result: LoyaltyUserSearchResult;
+    searchTokens: {
+        name: string;
+        email: string;
+        phone: string;
+        phoneDigits: string;
+    };
+};
+
+export type LoyaltyBalance = {
+    loyaltyId: string | null;
+    points: number;
+};
+
+export type LoyaltyUserLinkInfo = {
+    id: string;
+    favourite: boolean;
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string | null;
+    phoneNumber?: string | null;
+    loyaltyBalances: LoyaltyBalance[];
+};
+
+// Floor plan and the table management.
+export type ShapeType = "rect" | "circle" | "wall" | "plant" | "pillar" | "chair" | "stool" | "armchair" | "floor";
+export type CategoryType = "tables" | "chairs" | "structure" | "decor" | "select";
+
+export type FloorStyle = "tile" | "wood" | "concrete";
+
+export type TableStatus = "available" | "occupied" | "idle" | "reserved";
+
+export type TableLiveState = {
+    status: TableStatus;
+    covers: number | null;
+    totalCents: number | null;
+    elapsedMinutes: number | null;
+    serverLabel: string;
+};
+
+export interface ITableNodesAttributes {
+    id: string;
+    type: ShapeType;
+
+    // Position
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rotation: number;
+
+    // Business Data
+    number: string;
+    seats?: number;
+    sectionId: string;
+
+    // Production Features
+    status?: TableStatus; // live POS state
+    locked?: boolean; // prevent movement
+    zIndex?: number; // layer order
+
+    // Floor + Chairs
+    floorStyle?: FloorStyle;
+}
+
+export interface ISection {
+    id: string;
+    name: string;
+    hidden?: boolean;
+}
+
+export type FloorPlanNodePayload = {
+    id: string;
+    type: ShapeType;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rotation: number;
+    number: string;
+    seats?: number;
+    sectionId: string;
+    status?: TableStatus;
+    locked: boolean;
+    zIndex: number;
+    floorStyle?: FloorStyle;
+};
+
+export type FloorPlanPayload = {
+    id?: string;
+    restaurantId: string;
+    nodes: FloorPlanNodePayload[];
+    sections: Array<{
+        id: string;
+        name: string;
+        hidden?: boolean;
+    }>;
+};
+
+export type LayoutSnapshot = {
+    tables: ITableNodesAttributes[];
+    sections: ISection[];
+    selectedId: string | null;
+    activeSectionId: string;
+};

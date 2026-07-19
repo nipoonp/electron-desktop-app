@@ -6,11 +6,23 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         id
         country
         placedAt
+        placedAtUtc
+        settledAt
+        parkedAt
+        printedQuantities {
+            lineKey
+            quantity
+        }
         completedAt
+        completedAtUtc
         cancelledAt
         refundedAt
+        refundedAtUtc
         notes
         eftposReceipt
+        orderBatchable
+        orderBatchWindowInSeconds
+        orderMergeId
         total
         surcharge
         orderTypeSurcharge
@@ -29,10 +41,22 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         tax
         paid
         paymentInProgress
+        cancellationReason
         paymentAmounts {
             cash
             eftpos
             online
+            onAccount
+            uberEats
+            menulog
+            doordash
+            delivereasy
+        }
+        refundPaymentAmounts {
+            cash
+            eftpos
+            online
+            onAccount
             uberEats
             menulog
             doordash
@@ -66,6 +90,8 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         table
         buzzer
         registerId
+        settledRegisterId
+        orderUserId
         products {
             id
             name
@@ -219,14 +245,24 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     id: string;
     country: string;
     placedAt: string;
+    placedAtUtc: string | null;
+    settledAt: string | null;
+    parkedAt: string | null;
+    printedQuantities: { lineKey: string; quantity: number }[] | null;
     completedAt: string | null;
+    completedAtUtc: string | null;
     cancelledAt: string | null;
     refundedAt: string | null;
+    refundedAtUtc: string | null;
     notes: string | null;
     eftposReceipt: string | null;
+    orderBatchable: number | null;
+    orderBatchWindowInSeconds: number | null;
+    orderMergeId: string | null;
     total: number;
     surcharge: number | null;
     orderTypeSurcharge: number | null;
+    eftposCardType: EEftposCardType | null;
     eftposSurcharge: number | null;
     eftposTip: number | null;
     discount: number | null;
@@ -242,17 +278,17 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     subTotal: number;
     paid: boolean;
     paymentInProgress: boolean | null;
+    cancellationReason: string | null;
     paymentAmounts: IOrderPaymentAmounts | null;
-    thirdPartyIntegrationResult:
-        | {
-              shift8IsSuccess: boolean | null;
-              shift8ErrorMessage: string | null;
-              isSuccess: boolean | null;
-              errorMessage: string | null;
-              platform: string | null;
-              platformChannel: string | null;
-          }
-        | null;
+    refundPaymentAmounts: IOrderPaymentAmounts | null;
+    thirdPartyIntegrationResult: {
+        shift8IsSuccess: boolean | null;
+        shift8ErrorMessage: string | null;
+        isSuccess: boolean | null;
+        errorMessage: string | null;
+        platform: string | null;
+        platformChannel: string | null;
+    } | null;
     onlineOrder: boolean | null;
     guestCheckout: boolean | null;
     orderScheduledAt: string | null;
@@ -272,7 +308,10 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     number: string;
     table: string | null;
     buzzer: string | null;
+    covers: number | null;
     registerId: string;
+    settledRegisterId: string | null;
+    orderUserId: string;
     products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[];
 }
 
@@ -297,6 +336,14 @@ export enum ERegisterType {
     KIOSK = "KIOSK",
     POS = "POS",
     ONLINE = "ONLINE",
+}
+
+export enum EEftposCardType {
+    VISA = "VISA",
+    MASTERCARD = "MASTERCARD",
+    AMEX = "AMEX",
+    EFTPOS = "EFTPOS",
+    ALIPAY = "ALIPAY",
 }
 
 export interface IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT {
@@ -332,6 +379,7 @@ export interface IOrderPaymentAmounts {
     cash: number;
     eftpos: number;
     online: number;
+    onAccount: number;
     uberEats: number;
     menulog: number;
     doordash: number;

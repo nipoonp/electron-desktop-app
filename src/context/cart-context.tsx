@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { EPromotionType, IGET_RESTAURANT_PROMOTION } from "../graphql/customQueries";
+import { EOrderStatus, EPromotionType, IGET_RESTAURANT_PROMOTION } from "../graphql/customQueries";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
 
 import {
@@ -18,14 +18,28 @@ import { useRestaurant } from "./restaurant-context";
 import { useRegister } from "./register-context";
 import { toast } from "../tabin/components/toast";
 
+let electron: any;
+let ipcRenderer: any;
+try {
+    electron = window.require("electron");
+    ipcRenderer = electron.ipcRenderer;
+} catch (e) {}
+
+interface ISplitPaymentByPeopleState {
+    count: number;
+    paid: number;
+}
+
 const initialParkedOrderId = null;
 const initialParkedOrderNumber = null;
+const initialParkedOrderStatus = null;
 const initialOrderType = null;
 const initialPaymentMethod = null;
 const initialCovers = null;
 const initialTableNumber = null;
 const initialBuzzerNumber = null;
 const initialCustomerInformation = null;
+const initialOnAccountOrders = [];
 const initialCustomerLoyaltyPoints = null;
 const initialProducts = null;
 const initialNotes = "";
@@ -37,10 +51,26 @@ const initialPromotion = null;
 const initialAvailablePromotions = [];
 const initialUserAppliedLoyaltyId = null;
 const initialTotal = 0;
+const initialStaticDiscount = 0;
+const initialPercentageDiscount = 0;
 const initialSurcharge = 0;
 const initialPaidSoFar = 0;
 const initialOrderTypeSurcharge = 0;
-const initialPaymentAmounts: ICartPaymentAmounts = { cash: 0, eftpos: 0, online: 0, uberEats: 0, menulog: 0, doordash: 0, delivereasy: 0 };
+const initialPaidItemCounts: Record<string, number> = {};
+const initialSplitPaymentByPeopleState: ISplitPaymentByPeopleState = {
+    count: 0,
+    paid: 0,
+};
+const initialPaymentAmounts: ICartPaymentAmounts = {
+    cash: 0,
+    eftpos: 0,
+    online: 0,
+    onAccount: 0,
+    uberEats: 0,
+    menulog: 0,
+    doordash: 0,
+    delivereasy: 0,
+};
 const initialSubTotal = 0;
 const initialPayments = [];
 const initialTransactionEftposReceipts = "";
@@ -48,6 +78,8 @@ const initialIsShownUpSellCrossSellModal = false;
 const initialIsShownOrderThresholdMessageModal = false;
 const initialOrderScheduledAt = null;
 const initialOrderDetail = null;
+const initialIsCustomerDisplayOpen = false;
+const initialPrintedProductQuantities: Record<string, number> = {};
 
 type ContextProps = {
     // restaurant: IGET_RESTAURANT | null;
@@ -56,6 +88,8 @@ type ContextProps = {
     setParkedOrderId: (parkedOrderId: string | null) => void;
     parkedOrderNumber: string | null;
     setParkedOrderNumber: (parkedOrderNumber: string | null) => void;
+    parkedOrderStatus: EOrderStatus | null;
+    setParkedOrderStatus: (parkedOrderStatus: EOrderStatus | null) => void;
     orderType: EOrderType | null;
     setOrderType: (orderType: EOrderType) => void;
     paymentMethod: EPaymentMethod | null;
@@ -68,6 +102,8 @@ type ContextProps = {
     setBuzzerNumber: (buzzerNumber: string | null) => void;
     customerInformation: ICustomerInformation | null;
     setCustomerInformation: (customerInformation: ICustomerInformation | null) => void;
+    onAccountOrders: IGET_RESTAURANT_ORDER_FRAGMENT[];
+    setOnAccountOrders: (orders: IGET_RESTAURANT_ORDER_FRAGMENT[]) => void;
     customerLoyaltyPoints: number | null;
     setCustomerLoyaltyPoints: (customerLoyaltyPoints: number | null) => void;
     products: ICartProduct[] | null;
@@ -89,6 +125,10 @@ type ContextProps = {
     userAppliedLoyaltyId: string | null;
     setUserAppliedLoyaltyId: (userAppliedLoyaltyId) => void;
     total: number;
+    staticDiscount: number;
+    setStaticDiscount: (staticDiscount: number) => void;
+    percentageDiscount: number;
+    setPercentageDiscount: (percentageDiscount: number) => void;
     surcharge: number;
     subTotal: number;
     paidSoFar: number;
@@ -97,6 +137,10 @@ type ContextProps = {
     setPayments: (payment: ICartPayment[]) => void;
     paymentAmounts: ICartPaymentAmounts;
     setPaymentAmounts: (paymentAmounts: ICartPaymentAmounts) => void;
+    paidItemCounts: Record<string, number>;
+    setPaidItemCounts: (counts: Record<string, number>) => void;
+    splitPaymentByPeople: ISplitPaymentByPeopleState;
+    setSplitPaymentByPeople: (splitPaymentByPeople: ISplitPaymentByPeopleState) => void;
     isShownUpSellCrossSellModal: boolean;
     setIsShownUpSellCrossSellModal: (isShownUpSellCrossSellModal: boolean) => void;
     isShownOrderThresholdMessageModal: boolean;
@@ -104,7 +148,11 @@ type ContextProps = {
     orderScheduledAt: string | null;
     updateOrderScheduledAt: (orderScheduledAt: string | null) => void;
     orderDetail: IGET_RESTAURANT_ORDER_FRAGMENT | null;
-    updateOrderDetail: (orderDetail: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
+    updateOrderDetail: (orderDetail: IGET_RESTAURANT_ORDER_FRAGMENT | null) => void;
+    isCustomerDisplayOpen: boolean;
+    setIsCustomerDisplayOpen: (isCustomerDisplayOpen: boolean) => void;
+    printedProductQuantities: Record<string, number>;
+    setPrintedProductQuantities: (printedProductQuantities: Record<string, number>) => void;
 };
 
 const CartContext = createContext<ContextProps>({
@@ -114,6 +162,8 @@ const CartContext = createContext<ContextProps>({
     setParkedOrderId: () => {},
     parkedOrderNumber: initialParkedOrderNumber,
     setParkedOrderNumber: () => {},
+    parkedOrderStatus: initialParkedOrderStatus,
+    setParkedOrderStatus: () => {},
     orderType: initialOrderType,
     setOrderType: () => {},
     paymentMethod: initialPaymentMethod,
@@ -126,6 +176,8 @@ const CartContext = createContext<ContextProps>({
     setBuzzerNumber: () => {},
     customerInformation: initialCustomerInformation,
     setCustomerInformation: () => {},
+    onAccountOrders: initialOnAccountOrders,
+    setOnAccountOrders: () => {},
     customerLoyaltyPoints: initialCustomerLoyaltyPoints,
     setCustomerLoyaltyPoints: () => {},
     products: initialProducts,
@@ -147,6 +199,10 @@ const CartContext = createContext<ContextProps>({
     userAppliedLoyaltyId: initialUserAppliedLoyaltyId,
     setUserAppliedLoyaltyId: (userAppliedLoyaltyId) => {},
     total: initialTotal,
+    staticDiscount: initialStaticDiscount,
+    setStaticDiscount: () => {},
+    percentageDiscount: initialPercentageDiscount,
+    setPercentageDiscount: () => {},
     surcharge: initialSurcharge,
     subTotal: initialSubTotal,
     paidSoFar: initialPaidSoFar,
@@ -155,6 +211,10 @@ const CartContext = createContext<ContextProps>({
     setPayments: () => {},
     paymentAmounts: initialPaymentAmounts,
     setPaymentAmounts: () => {},
+    paidItemCounts: initialPaidItemCounts,
+    setPaidItemCounts: (_counts: Record<string, number>) => {},
+    splitPaymentByPeople: initialSplitPaymentByPeopleState,
+    setSplitPaymentByPeople: (_splitPaymentByPeople: ISplitPaymentByPeopleState) => {},
     isShownUpSellCrossSellModal: initialIsShownUpSellCrossSellModal,
     isShownOrderThresholdMessageModal: initialIsShownOrderThresholdMessageModal,
     setIsShownUpSellCrossSellModal: () => {},
@@ -162,7 +222,11 @@ const CartContext = createContext<ContextProps>({
     orderScheduledAt: initialOrderScheduledAt,
     updateOrderScheduledAt: (orderScheduledAt: string | null) => {},
     orderDetail: initialOrderDetail,
-    updateOrderDetail: (orderDetail: object) => {},
+    updateOrderDetail: (_orderDetail: IGET_RESTAURANT_ORDER_FRAGMENT | null) => {},
+    isCustomerDisplayOpen: initialIsCustomerDisplayOpen,
+    setIsCustomerDisplayOpen: () => {},
+    printedProductQuantities: initialPrintedProductQuantities,
+    setPrintedProductQuantities: () => {},
 });
 
 const CartProvider = (props: { children: React.ReactNode }) => {
@@ -171,23 +235,30 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
     const [parkedOrderId, _setParkedOrderId] = useState<string | null>(initialParkedOrderId);
     const [parkedOrderNumber, _setParkedOrderNumber] = useState<string | null>(initialParkedOrderNumber);
+    const [parkedOrderStatus, _setParkedOrderStatus] = useState<EOrderStatus | null>(initialParkedOrderStatus);
     const [orderType, _setOrderType] = useState<EOrderType | null>(initialOrderType);
     const [paymentMethod, _setPaymentMethod] = useState<EPaymentMethod | null>(initialPaymentMethod);
     const [covers, _setCovers] = useState<number | null>(initialCovers);
     const [tableNumber, _setTableNumber] = useState<string | null>(initialTableNumber);
     const [buzzerNumber, _setBuzzerNumber] = useState<string | null>(initialBuzzerNumber);
     const [customerInformation, _setCustomerInformation] = useState<ICustomerInformation | null>(initialCustomerInformation);
+    const [onAccountOrders, _setOnAccountOrders] = useState<IGET_RESTAURANT_ORDER_FRAGMENT[]>(initialOnAccountOrders);
     const [customerLoyaltyPoints, _setCustomerLoyaltyPoints] = useState<number | null>(initialCustomerLoyaltyPoints);
     const [products, _setProducts] = useState<ICartProduct[] | null>(initialProducts);
     const [notes, _setNotes] = useState<string>(initialNotes);
     const [total, _setTotal] = useState<number>(initialTotal);
+    const [staticDiscount, _setStaticDiscount] = useState<number>(initialStaticDiscount);
+    const [percentageDiscount, _setPercentageDiscount] = useState<number>(initialPercentageDiscount);
     const [surcharge, _setSurcharge] = useState<number>(initialSurcharge);
     const [paymentAmounts, _setPaymentAmounts] = useState<ICartPaymentAmounts>(initialPaymentAmounts);
+    const [paidItemCounts, _setPaidItemCounts] = useState<Record<string, number>>(initialPaidItemCounts);
     const [subTotal, _setSubTotal] = useState<number>(initialSubTotal);
     const [payments, _setPayments] = useState<ICartPayment[]>(initialPayments);
     const [orderTypeSurcharge, _setOrderTypeSurcharge] = useState<number>(initialOrderTypeSurcharge);
     const [isShownUpSellCrossSellModal, _setIsShownUpSellCrossSellModal] = useState<boolean>(initialIsShownUpSellCrossSellModal);
     const [isShownOrderThresholdMessageModal, _setIsShownOrderThresholdMessageModal] = useState(initialIsShownOrderThresholdMessageModal);
+
+    const [isCustomerDisplayOpen, _setIsCustomerDisplayOpen] = useState(initialIsCustomerDisplayOpen);
 
     const [userAppliedPromotionCode, _setUserAppliedPromotionCode] = useState<string | null>(initialUserAppliedPromotionCode);
     const [promotion, _setPromotion] = useState<ICartPromotion | null>(initialPromotion);
@@ -201,10 +272,30 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
     const [orderScheduledAt, _setOrderScheduledAt] = useState<string | null>(initialOrderScheduledAt);
     const [orderDetail, _setOrderDetail] = useState<IGET_RESTAURANT_ORDER_FRAGMENT | null>(initialOrderDetail);
+    const [printedProductQuantities, _setPrintedProductQuantities] = useState<Record<string, number>>(initialPrintedProductQuantities);
+    const [splitPaymentByPeople, _setSplitPaymentByPeople] = useState<ISplitPaymentByPeopleState>(initialSplitPaymentByPeopleState);
 
     // useEffect(() => {
     // console.log("xxx...products", products);
     // }, [products]);
+
+    useEffect(() => {
+        isCustomerDisplayOpen &&
+            ipcRenderer &&
+            ipcRenderer.send(
+                "SEND_CUSTOMER_DISPLAY_DATA",
+                JSON.stringify({
+                    products,
+                    promotion,
+                    surcharge,
+                    subTotal,
+                    staticDiscount,
+                    percentageDiscount,
+                    orderTypeSurcharge,
+                    orderType,
+                }),
+            );
+    }, [products, promotion, surcharge, subTotal, staticDiscount, percentageDiscount, orderTypeSurcharge]);
 
     useEffect(() => {
         if (!products) return;
@@ -228,8 +319,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         }
 
         _setSurcharge(newSurcharge);
-        _setSubTotal(newSubTotal + newSurcharge + orderTypeSurcharge);
-    }, [total, promotion, restaurant, orderTypeSurcharge]);
+        _setSubTotal(newSubTotal + newSurcharge + orderTypeSurcharge - staticDiscount - percentageDiscount);
+    }, [total, promotion, restaurant, orderTypeSurcharge, staticDiscount, percentageDiscount]);
 
     useEffect(() => {
         if (userAppliedPromotionCode) return; //Only apply restaurant promos if user has not applied one themselves
@@ -300,6 +391,11 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         console.log("bestPromotion", bestPromotion);
         _setProducts(discountedProducts);
         _setPromotion(bestPromotion);
+
+        if (bestPromotion) {
+            _setStaticDiscount(0);
+            _setPercentageDiscount(0);
+        }
     };
 
     const setUserAppliedPromotions = (promotions: IGET_RESTAURANT_PROMOTION[]): CheckIfPromotionValidResponse => {
@@ -427,7 +523,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         products &&
             products.forEach((p) => {
-                let price = p.price;
+                let price = p.price - p.discount;
 
                 p.modifierGroups.forEach((mg) => {
                     mg.modifiers.forEach((m) => {
@@ -466,6 +562,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
     const setParkedOrderNumber = (parkedOrderNumber: string | null) => {
         _setParkedOrderNumber(parkedOrderNumber);
+    };
+
+    const setParkedOrderStatus = (parkedOrderStatus: EOrderStatus | null) => {
+        _setParkedOrderStatus(parkedOrderStatus);
     };
 
     const setOrderType = (newOrderType: EOrderType) => {
@@ -571,6 +671,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setCustomerInformation(customerInformation);
     };
 
+    const setOnAccountOrders = (onAccountOrders: IGET_RESTAURANT_ORDER_FRAGMENT[]) => {
+        _setOnAccountOrders(onAccountOrders);
+    };
+
     const setCustomerLoyaltyPoints = (customerLoyaltyPoints: number | null) => {
         _setCustomerLoyaltyPoints(customerLoyaltyPoints);
     };
@@ -650,6 +754,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         const productAtIndex = newProducts[index];
 
         productAtIndex.discount = discount;
+        //Mark this as a manual price override so processPromotions/applyDiscountToCartProducts does not reset it to 0
+        productAtIndex.isPriceEdited = discount !== 0;
         newProducts[index] = productAtIndex;
 
         const newTotal = recalculateTotal(newProducts);
@@ -657,7 +763,17 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setProducts(newProducts);
         _setTotal(newTotal);
         updateCartQuantities(newProducts);
-        processPromotions(newProducts, newTotal);
+        // processPromotions(newProducts, newTotal);
+    };
+
+    const setStaticDiscount = (staticDiscount: number) => {
+        _setStaticDiscount(staticDiscount);
+        _setPercentageDiscount(0);
+    };
+
+    const setPercentageDiscount = (percentageDiscount: number) => {
+        _setPercentageDiscount(percentageDiscount);
+        _setStaticDiscount(0);
     };
 
     const deleteProduct = (index: number) => {
@@ -682,6 +798,12 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const setPaymentAmounts = (amount: ICartPaymentAmounts) => {
         _setPaymentAmounts(amount);
     };
+    const setPaidItemCounts = (counts: Record<string, number>) => {
+        _setPaidItemCounts(counts);
+    };
+    const setSplitPaymentByPeople = (value: ISplitPaymentByPeopleState) => {
+        _setSplitPaymentByPeople(value);
+    };
 
     const setPayments = (payments: ICartPayment[]) => {
         _setPayments(payments);
@@ -699,19 +821,25 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         _setOrderScheduledAt(orderScheduledAt);
     };
 
-    const updateOrderDetail = (orderDetail: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+    const updateOrderDetail = (orderDetail: IGET_RESTAURANT_ORDER_FRAGMENT | null) => {
         _setOrderDetail(orderDetail);
+    };
+
+    const setPrintedProductQuantities = (printedProductQuantities: Record<string, number>) => {
+        _setPrintedProductQuantities(printedProductQuantities);
     };
 
     const clearCart = () => {
         _setParkedOrderId(initialParkedOrderId);
         _setParkedOrderNumber(initialParkedOrderNumber);
+        _setParkedOrderStatus(initialParkedOrderStatus);
         _setOrderType(initialOrderType);
         _setPaymentMethod(initialPaymentMethod);
         _setCovers(initialCovers);
         _setTableNumber(initialTableNumber);
         _setBuzzerNumber(initialBuzzerNumber);
         _setCustomerInformation(initialCustomerInformation);
+        _setOnAccountOrders(initialOnAccountOrders);
         _setCustomerLoyaltyPoints(initialCustomerLoyaltyPoints);
         _setProducts(initialProducts);
         _setNotes(initialNotes);
@@ -723,13 +851,19 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         // _setAvailablePromotions(initialAvailablePromotions); //Don't need this. Otherwise, it will erase availablePromotions when you clear the cart
         _setUserAppliedLoyaltyId(initialUserAppliedLoyaltyId);
         _setTotal(initialTotal);
+        _setStaticDiscount(initialStaticDiscount);
+        _setPercentageDiscount(initialPercentageDiscount);
         _setSurcharge(initialSurcharge);
         _setPaymentAmounts(initialPaymentAmounts);
+        _setPaidItemCounts(initialPaidItemCounts);
+        _setSplitPaymentByPeople(initialSplitPaymentByPeopleState);
         _setSubTotal(initialSubTotal);
         _setPayments(initialPayments);
         _setIsShownUpSellCrossSellModal(initialIsShownUpSellCrossSellModal);
         _setIsShownOrderThresholdMessageModal(initialIsShownOrderThresholdMessageModal);
         _setOrderScheduledAt(initialOrderScheduledAt);
+        _setOrderDetail(initialOrderDetail);
+        _setPrintedProductQuantities(initialPrintedProductQuantities);
     };
 
     return (
@@ -741,6 +875,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setParkedOrderId: setParkedOrderId,
                 parkedOrderNumber: parkedOrderNumber,
                 setParkedOrderNumber: setParkedOrderNumber,
+                parkedOrderStatus: parkedOrderStatus,
+                setParkedOrderStatus: setParkedOrderStatus,
                 orderType: orderType,
                 setOrderType: setOrderType,
                 paymentMethod: paymentMethod,
@@ -753,6 +889,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 setBuzzerNumber: setBuzzerNumber,
                 customerInformation: customerInformation,
                 setCustomerInformation: setCustomerInformation,
+                onAccountOrders: onAccountOrders,
+                setOnAccountOrders: setOnAccountOrders,
                 customerLoyaltyPoints: customerLoyaltyPoints,
                 setCustomerLoyaltyPoints: setCustomerLoyaltyPoints,
                 products: products,
@@ -774,12 +912,17 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 userAppliedLoyaltyId: userAppliedLoyaltyId,
                 setUserAppliedLoyaltyId: setUserAppliedLoyaltyId,
                 total: total,
+                staticDiscount: staticDiscount,
+                setStaticDiscount: setStaticDiscount,
+                percentageDiscount: percentageDiscount,
+                setPercentageDiscount: setPercentageDiscount,
                 surcharge: surcharge,
                 subTotal: subTotal,
                 paidSoFar:
                     paymentAmounts.cash +
                     paymentAmounts.eftpos +
                     paymentAmounts.online +
+                    paymentAmounts.onAccount +
                     paymentAmounts.uberEats +
                     paymentAmounts.menulog +
                     paymentAmounts.doordash +
@@ -787,6 +930,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 orderTypeSurcharge: orderTypeSurcharge,
                 paymentAmounts: paymentAmounts,
                 setPaymentAmounts: setPaymentAmounts,
+                paidItemCounts: paidItemCounts,
+                setPaidItemCounts: setPaidItemCounts,
+                splitPaymentByPeople: splitPaymentByPeople,
+                setSplitPaymentByPeople: setSplitPaymentByPeople,
                 payments: payments,
                 setPayments: setPayments,
                 isShownUpSellCrossSellModal: isShownUpSellCrossSellModal,
@@ -797,6 +944,10 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                 updateOrderScheduledAt: updateOrderScheduledAt,
                 orderDetail: orderDetail,
                 updateOrderDetail: updateOrderDetail,
+                isCustomerDisplayOpen: isCustomerDisplayOpen,
+                setIsCustomerDisplayOpen: _setIsCustomerDisplayOpen,
+                printedProductQuantities: printedProductQuantities,
+                setPrintedProductQuantities: setPrintedProductQuantities,
             }}
             children={props.children}
         />
