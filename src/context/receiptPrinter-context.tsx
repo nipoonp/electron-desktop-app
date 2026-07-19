@@ -6,6 +6,7 @@ import { useGetRestaurantOnlineOrdersByBeginWithPlacedAtLazyQuery } from "../hoo
 import {
     IPrintReceiptDataOutput,
     IOrderReceipt,
+    IPrintCashUpDataInput,
     IPrintSalesDataInput,
     IOrderLabel,
     IPrintReceiptDataInput,
@@ -25,6 +26,7 @@ type ContextProps = {
     printLabel: (payload: IOrderLabel) => Promise<any>;
     printNoSaleReceipt: (noSaleReceipt: IPrintNoSaleReceiptDataInput) => Promise<any>;
     printSalesData: (printSalesDataInput: IPrintSalesDataInput) => Promise<any>;
+    printCashUpData: (printCashUpDataInput: IPrintCashUpDataInput) => Promise<any>;
 };
 
 const ReceiptPrinterContext = createContext<ContextProps>({
@@ -41,6 +43,9 @@ const ReceiptPrinterContext = createContext<ContextProps>({
         return new Promise(() => {});
     },
     printSalesData: (printSalesDataInput: IPrintSalesDataInput) => {
+        return new Promise(() => {});
+    },
+    printCashUpData: (printCashUpDataInput: IPrintCashUpDataInput) => {
         return new Promise(() => {});
     },
 });
@@ -457,6 +462,19 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         }
     };
 
+    const printCashUpData = async (printCashUpDataInput: IPrintCashUpDataInput) => {
+        if (checkParentView()) {
+            try {
+                const result: IPrintReceiptDataOutput = await sendParentAsync("RECEIPT_CASH_UP_DATA", printCashUpDataInput);
+
+                if (result.error) toast.error("There was an error printing your report");
+            } catch (e) {
+                console.error(e);
+                toast.error("There was an error printing your report");
+            }
+        }
+    };
+
     const storeFailedPrint = (failedPrintOrder: IPrintReceiptDataOutput) => {
         const currentFailedPrintQueue = localStorage.getItem("failedPrintQueue");
         const currentFailedPrintQueueOrders: IPrintReceiptDataOutput[] = currentFailedPrintQueue ? JSON.parse(currentFailedPrintQueue) : [];
@@ -491,6 +509,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 printLabel: printLabel,
                 printNoSaleReceipt: printNoSaleReceipt,
                 printSalesData: printSalesData,
+                printCashUpData: printCashUpData,
             }}
             children={props.children}
         />

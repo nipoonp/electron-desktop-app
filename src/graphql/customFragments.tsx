@@ -6,14 +6,18 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         id
         country
         placedAt
+        placedAtUtc
+        settledAt
         parkedAt
         printedQuantities {
             lineKey
             quantity
         }
         completedAt
+        completedAtUtc
         cancelledAt
         refundedAt
+        refundedAtUtc
         notes
         eftposReceipt
         orderBatchable
@@ -39,6 +43,16 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         paymentInProgress
         cancellationReason
         paymentAmounts {
+            cash
+            eftpos
+            online
+            onAccount
+            uberEats
+            menulog
+            doordash
+            delivereasy
+        }
+        refundPaymentAmounts {
             cash
             eftpos
             online
@@ -76,6 +90,8 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         table
         buzzer
         registerId
+        settledRegisterId
+        orderUserId
         products {
             id
             name
@@ -229,11 +245,15 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     id: string;
     country: string;
     placedAt: string;
+    placedAtUtc: string | null;
+    settledAt: string | null;
     parkedAt: string | null;
     printedQuantities: { lineKey: string; quantity: number }[] | null;
     completedAt: string | null;
+    completedAtUtc: string | null;
     cancelledAt: string | null;
     refundedAt: string | null;
+    refundedAtUtc: string | null;
     notes: string | null;
     eftposReceipt: string | null;
     orderBatchable: number | null;
@@ -260,6 +280,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     paymentInProgress: boolean | null;
     cancellationReason: string | null;
     paymentAmounts: IOrderPaymentAmounts | null;
+    refundPaymentAmounts: IOrderPaymentAmounts | null;
     thirdPartyIntegrationResult: {
         shift8IsSuccess: boolean | null;
         shift8ErrorMessage: string | null;
@@ -289,6 +310,8 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     buzzer: string | null;
     covers: number | null;
     registerId: string;
+    settledRegisterId: string | null;
+    orderUserId: string;
     products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[];
 }
 

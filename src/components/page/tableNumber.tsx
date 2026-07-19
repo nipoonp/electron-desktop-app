@@ -9,6 +9,7 @@ import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { Button } from "../../tabin/components/button";
 import { useRestaurant } from "../../context/restaurant-context";
 import { useUser } from "../../context/user-context";
+import { usePosUser } from "../../context/pos-user-context";
 import {
     FiX,
     FiEdit2,
@@ -211,6 +212,8 @@ const TableNumberFeatureEnabledPage = () => {
     const { restaurant } = useRestaurant();
     const { register, isPOS } = useRegister();
     const { user } = useUser();
+    const { selectedPosUser } = usePosUser();
+    const effectiveOrderUserId = selectedPosUser?.userId || user?.id;
     const {
         clearCart,
         parkedOrderId,
@@ -588,7 +591,6 @@ const TableNumberFeatureEnabledPage = () => {
         });
     };
 
-    // Finalizes the selected single table number and stores it in cart state.
     const onNext = () => {
         if (isDesignMode) {
             requestExitFromEditMode(() => {
@@ -1095,10 +1097,7 @@ const TableNumberFeatureEnabledPage = () => {
 
     // Transfer targets must be empty tables (no running order) to avoid accidental implicit merges.
     const transferTargetOptions = useMemo(
-        () =>
-            allTableNumbers.filter(
-                (tableNumberValue) => tableNumberValue !== transferSourceTable && !activeRunningOrdersByTable.has(tableNumberValue),
-            ),
+        () => allTableNumbers.filter((tableNumberValue) => tableNumberValue !== transferSourceTable && !activeRunningOrdersByTable.has(tableNumberValue)),
         [allTableNumbers, transferSourceTable, activeRunningOrdersByTable],
     );
 
@@ -1179,6 +1178,7 @@ const TableNumberFeatureEnabledPage = () => {
         const subTotal = options?.preserveFinancials ? order.subTotal : total;
         const tableValue = options?.tableOverride !== undefined ? `${options.tableOverride || ""}`.trim() : `${order.table || ""}`.trim();
         const sanitizedProducts = cloneAndSanitizeCartProducts(nextProducts);
+        if (!effectiveOrderUserId) throw new Error("Cannot perform this action because user context is missing.");
 
         const variables: Record<string, any> = {
             orderId: order.id,
@@ -1200,10 +1200,9 @@ const TableNumberFeatureEnabledPage = () => {
             products: sanitizedProducts,
             placedAt: order.placedAt,
             parkedAt: status === EOrderStatus.PARKED ? order.parkedAt || order.placedAt : undefined,
-            parkedAtUtc: status === EOrderStatus.PARKED ? now.toISOString() : undefined,
             completedAt: status === EOrderStatus.COMPLETED ? order.completedAt || toLocalISOString(now) : undefined,
             completedAtUtc: status === EOrderStatus.COMPLETED ? now.toISOString() : undefined,
-            orderUserId: user.id,
+            orderUserId: effectiveOrderUserId,
             orderRestaurantId: restaurant.id,
         };
 
@@ -1223,10 +1222,7 @@ const TableNumberFeatureEnabledPage = () => {
     };
 
     // Combines source-order print counters into destination-order counters so kitchen delta printing stays accurate after merge.
-    const mergePrintedProductTracking = async (
-        destinationOrder: IGET_RESTAURANT_ORDER_FRAGMENT,
-        sourceOrder: IGET_RESTAURANT_ORDER_FRAGMENT,
-    ) => {
+    const mergePrintedProductTracking = async (destinationOrder: IGET_RESTAURANT_ORDER_FRAGMENT, sourceOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
         const destinationPrintedProductQuantities = printedQuantitiesListToMap(destinationOrder.printedQuantities);
         const sourcePrintedProductQuantities = printedQuantitiesListToMap(sourceOrder.printedQuantities);
 
@@ -1281,8 +1277,7 @@ const TableNumberFeatureEnabledPage = () => {
 
         const refreshedOrdersResponse: any = await refetchActiveOrders();
         const refreshedOrders = (refreshedOrdersResponse?.data?.getOrdersByRestaurantByPlacedAt?.items || []).filter(Boolean);
-        const refreshedDestinationOrder =
-            refreshedOrders.find((order: IGET_RESTAURANT_ORDER_FRAGMENT) => order.id === destinationOrder.id) || destinationOrder;
+        const refreshedDestinationOrder = refreshedOrders.find((order: IGET_RESTAURANT_ORDER_FRAGMENT) => order.id === destinationOrder.id) || destinationOrder;
 
         // If the current cart session was bound to the source order, re-bind it to the merged destination order.
         if (parkedOrderId === sourceOrder.id) {
@@ -1675,18 +1670,10 @@ const TableNumberFeatureEnabledPage = () => {
                         </div>
                         <div className="action-buttons">
                             <div className="view-toggle">
-                                <button
-                                    className={`toggle-btn ${viewMode === "map" ? "active" : ""}`}
-                                    onClick={() => setViewMode("map")}
-                                    title="Map View"
-                                >
+                                <button className={`toggle-btn ${viewMode === "map" ? "active" : ""}`} onClick={() => setViewMode("map")} title="Map View">
                                     <FiMap size="20px" />
                                 </button>
-                                <button
-                                    className={`toggle-btn ${viewMode === "list" ? "active" : ""}`}
-                                    onClick={() => setViewMode("list")}
-                                    title="List View"
-                                >
+                                <button className={`toggle-btn ${viewMode === "list" ? "active" : ""}`} onClick={() => setViewMode("list")} title="List View">
                                     <FaRectangleList size="20px" />
                                 </button>
                                 <button
@@ -1706,19 +1693,13 @@ const TableNumberFeatureEnabledPage = () => {
                     {isDesignMode && (
                         <div className="editor-sidebar">
                             <div className="sidebar-group">
-                                <div
-                                    className={`sidebar-item ${activeCategory === "tables" ? "active" : ""}`}
-                                    onClick={() => setActiveCategory("tables")}
-                                >
+                                <div className={`sidebar-item ${activeCategory === "tables" ? "active" : ""}`} onClick={() => setActiveCategory("tables")}>
                                     <div className="icon">
                                         <FiSquare style={{ border: "1px solid currentColor", borderRadius: "4px" }} />
                                     </div>
                                     <div className="label">Tables</div>
                                 </div>
-                                <div
-                                    className={`sidebar-item ${activeCategory === "chairs" ? "active" : ""}`}
-                                    onClick={() => setActiveCategory("chairs")}
-                                >
+                                <div className={`sidebar-item ${activeCategory === "chairs" ? "active" : ""}`} onClick={() => setActiveCategory("chairs")}>
                                     <div className="icon">
                                         <FiLayout />
                                     </div>
@@ -1733,10 +1714,7 @@ const TableNumberFeatureEnabledPage = () => {
                                     </div>
                                     <div className="label">Structures</div>
                                 </div>
-                                <div
-                                    className={`sidebar-item ${activeCategory === "decor" ? "active" : ""}`}
-                                    onClick={() => setActiveCategory("decor")}
-                                >
+                                <div className={`sidebar-item ${activeCategory === "decor" ? "active" : ""}`} onClick={() => setActiveCategory("decor")}>
                                     <div className="icon">
                                         <FiBox />
                                     </div>
@@ -2108,362 +2086,361 @@ const TableNumberFeatureEnabledPage = () => {
                                 onClose={() => setShowReservationsPanel(false)}
                             />
                         ) : (
-                        <>
-                        <div className="close-button-wrapper-right">
-                            <FiX className="close-button" size={32} onClick={onClose} />
-                        </div>
+                            <>
+                                <div className="close-button-wrapper-right">
+                                    <FiX className="close-button" size={32} onClick={onClose} />
+                                </div>
 
-                        <div className="form-section top-spacing">
-                            <div className="h3 section-title">
-                                {isDesignMode ? "Properties" : selectedTable ? `Table ${selectedTable.number}` : "Select Table"}
-                            </div>
+                                <div className="form-section top-spacing">
+                                    <div className="h3 section-title">
+                                        {isDesignMode ? "Properties" : selectedTable ? `Table ${selectedTable.number}` : "Select Table"}
+                                    </div>
 
-                            {/* In Design Mode, show properties based on selection */}
-                            {isDesignMode ? (
-                                selectedId ? (
-                                    <div className="edit-panel">
-                                        {selectedNode && ["rect", "circle"].includes(selectedNode.type) ? (
-                                            <>
-                                                <div className="control-group">
-                                                    <label>Table Shape</label>
-                                                    <div className="status-actions">
-                                                        <button
-                                                            className={`status-action ${selectedNode.type === "rect" ? "active" : ""}`}
-                                                            onClick={() => updateSelectedShape("rect")}
-                                                        >
-                                                            Square / Rectangle
-                                                        </button>
-                                                        <button
-                                                            className={`status-action ${selectedNode.type === "circle" ? "active" : ""}`}
-                                                            onClick={() => updateSelectedShape("circle")}
-                                                        >
-                                                            Round
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <div className="control-group">
-                                                    <label>Table Number</label>
-                                                    <Input
-                                                        value={selectedNode?.number || ""}
-                                                        onChange={(e: any) => {
-                                                            const newVal = `${e.target.value || ""}`.trim();
-                                                            const currentNode = tables.find((t) => t.id === selectedId);
-                                                            if (!currentNode) return;
-                                                            const isDuplicate = tables.some(
-                                                                (t) =>
-                                                                    t.id !== selectedId &&
-                                                                    (t.type === "rect" || t.type === "circle") &&
-                                                                    t.sectionId === currentNode.sectionId &&
-                                                                    (t.number || "").trim() === newVal,
-                                                            );
-                                                            if (newVal && isDuplicate) {
-                                                                alert(`Table number '${newVal}' already exists in this section.`);
-                                                                return;
-                                                            }
-                                                            updateTables((prev) =>
-                                                                prev.map((t) => (t.id === selectedId ? { ...t, number: newVal } : t)),
-                                                            );
-                                                            setTable(newVal);
-                                                        }}
-                                                    />
-                                                </div>
-                                                <div className="control-group">
-                                                    <label>Default Covers</label>
-                                                    <Stepper
-                                                        count={selectedNode?.seats || DEFAULT_SEATS}
-                                                        min={1}
-                                                        max={12}
-                                                        onUpdate={(val) =>
-                                                            updateTables((prev) => prev.map((t) => (t.id === selectedId ? { ...t, seats: val } : t)))
-                                                        }
-                                                        size={32}
-                                                    />
-                                                </div>
-                                                <div className="control-group">
-                                                    <label>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedNode?.locked || false}
-                                                            onChange={(e) =>
-                                                                updateTables((prev) =>
-                                                                    prev.map((t) => (t.id === selectedId ? { ...t, locked: e.target.checked } : t)),
-                                                                )
-                                                            }
-                                                        />
-                                                        Lock Position
-                                                    </label>
-                                                </div>
-                                                <div className="control-group">
-                                                    <label>Table Status</label>
-                                                    <div className="status-actions">
-                                                        {STATUS_ORDER.map((status) => (
-                                                            <button
-                                                                key={status}
-                                                                className={`status-action status-${status} ${selectedNode?.status === status ? "active" : ""}`}
-                                                                onClick={() => updateSelectedStatus(status)}
-                                                            >
-                                                                {STATUS_META[status].label}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </>
-                                        ) : selectedNode?.type === "floor" ? (
-                                            <>
-                                                <div className="control-group">
-                                                    <label>Floor Style</label>
-                                                    <div className="status-actions">
-                                                        {(Object.keys(FLOOR_STYLE_META) as FloorStyle[]).map((style) => (
-                                                            <button
-                                                                key={style}
-                                                                className={`status-action ${selectedNode.floorStyle === style ? "active" : ""}`}
-                                                                onClick={() =>
-                                                                    updateTable(selectedNode.id, {
-                                                                        floorStyle: style,
-                                                                    })
+                                    {/* In Design Mode, show properties based on selection */}
+                                    {isDesignMode ? (
+                                        selectedId ? (
+                                            <div className="edit-panel">
+                                                {selectedNode && ["rect", "circle"].includes(selectedNode.type) ? (
+                                                    <>
+                                                        <div className="control-group">
+                                                            <label>Table Shape</label>
+                                                            <div className="status-actions">
+                                                                <button
+                                                                    className={`status-action ${selectedNode.type === "rect" ? "active" : ""}`}
+                                                                    onClick={() => updateSelectedShape("rect")}
+                                                                >
+                                                                    Square / Rectangle
+                                                                </button>
+                                                                <button
+                                                                    className={`status-action ${selectedNode.type === "circle" ? "active" : ""}`}
+                                                                    onClick={() => updateSelectedShape("circle")}
+                                                                >
+                                                                    Round
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div className="control-group">
+                                                            <label>Table Number</label>
+                                                            <Input
+                                                                value={selectedNode?.number || ""}
+                                                                onChange={(e: any) => {
+                                                                    const newVal = `${e.target.value || ""}`.trim();
+                                                                    const currentNode = tables.find((t) => t.id === selectedId);
+                                                                    if (!currentNode) return;
+                                                                    const isDuplicate = tables.some(
+                                                                        (t) =>
+                                                                            t.id !== selectedId &&
+                                                                            (t.type === "rect" || t.type === "circle") &&
+                                                                            t.sectionId === currentNode.sectionId &&
+                                                                            (t.number || "").trim() === newVal,
+                                                                    );
+                                                                    if (newVal && isDuplicate) {
+                                                                        alert(`Table number '${newVal}' already exists in this section.`);
+                                                                        return;
+                                                                    }
+                                                                    updateTables((prev) =>
+                                                                        prev.map((t) => (t.id === selectedId ? { ...t, number: newVal } : t)),
+                                                                    );
+                                                                    setTable(newVal);
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div className="control-group">
+                                                            <label>Default Covers</label>
+                                                            <Stepper
+                                                                count={selectedNode?.seats || DEFAULT_SEATS}
+                                                                min={1}
+                                                                max={12}
+                                                                onUpdate={(val) =>
+                                                                    updateTables((prev) => prev.map((t) => (t.id === selectedId ? { ...t, seats: val } : t)))
                                                                 }
-                                                            >
-                                                                {FLOOR_STYLE_META[style].label}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                                <div className="control-group">
-                                                    <label>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedNode?.locked || false}
-                                                            onChange={(e) =>
-                                                                updateTables((prev) =>
-                                                                    prev.map((t) => (t.id === selectedId ? { ...t, locked: e.target.checked } : t)),
-                                                                )
-                                                            }
-                                                        />
-                                                        Lock Position
-                                                    </label>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <div className="control-group">
-                                                    <label>Element</label>
-                                                    <p className="hint">Drag edges to resize or rotate. Click a chair to rotate counterclockwise.</p>
-                                                </div>
-                                                <div className="control-group">
-                                                    <label>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedNode?.locked || false}
-                                                            onChange={(e) =>
-                                                                updateTables((prev) =>
-                                                                    prev.map((t) => (t.id === selectedId ? { ...t, locked: e.target.checked } : t)),
-                                                                )
-                                                            }
-                                                        />
-                                                        Lock Position
-                                                    </label>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="text-muted small">Select an item to edit its properties.</div>
-                                )
-                            ) : selectedTable ? (
-                                <div className="table-details">
-                                    <div className={`status-pill status-${selectedTable.status || "available"}`}>
-                                        {STATUS_META[selectedTable.status || "available"].label}
-                                    </div>
-                                    <div className="detail-grid">
-                                        <div>
-                                            <div className="detail-label">Guests</div>
-                                            <div className="detail-value">
-                                                {selectedTableLiveState?.covers || coversNumber || selectedTable.seats || 0}
-                                            </div>
-                                        </div>
-                                        {/* Point 5: selected table details use the same live metadata model as table cards. */}
-                                        <div>
-                                            <div className="detail-label">Time Open</div>
-                                            <div className="detail-value">
-                                                {selectedTableLiveState?.elapsedMinutes !== null &&
-                                                selectedTableLiveState?.elapsedMinutes !== undefined
-                                                    ? `${selectedTableLiveState.elapsedMinutes}m`
-                                                    : "-"}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="detail-label">Total</div>
-                                            <div className="detail-value">
-                                                {formatOrderTotal(selectedTableLiveState?.totalCents ?? selectedTableCartTotalCents)}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="detail-label">Server</div>
-                                            <div className="detail-value">{selectedTableLiveState?.serverLabel || "-"}</div>
-                                        </div>
-                                    </div>
-                                    {!selectedTableHasLiveOrder && (
-                                        <div className="status-actions">
-                                            {VIEW_MODE_MANUAL_STATUSES.map((status) => (
-                                                <button
-                                                    key={status}
-                                                    className={`status-action status-${status} ${selectedTable.status === status ? "active" : ""}`}
-                                                    onClick={() => updateSelectedStatus(status)}
-                                                >
-                                                    {STATUS_META[status].label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                    {selectedRunningOrder && (
-                                        <div className="transfer-panel">
-                                            <div className="detail-label">Order Actions</div>
-                                            <div className="status-actions">
-                                                <button
-                                                    className={`status-action ${orderActionMode === "transfer" ? "active" : ""}`}
-                                                    onClick={startTransferMode}
-                                                    disabled={transferBusy || mergeBusy || !hasTransferTargets || orderActionMode === "merge"}
-                                                >
-                                                    Transfer Order
-                                                </button>
-                                                <button
-                                                    className={`status-action ${orderActionMode === "merge" ? "active" : ""}`}
-                                                    onClick={startMergeMode}
-                                                    disabled={mergeBusy || transferBusy || orderActionMode === "transfer"}
-                                                >
-                                                    Merge Orders
-                                                </button>
-                                                {orderActionMode !== "none" && (
-                                                    <button
-                                                        className="status-action"
-                                                        onClick={clearOrderActionMode}
-                                                        disabled={transferBusy || mergeBusy}
-                                                    >
-                                                        Cancel
-                                                    </button>
+                                                                size={32}
+                                                            />
+                                                        </div>
+                                                        <div className="control-group">
+                                                            <label>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={selectedNode?.locked || false}
+                                                                    onChange={(e) =>
+                                                                        updateTables((prev) =>
+                                                                            prev.map((t) => (t.id === selectedId ? { ...t, locked: e.target.checked } : t)),
+                                                                        )
+                                                                    }
+                                                                />
+                                                                Lock Position
+                                                            </label>
+                                                        </div>
+                                                        <div className="control-group">
+                                                            <label>Table Status</label>
+                                                            <div className="status-actions">
+                                                                {STATUS_ORDER.map((status) => (
+                                                                    <button
+                                                                        key={status}
+                                                                        className={`status-action status-${status} ${selectedNode?.status === status ? "active" : ""}`}
+                                                                        onClick={() => updateSelectedStatus(status)}
+                                                                    >
+                                                                        {STATUS_META[status].label}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                ) : selectedNode?.type === "floor" ? (
+                                                    <>
+                                                        <div className="control-group">
+                                                            <label>Floor Style</label>
+                                                            <div className="status-actions">
+                                                                {(Object.keys(FLOOR_STYLE_META) as FloorStyle[]).map((style) => (
+                                                                    <button
+                                                                        key={style}
+                                                                        className={`status-action ${selectedNode.floorStyle === style ? "active" : ""}`}
+                                                                        onClick={() =>
+                                                                            updateTable(selectedNode.id, {
+                                                                                floorStyle: style,
+                                                                            })
+                                                                        }
+                                                                    >
+                                                                        {FLOOR_STYLE_META[style].label}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        <div className="control-group">
+                                                            <label>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={selectedNode?.locked || false}
+                                                                    onChange={(e) =>
+                                                                        updateTables((prev) =>
+                                                                            prev.map((t) => (t.id === selectedId ? { ...t, locked: e.target.checked } : t)),
+                                                                        )
+                                                                    }
+                                                                />
+                                                                Lock Position
+                                                            </label>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <div className="control-group">
+                                                            <label>Element</label>
+                                                            <p className="hint">Drag edges to resize or rotate. Click a chair to rotate counterclockwise.</p>
+                                                        </div>
+                                                        <div className="control-group">
+                                                            <label>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={selectedNode?.locked || false}
+                                                                    onChange={(e) =>
+                                                                        updateTables((prev) =>
+                                                                            prev.map((t) => (t.id === selectedId ? { ...t, locked: e.target.checked } : t)),
+                                                                        )
+                                                                    }
+                                                                />
+                                                                Lock Position
+                                                            </label>
+                                                        </div>
+                                                    </>
                                                 )}
                                             </div>
-
-                                            {orderActionMode === "none" && (
-                                                <div className="helper-text">
-                                                    {hasTransferTargets || hasMergeSources || !!selectedRunningOrder
-                                                        ? "Choose an action for this running order."
-                                                        : "No transfer or merge action is currently available."}
+                                        ) : (
+                                            <div className="text-muted small">Select an item to edit its properties.</div>
+                                        )
+                                    ) : selectedTable ? (
+                                        <div className="table-details">
+                                            <div className={`status-pill status-${selectedTable.status || "available"}`}>
+                                                {STATUS_META[selectedTable.status || "available"].label}
+                                            </div>
+                                            <div className="detail-grid">
+                                                <div>
+                                                    <div className="detail-label">Guests</div>
+                                                    <div className="detail-value">
+                                                        {selectedTableLiveState?.covers || coversNumber || selectedTable.seats || 0}
+                                                    </div>
+                                                </div>
+                                                {/* Point 5: selected table details use the same live metadata model as table cards. */}
+                                                <div>
+                                                    <div className="detail-label">Time Open</div>
+                                                    <div className="detail-value">
+                                                        {selectedTableLiveState?.elapsedMinutes !== null && selectedTableLiveState?.elapsedMinutes !== undefined
+                                                            ? `${selectedTableLiveState.elapsedMinutes}m`
+                                                            : "-"}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="detail-label">Total</div>
+                                                    <div className="detail-value">
+                                                        {formatOrderTotal(selectedTableLiveState?.totalCents ?? selectedTableCartTotalCents)}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="detail-label">Server</div>
+                                                    <div className="detail-value">{selectedTableLiveState?.serverLabel || "-"}</div>
+                                                </div>
+                                            </div>
+                                            {!selectedTableHasLiveOrder && (
+                                                <div className="status-actions">
+                                                    {VIEW_MODE_MANUAL_STATUSES.map((status) => (
+                                                        <button
+                                                            key={status}
+                                                            className={`status-action status-${status} ${selectedTable.status === status ? "active" : ""}`}
+                                                            onClick={() => updateSelectedStatus(status)}
+                                                        >
+                                                            {STATUS_META[status].label}
+                                                        </button>
+                                                    ))}
                                                 </div>
                                             )}
-                                            {orderActionMode === "none" && mergeError && <div className="transfer-error">{mergeError}</div>}
+                                            {selectedRunningOrder && (
+                                                <div className="transfer-panel">
+                                                    <div className="detail-label">Order Actions</div>
+                                                    <div className="status-actions">
+                                                        <button
+                                                            className={`status-action ${orderActionMode === "transfer" ? "active" : ""}`}
+                                                            onClick={startTransferMode}
+                                                            disabled={transferBusy || mergeBusy || !hasTransferTargets || orderActionMode === "merge"}
+                                                        >
+                                                            Transfer Order
+                                                        </button>
+                                                        <button
+                                                            className={`status-action ${orderActionMode === "merge" ? "active" : ""}`}
+                                                            onClick={startMergeMode}
+                                                            disabled={mergeBusy || transferBusy || orderActionMode === "transfer"}
+                                                        >
+                                                            Merge Orders
+                                                        </button>
+                                                        {orderActionMode !== "none" && (
+                                                            <button
+                                                                className="status-action"
+                                                                onClick={clearOrderActionMode}
+                                                                disabled={transferBusy || mergeBusy}
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        )}
+                                                    </div>
 
-                                            {orderActionMode === "transfer" && (
-                                                <>
-                                                    <label className="detail-label">Target Table</label>
-                                                    <select
-                                                        className="transfer-target-select"
-                                                        value={transferTargetTable}
-                                                        onChange={(event) => {
-                                                            setTransferTargetTable(event.target.value);
-                                                            if (transferError) setTransferError(null);
-                                                        }}
-                                                        disabled={transferBusy || mergeBusy || !hasTransferTargets}
-                                                    >
-                                                        {!hasTransferTargets && <option value="">No empty target table available</option>}
-                                                        {transferTargetOptions.map((tableNumberOption) => (
-                                                            <option key={tableNumberOption} value={tableNumberOption}>
-                                                                Table {tableNumberOption}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                    {transferError && <div className="transfer-error">{transferError}</div>}
-                                                    {!hasTransferTargets && (
-                                                        <div className="helper-text">No empty table is available for transfer.</div>
-                                                    )}
-                                                    <Button
-                                                        className="transfer-action-btn"
-                                                        disabled={transferBusy || mergeBusy || !hasTransferTargets}
-                                                        onClick={() => void onRunTransferOperation()}
-                                                    >
-                                                        {transferBusy ? "Processing..." : "Transfer Running Order"}
-                                                    </Button>
-                                                </>
-                                            )}
-
-                                            {orderActionMode === "merge" && (
-                                                <>
-                                                    <label className="detail-label">Source Table</label>
-                                                    <select
-                                                        className="transfer-target-select"
-                                                        value={mergeSourceTable}
-                                                        onChange={(event) => {
-                                                            setMergeSourceTable(event.target.value);
-                                                            if (mergeError) setMergeError(null);
-                                                        }}
-                                                        disabled={mergeBusy || transferBusy || !hasMergeSources}
-                                                    >
-                                                        {!hasMergeSources && <option value="">No source table available</option>}
-                                                        {mergeSourceOptions.map((tableNumberOption) => (
-                                                            <option key={tableNumberOption} value={tableNumberOption}>
-                                                                Table {tableNumberOption}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                    {mergeSourceTable && (
+                                                    {orderActionMode === "none" && (
                                                         <div className="helper-text">
-                                                            Merge Table {mergeSourceTable} into Table {transferSourceTable}.
+                                                            {hasTransferTargets || hasMergeSources || !!selectedRunningOrder
+                                                                ? "Choose an action for this running order."
+                                                                : "No transfer or merge action is currently available."}
                                                         </div>
                                                     )}
-                                                    {mergeError && <div className="transfer-error">{mergeError}</div>}
-                                                    {!hasMergeSources && (
-                                                        <div className="helper-text">No source table with a running order is available.</div>
+                                                    {orderActionMode === "none" && mergeError && <div className="transfer-error">{mergeError}</div>}
+
+                                                    {orderActionMode === "transfer" && (
+                                                        <>
+                                                            <label className="detail-label">Target Table</label>
+                                                            <select
+                                                                className="transfer-target-select"
+                                                                value={transferTargetTable}
+                                                                onChange={(event) => {
+                                                                    setTransferTargetTable(event.target.value);
+                                                                    if (transferError) setTransferError(null);
+                                                                }}
+                                                                disabled={transferBusy || mergeBusy || !hasTransferTargets}
+                                                            >
+                                                                {!hasTransferTargets && <option value="">No empty target table available</option>}
+                                                                {transferTargetOptions.map((tableNumberOption) => (
+                                                                    <option key={tableNumberOption} value={tableNumberOption}>
+                                                                        Table {tableNumberOption}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                            {transferError && <div className="transfer-error">{transferError}</div>}
+                                                            {!hasTransferTargets && (
+                                                                <div className="helper-text">No empty table is available for transfer.</div>
+                                                            )}
+                                                            <Button
+                                                                className="transfer-action-btn"
+                                                                disabled={transferBusy || mergeBusy || !hasTransferTargets}
+                                                                onClick={() => void onRunTransferOperation()}
+                                                            >
+                                                                {transferBusy ? "Processing..." : "Transfer Running Order"}
+                                                            </Button>
+                                                        </>
                                                     )}
-                                                    <Button
-                                                        className="transfer-action-btn"
-                                                        disabled={mergeBusy || transferBusy || !hasMergeSources}
-                                                        onClick={() => void onRunMergeOperation()}
-                                                    >
-                                                        {mergeBusy ? "Processing..." : "Merge Into Selected Table"}
-                                                    </Button>
-                                                </>
+
+                                                    {orderActionMode === "merge" && (
+                                                        <>
+                                                            <label className="detail-label">Source Table</label>
+                                                            <select
+                                                                className="transfer-target-select"
+                                                                value={mergeSourceTable}
+                                                                onChange={(event) => {
+                                                                    setMergeSourceTable(event.target.value);
+                                                                    if (mergeError) setMergeError(null);
+                                                                }}
+                                                                disabled={mergeBusy || transferBusy || !hasMergeSources}
+                                                            >
+                                                                {!hasMergeSources && <option value="">No source table available</option>}
+                                                                {mergeSourceOptions.map((tableNumberOption) => (
+                                                                    <option key={tableNumberOption} value={tableNumberOption}>
+                                                                        Table {tableNumberOption}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                            {mergeSourceTable && (
+                                                                <div className="helper-text">
+                                                                    Merge Table {mergeSourceTable} into Table {transferSourceTable}.
+                                                                </div>
+                                                            )}
+                                                            {mergeError && <div className="transfer-error">{mergeError}</div>}
+                                                            {!hasMergeSources && (
+                                                                <div className="helper-text">No source table with a running order is available.</div>
+                                                            )}
+                                                            <Button
+                                                                className="transfer-action-btn"
+                                                                disabled={mergeBusy || transferBusy || !hasMergeSources}
+                                                                onClick={() => void onRunMergeOperation()}
+                                                            >
+                                                                {mergeBusy ? "Processing..." : "Merge Into Selected Table"}
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                </div>
                                             )}
+                                            <div className="helper-text">
+                                                {selectedTableHasLiveOrder
+                                                    ? "Status is driven by the active dine-in order."
+                                                    : "Tap to mark the table as available or reserved."}
+                                            </div>
                                         </div>
+                                    ) : (
+                                        /* Normal Mode: Inputs */
+                                        <>
+                                            <Input
+                                                autoFocus
+                                                onChange={(e) => {
+                                                    setTable(e.target.value);
+                                                    setTableError(false);
+                                                }}
+                                                value={table || ""}
+                                                error={tableError ? "Required" : ""}
+                                                placeholder="Enter or select table..."
+                                            />
+                                            {tableError && <div className="text-error mt-2">Required</div>}
+                                        </>
                                     )}
-                                    <div className="helper-text">
-                                        {selectedTableHasLiveOrder
-                                            ? "Status is driven by the active dine-in order."
-                                            : "Tap to mark the table as available or reserved."}
+                                </div>
+
+                                {register?.enableCovers && !isDesignMode && (
+                                    <div className="form-section">
+                                        <div className="h3 section-title">Covers</div>
+                                        <div className="covers-wrapper">
+                                            <Stepper count={coversNumber} min={1} max={20} onUpdate={setCoversNumber} size={48} />
+                                        </div>
                                     </div>
-                                </div>
-                            ) : (
-                                /* Normal Mode: Inputs */
-                                <>
-                                    <Input
-                                        autoFocus
-                                        onChange={(e) => {
-                                            setTable(e.target.value);
-                                            setTableError(false);
-                                        }}
-                                        value={table || ""}
-                                        error={tableError ? "Required" : ""}
-                                        placeholder="Enter or select table..."
-                                    />
-                                    {tableError && <div className="text-error mt-2">Required</div>}
-                                </>
-                            )}
-                        </div>
+                                )}
 
-                        {register?.enableCovers && !isDesignMode && (
-                            <div className="form-section">
-                                <div className="h3 section-title">Covers</div>
-                                <div className="covers-wrapper">
-                                    <Stepper count={coversNumber} min={1} max={20} onUpdate={setCoversNumber} size={48} />
+                                <div style={{ marginTop: "auto", width: "100%", paddingTop: "20px" }}>
+                                    <Button onClick={onNext} style={{ width: "100%", height: "50px", fontSize: "1.2rem" }}>
+                                        {isDesignMode ? "Done" : "Next"}
+                                    </Button>
                                 </div>
-                            </div>
-                        )}
-
-                        <div style={{ marginTop: "auto", width: "100%", paddingTop: "20px" }}>
-                            <Button onClick={onNext} style={{ width: "100%", height: "50px", fontSize: "1.2rem" }}>
-                                {isDesignMode ? "Done" : "Next"}
-                            </Button>
-                        </div>
-                        </>
+                            </>
                         )}
                     </div>
                 </div>
@@ -2492,9 +2469,7 @@ const TableNumberFeatureEnabledPage = () => {
                     onAddSection={(name) => addSection(name)}
                     onSave={() => void saveSectionSettings()}
                     onDeleteSection={deleteSectionDraft}
-                    onSectionNameChange={(sectionId, value) =>
-                        setSectionDrafts((prev) => prev.map((s) => (s.id === sectionId ? { ...s, name: value } : s)))
-                    }
+                    onSectionNameChange={(sectionId, value) => setSectionDrafts((prev) => prev.map((s) => (s.id === sectionId ? { ...s, name: value } : s)))}
                     onSectionVisibilityChange={(sectionId, isVisible) =>
                         setSectionDrafts((prev) => prev.map((s) => (s.id === sectionId ? { ...s, hidden: !isVisible } : s)))
                     }

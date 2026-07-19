@@ -1,0 +1,200 @@
+.cashup {
+    padding: 24px;
+    max-width: 1100px;
+    width: 100%;
+    margin: auto;
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .card:hover {
+        box-shadow: none;
+    }
+
+    .finalise,
+    .detail,
+    .money-movement-entry {
+        max-width: 640px;
+        margin: 0 auto;
+    }
+
+    .list-table {
+        overflow-x: auto;
+    }
+
+    .cashup-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .detail {
+        .meta {
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .print {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+    }
+
+    // Give icon + label buttons (Finalise, Print) breathing room.
+    .button {
+        gap: 8px;
+        align-items: center;
+    }
+}
+
+.money-movement-fields {
+    display: grid;
+    gap: 20px;
+}
+
+.cashup-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.cashup-banner {
+    margin-bottom: 24px;
+
+    .content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #92400e;
+        font-weight: 600;
+    }
+}
+
+.cashup-count-input {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+
+    .input {
+        max-width: 180px;
+        text-align: right;
+    }
+}
+
+.cashup-denomination-toggle {
+    display: inline-flex;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background: #f7f7f7;
+    cursor: pointer;
+
+    svg {
+        color: var(--primary-color);
+        font-size: 20px;
+    }
+
+    &.active {
+        border-color: var(--primary-color);
+        background: #ffffff;
+    }
+
+    &:disabled {
+        cursor: default;
+        opacity: 0.5;
+    }
+}
+
+.cashup-difference {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 8px 0;
+}
+
+.cashup-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.cashup-ghost-button {
+    background: #ffffff;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+}
+
+.cashup-warning-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    svg {
+        color: var(--error-color);
+        font-size: 22px;
+    }
+}
+
+.cashup-warning-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.cashup-warning {
+    text-align: center;
+
+    &.active {
+        border-color: var(--error-color);
+    }
+}
+
+.cashup-denomination-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 24px;
+}
+
+.cashup-denomination-field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 100px;
+    align-items: center;
+    gap: 12px;
+
+    .input {
+        text-align: right;
+    }
+}
+
+@media (max-width: 900px) {
+    .cashup {
+        padding: 16px;
+
+        .cashup-section-header {
+            align-items: stretch;
+            flex-direction: column;
+        }
+    }
+}

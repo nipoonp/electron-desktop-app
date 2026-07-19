@@ -8,6 +8,7 @@ import { BsDisplay } from "react-icons/bs";
 
 import "./menu.scss";
 import { useCart } from "../../context/cart-context";
+import { usePosUser } from "../../context/pos-user-context";
 
 let electron: any;
 let ipcRenderer: any;
@@ -20,6 +21,7 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
     const { setIsCustomerDisplayOpen } = useCart();
+    const { clearSelectedPosUser } = usePosUser();
     const [selectedTabId, setSelectedTabId] = useState<string>("");
     const [subTabs, setSubTabs] = useState<ITab[] | null>(null);
 
@@ -34,8 +36,24 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
     if (!restaurant) return <></>;
     if (!register) return <></>;
 
+    const visibleTabs = props.tabs.filter((tab) => {
+        if (tab.id === "cashup") {
+            // Cash management is only available on POS registers and only when the restaurant has enabled cash up in Tabin Web.
+            return restaurant.enableCashup && register.type === ERegisterType.POS;
+        }
+
+        if (tab.id === "selectPosUser") {
+            return register.type === ERegisterType.POS && !!register.enablePosUserPin;
+        }
+
+        return true;
+    });
+
     const selectTab = (tab: ITab) => {
         if (tab.route) {
+            if (tab.id === "selectPosUser") {
+                clearSelectedPosUser();
+            }
             props.onClickMenuRoute(tab.route);
         } else if (subTabs && tab.subTabs) {
             setSelectedTabId("");
@@ -74,7 +92,7 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
                 {restaurant.name} ({register.name})
             </div>
             <div className="separator-2"></div>
-            {props.tabs.map((tab: ITab) => (
+            {visibleTabs.map((tab: ITab) => (
                 <div key={tab.id} className="menu-tab-wrapper">
                     <div key={tab.id} onClick={() => selectTab(tab)} className="menu-tab">
                         <div className="menu-tab-icon">{tab.icon}</div>

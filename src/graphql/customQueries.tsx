@@ -23,6 +23,26 @@ export enum ERegisterType {
     ONLINE = "ONLINE",
 }
 
+export enum ECashupScopeType {
+    SITE = "SITE",
+    REGISTER = "REGISTER",
+    STAFF = "STAFF",
+}
+
+export enum ECashupSessionStatus {
+    OPEN = "OPEN",
+    FINALISED = "FINALISED",
+}
+
+export enum EMoneyMovementType {
+    MONEY_IN = "MONEY_IN",
+    MONEY_OUT = "MONEY_OUT",
+}
+
+export enum EMoneyMovementPaymentMethod {
+    CASH = "CASH",
+}
+
 export enum ERegisterPrinterType {
     BLUETOOTH = "BLUETOOTH",
     WIFI = "WIFI",
@@ -60,6 +80,9 @@ export const GET_USER = gql`
             }
             userRestaurants(limit: 1000) {
                 items {
+                    enablePosPin
+                    posPin
+                    posPinUpdatedAt
                     restaurant {
                         id
                         name
@@ -84,9 +107,7 @@ export interface IGET_USER {
         items: IGET_USER_RESTAURANT[];
     };
     userRestaurants: {
-        items: {
-            restaurant: IGET_USER_RESTAURANT;
-        }[];
+        items: IGET_USER_RESTAURANT_LINK[];
     };
 }
 
@@ -97,6 +118,32 @@ export interface IGET_USER_RESTAURANT {
     address: {
         formattedAddress: string;
     };
+    enablePosPin?: boolean | null;
+    posPin?: string | null;
+    posPinUpdatedAt?: string | null;
+}
+
+export interface IGET_USER_RESTAURANT_LINK {
+    enablePosPin?: boolean | null;
+    posPin?: string | null;
+    posPinUpdatedAt?: string | null;
+    restaurant: IGET_USER_RESTAURANT;
+}
+
+export interface IGET_RESTAURANT_USER {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    image?: IS3Object | null;
+}
+
+export interface IGET_RESTAURANT_USER_LINK {
+    id: string;
+    enablePosPin?: boolean | null;
+    posPin?: string | null;
+    posPinUpdatedAt?: string | null;
+    user: IGET_RESTAURANT_USER;
 }
 
 export interface IGET_USER_REGISTER_PRINTER {
@@ -207,7 +254,31 @@ export const GET_RESTAURANT = gql`
             delayBetweenOrdersInSeconds
             orderThresholdMessage
             surchargePercentage
+            enableCashup
+            cashupDefaultScope
+            # cashupAllowScopeSwitch
+            cashupVarianceReasonThreshold
             salesReportMailingList
+            users {
+                items {
+                    id
+                    enablePosPin
+                    posPin
+                    posPinUpdatedAt
+                    user {
+                        id
+                        firstName
+                        lastName
+                        email
+                        image {
+                            key
+                            bucket
+                            region
+                            identityPoolId
+                        }
+                    }
+                }
+            }
             orderThresholds {
                 enable
             }
@@ -298,6 +369,7 @@ export const GET_RESTAURANT = gql`
                     id
                     active
                     name
+                    enablePosUserPin
                     enableTableFlags
                     enableCovers
                     enableBuzzerNumbersForTakeaway
@@ -1024,7 +1096,14 @@ export interface IGET_RESTAURANT {
     delayBetweenOrdersInSeconds: number | null;
     orderThresholdMessage: string | null;
     surchargePercentage: number | null;
+    enableCashup: boolean | null;
+    cashupDefaultScope: ECashupScopeType | null;
+    // cashupAllowScopeSwitch: boolean | null;
+    cashupVarianceReasonThreshold: number | null;
     salesReportMailingList: string | null;
+    users: {
+        items: IGET_RESTAURANT_USER_LINK[];
+    };
     orderThresholds: {
         enable: boolean;
     } | null;
@@ -1099,6 +1178,7 @@ export interface IGET_RESTAURANT_REGISTER {
     id: string;
     active: boolean;
     name: string;
+    enablePosUserPin?: boolean;
     enableTableFlags: boolean;
     enableCovers: boolean;
     enableBuzzerNumbersForTakeaway: boolean;
@@ -1576,6 +1656,67 @@ export interface IGET_RESTAURANT_MODIFIER {
     productModifier?: IGET_RESTAURANT_PRODUCT;
 }
 
+export interface IGET_CASHUP_ORDER_PAYMENT_AMOUNTS {
+    cash: number | null;
+    eftpos: number | null;
+    online: number | null;
+    uberEats: number | null;
+    menulog: number | null;
+    doordash: number | null;
+    delivereasy: number | null;
+}
+
+export interface IGET_CASHUP_ORDER {
+    id: string;
+    status: EOrderStatus;
+    paid: boolean | null;
+    placedAt: string;
+    settledAt: string | null;
+    refundedAt: string | null;
+    parkedAt: string | null;
+    registerId: string;
+    settledRegisterId: string | null;
+    orderUserId: string | null;
+    paymentAmounts: IGET_CASHUP_ORDER_PAYMENT_AMOUNTS | null;
+    refundPaymentAmounts: IGET_CASHUP_ORDER_PAYMENT_AMOUNTS | null;
+}
+
+export interface IGET_CASHUP_SESSION {
+    id: string;
+    cashupRestaurantId: string;
+    cashupSessionDate: string;
+    scopeType: ECashupScopeType;
+    scopeKey: string;
+    status: ECashupSessionStatus;
+    openedAt: string;
+    finalisedAt: string | null;
+    finalisedUserId: string | null;
+    finalisedByName: string | null;
+    openingFloat: number;
+    recordedTotal: number | null;
+    countedTotal: number | null;
+    paymentSummary: string | null;
+    varianceReason: string | null;
+    owner: string | null;
+}
+
+export interface IGET_MONEY_MOVEMENT {
+    id: string;
+    moneyMovementRestaurantId: string;
+    moneyMovementRegisterId: string;
+    cashupSessionId: string | null;
+    scopeKey: string;
+    moneyMovementDate: string;
+    recordedAt: string;
+    type: EMoneyMovementType;
+    paymentMethod: EMoneyMovementPaymentMethod | null;
+    amount: number;
+    reason: string | null;
+    createdUserId: string | null;
+    createdByName: string | null;
+    owner: string | null;
+}
+
 export interface IS3Object {
     key: string;
     bucket: string;
@@ -1747,6 +1888,65 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
         ) {
             items {
                 ...OrderFieldsFragment
+            }
+        }
+    }
+`;
+
+export const GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
+    ${ORDER_FIELDS_FRAGMENT}
+    query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAtStartDate: String!, $placedAtEndDate: String!) {
+        getOrdersByRestaurantByPlacedAt(
+            limit: 1000000
+            sortDirection: DESC
+            orderRestaurantId: $orderRestaurantId
+            placedAt: { between: [$placedAtStartDate, $placedAtEndDate] }
+        ) {
+            items {
+                ...OrderFieldsFragment
+            }
+        }
+    }
+`;
+
+export const GET_CASHUP_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
+    query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAtStartDate: String!, $placedAtEndDate: String!) {
+        getOrdersByRestaurantByPlacedAt(
+            limit: 1000000
+            sortDirection: DESC
+            orderRestaurantId: $orderRestaurantId
+            placedAt: { between: [$placedAtStartDate, $placedAtEndDate] }
+            filter: { paymentInProgress: { ne: true } }
+        ) {
+            items {
+                id
+                status
+                paid
+                placedAt
+                settledAt
+                refundedAt
+                parkedAt
+                registerId
+                settledRegisterId
+                orderUserId
+                paymentAmounts {
+                    cash
+                    eftpos
+                    online
+                    uberEats
+                    menulog
+                    doordash
+                    delivereasy
+                }
+                refundPaymentAmounts {
+                    cash
+                    eftpos
+                    online
+                    uberEats
+                    menulog
+                    doordash
+                    delivereasy
+                }
             }
         }
     }
@@ -2161,7 +2361,6 @@ export const UPDATE_RESTAURANT_PREPARATION_TIME = gql`
     }
 `;
 
-
 export enum EReservationStatus {
     PENDING = "PENDING",
     CONFIRMED = "CONFIRMED",
@@ -2197,40 +2396,48 @@ export interface IGET_RESERVATION_FOR_TABLE {
 
 // Slim query for floor plan overlay — only fetches the fields needed to derive reserved table status.
 export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE = gql`
-    query GetReservationsByRestaurantByDate(
-        $restaurantId: ID!
-        $date: ModelStringKeyConditionInput
-        $limit: Int
-    ) {
-        getReservationsByRestaurantByDate(
-            restaurantId: $restaurantId
-            date: $date
-            limit: $limit
-        ) {
+    query GetReservationsByRestaurantByDate($restaurantId: ID!, $date: ModelStringKeyConditionInput, $limit: Int) {
+        getReservationsByRestaurantByDate(restaurantId: $restaurantId, date: $date, limit: $limit) {
             items {
                 id
                 tableNumber
                 status
                 date
             }
+            nextToken
+        }
+    }
+`;
+
+export const GET_LOYALTY_USER_BY_EMAIL = gql`
+    query GetLoyaltyUserByEmail($email: String!) {
+        getLoyaltyUserByEmail(email: $email) {
+            items {
+                id
+                firstName
+                lastName
+                phoneNumber
+                email
+                loyaltyHistories(limit: 10000) {
+                    items {
+                        id
+                        action
+                        points
+                        createdAt
+                        loyaltyHistoryLoyaltyId
+                    }
+                    nextToken
+                }
+            }
+            nextToken
         }
     }
 `;
 
 // Full query used by the reservations management page.
 export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE_FULL = gql`
-    query GetReservationsByRestaurantByDateFull(
-        $restaurantId: ID!
-        $date: ModelStringKeyConditionInput
-        $limit: Int
-        $nextToken: String
-    ) {
-        getReservationsByRestaurantByDate(
-            restaurantId: $restaurantId
-            date: $date
-            limit: $limit
-            nextToken: $nextToken
-        ) {
+    query GetReservationsByRestaurantByDateFull($restaurantId: ID!, $date: ModelStringKeyConditionInput, $limit: Int, $nextToken: String) {
+        getReservationsByRestaurantByDate(restaurantId: $restaurantId, date: $date, limit: $limit, nextToken: $nextToken) {
             items {
                 id
                 restaurantId
@@ -2245,6 +2452,79 @@ export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE_FULL = gql`
                 tableNumber
                 createdAt
                 updatedAt
+            }
+            nextToken
+        }
+    }
+`;
+
+export interface IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL {
+    id: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+    email: string;
+    loyaltyHistories: {
+        items: {
+            id: string;
+            action: ELOYALTY_ACTION;
+            points: number;
+            createdAt: string;
+            loyaltyHistoryLoyaltyId?: string | null;
+        }[];
+    };
+}
+
+export const GET_CASHUP_SESSIONS_BY_SCOPE_KEY_BY_OPENED_AT = gql`
+    query GetCashupSessionsByScopeKeyByOpenedAt($scopeKey: String!, $openedAt: ModelStringKeyConditionInput, $limit: Int, $nextToken: String) {
+        getCashupSessionsByScopeKeyByOpenedAt(
+            scopeKey: $scopeKey
+            openedAt: $openedAt
+            sortDirection: DESC
+            limit: $limit
+            nextToken: $nextToken
+        ) {
+            items {
+                id
+                cashupRestaurantId
+                cashupSessionDate
+                scopeType
+                scopeKey
+                status
+                openedAt
+                finalisedAt
+                finalisedUserId
+                finalisedByName
+                openingFloat
+                recordedTotal
+                countedTotal
+                paymentSummary
+                varianceReason
+                owner
+            }
+            nextToken
+        }
+    }
+`;
+
+export const GET_MONEY_MOVEMENTS_BY_SCOPE_KEY_BY_RECORDED_AT = gql`
+    query GetMoneyMovementsByScopeKeyByRecordedAt($scopeKey: String!, $recordedAt: ModelStringKeyConditionInput, $limit: Int, $nextToken: String) {
+        getMoneyMovementsByScopeKeyByRecordedAt(scopeKey: $scopeKey, recordedAt: $recordedAt, limit: $limit, nextToken: $nextToken) {
+            items {
+                id
+                moneyMovementRestaurantId
+                moneyMovementRegisterId
+                cashupSessionId
+                scopeKey
+                moneyMovementDate
+                recordedAt
+                type
+                paymentMethod
+                amount
+                reason
+                createdUserId
+                createdByName
+                owner
             }
             nextToken
         }

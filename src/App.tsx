@@ -10,6 +10,7 @@ import { VerifoneProvider } from "./context/verifone-context";
 import { TyroProvider } from "./context/tyro-context";
 import { ReceiptPrinterProvider } from "./context/receiptPrinter-context";
 import { RegisterProvider } from "./context/register-context";
+import { PosUserProvider } from "./context/pos-user-context";
 import { ElectronProvider } from "./context/electron-context";
 import { RestaurantProvider, useRestaurant } from "./context/restaurant-context";
 import { WindcaveProvider } from "./context/windcave-context";
@@ -141,24 +142,26 @@ const App = () => {
                                 {/* Put this here becuase if we put it under the restaurantProvider it tirggers the useEffect event listerners twice */}
                                 <RestaurantProvider>
                                     <RegisterProvider>
-                                        <ReceiptPrinterProvider>
-                                            <CartProvider>
-                                                <SmartpayProvider>
-                                                    <WindcaveProvider>
-                                                        <TyroProvider>
-                                                            <MX51Provider>
-                                                                <ErrorBoundary
-                                                                    FallbackComponent={ErrorBoundaryFallback}
-                                                                    onError={logFailureNotification}
-                                                                >
-                                                                    <Main />
-                                                                </ErrorBoundary>
-                                                            </MX51Provider>
-                                                        </TyroProvider>
-                                                    </WindcaveProvider>
-                                                </SmartpayProvider>
-                                            </CartProvider>
-                                        </ReceiptPrinterProvider>
+                                        <PosUserProvider>
+                                            <ReceiptPrinterProvider>
+                                                <CartProvider>
+                                                    <SmartpayProvider>
+                                                        <WindcaveProvider>
+                                                            <TyroProvider>
+                                                                <MX51Provider>
+                                                                    <ErrorBoundary
+                                                                        FallbackComponent={ErrorBoundaryFallback}
+                                                                        onError={logFailureNotification}
+                                                                    >
+                                                                        <Main />
+                                                                    </ErrorBoundary>
+                                                                </MX51Provider>
+                                                            </TyroProvider>
+                                                        </WindcaveProvider>
+                                                    </SmartpayProvider>
+                                                </CartProvider>
+                                            </ReceiptPrinterProvider>
+                                        </PosUserProvider>
                                     </RegisterProvider>
                                 </RestaurantProvider>
                             </VerifoneProvider>

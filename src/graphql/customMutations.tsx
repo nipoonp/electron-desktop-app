@@ -99,10 +99,11 @@ export const CREATE_ORDER = gql`
         $products: [OrderProductInput!]
         $placedAt: String
         $placedAtUtc: String
+        $settledAt: String
+        $settledRegisterId: ID
         $completedAt: String
         $completedAtUtc: String
         $parkedAt: String
-        $parkedAtUtc: String
         $orderUserId: ID!
         $orderRestaurantId: ID!
     ) {
@@ -139,10 +140,11 @@ export const CREATE_ORDER = gql`
                 products: $products
                 placedAt: $placedAt
                 placedAtUtc: $placedAtUtc
+                settledAt: $settledAt
+                settledRegisterId: $settledRegisterId
                 completedAt: $completedAt
                 completedAtUtc: $completedAtUtc
                 parkedAt: $parkedAt
-                parkedAtUtc: $parkedAtUtc
                 orderUserId: $orderUserId
                 orderRestaurantId: $orderRestaurantId
             }
@@ -175,10 +177,11 @@ export const UPDATE_ORDER = gql`
         $products: [OrderProductInput!]
         $placedAt: String
         $placedAtUtc: String
+        $settledAt: String
+        $settledRegisterId: ID
         $completedAt: String
         $completedAtUtc: String
         $parkedAt: String
-        $parkedAtUtc: String
         $orderUserId: ID!
         $orderRestaurantId: ID!
     ) {
@@ -204,10 +207,11 @@ export const UPDATE_ORDER = gql`
                 products: $products
                 placedAt: $placedAt
                 placedAtUtc: $placedAtUtc
+                settledAt: $settledAt
+                settledRegisterId: $settledRegisterId
                 completedAt: $completedAt
                 completedAtUtc: $completedAtUtc
                 parkedAt: $parkedAt
-                parkedAtUtc: $parkedAtUtc
                 orderUserId: $orderUserId
                 orderRestaurantId: $orderRestaurantId
             }
@@ -358,7 +362,7 @@ export const UPDATE_REGISTER_TYRO = gql`
 export const CREATE_RESERVATION = gql`
     mutation CreateReservation(
         $restaurantId: ID!
-        $date: AWSDate!
+        $date: String!
         $time: AWSTime!
         $covers: Int!
         $status: ReservationStatus!
@@ -399,10 +403,76 @@ export const CREATE_RESERVATION = gql`
     }
 `;
 
+export const CREATE_CASHUP_SESSION = gql`
+    mutation CreateCashupSession(
+        $id: ID!
+        $cashupRestaurantId: ID!
+        $cashupSessionDate: String!
+        $scopeType: CashupScopeType!
+        $scopeKey: String!
+        $status: CashupSessionStatus!
+        $openedAt: String!
+        $openingFloat: Int!
+        $owner: ID
+    ) {
+        createCashupSession(
+            input: {
+                id: $id
+                cashupRestaurantId: $cashupRestaurantId
+                cashupSessionDate: $cashupSessionDate
+                scopeType: $scopeType
+                scopeKey: $scopeKey
+                status: $status
+                openedAt: $openedAt
+                openingFloat: $openingFloat
+                owner: $owner
+            }
+        ) {
+            id
+            cashupRestaurantId
+            cashupSessionDate
+            scopeType
+            scopeKey
+            status
+            openedAt
+            finalisedAt
+            finalisedUserId
+            finalisedByName
+            openingFloat
+            recordedTotal
+            countedTotal
+            paymentSummary
+            varianceReason
+            owner
+        }
+    }
+`;
+
+export const CREATE_MONEY_MOVEMENT = gql`
+    mutation CreateMoneyMovement($input: CreateMoneyMovementInput!) {
+        createMoneyMovement(input: $input) {
+            id
+            moneyMovementRestaurantId
+            moneyMovementRegisterId
+            cashupSessionId
+            scopeKey
+            moneyMovementDate
+            recordedAt
+            type
+            paymentMethod
+            amount
+            reason
+            createdUserId
+            createdByName
+            owner
+        }
+    }
+`;
+
 export const UPDATE_RESERVATION = gql`
     mutation UpdateReservation(
         $id: ID!
-        $date: AWSDate
+        $date: String
         $time: AWSTime
         $covers: Int
         $status: ReservationStatus
@@ -439,6 +509,55 @@ export const UPDATE_RESERVATION = gql`
             tableNumber
             createdAt
             updatedAt
+        }
+    }
+`;
+
+export const UPDATE_CASHUP_SESSION = gql`
+    mutation UpdateCashupSession(
+        $id: ID!
+        $status: CashupSessionStatus
+        $finalisedAt: String
+        $finalisedUserId: ID
+        $finalisedByName: String
+        $openingFloat: Int
+        $recordedTotal: Int
+        $countedTotal: Int
+        $paymentSummary: AWSJSON
+        $varianceReason: String
+        $condition: ModelCashupSessionConditionInput
+    ) {
+        updateCashupSession(
+            input: {
+                id: $id
+                status: $status
+                finalisedAt: $finalisedAt
+                finalisedUserId: $finalisedUserId
+                finalisedByName: $finalisedByName
+                openingFloat: $openingFloat
+                recordedTotal: $recordedTotal
+                countedTotal: $countedTotal
+                paymentSummary: $paymentSummary
+                varianceReason: $varianceReason
+            }
+            condition: $condition
+        ) {
+            id
+            cashupRestaurantId
+            cashupSessionDate
+            scopeType
+            scopeKey
+            status
+            openedAt
+            finalisedAt
+            finalisedUserId
+            finalisedByName
+            openingFloat
+            recordedTotal
+            countedTotal
+            paymentSummary
+            varianceReason
+            owner
         }
     }
 `;

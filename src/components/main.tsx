@@ -9,10 +9,11 @@ import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
 import { useAuth, AuthenticationStatus } from "../context/auth-context";
 import { useUser } from "../context/user-context";
 import { useRestaurant } from "../context/restaurant-context";
+import { usePosUser } from "../context/pos-user-context";
 import { IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { useRegister } from "../context/register-context";
 import { ITab } from "../model/model";
-import { FiDollarSign, FiLock, FiMenu } from "react-icons/fi";
+import { FiDollarSign, FiLock, FiMenu, FiCheckSquare, FiUsers } from "react-icons/fi";
 import RequireCustomerInformation from "./page/customerInformation";
 import { sendFailureNotification } from "../util/errorHandling";
 
@@ -25,6 +26,7 @@ const CustomerDisplay = lazy(() => import("./page/customerDisplay"));
 const Restaurant = lazy(() => import("./page/restaurant"));
 const RestaurantList = lazy(() => import("./page/restaurantList"));
 const RegisterList = lazy(() => import("./page/registerList"));
+const PosUserList = lazy(() => import("./page/posUserList"));
 const Orders = lazy(() => import("./page/orders"));
 const Dashboard = lazy(() => import("./page/dashboard"));
 const BeginOrder = lazy(() => import("./page/beginOrder"));
@@ -34,6 +36,8 @@ const TableNumber = lazy(() => import("./page/tableNumber"));
 const BuzzerNumber = lazy(() => import("./page/buzzerNumber"));
 const PaymentMethod = lazy(() => import("./page/paymentMethod"));
 const Checkout = lazy(() => import("./page/checkout"));
+// Cash up is a dedicated POS page rather than a dashboard iframe screen.
+const CashUp = lazy(() => import("./page/cashManagement/cashUp"));
 const NoMatch = lazy(() => import("./page/error/404"));
 const Unauthorised = lazy(() => import("./page/error/unauthorised"));
 
@@ -55,6 +59,7 @@ export const customerDisplayPath = "/customer_display";
 export const restaurantListPath = "/restaurant_list";
 export const registerListPath = "/register_list";
 export const ordersPath = "/orders";
+export const posUserListPath = "/pos_user_list";
 export const dashboardPath = "/dashboard";
 export const configureNewEftposPath = "/configure_new_eftpos";
 export const beginOrderPath = "/begin_order";
@@ -65,6 +70,7 @@ export const customerInformationPath = "/customer_information";
 export const paymentMethodPath = "/payment_method";
 export const restaurantPath = "/restaurant";
 export const checkoutPath = "/checkout";
+export const cashUpPath = "/cash_up";
 export const unauthorizedPath = "/unauthorized";
 
 export const tabs: ITab[] = [
@@ -80,6 +86,20 @@ export const tabs: ITab[] = [
         name: "Dashboard",
         icon: <FiMenu height="20px" />,
         route: dashboardPath,
+        showOnMobile: true,
+    },
+    {
+        id: "cashup",
+        name: "Cash Up",
+        icon: <FiCheckSquare height="20px" />,
+        route: cashUpPath,
+        showOnMobile: true,
+    },
+    {
+        id: "selectPosUser",
+        name: "Select POS User",
+        icon: <FiUsers height="20px" />,
+        route: posUserListPath,
         showOnMobile: true,
     },
     {
@@ -132,33 +152,36 @@ export default () => {
         if (!restaurant) return;
         if (!register) return;
 
-        const timerId = setInterval(async () => {
-            try {
-                //We are having an issue where we get "NotAuthorizedException: Refresh Token has expired".
-                //To avoid the refresh_token from expiring, we will force it to refresh every 10 minutes.
-                //I can see the access_token and id_token get refreshed. But not sure about the refresh_token.
-                //https://github.com/aws-amplify/amplify-js/issues/2560
-                //Also in AWS Dashboard under Cognito User Pools > App Integration > We set the 'Refresh token expiration' to 365 days.
-                //So monitor the next few weeks howmany of those errors we get rearing "NotAuthorizedException: Refresh Token has expired" issue.
-                //If we don't get such errors then we can try remove this code below.
-                const cognitoUser = await Auth.currentAuthenticatedUser();
-                const currentSession = await Auth.currentSession();
+        const timerId = setInterval(
+            async () => {
+                try {
+                    //We are having an issue where we get "NotAuthorizedException: Refresh Token has expired".
+                    //To avoid the refresh_token from expiring, we will force it to refresh every 10 minutes.
+                    //I can see the access_token and id_token get refreshed. But not sure about the refresh_token.
+                    //https://github.com/aws-amplify/amplify-js/issues/2560
+                    //Also in AWS Dashboard under Cognito User Pools > App Integration > We set the 'Refresh token expiration' to 365 days.
+                    //So monitor the next few weeks howmany of those errors we get rearing "NotAuthorizedException: Refresh Token has expired" issue.
+                    //If we don't get such errors then we can try remove this code below.
+                    const cognitoUser = await Auth.currentAuthenticatedUser();
+                    const currentSession = await Auth.currentSession();
 
-                cognitoUser.refreshSession(currentSession.getRefreshToken(), (err, session) => {
-                    console.log("New session", err, session);
-                    // const { idToken, refreshToken, accessToken } = session;
-                });
+                    cognitoUser.refreshSession(currentSession.getRefreshToken(), (err, session) => {
+                        console.log("New session", err, session);
+                        // const { idToken, refreshToken, accessToken } = session;
+                    });
 
-                //If the above code doesn't refresh the refresh_token then uncomment the below lines and get the user to relog in again.
-                // const email = localStorage.getItem("current_e");
-                // const password = localStorage.getItem("current_p");
+                    //If the above code doesn't refresh the refresh_token then uncomment the below lines and get the user to relog in again.
+                    // const email = localStorage.getItem("current_e");
+                    // const password = localStorage.getItem("current_p");
 
-                // if (email && password) login(email, password);
-            } catch (error) {
-                console.error("Error", error);
-                await sendFailureNotification(error, JSON.stringify({ restaurant: restaurant?.id, register: register?.id }));
-            }
-        }, 10 * 60 * 1000); // 10 minutes
+                    // if (email && password) login(email, password);
+                } catch (error) {
+                    console.error("Error", error);
+                    await sendFailureNotification(error, JSON.stringify({ restaurant: restaurant?.id, register: register?.id }));
+                }
+            },
+            10 * 60 * 1000,
+        ); // 10 minutes
 
         return () => clearInterval(timerId);
     }, [restaurant, register]);
@@ -195,25 +218,27 @@ const AppRoutes = () => {
                 <Route path={customerDisplayPath} element={<CustomerDisplay />} />
                 <Route path={restaurantListPath} element={<PrivateRoute element={<RestaurantList />} />} />
                 <Route path={registerListPath} element={<PrivateRoute element={<RegisterList />} />} />
-                <Route path={ordersPath} element={<RestaurantRegisterPrivateRoute element={<Orders />} />}>
-                    <Route path=":date" element={<RestaurantRegisterPrivateRoute element={<Orders />} />} />
+                <Route path={posUserListPath} element={<RestaurantRegisterPosSetupPrivateRoute element={<PosUserList />} />} />
+                <Route path={ordersPath} element={<RestaurantRegisterPosPrivateRoute element={<Orders />} />}>
+                    <Route path=":date" element={<RestaurantRegisterPosPrivateRoute element={<Orders />} />} />
                 </Route>
-                <Route path={dashboardPath} element={<RestaurantRegisterPrivateRoute element={<Dashboard />} />} />
-                <Route path={configureNewEftposPath} element={<RestaurantRegisterPrivateRoute element={<ConfigureNewEftpos />} />} />
-                <Route path={beginOrderPath} element={<RestaurantRegisterPrivateRoute element={<BeginOrder />} />} />
-                <Route path={`${restaurantPath}/:restaurantId`} element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />}>
-                    <Route path=":selectedCategoryId" element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />}>
-                        <Route path=":selectedProductId" element={<RestaurantRegisterPrivateRoute element={<Restaurant />} />} />
+                <Route path={dashboardPath} element={<RestaurantRegisterPosPrivateRoute element={<Dashboard />} />} />
+                <Route path={configureNewEftposPath} element={<RestaurantRegisterPosPrivateRoute element={<ConfigureNewEftpos />} />} />
+                <Route path={beginOrderPath} element={<RestaurantRegisterSalePrivateRoute element={<BeginOrder />} />} />
+                <Route path={`${restaurantPath}/:restaurantId`} element={<RestaurantRegisterSalePrivateRoute element={<Restaurant />} />}>
+                    <Route path=":selectedCategoryId" element={<RestaurantRegisterSalePrivateRoute element={<Restaurant />} />}>
+                        <Route path=":selectedProductId" element={<RestaurantRegisterSalePrivateRoute element={<Restaurant />} />} />
                     </Route>
                 </Route>
-                <Route path={orderTypePath} element={<RestaurantRegisterPrivateRoute element={<OrderType />} />} />
-                <Route path={tableNumberPath} element={<RestaurantRegisterPrivateRoute element={<TableNumber />} />} />
-                <Route path={buzzerNumberPath} element={<RestaurantRegisterPrivateRoute element={<BuzzerNumber />} />} />
-                <Route path={customerInformationPath} element={<RestaurantRegisterPrivateRoute element={<RequireCustomerInformation />} />} />
-                <Route path={paymentMethodPath} element={<RestaurantRegisterPrivateRoute element={<PaymentMethod />} />} />
-                <Route path={checkoutPath} element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}>
-                    <Route path=":autoClickCompleteOrderOnLoad" element={<RestaurantRegisterPrivateRoute element={<Checkout />} />}></Route>
+                <Route path={orderTypePath} element={<RestaurantRegisterSalePrivateRoute element={<OrderType />} />} />
+                <Route path={tableNumberPath} element={<RestaurantRegisterSalePrivateRoute element={<TableNumber />} />} />
+                <Route path={buzzerNumberPath} element={<RestaurantRegisterSalePrivateRoute element={<BuzzerNumber />} />} />
+                <Route path={customerInformationPath} element={<RestaurantRegisterSalePrivateRoute element={<RequireCustomerInformation />} />} />
+                <Route path={paymentMethodPath} element={<RestaurantRegisterSalePrivateRoute element={<PaymentMethod />} />} />
+                <Route path={checkoutPath} element={<RestaurantRegisterSalePrivateRoute element={<Checkout />} />}>
+                    <Route path=":autoClickCompleteOrderOnLoad" element={<RestaurantRegisterSalePrivateRoute element={<Checkout />} />}></Route>
                 </Route>
+                <Route path={cashUpPath} element={<RestaurantRegisterPosPrivateRoute element={<CashUp />} />} />
                 <Route path={unauthorizedPath} element={<Unauthorised />} />
                 <Route path="*" element={<NoMatch />} />
             </Routes>
@@ -274,4 +299,50 @@ const RestaurantRegisterPrivateRoute = ({ element }) => {
 
     // Route to original path
     return element;
+};
+
+const PosUserPrivateRoute = ({ element }) => {
+    const { selectedPosUser, isUnlocked, availableUsers, isPosPinFeatureEnabled, hasSkippedPosUserSelection } = usePosUser();
+
+    if (!isPosPinFeatureEnabled) return element;
+
+    if (availableUsers.length === 0) {
+        if (hasSkippedPosUserSelection) return element;
+        return <Navigate to={posUserListPath} />;
+    }
+
+    if (!selectedPosUser) return <Navigate to={posUserListPath} />;
+    if (!isUnlocked) return <Navigate to={posUserListPath} />;
+
+    return element;
+};
+
+const RestaurantRegisterPosPrivateRoute = ({ element }) => {
+    const { isPOS, isPosPinFeatureEnabled } = useRegister();
+
+    // POS user selection and PIN screens should never appear for kiosk-style flows.
+    if (isPOS === false) return <Navigate to={beginOrderPath} replace />;
+
+    if (!isPosPinFeatureEnabled) return <RestaurantRegisterPrivateRoute element={element} />;
+
+    return <RestaurantRegisterPrivateRoute element={<PosUserPrivateRoute element={element} />} />;
+};
+
+const RestaurantRegisterSalePrivateRoute = ({ element }) => {
+    const { isPOS, isPosPinFeatureEnabled } = useRegister();
+
+    // Shared sales pages work for every register. Only POS registers require the staff selection gate.
+    if (isPOS === false || !isPosPinFeatureEnabled) return <RestaurantRegisterPrivateRoute element={element} />;
+
+    return <RestaurantRegisterPrivateRoute element={<PosUserPrivateRoute element={element} />} />;
+};
+
+const RestaurantRegisterPosSetupPrivateRoute = ({ element }) => {
+    const { isPOS, isPosPinFeatureEnabled } = useRegister();
+
+    // Non-POS registers should skip the POS user selection flow completely.
+    if (isPOS === false) return <Navigate to={beginOrderPath} replace />;
+    if (!isPosPinFeatureEnabled) return <Navigate to={beginOrderPath} replace />;
+
+    return <RestaurantRegisterPrivateRoute element={element} />;
 };

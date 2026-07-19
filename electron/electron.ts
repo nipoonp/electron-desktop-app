@@ -11,6 +11,7 @@ import {
     printKitchenReceiptLarge,
     printEftposReceipt,
     printNoSaleDataReceipt,
+    printCashUpDataReceipt,
 } from "./util";
 import {
     IEftposReceipt,
@@ -21,6 +22,8 @@ import {
     IPrintNoSaleReceiptDataInput,
     IPrintReceiptDataOutput,
     IPrintReceiptOutput,
+    IPrintCashUpDataInput,
+    IPrintCashUpDataOutput,
     IPrintSalesDataInput,
     IPrintSalesDataOutput,
 } from "./model";
@@ -375,6 +378,18 @@ ipcMain.handle("RECEIPT_SALES_DATA", async (event: any, printSalesDataInput: IPr
         return { error: null, printSalesDataInput: printSalesDataInput };
     } catch (e) {
         return { error: e, printSalesDataInput: printSalesDataInput };
+    }
+});
+
+ipcMain.handle("RECEIPT_CASH_UP_DATA", async (event: any, printCashUpDataInput: IPrintCashUpDataInput): Promise<IPrintCashUpDataOutput> => {
+    try {
+        const result: IPrintReceiptOutput = await printCashUpDataReceipt(printCashUpDataInput);
+
+        if (result.error) return { error: result.error, printCashUpDataInput: printCashUpDataInput };
+
+        return { error: null, printCashUpDataInput: printCashUpDataInput };
+    } catch (e) {
+        return { error: e, printCashUpDataInput: printCashUpDataInput };
     }
 });
 
