@@ -54,8 +54,6 @@ jobs:
               run: npm config set python "$(python -c 'import sys; print(sys.executable)')"
             - name: Install node-gyp
               run: npm install --global node-gyp@latest
-            - name: Install electron-builder
-              run: npm install --global electron-builder
             - name: Install dependencies
               run: npm install --legacy-peer-deps
             - name: Build native dependencies
@@ -65,7 +63,7 @@ jobs:
             - name: Build desktop
               run: npm run build:desktop
             - name: Release Electron app
-              run: electron-builder -w -p 'onTagOrDraft'
+              run: npm run release:windows
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
     # macos:

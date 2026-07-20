@@ -8,9 +8,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         placedAt
         placedAtUtc
         settledAt
-        settledAtUtc
         parkedAt
-        parkedAtUtc
         printedQuantities {
             lineKey
             quantity
@@ -249,9 +247,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     placedAt: string;
     placedAtUtc: string | null;
     settledAt: string | null;
-    settledAtUtc: string | null;
     parkedAt: string | null;
-    parkedAtUtc: string | null;
     printedQuantities: { lineKey: string; quantity: number }[] | null;
     completedAt: string | null;
     completedAtUtc: string | null;

@@ -19,7 +19,7 @@ export type TPosUser = {
     email: string;
     imageKey: string | null;
     imageIdentityPoolId: string | null;
-    posPinEnabled: boolean;
+    enablePosPin: boolean;
     posPin: string | null;
     attendanceEnabled: boolean;
     breakTrackingEnabled: boolean;
@@ -158,7 +158,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
                           email: userLink.user.email,
                           imageKey: userLink.user.image?.key || null,
                           imageIdentityPoolId: userLink.user.image?.identityPoolId || null,
-                          posPinEnabled: !!userLink.posPinEnabled,
+                          enablePosPin: !!userLink.enablePosPin,
                           posPin: userLink.posPin || null,
                           attendanceEnabled: !!userLink.attendanceEnabled,
                           breakTrackingEnabled: !!userLink.breakTrackingEnabled,
@@ -253,7 +253,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
     // or when the selected user does not require a PIN.
     const selectPosUser = (posUserId: string) => {
         const matchedUser = availableUsers.find((availableUser) => availableUser.id === posUserId) || null;
-        const shouldUnlockWithoutPin = !!matchedUser && (!isPosPinFeatureEnabled || !matchedUser.posPinEnabled);
+        const shouldUnlockWithoutPin = !!matchedUser && (!isPosPinFeatureEnabled || !matchedUser.enablePosPin);
 
         setSelectedPosUser(matchedUser);
         setIsUnlocked(shouldUnlockWithoutPin);
@@ -288,7 +288,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
     const unlockPosUser = async (pin: string) => {
         if (!selectedPosUser) return false;
 
-        if (!selectedPosUser.posPinEnabled) {
+        if (!selectedPosUser.enablePosPin) {
             setIsUnlocked(true);
             localStorage.setItem(unlockedStorageKey, "true");
             return true;

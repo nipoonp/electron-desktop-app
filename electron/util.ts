@@ -13,6 +13,7 @@ import {
     IPrintReceiptDataInput,
     IEftposReceipt,
     IPrintNoSaleOutput,
+    IPrintCashUpDataInput,
     IPrintNoSaleReceiptDataInput,
     ECountry,
 } from "./model";
@@ -134,11 +135,7 @@ const printDeliveryDetails = (printer, order: IOrderReceipt, options: { includeF
     printer.drawLine();
 };
 
-export const printCustomerReceipt = async (
-    order: IOrderReceipt,
-    receiptIndex?: number,
-    receiptTotalNumber?: number,
-): Promise<IPrintReceiptOutput> => {
+export const printCustomerReceipt = async (order: IOrderReceipt, receiptIndex?: number, receiptTotalNumber?: number): Promise<IPrintReceiptOutput> => {
     let printer;
 
     if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -231,18 +228,16 @@ export const printCustomerReceipt = async (
 
     printer.println(order.restaurant.address);
     printer.newLine();
-    printer.println(`Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
+    printer.println(`Placed: ${format(new Date(order.placedAt), "dd MMM yyyy HH:mm aa")}`);
 
     if (order.orderScheduledAt) {
         printer.bold(true);
-        printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+        printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM yyyy HH:mm aa")}`);
         printer.bold(false);
     }
 
     if (order.customerInformation) {
-        printer.println(
-            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`,
-        );
+        printer.println(`Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`);
 
         if (order.customerInformation.signatureBase64) {
             const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
@@ -377,9 +372,7 @@ export const printCustomerReceipt = async (
                                     let mStr = "";
 
                                     if (changedQuantity < 0 && Math.abs(changedQuantity) == productModifier_modifier.preSelectedQuantity) {
-                                        mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${
-                                            productModifier_modifier.name
-                                        }`;
+                                        mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${productModifier_modifier.name}`;
                                     } else {
                                         mStr = `${productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""}${
                                             productModifier_modifier.name
@@ -983,11 +976,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
     }
 };
 
-export const printKitchenReceiptSmall = async (
-    order: IOrderReceipt,
-    receiptIndex?: number,
-    receiptTotalNumber?: number,
-): Promise<IPrintReceiptOutput> => {
+export const printKitchenReceiptSmall = async (order: IOrderReceipt, receiptIndex?: number, receiptTotalNumber?: number): Promise<IPrintReceiptOutput> => {
     let printer;
 
     if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -1073,9 +1062,7 @@ export const printKitchenReceiptSmall = async (
     }
 
     if (order.customerInformation) {
-        printer.println(
-            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`,
-        );
+        printer.println(`Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`);
 
         if (order.customerInformation.signatureBase64) {
             const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
@@ -1374,11 +1361,7 @@ export const printKitchenReceiptSmall = async (
     }
 };
 
-export const printKitchenReceiptLarge = async (
-    order: IOrderReceipt,
-    receiptIndex?: number,
-    receiptTotalNumber?: number,
-): Promise<IPrintReceiptOutput> => {
+export const printKitchenReceiptLarge = async (order: IOrderReceipt, receiptIndex?: number, receiptTotalNumber?: number): Promise<IPrintReceiptOutput> => {
     let printer;
 
     if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -1465,9 +1448,7 @@ export const printKitchenReceiptLarge = async (
     }
 
     if (order.customerInformation) {
-        printer.println(
-            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`,
-        );
+        printer.println(`Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`);
 
         if (order.customerInformation.signatureBase64) {
             const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
@@ -1939,10 +1920,7 @@ const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
         runningTotals.totalPaymentAmounts.uberEats = addAmounts(runningTotals.totalPaymentAmounts.uberEats, day.totalPaymentAmounts.uberEats);
         runningTotals.totalPaymentAmounts.menulog = addAmounts(runningTotals.totalPaymentAmounts.menulog, day.totalPaymentAmounts.menulog);
         runningTotals.totalPaymentAmounts.doordash = addAmounts(runningTotals.totalPaymentAmounts.doordash, day.totalPaymentAmounts.doordash);
-        runningTotals.totalPaymentAmounts.delivereasy = addAmounts(
-            runningTotals.totalPaymentAmounts.delivereasy,
-            day.totalPaymentAmounts.delivereasy,
-        );
+        runningTotals.totalPaymentAmounts.delivereasy = addAmounts(runningTotals.totalPaymentAmounts.delivereasy, day.totalPaymentAmounts.delivereasy);
         runningTotals.totalPaymentAmounts.eftposSurcharge = addAmounts(
             runningTotals.totalPaymentAmounts.eftposSurcharge,
             day.totalPaymentAmounts.eftposSurcharge,
@@ -2124,6 +2102,93 @@ export const printSalesDataReceipt = async (printSalesDataInput: IPrintSalesData
             await printer.execute();
         } else if (printSalesDataInput.printer.printerType == ERegisterPrinterType.USB) {
             await usbPrinterExecute(printSalesDataInput.printer.printerAddress, printer.getBuffer());
+            printer.clear();
+        } else {
+            //Bluetooth
+        }
+
+        return { error: null };
+    } catch (e) {
+        return { error: e };
+    }
+};
+
+export const printCashUpDataReceipt = async (printCashUpDataInput: IPrintCashUpDataInput): Promise<IPrintReceiptOutput> => {
+    let printer;
+
+    if (printCashUpDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+            interface: `tcp://${printCashUpDataInput.printer.printerAddress}`,
+        });
+    } else if (printCashUpDataInput.printer.printerType == ERegisterPrinterType.USB) {
+        //@ts-ignore
+        printer = new ThermalPrinter({
+            type: PrinterTypes.EPSON, // 'star' or 'epson'
+        });
+    } else {
+        //Bluetooth
+    }
+
+    printer.alignCenter();
+    printer.bold(true);
+    printer.setTextSize(1, 1);
+    printer.println("End Of Day Takings");
+    printer.setTextNormal();
+    printer.bold(false);
+    printer.println(printCashUpDataInput.restaurantName);
+
+    printer.alignLeft();
+    printer.newLine();
+    printer.println(`Business Date: ${format(new Date(printCashUpDataInput.cashupSessionDate), "dd MMM yyyy")}`);
+    printer.println(printCashUpDataInput.scopeLabel);
+    if (printCashUpDataInput.finalisedAt) {
+        printer.println(`Finalised: ${format(new Date(printCashUpDataInput.finalisedAt), "dd MMM yyyy HH:mm")}`);
+    }
+    if (printCashUpDataInput.finalisedByName) printer.println(`Finalised By: ${printCashUpDataInput.finalisedByName}`);
+    printer.drawLine();
+
+    printer.tableCustom([
+        { text: "Payment Type", width: 0.4, align: "LEFT", bold: true },
+        { text: "Counted", width: 0.2, align: "RIGHT", bold: true },
+        { text: "Recorded", width: 0.2, align: "RIGHT", bold: true },
+        { text: "Diff", width: 0.2, align: "RIGHT", bold: true },
+    ]);
+
+    printCashUpDataInput.summaryRows.forEach((row) => {
+        printer.tableCustom([
+            { text: row.label, width: 0.4, align: "LEFT", bold: row.label === "Total" },
+            { text: `$${convertCentsToDollars(row.countedCents)}`, width: 0.2, align: "RIGHT", bold: row.label === "Total" },
+            { text: `$${convertCentsToDollars(row.recordedCents)}`, width: 0.2, align: "RIGHT", bold: row.label === "Total" },
+            { text: `$${convertCentsToDollars(row.differenceCents)}`, width: 0.2, align: "RIGHT", bold: row.label === "Total" },
+        ]);
+    });
+
+    printer.drawLine();
+    printer.bold(true);
+    printer.println("Drawer & Money Movement");
+    printer.bold(false);
+
+    printCashUpDataInput.drawerRows.forEach((row) => {
+        printer.tableCustom([
+            { text: row.label, width: 0.75, align: "LEFT" },
+            { text: `$${convertCentsToDollars(row.valueCents)}`, width: 0.25, align: "RIGHT" },
+        ]);
+    });
+
+    if (printCashUpDataInput.varianceReason) {
+        printer.newLine();
+        printer.println(`Variance Reason: ${printCashUpDataInput.varianceReason}`);
+    }
+
+    printer.partialCut();
+
+    try {
+        if (printCashUpDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
+            await printer.execute();
+        } else if (printCashUpDataInput.printer.printerType == ERegisterPrinterType.USB) {
+            await usbPrinterExecute(printCashUpDataInput.printer.printerAddress, printer.getBuffer());
             printer.clear();
         } else {
             //Bluetooth

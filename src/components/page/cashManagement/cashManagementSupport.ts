@@ -1,49 +1,36 @@
-import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../../../graphql/customFragments";
+import { format, subDays } from "date-fns";
 import {
-    ECashMovementPaymentMethod,
-    ECashMovementType,
-    EOrderStatus,
-    ETakingsScopeType,
-    ETakingsSessionStatus,
-    IGET_CASH_MOVEMENT,
-    IGET_TAKINGS_SESSION,
+    EMoneyMovementPaymentMethod,
+    EMoneyMovementType,
+    ECashupScopeType,
+    ECashupSessionStatus,
+    IGET_CASHUP_ORDER,
+    IGET_CASHUP_SESSION,
 } from "../../../graphql/customQueries";
-import { convertCentsToDollars, convertDollarsToCentsReturnInt, toLocalISOString } from "../../../util/util";
+import { convertCentsToDollars, convertDollarsToCentsReturnInt } from "../../../util/util";
 
 export type TCountMode = "counted" | "denominations";
-export type TCashEntryStep = "choice" | "counted" | "denominations";
-export type TCashUpView = "finalize" | "history";
+export type TCashUpView = "list" | "detail" | "entry" | "movement-detail" | "movement-entry";
 export type TPaymentKey = "cash" | "eftpos" | "online" | "uberEats" | "menulog" | "doordash" | "delivereasy";
 export type TPaymentTotals = Record<TPaymentKey, number>;
 export type TPaymentInputs = Record<TPaymentKey, string>;
 export type TDenominationInputs = Record<string, string>;
 
-export type TMoneyInOutView = "entry" | "history";
-export type TMoneyMovementDirection = ECashMovementType.MONEY_IN | ECashMovementType.MONEY_OUT;
-export type TMoneyMovementPaymentMethod = "cash" | "online" | "eftpos";
-type TResolvedTakingsScope = {
-    scopeType: ETakingsScopeType;
+export type TMoneyMovementDirection = EMoneyMovementType.MONEY_IN | EMoneyMovementType.MONEY_OUT;
+
+export type TResolvedCashupScope = {
+    scopeType: ECashupScopeType;
     scopeId: string;
     scopeKey: string;
 };
 
 export type TPaymentSummarySnapshot = Record<
     TPaymentKey,
-    { recordedCents: number; countedCents: number; differenceCents: number; moneyInCents?: number; moneyOutCents?: number }
+    { recordedCents: number; countedCents: number; differenceCents: number; moneyIn?: number; moneyOut?: number }
 >;
-
-const BUSINESS_TIME_ZONE = "Pacific/Auckland";
-const LEGACY_PAYMENT_REASON_PREFIX = /^\[Payment: ([^\]]+)\]\s*/;
 
 export const PAYMENT_KEYS: TPaymentKey[] = ["cash", "eftpos", "online", "uberEats", "menulog", "doordash", "delivereasy"];
 export const DENOMINATIONS = [10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10];
-export const MONEY_MOVEMENT_PAYMENT_METHODS: Array<{ key: TMoneyMovementPaymentMethod; label: string; value: ECashMovementPaymentMethod }> = [
-    { key: "cash", label: "Cash", value: ECashMovementPaymentMethod.CASH },
-    { key: "online", label: "Online", value: ECashMovementPaymentMethod.ONLINE },
-    { key: "eftpos", label: "Eftpos", value: ECashMovementPaymentMethod.EFTPOS },
-];
-
-// Builds an empty payment-totals object so cash-up calculations always start from the same keys.
 export const createPaymentTotals = (): TPaymentTotals => ({
     cash: 0,
     eftpos: 0,
@@ -54,7 +41,6 @@ export const createPaymentTotals = (): TPaymentTotals => ({
     delivereasy: 0,
 });
 
-// Converts saved cents totals into the text-input shape used by the cash-up form.
 export const createPaymentInputs = (totals?: Partial<TPaymentTotals>): TPaymentInputs => ({
     cash: convertCentsToDollars(totals?.cash || 0),
     eftpos: convertCentsToDollars(totals?.eftpos || 0),
@@ -65,60 +51,32 @@ export const createPaymentInputs = (totals?: Partial<TPaymentTotals>): TPaymentI
     delivereasy: convertCentsToDollars(totals?.delivereasy || 0),
 });
 
-// Prepares a blank quantity map for every supported cash denomination.
 export const createDenominationInputs = (): TDenominationInputs =>
     DENOMINATIONS.reduce((accumulator, denomination) => {
         accumulator[String(denomination)] = "";
         return accumulator;
     }, {} as TDenominationInputs);
 
-// Returns the restaurant business date string used by cash-up and money-history queries.
-export const getBusinessDate = () =>
-    new Intl.DateTimeFormat("en-CA", {
-        timeZone: BUSINESS_TIME_ZONE,
-    }).format(new Date());
+export const getBusinessDate = () => format(new Date(), "yyyy-MM-dd");
 
-// Builds the placedAt range used to load orders for one business date.
-export const getOrderDateRange = (businessDate: string) => {
-    const [year, month, day] = businessDate.split("-").map((value) => Number(value));
-    const baseDate = Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day) ? new Date(year, month - 1, day) : new Date();
-    const start = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), 0, 0, 0, 0);
-    const end = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), 23, 59, 59, 999);
+// Local ISO window covering one business date, matching the offset-less format written by toLocalISOString.
+export const getBusinessDayRange = (businessDate: string) => ({
+    start: `${businessDate}T00:00:00.00`,
+    end: `${businessDate}T23:59:59.99`,
+});
 
-    return {
-        start: toLocalISOString(start),
-        end: toLocalISOString(end),
-    };
+// Orders are fetched from one day earlier so orders placed yesterday but settled/refunded today
+// (e.g. parked overnight) still reach the cash up window filters.
+export const getOrderFetchRange = (businessDate: string) => {
+    const previousDay = format(subDays(new Date(`${businessDate}T00:00:00`), 1), "yyyy-MM-dd");
+    return { start: `${previousDay}T00:00:00.00`, end: `${businessDate}T23:59:59.99` };
 };
 
-// Builds a wider occurredAt range so business-date cash movements are not missed around timezone boundaries.
-export const getCashMovementDateRange = (businessDate: string) => {
-    const [year, month, day] = businessDate.split("-").map((value) => Number(value));
-    const baseDate = Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day) ? new Date(year, month - 1, day) : new Date();
-    const start = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() - 1, 0, 0, 0, 0);
-    const end = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + 1, 23, 59, 59, 999);
+// Deterministic id so concurrent creates for the same scope/date/number collide instead of duplicating.
+export const buildCashupSessionId = (scopeKey: string, businessDate: string, sessionSequence: number) =>
+    `${scopeKey}#${businessDate}#${sessionSequence}`;
 
-    return {
-        start: toLocalISOString(start),
-        end: toLocalISOString(end),
-    };
-};
-
-// Money history uses the same widened timestamp window as cash-up movement queries.
-export const getMovementDateRange = (businessDate: string) => getCashMovementDateRange(businessDate);
-
-// Produces the site-level scope key used by takings sessions and cash movements.
-const getSiteScopeKey = (restaurantId: string) => `${ETakingsScopeType.SITE}#${restaurantId}`;
-
-// Produces the register-level scope key used by takings sessions and cash movements.
-const getRegisterScopeKey = (registerId: string) => `${ETakingsScopeType.REGISTER}#${registerId}`;
-
-// Produces the staff-level scope key used by takings sessions and cash movements.
-const getStaffScopeKey = (staffId: string) => `${ETakingsScopeType.STAFF}#${staffId}`;
-
-// Resolves the active takings scope from restaurant settings so site, register, and staff
-// sessions all share the same scope key format and fallback rules.
-export const resolveTakingsScope = ({
+export const resolveCashupScope = ({
     restaurantId,
     registerId,
     staffId,
@@ -127,138 +85,70 @@ export const resolveTakingsScope = ({
     restaurantId?: string | null;
     registerId?: string | null;
     staffId?: string | null;
-    defaultScope?: ETakingsScopeType | null;
-}): TResolvedTakingsScope | null => {
-    if (defaultScope === ETakingsScopeType.REGISTER && registerId) {
-        return {
-            scopeType: ETakingsScopeType.REGISTER,
-            scopeId: registerId,
-            scopeKey: getRegisterScopeKey(registerId),
-        };
+    defaultScope?: ECashupScopeType | null;
+}): TResolvedCashupScope | null => {
+    if (defaultScope === ECashupScopeType.REGISTER && registerId) {
+        return { scopeType: ECashupScopeType.REGISTER, scopeId: registerId, scopeKey: `${ECashupScopeType.REGISTER}#${registerId}` };
     }
 
-    if (defaultScope === ETakingsScopeType.STAFF && staffId) {
-        return {
-            scopeType: ETakingsScopeType.STAFF,
-            scopeId: staffId,
-            scopeKey: getStaffScopeKey(staffId),
-        };
+    if (defaultScope === ECashupScopeType.STAFF && staffId) {
+        return { scopeType: ECashupScopeType.STAFF, scopeId: staffId, scopeKey: `${ECashupScopeType.STAFF}#${staffId}` };
     }
 
     if (restaurantId) {
-        return {
-            scopeType: ETakingsScopeType.SITE,
-            scopeId: restaurantId,
-            scopeKey: getSiteScopeKey(restaurantId),
-        };
+        return { scopeType: ECashupScopeType.SITE, scopeId: restaurantId, scopeKey: `${ECashupScopeType.SITE}#${restaurantId}` };
     }
 
     return null;
 };
 
-// Coerces mixed UI values into a safe number for arithmetic and GraphQL payloads.
 export const toWholeNumber = (value?: string | number | null) => {
     const parsed = Number(value || 0);
     return Number.isFinite(parsed) ? parsed : 0;
 };
 
-// Converts a currency text input into whole cents, treating blank values as zero.
 export const toCents = (value?: string) => {
     if (!value || value.trim() === "") return 0;
     const parsed = Number(value);
     return Number.isFinite(parsed) ? convertDollarsToCentsReturnInt(parsed) : 0;
 };
 
-// Maps a cash-movement payment method into the payment-summary key used by cash-up reconciliation.
-export const getCashMovementPaymentKey = (paymentMethod?: ECashMovementPaymentMethod | null): TPaymentKey | null => {
-    switch (paymentMethod) {
-        case ECashMovementPaymentMethod.EFTPOS:
-            return "eftpos";
-        case ECashMovementPaymentMethod.ONLINE:
-            return "online";
-        case ECashMovementPaymentMethod.CASH:
-        case null:
-        case undefined:
-            return "cash";
-        default:
-            return null;
-    }
-};
+// Money movements are cash-only for now (ONLINE/EFTPOS may be re-added later), so they always map to the cash column.
+export const getMoneyMovementPaymentKey = (_paymentMethod?: EMoneyMovementPaymentMethod | null): TPaymentKey => "cash";
 
-// Limits automatic business-date roll-forward to untouched placeholder sessions only.
-export const isReusableOpenTakingsSession = (session: IGET_TAKINGS_SESSION | null | undefined, linkedMovements: IGET_CASH_MOVEMENT[] = []) => {
-    if (!session || session.status !== ETakingsSessionStatus.OPEN) return false;
-    if (linkedMovements.some((movement) => movement.takingsSessionId === session.id)) return false;
-
-    return (
-        (session.cashSalesCents || 0) === 0 &&
-        (session.cashRefundsCents || 0) === 0 &&
-        (session.moneyInCents || 0) === 0 &&
-        (session.moneyOutCents || 0) === 0 &&
-        (session.cashDropsCents || 0) === 0 &&
-        (session.tipPayoutsCents || 0) === 0 &&
-        (session.recordedTotalCents || 0) === 0 &&
-        (session.countedTotalCents || 0) === 0 &&
-        (session.paymentVarianceCents || 0) === 0 &&
-        (session.openOrdersCount || 0) === 0 &&
-        (session.unpaidOrdersCount || 0) === 0 &&
-        (session.parkedOrdersCount || 0) === 0 &&
-        !session.paymentSummaryJson &&
-        !session.varianceReason &&
-        !session.notes
-    );
-};
-
-// Uses the audit-close time for finalized sessions and the activity/display time for open sessions.
-export const getTakingsSessionDisplayTimestamp = (session: IGET_TAKINGS_SESSION) => {
-    if (session.status === ETakingsSessionStatus.FINALIZED) return session.finalizedAt || session.lastActivityAt || session.openedAt;
-    return session.lastActivityAt || session.openedAt;
-};
-
-// Filters order rows down to the active takings scope so site and register cash-up views reconcile correctly.
-export const orderMatchesTakingsScope = (order: IGET_RESTAURANT_ORDER_FRAGMENT, scopeType: ETakingsScopeType, scopeId: string) => {
+export const orderMatchesCashupScope = (order: IGET_CASHUP_ORDER, scopeType: ECashupScopeType, scopeId: string) => {
     switch (scopeType) {
-        case ETakingsScopeType.REGISTER:
+        case ECashupScopeType.REGISTER:
             return order.settledRegisterId === scopeId || order.registerId === scopeId;
-        case ETakingsScopeType.STAFF:
+        case ECashupScopeType.STAFF:
             return order.orderUserId === scopeId;
-        case ETakingsScopeType.SITE:
         default:
             return true;
     }
 };
 
-// Aggregates order paymentAmounts into the recorded totals shown in the cash-up payment rows.
-const addPaymentAmounts = (totals: TPaymentTotals, amounts: IGET_RESTAURANT_ORDER_FRAGMENT["paymentAmounts"], multiplier = 1) => {
+const addPaymentAmounts = (totals: TPaymentTotals, amounts: IGET_CASHUP_ORDER["paymentAmounts"], multiplier = 1) => {
     if (!amounts) return;
 
-    totals.cash += (amounts.cash || 0) * multiplier;
-    totals.eftpos += (amounts.eftpos || 0) * multiplier;
-    totals.online += (amounts.online || 0) * multiplier;
-    totals.uberEats += (amounts.uberEats || 0) * multiplier;
-    totals.menulog += (amounts.menulog || 0) * multiplier;
-    totals.doordash += (amounts.doordash || 0) * multiplier;
-    totals.delivereasy += (amounts.delivereasy || 0) * multiplier;
+    PAYMENT_KEYS.forEach((key) => {
+        totals[key] += (amounts[key] || 0) * multiplier;
+    });
 };
 
-// Uses UTC settlement timestamps only so reconciliation matches the UTC session boundary.
-const getOrderSettlementTimestamp = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
-    if (!order.paid || !order.paymentAmounts) return null;
-    return order.settledAtUtc;
+export const isTimestampWithinSessionWindow = (value: string | null | undefined, sessionOpenedAt: string | null | undefined) => {
+    if (!value || !sessionOpenedAt) return false;
+    return value >= sessionOpenedAt;
 };
 
-const getOrderRefundTimestamp = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => order.refundedAtUtc;
-const getOrderParkedTimestamp = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => order.parkedAtUtc;
-const getOrderPlacedTimestamp = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => order.placedAtUtc;
-
-export const buildRecordedTotals = (orders: IGET_RESTAURANT_ORDER_FRAGMENT[] | null, sessionOpenedAt: string | null | undefined): TPaymentTotals => {
+// Settled payments add to recorded totals within the session window; refunds subtract.
+export const buildRecordedTotals = (orders: IGET_CASHUP_ORDER[] | null, sessionOpenedAt: string | null | undefined): TPaymentTotals => {
     const totals = createPaymentTotals();
 
     orders?.forEach((order) => {
-        // Reconciliation follows payment events inside the session window:
-        // settled payments add to recorded totals and refunds subtract from them.
-        if (isTimestampWithinSessionWindow(getOrderSettlementTimestamp(order), sessionOpenedAt)) addPaymentAmounts(totals, order.paymentAmounts, 1);
-        if (isTimestampWithinSessionWindow(getOrderRefundTimestamp(order), sessionOpenedAt)) {
+        if (order.paid && order.paymentAmounts && isTimestampWithinSessionWindow(order.settledAt, sessionOpenedAt)) {
+            addPaymentAmounts(totals, order.paymentAmounts, 1);
+        }
+        if (isTimestampWithinSessionWindow(order.refundedAt, sessionOpenedAt)) {
             addPaymentAmounts(totals, order.refundPaymentAmounts || order.paymentAmounts, -1);
         }
     });
@@ -266,32 +156,20 @@ export const buildRecordedTotals = (orders: IGET_RESTAURANT_ORDER_FRAGMENT[] | n
     return totals;
 };
 
-// Uses any payment-related event in the current session window to decide whether an order affects takings.
-export const orderHasTakingsActivityInSession = (order: IGET_RESTAURANT_ORDER_FRAGMENT, sessionOpenedAt: string | null | undefined) =>
-    isTimestampWithinSessionWindow(getOrderSettlementTimestamp(order), sessionOpenedAt) ||
-    isTimestampWithinSessionWindow(getOrderRefundTimestamp(order), sessionOpenedAt) ||
-    isTimestampWithinSessionWindow(getOrderParkedTimestamp(order), sessionOpenedAt) ||
-    isTimestampWithinSessionWindow(getOrderPlacedTimestamp(order), sessionOpenedAt);
+export const orderHasCashupActivityInSession = (order: IGET_CASHUP_ORDER, sessionOpenedAt: string | null | undefined) =>
+    isTimestampWithinSessionWindow(order.paid ? order.settledAt : null, sessionOpenedAt) ||
+    isTimestampWithinSessionWindow(order.refundedAt, sessionOpenedAt) ||
+    isTimestampWithinSessionWindow(order.parkedAt, sessionOpenedAt) ||
+    isTimestampWithinSessionWindow(order.placedAt, sessionOpenedAt);
 
-// Checks whether a timestamp belongs to the current takings session window.
-export const isTimestampWithinSessionWindow = (value: string | null | undefined, sessionOpenedAt: string | null | undefined) => {
-    if (!sessionOpenedAt) return false;
+export const getSessionDisplayTimestamp = (session: IGET_CASHUP_SESSION) =>
+    (session.status === ECashupSessionStatus.FINALISED && session.finalisedAt) || session.openedAt;
 
-    const valueTime = value ? new Date(value).getTime() : Number.NaN;
-    const sessionStartTime = new Date(sessionOpenedAt).getTime();
+export const getSessionVarianceCents = (session: IGET_CASHUP_SESSION) => (session.countedTotal || 0) - (session.recordedTotal || 0);
 
-    if (!Number.isFinite(valueTime) || !Number.isFinite(sessionStartTime)) return false;
+export const sortSessions = (sessions: IGET_CASHUP_SESSION[]) =>
+    [...sessions].sort((left, right) => (getSessionDisplayTimestamp(right) > getSessionDisplayTimestamp(left) ? 1 : -1));
 
-    return valueTime >= sessionStartTime;
-};
-
-// Sorts takings sessions so the newest visible session activity is handled first in active and history views.
-export const sortSessions = (sessions: IGET_TAKINGS_SESSION[]) =>
-    [...sessions].sort(
-        (left, right) => new Date(getTakingsSessionDisplayTimestamp(right)).getTime() - new Date(getTakingsSessionDisplayTimestamp(left)).getTime(),
-    );
-
-// Maps a payment key to the user-facing label shown in the cash-up payment list.
 export const getPaymentLabel = (key: TPaymentKey) => {
     switch (key) {
         case "cash":
@@ -313,76 +191,45 @@ export const getPaymentLabel = (key: TPaymentKey) => {
     }
 };
 
-// Formats session and movement timestamps into the shared history-table display used in cash screens.
 export const formatHistoryDate = (value: string) => {
     const date = new Date(value);
-    const today = new Date();
-    const isToday = date.toDateString() === today.toDateString();
-    const day = date.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "2-digit" });
+    const isToday = date.toDateString() === new Date().toDateString();
 
-    return `${date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false })} ${isToday ? "Today" : day}`;
+    return `${format(date, "HH:mm")} ${isToday ? "Today" : format(date, "dd/MM/yy")}`;
 };
 
-// Converts takings session status values into the exact history labels expected by the UI.
-export const getHistoryStatusLabel = (status: ETakingsSessionStatus) =>
-    status === ETakingsSessionStatus.FINALIZED ? "Finalised" : "Not yet finalised";
+// Matches the date style used across the project (e.g. the orders page "placed at"), e.g. "19 Jul 3:45 pm".
+export const formatCashupHistoryDate = (value?: string | null) => (value ? format(new Date(value), "dd MMM h:mm aa") : "-");
 
-// Maps the active scope into the main takings heading shown above the payment rows.
-export const getTakingsScopeTitle = (scopeType: ETakingsScopeType) => {
+export const formatCashupDateTime = (value?: string | null) => (value ? format(new Date(value), "dd MMM yyyy, HH:mm") : "-");
+
+export const formatCashupBusinessDate = (value?: string | null) => (value ? format(new Date(`${value}T00:00:00`), "dd MMM yyyy") : "-");
+
+export const getHistoryStatusLabel = (status: ECashupSessionStatus) => (status === ECashupSessionStatus.FINALISED ? "Finalised" : "Not yet finalised");
+
+export const getCashupScopeHistoryLabel = (scopeType: ECashupScopeType, scopeName: string) => {
     switch (scopeType) {
-        case ETakingsScopeType.REGISTER:
-            return "Takings by Register";
-        case ETakingsScopeType.STAFF:
-            return "Takings by Staff";
-        case ETakingsScopeType.SITE:
+        case ECashupScopeType.REGISTER:
+            return `Register: ${scopeName}`;
+        case ECashupScopeType.STAFF:
+            return `Staff: ${scopeName}`;
         default:
-            return "Takings by Site";
+            return `Site: ${scopeName}`;
     }
 };
 
-// Maps the active scope into the history-detail subtitle for finalized sessions.
-export const getTakingsScopeHistoryLabel = (scopeType: ETakingsScopeType) => {
-    switch (scopeType) {
-        case ETakingsScopeType.REGISTER:
-            return "Takings for this Register";
-        case ETakingsScopeType.STAFF:
-            return "Takings for this Staff Member";
-        case ETakingsScopeType.SITE:
-        default:
-            return "Takings for the Whole Site";
-    }
+export const getCashupScopeId = (scopeKey: string) => {
+    const separatorIndex = scopeKey.indexOf("#");
+    return separatorIndex === -1 ? "" : scopeKey.slice(separatorIndex + 1);
 };
 
-// Converts a money-movement enum into the action label used in buttons and history rows.
-export const getMovementTypeLabel = (type: ECashMovementType) => {
-    switch (type) {
-        case ECashMovementType.MONEY_IN:
-            return "Money In";
-        case ECashMovementType.MONEY_OUT:
-            return "Money Out";
-        case ECashMovementType.CASH_DROP:
-            return "Cash Drop";
-        case ECashMovementType.OPENING_FLOAT:
-            return "Opening Float";
-        case ECashMovementType.TIP_PAYOUT:
-            return "Tip Payout";
-        case ECashMovementType.FLOAT_ADJUSTMENT:
-            return "Float Adjustment";
-        default:
-            return type;
-    }
-};
+export const getCashupScopeTitle = (scopeType: ECashupScopeType, scopeName: string) => `Cash Up — ${getCashupScopeHistoryLabel(scopeType, scopeName)}`;
 
-// Resolves the selected payment method key into the GraphQL enum stored on CashMovement rows.
-export const getPaymentMethodValue = (method: TMoneyMovementPaymentMethod) =>
-    MONEY_MOVEMENT_PAYMENT_METHODS.find((item) => item.key === method)?.value || ECashMovementPaymentMethod.CASH;
+export const getMoneyMovementScopeTitle = (scopeType: ECashupScopeType, scopeName: string) =>
+    `Money Movement — ${getCashupScopeHistoryLabel(scopeType, scopeName)}`;
 
-// Builds the payment-method label shown in money history, with fallback for legacy reason-prefixed rows.
-export const getMovementPaymentLabel = (paymentMethod?: ECashMovementPaymentMethod | null, reason?: string | null) =>
-    MONEY_MOVEMENT_PAYMENT_METHODS.find((item) => item.value === paymentMethod)?.label || reason?.match(LEGACY_PAYMENT_REASON_PREFIX)?.[1] || "Cash";
+export const getMovementTypeLabel = (type: EMoneyMovementType) => (type === EMoneyMovementType.MONEY_IN ? "Money In" : "Money Out");
 
-// Removes the old payment-method prefix from legacy reasons so history notes remain readable.
-export const getMovementReasonText = (reason?: string | null) => reason?.replace(LEGACY_PAYMENT_REASON_PREFIX, "").trim() || "-";
+export const getMovementPaymentLabel = (_paymentMethod?: EMoneyMovementPaymentMethod | null) => "Cash";
 
-export const buildTakingsScopeStorageKey = (restaurantId?: string | null, registerId?: string | null) =>
-    `takingsScopePreference:${restaurantId || "none"}:${registerId || "none"}`;
+export const buildCashupDraftStorageKey = (sessionId: string) => `cashupDraft:${sessionId}`;

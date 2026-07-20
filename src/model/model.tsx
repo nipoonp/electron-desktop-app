@@ -335,6 +335,7 @@ export interface ICartProduct {
     price: number;
     totalPrice: number;
     discount: number;
+    isPriceEdited?: boolean; //true when the discount is a manual POS price override (not a promotion), so promotion reprocessing does not wipe it
     isAgeRescricted: boolean;
     image: IS3Object | null;
     quantity: number;
@@ -576,6 +577,24 @@ export interface IPrintSalesData {
     mostSoldProducts: IMostSoldItems;
 }
 
+export interface IPrintCashUpData {
+    restaurantName: string;
+    cashupSessionDate: string;
+    scopeLabel: string;
+    finalisedAt: string | null;
+    finalisedByName: string | null;
+    summaryRows: { label: string; countedCents: number; recordedCents: number; differenceCents: number }[];
+    drawerRows: { label: string; valueCents: number }[];
+    varianceReason: string | null;
+}
+
+export interface IPrintCashUpDataInput extends IPrintCashUpData {
+    printer: {
+        printerType: ERegisterPrinterType;
+        printerAddress: string;
+    };
+}
+
 export interface IMatchingUpSellCrossSellCategoryItem {
     category: IGET_RESTAURANT_CATEGORY;
 }
@@ -615,6 +634,11 @@ export type LoyaltyUserAggregate = {
     };
 };
 
+export type LoyaltyBalance = {
+    loyaltyId: string | null;
+    points: number;
+};
+
 export type LoyaltyUserLinkInfo = {
     id: string;
     favourite: boolean;
@@ -622,6 +646,7 @@ export type LoyaltyUserLinkInfo = {
     lastName?: string | null;
     email?: string | null;
     phoneNumber?: string | null;
+    loyaltyBalances: LoyaltyBalance[];
 };
 
 // Floor plan and the table management.

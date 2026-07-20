@@ -213,6 +213,26 @@ export interface IPrintNoSaleReceiptDataInput {
     };
 }
 
+export interface IPrintCashUpDataInput {
+    printer: {
+        printerType: ERegisterPrinterType;
+        printerAddress: string;
+    };
+    restaurantName: string;
+    cashupSessionDate: string;
+    scopeLabel: string;
+    finalisedAt: string | null;
+    finalisedByName: string | null;
+    summaryRows: { label: string; countedCents: number; recordedCents: number; differenceCents: number }[];
+    drawerRows: { label: string; valueCents: number }[];
+    varianceReason: string | null;
+}
+
+export interface IPrintCashUpDataOutput {
+    error: any;
+    printCashUpDataInput: IPrintCashUpDataInput;
+}
+
 export interface IPrintSalesDataOutput {
     error: any;
     printSalesDataInput: IPrintSalesDataInput;

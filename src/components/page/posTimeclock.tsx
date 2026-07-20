@@ -113,7 +113,7 @@ export default () => {
     const isOnBreak = activeAttendance?.status === EAttendanceRecordStatus.ON_BREAK || !!activeAttendanceBreak;
 
     // View is derived entirely from context — no separate local "view" state needed.
-    const isPinRequired = !!selectedPosUser && isPosPinFeatureEnabled && selectedPosUser.posPinEnabled && !isUnlocked;
+    const isPinRequired = !!selectedPosUser && isPosPinFeatureEnabled && selectedPosUser.enablePosPin && !isUnlocked;
     const localView: "idle" | "pin" | "actions" = !selectedPosUser ? "idle" : isPinRequired ? "pin" : "actions";
 
     // Show "Continue to POS" when the route guard will let them through:

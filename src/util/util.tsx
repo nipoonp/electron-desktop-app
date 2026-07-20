@@ -2,7 +2,6 @@ import { eachMinuteOfInterval, format, getDay, isAfter, isBefore, isWithinInterv
 import { addDays, isEqual } from "date-fns";
 import { IGET_RESTAURANT_ORDER_FRAGMENT, IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../graphql/customFragments";
 import {
-    ELOYALTY_ACTION,
     EDiscountType,
     ERegisterType,
     IGET_RESTAURANT_PROMOTION,
@@ -208,21 +207,17 @@ export const isItemAvailable = (availability?: IGET_RESTAURANT_ITEM_AVAILABILITY
     return isWithinTimeSlot;
 };
 
-export const calculateTotalLoyaltyPoints = (
-    histories: { action: ELOYALTY_ACTION; points: number; loyaltyHistoryLoyaltyId?: string | null }[],
-    loyaltyGroupList: string[] = [],
+// Sums a loyalty user's materialised per-loyalty balances, scoped to the loyalties in the active group.
+export const calculateLoyaltyPointsForGroup = (
+    loyaltyBalances: { loyaltyId?: string | null; points: number }[],
+    loyaltyGroupIds: string[],
 ): number => {
-    let total = 0;
+    const groupLoyaltyIds = new Set(loyaltyGroupIds);
 
-    for (const { action, points, loyaltyHistoryLoyaltyId } of histories) {
-        const isRelevant = !loyaltyHistoryLoyaltyId || loyaltyGroupList.includes(loyaltyHistoryLoyaltyId);
-        if (!isRelevant) continue;
-
-        if (action === ELOYALTY_ACTION.EARN) total += points;
-        else if (action === ELOYALTY_ACTION.REDEEM) total -= points;
-    }
-
-    return total;
+    return loyaltyBalances.reduce(
+        (total, { loyaltyId, points }) => (loyaltyId && groupLoyaltyIds.has(loyaltyId) ? total + (points || 0) : total),
+        0,
+    );
 };
 
 export const getProductQuantityAvailable = (
@@ -539,7 +534,8 @@ const getMatchingPromotionProducts = (
 };
 
 export const applyDiscountToCartProducts = (promotion: ICartPromotion | null, cartProducts: ICartProduct[]) => {
-    const cartProductsCpy = cartProducts.map((p) => ({ ...p, discount: 0 }));
+    //Reset promotion discounts to 0, but keep manual POS price overrides (isPriceEdited) intact
+    const cartProductsCpy = cartProducts.map((p) => ({ ...p, discount: p.isPriceEdited ? p.discount : 0 }));
 
     promotion?.matchingProducts.forEach((matchingProduct) => {
         if (matchingProduct.index !== undefined) {
