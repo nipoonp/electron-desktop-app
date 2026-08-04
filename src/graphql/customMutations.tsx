@@ -88,6 +88,7 @@ export const CREATE_ORDER = gql`
         $eftposCardType: EftposCardType
         $eftposSurcharge: Int
         $eftposTip: Int
+        $cashChangeAmount: Int
         $discount: Int
         $promotionId: ID
         $promotionType: PromotionType
@@ -129,6 +130,7 @@ export const CREATE_ORDER = gql`
                 eftposCardType: $eftposCardType
                 eftposSurcharge: $eftposSurcharge
                 eftposTip: $eftposTip
+                cashChangeAmount: $cashChangeAmount
                 discount: $discount
                 promotionId: $promotionId
                 promotionType: $promotionType

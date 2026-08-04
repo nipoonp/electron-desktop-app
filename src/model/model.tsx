@@ -475,6 +475,7 @@ export interface IOrderReceipt {
     orderTypeSurcharge: number | null;
     eftposSurcharge: number | null;
     eftposTip: number | null;
+    cashChangeAmount?: number | null;
     displayPaymentRequiredMessage: boolean;
     type: EOrderType;
     number: string;

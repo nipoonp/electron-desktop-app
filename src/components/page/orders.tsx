@@ -477,6 +477,7 @@ const Orders = () => {
                 orderTypeSurcharge: order.orderTypeSurcharge || null,
                 eftposSurcharge: order.eftposSurcharge || null,
                 eftposTip: order.eftposTip || null,
+                cashChangeAmount: order.cashChangeAmount || null,
                 discount: order.discount || null,
                 tax: order.tax,
                 subTotal: order.subTotal,

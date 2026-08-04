@@ -559,6 +559,17 @@ export const printCustomerReceipt = async (order: IOrderReceipt, receiptIndex?: 
             bold: true,
         },
     ]);
+    order.cashChangeAmount &&
+        order.cashChangeAmount > 0 &&
+        printer.tableCustom([
+            { text: "Change", align: "LEFT", width: 0.75, bold: true },
+            {
+                text: `\$${convertCentsToDollars(order.cashChangeAmount)}`,
+                align: "RIGHT",
+                width: 0.25,
+                bold: true,
+            },
+        ]);
 
     // printer.newLine();
     // printer.alignCenter();
