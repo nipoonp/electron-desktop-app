@@ -863,13 +863,17 @@ export const ProductModal = (props: {
 
     const getProductFooterMaxQuantity = () => {
         if (product.totalQuantityAvailable) {
-            return getProductQuantityAvailable(
-                {
-                    id: product.id,
-                    totalQuantityAvailable: product.totalQuantityAvailable,
-                },
-                cartProductQuantitiesById,
-                product.maxQuantityPerOrder
+            return Math.max(
+                getProductQuantityAvailable(
+                    {
+                        id: product.id,
+                        totalQuantityAvailable: product.totalQuantityAvailable,
+                    },
+                    cartProductQuantitiesById,
+                    product.maxQuantityPerOrder,
+                    editProduct ? editProduct.quantity : 0
+                ),
+                1
             );
         } else if (product.maxQuantityPerOrder) {
             return product.maxQuantityPerOrder;

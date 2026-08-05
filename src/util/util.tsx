@@ -218,11 +218,12 @@ export const getProductQuantityAvailable = (
     },
     cartProducts: ICartItemQuantitiesById,
     maxQuantityPerOrder: number | undefined,
+    currentCartItemQuantity: number = 0,
 ) => {
     let quantityAvailable = menuProductItem.totalQuantityAvailable;
 
     if (cartProducts[menuProductItem.id] != undefined) {
-        quantityAvailable -= cartProducts[menuProductItem.id].quantity;
+        quantityAvailable -= cartProducts[menuProductItem.id].quantity - currentCartItemQuantity;
     }
 
     if (maxQuantityPerOrder && maxQuantityPerOrder < quantityAvailable) {

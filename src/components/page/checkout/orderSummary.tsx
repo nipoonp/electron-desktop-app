@@ -165,13 +165,17 @@ const OrderItem = (props: {
         const productMaxQuantityPerOrder = menuProducts[product.id].maxQuantityPerOrder;
 
         if (productsTotalQuantityAvailable) {
-            return getProductQuantityAvailable(
-                {
-                    id: product.id,
-                    totalQuantityAvailable: productsTotalQuantityAvailable,
-                },
-                cartProductQuantitiesById,
-                productMaxQuantityPerOrder
+            return Math.max(
+                getProductQuantityAvailable(
+                    {
+                        id: product.id,
+                        totalQuantityAvailable: productsTotalQuantityAvailable,
+                    },
+                    cartProductQuantitiesById,
+                    productMaxQuantityPerOrder,
+                    product.quantity
+                ),
+                1
             );
         } else if (productMaxQuantityPerOrder) {
             return productMaxQuantityPerOrder;
