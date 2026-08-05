@@ -627,6 +627,8 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const updateProductQuantity = (index: number, quantity: number) => {
         // should never really end up here
         if (products == null) return;
+        // a cart item can never drop to zero or below, it has to be removed instead
+        if (quantity < 1) return;
 
         const newProducts = products;
         const productAtIndex = newProducts[index];

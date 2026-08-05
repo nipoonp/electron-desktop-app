@@ -218,11 +218,12 @@ export const getProductQuantityAvailable = (
     },
     cartProducts: ICartItemQuantitiesById,
     maxQuantityPerOrder: number | undefined,
+    currentCartItemQuantity: number = 0, //Quantity of the cart item being changed. It is already counted in cartProducts, so add it back to get the max for that item on its own.
 ) => {
     let quantityAvailable = menuProductItem.totalQuantityAvailable;
 
     if (cartProducts[menuProductItem.id] != undefined) {
-        quantityAvailable -= cartProducts[menuProductItem.id].quantity;
+        quantityAvailable -= cartProducts[menuProductItem.id].quantity - currentCartItemQuantity;
     }
 
     if (maxQuantityPerOrder && maxQuantityPerOrder < quantityAvailable) {

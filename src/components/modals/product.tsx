@@ -863,13 +863,18 @@ export const ProductModal = (props: {
 
     const getProductFooterMaxQuantity = () => {
         if (product.totalQuantityAvailable) {
-            return getProductQuantityAvailable(
-                {
-                    id: product.id,
-                    totalQuantityAvailable: product.totalQuantityAvailable,
-                },
-                cartProductQuantitiesById,
-                product.maxQuantityPerOrder
+            //Never below 1, a max under the stepper min leaves the stepper with no valid count to clamp to
+            return Math.max(
+                getProductQuantityAvailable(
+                    {
+                        id: product.id,
+                        totalQuantityAvailable: product.totalQuantityAvailable,
+                    },
+                    cartProductQuantitiesById,
+                    product.maxQuantityPerOrder,
+                    editProduct ? editProduct.quantity : 0 //When editing, this product is already counted in the cart quantities
+                ),
+                1
             );
         } else if (product.maxQuantityPerOrder) {
             return product.maxQuantityPerOrder;
