@@ -9,6 +9,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         placedAtUtc
         settledAt
         parkedAt
+        stripePaymentId
         printedQuantities {
             lineKey
             quantity
@@ -255,6 +256,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     cancelledAt: string | null;
     refundedAt: string | null;
     refundedAtUtc: string | null;
+    stripePaymentId: string | null;
     notes: string | null;
     eftposReceipt: string | null;
     orderBatchable: number | null;

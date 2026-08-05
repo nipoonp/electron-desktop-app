@@ -275,6 +275,7 @@ export const UPDATE_ORDER_STATUS = gql`
         $cancelledAtUtc: String
         $refundedAt: String
         $refundedAtUtc: String
+        $refundPaymentAmounts: OrderPaymentAmountsInput
     ) {
         updateOrder(
             input: {
@@ -288,6 +289,7 @@ export const UPDATE_ORDER_STATUS = gql`
                 cancelledAtUtc: $cancelledAtUtc
                 refundedAt: $refundedAt
                 refundedAtUtc: $refundedAtUtc
+                refundPaymentAmounts: $refundPaymentAmounts
             }
         ) {
             id

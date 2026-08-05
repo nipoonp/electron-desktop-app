@@ -4,6 +4,7 @@ import axios from "axios";
 import { UPDATE_ORDER_PRINTED_QUANTITIES, UPDATE_ORDER_STATUS } from "../../graphql/customMutations";
 import {
     EOrderStatus,
+    EOrderType,
     ERegisterPrinterType,
     GET_ORDER,
     GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT,
@@ -21,6 +22,7 @@ import {
     IGET_RESTAURANT_ORDER_FRAGMENT,
     IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT,
     IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT,
+    IOrderPaymentAmounts,
 } from "../../graphql/customFragments";
 // import { useRegister } from "../../context/register-context";
 // import { useReceiptPrinter } from "../../context/receiptPrinter-context";
@@ -37,13 +39,14 @@ import {
     printedQuantitiesListToMap,
     toLocalISOString,
 } from "../../util/util";
-import { convertCentsToDollars } from "../../util/util";
+import { convertCentsToDollars, convertDollarsToCentsReturnInt } from "../../util/util";
 import { StepperWithQuantityInput } from "../../tabin/components/stepperWithQuantityInput";
 import { BsFillCheckCircleFill, BsFillExclamationCircleFill } from "react-icons/bs";
 import { FaLink } from "react-icons/fa6";
 import { FiMail } from "react-icons/fi";
 import { CachedImage } from "../../tabin/components/cachedImage";
-import { getCloudFrontDomainName, getCreateMergedOrderEndpoint } from "../../private/aws-custom";
+import { Radio } from "../../tabin/components/radio";
+import { getCloudFrontDomainName, getCreateMergedOrderEndpoint, getCreateOnlineRefundEndpoint } from "../../private/aws-custom";
 import { useAuth } from "../../context/auth-context";
 import { Link } from "../../tabin/components/link";
 import { useRestaurant } from "../../context/restaurant-context";
@@ -54,10 +57,65 @@ import { useRegister } from "../../context/register-context";
 import { IoIosArrowBack } from "react-icons/io";
 import { beginOrderPath, restaurantPath } from "../main";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
-import { ICartModifier, ICartModifierGroup, ICartPaymentAmounts, ICartProduct, IOrderReceipt } from "../../model/model";
+import {
+    EEftposProvider,
+    EEftposTransactionOutcome,
+    ICartModifier,
+    ICartModifierGroup,
+    ICartPaymentAmounts,
+    ICartProduct,
+    IEftposTransactionOutcome,
+    IOrderReceipt,
+} from "../../model/model";
 import { SelectReceiptPrinterModal } from "../modals/selectReceiptPrinterModal";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { useCart } from "../../context/cart-context";
+import { useSmartpay } from "../../context/smartpay-context";
+import { useWindcave } from "../../context/windcave-context";
+import { useVerifone } from "../../context/verifone-context";
+
+type RefundMethod = "connected_eftpos" | "online_gateway" | "manual_eftpos" | "manual_cash" | "manual_online";
+
+const REFUND_METHOD_LABELS: Record<RefundMethod, string> = {
+    connected_eftpos: "Refund via connected eftpos",
+    online_gateway: "Refund via online payment gateway",
+    manual_eftpos: "Manual refund via eftpos",
+    manual_cash: "Manual refund via cash",
+    manual_online: "Manual refund via online",
+};
+
+const REFUND_METHOD_PAYMENT_MAP: Record<RefundMethod, keyof IOrderPaymentAmounts> = {
+    connected_eftpos: "eftpos",
+    online_gateway: "online",
+    manual_eftpos: "eftpos",
+    manual_cash: "cash",
+    manual_online: "online",
+};
+
+const CONNECTED_REFUND_METHODS: RefundMethod[] = ["connected_eftpos", "online_gateway"];
+const MANUAL_REFUND_METHODS: RefundMethod[] = ["manual_eftpos", "manual_cash", "manual_online"];
+
+const EMPTY_PAYMENT_AMOUNTS: IOrderPaymentAmounts = {
+    cash: 0,
+    eftpos: 0,
+    online: 0,
+    onAccount: 0,
+    uberEats: 0,
+    menulog: 0,
+    doordash: 0,
+    delivereasy: 0,
+};
+
+const getDeliveryProviderLabel = (deliveryProvider: IGET_RESTAURANT_ORDER_FRAGMENT["deliveryProvider"]) => {
+    if (deliveryProvider === "RESTAURANT_MANAGED") return "Restaurant delivery";
+    if (deliveryProvider === "UBER_DIRECT") return "Uber delivery";
+    return null;
+};
+
+const getDeliveryDistanceLabel = (deliveryDistanceMeters: IGET_RESTAURANT_ORDER_FRAGMENT["deliveryDistanceMeters"]) => {
+    if (!deliveryDistanceMeters) return null;
+    return `${(deliveryDistanceMeters / 1000).toFixed(1)} km`;
+};
 
 const Orders = () => {
     const navigate = useNavigate();
@@ -65,6 +123,9 @@ const Orders = () => {
     const { restaurant, setRestaurant, menuCategories, menuProducts, menuModifierGroups, menuModifiers } = useRestaurant();
     const { register } = useRegister();
     const { printReceipt } = useReceiptPrinter();
+    const { refundTransaction: smartpayRefundTransaction, pollForOutcome: smartpayPollForOutcome } = useSmartpay();
+    const { refundTransaction: windcaveRefundTransaction } = useWindcave();
+    const { refundTransaction: verifoneRefundTransaction } = useVerifone();
     const {
         clearCart,
         setParkedOrderId,
@@ -145,6 +206,7 @@ const Orders = () => {
                     placedAt: order.placedAt,
                     completedAt: toLocalISOString(now),
                     completedAtUtc: now.toISOString(),
+                    refundPaymentAmounts: { ...EMPTY_PAYMENT_AMOUNTS },
                 },
             });
         } catch (error) {
@@ -154,7 +216,7 @@ const Orders = () => {
         }
     };
 
-    const onOrderRefund = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+    const onOrderRefund = async (order: IGET_RESTAURANT_ORDER_FRAGMENT, refundPaymentAmounts: IOrderPaymentAmounts | null) => {
         const now = new Date();
 
         setShowFullScreenSpinner(true);
@@ -167,10 +229,130 @@ const Orders = () => {
                     placedAt: order.placedAt,
                     refundedAt: toLocalISOString(now),
                     refundedAtUtc: now.toISOString(),
+                    refundPaymentAmounts,
                 },
             });
         } catch (error) {
             toast.error("Could not update order status. Please contact a Tabin representative.");
+        } finally {
+            setShowFullScreenSpinner(false);
+        }
+    };
+
+    const buildRefundPaymentAmounts = (method: RefundMethod, refundAmount: number): IOrderPaymentAmounts => {
+        const paymentKey = REFUND_METHOD_PAYMENT_MAP[method];
+
+        return {
+            ...EMPTY_PAYMENT_AMOUNTS,
+            [paymentKey]: convertDollarsToCentsReturnInt(refundAmount),
+        };
+    };
+
+    const processRefund = async (order: IGET_RESTAURANT_ORDER_FRAGMENT, method: RefundMethod, refundAmount: number) => {
+        if (method !== "online_gateway") {
+            await onOrderRefund(order, buildRefundPaymentAmounts(method, refundAmount));
+            return;
+        }
+
+        if (!order.stripePaymentId) {
+            toast.error("Online payment gateway refund requires an online payment ID.");
+            return;
+        }
+
+        const createOnlineRefundEndpoint = getCreateOnlineRefundEndpoint();
+
+        if (!createOnlineRefundEndpoint) {
+            toast.error("Online refunds have not been setup for this environment. Please contact a Tabin representative.");
+            return;
+        }
+
+        setShowFullScreenSpinner(true);
+
+        try {
+            const { data } = await axios.post(createOnlineRefundEndpoint, {
+                amount: convertDollarsToCentsReturnInt(refundAmount),
+                restaurantId: restaurant ? restaurant.id : "",
+                orderId: order.id,
+                paymentId: order.stripePaymentId,
+                onlinePaymentGatewayProvider: restaurant && restaurant.onlinePaymentGatewayProvider ? restaurant.onlinePaymentGatewayProvider : "STRIPE",
+            });
+
+            // Windcave can respond before it has settled on an outcome, so do not mark the order refunded off an undetermined result
+            if (data.status === "pending") {
+                toast.error(data.responseText || "The refund is still being processed. Please confirm it in Payline before retrying.");
+                return;
+            }
+
+            await onOrderRefund(order, buildRefundPaymentAmounts(method, refundAmount));
+        } catch (error) {
+            toast.error(error.response?.data?.error || "Could not process online payment gateway refund.");
+        } finally {
+            setShowFullScreenSpinner(false);
+        }
+    };
+
+    const onRequestConnectedEftposRefund = async (order: IGET_RESTAURANT_ORDER_FRAGMENT, refundAmount: number, closeModal: () => void) => {
+        if (!register) {
+            toast.error("No register configured.");
+            return;
+        }
+
+        const amount = convertDollarsToCentsReturnInt(refundAmount);
+
+        if (!amount || Number.isNaN(amount) || amount <= 0) {
+            toast.error("Refund amount is missing or invalid.");
+            return;
+        }
+
+        setShowFullScreenSpinner(true);
+
+        try {
+            let refundOutcome: IEftposTransactionOutcome | null = null;
+
+            switch (register.eftposProvider) {
+                case EEftposProvider.WINDCAVE: {
+                    refundOutcome = await windcaveRefundTransaction(
+                        register.windcaveStationId,
+                        register.windcaveStationUser,
+                        register.windcaveStationKey,
+                        amount,
+                    );
+                    break;
+                }
+                case EEftposProvider.SMARTPAY:
+                    const pollingUrl = await smartpayRefundTransaction(amount);
+                    refundOutcome = await smartpayPollForOutcome(pollingUrl, () => {});
+                    break;
+                case EEftposProvider.VERIFONE:
+                    refundOutcome = await verifoneRefundTransaction(
+                        amount,
+                        register.eftposIpAddress,
+                        register.eftposPortNumber,
+                        restaurant ? restaurant.id : "",
+                        () => null,
+                    );
+                    break;
+                case EEftposProvider.TYRO:
+                    // TODO: add Tyro refund transaction support
+                    break;
+                case EEftposProvider.MX51:
+                    // TODO: add MX51 refund transaction support
+                    break;
+                default:
+                    // TODO: add refund transaction support for this provider
+                    break;
+            }
+
+            if (refundOutcome?.transactionOutcome === EEftposTransactionOutcome.Success) {
+                await onOrderRefund(order, buildRefundPaymentAmounts("connected_eftpos", refundAmount));
+                closeModal();
+                toast.success(refundOutcome.message || "Refund processed.");
+            } else {
+                toast.error(refundOutcome?.message || "Refund failed.");
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error("There was an error processing the refund.");
         } finally {
             setShowFullScreenSpinner(false);
         }
@@ -189,6 +371,7 @@ const Orders = () => {
                     placedAt: order.placedAt,
                     cancelledAt: toLocalISOString(now),
                     cancelledAtUtc: now.toISOString(),
+                    refundPaymentAmounts: { ...EMPTY_PAYMENT_AMOUNTS },
                 },
             });
         } catch (error) {
@@ -767,7 +950,8 @@ const Orders = () => {
                                         mergedOrders={mergedChildrenMap[order.id] || []}
                                         restaurant={restaurant}
                                         onOrderComplete={onOrderComplete}
-                                        onOrderRefund={onOrderRefund}
+                                        onRequestConnectedEftposRefund={onRequestConnectedEftposRefund}
+                                        onRefundByMethod={processRefund}
                                         onOrderCancel={onOrderCancel}
                                         onOrderReprint={onOrderReprint}
                                         onOpenParkedOrder={onOpenParkedOrder}
@@ -791,7 +975,8 @@ const Order = (props: {
     mergedOrders: IGET_RESTAURANT_ORDER_FRAGMENT[];
     restaurant;
     onOrderComplete: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
-    onOrderRefund: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
+    onRequestConnectedEftposRefund: (order: IGET_RESTAURANT_ORDER_FRAGMENT, refundAmount: number, closeModal: () => void) => void;
+    onRefundByMethod: (order: IGET_RESTAURANT_ORDER_FRAGMENT, method: RefundMethod, refundAmount: number) => void;
     onOrderCancel: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
     onOrderReprint: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
     onOpenParkedOrder: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
@@ -801,13 +986,15 @@ const Order = (props: {
     forceShowDetails?: boolean;
 }) => {
     const { isAdmin } = useAuth();
+    const { register } = useRegister();
     const {
         searchTerm,
         order,
         mergedOrders,
         restaurant,
         onOrderComplete,
-        onOrderRefund,
+        onRequestConnectedEftposRefund,
+        onRefundByMethod,
         onOrderCancel,
         onOrderReprint,
         onOpenParkedOrder,
@@ -821,6 +1008,34 @@ const Order = (props: {
     const [viewReceipt, setViewReceipt] = useState(false);
     const [showOrderDetail, setShowOrderDetail] = useState(false);
     const [mergedModalOpen, setMergedModalOpen] = useState(false);
+    const [refundModalOpen, setRefundModalOpen] = useState(false);
+    const [refundAmount, setRefundAmount] = useState("");
+    const [refundMethod, setRefundMethod] = useState<RefundMethod>("manual_eftpos");
+    const maxRefund = (order.subTotal || 0) / 100;
+    const parsedRefundAmount = Number(refundAmount);
+    const isRefundAmountValid = !Number.isNaN(parsedRefundAmount) && parsedRefundAmount >= 0 && parsedRefundAmount <= maxRefund;
+    const deliveryProviderLabel = order.type === EOrderType.DELIVERY ? getDeliveryProviderLabel(order.deliveryProvider) : null;
+    const showRestaurantDeliveryDetails = order.type === EOrderType.DELIVERY && order.deliveryProvider === "RESTAURANT_MANAGED";
+    const deliveryDistanceLabel = showRestaurantDeliveryDetails ? getDeliveryDistanceLabel(order.deliveryDistanceMeters) : null;
+    const refundEntries = order.refundPaymentAmounts
+        ? (
+              [
+                  { key: "cash", label: "Cash" },
+                  { key: "eftpos", label: "Eftpos" },
+                  { key: "online", label: "Online" },
+                  { key: "onAccount", label: "On Account" },
+                  { key: "uberEats", label: "Uber Eats" },
+                  { key: "menulog", label: "Menulog" },
+                  { key: "doordash", label: "Doordash" },
+                  { key: "delivereasy", label: "Delivereasy" },
+              ] as const
+          )
+              .map((item) => ({
+                  label: item.label,
+                  amount: order.refundPaymentAmounts?.[item.key] || 0,
+              }))
+              .filter((item) => item.amount > 0)
+        : [];
 
     if (searchTerm && searchTerm !== order.number) return <div></div>;
 
@@ -843,6 +1058,25 @@ const Order = (props: {
 
     const onToggleReceipt = () => {
         setViewReceipt(!viewReceipt);
+    };
+
+    const onOpenRefundModal = () => {
+        setRefundAmount(convertCentsToDollars(order.subTotal || 0));
+        setRefundMethod("manual_eftpos");
+        setRefundModalOpen(true);
+    };
+
+    const onCloseRefundModal = () => {
+        setRefundModalOpen(false);
+    };
+
+    const handleRefundAction = async (action: () => Promise<void>) => {
+        if (!isRefundAmountValid) {
+            toast.error("Refund amount cannot be greater than subtotal.");
+            return;
+        }
+        await action();
+        onCloseRefundModal();
     };
 
     const onClickShowOrderDetail = () => {
@@ -939,7 +1173,8 @@ const Order = (props: {
                             orders={mergedOrders}
                             restaurant={restaurant}
                             onOrderComplete={onOrderComplete}
-                            onOrderRefund={onOrderRefund}
+                            onRequestConnectedEftposRefund={onRequestConnectedEftposRefund}
+                            onRefundByMethod={onRefundByMethod}
                             onOrderCancel={onOrderCancel}
                             onOrderReprint={onOrderReprint}
                             onOpenParkedOrder={onOpenParkedOrder}
@@ -975,6 +1210,26 @@ const Order = (props: {
                         )}
                     </>
                 )}
+
+                {order.type === EOrderType.DELIVERY ? (
+                    <div className="mt-1">
+                        {deliveryProviderLabel && <div className="text-bold">{deliveryProviderLabel}</div>}
+                        {showRestaurantDeliveryDetails && order.deliveryAddress ? <div className="mt-1">{order.deliveryAddress}</div> : null}
+                        {showRestaurantDeliveryDetails && order.deliveryNotes ? <div>Delivery Notes: {order.deliveryNotes}</div> : null}
+                        {deliveryDistanceLabel ? <div className="mt-1">Distance: {deliveryDistanceLabel}</div> : null}
+                        {order.deliveryTrackingUrl ? (
+                            <Link
+                                onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    if (order.deliveryTrackingUrl) window.open(order.deliveryTrackingUrl, "_blank");
+                                }}
+                            >
+                                Delivery Tracking Link
+                            </Link>
+                        ) : null}
+                    </div>
+                ) : null}
             </div>
 
             {shouldShowOrderDetail && (
@@ -1067,12 +1322,24 @@ const Order = (props: {
                     ) : (
                         <></>
                     )}
+
+                    {refundEntries.length > 0 && (
+                        <>
+                            <div className="separator-2"></div>
+                            <div className="text-underline mb-2">Refund</div>
+                            {refundEntries.map((entry) => (
+                                <div key={entry.label} className="mt-1">
+                                    {entry.label}: ${convertCentsToDollars(entry.amount)}
+                                </div>
+                            ))}
+                        </>
+                    )}
                     <div className="separator-2"></div>
 
                     {!hideActionButtons && (
                         <div className="order-action-buttons-container mt-2">
                             {order.status !== EOrderStatus.COMPLETED && <Button onClick={() => onOrderComplete(order)}>Complete</Button>}
-                            {order.status !== EOrderStatus.REFUNDED && <Button onClick={() => onOrderRefund(order)}>Refund</Button>}
+                            {order.status !== EOrderStatus.REFUNDED && <Button onClick={onOpenRefundModal}>Refund</Button>}
                             {order.status !== EOrderStatus.CANCELLED && <Button onClick={() => onOrderCancel(order)}>Cancel</Button>}
                             {(order.status === EOrderStatus.PARKED ||
                                 (order.paymentAmounts &&
@@ -1114,6 +1381,69 @@ const Order = (props: {
                         onChange={(e) => setEmails(e.target.value)}
                     />
                     <Button onClick={sendEmail}>Send Email</Button>
+                </div>
+            </ModalV2>
+            <ModalV2 padding="24px" isOpen={refundModalOpen} onRequestClose={onCloseRefundModal}>
+                <div>
+                    <div className="h3 mb-1">Refund Options</div>
+                    <Input
+                        className="mb-1"
+                        type="number"
+                        label="Refund Amount"
+                        name="refundAmount"
+                        value={refundAmount}
+                        onChange={(e) => {
+                            setRefundAmount(e.target.value);
+                        }}
+                    />
+                    <div className="text-small text-grey mb-1">Connected</div>
+                    <div className="d-flex f-direction-col d-flex-gap-1 mb-1">
+                        {CONNECTED_REFUND_METHODS.map((method) => {
+                            const isOnlineGateway = method === "online_gateway";
+                            const isConnectedEftpos = method === "connected_eftpos";
+                            const isDisabled = (isConnectedEftpos && !register) || (isOnlineGateway && !order.stripePaymentId);
+                            return (
+                                <div key={method}>
+                                    <Radio selected={refundMethod === method} onSelect={() => setRefundMethod(method)} disabled={isDisabled}>
+                                        {REFUND_METHOD_LABELS[method]}
+                                        {isOnlineGateway && !order.stripePaymentId && (
+                                            <div className="text-small text-grey">Only available for orders paid online</div>
+                                        )}
+                                        {isConnectedEftpos && !register && (
+                                            <div className="text-small text-grey">Only available with a configured register</div>
+                                        )}
+                                    </Radio>
+                                </div>
+                            );
+                        })}
+                    </div>
+                    <div className="text-small text-grey mb-1">Manual</div>
+                    <div className="d-flex f-direction-col d-flex-gap-1 mb-1">
+                        {MANUAL_REFUND_METHODS.map((method) => (
+                            <Radio key={method} selected={refundMethod === method} onSelect={() => setRefundMethod(method)}>
+                                {REFUND_METHOD_LABELS[method]}
+                            </Radio>
+                        ))}
+                    </div>
+                    <div className="mt-4">
+                        <Button
+                            onClick={async () => {
+                                await handleRefundAction(async () => {
+                                    if (refundMethod === "online_gateway" && !order.stripePaymentId) {
+                                        toast.error("Online payment gateway refund requires an online payment ID.");
+                                        return;
+                                    }
+                                    if (refundMethod === "connected_eftpos") {
+                                        onRequestConnectedEftposRefund(order, parsedRefundAmount, onCloseRefundModal);
+                                        return;
+                                    }
+                                    await onRefundByMethod(order, refundMethod, parsedRefundAmount);
+                                });
+                            }}
+                        >
+                            Refund
+                        </Button>
+                    </div>
                 </div>
             </ModalV2>
         </div>
@@ -1209,12 +1539,24 @@ const MergedOrdersModal = (props: {
     orders: IGET_RESTAURANT_ORDER_FRAGMENT[];
     restaurant: any;
     onOrderComplete: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
-    onOrderRefund: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
+    onRequestConnectedEftposRefund: (order: IGET_RESTAURANT_ORDER_FRAGMENT, refundAmount: number, closeModal: () => void) => void;
+    onRefundByMethod: (order: IGET_RESTAURANT_ORDER_FRAGMENT, method: RefundMethod, refundAmount: number) => void;
     onOrderCancel: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
     onOrderReprint: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
     onOpenParkedOrder: (order: IGET_RESTAURANT_ORDER_FRAGMENT) => void;
 }) => {
-    const { isOpen, onRequestClose, orders, restaurant, onOrderComplete, onOrderRefund, onOrderCancel, onOrderReprint, onOpenParkedOrder } = props;
+    const {
+        isOpen,
+        onRequestClose,
+        orders,
+        restaurant,
+        onOrderComplete,
+        onRequestConnectedEftposRefund,
+        onRefundByMethod,
+        onOrderCancel,
+        onOrderReprint,
+        onOpenParkedOrder,
+    } = props;
     const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
     const toggle = (id: string) => setExpanded((e) => ({ ...e, [id]: !e[id] }));
@@ -1266,7 +1608,8 @@ const MergedOrdersModal = (props: {
                                         mergedOrders={[]}
                                         restaurant={restaurant}
                                         onOrderComplete={onOrderComplete}
-                                        onOrderRefund={onOrderRefund}
+                                        onRequestConnectedEftposRefund={onRequestConnectedEftposRefund}
+                                        onRefundByMethod={onRefundByMethod}
                                         onOrderCancel={onOrderCancel}
                                         onOrderReprint={onOrderReprint}
                                         onOpenParkedOrder={onOpenParkedOrder}
