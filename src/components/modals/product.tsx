@@ -863,7 +863,6 @@ export const ProductModal = (props: {
 
     const getProductFooterMaxQuantity = () => {
         if (product.totalQuantityAvailable) {
-            //Never below 1, a max under the stepper min leaves the stepper with no valid count to clamp to
             return Math.max(
                 getProductQuantityAvailable(
                     {
@@ -872,7 +871,7 @@ export const ProductModal = (props: {
                     },
                     cartProductQuantitiesById,
                     product.maxQuantityPerOrder,
-                    editProduct ? editProduct.quantity : 0 //When editing, this product is already counted in the cart quantities
+                    editProduct ? editProduct.quantity : 0
                 ),
                 1
             );

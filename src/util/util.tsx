@@ -218,7 +218,7 @@ export const getProductQuantityAvailable = (
     },
     cartProducts: ICartItemQuantitiesById,
     maxQuantityPerOrder: number | undefined,
-    currentCartItemQuantity: number = 0, //Quantity of the cart item being changed. It is already counted in cartProducts, so add it back to get the max for that item on its own.
+    currentCartItemQuantity: number = 0,
 ) => {
     let quantityAvailable = menuProductItem.totalQuantityAvailable;
 
