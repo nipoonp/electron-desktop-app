@@ -34,3 +34,17 @@ export const getCreateMergedOrderEndpoint = () => {
 
     return endpoints[env];
 };
+
+const createOnlineRefundEndpoints: { [env: string]: string } = {
+    sandbox: "",
+    dev: "",
+    test: "",
+    prod: "https://g9r7ik2p5j.execute-api.ap-southeast-2.amazonaws.com/prod/",
+};
+
+export const getCreateOnlineRefundEndpoint = () => {
+    const envStart = awsconfig.aws_user_files_s3_bucket.lastIndexOf("-");
+    const env = awsconfig.aws_user_files_s3_bucket.slice(envStart + 1);
+
+    return createOnlineRefundEndpoints[env];
+};

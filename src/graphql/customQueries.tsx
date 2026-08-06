@@ -265,6 +265,7 @@ export const GET_RESTAURANT = gql`
             }
             autoCompleteOrders
             enableLoyalty
+            onlinePaymentGatewayProvider
             # checkTableFeature
             preparationTimeInMinutes
             delayBetweenOrdersInSeconds
@@ -1178,6 +1179,7 @@ export interface IGET_RESTAURANT {
     customStyleSheet?: IS3Object;
     autoCompleteOrders: boolean | null;
     enableLoyalty: boolean | null;
+    onlinePaymentGatewayProvider?: string | null;
     checkTableFeature: boolean | true;
     preparationTimeInMinutes: number | null;
     delayBetweenOrdersInSeconds: number | null;

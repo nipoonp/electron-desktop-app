@@ -979,6 +979,7 @@ export const Checkout = () => {
                 orderTypeSurcharge: order.orderTypeSurcharge,
                 eftposSurcharge: order.eftposSurcharge,
                 eftposTip: order.eftposTip,
+                cashChangeAmount: order.cashChangeAmount,
                 discount: order.discount || null,
                 tax: order.tax,
                 subTotal: order.subTotal,
@@ -1168,6 +1169,7 @@ export const Checkout = () => {
         eftposCardType?: EEftposTransactionOutcomeCardType,
         eftposSurcharge?: number,
         eftposTip?: number,
+        cashChangeAmount?: number | null,
     ) => {
         const wasEditingParkedOrder = Boolean(parkedOrderId);
         const keepParkedStatus = wasEditingParkedOrder && parkOrder && Boolean(parkedOrderStatus);
@@ -1210,6 +1212,7 @@ export const Checkout = () => {
                 eftposCardType,
                 eftposSurcharge,
                 eftposTip,
+                cashChangeAmount,
             );
 
             createdOrder.current = newOrder;
@@ -1302,6 +1305,7 @@ export const Checkout = () => {
         eftposCardType?: EEftposTransactionOutcomeCardType,
         eftposSurcharge?: number,
         eftposTip?: number,
+        cashChangeAmount?: number | null,
     ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
         const now = new Date();
         if (!user) {
@@ -1375,6 +1379,7 @@ export const Checkout = () => {
                 eftposCardType: eftposCardType || undefined,
                 eftposSurcharge: eftposSurcharge || undefined,
                 eftposTip: eftposTip || undefined,
+                cashChangeAmount: cashChangeAmount || undefined,
                 discount: promotion ? promotion.discountedAmount : staticDiscount + percentageDiscount,
                 promotionId: promotion ? promotion.promotion.id : undefined,
                 promotionType: promotion ? promotion.promotion.type : undefined,
@@ -1750,8 +1755,8 @@ export const Checkout = () => {
 
                 setCashTransactionChangeAmount(changeAmount);
 
-                //Passing paymentAmounts, payments via params so we send the most updated values
-                await onSubmitOrder(true, false, newPaymentAmounts, newPayments);
+                //Passing paymentAmounts, payments, changeAmount via params so we send the most updated values
+                await onSubmitOrder(true, false, newPaymentAmounts, newPayments, undefined, undefined, undefined, changeAmount);
 
                 setPaymentModalState(EPaymentModalState.CashResult);
             }

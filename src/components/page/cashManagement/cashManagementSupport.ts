@@ -7,7 +7,7 @@ import {
     IGET_CASHUP_ORDER,
     IGET_CASHUP_SESSION,
 } from "../../../graphql/customQueries";
-import { convertCentsToDollars, convertDollarsToCentsReturnInt } from "../../../util/util";
+import { convertDollarsToCentsReturnInt } from "../../../util/util";
 
 export type TCountMode = "counted" | "denominations";
 export type TCashUpView = "list" | "detail" | "entry" | "movement-detail" | "movement-entry";
@@ -41,14 +41,15 @@ export const createPaymentTotals = (): TPaymentTotals => ({
     delivereasy: 0,
 });
 
-export const createPaymentInputs = (totals?: Partial<TPaymentTotals>): TPaymentInputs => ({
-    cash: convertCentsToDollars(totals?.cash || 0),
-    eftpos: convertCentsToDollars(totals?.eftpos || 0),
-    online: convertCentsToDollars(totals?.online || 0),
-    uberEats: convertCentsToDollars(totals?.uberEats || 0),
-    menulog: convertCentsToDollars(totals?.menulog || 0),
-    doordash: convertCentsToDollars(totals?.doordash || 0),
-    delivereasy: convertCentsToDollars(totals?.delivereasy || 0),
+// Counted amounts start blank so staff type what they counted instead of editing a prefilled 0.00.
+export const createPaymentInputs = (): TPaymentInputs => ({
+    cash: "",
+    eftpos: "",
+    online: "",
+    uberEats: "",
+    menulog: "",
+    doordash: "",
+    delivereasy: "",
 });
 
 export const createDenominationInputs = (): TDenominationInputs =>
@@ -73,8 +74,7 @@ export const getOrderFetchRange = (businessDate: string) => {
 };
 
 // Deterministic id so concurrent creates for the same scope/date/number collide instead of duplicating.
-export const buildCashupSessionId = (scopeKey: string, businessDate: string, sessionSequence: number) =>
-    `${scopeKey}#${businessDate}#${sessionSequence}`;
+export const buildCashupSessionId = (scopeKey: string, businessDate: string, sessionSequence: number) => `${scopeKey}#${businessDate}#${sessionSequence}`;
 
 export const resolveCashupScope = ({
     restaurantId,
@@ -140,12 +140,14 @@ export const isTimestampWithinSessionWindow = (value: string | null | undefined,
     return value >= sessionOpenedAt;
 };
 
+export const getOrderSettledTimestamp = (order: IGET_CASHUP_ORDER) => (order.paid ? order.settledAt || order.placedAt : null);
+
 // Settled payments add to recorded totals within the session window; refunds subtract.
 export const buildRecordedTotals = (orders: IGET_CASHUP_ORDER[] | null, sessionOpenedAt: string | null | undefined): TPaymentTotals => {
     const totals = createPaymentTotals();
 
     orders?.forEach((order) => {
-        if (order.paid && order.paymentAmounts && isTimestampWithinSessionWindow(order.settledAt, sessionOpenedAt)) {
+        if (order.paymentAmounts && isTimestampWithinSessionWindow(getOrderSettledTimestamp(order), sessionOpenedAt)) {
             addPaymentAmounts(totals, order.paymentAmounts, 1);
         }
         if (isTimestampWithinSessionWindow(order.refundedAt, sessionOpenedAt)) {
@@ -157,7 +159,7 @@ export const buildRecordedTotals = (orders: IGET_CASHUP_ORDER[] | null, sessionO
 };
 
 export const orderHasCashupActivityInSession = (order: IGET_CASHUP_ORDER, sessionOpenedAt: string | null | undefined) =>
-    isTimestampWithinSessionWindow(order.paid ? order.settledAt : null, sessionOpenedAt) ||
+    isTimestampWithinSessionWindow(getOrderSettledTimestamp(order), sessionOpenedAt) ||
     isTimestampWithinSessionWindow(order.refundedAt, sessionOpenedAt) ||
     isTimestampWithinSessionWindow(order.parkedAt, sessionOpenedAt) ||
     isTimestampWithinSessionWindow(order.placedAt, sessionOpenedAt);

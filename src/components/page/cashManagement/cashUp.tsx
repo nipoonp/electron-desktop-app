@@ -115,7 +115,7 @@ export default () => {
         scopeType === ECashupScopeType.REGISTER ? register?.name || "" : scopeType === ECashupScopeType.STAFF ? effectiveCashUserName : restaurant?.name || "";
 
     const [countMode, setCountMode] = useState<TCountMode>("counted");
-    const [openingFloatInput, setOpeningFloatInput] = useState("0.00");
+    const [openingFloatInput, setOpeningFloatInput] = useState("");
     const [countedPaymentInputs, setCountedPaymentInputs] = useState<TPaymentInputs>(createPaymentInputs());
     const [denominationInputs, setDenominationInputs] = useState<TDenominationInputs>(createDenominationInputs());
     const [draftDenominationInputs, setDraftDenominationInputs] = useState<TDenominationInputs>(createDenominationInputs());
@@ -147,7 +147,8 @@ export default () => {
 
     // Restore or reset the entry form when the active session changes.
     useEffect(() => {
-        setOpeningFloatInput(convertCentsToDollars(currentSession?.openingFloat || 0));
+        // Only an already saved float is restored, so a fresh cash up starts with an empty field.
+        setOpeningFloatInput(currentSession?.openingFloat ? convertCentsToDollars(currentSession.openingFloat) : "");
 
         const storedDraft = currentSession ? localStorage.getItem(buildCashupDraftStorageKey(currentSession.id)) : null;
         if (storedDraft) {
@@ -546,6 +547,7 @@ export default () => {
                         <Input
                             type="number"
                             min="0"
+                            placeholder="0.00"
                             value={usesDenominations ? convertCentsToDollars(countedCashFromDenominationsCents) : countedPaymentInputs[key]}
                             onChange={(event) => updateCountedPaymentInput(key, event.target.value)}
                             disabled={!!staleOpenSession || usesDenominations}
@@ -656,6 +658,7 @@ export default () => {
                                 <Input
                                     type="number"
                                     min="0"
+                                    placeholder="0"
                                     value={draftDenominationInputs[String(denomination)]}
                                     onChange={(event) =>
                                         setDraftDenominationInputs((previous) => ({
@@ -948,6 +951,7 @@ export default () => {
                                     label="Opening Float"
                                     type="number"
                                     min="0"
+                                    placeholder="0.00"
                                     value={openingFloatInput}
                                     onChange={(event) => setOpeningFloatInput(event.target.value)}
                                     disabled={!!staleOpenSession}

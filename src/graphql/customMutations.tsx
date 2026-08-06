@@ -88,6 +88,7 @@ export const CREATE_ORDER = gql`
         $eftposCardType: EftposCardType
         $eftposSurcharge: Int
         $eftposTip: Int
+        $cashChangeAmount: Int
         $discount: Int
         $promotionId: ID
         $promotionType: PromotionType
@@ -129,6 +130,7 @@ export const CREATE_ORDER = gql`
                 eftposCardType: $eftposCardType
                 eftposSurcharge: $eftposSurcharge
                 eftposTip: $eftposTip
+                cashChangeAmount: $cashChangeAmount
                 discount: $discount
                 promotionId: $promotionId
                 promotionType: $promotionType
@@ -273,6 +275,7 @@ export const UPDATE_ORDER_STATUS = gql`
         $cancelledAtUtc: String
         $refundedAt: String
         $refundedAtUtc: String
+        $refundPaymentAmounts: OrderPaymentAmountsInput
     ) {
         updateOrder(
             input: {
@@ -286,6 +289,7 @@ export const UPDATE_ORDER_STATUS = gql`
                 cancelledAtUtc: $cancelledAtUtc
                 refundedAt: $refundedAt
                 refundedAtUtc: $refundedAtUtc
+                refundPaymentAmounts: $refundPaymentAmounts
             }
         ) {
             id

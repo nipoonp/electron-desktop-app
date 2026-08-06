@@ -9,6 +9,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         placedAtUtc
         settledAt
         parkedAt
+        stripePaymentId
         printedQuantities {
             lineKey
             quantity
@@ -28,6 +29,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         orderTypeSurcharge
         eftposSurcharge
         eftposTip
+        cashChangeAmount
         discount
         deliveryProvider
         deliveryAddress
@@ -254,6 +256,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     cancelledAt: string | null;
     refundedAt: string | null;
     refundedAtUtc: string | null;
+    stripePaymentId: string | null;
     notes: string | null;
     eftposReceipt: string | null;
     orderBatchable: number | null;
@@ -265,6 +268,7 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     eftposCardType: EEftposCardType | null;
     eftposSurcharge: number | null;
     eftposTip: number | null;
+    cashChangeAmount: number | null;
     discount: number | null;
     deliveryProvider: "UBER_DIRECT" | "RESTAURANT_MANAGED" | null;
     deliveryAddress: string | null;
