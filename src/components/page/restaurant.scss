@@ -100,7 +100,7 @@
             .products {
                 display: grid;
                 grid-gap: 8px;
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
 
                 .product {
                     position: relative;
@@ -108,7 +108,7 @@
                     padding: 8px;
                     border-radius: 10px;
                     opacity: 1;
-                    height: 150px;
+                    height: 120px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -136,7 +136,7 @@
                     }
 
                     .name {
-                        font-size: 18px;
+                        font-size: 16px;
                         line-height: 1.5em;
                         text-align: center;
                     }
@@ -172,12 +172,12 @@
 
                     .display-price {
                         text-align: center;
-                        font-size: 18px;
+                        font-size: 16px;
                     }
 
                     .price {
                         text-align: center;
-                        font-size: 18px;
+                        font-size: 16px;
                     }
                 }
 
