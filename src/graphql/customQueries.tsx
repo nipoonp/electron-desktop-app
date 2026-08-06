@@ -371,6 +371,7 @@ export const GET_RESTAURANT = gql`
                     active
                     name
                     enablePosUserPin
+                    pinTimeoutInMinutes
                     enableTableFlags
                     enableCovers
                     enableBuzzerNumbersForTakeaway
@@ -1181,6 +1182,7 @@ export interface IGET_RESTAURANT_REGISTER {
     active: boolean;
     name: string;
     enablePosUserPin?: boolean;
+    pinTimeoutInMinutes?: number | null;
     enableTableFlags: boolean;
     enableCovers: boolean;
     enableBuzzerNumbersForTakeaway: boolean;
