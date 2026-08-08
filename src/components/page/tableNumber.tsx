@@ -130,9 +130,9 @@ type TableClusterClipboard = {
 const isChairShapeType = (type: ShapeType) => CHAIR_SHAPE_TYPES.includes(type);
 const isTableShapeType = (type: ShapeType) => type === "rect" || type === "circle";
 
-// Uses restaurant-level feature config when available; falls back to static value for now.
-const getIsTableFeatureEnabled = (restaurant: { checkTableFeature?: boolean | null } | null | undefined) => {
-    if (typeof restaurant?.checkTableFeature === "boolean") return restaurant.checkTableFeature;
+// Uses register-level feature config when available; falls back to static value for now.
+const getIsTableFeatureEnabled = (register: { enableTableMapping?: boolean | null } | null | undefined) => {
+    if (typeof register?.enableTableMapping === "boolean") return register.enableTableMapping;
     return TABLE_FEATURE_STATIC_FALLBACK;
 };
 
@@ -192,14 +192,12 @@ const TableNumberFeatureDisabledPage = () => {
                     {tableError && <div className="text-error mt-2">Required</div>}
                 </div>
 
-                {register?.enableCovers && (
-                    <div className="mb-12 text-center" style={{ width: "300px" }}>
-                        <div className="h3 mb-2">Number Of Diners</div>
-                        <div className="covers-wrapper">
-                            <Stepper count={coversNumber} min={1} max={20} onUpdate={setCoversNumber} size={48} />
-                        </div>
+                <div className="mb-12 text-center" style={{ width: "300px" }}>
+                    <div className="h3 mb-2">Number Of Diners</div>
+                    <div className="covers-wrapper">
+                        <Stepper count={coversNumber} min={1} max={20} onUpdate={setCoversNumber} size={48} />
                     </div>
-                )}
+                </div>
                 <Button onClick={onNext}>Next</Button>
             </div>
         </PageWrapper>
@@ -2426,7 +2424,7 @@ const TableNumberFeatureEnabledPage = () => {
                                     )}
                                 </div>
 
-                                {register?.enableCovers && !isDesignMode && (
+                                {!isDesignMode && (
                                     <div className="form-section">
                                         <div className="h3 section-title">Covers</div>
                                         <div className="covers-wrapper">
@@ -2481,8 +2479,8 @@ const TableNumberFeatureEnabledPage = () => {
 
 // Feature switch: keep disabled flow first in this file, enabled flow after it.
 const TableNumberPage = () => {
-    const { restaurant } = useRestaurant();
-    const isTableFeatureEnabled = getIsTableFeatureEnabled(restaurant);
+    const { register } = useRegister();
+    const isTableFeatureEnabled = getIsTableFeatureEnabled(register);
     return isTableFeatureEnabled ? <TableNumberFeatureEnabledPage /> : <TableNumberFeatureDisabledPage />;
 };
 

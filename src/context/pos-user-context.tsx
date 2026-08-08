@@ -180,16 +180,16 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
 
     const idleTimeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Re-locks the register after the register's configured minutes of inactivity, so the same
+    // Re-locks the register after the register's configured seconds of inactivity, so the same
     // cashier just has to re-enter their PIN instead of staying unlocked indefinitely.
     useEffect(() => {
-        const pinTimeoutInMinutes = register?.pinTimeoutInMinutes;
+        const pinTimeoutInSeconds = register?.pinTimeoutInSeconds;
 
-        if (!isPOS || !isPosPinFeatureEnabled || !isUnlocked || !pinTimeoutInMinutes || pinTimeoutInMinutes <= 0) {
+        if (!isPOS || !isPosPinFeatureEnabled || !isUnlocked || !pinTimeoutInSeconds || pinTimeoutInSeconds <= 0) {
             return;
         }
 
-        const timeoutMs = pinTimeoutInMinutes * 60 * 1000;
+        const timeoutMs = pinTimeoutInSeconds * 1000;
         const activityEvents: (keyof DocumentEventMap)[] = ["mousedown", "keydown", "touchstart", "wheel"];
 
         const resetIdleTimeout = () => {
@@ -207,7 +207,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
                 idleTimeoutIdRef.current = null;
             }
         };
-    }, [isPOS, isPosPinFeatureEnabled, isUnlocked, register?.pinTimeoutInMinutes]);
+    }, [isPOS, isPosPinFeatureEnabled, isUnlocked, register?.pinTimeoutInSeconds]);
 
     // Clears the cashier selection completely and resets the saved unlock state.
     const clearSelectedPosUser = () => {
