@@ -1222,28 +1222,30 @@ const TableNumberFeatureEnabledPage = () => {
     };
 
     // Combines source-order print counters into destination-order counters so kitchen delta printing stays accurate after merge.
-    const mergePrintedProductTracking = async (destinationOrder: IGET_RESTAURANT_ORDER_FRAGMENT, sourceOrder: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+    const mergePrintedProductTracking = async (
+        mergedOrderId: string,
+        destinationOrder: IGET_RESTAURANT_ORDER_FRAGMENT,
+        sourceOrder: IGET_RESTAURANT_ORDER_FRAGMENT,
+    ) => {
         const destinationPrintedProductQuantities = printedQuantitiesListToMap(destinationOrder.printedQuantities);
         const sourcePrintedProductQuantities = printedQuantitiesListToMap(sourceOrder.printedQuantities);
 
         const hasSourcePrintedProducts = Object.keys(sourcePrintedProductQuantities).length > 0;
-        if (!hasSourcePrintedProducts) return;
+        if (!hasSourcePrintedProducts) return null;
 
         Object.entries(sourcePrintedProductQuantities).forEach(([lineKey, quantity]) => {
             destinationPrintedProductQuantities[lineKey] = (destinationPrintedProductQuantities[lineKey] || 0) + quantity;
         });
 
         try {
-            await Promise.all([
-                updateOrderPrintedQuantitiesMutation({
-                    variables: { orderId: destinationOrder.id, printedQuantities: printedQuantitiesToList(destinationPrintedProductQuantities) },
-                }),
-                updateOrderPrintedQuantitiesMutation({
-                    variables: { orderId: sourceOrder.id, printedQuantities: [] },
-                }),
-            ]);
-            setPrintedProductQuantities(destinationPrintedProductQuantities);
-        } catch {}
+            await updateOrderPrintedQuantitiesMutation({
+                variables: { orderId: mergedOrderId, printedQuantities: printedQuantitiesToList(destinationPrintedProductQuantities) },
+            });
+            return destinationPrintedProductQuantities;
+        } catch {
+            toast.error("Orders merged, but kitchen send tracking could not be updated. Recheck sent items before firing to kitchen.");
+            return null;
+        }
     };
 
     // Merges one running dine-in order into the selected table order (destination).
@@ -1263,7 +1265,7 @@ const TableNumberFeatureEnabledPage = () => {
         const [freshDestinationOrder, freshSourceOrder] = await Promise.all([getFreshOrder(destinationOrder), getFreshOrder(sourceOrder)]);
 
         const endpoint = getCreateMergedOrderEndpoint();
-        await axios({
+        const mergeResponse: any = await axios({
             method: "post",
             url: endpoint,
             data: {
@@ -1273,14 +1275,17 @@ const TableNumberFeatureEnabledPage = () => {
             },
         });
 
-        await mergePrintedProductTracking(freshDestinationOrder, freshSourceOrder);
+        const mergedOrderId = mergeResponse?.data?.mergedOrderId;
+        if (!mergedOrderId) throw new Error("Orders were merged but the merged order could not be identified. Please refresh and check the table.");
+
+        const mergedPrintedProductQuantities = await mergePrintedProductTracking(mergedOrderId, freshDestinationOrder, freshSourceOrder);
 
         const refreshedOrdersResponse: any = await refetchActiveOrders();
         const refreshedOrders = (refreshedOrdersResponse?.data?.getOrdersByRestaurantByPlacedAt?.items || []).filter(Boolean);
-        const refreshedDestinationOrder = refreshedOrders.find((order: IGET_RESTAURANT_ORDER_FRAGMENT) => order.id === destinationOrder.id) || destinationOrder;
+        const refreshedDestinationOrder = refreshedOrders.find((order: IGET_RESTAURANT_ORDER_FRAGMENT) => order.id === mergedOrderId);
 
-        // If the current cart session was bound to the source order, re-bind it to the merged destination order.
-        if (parkedOrderId === sourceOrder.id) {
+        // If the current cart session was bound to either merged order, re-bind it to the new merged order.
+        if (refreshedDestinationOrder && (parkedOrderId === sourceOrder.id || parkedOrderId === destinationOrder.id)) {
             const destinationTableValue = `${refreshedDestinationOrder.table || normalizedDestinationTable}`.trim();
             setParkedOrderId(refreshedDestinationOrder.id);
             setParkedOrderNumber(refreshedDestinationOrder.number);
@@ -1304,7 +1309,7 @@ const TableNumberFeatureEnabledPage = () => {
             if (typeof refreshedDestinationOrder.covers === "number" && refreshedDestinationOrder.covers > 0) {
                 setCovers(refreshedDestinationOrder.covers);
             }
-            setPrintedProductQuantities(initializeRunningOrderPrintedProductTracking(refreshedDestinationOrder));
+            setPrintedProductQuantities(mergedPrintedProductQuantities || initializeRunningOrderPrintedProductTracking(refreshedDestinationOrder));
         }
 
         toast.success(`Running order merged into Table ${normalizedDestinationTable}.`);
