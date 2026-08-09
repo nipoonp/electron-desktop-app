@@ -13,35 +13,13 @@
         button {
             min-width: 100px;
 
-            &.secondary {
-                background-color: #f1f3f5;
-                color: #495057;
-
-                &:hover {
-                    background-color: #e9ecef;
-                }
-            }
-
-            &.primary {
-                background-color: #228be6;
-                color: #fff;
-
-                &:hover {
-                    background-color: #1c7ed6;
-                }
+            &.cancel-button {
+                background-color: var(--background-color);
+                color: #484848;
+                border: 1px solid #e0e0e0;
+                font-weight: 300;
             }
         }
-    }
-}
-
-.table-layout-unsaved-modal {
-    .unsaved-error {
-        font-size: 12px;
-        color: #c92a2a;
-        background: #fff5f5;
-        border: 1px solid #ffa8a8;
-        border-radius: 8px;
-        padding: 8px 10px;
     }
 }
 

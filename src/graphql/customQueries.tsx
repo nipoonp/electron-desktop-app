@@ -250,7 +250,6 @@ export const GET_RESTAURANT = gql`
             autoCompleteOrders
             enableLoyalty
             onlinePaymentGatewayProvider
-            # checkTableFeature
             preparationTimeInMinutes
             delayBetweenOrdersInSeconds
             orderThresholdMessage
@@ -371,7 +370,9 @@ export const GET_RESTAURANT = gql`
                     active
                     name
                     enablePosUserPin
+                    pinTimeoutInSeconds
                     enableTableFlags
+                    enableTableMapping
                     enableCovers
                     enableBuzzerNumbersForTakeaway
                     enableBuzzerNumbersForDineIn
@@ -1094,7 +1095,6 @@ export interface IGET_RESTAURANT {
     autoCompleteOrders: boolean | null;
     enableLoyalty: boolean | null;
     onlinePaymentGatewayProvider?: string | null;
-    checkTableFeature: boolean | true;
     preparationTimeInMinutes: number | null;
     delayBetweenOrdersInSeconds: number | null;
     orderThresholdMessage: string | null;
@@ -1182,7 +1182,9 @@ export interface IGET_RESTAURANT_REGISTER {
     active: boolean;
     name: string;
     enablePosUserPin?: boolean;
+    pinTimeoutInSeconds?: number | null;
     enableTableFlags: boolean;
+    enableTableMapping: boolean;
     enableCovers: boolean;
     enableBuzzerNumbersForTakeaway: boolean;
     enableBuzzerNumbersForDineIn: boolean;
@@ -2482,13 +2484,7 @@ export interface IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL {
 
 export const GET_CASHUP_SESSIONS_BY_SCOPE_KEY_BY_OPENED_AT = gql`
     query GetCashupSessionsByScopeKeyByOpenedAt($scopeKey: String!, $openedAt: ModelStringKeyConditionInput, $limit: Int, $nextToken: String) {
-        getCashupSessionsByScopeKeyByOpenedAt(
-            scopeKey: $scopeKey
-            openedAt: $openedAt
-            sortDirection: DESC
-            limit: $limit
-            nextToken: $nextToken
-        ) {
+        getCashupSessionsByScopeKeyByOpenedAt(scopeKey: $scopeKey, openedAt: $openedAt, sortDirection: DESC, limit: $limit, nextToken: $nextToken) {
             items {
                 id
                 cashupRestaurantId

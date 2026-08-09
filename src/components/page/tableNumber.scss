@@ -649,21 +649,22 @@
     .input-form-container {
         width: 360px;
         background-color: white;
-        border-left: 1px solid #f1f3f5;
+        border-left: 1px solid #e0e0e0;
         padding: 24px;
         display: flex;
         flex-direction: column;
         z-index: 50;
+        font-family: "Quicksand", sans-serif;
 
         .close-button-wrapper-right {
             display: flex;
             justify-content: flex-end;
-            margin-bottom: 20px;
+            margin-bottom: 8px;
             .close-button {
                 cursor: pointer;
-                color: #adb5bd;
+                color: #999999;
                 &:hover {
-                    color: #495057;
+                    color: #484848;
                 }
             }
         }
@@ -675,14 +676,14 @@
             gap: 10px;
             margin-bottom: 12px;
             padding: 10px 12px;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
-            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            background: #f5f5f5;
 
             .save-status-label {
                 font-size: 12px;
                 font-weight: 600;
-                color: #495057;
+                color: #484848;
             }
 
             .save-retry-btn {
@@ -734,25 +735,25 @@
         }
 
         .form-section {
-            margin-bottom: 32px;
+            margin-bottom: 16px;
             .section-title {
                 font-size: 18px;
                 font-weight: 700;
-                margin-bottom: 16px;
-                color: #212529;
+                margin-bottom: 8px;
+                color: #484848;
             }
             .covers-wrapper {
                 display: flex;
                 justify-content: center;
-                background: #f8f9fa;
-                padding: 16px;
-                border-radius: 8px;
+                background: #f5f5f5;
+                padding: 10px;
+                border-radius: 10px;
             }
 
             .edit-panel {
-                background: #f8f9fa;
-                border-radius: 8px;
-                border: 1px solid #e9ecef;
+                background: #f5f5f5;
+                border-radius: 10px;
+                border: 1px solid #e0e0e0;
                 padding: 16px;
                 .control-group {
                     margin-bottom: 16px;
@@ -764,21 +765,21 @@
                     display: block;
                     font-size: 12px;
                     font-weight: 600;
-                    color: #495057;
+                    color: #484848;
                     margin-bottom: 6px;
                 }
                 .hint {
                     font-size: 11px;
-                    color: #868e96;
+                    color: #999999;
                     margin: 0;
                 }
             }
         }
 
         .table-details {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 12px;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
             padding: 16px;
             display: flex;
             flex-direction: column;
@@ -795,20 +796,59 @@
             font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: #868e96;
+            color: #999999;
         }
         .detail-value {
             font-size: 14px;
             font-weight: 600;
-            color: #212529;
+            color: #484848;
             margin-top: 4px;
         }
         .helper-text {
             font-size: 11px;
-            color: #868e96;
+            color: #999999;
         }
+        .order-items-panel {
+            border-top: 1px solid #e0e0e0;
+            padding-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+
+            .order-items-list {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                max-height: 200px;
+                overflow-y: auto;
+            }
+
+            .order-item-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                gap: 10px;
+                font-size: 12px;
+                color: #484848;
+            }
+
+            .order-item-name {
+                overflow-wrap: break-word;
+            }
+
+            .order-item-qty {
+                font-weight: 700;
+                margin-right: 2px;
+            }
+
+            .order-item-price {
+                font-weight: 600;
+                white-space: nowrap;
+            }
+        }
+
         .transfer-panel {
-            border-top: 1px solid #e9ecef;
+            border-top: 1px solid #e0e0e0;
             padding-top: 12px;
             display: flex;
             flex-direction: column;
@@ -816,19 +856,19 @@
 
             .transfer-target-select {
                 width: 100%;
-                border: 1px solid #dee2e6;
+                border: 1px solid #e0e0e0;
                 border-radius: 8px;
                 padding: 8px 10px;
                 font-size: 13px;
-                color: #343a40;
+                color: #484848;
                 background: #fff;
             }
 
             .transfer-error {
                 font-size: 11px;
-                color: #c92a2a;
+                color: var(--error-color);
                 background: #fff5f5;
-                border: 1px solid #ffa8a8;
+                border: 1px solid var(--error-color);
                 border-radius: 8px;
                 padding: 6px 8px;
             }
@@ -845,29 +885,29 @@
             gap: 8px;
         }
         .status-action {
-            border: 1px solid #dee2e6;
+            border: 1px solid #e0e0e0;
             background: #fff;
-            border-radius: 999px;
+            border-radius: 20px;
             padding: 6px 10px;
             font-size: 11px;
             font-weight: 600;
-            color: #495057;
+            color: #484848;
             cursor: pointer;
             transition: all 0.2s;
             &:hover {
-                border-color: #a5d8ff;
-                color: #1c7ed6;
-                background: #e7f5ff;
+                border-color: var(--primary-color);
+                color: var(--primary-color);
+                background: rgba(43, 49, 140, 0.06);
             }
             &.active {
-                border-color: #2f9e44;
-                color: #2f9e44;
-                background: #ebfbee;
+                border-color: var(--primary-color);
+                color: var(--secondary-text-color);
+                background: var(--primary-color);
             }
             &.status-available.active {
                 border-color: #adb5bd;
-                color: #495057;
-                background: #f8f9fa;
+                color: #484848;
+                background: #f5f5f5;
             }
             &.status-occupied.active {
                 border-color: #e8590c;
@@ -876,13 +916,24 @@
             }
             &.status-idle.active {
                 border-color: #868e96;
-                color: #495057;
+                color: #484848;
                 background: #e9ecef;
             }
             &.status-reserved.active {
                 border-color: #228be6;
                 color: #1c7ed6;
                 background: #d0ebff;
+            }
+            &:disabled {
+                cursor: default;
+                background-color: hsl(0, 0%, 70%);
+                border-color: hsl(0, 0%, 70%);
+                color: #ffffff;
+                &:hover {
+                    background-color: hsl(0, 0%, 70%);
+                    border-color: hsl(0, 0%, 70%);
+                    color: #ffffff;
+                }
             }
         }
     }
@@ -892,15 +943,15 @@
         align-items: center;
         justify-content: center;
         padding: 4px 10px;
-        border-radius: 999px;
+        border-radius: 20px;
         font-size: 11px;
         font-weight: 600;
         border: 1px solid transparent;
         white-space: nowrap;
         &.status-available {
-            background: #f8f9fa;
-            border-color: #ced4da;
-            color: #495057;
+            background: #f5f5f5;
+            border-color: #adb5bd;
+            color: #484848;
         }
         &.status-occupied {
             background: #ffd8a8;
@@ -910,7 +961,7 @@
         &.status-idle {
             background: #e9ecef;
             border-color: #868e96;
-            color: #495057;
+            color: #484848;
         }
         &.status-reserved {
             background: #d0ebff;

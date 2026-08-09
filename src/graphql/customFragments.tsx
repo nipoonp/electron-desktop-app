@@ -91,6 +91,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         number
         table
         buzzer
+        covers
         registerId
         settledRegisterId
         orderUserId

@@ -56,16 +56,13 @@ export const TableLayoutUnsavedChangesModal = (props: ITableLayoutUnsavedChanges
             <div className="table-layout-unsaved-modal">
                 <div className="h3 mb-2">Unsaved Layout Changes</div>
                 <div className="mb-3">You have unsaved layout changes. Save before leaving edit mode?</div>
-                {props.error && <div className="unsaved-error mb-3">{props.error}</div>}
+                {props.error && <div className="text-error mb-3">{props.error}</div>}
                 <div className="modal-actions">
-                    <Button className="secondary" onClick={props.onCancel} disabled={props.isSaving}>
-                        Cancel
-                    </Button>
-                    <Button className="secondary" onClick={props.onDiscard} disabled={props.isSaving}>
+                    <Button className="cancel-button" onClick={props.onDiscard} disabled={props.isSaving}>
                         Discard
                     </Button>
-                    <Button onClick={props.onSave} disabled={props.isSaving}>
-                        {props.isSaving ? "Saving..." : "Save"}
+                    <Button onClick={props.onSave} disabled={props.isSaving} loading={props.isSaving}>
+                        Save
                     </Button>
                 </div>
             </div>
