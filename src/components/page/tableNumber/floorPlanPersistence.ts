@@ -75,31 +75,27 @@ const validateLayout = (nodes: FloorPlanPayload["nodes"], sectionsList: ISection
         sectionIds.add(section.id);
     }
 
-    const tableNumbersBySection = new Map<string, Set<string>>();
+    const usedTableNumbers = new Set<string>();
     for (const node of nodes) {
         if (!node.id || !node.id.trim()) return "Element ID cannot be empty.";
         if (node.type !== "rect" && node.type !== "circle") continue;
         const tableNumber = (node.number || "").trim();
         if (!tableNumber) return "Every table must have a number.";
 
-        const sectionId = node.sectionId;
-        const bucket = tableNumbersBySection.get(sectionId) || new Set<string>();
-        if (bucket.has(tableNumber)) {
-            const sectionName = sectionsList.find((section) => section.id === sectionId)?.name || sectionId;
-            return `Duplicate table number '${tableNumber}' in section '${sectionName}'.`;
+        if (usedTableNumbers.has(tableNumber)) {
+            return `Duplicate table number '${tableNumber}'. Table numbers must be unique across all sections.`;
         }
-        bucket.add(tableNumber);
-        tableNumbersBySection.set(sectionId, bucket);
+        usedTableNumbers.add(tableNumber);
     }
 
     return null;
 };
 
-// Returns the next available table number within the current section.
-export const nextTableNumberInSection = (sectionId: string, nodes: ITableNodesAttributes[]) => {
+// Returns the next available table number across the whole floor plan (all sections).
+export const nextAvailableTableNumber = (nodes: ITableNodesAttributes[]) => {
     const used = new Set(
         nodes
-            .filter((node) => node.sectionId === sectionId && (node.type === "rect" || node.type === "circle"))
+            .filter((node) => node.type === "rect" || node.type === "circle")
             .map((node) => (node.number || "").trim())
             .filter(Boolean),
     );

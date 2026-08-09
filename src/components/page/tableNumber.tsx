@@ -87,7 +87,7 @@ import {
     buildUniqueId,
     createFloorPlanPayload,
     hashPayload,
-    nextTableNumberInSection,
+    nextAvailableTableNumber,
     normalizeSectionName,
     normalizeSectionsWithMap,
     prepareLayoutForPersistence,
@@ -111,6 +111,8 @@ const TABLE_FEATURE_STATIC_FALLBACK = true;
 const CLUSTER_CHAIR_CAPTURE_PADDING = 70;
 const TABLE_CLUSTER_PASTE_OFFSET = 30;
 const CHAIR_SHAPE_TYPES: ShapeType[] = ["chair", "stool", "armchair"];
+// Remembers the user's last-selected map/list view locally so it persists across refreshes without a backend save.
+const TABLE_VIEW_MODE_STORAGE_KEY = "tableLayoutViewMode";
 
 type TableClusterClipboardItem = {
     node: ITableNodesAttributes;
@@ -255,7 +257,9 @@ const TableNumberFeatureEnabledPage = () => {
     const [sections, setSections] = useState<ISection[]>([]);
     const [floorPlanId, setFloorPlanId] = useState<string | null>(null);
     const [activeSectionId, setActiveSectionId] = useState<string>("");
-    const [viewMode, setViewMode] = useState<"map" | "list">("map");
+    const [viewMode, setViewMode] = useState<"map" | "list">(() =>
+        localStorage.getItem(TABLE_VIEW_MODE_STORAGE_KEY) === "list" ? "list" : "map",
+    );
 
     // UI State
     const [selectedId, selectShape] = useState<string | null>(null);
@@ -576,6 +580,12 @@ const TableNumberFeatureEnabledPage = () => {
 
     // --- Actions ---
 
+    // User-driven view toggle: persists the choice locally so it survives an app refresh/restart.
+    const handleViewModeChange = (mode: "map" | "list") => {
+        setViewMode(mode);
+        localStorage.setItem(TABLE_VIEW_MODE_STORAGE_KEY, mode);
+    };
+
     // Leaves the table screen and routes back to the correct page for POS or kiosk flow.
     const onClose = () => {
         const restaurantId = restaurant?.id;
@@ -633,7 +643,6 @@ const TableNumberFeatureEnabledPage = () => {
                     : null,
             );
             setProducts(mapOrderProductsToCartProducts(runningOrder.products));
-            if (typeof runningOrder.covers === "number" && runningOrder.covers > 0) setCovers(runningOrder.covers);
 
             // Point 3: cache backend print tracking in cart state for sent/unsent display.
             setPrintedProductQuantities(initializeRunningOrderPrintedProductTracking(runningOrder));
@@ -879,7 +888,7 @@ const TableNumberFeatureEnabledPage = () => {
 
         const isTable = ["rect", "circle"].includes(type);
         const isFloor = type === "floor";
-        const nextNum = isTable ? nextTableNumberInSection(activeSectionId, tables) : "";
+        const nextNum = isTable ? nextAvailableTableNumber(tables) : "";
         const nextZIndex = isFloor ? FLOOR_Z_INDEX : nextZIndexForType(type, tables);
 
         const newTable: ITableNodesAttributes = {
@@ -1008,23 +1017,33 @@ const TableNumberFeatureEnabledPage = () => {
         return byTable;
     }, [visibleActiveOrders]);
 
+    // Maps a restaurant user id to their display name, so running orders can show who placed them.
+    const restaurantUserNameById = useMemo(() => {
+        const map = new Map<string, string>();
+        (restaurant?.users?.items || []).forEach((userLink) => {
+            if (!userLink?.user?.id) return;
+            map.set(userLink.user.id, `${userLink.user.firstName || ""} ${userLink.user.lastName || ""}`.trim());
+        });
+        return map;
+    }, [restaurant]);
+
     // Point 5: drive runtime table state from currently open orders and expose live table metadata.
     const liveTableStateByTable = useMemo<Map<string, TableLiveState>>(() => {
         const summaries = new Map<string, TableLiveState>();
 
         activeRunningOrdersByTable.forEach((order, tableNumberValue) => {
             const covers = typeof order.covers === "number" && order.covers > 0 ? order.covers : null;
-            const currentRegisterName = register && order.registerId === register.id ? register.name || null : null;
+            const orderUserName = order.orderUserId ? restaurantUserNameById.get(order.orderUserId) || null : null;
             summaries.set(tableNumberValue, {
                 status: "occupied",
                 covers,
                 totalCents: typeof order.total === "number" ? order.total : null,
                 elapsedMinutes: getElapsedMinutes(order.placedAt, tableLiveClockMs),
-                serverLabel: getServerLabelForOrder(order, currentRegisterName),
+                serverLabel: getServerLabelForOrder(orderUserName),
             });
         });
         return summaries;
-    }, [activeRunningOrdersByTable, register, tableLiveClockMs]);
+    }, [activeRunningOrdersByTable, restaurantUserNameById, tableLiveClockMs]);
 
     // Derive the set of table numbers that have a PENDING or CONFIRMED reservation today.
     const reservedTableNumbers = useMemo<Set<string>>(() => {
@@ -1341,7 +1360,11 @@ const TableNumberFeatureEnabledPage = () => {
     // Opens transfer mode and keeps merge controls collapsed.
     const startTransferMode = () => {
         if (orderActionMode === "merge") return;
-        if (!selectedRunningOrder || !hasTransferTargets || transferBusy || mergeBusy) return;
+        if (!selectedRunningOrder || transferBusy || mergeBusy) return;
+        if (!hasTransferTargets) {
+            toast.error("No empty table is available to transfer to.");
+            return;
+        }
         setOrderActionMode("transfer");
         setTransferError(null);
         setMergeError(null);
@@ -1352,9 +1375,7 @@ const TableNumberFeatureEnabledPage = () => {
         if (orderActionMode === "transfer") return;
         if (!selectedRunningOrder || mergeBusy || transferBusy) return;
         if (!hasMergeSources) {
-            const message = "No other running table is available to merge.";
-            setMergeError(message);
-            toast.error(message);
+            toast.error("No other running table is available to merge.");
             return;
         }
         setOrderActionMode("merge");
@@ -1571,7 +1592,7 @@ const TableNumberFeatureEnabledPage = () => {
                 usedIds.add(nextId);
 
                 const isTableShape = item.node.type === "rect" || item.node.type === "circle";
-                const tableNumberValue = isTableShape ? nextTableNumberInSection(targetSectionId, nextNodes) : item.node.number || "";
+                const tableNumberValue = isTableShape ? nextAvailableTableNumber(nextNodes) : item.node.number || "";
                 const nextNode: ITableNodesAttributes = {
                     ...item.node,
                     id: nextId,
@@ -1668,10 +1689,18 @@ const TableNumberFeatureEnabledPage = () => {
                         </div>
                         <div className="action-buttons">
                             <div className="view-toggle">
-                                <button className={`toggle-btn ${viewMode === "map" ? "active" : ""}`} onClick={() => setViewMode("map")} title="Map View">
+                                <button
+                                    className={`toggle-btn ${viewMode === "map" ? "active" : ""}`}
+                                    onClick={() => handleViewModeChange("map")}
+                                    title="Map View"
+                                >
                                     <FiMap size="20px" />
                                 </button>
-                                <button className={`toggle-btn ${viewMode === "list" ? "active" : ""}`} onClick={() => setViewMode("list")} title="List View">
+                                <button
+                                    className={`toggle-btn ${viewMode === "list" ? "active" : ""}`}
+                                    onClick={() => handleViewModeChange("list")}
+                                    title="List View"
+                                >
                                     <FaRectangleList size="20px" />
                                 </button>
                                 <button
@@ -1962,7 +1991,8 @@ const TableNumberFeatureEnabledPage = () => {
                                                     if (!isNonInteractive(tableAttr.type)) {
                                                         setTable(tableAttr.number);
                                                         setTableError(false);
-                                                        const nextCovers = tableAttr.seats;
+                                                        const liveState = liveTableStateByTable.get(`${tableAttr.number || ""}`.trim());
+                                                        const nextCovers = liveState?.covers || tableAttr.seats;
                                                         if (nextCovers) setCoversNumber(nextCovers);
                                                     }
                                                 }}
@@ -2129,11 +2159,10 @@ const TableNumberFeatureEnabledPage = () => {
                                                                         (t) =>
                                                                             t.id !== selectedId &&
                                                                             (t.type === "rect" || t.type === "circle") &&
-                                                                            t.sectionId === currentNode.sectionId &&
                                                                             (t.number || "").trim() === newVal,
                                                                     );
                                                                     if (newVal && isDuplicate) {
-                                                                        alert(`Table number '${newVal}' already exists in this section.`);
+                                                                        alert(`Table number '${newVal}' already exists. Table numbers must be unique across all sections.`);
                                                                         return;
                                                                     }
                                                                     updateTables((prev) =>
@@ -2254,7 +2283,7 @@ const TableNumberFeatureEnabledPage = () => {
                                                 <div>
                                                     <div className="detail-label">Guests</div>
                                                     <div className="detail-value">
-                                                        {selectedTableLiveState?.covers || coversNumber || selectedTable.seats || 0}
+                                                        {coversNumber || selectedTableLiveState?.covers || selectedTable.seats || 0}
                                                     </div>
                                                 </div>
                                                 {/* Point 5: selected table details use the same live metadata model as table cards. */}
@@ -2290,6 +2319,23 @@ const TableNumberFeatureEnabledPage = () => {
                                                     ))}
                                                 </div>
                                             )}
+                                            {selectedRunningOrder && selectedRunningOrder.products && selectedRunningOrder.products.length > 0 && (
+                                                <div className="order-items-panel">
+                                                    <div className="detail-label">Order Items</div>
+                                                    <div className="order-items-list">
+                                                        {selectedRunningOrder.products.map((product, index) => (
+                                                            <div className="order-item-row" key={`${product.id}-${index}`}>
+                                                                <div className="order-item-name">
+                                                                    <span className="order-item-qty">{product.quantity}×</span> {product.name}
+                                                                </div>
+                                                                <div className="order-item-price">
+                                                                    {formatOrderTotal(product.totalPrice * product.quantity - (product.discount || 0))}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                             {selectedRunningOrder && (
                                                 <div className="transfer-panel">
                                                     <div className="detail-label">Order Actions</div>
@@ -2297,7 +2343,7 @@ const TableNumberFeatureEnabledPage = () => {
                                                         <button
                                                             className={`status-action ${orderActionMode === "transfer" ? "active" : ""}`}
                                                             onClick={startTransferMode}
-                                                            disabled={transferBusy || mergeBusy || !hasTransferTargets || orderActionMode === "merge"}
+                                                            disabled={transferBusy || mergeBusy || orderActionMode === "merge"}
                                                         >
                                                             Transfer Order
                                                         </button>
@@ -2319,15 +2365,6 @@ const TableNumberFeatureEnabledPage = () => {
                                                         )}
                                                     </div>
 
-                                                    {orderActionMode === "none" && (
-                                                        <div className="helper-text">
-                                                            {hasTransferTargets || hasMergeSources || !!selectedRunningOrder
-                                                                ? "Choose an action for this running order."
-                                                                : "No transfer or merge action is currently available."}
-                                                        </div>
-                                                    )}
-                                                    {orderActionMode === "none" && mergeError && <div className="transfer-error">{mergeError}</div>}
-
                                                     {orderActionMode === "transfer" && (
                                                         <>
                                                             <label className="detail-label">Target Table</label>
@@ -2348,9 +2385,6 @@ const TableNumberFeatureEnabledPage = () => {
                                                                 ))}
                                                             </select>
                                                             {transferError && <div className="transfer-error">{transferError}</div>}
-                                                            {!hasTransferTargets && (
-                                                                <div className="helper-text">No empty table is available for transfer.</div>
-                                                            )}
                                                             <Button
                                                                 className="transfer-action-btn"
                                                                 disabled={transferBusy || mergeBusy || !hasTransferTargets}
@@ -2380,15 +2414,7 @@ const TableNumberFeatureEnabledPage = () => {
                                                                     </option>
                                                                 ))}
                                                             </select>
-                                                            {mergeSourceTable && (
-                                                                <div className="helper-text">
-                                                                    Merge Table {mergeSourceTable} into Table {transferSourceTable}.
-                                                                </div>
-                                                            )}
                                                             {mergeError && <div className="transfer-error">{mergeError}</div>}
-                                                            {!hasMergeSources && (
-                                                                <div className="helper-text">No source table with a running order is available.</div>
-                                                            )}
                                                             <Button
                                                                 className="transfer-action-btn"
                                                                 disabled={mergeBusy || transferBusy || !hasMergeSources}
@@ -2400,11 +2426,6 @@ const TableNumberFeatureEnabledPage = () => {
                                                     )}
                                                 </div>
                                             )}
-                                            <div className="helper-text">
-                                                {selectedTableHasLiveOrder
-                                                    ? "Status is driven by the active dine-in order."
-                                                    : "Tap to mark the table as available or reserved."}
-                                            </div>
                                         </div>
                                     ) : (
                                         /* Normal Mode: Inputs */
@@ -2428,7 +2449,7 @@ const TableNumberFeatureEnabledPage = () => {
                                     <div className="form-section">
                                         <div className="h3 section-title">Covers</div>
                                         <div className="covers-wrapper">
-                                            <Stepper count={coversNumber} min={1} max={20} onUpdate={setCoversNumber} size={48} />
+                                            <Stepper count={coversNumber} min={1} max={20} onUpdate={setCoversNumber} size={32} />
                                         </div>
                                     </div>
                                 )}
