@@ -51,6 +51,7 @@ export const mapOrderProductsToCartProducts = (orderProducts: IGET_RESTAURANT_OR
         totalPrice: product.totalPrice,
         discount: product.discount,
         isAgeRescricted: product.isAgeRescricted,
+        reportingGroup: product.reportingGroup,
         image: product.image
             ? {
                   key: product.image.key,
@@ -88,6 +89,7 @@ export const sanitizeCartProductForMutationInput = (product: any) => {
     if (product.image == null) delete product.image;
     if (product.notes == null || product.notes === "") delete product.notes;
     if (product.category && product.category.image == null) delete product.category.image;
+    if (product.reportingGroup == null || product.reportingGroup === "") delete product.reportingGroup;
     delete product.isAgeRescricted;
     //isPriceEdited is cart-only state (marks a manual price override); not part of OrderProductInput
     delete product.isPriceEdited;

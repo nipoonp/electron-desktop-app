@@ -571,6 +571,7 @@ export const Checkout = () => {
                 totalPrice: product.price,
                 discount: 0,
                 isAgeRescricted: product.isAgeRescricted,
+                reportingGroup: product.reportingGroup,
                 image: product.image
                     ? {
                           key: product.image.key,
@@ -1491,6 +1492,10 @@ export const Checkout = () => {
 
                 if (product.category.image == null) {
                     delete product.category.image;
+                }
+
+                if (product.reportingGroup == null || product.reportingGroup === "") {
+                    delete product.reportingGroup;
                 }
 
                 // if (product.isAgeRescricted == null) {

@@ -612,6 +612,7 @@ export const GET_RESTAURANT = gql`
                                 }
                                 availablePlatforms
                                 isAgeRescricted
+                                reportingGroup
                                 backgroundColor
                                 borderColor
                                 availability {
@@ -1601,6 +1602,7 @@ export interface IGET_RESTAURANT_PRODUCT {
     image?: IS3Object;
     availablePlatforms: ERegisterType[];
     isAgeRescricted: boolean;
+    reportingGroup?: string | null;
     backgroundColor?: string | null;
     borderColor?: string | null;
     availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
@@ -2009,6 +2011,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                     identityPoolId
                 }
                 availablePlatforms
+                reportingGroup
                 backgroundColor
                 borderColor
                 availability {
