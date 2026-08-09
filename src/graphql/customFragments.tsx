@@ -92,6 +92,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                     identityPoolId
                 }
             }
+            reportingGroup
             modifierGroups {
                 id
                 name
@@ -290,6 +291,7 @@ export interface IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT {
     notes: string | null;
     image: IS3Object | null;
     category: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | null;
+    reportingGroup?: string | null;
     modifierGroups: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] | null;
 }
 

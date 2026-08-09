@@ -668,6 +668,7 @@ export const GET_RESTAURANT = gql`
                                     }
                                 }
                                 subCategories
+                                reportingGroup
                                 categories {
                                     items {
                                         category {
@@ -1522,6 +1523,7 @@ export interface IGET_RESTAURANT_PRODUCT {
     isAgeRescricted: boolean;
     availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
     subCategories?: string;
+    reportingGroup?: string | null;
     categories: { items: IGET_RESTAURANT_CATEGORY_LINK[] };
     modifierGroups?: {
         items: IGET_RESTAURANT_MODIFIER_GROUP_LINK[];
@@ -1840,6 +1842,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                     }
                 }
                 subCategories
+                reportingGroup
                 categories {
                     items {
                         category {
