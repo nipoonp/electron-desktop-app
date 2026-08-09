@@ -143,6 +143,7 @@ export default () => {
                 totalPrice: product.totalPrice,
                 discount: 0, //Set discount to total because we do not want to add any discount or promotions to parked orders
                 isAgeRescricted: product.isAgeRescricted,
+                reportingGroup: product.reportingGroup,
                 image: product.image
                     ? {
                           key: product.image.key,

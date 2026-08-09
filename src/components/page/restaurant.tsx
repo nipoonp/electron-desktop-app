@@ -228,6 +228,7 @@ const Restaurant = () => {
                             totalPrice: product.price,
                             discount: 0,
                             isAgeRescricted: false,
+                            reportingGroup: product.reportingGroup,
                             image: product.image
                                 ? {
                                       key: product.image.key,
@@ -439,6 +440,7 @@ const Restaurant = () => {
             totalPrice: product.price,
             discount: 0,
             isAgeRescricted: product.isAgeRescricted,
+            reportingGroup: product.reportingGroup,
             image: product.image
                 ? {
                       key: product.image.key,

@@ -335,6 +335,7 @@ export interface ICartProduct {
     maxQuantityPerOrder?: number;
     notes: string | null;
     category: ICartCategory | null; //Product modifier do not have category
+    reportingGroup?: string | null;
     modifierGroups: ICartModifierGroup[];
 }
 
