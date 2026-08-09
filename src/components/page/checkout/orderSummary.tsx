@@ -131,17 +131,16 @@ const OrderItem = (props: {
     };
 
     const onBlurPrice = (newPrice: string) => {
-        let newPriceFloat = parseFloat(newPrice) / product.quantity;
-
         if (newPrice === "") {
             setPrice("0.00");
             onApplyProductDiscount(displayOrder, 0);
-        } else {
-            const rounded = Math.round(newPriceFloat * 100) / 100; //To 2 dp
-
-            setPrice(rounded.toFixed(2));
-            onApplyProductDiscount(displayOrder, product.totalPrice - convertDollarsToCentsReturnInt(rounded));
+            return;
         }
+
+        const rounded = Math.round(parseFloat(newPrice) * 100) / 100; //To 2 dp
+
+        setPrice(rounded.toFixed(2));
+        onApplyProductDiscount(displayOrder, product.totalPrice * product.quantity - convertDollarsToCentsReturnInt(rounded));
 
         // setIsOptionsExpanded(false);
     };

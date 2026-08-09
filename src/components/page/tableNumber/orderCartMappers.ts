@@ -50,6 +50,7 @@ export const mapOrderProductsToCartProducts = (orderProducts: IGET_RESTAURANT_OR
         price: product.price,
         totalPrice: product.totalPrice,
         discount: product.discount,
+        isPriceEdited: product.discount !== 0,
         isAgeRescricted: product.isAgeRescricted,
         reportingGroup: product.reportingGroup,
         image: product.image
@@ -119,7 +120,7 @@ export const calculateCartProductsTotal = (products: ICartProduct[] | null) => {
 
     products &&
         products.forEach((product) => {
-            let price = product.price - product.discount;
+            let price = product.price;
 
             product.modifierGroups.forEach((modifierGroup) => {
                 modifierGroup.modifiers.forEach((modifier) => {
@@ -139,7 +140,7 @@ export const calculateCartProductsTotal = (products: ICartProduct[] | null) => {
                 });
             });
 
-            totalPrice += price * product.quantity;
+            totalPrice += price * product.quantity - product.discount;
         });
 
     return totalPrice;
