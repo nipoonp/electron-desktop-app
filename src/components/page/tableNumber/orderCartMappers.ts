@@ -50,7 +50,9 @@ export const mapOrderProductsToCartProducts = (orderProducts: IGET_RESTAURANT_OR
         price: product.price,
         totalPrice: product.totalPrice,
         discount: product.discount,
+        isPriceEdited: product.discount !== 0,
         isAgeRescricted: product.isAgeRescricted,
+        reportingGroup: product.reportingGroup,
         image: product.image
             ? {
                   key: product.image.key,
@@ -88,6 +90,7 @@ export const sanitizeCartProductForMutationInput = (product: any) => {
     if (product.image == null) delete product.image;
     if (product.notes == null || product.notes === "") delete product.notes;
     if (product.category && product.category.image == null) delete product.category.image;
+    if (product.reportingGroup == null || product.reportingGroup === "") delete product.reportingGroup;
     delete product.isAgeRescricted;
     //isPriceEdited is cart-only state (marks a manual price override); not part of OrderProductInput
     delete product.isPriceEdited;
@@ -117,7 +120,7 @@ export const calculateCartProductsTotal = (products: ICartProduct[] | null) => {
 
     products &&
         products.forEach((product) => {
-            let price = product.price - product.discount;
+            let price = product.price;
 
             product.modifierGroups.forEach((modifierGroup) => {
                 modifierGroup.modifiers.forEach((modifier) => {
@@ -137,7 +140,7 @@ export const calculateCartProductsTotal = (products: ICartProduct[] | null) => {
                 });
             });
 
-            totalPrice += price * product.quantity;
+            totalPrice += price * product.quantity - product.discount;
         });
 
     return totalPrice;

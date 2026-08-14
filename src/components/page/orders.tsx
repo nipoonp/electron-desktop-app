@@ -37,6 +37,7 @@ import {
     isModifierQuantityAvailable,
     isProductQuantityAvailable,
     printedQuantitiesListToMap,
+    printedQuantitiesToList,
     toLocalISOString,
 } from "../../util/util";
 import { convertCentsToDollars, convertDollarsToCentsReturnInt } from "../../util/util";
@@ -419,6 +420,7 @@ const Orders = () => {
                 totalPrice: product.totalPrice,
                 discount: 0, //Set discount to total because we do not want to add any discount or promotions to parked orders
                 isAgeRescricted: product.isAgeRescricted,
+                reportingGroup: product.reportingGroup,
                 image: product.image
                     ? {
                           key: product.image.key,
@@ -540,7 +542,6 @@ const Orders = () => {
             const pOrder: IGET_RESTAURANT_ORDER_FRAGMENT = freshResult.data?.getOrder ?? parkedOrder;
 
             const mergedPrintedProductQuantities = printedQuantitiesListToMap(pOrder.printedQuantities);
-            let hasMergedPrintedProducts = Object.keys(mergedPrintedProductQuantities).length > 0;
 
             const mergedOrders = await Promise.all(
                 orders
@@ -551,23 +552,30 @@ const Orders = () => {
                     }),
             );
 
-            for (const mergedOrder of mergedOrders) {
-                const printedProductQuantities = printedQuantitiesListToMap(mergedOrder.printedQuantities);
-
-                if (Object.keys(printedProductQuantities).length === 0) continue;
-
-                Object.entries(printedProductQuantities).forEach(([lineKey, quantity]) => {
-                    mergedPrintedProductQuantities[lineKey] = (mergedPrintedProductQuantities[lineKey] || 0) + quantity;
+            const sourcePrintedProductQuantities: Record<string, number> = {};
+            mergedOrders.forEach((mergedOrder) => {
+                Object.entries(printedQuantitiesListToMap(mergedOrder.printedQuantities)).forEach(([lineKey, quantity]) => {
+                    sourcePrintedProductQuantities[lineKey] = (sourcePrintedProductQuantities[lineKey] || 0) + quantity;
                 });
+            });
 
-                hasMergedPrintedProducts = true;
+            let hasUncountedPrintedProducts = false;
+            Object.entries(sourcePrintedProductQuantities).forEach(([lineKey, quantity]) => {
+                if (quantity <= (mergedPrintedProductQuantities[lineKey] || 0)) return;
 
+                mergedPrintedProductQuantities[lineKey] = quantity;
+                hasUncountedPrintedProducts = true;
+            });
+
+            if (hasUncountedPrintedProducts) {
                 try {
                     await updateOrderPrintedQuantitiesMutation({
-                        variables: { orderId: mergedOrder.id, printedQuantities: [] },
+                        variables: { orderId: pOrder.id, printedQuantities: printedQuantitiesToList(mergedPrintedProductQuantities) },
                     });
                 } catch {}
             }
+
+            const hasMergedPrintedProducts = Object.keys(mergedPrintedProductQuantities).length > 0;
 
             navigate(restaurantPath + "/" + restaurant.id);
 

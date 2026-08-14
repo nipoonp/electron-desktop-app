@@ -501,7 +501,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
 
         products &&
             products.forEach((p) => {
-                let price = p.price - p.discount;
+                let price = p.price;
 
                 p.modifierGroups.forEach((mg) => {
                     mg.modifiers.forEach((m) => {
@@ -528,7 +528,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                     });
                 });
 
-                totalPrice += price * p.quantity;
+                totalPrice += price * p.quantity - (p.isPriceEdited ? p.discount : 0);
             });
 
         return totalPrice;

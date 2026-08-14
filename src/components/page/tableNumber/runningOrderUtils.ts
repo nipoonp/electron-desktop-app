@@ -14,12 +14,9 @@ export const getElapsedMinutes = (placedAt: string, nowMs: number) => {
     return Math.floor((nowMs - openedAtMs) / (60 * 1000));
 };
 
-// Resolves the server label shown in table metadata.
-export const getServerLabelForOrder = (order: IGET_RESTAURANT_ORDER_FRAGMENT, currentRegisterName: string | null) => {
-    if (currentRegisterName && order.registerId) return currentRegisterName;
-    if (!order.registerId) return "-";
-    return `Register ${order.registerId.slice(0, 6)}`;
-};
+// Resolves the server label shown in table metadata: the name of whichever user actually placed the
+// order (the PIN-authenticated cashier when POS PIN is used, otherwise the logged-in POS user).
+export const getServerLabelForOrder = (orderUserName: string | null) => orderUserName || "-";
 
 // Formats cents into currency text for table cards/details.
 export const formatOrderTotal = (totalCents: number | null | undefined) => {

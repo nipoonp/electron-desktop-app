@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
@@ -84,8 +84,7 @@ const buildUnlockedStorageKey = (restaurantId?: string | null, registerId?: stri
 const buildSkippedSelectionStorageKey = (restaurantId?: string | null, registerId?: string | null) =>
     `selectedPosUserSkipped:${restaurantId || "none"}:${registerId || "none"}`;
 
-export const getBusinessDate = (date = new Date()) =>
-    new Intl.DateTimeFormat("en-CA").format(date);
+export const getBusinessDate = (date = new Date()) => new Intl.DateTimeFormat("en-CA").format(date);
 
 export const calculateDurationMinutes = (startTime?: string | null, endTime = new Date().toISOString()) => {
     if (!startTime) return 0;
@@ -306,6 +305,37 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
         setIsUnlocked(false);
         localStorage.removeItem(unlockedStorageKey);
     };
+
+    const idleTimeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Re-locks the register after the register's configured seconds of inactivity, so the same
+    // cashier just has to re-enter their PIN instead of staying unlocked indefinitely.
+    useEffect(() => {
+        const posUserPinTimeoutInSeconds = register?.posUserPinTimeoutInSeconds;
+
+        if (!isPOS || !isPosPinFeatureEnabled || !isUnlocked || !posUserPinTimeoutInSeconds || posUserPinTimeoutInSeconds <= 0) {
+            return;
+        }
+
+        const timeoutMs = posUserPinTimeoutInSeconds * 1000;
+        const activityEvents: (keyof DocumentEventMap)[] = ["mousedown", "keydown", "touchstart", "wheel"];
+
+        const resetIdleTimeout = () => {
+            if (idleTimeoutIdRef.current) clearTimeout(idleTimeoutIdRef.current);
+            idleTimeoutIdRef.current = setTimeout(lockPosUser, timeoutMs);
+        };
+
+        activityEvents.forEach((eventName) => document.addEventListener(eventName, resetIdleTimeout));
+        resetIdleTimeout();
+
+        return () => {
+            activityEvents.forEach((eventName) => document.removeEventListener(eventName, resetIdleTimeout));
+            if (idleTimeoutIdRef.current) {
+                clearTimeout(idleTimeoutIdRef.current);
+                idleTimeoutIdRef.current = null;
+            }
+        };
+    }, [isPOS, isPosPinFeatureEnabled, isUnlocked, register?.posUserPinTimeoutInSeconds]);
 
     // Clears the cashier selection completely and resets the saved unlock state.
     const clearSelectedPosUser = () => {
