@@ -302,9 +302,27 @@ const RestaurantRegisterPrivateRoute = ({ element }) => {
 };
 
 const PosUserPrivateRoute = ({ element }) => {
-    const { selectedPosUser, isUnlocked, availableUsers, isPosPinFeatureEnabled, hasSkippedPosUserSelection } = usePosUser();
+    const {
+        selectedPosUser,
+        isUnlocked,
+        availableUsers,
+        isPosPinFeatureEnabled,
+        hasSkippedPosUserSelection,
+        activeAttendance,
+        activeAttendanceBreak,
+        attendanceLoading,
+    } = usePosUser();
 
-    if (!isPosPinFeatureEnabled) return element;
+    // With the register-level PIN off, staff never unlock/select through this page automatically —
+    // but attendance still has to be satisfied for whichever user (if any) is currently selected,
+    // e.g. after picking themselves from the Timeclock menu tab.
+    if (!isPosPinFeatureEnabled) {
+        if (selectedPosUser?.attendanceEnabled) {
+            if (attendanceLoading) return <FullScreenSpinner show={true} text="Loading shift..." />;
+            if (!activeAttendance || activeAttendanceBreak) return <Navigate to={posUserListPath} />;
+        }
+        return element;
+    }
 
     if (availableUsers.length === 0) {
         if (hasSkippedPosUserSelection) return element;
@@ -313,36 +331,37 @@ const PosUserPrivateRoute = ({ element }) => {
 
     if (!selectedPosUser) return <Navigate to={posUserListPath} />;
     if (!isUnlocked) return <Navigate to={posUserListPath} />;
+    if (selectedPosUser.attendanceEnabled) {
+        if (attendanceLoading) return <FullScreenSpinner show={true} text="Loading shift..." />;
+        if (!activeAttendance || activeAttendanceBreak) return <Navigate to={posUserListPath} />;
+    }
 
     return element;
 };
 
 const RestaurantRegisterPosPrivateRoute = ({ element }) => {
-    const { isPOS, isPosPinFeatureEnabled } = useRegister();
+    const { isPOS } = useRegister();
 
     // POS user selection and PIN screens should never appear for kiosk-style flows.
     if (isPOS === false) return <Navigate to={beginOrderPath} replace />;
-
-    if (!isPosPinFeatureEnabled) return <RestaurantRegisterPrivateRoute element={element} />;
 
     return <RestaurantRegisterPrivateRoute element={<PosUserPrivateRoute element={element} />} />;
 };
 
 const RestaurantRegisterSalePrivateRoute = ({ element }) => {
-    const { isPOS, isPosPinFeatureEnabled } = useRegister();
+    const { isPOS } = useRegister();
 
     // Shared sales pages work for every register. Only POS registers require the staff selection gate.
-    if (isPOS === false || !isPosPinFeatureEnabled) return <RestaurantRegisterPrivateRoute element={element} />;
+    if (isPOS === false) return <RestaurantRegisterPrivateRoute element={element} />;
 
     return <RestaurantRegisterPrivateRoute element={<PosUserPrivateRoute element={element} />} />;
 };
 
 const RestaurantRegisterPosSetupPrivateRoute = ({ element }) => {
-    const { isPOS, isPosPinFeatureEnabled } = useRegister();
+    const { isPOS } = useRegister();
 
     // Non-POS registers should skip the POS user selection flow completely.
     if (isPOS === false) return <Navigate to={beginOrderPath} replace />;
-    if (!isPosPinFeatureEnabled) return <Navigate to={beginOrderPath} replace />;
 
     return <RestaurantRegisterPrivateRoute element={element} />;
 };

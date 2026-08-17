@@ -43,7 +43,11 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
         }
 
         if (tab.id === "selectPosUser") {
-            return register.type === ERegisterType.POS && !!register.enablePosUserPin;
+            if (register.type !== ERegisterType.POS) return false;
+            // PIN-enabled registers always show it (it's the login screen). PIN-off registers
+            // still need it as a voluntary way to clock in/out when any staff has attendance enabled.
+            if (register.enablePosUserPin) return true;
+            return (restaurant.users?.items || []).some((userLink) => !!userLink.attendanceEnabled);
         }
 
         return true;

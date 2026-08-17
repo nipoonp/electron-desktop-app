@@ -36,6 +36,14 @@
         border-radius: 12px;
     }
 
+    // Positioning anchor for the shift-status badge — kept separate from .pos-user-card-avatar
+    // because that element clips to a circle (overflow: hidden), which would clip the badge too.
+    .pos-user-card-avatar-wrapper {
+        position: relative;
+        width: 104px;
+        height: 104px;
+    }
+
     .pos-user-card-avatar {
         display: flex;
         align-items: center;
@@ -49,6 +57,22 @@
         font-size: 34px;
         font-weight: 600;
         overflow: hidden;
+    }
+
+    // Shows whether this staff member is currently clocked in / on break.
+    .pos-user-card-shift-badge {
+        position: absolute;
+        right: -2px;
+        bottom: -2px;
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        border: 3px solid #fff;
+        background-color: #34c759;
+
+        &.on-break {
+            background-color: #ff9f0a;
+        }
     }
 
     .pos-user-card-avatar-image {
@@ -69,7 +93,8 @@
     }
 }
 
-.pos-pin {
+.pos-pin,
+.pos-attendance {
     display: flex;
     align-items: center;
     flex-direction: column;
@@ -87,6 +112,66 @@
     }
 }
 
+// ── Attendance actions panel (shown for attendance-enabled users after unlock) ──
+
+.pos-attendance {
+    gap: 24px;
+    color: #484848;
+
+    &__employee {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a2029;
+        text-align: center;
+        letter-spacing: 0.01em;
+    }
+
+    &__actions {
+        display: flex;
+        flex-direction: row;
+        gap: 16px;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+        max-width: 480px;
+    }
+
+    &__btn-primary {
+        flex: 1;
+        min-width: 180px;
+        min-height: 58px;
+        font-size: 18px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    &__btn-outline {
+        flex: 1;
+        min-width: 180px;
+        min-height: 58px;
+        font-size: 18px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: #fff;
+        color: #404955;
+        border: 1px solid #d4d9df;
+    }
+
+    &__loading {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: #9aa3ae;
+        font-size: 15px;
+    }
+}
+
 @media (max-width: 900px) {
     .pos-user-list {
         padding: 24px 16px;
@@ -98,6 +183,11 @@
     }
 
     .pos-user-card {
+        .pos-user-card-avatar-wrapper {
+            width: 92px;
+            height: 92px;
+        }
+
         .pos-user-card-avatar {
             width: 92px;
             height: 92px;
