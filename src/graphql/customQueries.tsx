@@ -157,8 +157,6 @@ export interface IGET_RESTAURANT_USER_LINK {
     posPin?: string | null;
     posPinUpdatedAt?: string | null;
     attendanceEnabled?: boolean | null;
-    breakTrackingEnabled?: boolean | null;
-    defaultBreakDurationMinutes?: number | null;
     user: IGET_RESTAURANT_USER;
 }
 
@@ -282,8 +280,6 @@ export const GET_RESTAURANT = gql`
                     posPin
                     posPinUpdatedAt
                     attendanceEnabled
-                    breakTrackingEnabled
-                    defaultBreakDurationMinutes
                     user {
                         id
                         firstName

@@ -247,7 +247,7 @@ export default () => {
                                         <span>End break</span>
                                     </Button>
                                 </>
-                            ) : selectedPosUser.breakTrackingEnabled ? (
+                            ) : (
                                 <>
                                     <Button
                                         className="pos-attendance__btn-primary"
@@ -263,16 +263,6 @@ export default () => {
                                         <span>Start break</span>
                                     </Button>
                                 </>
-                            ) : (
-                                <Button
-                                    className="pos-attendance__btn-primary"
-                                    onClick={handleClockOut}
-                                    loading={attendanceActionLoading}
-                                    disabled={attendanceActionLoading}
-                                >
-                                    <FiLogOut />
-                                    <span>Clock out</span>
-                                </Button>
                             )}
                         </div>
                     </div>

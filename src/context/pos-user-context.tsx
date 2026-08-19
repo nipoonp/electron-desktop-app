@@ -26,8 +26,6 @@ export type TPosUser = {
     enablePosPin: boolean;
     posPin: string | null;
     attendanceEnabled: boolean;
-    breakTrackingEnabled: boolean;
-    defaultBreakDurationMinutes: number | null;
 };
 
 type ContextProps = {
@@ -177,8 +175,6 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
                           enablePosPin: !!userLink.enablePosPin,
                           posPin: userLink.posPin || null,
                           attendanceEnabled: !!userLink.attendanceEnabled,
-                          breakTrackingEnabled: !!userLink.breakTrackingEnabled,
-                          defaultBreakDurationMinutes: userLink.defaultBreakDurationMinutes ?? null,
                       }))
                       .sort((left, right) => `${left.firstName} ${left.lastName}`.localeCompare(`${right.firstName} ${right.lastName}`)),
         [isPOS, restaurant],
@@ -519,7 +515,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
     };
 
     const startBreak = async () => {
-        if (!selectedPosUser?.breakTrackingEnabled || !activeAttendance || activeAttendanceBreak) return false;
+        if (!activeAttendance || activeAttendanceBreak) return false;
 
         const startedAt = new Date().toISOString();
         const userName = selectedPosUser ? `${selectedPosUser.firstName} ${selectedPosUser.lastName}`.trim() : "";
