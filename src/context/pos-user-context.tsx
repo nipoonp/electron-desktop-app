@@ -33,6 +33,7 @@ type ContextProps = {
     selectedPosUser: TPosUser | null;
     isUnlocked: boolean;
     isPosPinFeatureEnabled: boolean;
+    isAttendanceFeatureEnabled: boolean;
     hasSkippedPosUserSelection: boolean;
     activeAttendance: IGET_ATTENDANCE | null;
     activeAttendanceBreak: IGET_ATTENDANCE_BREAK | null;
@@ -60,6 +61,7 @@ const PosUserContext = createContext<ContextProps>({
     selectedPosUser: null,
     isUnlocked: false,
     isPosPinFeatureEnabled: false,
+    isAttendanceFeatureEnabled: false,
     hasSkippedPosUserSelection: false,
     activeAttendance: null,
     activeAttendanceBreak: null,
@@ -150,7 +152,7 @@ export const getAdjustmentHistoryForUpdate = (
 
 export const PosUserProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
-    const { register, isPOS, isPosPinFeatureEnabled } = useRegister();
+    const { register, isPOS, isPosPinFeatureEnabled, isAttendanceFeatureEnabled } = useRegister();
     const [selectedPosUser, setSelectedPosUser] = useState<TPosUser | null>(null);
     const [isUnlocked, setIsUnlocked] = useState(false);
     const [hasSkippedPosUserSelection, setHasSkippedPosUserSelection] = useState(false);
@@ -579,6 +581,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
                 selectedPosUser,
                 isUnlocked,
                 isPosPinFeatureEnabled,
+                isAttendanceFeatureEnabled,
                 hasSkippedPosUserSelection,
                 isResumedFromIdleLock,
                 attendanceStatusByUserId,

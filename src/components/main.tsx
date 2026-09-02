@@ -311,13 +311,14 @@ const PosUserPrivateRoute = ({ element }) => {
         activeAttendance,
         activeAttendanceBreak,
         attendanceLoading,
+        isAttendanceFeatureEnabled,
     } = usePosUser();
 
     // With the register-level PIN off, staff never unlock/select through this page automatically —
     // but attendance still has to be satisfied for whichever user (if any) is currently selected,
     // e.g. after picking themselves from the Timeclock menu tab.
     if (!isPosPinFeatureEnabled) {
-        if (selectedPosUser?.attendanceEnabled) {
+        if (isAttendanceFeatureEnabled && selectedPosUser?.attendanceEnabled) {
             if (attendanceLoading) return <FullScreenSpinner show={true} text="Loading shift..." />;
             if (!activeAttendance || activeAttendanceBreak) return <Navigate to={posUserListPath} />;
         }
@@ -331,7 +332,7 @@ const PosUserPrivateRoute = ({ element }) => {
 
     if (!selectedPosUser) return <Navigate to={posUserListPath} />;
     if (!isUnlocked) return <Navigate to={posUserListPath} />;
-    if (selectedPosUser.attendanceEnabled) {
+    if (isAttendanceFeatureEnabled && selectedPosUser.attendanceEnabled) {
         if (attendanceLoading) return <FullScreenSpinner show={true} text="Loading shift..." />;
         if (!activeAttendance || activeAttendanceBreak) return <Navigate to={posUserListPath} />;
     }

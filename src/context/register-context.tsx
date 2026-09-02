@@ -22,6 +22,7 @@ type ContextProps = {
     register: IGET_RESTAURANT_REGISTER | null;
     isPOS: boolean | null;
     isPosPinFeatureEnabled: boolean;
+    isAttendanceFeatureEnabled: boolean;
     connectRegister: (key: string) => Promise<any>;
     disconnectRegister: (key: string) => Promise<any>;
     isShownNewOnlineOrderReceivedModal: boolean;
@@ -36,6 +37,7 @@ const RegisterContext = createContext<ContextProps>({
     register: null,
     isPOS: false,
     isPosPinFeatureEnabled: false,
+    isAttendanceFeatureEnabled: false,
     connectRegister: (key: string) => {
         return new Promise(() => {});
     },
@@ -137,6 +139,7 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
                 register: register,
                 isPOS: register ? register.type == ERegisterType.POS : null,
                 isPosPinFeatureEnabled: !!register?.enablePosUserPin,
+                isAttendanceFeatureEnabled: !!register?.enablePosUserAttendance,
                 connectRegister: connectRegister,
                 disconnectRegister: disconnectRegister,
                 isShownNewOnlineOrderReceivedModal: isShownNewOnlineOrderReceivedModal,

@@ -32,7 +32,7 @@ export default () => {
             setShowFullScreenSpinner(false);
             // Only POS registers use the staff selection + PIN gate. Kiosk-style registers
             // continue directly into the shared begin-order flow.
-            navigate(selectedRegister?.type === ERegisterType.POS && selectedRegister?.enablePosUserPin ? posUserListPath : beginOrderPath, {
+            navigate(selectedRegister?.type === ERegisterType.POS && (selectedRegister?.enablePosUserPin || selectedRegister?.enablePosUserAttendance) ? posUserListPath : beginOrderPath, {
                 replace: true,
             });
         } catch (e) {
@@ -63,7 +63,7 @@ export default () => {
                         {restaurant.registers.items
                             .filter((reg) => reg.type !== ERegisterType.ONLINE)
                             .map((reg, index) => (
-                                <>
+                                <div key={reg.id}>
                                     {index != 0 && <div className="separator-4"></div>}
                                     <div className="register-list-item">
                                         <div>{reg.name}</div>
@@ -90,7 +90,7 @@ export default () => {
                                             </>
                                         )}
                                     </div>
-                                </>
+                                </div>
                             ))}
                         <div className="mt-2">
                             <Button onClick={logout}>Log Out</Button>
