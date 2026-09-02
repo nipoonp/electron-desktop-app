@@ -1,19 +1,23 @@
 import { GET_PROMOTION_BY_ID, IGET_RESTAURANT_PROMOTION } from "../graphql/customQueries";
 import { useLazyQuery } from "@apollo/client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export const useGetPromotionByIdLazyQuery = () => {
     const [promotionsById, setPromotionsById] = useState<Record<string, IGET_RESTAURANT_PROMOTION>>({});
 
-    const [getPromotionById, { loading, error, data: _data }] = useLazyQuery(GET_PROMOTION_BY_ID, {
+    const [_getPromotionById, { loading, error }] = useLazyQuery(GET_PROMOTION_BY_ID, {
         fetchPolicy: "network-only",
     });
 
-    useEffect(() => {
-        if (_data?.getPromotion) {
-            setPromotionsById((prev) => ({ ...prev, [_data.getPromotion.id]: _data.getPromotion }));
+    const getPromotionById = async (options: { variables: { id: string } }) => {
+        const result = await _getPromotionById(options);
+
+        if (result.data?.getPromotion) {
+            setPromotionsById((prev) => ({ ...prev, [result.data.getPromotion.id]: result.data.getPromotion }));
         }
-    }, [_data]);
+
+        return result;
+    };
 
     return {
         getPromotionById,

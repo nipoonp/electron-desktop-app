@@ -35,9 +35,7 @@ export const RewardsModal = (props: IRewardsModalProps) => {
     useEffect(() => {
         if (!restaurant?.loyalties?.items?.length) return;
 
-        const promotionIds = Array.from(
-            new Set(restaurant.loyalties.items.flatMap((loyalty) => loyalty.rewards.map((reward) => reward.promotionId))),
-        );
+        const promotionIds = Array.from(new Set(restaurant.loyalties.items.flatMap((loyalty) => (loyalty.rewards || []).map((reward) => reward.promotionId))));
 
         promotionIds.forEach((id) => getPromotionById({ variables: { id } }));
     }, []);
@@ -123,6 +121,11 @@ export const RewardsModal = (props: IRewardsModalProps) => {
         });
     };
 
+    // Rewards are configured per loyalty, so flatten them across every loyalty before checking if there are any to show.
+    const loyaltyRewards = (restaurant?.loyalties?.items || [])
+        .flatMap((loyalty) => (loyalty.rewards || []).map((reward) => ({ loyaltyId: loyalty.id, reward })))
+        .filter(({ reward }, index, rewards) => rewards.findIndex((r) => r.reward.promotionId === reward.promotionId) === index);
+
     return (
         <>
             <ModalV2 isOpen={props.isOpen} width="90%" padding="24px" disableClose={false} onRequestClose={onModalClose}>
@@ -130,30 +133,25 @@ export const RewardsModal = (props: IRewardsModalProps) => {
                     <div className="h2 mb-2">Please select your reward</div>
                     {restaurant &&
                         restaurant.loyalties &&
-                        restaurant.loyalties.items.map((loyalty) => (
-                            <>
-                                {loyalty && loyalty.rewards.length > 0 ? (
-                                    loyalty.rewards.map((reward) => (
-                                        <div key={reward.promotionId} className="reward-promotion mb-2">
-                                            <div className="h3 reward-promotion-name">{promotionsById[reward.promotionId]?.name}</div>
-                                            <div>
-                                                {reward.points} point{reward.points !== 1 ? "s" : ""}
-                                            </div>
-                                            <Button
-                                                disabled={
-                                                    !promotionsById[reward.promotionId] ||
-                                                    (customerLoyaltyPoints ? customerLoyaltyPoints < reward.points : false)
-                                                }
-                                                onClick={() => onApply(loyalty.id, reward.promotionId, reward.points)}
-                                            >
-                                                Apply
-                                            </Button>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div>No rewards available</div>
-                                )}
-                            </>
+                        (loyaltyRewards.length > 0 ? (
+                            loyaltyRewards.map(({ loyaltyId, reward }) => (
+                                <div key={reward.promotionId} className="reward-promotion mb-2">
+                                    <div className="h3 reward-promotion-name">{promotionsById[reward.promotionId]?.name}</div>
+                                    <div>
+                                        {reward.points} point{reward.points !== 1 ? "s" : ""}
+                                    </div>
+                                    <Button
+                                        disabled={
+                                            !promotionsById[reward.promotionId] || (customerLoyaltyPoints ? customerLoyaltyPoints < reward.points : false)
+                                        }
+                                        onClick={() => onApply(loyaltyId, reward.promotionId, reward.points)}
+                                    >
+                                        Apply
+                                    </Button>
+                                </div>
+                            ))
+                        ) : (
+                            <div>No rewards available</div>
                         ))}
                 </div>
             </ModalV2>
