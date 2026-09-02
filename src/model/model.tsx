@@ -6,6 +6,11 @@ import {
 } from "../graphql/customFragments";
 import { IGET_RESTAURANT_PROMOTION, IGET_RESTAURANT_CATEGORY, IGET_RESTAURANT_PRODUCT, IS3Object, EOrderStatus } from "../graphql/customQueries";
 
+export enum ECountry {
+    nz = "nz",
+    au = "au",
+}
+
 export interface ITab {
     id: string;
     name: string;
@@ -264,6 +269,7 @@ export interface IMX51EftposQuestion {
 export enum EOrderType {
     DINEIN = "DINEIN",
     TAKEAWAY = "TAKEAWAY",
+    PICKUP = "PICKUP",
     DELIVERY = "DELIVERY",
 }
 
@@ -325,8 +331,11 @@ export interface ICartProduct {
     isAgeRescricted: boolean;
     image: IS3Object | null;
     quantity: number;
+    incrementAmount?: number;
+    maxQuantityPerOrder?: number;
     notes: string | null;
     category: ICartCategory | null; //Product modifier do not have category
+    reportingGroup?: string | null;
     modifierGroups: ICartModifierGroup[];
 }
 
@@ -403,6 +412,7 @@ export enum EReceiptPrinterPrinterType {
 
 export interface IOrderReceipt {
     orderId: string;
+    country: string;
     status: EOrderStatus;
     printerType: ERegisterPrinterType;
     printerAddress: string;
@@ -413,6 +423,7 @@ export interface IOrderReceipt {
     kitchenPrinterLarge: boolean | null;
     hidePreparationTime: boolean | null;
     hideModifierGroupName: boolean | null;
+    skipReceiptCutCommand: boolean | null;
     printReceiptForEachProduct: boolean | null;
     hideOrderType: boolean;
     hideModifierGroupsForCustomer: boolean | null;
@@ -439,8 +450,16 @@ export interface IOrderReceipt {
     products: ICartProduct[];
     eftposReceipt: string | null;
     paymentAmounts: IOrderPaymentAmounts | null;
+    deliveryProvider?: "UBER_DIRECT" | "RESTAURANT_MANAGED" | null;
+    deliveryAddress?: string | null;
+    deliveryNotes?: string | null;
+    deliveryDistanceMeters?: number | null;
+    deliveryFeeDiscount?: number | null;
+    deliveryFee?: number | null;
+    deliveryTrackingUrl?: string | null;
     total: number;
     discount: number | null;
+    tax: number;
     subTotal: number;
     paid: boolean;
     surcharge: number | null;
@@ -455,6 +474,7 @@ export interface IOrderReceipt {
     placedAt: string;
     orderScheduledAt: string | null;
     preparationTimeInMinutes: number | null;
+    enableLoyalty: boolean | null;
 }
 
 export interface IOrderLabel {
@@ -471,6 +491,8 @@ export interface IPrintSalesDataInputDailySales {
     [date: string]: {
         totalAmount: number;
         totalQuantity: number;
+        totalDiscountAmount: number;
+        totalRefundAmount: number;
         totalPaymentAmounts: IOrderPaymentAmounts;
     };
 }
@@ -504,6 +526,8 @@ export interface IDailySales {
         totalAmount: number;
         totalQuantity: number;
         orders: IGET_RESTAURANT_ORDER_FRAGMENT[];
+        totalDiscountAmount: number;
+        totalRefundAmount: number;
         totalPaymentAmounts: IOrderPaymentAmounts;
     };
 }

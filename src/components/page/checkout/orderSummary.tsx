@@ -2,7 +2,7 @@ import { useRegister } from "../../../context/register-context";
 import { ICartModifierGroup, ICartProduct } from "../../../model/model";
 import { Button } from "../../../tabin/components/button";
 import { Stepper } from "../../../tabin/components/stepper";
-import { convertCentsToDollars, convertDollarsToCents, convertDollarsToCentsReturnInt } from "../../../util/util";
+import { convertCentsToDollars, convertDollarsToCents, convertDollarsToCentsReturnInt, getProductQuantityAvailable } from "../../../util/util";
 import { ProductModifier } from "../../shared/productModifier";
 import { FiChevronDown, FiChevronRight } from "react-icons/fi";
 import { useEffect, useState } from "react";
@@ -11,11 +11,13 @@ import { Input } from "../../../tabin/components/input";
 import "./orderSummary.scss";
 import { CachedImage } from "../../../tabin/components/cachedImage";
 import { getCloudFrontDomainName } from "../../../private/aws-custom";
+import { useCart } from "../../../context/cart-context";
+import { useRestaurant } from "../../../context/restaurant-context";
 
 export const OrderSummary = (props: {
     products: ICartProduct[];
     onEditProduct: (product: ICartProduct, displayOrder: number) => void;
-    onRemoveProduct: (displayOrder: number) => void;
+    onRemoveProduct?: (displayOrder: number) => void;
     onUpdateProductQuantity: (displayOrder: number, productQuantity: number) => void;
     onApplyProductDiscount: (displayOrder: number, discount: number) => void;
 }) => {
@@ -56,10 +58,12 @@ const OrderItem = (props: {
     onEditProduct: (product: ICartProduct, displayOrder: number) => void;
     onUpdateProductQuantity: (displayOrder: number, productQuantity: number) => void;
     onApplyProductDiscount: (displayOrder: number, discount: number) => void;
-    onRemoveProduct: (displayOrder: number) => void;
+    onRemoveProduct?: (displayOrder: number) => void;
 }) => {
     const { product, displayOrder, onEditProduct, onUpdateProductQuantity, onApplyProductDiscount, onRemoveProduct } = props;
     const { isPOS } = useRegister();
+    const { menuProducts } = useRestaurant();
+    const { cartProductQuantitiesById } = useCart();
 
     const [displayPrice, setDisplayPrice] = useState(convertCentsToDollars(product.totalPrice * product.quantity - product.discount));
     const [originalPrice, setOriginalPrice] = useState(convertCentsToDollars(product.totalPrice * product.quantity));
@@ -156,8 +160,37 @@ const OrderItem = (props: {
         </div>
     );
 
+    const getProductMaxQuantity = (product: ICartProduct) => {
+        const productsTotalQuantityAvailable = menuProducts[product.id].totalQuantityAvailable;
+        const productMaxQuantityPerOrder = menuProducts[product.id].maxQuantityPerOrder;
+
+        if (productsTotalQuantityAvailable) {
+            return Math.max(
+                getProductQuantityAvailable(
+                    {
+                        id: product.id,
+                        totalQuantityAvailable: productsTotalQuantityAvailable,
+                    },
+                    cartProductQuantitiesById,
+                    productMaxQuantityPerOrder,
+                    product.quantity
+                ),
+                1
+            );
+        } else if (productMaxQuantityPerOrder) {
+            return productMaxQuantityPerOrder;
+        }
+    };
+
     const quantityStepper = !product.isPreSelectedProduct ? (
-        <Stepper count={parseInt(quantity, 10)} min={1} onUpdate={(count: number) => onChangeStepperQuantity(count)} size={32} />
+        <Stepper
+            count={parseInt(quantity, 10)}
+            min={1}
+            max={getProductMaxQuantity(product)}
+            onUpdate={(count: number) => onChangeStepperQuantity(count)}
+            size={32}
+            stepAmount={product.incrementAmount || 1}
+        />
     ) : (
         <div></div>
     );
@@ -193,7 +226,7 @@ const OrderItem = (props: {
                 <div className="text-center">
                     <div className="h2 text-primary mb-2">${displayPrice}</div>
                     {product.discount ? <div className="h3 text-primary mb-2 original-price">${originalPrice}</div> : <></>}
-                    {!props.product.isPreSelectedProduct && (
+                    {onRemoveProduct && !props.product.isPreSelectedProduct && (
                         <Button className="remove-button" onClick={() => onRemoveProduct(displayOrder)}>
                             Remove
                         </Button>
@@ -272,6 +305,9 @@ const OrderItemDetails = (props: {
                                                     <div className="mt-2"></div>
                                                     <ProductModifier
                                                         selectionIndex={m.productModifiers && m.productModifiers.length > 1 ? index + 1 : undefined}
+                                                        showNoExtraSelectionsMade={
+                                                            m.productModifiers?.some((pm) => pm.modifierGroups?.length) || false
+                                                        }
                                                         product={productModifier}
                                                     />
                                                 </div>

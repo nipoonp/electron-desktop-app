@@ -2,8 +2,21 @@ import { useState, useEffect, useRef } from "react";
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
 import { useNavigate } from "react-router-dom";
-import { convertBase64ToFile, convertCentsToDollars, convertProductTypesForPrint, filterPrintProducts, getOrderNumber } from "../../util/util";
-import { useMutation, useApolloClient } from "@apollo/client";
+import {
+    calculateTaxAmount,
+    convertBase64ToFile,
+    convertCentsToDollars,
+    convertProductTypesForPrint,
+    filterPrintProducts,
+    getCartProductUnitTotalPrice,
+    getOrderNumber,
+    isItemAvailable,
+    isItemSoldOut,
+    isProductQuantityAvailable,
+    isThemePreviewMode,
+    toLocalISOString,
+} from "../../util/util";
+import { useMutation } from "@apollo/client";
 import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
 import { GET_RESTAURANT } from "../../graphql/customQueries";
 import { FiArrowDownCircle } from "react-icons/fi";
@@ -14,6 +27,10 @@ import {
     IS3Object,
     IGET_THIRD_PARTY_ORDER_RESPONSE,
     IGET_RESTAURANT_REGISTER_PRINTER,
+    IGET_RESTAURANT_AVAILABILITY_RESTAURANT,
+    IGET_RESTAURANT_AVAILABILITY_CATEGORY,
+    IGET_RESTAURANT_AVAILABILITY_PRODUCT,
+    IGET_RESTAURANT_AVAILABILITY_MODIFIER,
 } from "../../graphql/customQueries";
 import {
     restaurantPath,
@@ -51,12 +68,12 @@ import { useUser } from "../../context/user-context";
 import { PageWrapper } from "../../tabin/components/pageWrapper";
 import { useSmartpay } from "../../context/smartpay-context";
 import { Button } from "../../tabin/components/button";
+import { toast } from "../../tabin/components/toast";
 import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
 import { useVerifone } from "../../context/verifone-context";
 import { useRegister } from "../../context/register-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { getPublicCloudFrontDomainName } from "../../private/aws-custom";
-import { toLocalISOString } from "../../util/util";
 import { useRestaurant } from "../../context/restaurant-context";
 import { UpSellProductModal } from "../modals/upSellProduct";
 import { Link } from "../../tabin/components/link";
@@ -78,14 +95,37 @@ import { Storage } from "aws-amplify";
 import awsconfig from "../../aws-exports";
 import { OrderScheduleDateTime } from "../../tabin/components/orderScheduleDateTime";
 import { useGetThirdPartyOrderResponseLazyQuery } from "../../hooks/useGetThirdPartyOrderResponseLazyQuery";
+import { useGetRestaurantAvailabilityLazyQuery } from "../../hooks/useGetRestaurantAvailabilityLazyQuery";
 
 import "./checkout.scss";
 import axios from "axios";
 import { R18MessageModal } from "../modals/r18MessageModal";
 import { useTyro } from "../../context/tyro-context";
 import { useMX51 } from "../../context/mx51-context";
+import { LoyaltyHeader } from "../shared/loyaltyHeader";
+import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 
 const logger = new Logger("checkout");
+
+type AvailabilityCheckResult = {
+    soldOutItems: string[];
+    productsToRemove: number[];
+    productsToUpdate: { index: number; product: ICartProduct }[];
+};
+
+type AvailabilityModifierGroupIndex = {
+    modifiersById: Map<string, IGET_RESTAURANT_AVAILABILITY_MODIFIER>;
+};
+
+type AvailabilityProductIndex = {
+    product: IGET_RESTAURANT_AVAILABILITY_PRODUCT;
+    modifierGroupsById: Map<string, AvailabilityModifierGroupIndex>;
+};
+
+type AvailabilityCategoryIndex = {
+    category: IGET_RESTAURANT_AVAILABILITY_CATEGORY;
+    productsById: Map<string, AvailabilityProductIndex>;
+};
 
 // Component
 export const Checkout = () => {
@@ -130,11 +170,14 @@ export const Checkout = () => {
         setIsShownOrderThresholdMessageModal,
         orderScheduledAt,
         updateOrderScheduledAt,
-        orderDetail,
         updateOrderDetail,
+        customerLoyaltyPoints,
+        userAppliedLoyaltyId,
+        cartProductQuantitiesById,
     } = useCart();
+
     const { restaurant, restaurantBase64Logo } = useRestaurant();
-    const { register, isPOS } = useRegister();
+    const { register, isPOS, isEftposMerchantNameLocked, lockEftposMerchantName } = useRegister();
     const { printReceipt, printEftposReceipt, printLabel } = useReceiptPrinter();
     const { user } = useUser();
     const { logError } = useErrorLogging();
@@ -158,6 +201,7 @@ export const Checkout = () => {
             logger.debug("update order mutation result: ", mutationResult);
         },
     });
+    const { getRestaurantDataAvailability } = useGetRestaurantAvailabilityLazyQuery();
 
     const { getThirdPartyOrderResponse } = useGetThirdPartyOrderResponseLazyQuery();
 
@@ -205,6 +249,7 @@ export const Checkout = () => {
 
     const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
     const [showModal, setShowModal] = useState<string>("");
+    const [showFullScreenSpinner, setShowFullScreenSpinner] = useState(false);
 
     useEffect(() => {
         const checkDivScrollable = () => {
@@ -313,6 +358,9 @@ export const Checkout = () => {
     if (!restaurant) navigate(beginOrderPath);
     if (!restaurant) throw "Restaurant is invalid";
 
+    const dineInAllowed = register.availableOrderTypes.includes(EOrderType.DINEIN);
+    const takeAwayAllowed = register.availableOrderTypes.includes(EOrderType.TAKEAWAY);
+
     const incrementRedirectTimer = (time: number) => {
         setPaymentOutcomeApprovedRedirectTimeLeft(time);
         transactionCompleteRedirectTime = time;
@@ -329,10 +377,12 @@ export const Checkout = () => {
             showAlert(
                 "Incomplete Payments",
                 "There have been partial payments made on this order. Are you sure you would like to cancel this order?",
-                () => {},
+                null,
                 () => {
                     cancelOrder();
                 },
+                "No",
+                "Yes",
             );
         } else {
             cancelOrder();
@@ -421,6 +471,7 @@ export const Checkout = () => {
                 totalPrice: product.price,
                 discount: 0,
                 isAgeRescricted: product.isAgeRescricted,
+                reportingGroup: product.reportingGroup,
                 image: product.image
                     ? {
                           key: product.image.key,
@@ -468,7 +519,160 @@ export const Checkout = () => {
         deleteProduct(displayOrder);
     };
 
+    const checkConditionsBeforeCreateOrder = (
+        latestRestaurant: IGET_RESTAURANT_AVAILABILITY_RESTAURANT | null | undefined,
+        cartProducts: ICartProduct[] | null,
+    ): AvailabilityCheckResult => {
+        if (!latestRestaurant || !cartProducts) {
+            return { soldOutItems: [], productsToRemove: [], productsToUpdate: [] };
+        }
+
+        const soldOutItems = new Set<string>();
+        const productsToRemove = new Set<number>();
+        const productsToUpdate: { index: number; product: ICartProduct }[] = [];
+
+        const categoriesById = new Map<string, AvailabilityCategoryIndex>();
+        for (const category of latestRestaurant.categories.items) {
+            const productsById = new Map<string, AvailabilityProductIndex>();
+
+            for (const productItem of category.products.items) {
+                const product = productItem.product;
+                const modifierGroupsById = new Map<string, AvailabilityModifierGroupIndex>();
+
+                for (const modifierGroupItem of product.modifierGroups.items) {
+                    const modifierGroup = modifierGroupItem.modifierGroup;
+                    const modifiersById = new Map(
+                        modifierGroup.modifiers.items.map((modifierItem) => [modifierItem.modifier.id, modifierItem.modifier]),
+                    );
+
+                    modifierGroupsById.set(modifierGroup.id, {
+                        modifiersById,
+                    });
+                }
+
+                productsById.set(product.id, {
+                    product,
+                    modifierGroupsById,
+                });
+            }
+
+            categoriesById.set(category.id, {
+                category,
+                productsById,
+            });
+        }
+
+        for (let index = 0; index < cartProducts.length; index++) {
+            const cartProduct = cartProducts[index];
+            let updatedProduct: ICartProduct | null = null;
+
+            const addSoldOutItem = (name: string) => {
+                soldOutItems.add(name);
+            };
+
+            const markProductForRemoval = (name: string) => {
+                addSoldOutItem(name);
+                productsToRemove.add(index);
+            };
+
+            const ensureUpdatedProduct = (): ICartProduct => {
+                if (!updatedProduct) {
+                    updatedProduct = JSON.parse(JSON.stringify(cartProduct)) as ICartProduct;
+                }
+                return updatedProduct;
+            };
+
+            const removeModifierGroupFromProduct = (modifierGroupId: string) => {
+                const productCopy = ensureUpdatedProduct();
+                productCopy.modifierGroups = productCopy.modifierGroups.filter((group) => group.id !== modifierGroupId);
+            };
+
+            if (!cartProduct.category) {
+                markProductForRemoval(cartProduct.name);
+                continue;
+            }
+
+            const categoryIndex = categoriesById.get(cartProduct.category.id);
+            if (!categoryIndex) {
+                markProductForRemoval(cartProduct.name);
+                continue;
+            }
+
+            const isCategorySoldOut = isItemSoldOut(categoryIndex.category.soldOut ?? undefined, categoryIndex.category.soldOutDate ?? undefined);
+            if (isCategorySoldOut) {
+                markProductForRemoval(cartProduct.name);
+                continue;
+            }
+
+            const productIndex = categoryIndex.productsById.get(cartProduct.id);
+            if (!productIndex) {
+                markProductForRemoval(cartProduct.name);
+                continue;
+            }
+
+            const product = productIndex.product;
+            const isProductSoldOut = isItemSoldOut(product.soldOut ?? undefined, product.soldOutDate ?? undefined);
+            const productAvailableQuantity = isProductSoldOut ? 0 : product.totalQuantityAvailable;
+            if (isProductSoldOut || (productAvailableQuantity !== null && productAvailableQuantity < cartProduct.quantity)) {
+                addSoldOutItem(product.name);
+                if (productAvailableQuantity !== null && productAvailableQuantity > 0) {
+                    const productCopy = ensureUpdatedProduct();
+                    productCopy.quantity = productAvailableQuantity;
+                } else {
+                    productsToRemove.add(index);
+                    continue;
+                }
+            }
+
+            for (const mg of cartProduct.modifierGroups) {
+                const modifierGroupIndex = productIndex.modifierGroupsById.get(mg.id);
+                if (!modifierGroupIndex) {
+                    removeModifierGroupFromProduct(mg.id);
+                    continue;
+                }
+
+                let shouldRemoveModifierGroup = false;
+                for (const m of mg.modifiers) {
+                    const modifier = modifierGroupIndex.modifiersById.get(m.id);
+                    if (!modifier) {
+                        addSoldOutItem(m.name);
+                        shouldRemoveModifierGroup = true;
+                        continue;
+                    }
+
+                    const isModifierSoldOut = isItemSoldOut(modifier.soldOut ?? undefined, modifier.soldOutDate ?? undefined);
+                    const modifierAvailableQuantity = isModifierSoldOut ? 0 : modifier.totalQuantityAvailable;
+                    if (isModifierSoldOut || (modifierAvailableQuantity !== null && modifierAvailableQuantity < m.quantity)) {
+                        addSoldOutItem(modifier.name);
+                        shouldRemoveModifierGroup = true;
+                    }
+                }
+
+                if (shouldRemoveModifierGroup) {
+                    removeModifierGroupFromProduct(mg.id);
+                }
+            }
+
+            const productToUpdate = !productsToRemove.has(index) ? (updatedProduct as ICartProduct | null) : null;
+            if (productToUpdate) {
+                productToUpdate.totalPrice = getCartProductUnitTotalPrice(productToUpdate);
+                productsToUpdate.push({ index, product: productToUpdate });
+            }
+        }
+
+        return {
+            soldOutItems: Array.from(soldOutItems),
+            productsToRemove: Array.from(productsToRemove),
+            productsToUpdate,
+        };
+    };
+
     const onClickOrderButton = async () => {
+        if (isThemePreviewMode()) {
+            toast.error("Ordering is disabled in theme preview mode.");
+            return;
+        }
+
         if (restaurant.orderThresholds?.enable && restaurant.orderThresholdMessage && !isShownOrderThresholdMessageModal) {
             setShowOrderThresholdMessageModal(true);
             return;
@@ -497,6 +701,46 @@ export const Checkout = () => {
 
             if (invalid) {
                 navigate(customerInformationPath);
+                return;
+            }
+        }
+
+        console.log("on submit order called with: ", register, register.checkConditionsBeforeCreateOrder);
+        // Check backend quantities before creating order
+        if (register.checkConditionsBeforeCreateOrder) {
+            setShowFullScreenSpinner(true);
+
+            const { data: restaurantData } = await getRestaurantDataAvailability({
+                variables: { restaurantId: restaurant.id },
+                fetchPolicy: "no-cache", //This is to stop the GetRestaurant API get double called. I think its somehting to do with useGetRestaurantQuery "cache-first" and "netowrk-first" fetchPolicy.
+            });
+            const { soldOutItems, productsToRemove, productsToUpdate } = checkConditionsBeforeCreateOrder(restaurantData?.getRestaurant, products);
+
+            setShowFullScreenSpinner(false);
+
+            if (soldOutItems.length > 0) {
+                setShowPaymentModal(false);
+                setPaymentModalState(EPaymentModalState.None);
+                setPaymentOutcomeOrderNumber(null);
+                showAlert(
+                    "Items Unavailable",
+                    `The following items are no longer available:\n${soldOutItems.join("\n")}`,
+                    null,
+                    () => {
+                        const removeIndexes = productsToRemove.slice().sort((a, b) => b - a);
+                        for (let i = 0; i < productsToUpdate.length; i++) {
+                            const update = productsToUpdate[i];
+                            if (removeIndexes.includes(update.index)) continue;
+                            updateProduct(update.index, update.product);
+                        }
+                        removeIndexes.forEach((removeIndex) => {
+                            deleteProduct(removeIndex);
+                        });
+                        navigate(checkoutPath);
+                    },
+                    null,
+                    "Review Order",
+                );
                 return;
             }
         }
@@ -593,6 +837,7 @@ export const Checkout = () => {
             //Not checking if its printerType receipt
             await printReceipt({
                 orderId: order.id,
+                country: order.country,
                 status: order.status,
                 printerType: printer.type,
                 printerAddress: printer.address,
@@ -603,12 +848,13 @@ export const Checkout = () => {
                 kitchenPrinterLarge: printer.kitchenPrinterLarge,
                 hidePreparationTime: printer.hidePreparationTime,
                 hideModifierGroupName: printer.hideModifierGroupName,
+                skipReceiptCutCommand: printer.skipReceiptCutCommand,
                 printReceiptForEachProduct: printer.printReceiptForEachProduct,
-                hideOrderType: register.availableOrderTypes.length === 1, //Don't show order type if only 1 is available
+                hideOrderType: dineInAllowed && takeAwayAllowed ? false : true, //Don't show order type if only 1 is available
                 hideModifierGroupsForCustomer: false,
                 restaurant: {
                     name: restaurant.name,
-                    address: `${restaurant.address.aptSuite || ""} ${restaurant.address.formattedAddress || ""}`,
+                    address: restaurant.address.receiptAddress || restaurant.address.formattedAddress,
                     gstNumber: restaurant.gstNumber,
                 },
                 restaurantLogoBase64: restaurantBase64Logo,
@@ -629,12 +875,20 @@ export const Checkout = () => {
                 products: convertProductTypesForPrint(productsToPrint),
                 eftposReceipt: order.eftposReceipt,
                 paymentAmounts: order.paymentAmounts,
+                deliveryProvider: order.deliveryProvider,
+                deliveryAddress: order.deliveryAddress,
+                deliveryNotes: order.deliveryNotes,
+                deliveryDistanceMeters: order.deliveryDistanceMeters,
+                deliveryFeeDiscount: order.deliveryFeeDiscount,
+                deliveryFee: order.deliveryFee,
+                deliveryTrackingUrl: order.deliveryTrackingUrl,
                 total: order.total,
                 surcharge: order.surcharge,
                 orderTypeSurcharge: order.orderTypeSurcharge,
                 eftposSurcharge: order.eftposSurcharge,
                 eftposTip: order.eftposTip,
-                discount: order.promotionId && order.discount ? order.discount : null,
+                discount: order.discount || null,
+                tax: order.tax,
                 subTotal: order.subTotal,
                 paid: order.paid,
                 //display payment required message if kiosk and paid cash
@@ -647,6 +901,7 @@ export const Checkout = () => {
                 placedAt: order.placedAt,
                 orderScheduledAt: order.orderScheduledAt,
                 preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
+                enableLoyalty: restaurant.enableLoyalty,
             });
         }
     };
@@ -693,7 +948,7 @@ export const Checkout = () => {
         eftposCardType?: EEftposTransactionOutcomeCardType,
         eftposSurcharge?: number,
         eftposTip?: number,
-    ): Promise<boolean> => {
+    ) => {
         //If parked order do not generate order number
         let orderNumber =
             parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
@@ -960,12 +1215,16 @@ export const Checkout = () => {
         eftposTip?: number,
     ): Promise<IGET_RESTAURANT_ORDER_FRAGMENT> => {
         const now = new Date();
+        if (isThemePreviewMode()) {
+            throw "Ordering is disabled in theme preview mode";
+        }
+
         if (!user) {
             await logError("Invalid user", JSON.stringify({ user: user }));
             throw "Invalid user";
         }
 
-        if (register.availableOrderTypes.length === 0) {
+        if (!dineInAllowed && !takeAwayAllowed) {
             await logError("Invalid available order types", JSON.stringify({ register: register }));
             throw "Invalid available order types";
         }
@@ -984,6 +1243,7 @@ export const Checkout = () => {
 
         try {
             variables = {
+                country: restaurant.country,
                 status: "NEW",
                 paid: paid,
                 type: orderType ? orderType : register.availableOrderTypes[0],
@@ -1018,6 +1278,8 @@ export const Checkout = () => {
                 discount: promotion ? promotion.discountedAmount : undefined,
                 promotionId: promotion ? promotion.promotion.id : undefined,
                 promotionType: promotion ? promotion.promotion.type : undefined,
+                loyaltyId: userAppliedLoyaltyId || undefined,
+                tax: Math.round(calculateTaxAmount(restaurant.country, subTotal + (eftposSurcharge || 0) + (eftposTip || 0))),
                 subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0),
                 preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                 registerId: register.id,
@@ -1045,6 +1307,7 @@ export const Checkout = () => {
             await logError(
                 "Error in createOrderMutation input",
                 JSON.stringify({
+                    country: restaurant.country,
                     status: "NEW",
                     paid: paid,
                     type: orderType ? orderType : register.availableOrderTypes[0],
@@ -1079,6 +1342,8 @@ export const Checkout = () => {
                     discount: promotion ? promotion.discountedAmount : undefined,
                     promotionId: promotion ? promotion.promotion.id : undefined,
                     promotionType: promotion ? promotion.promotion.type : undefined,
+                    loyaltyId: userAppliedLoyaltyId || undefined,
+                    tax: Math.round(calculateTaxAmount(restaurant.country, subTotal + (eftposSurcharge || 0) + (eftposTip || 0))),
                     subTotal: subTotal + (eftposSurcharge || 0) + (eftposTip || 0),
                     preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
                     registerId: register.id,
@@ -1120,6 +1385,10 @@ export const Checkout = () => {
 
                 if (product.category.image == null) {
                     delete product.category.image;
+                }
+
+                if (product.reportingGroup == null || product.reportingGroup === "") {
+                    delete product.reportingGroup;
                 }
 
                 // if (product.isAgeRescricted == null) {
@@ -1192,6 +1461,10 @@ export const Checkout = () => {
         try {
             let outcome: IEftposTransactionOutcome | null = null;
 
+            if (register.eftposProvider == EEftposProvider.VERIFONE && isEftposMerchantNameLocked()) {
+                throw "This register is locked because the EFTPOS merchant name did not match the receipt. Please update the merchant name and restart the app.";
+            }
+
             if (register.eftposProvider == EEftposProvider.SMARTPAY) {
                 let delayedShown = false;
 
@@ -1202,7 +1475,7 @@ export const Checkout = () => {
                     }
                 };
 
-                const pollingUrl = await smartpayCreateTransaction(amount, "Card.Purchase");
+                const pollingUrl = await smartpayCreateTransaction(amount);
                 outcome = await smartpayPollForOutcome(pollingUrl, delayed);
             } else if (register.eftposProvider == EEftposProvider.WINDCAVE) {
                 outcome = await windcaveCreateTransaction(
@@ -1222,6 +1495,17 @@ export const Checkout = () => {
                     restaurant.id,
                     setEftposMessage,
                 );
+
+                if (
+                    outcome.transactionOutcome === EEftposTransactionOutcome.Success &&
+                    outcome.eftposReceipt &&
+                    (!register.eftposMerchantName || !outcome.eftposReceipt.includes(register.eftposMerchantName))
+                ) {
+                    lockEftposMerchantName();
+                    toast.error(
+                        "The EFTPOS merchant name does not match the receipt. This register has been locked. Please update the merchant name and restart the app.",
+                    );
+                }
             } else if (register.eftposProvider == EEftposProvider.TYRO) {
                 const setEftposMessage = (message: string | null) => setEftposTransactionProcessMessage(message);
                 const setEftposQuestion = (question: ITyroEftposQuestion) => setEftposTransactionProcessQuestion(question);
@@ -1329,7 +1613,7 @@ export const Checkout = () => {
 
                 if (newTotalPaymentAmounts >= subTotal) {
                     //Passing paymentAmounts, payments via params so we send the most updated values
-                    const didSubmit = await onSubmitOrder(
+                    await onSubmitOrder(
                         true,
                         false,
                         newPaymentAmounts,
@@ -1618,23 +1902,35 @@ export const Checkout = () => {
 
             menuCategories.forEach((category) => {
                 if (category.availablePlatforms && !category.availablePlatforms.includes(register.type)) return;
+                const isCategoryAvailable = isItemAvailable(category.availability);
+                const isCategorySoldOut = isItemSoldOut(category.soldOut, category.soldOutDate);
 
-                category.products?.items.forEach((p) => {
-                    if (p.product.availablePlatforms && !p.product.availablePlatforms.includes(register.type)) return;
+                const isCateogryValid = !isCategorySoldOut && isCategoryAvailable;
 
-                    const matchingProduct = upSellCrossSellProducts.find((upSellProduct) => p.product.id === upSellProduct.id);
+                isCateogryValid &&
+                    category.products?.items.forEach((p) => {
+                        const isProductSoldOut = isItemSoldOut(p.product.soldOut, p.product.soldOutDate);
+                        const isProductAvailable = isItemAvailable(p.product.availability);
+                        const isQuantityAvailable = isProductQuantityAvailable(p.product, cartProductQuantitiesById, p.product.maxQuantityPerOrder);
 
-                    if (matchingProduct) {
-                        const isAlreadyAdded = upSellCrossSaleProductItems.some((item) => item.product.id === matchingProduct.id);
+                        const isProductValid = !isProductSoldOut && isProductAvailable && isCategoryAvailable && isQuantityAvailable;
 
-                        if (!isAlreadyAdded) {
-                            upSellCrossSaleProductItems.push({
-                                category: category,
-                                product: p.product,
-                            });
+                        if (!isProductValid) return;
+                        if (p.product.availablePlatforms && !p.product.availablePlatforms.includes(register.type)) return;
+
+                        const matchingProduct = upSellCrossSellProducts.find((upSellProduct) => p.product.id === upSellProduct.id);
+
+                        if (matchingProduct) {
+                            const isAlreadyAdded = upSellCrossSaleProductItems.some((item) => item.product.id === matchingProduct.id);
+
+                            if (!isAlreadyAdded) {
+                                upSellCrossSaleProductItems.push({
+                                    category: category,
+                                    product: p.product,
+                                });
+                            }
                         }
-                    }
-                });
+                    });
             });
 
             if (upSellCrossSaleProductItems.length === 0) return <></>;
@@ -1797,7 +2093,7 @@ export const Checkout = () => {
 
     const modalsAndSpinners = (
         <>
-            {/* <FullScreenSpinner show={loading} text={loadingMessage} /> */}
+            {showFullScreenSpinner && <FullScreenSpinner show={true} text="Processing your order..." />}
 
             {upSellCategoryModal()}
             {upSellProductModal()}
@@ -1948,7 +2244,7 @@ export const Checkout = () => {
         <>
             <div className={isPOS ? "mt-4" : "mt-10"}></div>
             {title}
-            {register && register.availableOrderTypes.length > 1 && restaurantOrderType}
+            {dineInAllowed && takeAwayAllowed ? restaurantOrderType : null}
             {buzzerNumber && <div className="mb-2">{restaurantBuzzerNumber}</div>}
             {tableNumber && <div className="mb-2">{restaurantTableNumber}</div>}
             {covers && <div className="mb-2">{restaurantCovers}</div>}
@@ -1980,11 +2276,14 @@ export const Checkout = () => {
                 />
             </div>
             <div className="mb-2"></div> */}
-            {promotion ? (
+            {customerLoyaltyPoints !== null && promotion ? (
                 <div className="h3 text-center mb-2">
-                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(
-                        promotion.discountedAmount,
-                    )}`}{" "}
+                    {`Loyalty Discount: -$${convertCentsToDollars(promotion.discountedAmount)}`}{" "}
+                    {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
+                </div>
+            ) : promotion ? (
+                <div className="h3 text-center mb-2">
+                    {`Discount${promotion.promotion.code ? ` (${promotion.promotion.code})` : ""}: -$${convertCentsToDollars(promotion.discountedAmount)}`}{" "}
                     {userAppliedPromotionCode && <Link onClick={removeUserAppliedPromotion}> (Remove) </Link>}
                 </div>
             ) : (
@@ -2030,6 +2329,7 @@ export const Checkout = () => {
         <>
             <PageWrapper>
                 <div className="checkout">
+                    {customerLoyaltyPoints !== null ? <LoyaltyHeader showRedeemButton={true} /> : <></>}
                     <div className="order-wrapper">
                         <div
                             ref={(ref) => setProductsWrapperElement(ref)}

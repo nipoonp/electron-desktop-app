@@ -43,14 +43,17 @@ jobs:
             - uses: actions/setup-node@v3.6.0
               with:
                   node-version: 16
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
             - name: Install windows build tools
               run: npm install --global --production windows-build-tools@4.0.0
             - name: Set npm config set msvs_version 2019 --global
               run: npm config set msvs_version 2019 --global
+            - name: Set npm config python 3.11
+              run: npm config set python "$(python -c 'import sys; print(sys.executable)')"
             - name: Install node-gyp
               run: npm install --global node-gyp@latest
-            - name: Install electron-builder
-              run: npm install --global electron-builder
             - name: Install dependencies
               run: npm install --legacy-peer-deps
             - name: Build native dependencies
@@ -60,7 +63,7 @@ jobs:
             - name: Build desktop
               run: npm run build:desktop
             - name: Release Electron app
-              run: electron-builder -w -p 'onTagOrDraft'
+              run: npm run release:windows
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
     # macos:

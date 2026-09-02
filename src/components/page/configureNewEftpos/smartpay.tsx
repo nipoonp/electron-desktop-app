@@ -10,7 +10,6 @@ import { IEftposTransactionOutcome } from "../../../model/model";
 export const SmartPay = () => {
     const [pairingCode, setPairingCode] = useState("");
     const [amount, setAmount] = useState(0);
-    const [transactionType, setTransactionType] = useState("Card.Purchase");
     const [showSpinner, setShowSpinner] = useState(false);
     const { sendPairingRequest, createTransaction, pollForOutcome } = useSmartpay();
 
@@ -43,7 +42,7 @@ export const SmartPay = () => {
         };
 
         try {
-            let pollingUrl = await createTransaction(amount, transactionType);
+            let pollingUrl = await createTransaction(amount);
 
             const res: IEftposTransactionOutcome = await pollForOutcome(pollingUrl, delayed);
 
@@ -86,19 +85,6 @@ export const SmartPay = () => {
                     placeholder="199"
                     onChange={(event: React.ChangeEvent<HTMLInputElement>) => setAmount(Number(event.target.value))}
                 />
-
-                <Select
-                    className="mb-4"
-                    label="Transaction Type:"
-                    name="transaction-type"
-                    value={transactionType}
-                    onChange={(event: React.ChangeEvent<HTMLSelectElement>) => setTransactionType(event.target.value)}
-                >
-                    <option value="Card.Purchase">Card.Purchase</option>
-                    <option value="Card.Refund">Card.Refund</option>
-                    <option value="QR.Merchant.Purchase">QR.Merchant.Purchase</option>
-                    <option value="QR.Refund">QR.Refund</option>
-                </Select>
 
                 <Button onClick={performEftposTransaction} disabled={showSpinner}>
                     Send Transaction

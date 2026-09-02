@@ -39,7 +39,7 @@ export const UpSellProductModal = (props: IUpSellProductModalProps) => {
         const isSoldOut = isItemSoldOut(product.soldOut, product.soldOutDate);
         const isProductAvailable = isItemAvailable(product.availability);
         const isCategoryAvailable = isItemAvailable(category.availability);
-        const isQuantityAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById);
+        const isQuantityAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById, product.maxQuantityPerOrder);
 
         const isValid = !isSoldOut && isProductAvailable && isCategoryAvailable && isQuantityAvailable;
 

@@ -8,19 +8,12 @@ import {
     IPrintReceiptOutput,
     IPrintSalesDataInput,
     EOrderStatus,
-    IEftposReceiptOutput,
-    IPrintReceiptDataInput,
+    EOrderType,
     IEftposReceipt,
+    ECountry,
 } from "./model";
 import usbPrinter from "@thiagoelg/node-printer";
-import { format } from "date-fns";
-
-export const taxRate = 0.15;
-
-export const calculateTaxAmount = (total: number) => {
-    const diff = total / (1 + taxRate);
-    return total - diff;
-};
+import { format, isToday } from "date-fns";
 
 export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
@@ -98,11 +91,46 @@ const getProductTotal = (product: ICartProduct) => {
     return price;
 };
 
-export const printCustomerReceipt = async (
-    order: IOrderReceipt,
-    receiptIndex?: number,
-    receiptTotalNumber?: number
-): Promise<IPrintReceiptOutput> => {
+const printDeliveryDetails = (printer, order: IOrderReceipt, options: { includeFee: boolean; includeTrackingQr: boolean }) => {
+    if (order.type !== EOrderType.DELIVERY) return;
+    const deliveryProviderLabel =
+        order.deliveryProvider === "RESTAURANT_MANAGED" ? "Restaurant delivery" : order.deliveryProvider === "UBER_DIRECT" ? "Uber delivery" : null;
+
+    printer.newLine();
+    printer.drawLine();
+    printer.alignCenter();
+    printer.bold(true);
+    printer.setTextSize(1, 1);
+    printer.println("DELIVERY");
+    printer.setTextNormal();
+    if (deliveryProviderLabel) printer.println(deliveryProviderLabel);
+    printer.bold(false);
+    printer.alignLeft();
+
+    if (order.deliveryProvider === "RESTAURANT_MANAGED" && order.deliveryAddress) printer.println(`Address: ${order.deliveryAddress}`);
+    if (order.deliveryProvider === "RESTAURANT_MANAGED" && order.deliveryNotes) printer.println(`Instructions: ${order.deliveryNotes}`);
+    if (order.deliveryProvider === "RESTAURANT_MANAGED" && order.deliveryDistanceMeters) {
+        printer.println(`Distance: ${(order.deliveryDistanceMeters / 1000).toFixed(1)} km`);
+    }
+    if (options.includeFee && order.deliveryFee != null) {
+        printer.println(`Delivery Fee: $${convertCentsToDollars(order.deliveryFee)}`);
+    }
+    if (order.deliveryProvider === "UBER_DIRECT" && options.includeTrackingQr) {
+        printer.newLine();
+        printer.alignCenter();
+        if (order.deliveryTrackingUrl) {
+            printer.println("Scan for Uber tracking");
+            printer.printQR(order.deliveryTrackingUrl);
+        } else {
+            printer.println("Uber tracking pending");
+        }
+        printer.alignLeft();
+    }
+
+    printer.drawLine();
+};
+
+export const printCustomerReceipt = async (order: IOrderReceipt, receiptIndex?: number, receiptTotalNumber?: number): Promise<IPrintReceiptOutput> => {
     let printer;
 
     if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -159,24 +187,26 @@ export const printCustomerReceipt = async (
 
     printer.newLine();
 
-    if (order.restaurant.gstNumber) printer.println(`GST: ${order.restaurant.gstNumber}`);
+    if (order.restaurant.gstNumber) {
+        if (order.country === ECountry.au) {
+            printer.println(`ABN: ${order.restaurant.gstNumber}`);
+        } else {
+            printer.println(`GST: ${order.restaurant.gstNumber}`);
+        }
+    }
 
     printer.println(order.restaurant.address);
     printer.newLine();
-    printer.println(`Order Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
+    printer.println(`Placed: ${format(new Date(order.placedAt), "dd MMM yyyy HH:mm aa")}`);
 
     if (order.orderScheduledAt) {
         printer.bold(true);
-        printer.underlineThick(true);
-        printer.println(`Order Scheduled: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
-        printer.underlineThick(false);
+        printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM yyyy HH:mm aa")}`);
         printer.bold(false);
     }
 
     if (order.customerInformation) {
-        printer.println(
-            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
-        );
+        printer.println(`Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`);
 
         if (order.customerInformation.signatureBase64) {
             const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
@@ -311,9 +341,7 @@ export const printCustomerReceipt = async (
                                     let mStr = "";
 
                                     if (changedQuantity < 0 && Math.abs(changedQuantity) == productModifier_modifier.preSelectedQuantity) {
-                                        mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${
-                                            productModifier_modifier.name
-                                        }`;
+                                        mStr = `(REMOVE) ${changedQuantity > 1 ? `${Math.abs(changedQuantity)}x ` : ""}${productModifier_modifier.name}`;
                                     } else {
                                         mStr = `${productModifier_modifier.quantity > 1 ? `${Math.abs(productModifier_modifier.quantity)}x ` : ""}${
                                             productModifier_modifier.name
@@ -351,7 +379,7 @@ export const printCustomerReceipt = async (
 
     printer.tableCustom([
         { text: "GST", align: "LEFT", width: 0.75 },
-        { text: `\$${convertCentsToDollars(calculateTaxAmount(order.total))}`, align: "RIGHT", width: 0.25 },
+        { text: `\$${convertCentsToDollars(order.tax)}`, align: "RIGHT", width: 0.25 },
     ]);
     order.discount &&
         printer.tableCustom([
@@ -501,8 +529,13 @@ export const printCustomerReceipt = async (
     //     });
     // }
 
-    printer.newLine();
-    printer.alignCenter();
+    if (order.enableLoyalty) {
+        printer.newLine();
+        printer.alignCenter();
+
+        printer.println("Don't miss out on your reward points!");
+        printer.printQR(`http://rewards.tabin.co.nz/${order.orderId}`);
+    }
 
     if (order.receiptFooterText) {
         printer.bold(true);
@@ -515,7 +548,10 @@ export const printCustomerReceipt = async (
         printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
     }
 
-    printer.partialCut();
+    if (order.skipReceiptCutCommand) {
+    } else {
+        printer.partialCut();
+    }
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -576,14 +612,20 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
     printer.bold(false);
     printer.newLine();
 
-    printer.println(`Order Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
+    printer.println(`Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
 
     if (order.orderScheduledAt) {
-        printer.invert(true);
+        printer.setTextSize(1, 1);
         printer.bold(true);
-        printer.println(`Order Scheduled: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+
+        if (isToday(new Date(order.orderScheduledAt))) {
+            printer.println(`Pickup: Today ${format(new Date(order.orderScheduledAt), "HH:mm aa")}`);
+        } else {
+            printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+        }
+
         printer.bold(false);
-        printer.invert(false);
+        printer.setTextNormal();
     }
 
     if (order.status === EOrderStatus.PARKED && order.notes) {
@@ -637,6 +679,8 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
         printer.setTextNormal();
         printer.bold(false);
     }
+
+    printDeliveryDetails(printer, order, { includeFee: false, includeTrackingQr: true });
 
     if (order.customerInformation) {
         printer.newLine();
@@ -752,7 +796,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
                                         } else {
                                             printer.print(", ");
                                         }
-                                    }
+                                    },
                                 );
                             });
                         } else {
@@ -843,7 +887,10 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
-    printer.partialCut();
+    if (order.skipReceiptCutCommand) {
+    } else {
+        printer.partialCut();
+    }
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -861,11 +908,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
     }
 };
 
-export const printKitchenReceiptSmall = async (
-    order: IOrderReceipt,
-    receiptIndex?: number,
-    receiptTotalNumber?: number
-): Promise<IPrintReceiptOutput> => {
+export const printKitchenReceiptSmall = async (order: IOrderReceipt, receiptIndex?: number, receiptTotalNumber?: number): Promise<IPrintReceiptOutput> => {
     let printer;
 
     if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -908,20 +951,24 @@ export const printKitchenReceiptSmall = async (
     printer.bold(false);
     printer.newLine();
 
-    printer.println(`Order Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
+    printer.println(`Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
 
     if (order.orderScheduledAt) {
-        printer.invert(true);
+        printer.setTextSize(1, 1);
         printer.bold(true);
-        printer.println(`Order Scheduled: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+
+        if (isToday(new Date(order.orderScheduledAt))) {
+            printer.println(`Pickup: Today ${format(new Date(order.orderScheduledAt), "HH:mm aa")}`);
+        } else {
+            printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+        }
+
         printer.bold(false);
-        printer.invert(false);
+        printer.setTextNormal();
     }
 
     if (order.customerInformation) {
-        printer.println(
-            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
-        );
+        printer.println(`Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`);
 
         if (order.customerInformation.signatureBase64) {
             const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
@@ -982,6 +1029,8 @@ export const printKitchenReceiptSmall = async (
         printer.println(`Ready in ${order.preparationTimeInMinutes} ${order.preparationTimeInMinutes > 1 ? "mins" : "min"}`);
         printer.bold(false);
     }
+
+    printDeliveryDetails(printer, order, { includeFee: false, includeTrackingQr: true });
 
     if (order.customerInformation) {
         printer.newLine();
@@ -1095,7 +1144,7 @@ export const printKitchenReceiptSmall = async (
                                         } else {
                                             printer.print(", ");
                                         }
-                                    }
+                                    },
                                 );
                             });
                         } else {
@@ -1197,7 +1246,10 @@ export const printKitchenReceiptSmall = async (
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
-    printer.partialCut();
+    if (order.skipReceiptCutCommand) {
+    } else {
+        printer.partialCut();
+    }
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -1215,11 +1267,7 @@ export const printKitchenReceiptSmall = async (
     }
 };
 
-export const printKitchenReceiptLarge = async (
-    order: IOrderReceipt,
-    receiptIndex?: number,
-    receiptTotalNumber?: number
-): Promise<IPrintReceiptOutput> => {
+export const printKitchenReceiptLarge = async (order: IOrderReceipt, receiptIndex?: number, receiptTotalNumber?: number): Promise<IPrintReceiptOutput> => {
     let printer;
 
     if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -1263,20 +1311,24 @@ export const printKitchenReceiptLarge = async (
     printer.bold(false);
     printer.newLine();
 
-    printer.println(`Order Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
+    printer.println(`Placed: ${format(new Date(order.placedAt), "dd MMM HH:mm aa")}`);
 
     if (order.orderScheduledAt) {
-        printer.invert(true);
+        printer.setTextSize(1, 1);
         printer.bold(true);
-        printer.println(`Order Scheduled: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+
+        if (isToday(new Date(order.orderScheduledAt))) {
+            printer.println(`Pickup: Today ${format(new Date(order.orderScheduledAt), "HH:mm aa")}`);
+        } else {
+            printer.println(`Pickup: ${format(new Date(order.orderScheduledAt), "dd MMM HH:mm aa")}`);
+        }
+
         printer.bold(false);
-        printer.invert(false);
+        printer.setTextNormal();
     }
 
     if (order.customerInformation) {
-        printer.println(
-            `Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`
-        );
+        printer.println(`Customer: ${order.customerInformation.firstName} ${order.customerInformation.email} ${order.customerInformation.phoneNumber}`);
 
         if (order.customerInformation.signatureBase64) {
             const signatureImageRemoveTag = order.customerInformation.signatureBase64.split(",")[1];
@@ -1339,6 +1391,8 @@ export const printKitchenReceiptLarge = async (
         printer.setTextNormal();
         printer.bold(false);
     }
+
+    printDeliveryDetails(printer, order, { includeFee: false, includeTrackingQr: true });
 
     if (order.customerInformation) {
         printer.newLine();
@@ -1462,7 +1516,7 @@ export const printKitchenReceiptLarge = async (
                                         }
                                         printer.setTextNormal();
                                         printer.bold(false);
-                                    }
+                                    },
                                 );
                             });
                         } else {
@@ -1561,7 +1615,10 @@ export const printKitchenReceiptLarge = async (
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
-    printer.partialCut();
+    if (order.skipReceiptCutCommand) {
+    } else {
+        printer.partialCut();
+    }
 
     try {
         if (order.printerType == ERegisterPrinterType.WIFI) {
@@ -1627,6 +1684,10 @@ export const printEftposReceipt = async (receiptDataInput: IEftposReceipt) => {
 };
 
 const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
+    const toCurrency = (value?: number | null) => (typeof value === "number" && value !== 0 ? `$${convertCentsToDollars(value)}` : null);
+
+    const addAmounts = (existing: number, incoming?: number | null) => existing + (typeof incoming === "number" ? incoming : 0);
+
     printer.alignCenter();
     printer.bold(true);
     printer.setTextSize(1, 1);
@@ -1638,32 +1699,166 @@ const printSalesByDayReceipt = (printer: any, data: IPrintSalesDataInput) => {
 
     printer.newLine();
     printer.println(`Date Range: ${format(new Date(data.startDate), "dd MMM yyyy")} - ${format(new Date(data.endDate), "dd MMM yyyy")}`);
-    printer.newLine();
     printer.println(`Printed On: ${format(new Date(), "dd MMM yyyy HH:mm aa")}`);
+    printer.drawLine();
     printer.newLine();
 
-    Object.entries(data.dailySales).forEach(([date, data]) => {
+    const runningTotals = {
+        totalAmount: 0,
+        totalQuantity: 0,
+        totalDiscountAmount: 0,
+        totalRefundAmount: 0,
+        totalPaymentAmounts: {
+            cash: 0,
+            eftpos: 0,
+            online: 0,
+            onAccount: 0,
+            uberEats: 0,
+            menulog: 0,
+            doordash: 0,
+            delivereasy: 0,
+            eftposSurcharge: 0,
+        },
+    };
+
+    const buildPaymentRows = (totals: IPrintSalesDataInput["dailySales"][string]["totalPaymentAmounts"]) =>
+        [
+            { label: "Cash", amount: totals.cash },
+            { label: "Eftpos", amount: totals.eftpos },
+            { label: "Online", amount: totals.online },
+            { label: "Uber Eats", amount: totals.uberEats },
+            { label: "Menu Log", amount: totals.menulog },
+            { label: "Doordash", amount: totals.doordash },
+            { label: "Delivereasy", amount: totals.delivereasy },
+            { label: "Card Surcharge", amount: totals.eftposSurcharge },
+        ].filter((row) => typeof row.amount === "number" && row.amount !== 0);
+
+    const dayEntries = Object.entries(data.dailySales);
+
+    dayEntries.forEach(([date, day]) => {
+        const discountAmount = day.totalDiscountAmount ?? 0;
+        const refundAmount = day.totalRefundAmount ?? 0;
+
         printer.bold(true);
-        printer.underline(true);
         printer.println(date);
-        printer.underline(false);
         printer.bold(false);
+        printer.drawLine();
 
-        printer.println(`Cash: $${convertCentsToDollars(data.totalPaymentAmounts.cash)}`);
-        printer.println(`Eftpos: $${convertCentsToDollars(data.totalPaymentAmounts.eftpos)}`);
-        printer.println(`Online: $${convertCentsToDollars(data.totalPaymentAmounts.online)}`);
-        printer.println(`Uber Eats: $${convertCentsToDollars(data.totalPaymentAmounts.uberEats)}`);
-        printer.println(`Menu Log: $${convertCentsToDollars(data.totalPaymentAmounts.menulog)}`);
-        printer.println(`Doordash: $${convertCentsToDollars(data.totalPaymentAmounts.doordash)}`);
-        printer.println(`Delivereasy: $${convertCentsToDollars(data.totalPaymentAmounts.delivereasy)}`);
+        const paymentRows = buildPaymentRows(day.totalPaymentAmounts);
+        if (paymentRows.length) {
+            printer.tableCustom([
+                { text: "Payment Type", width: 0.75, align: "LEFT", bold: true },
+                { text: "Amount", width: 0.25, align: "RIGHT", bold: true },
+            ]);
 
-        printer.bold(true);
-        printer.println(`Total: $${convertCentsToDollars(data.totalAmount)}`);
-        printer.println(`Number of Orders: ${data.totalQuantity}`);
+            paymentRows.forEach((row) => {
+                const formattedAmount = toCurrency(row.amount);
 
-        printer.bold(false);
+                if (!formattedAmount) return;
+
+                printer.tableCustom([
+                    { text: row.label, width: 0.75, align: "LEFT" },
+                    { text: formattedAmount, width: 0.25, align: "RIGHT" },
+                ]);
+            });
+        }
+
+        if (discountAmount || refundAmount) {
+            printer.newLine();
+            if (discountAmount) {
+                printer.tableCustom([
+                    { text: "Discounts", width: 0.75, align: "LEFT" },
+                    { text: `$${convertCentsToDollars(discountAmount)}`, width: 0.25, align: "RIGHT" },
+                ]);
+            }
+            if (refundAmount) {
+                printer.tableCustom([
+                    { text: "Refunds", width: 0.75, align: "LEFT" },
+                    { text: `$${convertCentsToDollars(refundAmount)}`, width: 0.25, align: "RIGHT" },
+                ]);
+            }
+        }
+
+        printer.drawLine();
+        printer.tableCustom([
+            { text: "Orders", width: 0.75, align: "LEFT", bold: true },
+            { text: `${day.totalQuantity}`, width: 0.25, align: "RIGHT", bold: true },
+        ]);
+        printer.tableCustom([
+            { text: "Total Sales", width: 0.75, align: "LEFT", bold: true },
+            { text: `$${convertCentsToDollars(day.totalAmount)}`, width: 0.25, align: "RIGHT", bold: true },
+        ]);
         printer.newLine();
+
+        runningTotals.totalAmount += day.totalAmount;
+        runningTotals.totalQuantity += day.totalQuantity;
+        runningTotals.totalDiscountAmount += discountAmount;
+        runningTotals.totalRefundAmount += refundAmount;
+        runningTotals.totalPaymentAmounts.cash = addAmounts(runningTotals.totalPaymentAmounts.cash, day.totalPaymentAmounts.cash);
+        runningTotals.totalPaymentAmounts.eftpos = addAmounts(runningTotals.totalPaymentAmounts.eftpos, day.totalPaymentAmounts.eftpos);
+        runningTotals.totalPaymentAmounts.online = addAmounts(runningTotals.totalPaymentAmounts.online, day.totalPaymentAmounts.online);
+        runningTotals.totalPaymentAmounts.uberEats = addAmounts(runningTotals.totalPaymentAmounts.uberEats, day.totalPaymentAmounts.uberEats);
+        runningTotals.totalPaymentAmounts.menulog = addAmounts(runningTotals.totalPaymentAmounts.menulog, day.totalPaymentAmounts.menulog);
+        runningTotals.totalPaymentAmounts.doordash = addAmounts(runningTotals.totalPaymentAmounts.doordash, day.totalPaymentAmounts.doordash);
+        runningTotals.totalPaymentAmounts.delivereasy = addAmounts(runningTotals.totalPaymentAmounts.delivereasy, day.totalPaymentAmounts.delivereasy);
+        runningTotals.totalPaymentAmounts.eftposSurcharge = addAmounts(
+            runningTotals.totalPaymentAmounts.eftposSurcharge,
+            day.totalPaymentAmounts.eftposSurcharge,
+        );
     });
+
+    if (dayEntries.length > 1) {
+        printer.bold(true);
+        printer.println("Summary");
+        printer.bold(false);
+        printer.drawLine();
+
+        const summaryRows = buildPaymentRows(runningTotals.totalPaymentAmounts);
+
+        if (summaryRows.length) {
+            printer.tableCustom([
+                { text: "Payment Type", width: 0.75, align: "LEFT", bold: true },
+                { text: "Amount", width: 0.25, align: "RIGHT", bold: true },
+            ]);
+
+            summaryRows.forEach((row) => {
+                const formattedAmount = toCurrency(row.amount);
+
+                if (!formattedAmount) return;
+
+                printer.tableCustom([
+                    { text: row.label, width: 0.75, align: "LEFT" },
+                    { text: formattedAmount, width: 0.25, align: "RIGHT" },
+                ]);
+            });
+        }
+
+        if (runningTotals.totalDiscountAmount || runningTotals.totalRefundAmount) {
+            printer.newLine();
+            if (runningTotals.totalDiscountAmount) {
+                printer.tableCustom([
+                    { text: "Discounts", width: 0.75, align: "LEFT" },
+                    { text: `$${convertCentsToDollars(runningTotals.totalDiscountAmount)}`, width: 0.25, align: "RIGHT" },
+                ]);
+            }
+            if (runningTotals.totalRefundAmount) {
+                printer.tableCustom([
+                    { text: "Refunds", width: 0.75, align: "LEFT" },
+                    { text: `$${convertCentsToDollars(runningTotals.totalRefundAmount)}`, width: 0.25, align: "RIGHT" },
+                ]);
+            }
+        }
+
+        printer.drawLine();
+        printer.tableCustom([
+            { text: "Total Orders", width: 0.75, align: "LEFT", bold: true },
+            { text: `${runningTotals.totalQuantity}`, width: 0.25, align: "RIGHT", bold: true },
+        ]);
+        printer.tableCustom([
+            { text: "Total Sales", width: 0.75, align: "LEFT", bold: true },
+            { text: `$${convertCentsToDollars(runningTotals.totalAmount)}`, width: 0.25, align: "RIGHT", bold: true },
+        ]);
+    }
 
     return printer;
 };

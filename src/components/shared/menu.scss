@@ -49,6 +49,23 @@
     }
 }
 
+.menu-tab-customer-display {
+    cursor: pointer;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+    font-weight: 500;
+
+    .menu-tab-icon-customer-display {
+        font-size: 24px;
+    }
+
+    .menu-tab-text-customer-display {
+        margin-left: 24px;
+    }
+}
+
 .menu-tab-exit {
     color: transparent;
     cursor: pointer;

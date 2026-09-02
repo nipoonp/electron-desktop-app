@@ -7,13 +7,11 @@ import {
     IGET_RESTAURANT_MODIFIER,
     IGET_RESTAURANT_MODIFIER_GROUP,
     IGET_RESTAURANT_PRODUCT,
-    ILIST_RESTAURANTS,
+    IGET_USER_RESTAURANT,
 } from "../graphql/customQueries";
 import { useGetRestaurantQuery } from "../hooks/useGetRestaurantQuery";
 import { getCloudFrontDomainName } from "../private/aws-custom";
-import { useListRestaurantsQuery } from "../hooks/useListRestaurantsQuery";
-import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
-import { getBase64FromUrlImage } from "../util/util";
+import { getBase64FromUrlImage, getThemePreviewRestaurantId } from "../util/util";
 
 interface IMENU_CATEGORIES {
     [index: string]: IGET_RESTAURANT_CATEGORY;
@@ -33,7 +31,7 @@ interface IMENU_MODIFIERS {
 
 type ContextProps = {
     selectRestaurant: (id: string | null) => void;
-    userRestaurants: ILIST_RESTAURANTS[] | null;
+    userRestaurants: IGET_USER_RESTAURANT[] | null;
     restaurant: IGET_RESTAURANT | null;
     setRestaurant: (restaurant: IGET_RESTAURANT) => void;
     restaurantProductImages: any;
@@ -63,7 +61,7 @@ const RestaurantContext = createContext<ContextProps>({
 
 const C = (props: {
     restaurantId: string;
-    userRestaurants: ILIST_RESTAURANTS[] | null;
+    userRestaurants: IGET_USER_RESTAURANT[] | null;
     selectRestaurant: (id: string | null) => void;
     children: React.ReactNode;
 }) => {
@@ -83,12 +81,12 @@ const C = (props: {
         setRestaurantLoading(getRestaurantLoading);
         setRestaurantError(getRestaurantError ? true : false);
 
-        if (getRestaurantData && getRestaurantData.logo) {
+        if (getRestaurantData && getRestaurantData.receiptLogo) {
             //Don't need to do await here. We do not need the base64 logo here instantly.
             getBase64FromUrlImage(
-                `${getCloudFrontDomainName()}/protected/${getRestaurantData.logo.identityPoolId}/${getRestaurantData.logo.key}`,
+                `${getCloudFrontDomainName()}/protected/${getRestaurantData.receiptLogo.identityPoolId}/${getRestaurantData.receiptLogo.key}`,
                 250,
-                "image/png"
+                "image/png",
             )
                 .then((base64Logo) => setRestaurantBase64Logo(base64Logo))
                 .catch((e) => console.error("Error getting logo base64", e));
@@ -165,9 +163,8 @@ const C = (props: {
                         <link
                             rel="stylesheet"
                             type="text/css"
-                            href={`${getCloudFrontDomainName()}/protected/${restaurant.customStyleSheet.identityPoolId}/${
-                                restaurant.customStyleSheet.key
-                            }`}
+                            data-custom-style-sheet="restaurant"
+                            href={`${getCloudFrontDomainName()}/protected/${restaurant.customStyleSheet.identityPoolId}/${restaurant.customStyleSheet.key}`}
                         />
                     )}
                 </>
@@ -177,37 +174,24 @@ const C = (props: {
 };
 
 const RestaurantProvider = (props: { children: React.ReactNode }) => {
-    const [userRestaurants, setUserRestaurants] = useState<ILIST_RESTAURANTS[] | null>(null);
+    const [userRestaurants, setUserRestaurants] = useState<IGET_USER_RESTAURANT[] | null>(null);
     const [selectedRestaurantId, setSelectedRestaurantId] = useState<string | null>(null);
 
     const { user } = useUser();
-
-    const { data: restaurants, error: restaurantError, loading: restaurantLoading } = useListRestaurantsQuery();
 
     useEffect(() => {
         if (!user) {
             setUserRestaurants(null);
             return;
         } else {
-            if (!restaurants) return;
             if (!user) return;
 
-            const newOwnRestaurants: ILIST_RESTAURANTS[] = [];
-            const newManageRestaurants: ILIST_RESTAURANTS[] = [];
+            const userOwnRestaurants: IGET_USER_RESTAURANT[] = user.restaurants.items || [];
+            const useManagerRestaurants: IGET_USER_RESTAURANT[] = user.userRestaurants.items.map((ur) => ur.restaurant);
 
-            restaurants.map((restaurant) => {
-                if (restaurant.restaurantManagerId === user.id) newOwnRestaurants.push(restaurant);
-
-                restaurant.users.items.forEach((u) => {
-                    if (u.user.id === user.id) {
-                        newManageRestaurants.push(restaurant);
-                    }
-                });
-            });
-
-            setUserRestaurants([...newOwnRestaurants, ...newManageRestaurants]);
+            setUserRestaurants([...userOwnRestaurants, ...useManagerRestaurants]);
         }
-    }, [user, restaurants]);
+    }, [user]);
 
     useEffect(() => {
         const storedSelectedRestaurantId = localStorage.getItem("selectedRestaurantId");
@@ -229,8 +213,12 @@ const RestaurantProvider = (props: { children: React.ReactNode }) => {
             });
     };
 
-    if (restaurantLoading) return <FullScreenSpinner show={true} text="Loading restaurants..." />;
-    if (restaurantError) return <div>Error! {restaurantError.message}</div>;
+    //In theme preview mode the restaurant comes from the url instead of the logged in user's restaurant list.
+    const themePreviewRestaurantId = getThemePreviewRestaurantId();
+
+    if (themePreviewRestaurantId) {
+        return <C restaurantId={themePreviewRestaurantId} userRestaurants={null} selectRestaurant={() => {}} {...props} />;
+    }
 
     if (selectedRestaurantId) {
         return <C restaurantId={selectedRestaurantId} userRestaurants={userRestaurants} selectRestaurant={selectRestaurant} {...props} />;

@@ -1,22 +1,19 @@
 import { useEffect, useState } from "react";
 import { FiExternalLink, FiX } from "react-icons/fi";
 import { useRestaurant } from "../../context/restaurant-context";
-import { ISubTab, ITab } from "../../model/model";
+import { ERegisterType, ISubTab, ITab } from "../../model/model";
 import config from "./../../../package.json";
 import { useRegister } from "../../context/register-context";
+import { BsDisplay } from "react-icons/bs";
 
 import "./menu.scss";
-
-let electron: any;
-let ipcRenderer: any;
-try {
-    electron = window.require("electron");
-    ipcRenderer = electron.ipcRenderer;
-} catch (e) {}
+import { useElectron } from "../../context/electron-context";
 
 export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) => void; onHideMenu: () => void }) => {
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
+    const { sendParent } = useElectron();
+
     const [selectedTabId, setSelectedTabId] = useState<string>("");
     const [subTabs, setSubTabs] = useState<ITab[] | null>(null);
 
@@ -49,8 +46,12 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
         }
     };
 
+    const selectOpenCustomerDisplay = () => {
+        sendParent("OPEN_CUSTOMER_DISPLAY");
+    };
+
     const selectTabExit = () => {
-        ipcRenderer && ipcRenderer.send("EXIT_ELECTRON_APP");
+        sendParent("EXIT_ELECTRON_APP");
     };
 
     return (
@@ -81,6 +82,14 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
                         ))}
                 </div>
             ))}
+            {/* {register.type === ERegisterType.POS && ( */}
+            <div onClick={() => selectOpenCustomerDisplay()} className="menu-tab-customer-display">
+                <div className="menu-tab-icon-customer-display">
+                    <BsDisplay height="20px" />
+                </div>
+                <div className="menu-tab-text-customer-display">Open Customer Display</div>
+            </div>
+            {/* )} */}
             <div onClick={() => selectTabExit()} className="menu-tab-exit">
                 <div className="menu-tab-icon-exit">
                     <FiExternalLink height="20px" />

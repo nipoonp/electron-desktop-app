@@ -8,6 +8,7 @@ import { Input } from "../../tabin/components/input";
 import { ModalV2 } from "../../tabin/components/modalv2";
 import { toast } from "../../tabin/components/toast";
 import { convertCentsToDollars } from "../../util/util";
+import { IGET_RESTAURANT_PROMOTION } from "../../graphql/customQueries";
 
 interface IPromotionCodeModalProps {
     isOpen: boolean;
@@ -16,7 +17,7 @@ interface IPromotionCodeModalProps {
 
 export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
     const { restaurant } = useRestaurant();
-    const { setUserAppliedPromotion, orderType, total } = useCart();
+    const { setUserAppliedPromotions, orderType, total } = useCart();
 
     const [promotionCode, setPromotionCode] = useState("");
     const [error, setError] = useState("");
@@ -41,31 +42,38 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
                 setError("Invalid promo code applied");
                 return;
             } else {
-                const appliedPromotion = getPromotionsByCodeData[0];
+                const appliedPromotions: IGET_RESTAURANT_PROMOTION[] = getPromotionsByCodeData;
+                const availablePromotions: IGET_RESTAURANT_PROMOTION[] = [];
 
-                if (appliedPromotion.totalAvailableUses !== null) {
-                    if (appliedPromotion.totalNumberUsed >= appliedPromotion.totalAvailableUses) {
-                        setError("This code has no more uses remaining. Please try another code");
-                        return;
+                appliedPromotions.forEach((appliedPromotion) => {
+                    let errorMessage = "";
+
+                    if (appliedPromotion.totalAvailableUses !== null) {
+                        if (appliedPromotion.totalNumberUsed >= appliedPromotion.totalAvailableUses) {
+                            errorMessage = "This code has no more uses remaining. Please try another code";
+                        }
                     }
-                }
 
-                if (!orderType || !appliedPromotion.availableOrderTypes) {
-                    setError("Invalid order type");
-                    return;
-                }
+                    if (!orderType || !appliedPromotion.availableOrderTypes) {
+                        errorMessage = "Invalid order type";
+                    }
 
-                if (!appliedPromotion.availableOrderTypes.includes(EOrderType[orderType])) {
-                    setError(`This code is not valid for ${orderType.toLowerCase()}. Please try another code`);
-                    return;
-                }
+                    if (orderType && !appliedPromotion.availableOrderTypes.includes(EOrderType[orderType])) {
+                        errorMessage = `This code is not valid for ${orderType.toLowerCase()}. Please try another code`;
+                    }
 
-                if (total < appliedPromotion.minSpend) {
-                    setError(`Minimum spend for this promotion is $${convertCentsToDollars(appliedPromotion.minSpend)}`);
-                    return;
-                }
+                    if (total < appliedPromotion.minSpend) {
+                        errorMessage = `Minimum spend for this promotion is $${convertCentsToDollars(appliedPromotion.minSpend)}`;
+                    }
 
-                const status = setUserAppliedPromotion(appliedPromotion); //Apply the first one if there are many with the same code.
+                    if (availablePromotions.length === 0 && errorMessage) {
+                        setError(errorMessage);
+                    } else {
+                        availablePromotions.push(appliedPromotion);
+                    }
+                });
+
+                const status = setUserAppliedPromotions(availablePromotions); //Apply the first one if there are many with the same code.
 
                 if (status == CheckIfPromotionValidResponse.UNAVAILABLE) {
                     setError("This code is currently unavailable. Please try again later");

@@ -5,12 +5,15 @@ import { UPDATE_REGISTER_KEY } from "../graphql/customMutations";
 import { ERegisterType, IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { getCloudFrontDomainName } from "../private/aws-custom";
 import { useRestaurant } from "./restaurant-context";
+import { getThemePreviewRegisterId, isThemePreviewMode } from "../util/util";
 
 type ContextProps = {
     register: IGET_RESTAURANT_REGISTER | null;
     isPOS: boolean | null;
     connectRegister: (key: string) => Promise<any>;
     disconnectRegister: (key: string) => Promise<any>;
+    isEftposMerchantNameLocked: () => boolean;
+    lockEftposMerchantName: () => void;
 };
 
 const RegisterContext = createContext<ContextProps>({
@@ -22,6 +25,8 @@ const RegisterContext = createContext<ContextProps>({
     disconnectRegister: (key: string) => {
         return new Promise(() => {});
     },
+    isEftposMerchantNameLocked: () => false,
+    lockEftposMerchantName: () => {},
 });
 
 const RegisterProvider = (props: { children: React.ReactNode }) => {
@@ -30,16 +35,28 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
 
     useEffect(() => {
+        //In theme preview mode the register comes from the url and does not need to be actively connected.
+        //Nothing is mutated so real kiosk connections are unaffected.
+        if (isThemePreviewMode()) {
+            const themePreviewRegisterId = getThemePreviewRegisterId();
+            const previewRegister =
+                restaurant?.registers.items.find((r) => r.id === themePreviewRegisterId) ?? restaurant?.registers.items[0] ?? null;
+
+            setRegister(previewRegister);
+            return;
+        }
+
         const storedRegisterKey = localStorage.getItem("registerKey");
 
-        let matchingRegister: IGET_RESTAURANT_REGISTER | null = null;
+        const matchingRegister = restaurant?.registers.items.find((r) => storedRegisterKey == r.id && r.active == true) ?? null;
 
-        restaurant &&
-            restaurant.registers.items.forEach((r) => {
-                if (storedRegisterKey == r.id && r.active == true) {
-                    matchingRegister = r;
-                }
-            });
+        if (matchingRegister) {
+            const key = `eftposMerchantMismatch:${matchingRegister.id}`;
+            const failedName = localStorage.getItem(key);
+            if (failedName != null && failedName !== (matchingRegister.eftposMerchantName || "")) {
+                localStorage.removeItem(key);
+            }
+        }
 
         setRegister(matchingRegister);
     }, [restaurant, registerKey]);
@@ -85,6 +102,14 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
         });
     };
 
+    const isEftposMerchantNameLocked = () => {
+        return register ? localStorage.getItem(`eftposMerchantMismatch:${register.id}`) != null : false;
+    };
+
+    const lockEftposMerchantName = () => {
+        if (register) localStorage.setItem(`eftposMerchantMismatch:${register.id}`, register.eftposMerchantName || "");
+    };
+
     return (
         <RegisterContext.Provider
             value={{
@@ -92,6 +117,8 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
                 isPOS: register ? register.type == ERegisterType.POS : null,
                 connectRegister: connectRegister,
                 disconnectRegister: disconnectRegister,
+                isEftposMerchantNameLocked: isEftposMerchantNameLocked,
+                lockEftposMerchantName: lockEftposMerchantName,
             }}
             children={
                 <>
@@ -100,9 +127,8 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
                         <link
                             rel="stylesheet"
                             type="text/css"
-                            href={`${getCloudFrontDomainName()}/protected/${register.customStyleSheet.identityPoolId}/${
-                                register.customStyleSheet.key
-                            }`}
+                            data-custom-style-sheet="register"
+                            href={`${getCloudFrontDomainName()}/protected/${register.customStyleSheet.identityPoolId}/${register.customStyleSheet.key}`}
                         />
                     )}
                 </>

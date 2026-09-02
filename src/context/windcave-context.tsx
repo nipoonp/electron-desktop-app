@@ -7,6 +7,7 @@ import { useRegister } from "./register-context";
 import { format } from "date-fns";
 import { useErrorLogging } from "./errorLogging-context";
 import { delay } from "../model/util";
+import { useElectron } from "./electron-context";
 
 var convert = require("xml-js");
 
@@ -165,12 +166,18 @@ type ContextProps = {
         key: string,
         amount: number,
         transactionType: string,
-        action?: string
+        action?: string,
     ) => Promise<IEftposTransactionOutcome>;
+    refundTransaction: (stationId: string, user: string, key: string, amount: number, action?: string) => Promise<IEftposTransactionOutcome>;
 };
 
 const WindcaveContext = createContext<ContextProps>({
     createTransaction: (stationId: string, user: string, key: string, amount: number, transactionType: string, action?: string) => {
+        return new Promise(() => {
+            console.log("");
+        });
+    },
+    refundTransaction: (stationId: string, user: string, key: string, amount: number, action?: string) => {
         return new Promise(() => {
             console.log("");
         });
@@ -182,6 +189,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
     const { restaurant } = useRestaurant();
     const { register } = useRegister();
     const { logError } = useErrorLogging();
+    const { checkParentView } = useElectron();
 
     const logs = useRef<string>(initialLogs);
 
@@ -241,13 +249,49 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         logs.current += format(new Date(), "dd/MM/yy HH:mm:ss.SSS ") + log + "\n";
     };
 
+    const postWindcaveXML = async (xml: string) => {
+        const parentView = checkParentView();
+
+        if (parentView.reactNativeWebView) {
+            const windcaveRequest = typeof window !== "undefined" ? (window as any).windcaveRequest : undefined;
+            if (windcaveRequest) {
+                const res = await windcaveRequest(xml, {
+                    url: BASE_URL,
+                    method: "POST",
+                    headers: { "Content-Type": "application/xml" },
+                    responseType: "text",
+                });
+
+                if (!res.ok) {
+                    const status = res.status ? ` (${res.status})` : "";
+                    throw new Error(res.error || `Windcave request failed${status}`);
+                }
+
+                return {
+                    status: res.status ?? 200,
+                    data: res.data,
+                    headers: res.headers,
+                    statusText: res.statusText,
+                };
+            }
+
+            throw new Error("Windcave bridge not available in WebView");
+        }
+
+        return axios.post(BASE_URL, xml, {
+            headers: {
+                "Content-Type": "application/xml",
+            },
+        });
+    };
+
     const sendTransaction = async (
         stationId: string,
         user: string,
         key: string,
         amount: number,
         transactionType: string,
-        action: string = ACTION
+        action: string = ACTION,
     ): Promise<string> => {
         if (!amount) {
             throw "The amount has to be supplied";
@@ -305,11 +349,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         const paramsXML = convert.json2xml(params, { compact: true, spaces: 4 });
 
         try {
-            const response = await axios.post(BASE_URL, paramsXML, {
-                headers: {
-                    "Content-Type": "application/xml",
-                },
-            });
+            const response = await postWindcaveXML(paramsXML);
 
             console.log(`Transaction POST response received (${response.status}) ${response.data}`);
             addToLogs(JSON.stringify({ url: BASE_URL, data: response }));
@@ -350,7 +390,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         action: string = ACTION,
         name: string,
         val: string,
-        txnRef: string
+        txnRef: string,
     ): Promise<string> => {
         const params = {
             Scr: {
@@ -385,11 +425,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         const paramsXML = convert.json2xml(params, { compact: true, spaces: 4 });
 
         try {
-            const response = await axios.post(BASE_URL, paramsXML, {
-                headers: {
-                    "Content-Type": "application/xml",
-                },
-            });
+            const response = await postWindcaveXML(paramsXML);
 
             console.log(`Transaction POST response received (${response.status}) ${response.data}`);
             addToLogs(JSON.stringify({ url: BASE_URL, data: response }));
@@ -418,7 +454,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         user: string,
         key: string,
         txnRef: string,
-        action: string = ACTION
+        action: string = ACTION,
     ): Promise<IEftposTransactionOutcome> => {
         const interval = 2 * 1000; // 2 seconds
         const timeout = 3 * 60 * 1000; // 3 minutes
@@ -453,11 +489,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
 
                 const paramsXML = convert.json2xml(params, { compact: true, spaces: 4 });
 
-                const response = await axios.post(BASE_URL, paramsXML, {
-                    headers: {
-                        "Content-Type": "application/xml",
-                    },
-                });
+                const response = await postWindcaveXML(paramsXML);
 
                 console.log(`Transaction GET response received (${response.status}) ${response.data}`);
                 addToLogs(JSON.stringify({ url: BASE_URL, data: response }));
@@ -592,7 +624,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                             restaurantId: restaurant ? restaurant.id : "",
                             restaurantName: restaurant ? restaurant.name : "",
                             logs: logs,
-                        })
+                        }),
                     );
                     addToLogs(`Retrying (${retryCount + 1}/${maxRetryCount})...`);
 
@@ -608,7 +640,7 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
                             restaurantId: restaurant ? restaurant.id : "",
                             restaurantName: restaurant ? restaurant.name : "",
                             logs: logs,
-                        })
+                        }),
                     );
 
                     reject(e.message || e || "There was an unknown error. Please retry or contact Windcave support.");
@@ -625,14 +657,14 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         key: string,
         amount: number,
         transactionType: string,
-        action: string = ACTION
+        action: string = ACTION,
     ): Promise<IEftposTransactionOutcome> => {
         return new Promise(async (resolve, reject) => {
             try {
                 resetVariables();
 
                 const txnRef = await sendTransaction(stationId, user, key, amount, transactionType, action);
-                const outcome: IEftposTransactionOutcome = await pollForOutcome(stationId, user, key, txnRef);
+                const outcome: IEftposTransactionOutcome = await pollForOutcome(stationId, user, key, txnRef, action);
 
                 resolve(outcome);
             } catch (e) {
@@ -646,10 +678,37 @@ const WindcaveProvider = (props: { children: React.ReactNode }) => {
         });
     };
 
+    const refundTransaction = (
+        stationId: string,
+        user: string,
+        key: string,
+        amount: number,
+        action: string = ACTION,
+    ): Promise<IEftposTransactionOutcome> => {
+        return new Promise(async (resolve, reject) => {
+            try {
+                resetVariables();
+
+                const txnRef = await sendTransaction(stationId, user, key, amount, "Refund", action);
+                const outcome: IEftposTransactionOutcome = await pollForOutcome(stationId, user, key, txnRef, action);
+
+                resolve(outcome);
+            } catch (e) {
+                console.log("Error", e);
+                addToLogs(`Error ${e}`);
+
+                reject(e);
+            } finally {
+                await createEftposTransactionLog(restaurant ? restaurant.id : "", "Refund", amount);
+            }
+        });
+    };
+
     return (
         <WindcaveContext.Provider
             value={{
                 createTransaction: createTransaction,
+                refundTransaction: refundTransaction,
             }}
             children={props.children}
         />

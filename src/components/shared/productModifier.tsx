@@ -7,28 +7,45 @@ import "./productModifier.scss";
 
 export const ProductModifier = (props: {
     selectionIndex?: number;
-    product: ICartProduct | IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT;
+    showNoExtraSelectionsMade: boolean;
+    product: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT;
     onEditSelections?: () => void;
 }) => {
     const { product, selectionIndex, onEditSelections } = props;
 
     return (
-        <div className="modifier-product-modifier-wrapper">
-            {selectionIndex && <div className="mb-2 text-underline">Selection {selectionIndex}</div>}
+        <>
             {product.modifierGroups && product.modifierGroups.length > 0 ? (
-                <OrderItemDetails modifierGroups={product.modifierGroups} />
+                <div className="modifier-product-modifier-wrapper">
+                    {selectionIndex && <div className="mb-2 text-underline">Selection {selectionIndex}</div>}
+                    <OrderItemDetails modifierGroups={product.modifierGroups} />
+                    {onEditSelections && (
+                        <>
+                            <div className="separator-2"></div>
+                            <Link className="product-modifier-edit-selections-link" onClick={onEditSelections}>
+                                Edit Selections
+                            </Link>
+                        </>
+                    )}
+                </div>
             ) : (
-                <div>No extra selections made</div>
-            )}
-            {onEditSelections && (
                 <>
-                    <div className="separator-2"></div>
-                    <Link className="product-modifier-edit-selections-link" onClick={onEditSelections}>
-                        Edit Selections
-                    </Link>
+                    {props.showNoExtraSelectionsMade && (
+                        <div className="modifier-product-modifier-wrapper">
+                            No extra selections made
+                            {onEditSelections && (
+                                <>
+                                    <div className="separator-2"></div>
+                                    <Link className="product-modifier-edit-selections-link" onClick={onEditSelections}>
+                                        Edit Selections
+                                    </Link>
+                                </>
+                            )}
+                        </div>
+                    )}
                 </>
             )}
-        </div>
+        </>
     );
 };
 

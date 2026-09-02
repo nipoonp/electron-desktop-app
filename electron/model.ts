@@ -1,3 +1,8 @@
+export enum ECountry {
+    nz = "nz",
+    au = "au",
+}
+
 export enum EOrderStatus {
     NEW = "NEW",
     COMPLETED = "COMPLETED",
@@ -9,6 +14,8 @@ export enum EOrderStatus {
 export enum EOrderType {
     DINEIN = "DINEIN",
     TAKEAWAY = "TAKEAWAY",
+    PICKUP = "PICKUP",
+    DELIVERY = "DELIVERY",
 }
 
 export enum ERegisterPrinterType {
@@ -41,6 +48,8 @@ export interface ICartProduct {
     discount: number;
     image: IS3Object | null;
     quantity: number;
+    incrementAmount: number;
+    maxQuantityPerOrder: number;
     notes: string | null;
     category: ICartCategory | null; //Product modifier do not have category
     modifierGroups: ICartModifierGroup[];
@@ -81,6 +90,7 @@ export interface IPreSelectedModifiers {
 
 export interface IOrderReceipt {
     orderId: string;
+    country: string;
     status: EOrderStatus;
     printerType: ERegisterPrinterType;
     printerAddress: string;
@@ -91,6 +101,7 @@ export interface IOrderReceipt {
     kitchenPrinterLarge: boolean | null;
     hidePreparationTime: boolean | null;
     hideModifierGroupName: boolean | null;
+    skipReceiptCutCommand: boolean | null;
     printReceiptForEachProduct: boolean | null;
     hideOrderType: boolean;
     hideModifierGroupsForCustomer: boolean | null;
@@ -117,8 +128,16 @@ export interface IOrderReceipt {
     products: ICartProduct[];
     eftposReceipt: string | null;
     paymentAmounts: IOrderPaymentAmounts | null;
+    deliveryProvider?: "UBER_DIRECT" | "RESTAURANT_MANAGED" | null;
+    deliveryAddress?: string | null;
+    deliveryNotes?: string | null;
+    deliveryDistanceMeters?: number | null;
+    deliveryFeeDiscount?: number | null;
+    deliveryFee?: number | null;
+    deliveryTrackingUrl?: string | null;
     total: number;
     discount: number | null;
+    tax: number;
     subTotal: number;
     paid: boolean;
     surcharge: number | null;
@@ -133,6 +152,7 @@ export interface IOrderReceipt {
     placedAt: string;
     orderScheduledAt: string | null;
     preparationTimeInMinutes: number | null;
+    enableLoyalty: boolean | null;
 }
 
 export interface IEftposReceipt {
@@ -147,6 +167,8 @@ export interface IPrintSalesDataInputDailySales {
     [date: string]: {
         totalAmount: number;
         totalQuantity: number;
+        totalDiscountAmount: number;
+        totalRefundAmount: number;
         totalPaymentAmounts: IOrderPaymentAmounts;
     };
 }
@@ -197,6 +219,7 @@ export interface IOrderPaymentAmounts {
     menulog: number;
     doordash: number;
     delivereasy: number;
+    eftposSurcharge?: number;
 }
 
 export interface IPrintReceiptDataOutput {

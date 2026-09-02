@@ -9,6 +9,7 @@ import {
     isItemAvailable,
     isItemSoldOut,
     isModifierQuantityAvailable,
+    isOrderTypeAllowed,
     isProductQuantityAvailable,
 } from "../../util/util";
 import { FiArrowDownCircle } from "react-icons/fi";
@@ -63,17 +64,21 @@ export const ProductModal = (props: {
 }) => {
     const { register } = useRegister();
     const { category, product, currentSelectedProductModifier, isOpen, onAddProduct, onUpdateProduct, onClose, editProduct } = props;
-    const { cartProductQuantitiesById } = useCart();
+    const { cartProductQuantitiesById, orderType } = useCart();
 
     const getPreSelectedModifiers = () => {
         //Set preselected modifiers logic
         let newOrderedModifiers: IPreSelectedModifiers = {};
 
+        const getPreSelectedModifierQuantity = (preSelectedQuantity: number, choiceDuplicate: number, choiceMax: number) => {
+            return Math.min(preSelectedQuantity, choiceDuplicate, choiceMax);
+        };
+
         product.modifierGroups &&
             product.modifierGroups.items.forEach((modifierGroupLink) => {
                 modifierGroupLink.modifierGroup.modifiers &&
                     modifierGroupLink.modifierGroup.modifiers.items.map((modifierLink) => {
-                        if (modifierLink.preSelectedQuantity) {
+                        if (modifierLink.modifier.preSelectedQuantity) {
                             if (newOrderedModifiers[modifierGroupLink.modifierGroup.id] === undefined) {
                                 newOrderedModifiers[modifierGroupLink.modifierGroup.id] = [];
                             }
@@ -87,8 +92,16 @@ export const ProductModal = (props: {
                                         name: modifierLink.modifier.name,
                                         kitchenName: modifierLink.modifier.kitchenName,
                                         price: modifierLink.modifier.price,
-                                        preSelectedQuantity: modifierLink.preSelectedQuantity,
-                                        quantity: modifierLink.preSelectedQuantity,
+                                        preSelectedQuantity: getPreSelectedModifierQuantity(
+                                            modifierLink.modifier.preSelectedQuantity,
+                                            modifierGroupLink.modifierGroup.choiceDuplicate,
+                                            modifierGroupLink.modifierGroup.choiceMax
+                                        ),
+                                        quantity: getPreSelectedModifierQuantity(
+                                            modifierLink.modifier.preSelectedQuantity,
+                                            modifierGroupLink.modifierGroup.choiceDuplicate,
+                                            modifierGroupLink.modifierGroup.choiceMax
+                                        ),
                                         productModifiers: null,
                                         image: modifierLink.modifier.image
                                             ? {
@@ -215,7 +228,7 @@ export const ProductModal = (props: {
 
         price = price * quantity;
         setTotalDisplayPrice(price);
-    }, [orderedModifiers, quantity]);
+    }, [orderedModifiers, quantity, orderType]);
 
     const onModalClose = () => {
         onClose();
@@ -714,7 +727,7 @@ export const ProductModal = (props: {
                         choiceDuplicate: mg.modifierGroup.choiceDuplicate,
                         choiceMin: mg.modifierGroup.choiceMin,
                         choiceMax: mg.modifierGroup.choiceMax,
-                        hideForCustomer: mg.hideForCustomer,
+                        hideForCustomer: mg.modifierGroup.hideForCustomer,
                         modifiers: orderedModifiers[mg.modifierGroup.id],
                     });
                 }
@@ -725,9 +738,10 @@ export const ProductModal = (props: {
             name: product.name,
             kitchenName: product.kitchenName,
             price: product.price,
-            totalPrice: totalDisplayPrice / quantity,
+            totalPrice: Math.round(totalDisplayPrice / quantity),
             discount: 0,
             isAgeRescricted: product.isAgeRescricted,
+            reportingGroup: product.reportingGroup,
             image: product.image
                 ? {
                       key: product.image.key,
@@ -737,6 +751,8 @@ export const ProductModal = (props: {
                   }
                 : null,
             quantity: quantity,
+            incrementAmount: product.incrementAmount,
+            maxQuantityPerOrder: product.maxQuantityPerOrder,
             notes: notes || null,
             category: {
                 id: category.id,
@@ -787,8 +803,9 @@ export const ProductModal = (props: {
             <div className="separator-6"></div>
             {product.modifierGroups &&
                 product.modifierGroups.items.map((mg) => {
-                    if (mg.hideForCustomer) return;
+                    if (mg.modifierGroup.hideForCustomer) return;
                     if (register && mg.modifierGroup.availablePlatforms && !mg.modifierGroup.availablePlatforms.includes(register.type)) return;
+                    if (!isOrderTypeAllowed(orderType, mg.modifierGroup.availableOrderTypes)) return;
 
                     return (
                         <>
@@ -846,22 +863,36 @@ export const ProductModal = (props: {
     );
 
     const getProductFooterMaxQuantity = () => {
-        if (!product.totalQuantityAvailable) return;
-
-        return getProductQuantityAvailable(
-            {
-                id: product.id,
-                totalQuantityAvailable: product.totalQuantityAvailable,
-            },
-            cartProductQuantitiesById
-        );
+        if (product.totalQuantityAvailable) {
+            return Math.max(
+                getProductQuantityAvailable(
+                    {
+                        id: product.id,
+                        totalQuantityAvailable: product.totalQuantityAvailable,
+                    },
+                    cartProductQuantitiesById,
+                    product.maxQuantityPerOrder,
+                    editProduct ? editProduct.quantity : 0
+                ),
+                1
+            );
+        } else if (product.maxQuantityPerOrder) {
+            return product.maxQuantityPerOrder;
+        }
     };
 
     const footer = (
         <>
             {!currentSelectedProductModifier && (
                 <div className="stepper mb-4">
-                    <Stepper count={quantity} min={1} max={getProductFooterMaxQuantity()} onUpdate={onUpdateQuantity} size={48} />
+                    <Stepper
+                        count={quantity}
+                        min={1}
+                        max={getProductFooterMaxQuantity()}
+                        onUpdate={onUpdateQuantity}
+                        size={48}
+                        stepAmount={product.incrementAmount || 1}
+                    />
                 </div>
             )}
             <div className="footer-buttons-container">
@@ -891,19 +922,19 @@ export const ProductModal = (props: {
             <div ref={(ref) => setProductsWrapperElement(ref)} className="product" id="productsWrapperScrollModel">
                 <div className="mt-11" />
                 <div className="product-header">
-                    <div className="image-wrapper">
-                        {product.imageUrl ? (
+                    {product.imageUrl ? (
+                        <div className="image-wrapper">
                             <CachedImage url={`${product.imageUrl}`} className="image" alt="product-image" />
-                        ) : product.image ? (
-                            <>
-                                <CachedImage
-                                    className="image"
-                                    url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
-                                    alt="product-image"
-                                />
-                            </>
-                        ) : null}
-                    </div>
+                        </div>
+                    ) : product.image ? (
+                        <div className="image-wrapper">
+                            <CachedImage
+                                className="image"
+                                url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
+                                alt="product-image"
+                            />
+                        </div>
+                    ) : null}
                     <div>
                         <div className="h1 mb-4 name">
                             {currentSelectedProductModifier ? currentSelectedProductModifier.selectedModifier.name : product.name}
@@ -1025,7 +1056,7 @@ export const ModifierGroup = (props: {
         scrollToDiv,
     } = props;
     const { register } = useRegister();
-    const { cartProductQuantitiesById, cartModifierQuantitiesById } = useCart();
+    const { cartProductQuantitiesById, cartModifierQuantitiesById, orderType } = useCart();
 
     const [collapsed, setCollapsed] = useState<boolean>(modifierGroup.collapsedByDefault ? modifierGroup.collapsedByDefault : false);
     const [subModifierGroups, setSubModifierGroups] = useState<string[]>([]);
@@ -1070,7 +1101,11 @@ export const ModifierGroup = (props: {
         if (modifier.productModifier) {
             const isSoldOut = isItemSoldOut(modifier.productModifier.soldOut, modifier.productModifier.soldOutDate);
             const isAvailable = isItemAvailable(modifier.productModifier.availability);
-            const isQuantityAvailable = isProductQuantityAvailable(modifier.productModifier, cartProductQuantitiesById);
+            const isQuantityAvailable = isProductQuantityAvailable(
+                modifier.productModifier,
+                cartProductQuantitiesById,
+                modifier.productModifier.maxQuantityPerOrder
+            );
 
             return !isSoldOut && isAvailable && isQuantityAvailable;
         } else {
@@ -1181,6 +1216,7 @@ export const ModifierGroup = (props: {
                                 .sort((a, b) => (modifierGroup.alphabeticalSorting ? a.modifier.name.localeCompare(b.modifier.name) : 0))
                                 .map((m) => {
                                     if (register && m.modifier.availablePlatforms && !m.modifier.availablePlatforms.includes(register.type)) return;
+                                    if (!isOrderTypeAllowed(orderType, m.modifier.availableOrderTypes)) return;
                                     if (
                                         (selectedSubModifierGroup &&
                                             m.modifier.subModifierGroups &&
@@ -1206,20 +1242,20 @@ export const ModifierGroup = (props: {
                                                 productModifier: IGET_RESTAURANT_PRODUCT
                                             ) => props.onEditSelectionsProductModifier(index, selectedModifier, productModifier)}
                                             onCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                                onCheckingModifier(selectedModifier, m.preSelectedQuantity);
+                                                onCheckingModifier(selectedModifier, m.modifier.preSelectedQuantity);
                                             }}
                                             onUnCheckingModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                                onUnCheckingModifier(selectedModifier, m.preSelectedQuantity);
+                                                onUnCheckingModifier(selectedModifier, m.modifier.preSelectedQuantity);
                                             }}
                                             onChangeModifierQuantity={(
                                                 selectedModifier: IGET_RESTAURANT_MODIFIER,
                                                 isIncremented: boolean,
                                                 quantity: number
                                             ) => {
-                                                onChangeModifierQuantity(selectedModifier, m.preSelectedQuantity, isIncremented, quantity);
+                                                onChangeModifierQuantity(selectedModifier, m.modifier.preSelectedQuantity, isIncremented, quantity);
                                             }}
                                             onSelectRadioModifier={(selectedModifier: IGET_RESTAURANT_MODIFIER) => {
-                                                onSelectRadioModifier(selectedModifier, m.preSelectedQuantity);
+                                                onSelectRadioModifier(selectedModifier, m.modifier.preSelectedQuantity);
                                             }}
                                             modifierQuantity={modifierQuantity(m.modifier)}
                                             productQuantity={productQuantity}
@@ -1303,7 +1339,8 @@ const Modifier = (props: {
                     id: modifier.productModifier.id,
                     totalQuantityAvailable: modifier.productModifier.totalQuantityAvailable,
                 },
-                cartProductQuantitiesById
+                cartProductQuantitiesById,
+                modifier.productModifier.maxQuantityPerOrder
             );
         } else {
             if (!modifier.totalQuantityAvailable) return null;
@@ -1370,13 +1407,19 @@ const Modifier = (props: {
     const modifierChildren = (
         <>
             <div className="modifier-item">
-                {modifier.image && (
-                    <CachedImage
-                        url={`${getCloudFrontDomainName()}/protected/${modifier.image.identityPoolId}/${modifier.image.key}`}
-                        className="image mr-3"
-                        alt="product-image"
-                    />
-                )}
+                {modifier.imageUrl ? (
+                    <div className="image-wrapper">
+                        <CachedImage url={`${modifier.imageUrl}`} className="image mr-3" alt="modifier-image" />
+                    </div>
+                ) : modifier.image ? (
+                    <div className="image-wrapper">
+                        <CachedImage
+                            className="image"
+                            url={`${getCloudFrontDomainName()}/protected/${modifier.image.identityPoolId}/${modifier.image.key}`}
+                            alt="modifier-image"
+                        />
+                    </div>
+                ) : null}
 
                 {isValid ? (
                     <div>
@@ -1403,7 +1446,7 @@ const Modifier = (props: {
                 )}
 
                 {modifier.productModifier && modifier.productModifier.modifierGroups && modifier.productModifier.modifierGroups.items.length > 0 && (
-                    <FiChevronRight className="product-modifier-chevron-right" size={24} />
+                    <FiChevronRight className="product-modifier-chevron-rigrht" size={24} />
                 )}
             </div>
         </>
@@ -1411,17 +1454,21 @@ const Modifier = (props: {
 
     const getModifierStepperMax = () => {
         if (modifierQuantityAvailable) {
-            let maxSelectable = Math.min(choiceDuplicate, modifierQuantityAvailable);
+            let maxSelectable = 0;
+            const diffSelectable = choiceDuplicate - modifiersSelectedCount;
+
+            if (modifierQuantityAvailable <= diffSelectable) {
+                maxSelectable = Math.min(diffSelectable, modifierQuantityAvailable);
+            } else {
+                maxSelectable = Math.min(diffSelectable, modifierQuantityAvailable);
+                maxSelectable += stepperCount;
+            }
+
+            if (maxSelectable > modifierQuantityAvailable) {
+                maxSelectable = modifierQuantityAvailable;
+            }
 
             return Math.floor(maxSelectable / productQuantity);
-
-            // let maxSelectable = Math.min(choiceDuplicate - modifiersSelectedCount, modifierQuantityAvailable);
-
-            // if (maxSelectable < modifierQuantityAvailable) {
-            //     maxSelectable = modifierQuantityAvailable;
-            // }
-
-            // return Math.floor(maxSelectable / productQuantity);
         } else {
             return maxReached ? stepperCount : choiceDuplicate;
         }
@@ -1503,6 +1550,7 @@ const Modifier = (props: {
                             <ProductModifier
                                 key={productModifier.id}
                                 product={productModifier}
+                                showNoExtraSelectionsMade={selectedModifier.productModifiers?.some((pm) => pm.modifierGroups?.length) || false}
                                 onEditSelections={() => onEditSelectionsProductModifier(index)}
                             />
                         </>

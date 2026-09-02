@@ -7,9 +7,23 @@ try {
     ipcRenderer = electron.ipcRenderer;
 } catch (e) {}
 
-type ContextProps = {};
+type ContextProps = {
+    checkParentView: () => { electron: boolean; reactNativeWebView: boolean };
+    getParentView: () => any;
+    sendParentAsync: (type: string, payload?: any) => Promise<any>;
+    sendParent: (type: string, payload?: any) => void;
+};
 
-const ElectronContext = createContext<ContextProps>({});
+const ElectronContext = createContext<ContextProps>({
+    checkParentView: () => ({ electron: false, reactNativeWebView: false }),
+    getParentView: () => {},
+    sendParentAsync: (type: string, payload?: any) => {
+        return new Promise(() => {
+            console.log("");
+        });
+    },
+    sendParent: (type: string, payload?: any) => {},
+});
 
 const ElectronProvider = (props: { children: React.ReactNode }) => {
     const [electronUpdaterMessage, setElectronUpdaterMessage] = useState<string | null>(null);
@@ -66,9 +80,52 @@ const ElectronProvider = (props: { children: React.ReactNode }) => {
         );
     };
 
+    const checkParentView = () => {
+        if (ipcRenderer) return { electron: true, reactNativeWebView: false };
+        // @ts-ignore
+        if (window && window.ReactNativeWebView) return { electron: false, reactNativeWebView: true };
+
+        return { electron: false, reactNativeWebView: false };
+    };
+
+    const getParentView = () => {
+        if (ipcRenderer) return ipcRenderer;
+        // @ts-ignore
+        if (window && window.ReactNativeWebView) return window.ReactNativeWebView;
+    };
+
+    const sendParentAsync = (type: string, payload?: any) => {
+        if (ipcRenderer) {
+            return ipcRenderer.invoke(type, payload);
+        }
+
+        // @ts-ignore
+        if (window && window.ReactNativeWebView) {
+            //@ts-ignore
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: type, payload: payload }));
+        }
+    };
+
+    const sendParent = (type: string, payload?: any) => {
+        if (ipcRenderer) {
+            ipcRenderer.send(type, payload);
+        }
+
+        // @ts-ignore
+        if (window && window.ReactNativeWebView) {
+            //@ts-ignore
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: type, payload: payload }));
+        }
+    };
+
     return (
         <ElectronContext.Provider
-            value={{}}
+            value={{
+                checkParentView: checkParentView,
+                getParentView: getParentView,
+                sendParentAsync: sendParentAsync,
+                sendParent: sendParent,
+            }}
             children={
                 <>
                     {!isOnline && <NoInternetConnection />}

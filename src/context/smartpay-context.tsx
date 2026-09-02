@@ -53,7 +53,8 @@ const initialLogs = "";
 
 type ContextProps = {
     sendPairingRequest: (pairingCode: string) => Promise<void>;
-    createTransaction: (amount: number, transactionType: string) => Promise<string>;
+    createTransaction: (amount: number) => Promise<string>;
+    refundTransaction: (amount: number) => Promise<string>;
     pollForOutcome: (pollingUrl: string, delayed: () => void) => Promise<IEftposTransactionOutcome>;
 };
 
@@ -63,7 +64,12 @@ const SmartpayContext = createContext<ContextProps>({
             console.log("");
         });
     },
-    createTransaction: (amount: number, transactionType: string) => {
+    createTransaction: (amount: number) => {
+        return new Promise(() => {
+            console.log("");
+        });
+    },
+    refundTransaction: (amount: number) => {
         return new Promise(() => {
             console.log("");
         });
@@ -119,6 +125,10 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
 
         console.log(log);
         logs.current += newLog + "\n";
+    };
+
+    const resetVariables = () => {
+        logs.current = initialLogs;
     };
 
     const createEftposTransactionLog = async (restaurantId: string, transactionType: string, amount: number) => {
@@ -237,13 +247,12 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
     //     - resolve(string) - the string will contain the polling url
     //     - reject(string) - the string will contain the error message
     // ======================================================
-    const createTransaction = (amount: number, transactionType: string): Promise<string> => {
+    const sendTransaction = (amount: number, transactionType: string): Promise<string> => {
         // The first request will POST the transaction parameters to the endpoint, and obtain a
         // polling URL. The client will then continue polling (executing GET against that URL)
         // until the actual final outcome of the transaction is received.
 
         // This function will return that polling URL via the resolve function.
-
         return new Promise((resolve, reject) => {
             if (!amount) {
                 reject("The amount has to be supplied");
@@ -518,11 +527,46 @@ const SmartpayProvider = (props: { children: React.ReactNode }) => {
         return new Promise(checkCondition);
     };
 
+    const createTransaction = (amount: number): Promise<string> => {
+        return new Promise(async (resolve, reject) => {
+            try {
+                resetVariables();
+
+                const pollingUrl = await sendTransaction(amount, "Card.Purchase");
+
+                resolve(pollingUrl);
+            } catch (e) {
+                console.log("Error", e);
+                addToLogs(`Error ${e}`);
+
+                reject(e);
+            }
+        });
+    };
+
+    const refundTransaction = (amount: number): Promise<string> => {
+        return new Promise(async (resolve, reject) => {
+            try {
+                resetVariables();
+
+                const pollingUrl = await sendTransaction(amount, "Card.Refund");
+
+                resolve(pollingUrl);
+            } catch (e) {
+                console.log("Error", e);
+                addToLogs(`Error ${e}`);
+
+                reject(e);
+            }
+        });
+    };
+
     return (
         <SmartpayContext.Provider
             value={{
                 sendPairingRequest: sendPairingRequest,
                 createTransaction: createTransaction,
+                refundTransaction: refundTransaction,
                 pollForOutcome: pollForOutcome,
             }}
             children={props.children}

@@ -13,6 +13,7 @@ export enum EOrderStatus {
 export enum EOrderType {
     DINEIN = "DINEIN",
     TAKEAWAY = "TAKEAWAY",
+    PICKUP = "PICKUP",
     DELIVERY = "DELIVERY",
 }
 
@@ -28,46 +29,15 @@ export enum ERegisterPrinterType {
     USB = "USB",
 }
 
+export enum ELOYALTY_ACTION {
+    EARN = "EARN",
+    REDEEM = "REDEEM",
+}
+
 export enum ECustomCustomerFieldType {
     STRING = "STRING",
     NUMBER = "NUMBER",
     DROPDOWN = "DROPDOWN",
-}
-
-export const LIST_RESTAURANTS = gql`
-    query ListRestaurants {
-        listRestaurants(limit: 1000) {
-            items {
-                id
-                name
-                description
-                verified
-                restaurantManagerId
-                users {
-                    items {
-                        user {
-                            id
-                        }
-                    }
-                }
-            }
-        }
-    }
-`;
-
-export interface ILIST_RESTAURANTS {
-    id: string;
-    name: string;
-    description: string;
-    verified: boolean;
-    restaurantManagerId: string;
-    users: {
-        items: {
-            user: {
-                id: string;
-            };
-        }[];
-    };
 }
 
 export const GET_USER = gql`
@@ -78,10 +48,26 @@ export const GET_USER = gql`
             firstName
             lastName
             email
-            restaurants(limit: 50) {
+            userRestaurants(limit: 1000) {
+                items {
+                    restaurant {
+                        id
+                        name
+                        verified
+                        address {
+                            formattedAddress
+                        }
+                    }
+                }
+            }
+            restaurants(limit: 1000) {
                 items {
                     id
                     name
+                    verified
+                    address {
+                        formattedAddress
+                    }
                     advertisements {
                         items {
                             id
@@ -124,12 +110,15 @@ export const GET_USER = gql`
                                     type
                                 }
                             }
+                            hideMostPopularCategory
+                            disableKioskLoyaltyScreen
                             eftposProvider
                             eftposIpAddress
                             eftposPortNumber
                             windcaveStationId
                             windcaveStationUser
                             windcaveStationKey
+                            eftposMerchantName
                             tyroMerchantId
                             tyroTerminalId
                             skipEftposReceiptSignature
@@ -159,6 +148,7 @@ export const GET_USER = gql`
                                     kitchenPrinterLarge
                                     hidePreparationTime
                                     hideModifierGroupName
+                                    skipReceiptCutCommand
                                     printReceiptForEachProduct
                                     printAllOrderReceipts
                                     printOnlineOrderReceipts
@@ -187,6 +177,23 @@ export interface IGET_USER {
     firstName: string;
     lastName: string;
     email: string;
+    restaurants: {
+        items: IGET_USER_RESTAURANT[];
+    };
+    userRestaurants: {
+        items: {
+            restaurant: IGET_USER_RESTAURANT;
+        }[];
+    };
+}
+
+export interface IGET_USER_RESTAURANT {
+    id: string;
+    name: string;
+    verified: boolean;
+    address: {
+        formattedAddress: string;
+    };
 }
 
 export interface IGET_USER_REGISTER_PRINTER {
@@ -202,6 +209,7 @@ export interface IGET_USER_REGISTER_PRINTER {
     kitchenPrinterLarge: boolean;
     hidePreparationTime: boolean;
     hideModifierGroupName: boolean;
+    skipReceiptCutCommand: boolean;
     printReceiptForEachProduct: boolean;
     ignoreCategories: {
         items: IGET_USER_REGISTER_PRINTER_IGNORE_CATEGORY[];
@@ -233,10 +241,11 @@ export const GET_RESTAURANT = gql`
             id
             name
             description
+            country
             isAcceptingOrders
             verified
             address {
-                aptSuite
+                receiptAddress
                 formattedAddress
             }
             operatingHours {
@@ -275,6 +284,12 @@ export const GET_RESTAURANT = gql`
                 region
                 identityPoolId
             }
+            receiptLogo {
+                key
+                bucket
+                region
+                identityPoolId
+            }
             gstNumber
             customStyleSheet {
                 key
@@ -283,6 +298,7 @@ export const GET_RESTAURANT = gql`
                 identityPoolId
             }
             autoCompleteOrders
+            enableLoyalty
             preparationTimeInMinutes
             delayBetweenOrdersInSeconds
             orderThresholdMessage
@@ -409,12 +425,15 @@ export const GET_RESTAURANT = gql`
                             type
                         }
                     }
+                    hideMostPopularCategory
+                    disableKioskLoyaltyScreen
                     eftposProvider
                     eftposIpAddress
                     eftposPortNumber
                     windcaveStationId
                     windcaveStationUser
                     windcaveStationKey
+                    eftposMerchantName
                     tyroMerchantId
                     tyroTerminalId
                     skipEftposReceiptSignature
@@ -444,6 +463,7 @@ export const GET_RESTAURANT = gql`
                             kitchenPrinterLarge
                             hidePreparationTime
                             hideModifierGroupName
+                            skipReceiptCutCommand
                             printReceiptForEachProduct
                             printAllOrderReceipts
                             printOnlineOrderReceipts
@@ -469,7 +489,7 @@ export const GET_RESTAURANT = gql`
                     }
                 }
             }
-            promotions {
+            promotions(filter: { autoApply: { eq: true } }) {
                 items {
                     id
                     name
@@ -515,6 +535,7 @@ export const GET_RESTAURANT = gql`
                     minSpend
                     applyToCheapest
                     applyToModifiers
+                    maxApplicationsPerOrder
                     items {
                         items {
                             id
@@ -557,6 +578,7 @@ export const GET_RESTAURANT = gql`
                     }
                     displaySequence
                     availablePlatforms
+                    availableOrderTypes
                     availability {
                         monday {
                             startTime
@@ -601,6 +623,8 @@ export const GET_RESTAURANT = gql`
                                 tags
                                 totalQuantitySold
                                 totalQuantityAvailable
+                                incrementAmount
+                                maxQuantityPerOrder
                                 soldOut
                                 soldOutDate
                                 imageUrl
@@ -611,6 +635,7 @@ export const GET_RESTAURANT = gql`
                                     identityPoolId
                                 }
                                 availablePlatforms
+                                availableOrderTypes
                                 isAgeRescricted
                                 availability {
                                     monday {
@@ -643,6 +668,7 @@ export const GET_RESTAURANT = gql`
                                     }
                                 }
                                 subCategories
+                                reportingGroup
                                 categories {
                                     items {
                                         category {
@@ -658,6 +684,7 @@ export const GET_RESTAURANT = gql`
                                             }
                                             displaySequence
                                             availablePlatforms
+                                            availableOrderTypes
                                             availability {
                                                 monday {
                                                     startTime
@@ -695,7 +722,6 @@ export const GET_RESTAURANT = gql`
                                     items {
                                         id
                                         displaySequence
-                                        hideForCustomer
                                         modifierGroup {
                                             id
                                             name
@@ -703,14 +729,15 @@ export const GET_RESTAURANT = gql`
                                             choiceMin
                                             choiceMax
                                             choiceDuplicate
+                                            hideForCustomer
                                             collapsedByDefault
                                             availablePlatforms
+                                            availableOrderTypes
                                             alphabeticalSorting
                                             modifiers(limit: 50) {
                                                 items {
                                                     id
                                                     displaySequence
-                                                    preSelectedQuantity
                                                     modifier {
                                                         id
                                                         name
@@ -729,7 +756,9 @@ export const GET_RESTAURANT = gql`
                                                         soldOut
                                                         soldOutDate
                                                         availablePlatforms
+                                                        availableOrderTypes
                                                         subModifierGroups
+                                                        preSelectedQuantity
                                                         productModifier {
                                                             id
                                                             name
@@ -739,6 +768,8 @@ export const GET_RESTAURANT = gql`
                                                             tags
                                                             totalQuantitySold
                                                             totalQuantityAvailable
+                                                            incrementAmount
+                                                            maxQuantityPerOrder
                                                             soldOut
                                                             soldOutDate
                                                             imageUrl
@@ -748,6 +779,7 @@ export const GET_RESTAURANT = gql`
                                                                 region
                                                                 identityPoolId
                                                             }
+                                                            availableOrderTypes
                                                             categories {
                                                                 items {
                                                                     category {
@@ -798,7 +830,6 @@ export const GET_RESTAURANT = gql`
                                                                 items {
                                                                     id
                                                                     displaySequence
-                                                                    hideForCustomer
                                                                     modifierGroup {
                                                                         id
                                                                         name
@@ -806,13 +837,13 @@ export const GET_RESTAURANT = gql`
                                                                         choiceMin
                                                                         choiceMax
                                                                         choiceDuplicate
+                                                                        hideForCustomer
                                                                         collapsedByDefault
                                                                         availablePlatforms
                                                                         modifiers(limit: 50) {
                                                                             items {
                                                                                 id
                                                                                 displaySequence
-                                                                                preSelectedQuantity
                                                                                 modifier {
                                                                                     id
                                                                                     name
@@ -825,6 +856,7 @@ export const GET_RESTAURANT = gql`
                                                                                         region
                                                                                         identityPoolId
                                                                                     }
+                                                                                    preSelectedQuantity
                                                                                     productModifier {
                                                                                         id
                                                                                         name
@@ -834,6 +866,8 @@ export const GET_RESTAURANT = gql`
                                                                                         tags
                                                                                         totalQuantitySold
                                                                                         totalQuantityAvailable
+                                                                                        incrementAmount
+                                                                                        maxQuantityPerOrder
                                                                                         soldOut
                                                                                         soldOutDate
                                                                                         imageUrl
@@ -843,6 +877,7 @@ export const GET_RESTAURANT = gql`
                                                                                             region
                                                                                             identityPoolId
                                                                                         }
+                                                                                        availableOrderTypes
                                                                                         categories {
                                                                                             items {
                                                                                                 category {
@@ -920,6 +955,8 @@ export const GET_RESTAURANT = gql`
                     soldOut
                     soldOutDate
                     totalQuantityAvailable
+                    incrementAmount
+                    maxQuantityPerOrder
                 }
             }
             # Only for stock component
@@ -937,25 +974,155 @@ export const GET_RESTAURANT = gql`
                     }
                 }
             }
+            loyalties(limit: 100) {
+                items {
+                    id
+                    name
+                    type
+                    pointAmount
+                    categories {
+                        points
+                        categoryId
+                    }
+                    products {
+                        points
+                        productId
+                    }
+                    rewards {
+                        points
+                        promotionId
+                    }
+                    loyaltyGroupId
+                }
+            }
         }
     }
 `;
+
+export const GET_RESTAURANT_AVAILABILITY = gql`
+    query GetRestaurantAvailability($restaurantId: ID!) {
+        getRestaurant(id: $restaurantId) {
+            id
+            categories(limit: 20) {
+                items {
+                    id
+                    soldOut
+                    soldOutDate
+                    products(limit: 100) {
+                        items {
+                            product {
+                                id
+                                name
+                                soldOut
+                                soldOutDate
+                                totalQuantityAvailable
+                                modifierGroups(limit: 20) {
+                                    items {
+                                        modifierGroup {
+                                            id
+                                            name
+                                            choiceMin
+                                            modifiers(limit: 50) {
+                                                items {
+                                                    modifier {
+                                                        id
+                                                        name
+                                                        soldOut
+                                                        soldOutDate
+                                                        totalQuantityAvailable
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+`;
+
+export interface IGET_RESTAURANT_AVAILABILITY {
+    getRestaurant: IGET_RESTAURANT_AVAILABILITY_RESTAURANT;
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_RESTAURANT {
+    id: string;
+    categories: {
+        items: IGET_RESTAURANT_AVAILABILITY_CATEGORY[];
+    };
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_CATEGORY {
+    id: string;
+    soldOut: boolean | null;
+    soldOutDate: string | null;
+    products: {
+        items: IGET_RESTAURANT_AVAILABILITY_PRODUCT_LINK[];
+    };
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_PRODUCT_LINK {
+    product: IGET_RESTAURANT_AVAILABILITY_PRODUCT;
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_PRODUCT {
+    id: string;
+    name: string;
+    soldOut: boolean | null;
+    soldOutDate: string | null;
+    totalQuantityAvailable: number | null;
+    modifierGroups: {
+        items: IGET_RESTAURANT_AVAILABILITY_MODIFIER_GROUP_LINK[];
+    };
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_MODIFIER_GROUP_LINK {
+    modifierGroup: IGET_RESTAURANT_AVAILABILITY_MODIFIER_GROUP;
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_MODIFIER_GROUP {
+    id: string;
+    name: string;
+    choiceMin: number | null;
+    modifiers: {
+        items: IGET_RESTAURANT_AVAILABILITY_MODIFIER_LINK[];
+    };
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_MODIFIER_LINK {
+    modifier: IGET_RESTAURANT_AVAILABILITY_MODIFIER;
+}
+
+export interface IGET_RESTAURANT_AVAILABILITY_MODIFIER {
+    id: string;
+    name: string;
+    soldOut: boolean | null;
+    soldOutDate: string | null;
+    totalQuantityAvailable: number | null;
+}
 
 export interface IGET_RESTAURANT {
     id: string;
     name: string;
     description: string;
+    country: string;
     isAcceptingOrders: boolean;
     verified: boolean;
     address: {
-        aptSuite: string;
+        receiptAddress?: string | null;
         formattedAddress: string;
     };
     operatingHours: IGET_RESTAURANT_OPERATING_HOURS;
     logo?: IS3Object;
+    receiptLogo?: IS3Object;
     gstNumber: string | null;
     customStyleSheet?: IS3Object;
     autoCompleteOrders: boolean | null;
+    enableLoyalty: boolean | null;
     preparationTimeInMinutes: number | null;
     delayBetweenOrdersInSeconds: number | null;
     orderThresholdMessage: string | null;
@@ -969,6 +1136,7 @@ export interface IGET_RESTAURANT {
     upSellCrossSell?: IGET_RESTAURANT_UP_SELL_CROSS_SELL;
     registers: { items: IGET_RESTAURANT_REGISTER[] };
     promotions: { items: IGET_RESTAURANT_PROMOTION[] };
+    loyalties: { items: IGET_RESTAURANT_LOYALTY[] };
     categories: {
         items: IGET_RESTAURANT_CATEGORY[];
     };
@@ -1040,7 +1208,7 @@ export interface IGET_RESTAURANT_REGISTER {
     enableBuzzerNumbersForDineIn: boolean;
     enableSkuScanner: boolean;
     enableFeedback: boolean;
-    checkConditionsBeforeCreateOrder: boolean;
+    checkConditionsBeforeCreateOrder?: boolean;
     enablePayLater: boolean;
     enableCashPayments: boolean;
     enableEftposPayments: boolean;
@@ -1052,12 +1220,15 @@ export interface IGET_RESTAURANT_REGISTER {
     orderTypeSurcharge: OrderTypeSurchargeType;
     type: ERegisterType;
     requestCustomerInformation?: RequestCustomerInformationType;
+    hideMostPopularCategory?: boolean;
+    disableKioskLoyaltyScreen?: boolean;
     eftposProvider: string;
     eftposIpAddress: string;
     eftposPortNumber: string;
     windcaveStationId: string;
     windcaveStationUser: string;
     windcaveStationKey: string;
+    eftposMerchantName: string | null;
     tyroMerchantId: number;
     tyroTerminalId: number;
     skipEftposReceiptSignature: boolean;
@@ -1103,6 +1274,7 @@ export interface IGET_RESTAURANT_REGISTER_PRINTER {
     kitchenPrinterLarge: boolean;
     hidePreparationTime: boolean;
     hideModifierGroupName: boolean;
+    skipReceiptCutCommand: boolean;
     printReceiptForEachProduct: boolean;
     printAllOrderReceipts: boolean;
     printOnlineOrderReceipts: boolean;
@@ -1201,6 +1373,7 @@ export interface IGET_RESTAURANT_PROMOTION {
     minSpend: number;
     applyToCheapest: boolean;
     applyToModifiers: boolean;
+    maxApplicationsPerOrder: number | null;
     type: EPromotionType;
     items: { items: IGET_RESTAURANT_PROMOTION_ITEMS[] };
     discounts: { items: IGET_RESTAURANT_PROMOTION_DISCOUNT[] };
@@ -1251,6 +1424,56 @@ export enum EDiscountType {
     SETPRICE = "SETPRICE",
 }
 
+export interface IGET_RESTAURANT_LOYALTY {
+    id: string;
+    name: string;
+    type: ELoyaltyType;
+    pointAmount: number;
+    categories: IGET_RESTAURANT_LOYALTY_CATEGORY[];
+    products: IGET_RESTAURANT_LOYALTY_PRODUCT[];
+    rewards: IGET_RESTAURANT_LOYALTY_REWARD[];
+    loyaltyGroupId: string;
+    loyaltyHistories: {
+        items: IGET_RESTAURANT_LOYALTY_HISTORY[];
+    };
+}
+
+export interface IGET_RESTAURANT_LOYALTY_CATEGORY {
+    points: number;
+    categoryId: string;
+}
+
+export interface IGET_RESTAURANT_LOYALTY_PRODUCT {
+    points: number;
+    productId: string;
+}
+
+export interface IGET_RESTAURANT_LOYALTY_REWARD {
+    points: number;
+    promotionId: string;
+}
+
+export interface IGET_RESTAURANT_LOYALTY_HISTORY {
+    id: string;
+    action: ELOYALTY_ACTION;
+    points: number;
+    createdAt: string;
+    loyaltyHistoryOrderId: string;
+    loyaltyUser: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        phoneNumber: string;
+    };
+}
+
+export enum ELoyaltyType {
+    AMOUNT = "AMOUNT",
+    PRODUCT = "PRODUCT",
+    CATEGORY = "CATEGORY",
+}
+
 export interface IGET_RESTAURANT_CATEGORY {
     id: string;
     name: string;
@@ -1260,6 +1483,7 @@ export interface IGET_RESTAURANT_CATEGORY {
     imageUrl?: string;
     image?: IS3Object;
     availablePlatforms: ERegisterType[];
+    availableOrderTypes: EOrderType[];
     soldOut?: boolean;
     soldOutDate?: string;
     availability: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
@@ -1288,14 +1512,18 @@ export interface IGET_RESTAURANT_PRODUCT {
     tags: string | null;
     totalQuantitySold?: number;
     totalQuantityAvailable?: number;
+    incrementAmount?: number;
+    maxQuantityPerOrder?: number;
     soldOut?: boolean;
     soldOutDate?: string;
     imageUrl?: string;
     image?: IS3Object;
     availablePlatforms: ERegisterType[];
+    availableOrderTypes: EOrderType[];
     isAgeRescricted: boolean;
     availability?: IGET_RESTAURANT_ITEM_AVAILABILITY_HOURS;
     subCategories?: string;
+    reportingGroup?: string | null;
     categories: { items: IGET_RESTAURANT_CATEGORY_LINK[] };
     modifierGroups?: {
         items: IGET_RESTAURANT_MODIFIER_GROUP_LINK[];
@@ -1305,7 +1533,6 @@ export interface IGET_RESTAURANT_PRODUCT {
 export interface IGET_RESTAURANT_MODIFIER_GROUP_LINK {
     id: string;
     displaySequence: number;
-    hideForCustomer: boolean | null;
     modifierGroup: IGET_RESTAURANT_MODIFIER_GROUP;
 }
 
@@ -1316,8 +1543,10 @@ export interface IGET_RESTAURANT_MODIFIER_GROUP {
     choiceMin: number;
     choiceMax: number;
     choiceDuplicate: number;
+    hideForCustomer: boolean | null;
     collapsedByDefault?: boolean | null;
     availablePlatforms: ERegisterType[];
+    availableOrderTypes: EOrderType[];
     alphabeticalSorting: boolean;
     modifiers?: {
         items: IGET_RESTAURANT_MODIFIER_LINK[];
@@ -1327,7 +1556,6 @@ export interface IGET_RESTAURANT_MODIFIER_GROUP {
 export interface IGET_RESTAURANT_MODIFIER_LINK {
     id: string;
     displaySequence: number;
-    preSelectedQuantity: number;
     modifier: IGET_RESTAURANT_MODIFIER;
 }
 
@@ -1344,8 +1572,10 @@ export interface IGET_RESTAURANT_MODIFIER {
     soldOut?: boolean;
     soldOutDate?: string;
     availablePlatforms: ERegisterType[];
+    availableOrderTypes: EOrderType[];
     isAgeRescricted: boolean;
     subModifierGroups: string;
+    preSelectedQuantity: number;
     productModifier?: IGET_RESTAURANT_PRODUCT;
 }
 
@@ -1404,6 +1634,7 @@ export const GET_PROMOTION_BY_CODE = gql`
                 minSpend
                 applyToCheapest
                 applyToModifiers
+                maxApplicationsPerOrder
                 items {
                     items {
                         id
@@ -1432,6 +1663,81 @@ export const GET_PROMOTION_BY_CODE = gql`
     }
 `;
 
+export const GET_PROMOTION_BY_ID = gql`
+    query GetPromotion($id: ID!) {
+        getPromotion(id: $id) {
+            id
+            name
+            type
+            code
+            autoApply
+            startDate
+            endDate
+            availability {
+                monday {
+                    startTime
+                    endTime
+                }
+                tuesday {
+                    startTime
+                    endTime
+                }
+                wednesday {
+                    startTime
+                    endTime
+                }
+                thursday {
+                    startTime
+                    endTime
+                }
+                friday {
+                    startTime
+                    endTime
+                }
+                saturday {
+                    startTime
+                    endTime
+                }
+                sunday {
+                    startTime
+                    endTime
+                }
+            }
+            availablePlatforms
+            availableOrderTypes
+            totalNumberUsed
+            totalAvailableUses
+            minSpend
+            applyToCheapest
+            applyToModifiers
+            maxApplicationsPerOrder
+            items {
+                items {
+                    id
+                    minQuantity
+                    categoryIds
+                    productIds
+                }
+            }
+            discounts {
+                items {
+                    id
+                    amount
+                    type
+                    items {
+                        items {
+                            id
+                            minQuantity
+                            categoryIds
+                            productIds
+                        }
+                    }
+                }
+            }
+        }
+    }
+`;
+
 export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
     ${ORDER_FIELDS_FRAGMENT}
     query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAt: String!) {
@@ -1440,6 +1746,7 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
             sortDirection: DESC
             orderRestaurantId: $orderRestaurantId
             placedAt: { beginsWith: $placedAt }
+            filter: { paymentInProgress: { ne: true } }
         ) {
             items {
                 ...OrderFieldsFragment
@@ -1455,6 +1762,7 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
             limit: 1000000
             orderRestaurantId: $orderRestaurantId
             placedAt: { between: [$placedAtStartDate, $placedAtEndDate] }
+            filter: { paymentInProgress: { ne: true } }
         ) {
             items {
                 ...OrderFieldsFragment
@@ -1471,7 +1779,7 @@ export const GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
             sortDirection: DESC
             orderRestaurantId: $orderRestaurantId
             placedAt: { beginsWith: $placedAt }
-            filter: { onlineOrder: { eq: true } }
+            filter: { and: [{ onlineOrder: { eq: true } }, { paymentInProgress: { ne: true } }] }
         ) {
             items {
                 ...OrderFieldsFragment
@@ -1491,6 +1799,8 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                 tags
                 totalQuantitySold
                 totalQuantityAvailable
+                incrementAmount
+                maxQuantityPerOrder
                 soldOut
                 soldOutDate
                 imageUrl
@@ -1532,6 +1842,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                     }
                 }
                 subCategories
+                reportingGroup
                 categories {
                     items {
                         category {
@@ -1583,20 +1894,19 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                     items {
                         id
                         displaySequence
-                        hideForCustomer
                         modifierGroup {
                             id
                             name
                             choiceMin
                             choiceMax
                             choiceDuplicate
+                            hideForCustomer
                             collapsedByDefault
                             availablePlatforms
                             modifiers(limit: 500) {
                                 items {
                                     id
                                     displaySequence
-                                    preSelectedQuantity
                                     modifier {
                                         id
                                         name
@@ -1612,6 +1922,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                         totalQuantityAvailable
                                         soldOut
                                         soldOutDate
+                                        preSelectedQuantity
                                         availablePlatforms
                                         productModifier {
                                             id
@@ -1621,6 +1932,8 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                             tags
                                             totalQuantitySold
                                             totalQuantityAvailable
+                                            incrementAmount
+                                            maxQuantityPerOrder
                                             soldOut
                                             soldOutDate
                                             imageUrl
@@ -1679,20 +1992,19 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                 items {
                                                     id
                                                     displaySequence
-                                                    hideForCustomer
                                                     modifierGroup {
                                                         id
                                                         name
                                                         choiceMin
                                                         choiceMax
                                                         choiceDuplicate
+                                                        hideForCustomer
                                                         collapsedByDefault
                                                         availablePlatforms
                                                         modifiers(limit: 500) {
                                                             items {
                                                                 id
                                                                 displaySequence
-                                                                preSelectedQuantity
                                                                 modifier {
                                                                     id
                                                                     name
@@ -1706,8 +2018,11 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
                                                                     }
                                                                     totalQuantitySold
                                                                     totalQuantityAvailable
+                                                                    incrementAmount
+                                                                    maxQuantityPerOrder
                                                                     soldOut
                                                                     soldOutDate
+                                                                    preSelectedQuantity
                                                                     availablePlatforms
                                                                 }
                                                             }
@@ -1785,4 +2100,86 @@ export interface IGET_FEEDBACK_BY_RESTAURANT_COMMENT {
     comment: string;
     rating: number;
     orderId: string;
+}
+
+export const GET_LOYALTY_USER_BY_PHONE_NUMBER = gql`
+    query GetLoyaltyUserByPhoneNumber($phoneNumber: String!) {
+        getLoyaltyUserByPhoneNumber(phoneNumber: $phoneNumber) {
+            items {
+                id
+                firstName
+                lastName
+                phoneNumber
+                email
+                loyaltyHistories(limit: 10000) {
+                    items {
+                        id
+                        action
+                        points
+                        createdAt
+                        loyaltyHistoryLoyaltyId
+                    }
+                    nextToken
+                }
+            }
+            nextToken
+        }
+    }
+`;
+
+export const GET_LOYALTY_USER_BY_EMAIL = gql`
+    query GetLoyaltyUserByEmail($email: String!) {
+        getLoyaltyUserByEmail(email: $email) {
+            items {
+                id
+                firstName
+                lastName
+                phoneNumber
+                email
+                loyaltyHistories(limit: 10000) {
+                    items {
+                        id
+                        action
+                        points
+                        createdAt
+                        loyaltyHistoryLoyaltyId
+                    }
+                    nextToken
+                }
+            }
+            nextToken
+        }
+    }
+`;
+
+export interface IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL {
+    id: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+    email: string;
+    loyaltyHistories: {
+        items: {
+            id: string;
+            action: ELOYALTY_ACTION;
+            points: number;
+            createdAt: string;
+            loyaltyHistoryLoyaltyId?: string | null;
+        }[];
+    };
+}
+
+export const GET_LOYALTIES_BY_GROUP_ID = gql`
+    query GetLoyaltiesByGroupId($loyaltyGroupId: String!) {
+        getLoyaltiesByGroupId(loyaltyGroupId: $loyaltyGroupId, limit: 10000) {
+            items {
+                id
+            }
+            nextToken
+        }
+    }
+`;
+
+export interface IGET_LOYALTIES_BY_GROUP_ID_ITEM {
+    id: string;
 }

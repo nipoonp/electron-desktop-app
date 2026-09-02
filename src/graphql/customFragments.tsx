@@ -4,6 +4,7 @@ import { ECustomCustomerFieldType, EOrderStatus, EOrderType, IS3Object } from ".
 export const ORDER_FIELDS_FRAGMENT = gql`
     fragment OrderFieldsFragment on Order {
         id
+        country
         placedAt
         completedAt
         cancelledAt
@@ -16,9 +17,18 @@ export const ORDER_FIELDS_FRAGMENT = gql`
         eftposSurcharge
         eftposTip
         discount
+        deliveryProvider
+        deliveryAddress
+        deliveryNotes
+        deliveryDistanceMeters
+        deliveryFeeDiscount
+        deliveryFee
+        deliveryTrackingUrl
         promotionId
         subTotal
+        tax
         paid
+        paymentInProgress
         paymentAmounts {
             cash
             eftpos
@@ -27,6 +37,14 @@ export const ORDER_FIELDS_FRAGMENT = gql`
             menulog
             doordash
             delivereasy
+        }
+        thirdPartyIntegrationResult {
+            shift8IsSuccess
+            shift8ErrorMessage
+            isSuccess
+            errorMessage
+            platform
+            platformChannel
         }
         onlineOrder
         guestCheckout
@@ -74,6 +92,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
                     identityPoolId
                 }
             }
+            reportingGroup
             modifierGroups {
                 id
                 name
@@ -199,6 +218,7 @@ export const ORDER_FIELDS_FRAGMENT = gql`
 
 export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     id: string;
+    country: string;
     placedAt: string;
     completedAt: string | null;
     cancelledAt: string | null;
@@ -211,10 +231,29 @@ export interface IGET_RESTAURANT_ORDER_FRAGMENT {
     eftposSurcharge: number | null;
     eftposTip: number | null;
     discount: number | null;
+    deliveryProvider: "UBER_DIRECT" | "RESTAURANT_MANAGED" | null;
+    deliveryAddress: string | null;
+    deliveryNotes: string | null;
+    deliveryDistanceMeters: number | null;
+    deliveryFeeDiscount: number | null;
+    deliveryFee: number | null;
+    deliveryTrackingUrl: string | null;
     promotionId: string | null;
+    tax: number;
     subTotal: number;
     paid: boolean;
+    paymentInProgress: boolean | null;
     paymentAmounts: IOrderPaymentAmounts | null;
+    thirdPartyIntegrationResult:
+        | {
+              shift8IsSuccess: boolean | null;
+              shift8ErrorMessage: string | null;
+              isSuccess: boolean | null;
+              errorMessage: string | null;
+              platform: string | null;
+              platformChannel: string | null;
+          }
+        | null;
     onlineOrder: boolean | null;
     guestCheckout: boolean | null;
     orderScheduledAt: string | null;
@@ -246,10 +285,13 @@ export interface IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT {
     totalPrice: number;
     discount: number;
     isAgeRescricted: boolean;
+    incrementAmount?: number;
+    maxQuantityPerOrder?: number;
     quantity: number;
     notes: string | null;
     image: IS3Object | null;
     category: IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT | null;
+    reportingGroup?: string | null;
     modifierGroups: IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT[] | null;
 }
 
@@ -296,4 +338,5 @@ export interface IOrderPaymentAmounts {
     menulog: number;
     doordash: number;
     delivereasy: number;
+    eftposSurcharge?: number;
 }
