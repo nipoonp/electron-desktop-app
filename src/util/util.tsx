@@ -585,7 +585,7 @@ const discountMatchingProducts = (
     }
 
     matchingProductsCpy.forEach((p) => {
-        p.discount = discountMap.get(getProductKey(p)) || 0;
+        p.discount = Math.floor(discountMap.get(getProductKey(p)) || 0);
     });
 
     return matchingProductsCpy;
