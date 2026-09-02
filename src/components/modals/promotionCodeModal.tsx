@@ -39,9 +39,7 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
         if (!props.isOpen || !restaurant?.loyalties?.items?.length) return;
         if (!customerInformation?.firstName || !customerInformation?.email || !customerInformation?.phoneNumber) return;
 
-        const promotionIds = Array.from(
-            new Set(restaurant.loyalties.items.flatMap((loyalty) => loyalty.rewards.map((reward) => reward.promotionId))),
-        );
+        const promotionIds = Array.from(new Set(restaurant.loyalties.items.flatMap((loyalty) => (loyalty.rewards || []).map((reward) => reward.promotionId))));
 
         promotionIds.forEach((id) => getPromotionById({ variables: { id } }));
     }, [props.isOpen, customerInformation]);
@@ -150,6 +148,10 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
         });
     };
 
+    const loyaltyRewards = (restaurant?.loyalties?.items || [])
+        .flatMap((loyalty) => (loyalty.rewards || []).map((reward) => ({ loyaltyId: loyalty.id, reward })))
+        .filter(({ reward }, index, rewards) => rewards.findIndex((r) => r.reward.promotionId === reward.promotionId) === index);
+
     return (
         <>
             <ModalV2 padding="24px" isOpen={props.isOpen} disableClose={false} onRequestClose={props.onClose}>
@@ -178,30 +180,26 @@ export const PromotionCodeModal = (props: IPromotionCodeModalProps) => {
                             <div className="mb-2">{`${customerInformation.firstName} has ${customerLoyaltyPoints} point${customerLoyaltyPoints !== 1 ? "s" : ""}`}</div>
                             {restaurant &&
                                 restaurant.loyalties &&
-                                restaurant.loyalties.items.map((loyalty) => (
-                                    <>
-                                        {loyalty && loyalty.rewards.length > 0 ? (
-                                            loyalty.rewards.map((reward) => (
-                                                <div key={reward.promotionId} className="reward-promotion mb-2">
-                                                    <div className="h3 reward-promotion-name">{loyaltyPromotionsById[reward.promotionId]?.name}</div>
-                                                    <div>
-                                                        {reward.points} point{reward.points !== 1 ? "s" : ""}
-                                                    </div>
-                                                    <Button
-                                                        disabled={
-                                                            !loyaltyPromotionsById[reward.promotionId] ||
-                                                            (customerLoyaltyPoints ? customerLoyaltyPoints < reward.points : false)
-                                                        }
-                                                        onClick={() => onApply(loyalty.id, reward.promotionId, reward.points)}
-                                                    >
-                                                        Apply
-                                                    </Button>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div>No rewards available</div>
-                                        )}
-                                    </>
+                                (loyaltyRewards.length > 0 ? (
+                                    loyaltyRewards.map(({ loyaltyId, reward }) => (
+                                        <div key={reward.promotionId} className="reward-promotion mb-2">
+                                            <div className="reward-promotion-name">{loyaltyPromotionsById[reward.promotionId]?.name}</div>
+                                            <div>
+                                                {reward.points} point{reward.points !== 1 ? "s" : ""}
+                                            </div>
+                                            <Button
+                                                disabled={
+                                                    !loyaltyPromotionsById[reward.promotionId] ||
+                                                    (customerLoyaltyPoints ? customerLoyaltyPoints < reward.points : false)
+                                                }
+                                                onClick={() => onApply(loyaltyId, reward.promotionId, reward.points)}
+                                            >
+                                                Apply
+                                            </Button>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div>No rewards available</div>
                                 ))}
                         </div>
                     </>
