@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
@@ -195,9 +195,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
         return (
             attendanceHistory.find(
                 (attendance) =>
-                    attendance.attendanceRestaurantId === restaurant?.id &&
-                    attendance.status !== EAttendanceRecordStatus.COMPLETED &&
-                    !attendance.clockOut,
+                    attendance.attendanceRestaurantId === restaurant?.id && attendance.status !== EAttendanceRecordStatus.COMPLETED && !attendance.clockOut,
             ) || null
         );
     }, [attendanceHistory, restaurant?.id]);
@@ -237,16 +235,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
         if (availableUsers.length > 0) {
             localStorage.removeItem(skippedSelectionStorageKey);
         }
-    }, [
-        availableUsers,
-        isPOS,
-        isPosPinFeatureEnabled,
-        register?.id,
-        restaurant?.id,
-        selectedUserStorageKey,
-        skippedSelectionStorageKey,
-        unlockedStorageKey,
-    ]);
+    }, [availableUsers, isPOS, isPosPinFeatureEnabled, register?.id, restaurant?.id, selectedUserStorageKey, skippedSelectionStorageKey, unlockedStorageKey]);
 
     // Selects a cashier for the current register and skips PIN when register-level POS PIN is disabled
     // or when the selected user does not require a PIN.
