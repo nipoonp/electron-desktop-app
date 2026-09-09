@@ -571,7 +571,7 @@ export const CREATE_ATTENDANCE = gql`
         $employeeName: String!
         $employeeUserId: ID!
         $status: AttendanceRecordStatus!
-        $businessDate: AWSDate
+        $businessDate: String
         $clockIn: String!
         $clockOut: String
         $totalBreakMinutes: Int
@@ -638,7 +638,7 @@ export const UPDATE_ATTENDANCE = gql`
         $id: ID!
         $employeeName: String
         $employeeUserId: ID
-        $businessDate: AWSDate
+        $businessDate: String
         $status: AttendanceRecordStatus
         $clockIn: String
         $clockOut: String
