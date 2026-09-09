@@ -43,6 +43,19 @@ export enum EMoneyMovementPaymentMethod {
     CASH = "CASH",
 }
 
+export enum EAttendanceRecordStatus {
+    ACTIVE = "ACTIVE",
+    ON_BREAK = "ON_BREAK",
+    COMPLETED = "COMPLETED",
+}
+
+export enum EAttendanceAdjustmentStatus {
+    CREATED = "CREATED",
+    UPDATED = "UPDATED",
+    DELETED = "DELETED",
+    RESTORED = "RESTORED",
+}
+
 export enum ERegisterPrinterType {
     BLUETOOTH = "BLUETOOTH",
     WIFI = "WIFI",
@@ -143,6 +156,9 @@ export interface IGET_RESTAURANT_USER_LINK {
     enablePosPin?: boolean | null;
     posPin?: string | null;
     posPinUpdatedAt?: string | null;
+    attendanceEnabled?: boolean | null;
+    breakTrackingEnabled?: boolean | null;
+    defaultBreakDurationMinutes?: number | null;
     user: IGET_RESTAURANT_USER;
 }
 
@@ -265,6 +281,9 @@ export const GET_RESTAURANT = gql`
                     enablePosPin
                     posPin
                     posPinUpdatedAt
+                    attendanceEnabled
+                    breakTrackingEnabled
+                    defaultBreakDurationMinutes
                     user {
                         id
                         firstName
@@ -964,6 +983,74 @@ export const GET_RESTAURANT = gql`
                         promotionId
                     }
                     loyaltyGroupId
+                }
+            }
+        }
+    }
+`;
+
+export interface IGET_ATTENDANCE_BREAK {
+    breakStart: string;
+    breakEnd?: string | null;
+    durationMinutes?: number | null;
+}
+
+export interface IGET_ATTENDANCE {
+    id: string;
+    employeeName: string;
+    employeeUserId: string;
+    status: EAttendanceRecordStatus;
+    businessDate?: string | null;
+    clockIn: string;
+    clockOut?: string | null;
+    totalBreakMinutes?: number | null;
+    workedMinutes?: number | null;
+    manualEntry?: boolean | null;
+    adjustmentReason?: string | null;
+    adjustedByUserId?: string | null;
+    adjustedByUserName?: string | null;
+    adjustedAt?: string | null;
+    adjustmentHistory?:
+        | {
+              status: EAttendanceAdjustmentStatus;
+              changedByUserId?: string | null;
+              changedByUserName?: string | null;
+              changedAt?: string | null;
+          }[]
+        | null;
+    attendanceRestaurantId: string;
+    breaks?: IGET_ATTENDANCE_BREAK[] | null;
+}
+
+export const LIST_ATTENDANCES_BY_USER = gql`
+    query ListAttendancesByUserId($employeeUserId: ID!, $limit: Int) {
+        listAttendancesByUserId(employeeUserId: $employeeUserId, limit: $limit, sortDirection: DESC) {
+            items {
+                id
+                employeeName
+                employeeUserId
+                status
+                businessDate
+                clockIn
+                clockOut
+                totalBreakMinutes
+                workedMinutes
+                manualEntry
+                adjustmentReason
+                adjustedByUserId
+                adjustedByUserName
+                adjustedAt
+                adjustmentHistory {
+                    status
+                    changedByUserId
+                    changedByUserName
+                    changedAt
+                }
+                attendanceRestaurantId
+                breaks {
+                    breakStart
+                    breakEnd
+                    durationMinutes
                 }
             }
         }
