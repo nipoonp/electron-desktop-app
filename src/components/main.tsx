@@ -26,7 +26,7 @@ const CustomerDisplay = lazy(() => import("./page/customerDisplay"));
 const Restaurant = lazy(() => import("./page/restaurant"));
 const RestaurantList = lazy(() => import("./page/restaurantList"));
 const RegisterList = lazy(() => import("./page/registerList"));
-const PosUserList = lazy(() => import("./page/posUserList"));
+const PosTimeclock = lazy(() => import("./page/posTimeclock"));
 const Orders = lazy(() => import("./page/orders"));
 const Dashboard = lazy(() => import("./page/dashboard"));
 const BeginOrder = lazy(() => import("./page/beginOrder"));
@@ -59,7 +59,6 @@ export const customerDisplayPath = "/customer_display";
 export const restaurantListPath = "/restaurant_list";
 export const registerListPath = "/register_list";
 export const ordersPath = "/orders";
-export const posUserListPath = "/pos_user_list";
 export const dashboardPath = "/dashboard";
 export const configureNewEftposPath = "/configure_new_eftpos";
 export const beginOrderPath = "/begin_order";
@@ -71,6 +70,7 @@ export const paymentMethodPath = "/payment_method";
 export const restaurantPath = "/restaurant";
 export const checkoutPath = "/checkout";
 export const cashUpPath = "/cash_up";
+export const posTimeclockPath = "/pos_timeclock";
 export const unauthorizedPath = "/unauthorized";
 
 export const tabs: ITab[] = [
@@ -96,10 +96,10 @@ export const tabs: ITab[] = [
         showOnMobile: true,
     },
     {
-        id: "selectPosUser",
-        name: "Select POS User",
+        id: "timeclock",
+        name: "Timeclock",
         icon: <FiUsers height="20px" />,
-        route: posUserListPath,
+        route: posTimeclockPath,
         showOnMobile: true,
     },
     {
@@ -218,7 +218,7 @@ const AppRoutes = () => {
                 <Route path={customerDisplayPath} element={<CustomerDisplay />} />
                 <Route path={restaurantListPath} element={<PrivateRoute element={<RestaurantList />} />} />
                 <Route path={registerListPath} element={<PrivateRoute element={<RegisterList />} />} />
-                <Route path={posUserListPath} element={<RestaurantRegisterPosSetupPrivateRoute element={<PosUserList />} />} />
+                <Route path={posTimeclockPath} element={<RestaurantRegisterPosSetupPrivateRoute element={<PosTimeclock />} />} />
                 <Route path={ordersPath} element={<RestaurantRegisterPosPrivateRoute element={<Orders />} />}>
                     <Route path=":date" element={<RestaurantRegisterPosPrivateRoute element={<Orders />} />} />
                 </Route>
@@ -327,7 +327,7 @@ const PosUserPrivateRoute = ({ element }) => {
 
     if (availableUsers.length === 0) {
         if (hasSkippedPosUserSelection) return element;
-        return <Navigate to={posUserListPath} />;
+        return <Navigate to={posTimeclockPath} />;
     }
 
     if (!selectedPosUser) return <Navigate to={posUserListPath} />;
