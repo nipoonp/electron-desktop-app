@@ -50,8 +50,7 @@ const formatClockTime = (date: Date): { timeMain: string; timePeriod: string } =
     return { timeMain: parts[0] || str, timePeriod: (parts[1] || "").toUpperCase() };
 };
 
-const staffListName = (user: TPosUser) =>
-    `${user.firstName.toUpperCase()} ${user.lastName.slice(0, 1).toUpperCase()}`;
+const staffListName = (user: TPosUser) => `${user.firstName.toUpperCase()} ${user.lastName.slice(0, 1).toUpperCase()}`;
 
 export default () => {
     const navigate = useNavigate();
@@ -105,9 +104,7 @@ export default () => {
     const filteredUsers = useMemo(() => {
         if (!searchQuery.trim()) return usersToDisplay;
         const q = searchQuery.toLowerCase();
-        return usersToDisplay.filter(
-            (u) => u.firstName.toLowerCase().includes(q) || u.lastName.toLowerCase().includes(q),
-        );
+        return usersToDisplay.filter((u) => u.firstName.toLowerCase().includes(q) || u.lastName.toLowerCase().includes(q));
     }, [usersToDisplay, searchQuery]);
 
     const isOnBreak = activeAttendance?.status === EAttendanceRecordStatus.ON_BREAK || !!activeAttendanceBreak;
@@ -118,8 +115,7 @@ export default () => {
 
     // Show "Continue to POS" when the route guard will let them through:
     // attendance not required OR (clocked in AND not on break).
-    const canContinueToPOS =
-        !selectedPosUser?.attendanceEnabled || (!attendanceLoading && !!activeAttendance && !isOnBreak);
+    const canContinueToPOS = !selectedPosUser?.attendanceEnabled || (!attendanceLoading && !!activeAttendance && !isOnBreak);
 
     const handleSelectUser = (userId: string) => {
         if (selectedPosUser?.id === userId) {
@@ -231,9 +227,7 @@ export default () => {
                                 <span className="pos-timeclock__clock-digits">{timeMain}</span>
                                 <span className="pos-timeclock__clock-period">{timePeriod}</span>
                             </div>
-                            <p className="pos-timeclock__prompt">
-                                Hey there, just click on your name to clock in or out
-                            </p>
+                            <p className="pos-timeclock__prompt">Hey there, just click on your name to clock in or out</p>
                         </>
                     )}
 
@@ -308,7 +302,7 @@ export default () => {
                                                 </Button>
                                             )}
 
-                                            {activeAttendance && !isOnBreak && selectedPosUser.breakTrackingEnabled && (
+                                            {activeAttendance && !isOnBreak && (
                                                 <Button
                                                     className="pos-timeclock__btn-outline"
                                                     onClick={() => handleAction(startBreak, "Break started.", "Unable to start break.")}

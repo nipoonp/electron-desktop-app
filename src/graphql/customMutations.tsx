@@ -517,118 +517,6 @@ export const UPDATE_RESERVATION = gql`
     }
 `;
 
-export const CREATE_ATTENDANCE = gql`
-    mutation CreateAttendance(
-        $employeeName: String!
-        $employeeUserId: ID!
-        $status: AttendanceRecordStatus!
-        $businessDate: String
-        $clockIn: String!
-        $clockOut: String
-        $manualEntry: Boolean
-        $adjustmentReason: String
-        $adjustmentHistory: [AttendanceAdjustmentInput]
-        $attendanceRestaurantId: ID!
-        $scheduledShiftId: ID
-        $owner: ID
-        $deleted: Boolean
-    ) {
-        createAttendance(
-            input: {
-                employeeName: $employeeName
-                employeeUserId: $employeeUserId
-                status: $status
-                businessDate: $businessDate
-                clockIn: $clockIn
-                clockOut: $clockOut
-                manualEntry: $manualEntry
-                adjustmentReason: $adjustmentReason
-                adjustmentHistory: $adjustmentHistory
-                attendanceRestaurantId: $attendanceRestaurantId
-                scheduledShiftId: $scheduledShiftId
-                owner: $owner
-                deleted: $deleted
-            }
-        ) {
-            id
-            employeeName
-            employeeUserId
-            status
-            businessDate
-            clockIn
-            clockOut
-            manualEntry
-            adjustmentReason
-            adjustmentHistory {
-                status
-                changedByUserId
-                changedByUserName
-                changedAt
-            }
-            attendanceRestaurantId
-            scheduledShiftId
-            deleted
-        }
-    }
-`;
-
-export const UPDATE_ATTENDANCE = gql`
-    mutation UpdateAttendance(
-        $id: ID!
-        $employeeName: String
-        $employeeUserId: ID
-        $businessDate: String
-        $status: AttendanceRecordStatus
-        $clockIn: String
-        $clockOut: String
-        $manualEntry: Boolean
-        $adjustmentReason: String
-        $adjustmentHistory: [AttendanceAdjustmentInput]
-        $breaks: [AttendanceBreakInput]
-        $deleted: Boolean
-    ) {
-        updateAttendance(
-            input: {
-                id: $id
-                employeeName: $employeeName
-                employeeUserId: $employeeUserId
-                businessDate: $businessDate
-                status: $status
-                clockIn: $clockIn
-                clockOut: $clockOut
-                manualEntry: $manualEntry
-                adjustmentReason: $adjustmentReason
-                adjustmentHistory: $adjustmentHistory
-                breaks: $breaks
-                deleted: $deleted
-            }
-        ) {
-            id
-            employeeName
-            employeeUserId
-            status
-            businessDate
-            clockIn
-            clockOut
-            manualEntry
-            adjustmentReason
-            adjustmentHistory {
-                status
-                changedByUserId
-                changedByUserName
-                changedAt
-            }
-            breaks {
-                breakStart
-                breakEnd
-                durationMinutes
-            }
-            attendanceRestaurantId
-            deleted
-        }
-    }
-`;
-
 export const UPDATE_CASHUP_SESSION = gql`
     mutation UpdateCashupSession(
         $id: ID!
@@ -686,15 +574,12 @@ export const CREATE_ATTENDANCE = gql`
         $businessDate: String
         $clockIn: String!
         $clockOut: String
-        $totalBreakMinutes: Int
-        $workedMinutes: Int
         $manualEntry: Boolean
         $adjustmentReason: String
-        $adjustedByUserId: ID
-        $adjustedByUserName: String
-        $adjustedAt: String
         $adjustmentHistory: [AttendanceAdjustmentInput]
+        $breaks: [AttendanceBreakInput]
         $attendanceRestaurantId: ID!
+        $scheduledShiftId: ID
         $owner: ID
         $deleted: Boolean
     ) {
@@ -706,15 +591,12 @@ export const CREATE_ATTENDANCE = gql`
                 businessDate: $businessDate
                 clockIn: $clockIn
                 clockOut: $clockOut
-                totalBreakMinutes: $totalBreakMinutes
-                workedMinutes: $workedMinutes
                 manualEntry: $manualEntry
                 adjustmentReason: $adjustmentReason
-                adjustedByUserId: $adjustedByUserId
-                adjustedByUserName: $adjustedByUserName
-                adjustedAt: $adjustedAt
                 adjustmentHistory: $adjustmentHistory
+                breaks: $breaks
                 attendanceRestaurantId: $attendanceRestaurantId
+                scheduledShiftId: $scheduledShiftId
                 owner: $owner
                 deleted: $deleted
             }
@@ -726,20 +608,22 @@ export const CREATE_ATTENDANCE = gql`
             businessDate
             clockIn
             clockOut
-            totalBreakMinutes
-            workedMinutes
             manualEntry
             adjustmentReason
-            adjustedByUserId
-            adjustedByUserName
-            adjustedAt
             adjustmentHistory {
                 status
                 changedByUserId
                 changedByUserName
                 changedAt
             }
+            breaks {
+                breakStart
+                breakEnd
+                durationMinutes
+            }
             attendanceRestaurantId
+            scheduledShiftId
+            owner
             deleted
         }
     }
@@ -754,15 +638,11 @@ export const UPDATE_ATTENDANCE = gql`
         $status: AttendanceRecordStatus
         $clockIn: String
         $clockOut: String
-        $totalBreakMinutes: Int
-        $workedMinutes: Int
         $manualEntry: Boolean
         $adjustmentReason: String
-        $adjustedByUserId: ID
-        $adjustedByUserName: String
-        $adjustedAt: String
         $adjustmentHistory: [AttendanceAdjustmentInput]
         $breaks: [AttendanceBreakInput]
+        $scheduledShiftId: ID
         $deleted: Boolean
     ) {
         updateAttendance(
@@ -774,15 +654,11 @@ export const UPDATE_ATTENDANCE = gql`
                 status: $status
                 clockIn: $clockIn
                 clockOut: $clockOut
-                totalBreakMinutes: $totalBreakMinutes
-                workedMinutes: $workedMinutes
                 manualEntry: $manualEntry
                 adjustmentReason: $adjustmentReason
-                adjustedByUserId: $adjustedByUserId
-                adjustedByUserName: $adjustedByUserName
-                adjustedAt: $adjustedAt
                 adjustmentHistory: $adjustmentHistory
                 breaks: $breaks
+                scheduledShiftId: $scheduledShiftId
                 deleted: $deleted
             }
         ) {
@@ -793,13 +669,8 @@ export const UPDATE_ATTENDANCE = gql`
             businessDate
             clockIn
             clockOut
-            totalBreakMinutes
-            workedMinutes
             manualEntry
             adjustmentReason
-            adjustedByUserId
-            adjustedByUserName
-            adjustedAt
             adjustmentHistory {
                 status
                 changedByUserId
@@ -812,6 +683,8 @@ export const UPDATE_ATTENDANCE = gql`
                 durationMinutes
             }
             attendanceRestaurantId
+            scheduledShiftId
+            owner
             deleted
         }
     }

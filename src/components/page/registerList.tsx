@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "../../tabin/components/toast";
 import { useRegister } from "../../context/register-context";
 import { useNavigate } from "react-router-dom";
-import { beginOrderPath, posTimeclockPath } from "../main";
+import { beginOrderPath, posUserListPath } from "../main";
 import { useRestaurant } from "../../context/restaurant-context";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { Button } from "../../tabin/components/button";
