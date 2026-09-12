@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "../../tabin/components/toast";
 import { useRegister } from "../../context/register-context";
 import { useNavigate } from "react-router-dom";
-import { beginOrderPath, posTimeclockPath } from "../main";
+import { beginOrderPath, posUserListPath } from "../main";
 import { useRestaurant } from "../../context/restaurant-context";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 import { Button } from "../../tabin/components/button";
@@ -32,9 +32,14 @@ export default () => {
             setShowFullScreenSpinner(false);
             // Only POS registers use the staff selection + PIN gate. Kiosk-style registers
             // continue directly into the shared begin-order flow.
-            navigate(selectedRegister?.type === ERegisterType.POS && selectedRegister?.enablePosUserPin ? posTimeclockPath : beginOrderPath, {
-                replace: true,
-            });
+            navigate(
+                selectedRegister?.type === ERegisterType.POS && (selectedRegister?.enablePosUserPin || selectedRegister?.enablePosUserAttendance)
+                    ? posUserListPath
+                    : beginOrderPath,
+                {
+                    replace: true,
+                },
+            );
         } catch (e) {
             setShowFullScreenSpinner(false);
             toast.error(e);
@@ -63,7 +68,7 @@ export default () => {
                         {restaurant.registers.items
                             .filter((reg) => reg.type !== ERegisterType.ONLINE)
                             .map((reg, index) => (
-                                <>
+                                <div key={reg.id}>
                                     {index != 0 && <div className="separator-4"></div>}
                                     <div className="register-list-item">
                                         <div>{reg.name}</div>
@@ -90,7 +95,7 @@ export default () => {
                                             </>
                                         )}
                                     </div>
-                                </>
+                                </div>
                             ))}
                         <div className="mt-2">
                             <Button onClick={logout}>Log Out</Button>

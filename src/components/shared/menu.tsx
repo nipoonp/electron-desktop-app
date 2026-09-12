@@ -43,7 +43,9 @@ export const Menu = (props: { tabs: ITab[]; onClickMenuRoute: (route: string) =>
         }
 
         if (tab.id === "selectPosUser") {
-            return register.type === ERegisterType.POS && !!register.enablePosUserPin;
+            if (register.type !== ERegisterType.POS) return false;
+            // Show if either PIN or attendance feature is enabled at register level
+            return !!register.enablePosUserPin || !!register.enablePosUserAttendance;
         }
 
         return true;

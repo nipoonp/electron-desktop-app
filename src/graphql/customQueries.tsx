@@ -157,8 +157,6 @@ export interface IGET_RESTAURANT_USER_LINK {
     posPin?: string | null;
     posPinUpdatedAt?: string | null;
     attendanceEnabled?: boolean | null;
-    breakTrackingEnabled?: boolean | null;
-    defaultBreakDurationMinutes?: number | null;
     user: IGET_RESTAURANT_USER;
 }
 
@@ -282,8 +280,6 @@ export const GET_RESTAURANT = gql`
                     posPin
                     posPinUpdatedAt
                     attendanceEnabled
-                    breakTrackingEnabled
-                    defaultBreakDurationMinutes
                     user {
                         id
                         firstName
@@ -389,6 +385,7 @@ export const GET_RESTAURANT = gql`
                     active
                     name
                     enablePosUserPin
+                    enablePosUserAttendance
                     posUserPinTimeoutInSeconds
                     enableTableFlags
                     enableTableMapping
@@ -989,74 +986,6 @@ export const GET_RESTAURANT = gql`
     }
 `;
 
-export interface IGET_ATTENDANCE_BREAK {
-    breakStart: string;
-    breakEnd?: string | null;
-    durationMinutes?: number | null;
-}
-
-export interface IGET_ATTENDANCE {
-    id: string;
-    employeeName: string;
-    employeeUserId: string;
-    status: EAttendanceRecordStatus;
-    businessDate?: string | null;
-    clockIn: string;
-    clockOut?: string | null;
-    totalBreakMinutes?: number | null;
-    workedMinutes?: number | null;
-    manualEntry?: boolean | null;
-    adjustmentReason?: string | null;
-    adjustedByUserId?: string | null;
-    adjustedByUserName?: string | null;
-    adjustedAt?: string | null;
-    adjustmentHistory?:
-        | {
-              status: EAttendanceAdjustmentStatus;
-              changedByUserId?: string | null;
-              changedByUserName?: string | null;
-              changedAt?: string | null;
-          }[]
-        | null;
-    attendanceRestaurantId: string;
-    breaks?: IGET_ATTENDANCE_BREAK[] | null;
-}
-
-export const LIST_ATTENDANCES_BY_USER = gql`
-    query ListAttendancesByUserId($employeeUserId: ID!, $limit: Int) {
-        listAttendancesByUserId(employeeUserId: $employeeUserId, limit: $limit, sortDirection: DESC) {
-            items {
-                id
-                employeeName
-                employeeUserId
-                status
-                businessDate
-                clockIn
-                clockOut
-                totalBreakMinutes
-                workedMinutes
-                manualEntry
-                adjustmentReason
-                adjustedByUserId
-                adjustedByUserName
-                adjustedAt
-                adjustmentHistory {
-                    status
-                    changedByUserId
-                    changedByUserName
-                    changedAt
-                }
-                attendanceRestaurantId
-                breaks {
-                    breakStart
-                    breakEnd
-                    durationMinutes
-                }
-            }
-        }
-    }
-`;
-
 export const GET_RESTAURANT_AVAILABILITY = gql`
     query GetRestaurantAvailability($restaurantId: ID!) {
         getRestaurant(id: $restaurantId) {
@@ -1264,11 +1193,101 @@ export interface IGET_RESTAURANT_ADVERTISEMENT_AVAILABILITY_TIMES {
     endTime: string;
 }
 
+export interface IGET_ATTENDANCE_BREAK {
+    breakStart: string;
+    breakEnd?: string | null;
+    durationMinutes?: number | null;
+}
+
+export interface IGET_ATTENDANCE {
+    id: string;
+    employeeName: string;
+    employeeUserId: string;
+    status: EAttendanceRecordStatus;
+    businessDate?: string | null;
+    clockIn: string;
+    clockOut?: string | null;
+    manualEntry?: boolean | null;
+    adjustmentReason?: string | null;
+    adjustmentHistory?:
+        | {
+              status: EAttendanceAdjustmentStatus;
+              changedByUserId?: string | null;
+              changedByUserName?: string | null;
+              changedAt?: string | null;
+          }[]
+        | null;
+    attendanceRestaurantId: string;
+    scheduledShiftId?: string | null;
+    owner?: string | null;
+    deleted?: boolean | null;
+    breaks?: IGET_ATTENDANCE_BREAK[] | null;
+}
+
+export const LIST_ATTENDANCES_BY_USER = gql`
+    query ListAttendancesByUserId($employeeUserId: ID!, $limit: Int) {
+        listAttendancesByUserId(employeeUserId: $employeeUserId, limit: $limit, sortDirection: DESC) {
+            items {
+                id
+                employeeName
+                employeeUserId
+                status
+                businessDate
+                clockIn
+                clockOut
+                manualEntry
+                adjustmentReason
+                adjustmentHistory {
+                    status
+                    changedByUserId
+                    changedByUserName
+                    changedAt
+                }
+                attendanceRestaurantId
+                scheduledShiftId
+                owner
+                deleted
+                breaks {
+                    breakStart
+                    breakEnd
+                    durationMinutes
+                }
+            }
+        }
+    }
+`;
+
+export interface IGET_ROSTER_SHIFT {
+    id: string;
+    employeeUserId: string;
+    shiftDate: string;
+    startTime: string;
+    finishTime: string;
+}
+
+/** Used at clock-in to find the employee's rostered shift(s) for today, so the attendance record
+ *  can link back to it. shiftDate is filtered server-side; employeeUserId is filtered client-side
+ *  since RosterShift has no employee-scoped index of its own. */
+export const LIST_ROSTER_SHIFTS_BY_RESTAURANT_AND_DATE = gql`
+    query ListRosterShiftsByRestaurantId($rosterRestaurantId: ID!, $shiftDate: String) {
+        listRosterShiftsByRestaurantId(rosterRestaurantId: $rosterRestaurantId, shiftDate: { eq: $shiftDate }, limit: 200) {
+            items {
+                id
+                employeeUserId
+                shiftDate
+                startTime
+                finishTime
+            }
+        }
+    }
+`;
+
 export interface IGET_RESTAURANT_REGISTER {
     id: string;
     active: boolean;
     name: string;
     enablePosUserPin?: boolean;
+    enablePosUserAttendance?: boolean;
     posUserPinTimeoutInSeconds?: number | null;
     enableTableFlags: boolean;
     enableTableMapping: boolean;
