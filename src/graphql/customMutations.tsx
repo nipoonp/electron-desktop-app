@@ -363,6 +363,15 @@ export const UPDATE_REGISTER_TYRO = gql`
     }
 `;
 
+export const UPDATE_RESTAURANT_PAUSE_RESERVATIONS_UNTIL = gql`
+    mutation UpdateRestaurantPauseReservationsUntil($id: ID!, $pauseReservationsUntil: String) {
+        updateRestaurant(input: { id: $id, pauseReservationsUntil: $pauseReservationsUntil }) {
+            id
+            pauseReservationsUntil
+        }
+    }
+`;
+
 export const CREATE_RESERVATION = gql`
     mutation CreateReservation(
         $restaurantId: ID!

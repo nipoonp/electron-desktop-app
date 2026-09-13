@@ -264,6 +264,7 @@ export const GET_RESTAURANT = gql`
             autoCompleteOrders
             enableLoyalty
             onlinePaymentGatewayProvider
+            pauseReservationsUntil
             preparationTimeInMinutes
             delayBetweenOrdersInSeconds
             orderThresholdMessage
@@ -1111,6 +1112,7 @@ export interface IGET_RESTAURANT {
     autoCompleteOrders: boolean | null;
     enableLoyalty: boolean | null;
     onlinePaymentGatewayProvider?: string | null;
+    pauseReservationsUntil?: string | null;
     preparationTimeInMinutes: number | null;
     delayBetweenOrdersInSeconds: number | null;
     orderThresholdMessage: string | null;
@@ -2508,6 +2510,15 @@ export interface IGET_RESERVATION_FOR_TABLE {
 }
 
 // Slim query for floor plan overlay — only fetches the fields needed to derive reserved table status.
+export const GET_RESERVATION_PAUSE_STATUS = gql`
+    query GetReservationPauseStatus($restaurantId: ID!) {
+        getRestaurant(id: $restaurantId) {
+            id
+            pauseReservationsUntil
+        }
+    }
+`;
+
 export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE = gql`
     query GetReservationsByRestaurantByDate($restaurantId: ID!, $date: ModelStringKeyConditionInput, $limit: Int) {
         getReservationsByRestaurantByDate(restaurantId: $restaurantId, date: $date, limit: $limit) {
