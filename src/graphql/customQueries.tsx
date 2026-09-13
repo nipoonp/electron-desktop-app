@@ -21,6 +21,7 @@ export enum ERegisterType {
     KIOSK = "KIOSK",
     POS = "POS",
     ONLINE = "ONLINE",
+    KDS = "KDS",
 }
 
 export enum ERegisterPrinterType {

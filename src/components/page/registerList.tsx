@@ -55,7 +55,7 @@ export default () => {
                     <>
                         <div className="h2 mb-6">Select a register to use</div>
                         {restaurant.registers.items
-                            .filter((reg) => reg.type !== ERegisterType.ONLINE)
+                            .filter((reg) => reg.type === ERegisterType.POS || reg.type === ERegisterType.KIOSK)
                             .map((reg, index) => (
                                 <>
                                     {index != 0 && <div className="separator-4"></div>}
