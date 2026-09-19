@@ -342,10 +342,7 @@ const Restaurant = () => {
             return;
         }
 
-        const defaultType =
-            availableOrderTypes.length === 1 && availableOrderTypes.includes(EOrderType.DINEIN)
-                ? EOrderType.DINEIN
-                : EOrderType.TAKEAWAY;
+        const defaultType = availableOrderTypes.length === 1 && availableOrderTypes.includes(EOrderType.DINEIN) ? EOrderType.DINEIN : EOrderType.TAKEAWAY;
         setOrderType(defaultType);
     }, [isPOS, register, orderType]);
 
@@ -356,8 +353,8 @@ const Restaurant = () => {
             const defaultType = availableOrderTypes.includes(EOrderType.TAKEAWAY)
                 ? EOrderType.TAKEAWAY
                 : availableOrderTypes.includes(EOrderType.DINEIN)
-                ? EOrderType.DINEIN
-                : null;
+                  ? EOrderType.DINEIN
+                  : null;
 
             if (defaultType) {
                 setOrderType(defaultType);
@@ -539,12 +536,13 @@ const Restaurant = () => {
         const isValid = !isSoldOut && isProductAvailable && isCategoryAvailable && isQuantityAvailable;
 
         const addToCart = products && products.find((item) => item.id === product.id);
+        const imageUrl = product.imageUrl || (product.image && `${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`);
 
         return (
             <>
                 <div
                     key={product.id}
-                    className={`product ${isValid ? "" : "sold-out"} ${addToCart ? "add-to-cart" : ""}`}
+                    className={`product ${isValid ? "" : "sold-out"} ${addToCart ? "add-to-cart" : ""} ${product.borderColor ? "custom-border" : ""}`}
                     style={{
                         backgroundColor: product.backgroundColor ? product.backgroundColor : undefined,
                         color: product.backgroundColor ? getContrastTextColor(product.backgroundColor) : undefined,
@@ -560,17 +558,7 @@ const Restaurant = () => {
                         <></>
                     )}
 
-                    {/* {product.imageUrl ? (
-                        <CachedImage url={`${product.imageUrl}`} className="image mb-2" alt="product-image" />
-                    ) : product.image ? (
-                        <>
-                            <CachedImage
-                                className="image mb-2"
-                                url={`${getCloudFrontDomainName()}/protected/${product.image.identityPoolId}/${product.image.key}`}
-                                alt="product-image"
-                            />
-                        </>
-                    ) : null} */}
+                    {imageUrl && <CachedImage url={imageUrl} className="image" alt="" />}
 
                     <div className="name text-bold">{isValid ? `${product.name}` : `${product.name} (SOLD OUT)`}</div>
 
@@ -591,11 +579,7 @@ const Restaurant = () => {
         );
     };
 
-    const Category = (props: {
-        isSelected: boolean;
-        category: IGET_RESTAURANT_CATEGORY;
-        onCategorySelected: (category: IGET_RESTAURANT_CATEGORY) => void;
-    }) => {
+    const Category = (props: { isSelected: boolean; category: IGET_RESTAURANT_CATEGORY; onCategorySelected: (category: IGET_RESTAURANT_CATEGORY) => void }) => {
         const { isSelected, category, onCategorySelected } = props;
 
         const isSoldOut = isItemSoldOut(category.soldOut, category.soldOutDate);
@@ -644,18 +628,7 @@ const Restaurant = () => {
 
     const menuSearchProduct = (
         <>
-            <Shake
-                active={isPOS ? false : isShakeAnimationActive}
-                h={5}
-                v={5}
-                r={3}
-                dur={300}
-                int={10}
-                max={100}
-                fixed={true}
-                fixedStop={false}
-                freez={false}
-            >
+            <Shake active={isPOS ? false : isShakeAnimationActive} h={5} v={5} r={3} dur={300} int={10} max={100} fixed={true} fixedStop={false} freez={false}>
                 <div
                     className="category search-product-button background-grey"
                     onClick={() => {
