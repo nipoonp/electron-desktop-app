@@ -100,8 +100,11 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
                 const newOrders: IGET_RESTAURANT_ORDER_FRAGMENT[] = res.data.getOrdersByRestaurantByPlacedAt.items;
 
+                const mergedOrderIds = new Set(newOrders.map((order) => order.orderMergeId).filter(Boolean));
+
                 const ordersToPrint = newOrders.filter(
-                    (order) => order.onlineOrder || order.thirdPartyIntegrationResult?.platform === "DELIVERECTPOS",
+                    (order) =>
+                        !mergedOrderIds.has(order.id) && (order.onlineOrder || order.thirdPartyIntegrationResult?.platform === "DELIVERECTPOS"),
                 );
 
                 for (var i = 0; i < ordersToPrint.length; i++) {

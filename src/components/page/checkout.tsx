@@ -1173,10 +1173,10 @@ export const Checkout = () => {
         cashChangeAmount?: number | null,
     ) => {
         const wasEditingParkedOrder = Boolean(parkedOrderId);
-        const keepParkedStatus = wasEditingParkedOrder && parkOrder && Boolean(parkedOrderStatus);
+        const keepExistingStatus = wasEditingParkedOrder && parkedOrderStatus && (parkOrder || parkedOrderStatus !== EOrderStatus.PARKED);
         //If parked order do not generate order number
         const orderNumber = parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
-        const orderStatus = keepParkedStatus ? parkedOrderStatus! : EOrderStatus.NEW;
+        const orderStatus = keepExistingStatus ? parkedOrderStatus! : EOrderStatus.NEW;
 
         setPaymentOutcomeOrderNumber(orderNumber);
 
@@ -1404,6 +1404,8 @@ export const Checkout = () => {
                 variables.discount = undefined;
                 variables.promotionId = undefined;
                 variables.subTotal = total; //Set subTotal to total because we do not want to add any discount or promotions. Also product.discount is set to 0 in dashboard.tsx
+            } else if (orderStatus !== EOrderStatus.NEW) {
+                // Keep existing status and completedAt
             } else if (restaurant.autoCompleteOrders) {
                 variables.status = "COMPLETED";
                 variables.completedAt = toLocalISOString(now);
