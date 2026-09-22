@@ -6,23 +6,20 @@ import {
     calculateTaxAmount,
     convertBase64ToFile,
     convertCentsToDollars,
-    convertProductTypesForPrint,
-    filterPrintProducts,
     getCartProductUnitTotalPrice,
     getOrderLineSignature,
+    getReceiptPrinter,
+    isKitchenReceiptPrinter,
     getOrderNumber,
     isItemSoldOut,
     isProductQuantityAvailable,
-    printedQuantitiesListToMap,
-    printedQuantitiesToList,
     toLocalISOString,
 } from "../../util/util";
-import { useLazyQuery, useMutation } from "@apollo/client";
-import { CREATE_ORDER, UPDATE_ORDER, UPDATE_ORDER_PRINTED_QUANTITIES } from "../../graphql/customMutations";
+import { useMutation } from "@apollo/client";
+import { CREATE_ORDER, UPDATE_ORDER } from "../../graphql/customMutations";
 import { FiArrowDownCircle } from "react-icons/fi";
 import {
     GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT,
-    GET_ORDER,
     IGET_RESTAURANT_CATEGORY,
     IGET_RESTAURANT_PRODUCT,
     EPromotionType,
@@ -60,7 +57,6 @@ import {
     EEftposProvider,
     ICartPaymentAmounts,
     ICartPayment,
-    EReceiptPrinterPrinterType,
     EPaymentMethod,
     EVerifoneTransactionOutcome,
     ERegisterType,
@@ -142,45 +138,6 @@ type AvailabilityCategoryIndex = {
     productsById: Map<string, AvailabilityProductIndex>;
 };
 
-// Builds a lineKey -> quantity map from order products.
-export const getProductQuantities = (products: IGET_RESTAURANT_ORDER_FRAGMENT["products"]) =>
-    (products || []).reduce(
-        (productQuantities, product) => {
-            const key = getOrderLineSignature(product);
-            productQuantities[key] = (productQuantities[key] || 0) + product.quantity;
-
-            return productQuantities;
-        },
-        {} as Record<string, number>,
-    );
-
-// Merges product quantities into a target map using add or max strategy.
-export const mergeProductQuantities = (target: Record<string, number>, source: Record<string, number>, strategy: "add" | "max") => {
-    Object.entries(source).forEach(([productId, quantity]) => {
-        target[productId] = strategy === "add" ? (target[productId] || 0) + quantity : Math.max(target[productId] || 0, quantity);
-    });
-};
-
-// Returns only quantities that have not been sent to kitchen yet.
-export const getUnprintedParkedOrderProducts = (order: IGET_RESTAURANT_ORDER_FRAGMENT, printedProductQuantities: Record<string, number>) => {
-    const remainingPrintedProductQuantities = { ...printedProductQuantities };
-
-    return order.products.reduce(
-        (productsToPrint, product) => {
-            const key = getOrderLineSignature(product);
-            const printedQuantity = remainingPrintedProductQuantities[key] || 0;
-            const quantityToPrint = Math.max(product.quantity - printedQuantity, 0);
-
-            remainingPrintedProductQuantities[key] = Math.max(printedQuantity - product.quantity, 0);
-
-            if (quantityToPrint > 0) productsToPrint.push({ ...product, quantity: quantityToPrint });
-
-            return productsToPrint;
-        },
-        [] as IGET_RESTAURANT_ORDER_FRAGMENT["products"],
-    );
-};
-
 // Component
 export const Checkout = () => {
     // context
@@ -249,9 +206,9 @@ export const Checkout = () => {
         setPaidItemCounts,
         setSplitPaymentByPeople,
     } = useCart();
-    const { restaurant, restaurantBase64Logo } = useRestaurant();
+    const { restaurant } = useRestaurant();
     const { register, isPOS, isEftposMerchantNameLocked, lockEftposMerchantName } = useRegister();
-    const { printReceipt, printEftposReceipt, printLabel, printNoSaleReceipt } = useReceiptPrinter();
+    const { printOrderReceipt, printUnprintedKitchenItems, printEftposReceipt, printNoSaleReceipt } = useReceiptPrinter();
     const { user } = useUser();
     const { selectedPosUser } = usePosUser();
     const { logError } = useErrorLogging();
@@ -276,8 +233,6 @@ export const Checkout = () => {
             logger.debug("update order mutation result: ", mutationResult);
         },
     });
-    const [updateOrderPrintedQuantitiesMutation] = useMutation(UPDATE_ORDER_PRINTED_QUANTITIES);
-    const [getOrder] = useLazyQuery(GET_ORDER, { fetchPolicy: "network-only" });
     const { getRestaurantDataAvailability } = useGetRestaurantAvailabilityLazyQuery();
 
     const { getThirdPartyOrderResponse } = useGetThirdPartyOrderResponseLazyQuery();
@@ -909,119 +864,37 @@ export const Checkout = () => {
         clearCart();
     };
 
-    const sendReceiptPrint = async (order: IGET_RESTAURANT_ORDER_FRAGMENT, printer: IGET_RESTAURANT_REGISTER_PRINTER) => {
-        const productsToPrint = filterPrintProducts(order.products, printer);
-
-        if (productsToPrint.length === 0) return;
-
-        if (printer.printerType === EReceiptPrinterPrinterType.LABEL) {
-            await printLabel({
-                orderId: order.id,
-                printerName: printer.name, //For label printer name is important
-                printerType: printer.type,
-                printerAddress: printer.address,
-                products: convertProductTypesForPrint(productsToPrint),
-                number: order.number,
-                placedAt: format(new Date(order.placedAt), "dd/MM HH:mm"),
-            });
-        } else {
-            //Not checking if its printerType receipt
-            await printReceipt({
-                orderId: order.id,
-                country: order.country,
-                futureOrder: false,
-                orderReminder: false,
-                status: order.status,
-                printerType: printer.type,
-                printerAddress: printer.address,
-                receiptFooterText: printer.receiptFooterText,
-                customerPrinter: printer.customerPrinter,
-                kitchenPrinter: printer.kitchenPrinter,
-                kitchenPrinterSmall: printer.kitchenPrinterSmall,
-                kitchenPrinterLarge: printer.kitchenPrinterLarge,
-                hidePreparationTime: printer.hidePreparationTime,
-                hideModifierGroupName: printer.hideModifierGroupName,
-                skipReceiptCutCommand: printer.skipReceiptCutCommand,
-                printReceiptForEachProduct: printer.printReceiptForEachProduct,
-                hideOrderType: register.availableOrderTypes.length === 1, //Don't show order type if only 1 is available
-                hideModifierGroupsForCustomer: false,
-                restaurant: {
-                    name: restaurant.name,
-                    address: restaurant.address.receiptAddress || restaurant.address.formattedAddress,
-                    gstNumber: restaurant.gstNumber,
-                },
-                restaurantLogoBase64: restaurantBase64Logo,
-                customerInformation: customerInformation
-                    ? {
-                          firstName: customerInformation.firstName,
-                          email: customerInformation.email,
-                          phoneNumber: customerInformation.phoneNumber,
-                          signatureBase64: customerInformation.signatureBase64,
-                          customFields: customerInformation.customFields.map((field) => ({
-                              label: field.label,
-                              value: field.value,
-                              type: field.type,
-                          })),
-                      }
-                    : null,
-                notes: order.notes,
-                products: convertProductTypesForPrint(productsToPrint),
-                eftposReceipt: order.eftposReceipt,
-                paymentAmounts: order.paymentAmounts,
-                deliveryProvider: order.deliveryProvider,
-                deliveryAddress: order.deliveryAddress,
-                deliveryNotes: order.deliveryNotes,
-                deliveryDistanceMeters: order.deliveryDistanceMeters,
-                deliveryFeeDiscount: order.deliveryFeeDiscount,
-                deliveryFee: order.deliveryFee,
-                deliveryTrackingUrl: order.deliveryTrackingUrl,
-                total: order.total,
-                surcharge: order.surcharge,
-                orderTypeSurcharge: order.orderTypeSurcharge,
-                eftposSurcharge: order.eftposSurcharge,
-                eftposTip: order.eftposTip,
-                cashChangeAmount: order.cashChangeAmount,
-                discount: order.discount || null,
-                tax: order.tax,
-                subTotal: order.subTotal,
-                paid: order.paid,
-                //display payment required message if kiosk and paid cash
-                displayPaymentRequiredMessage:
-                    !order.paid || (!isPOS && order.paid && order.paymentAmounts && order.paymentAmounts.cash === order.subTotal) ? true : false,
-                type: order.type,
-                number: order.number,
-                table: order.table,
-                buzzer: order.buzzer,
-                placedAt: order.placedAt,
-                orderScheduledAt: order.orderScheduledAt,
-                preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
-                enableLoyalty: restaurant.enableLoyalty,
-            });
-        }
-    };
-
-    const isKitchenReceiptPrinter = (printer: IGET_RESTAURANT_REGISTER_PRINTER) =>
-        printer.kitchenPrinter === true || printer.kitchenPrinterSmall === true || printer.kitchenPrinterLarge === true;
-
-    const getReceiptPrinter = (printer: IGET_RESTAURANT_REGISTER_PRINTER, receiptType: "customer" | "kitchen"): IGET_RESTAURANT_REGISTER_PRINTER => ({
-        ...printer,
-        customerPrinter: receiptType === "customer",
-        kitchenPrinter: receiptType === "kitchen" ? printer.kitchenPrinter : false,
-        kitchenPrinterSmall: receiptType === "kitchen" ? printer.kitchenPrinterSmall : false,
-        kitchenPrinterLarge: receiptType === "kitchen" ? printer.kitchenPrinterLarge : false,
+    const getCheckoutReceiptOverrides = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => ({
+        customerInformation: customerInformation
+            ? {
+                  firstName: customerInformation.firstName,
+                  email: customerInformation.email,
+                  phoneNumber: customerInformation.phoneNumber,
+                  signatureBase64: customerInformation.signatureBase64,
+                  customFields: customerInformation.customFields.map((field) => ({
+                      label: field.label,
+                      value: field.value,
+                      type: field.type,
+                  })),
+              }
+            : null,
+        displayPaymentRequiredMessage: !order.paid || (!isPOS && order.paid && order.paymentAmounts?.cash === order.subTotal),
     });
+
+    const sendReceiptPrint = (order: IGET_RESTAURANT_ORDER_FRAGMENT, printer: IGET_RESTAURANT_REGISTER_PRINTER) =>
+        printOrderReceipt(order, printer, getCheckoutReceiptOverrides(order));
 
     const printReceipts = async (
         order: IGET_RESTAURANT_ORDER_FRAGMENT,
         options?: {
-            treatAsPreviouslyParked?: boolean;
+            trackKitchenQuantities?: boolean;
         },
     ) => {
         if (!register.printers) return;
 
-        const treatAsPreviouslyParked = options?.treatAsPreviouslyParked ?? Boolean(order.parkedAt);
+        const trackKitchenQuantities = options?.trackKitchenQuantities || Boolean(order.parkedAt || order.onlineOrder || order.printedQuantities?.length);
         const shouldPromptForCustomerReceipt = register.askToPrintCustomerReceipt === true;
-        let hasPrintedParkedOrderReceipts = false;
+        let hasPrintedKitchenItems = false;
 
         for (const printer of register.printers.items) {
             //Open cash drawer if paid by cash, even if we don't print a receipt
@@ -1029,10 +902,10 @@ export const Checkout = () => {
                 await printNoSaleReceipt({ printer: { printerType: printer.type, printerAddress: printer.address } });
             }
 
-            // If an order was parked before, print only newly added kitchen items, but still allow a full customer copy.
-            if (treatAsPreviouslyParked && isKitchenReceiptPrinter(printer)) {
-                if (!hasPrintedParkedOrderReceipts) {
-                    hasPrintedParkedOrderReceipts = true;
+            // Reopened and online orders share kitchen quantity tracking; customer copies still contain the full order.
+            if (trackKitchenQuantities && isKitchenReceiptPrinter(printer)) {
+                if (!hasPrintedKitchenItems) {
+                    hasPrintedKitchenItems = true;
                     await onPrintParkedOrderReceipts(order);
                 }
 
@@ -1072,63 +945,13 @@ export const Checkout = () => {
             });
     };
 
-    const getLatestPrintedProductQuantities = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
-        const latestOrderResult = await getOrder({ variables: { id: order.id } });
-        const latestOrder: IGET_RESTAURANT_ORDER_FRAGMENT = latestOrderResult.data?.getOrder || order;
-        return printedQuantitiesListToMap(latestOrder.printedQuantities);
-    };
-
     const onPrintParkedOrderReceipts = async (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
-        if (!register.printers) return;
-
-        const printedProductQuantities = await getLatestPrintedProductQuantities(order);
-        const unprintedProducts = getUnprintedParkedOrderProducts(order, printedProductQuantities);
-        const unprintedProductQuantities = getProductQuantities(unprintedProducts);
-
-        if (unprintedProducts.length === 0) {
-            setPrintedProductQuantities(printedProductQuantities);
-            setKitchenPrintTrackingVersion((prev) => prev + 1);
-            return;
-        }
-        const printedProductQuantitiesThisRun: Record<string, number> = {};
-        let hasApplicableKitchenPrinter = false;
-
-        for (const printer of register.printers.items) {
-            if (!isKitchenReceiptPrinter(printer)) continue;
-
-            const printerProducts = filterPrintProducts([...unprintedProducts], printer);
-
-            if (printerProducts.length === 0) continue;
-
-            hasApplicableKitchenPrinter = true;
-
-            try {
-                await sendReceiptPrint({ ...order, products: printerProducts }, getReceiptPrinter(printer, "kitchen"));
-                mergeProductQuantities(printedProductQuantitiesThisRun, getProductQuantities(printerProducts), "max");
-            } catch (error) {
-                logger.error("unable to print parked order receipt", error);
-            }
-        }
-
-        // No kitchen printers are configured for these products — treat all as sent so they don't block the park cycle.
-        if (!hasApplicableKitchenPrinter) mergeProductQuantities(printedProductQuantitiesThisRun, unprintedProductQuantities, "max");
-
-        const latestPrintedProductQuantities = await getLatestPrintedProductQuantities(order);
-
-        Object.entries(printedProductQuantitiesThisRun).forEach(([lineKey, quantity]) => {
-            const targetQuantity = (printedProductQuantities[lineKey] || 0) + quantity;
-            latestPrintedProductQuantities[lineKey] = Math.max(latestPrintedProductQuantities[lineKey] || 0, targetQuantity);
+        const printedProductQuantities = await printUnprintedKitchenItems(order, {
+            receiptOverrides: getCheckoutReceiptOverrides(order),
+            markUnroutedAsSent: true,
         });
-
-        try {
-            await updateOrderPrintedQuantitiesMutation({
-                variables: { orderId: order.id, printedQuantities: printedQuantitiesToList(latestPrintedProductQuantities) },
-            });
-            setPrintedProductQuantities(latestPrintedProductQuantities);
-            setKitchenPrintTrackingVersion((prev) => prev + 1);
-        } catch (error) {
-            logger.error("unable to persist printed quantities to backend", error);
-        }
+        setPrintedProductQuantities(printedProductQuantities);
+        setKitchenPrintTrackingVersion((prev) => prev + 1);
     };
 
     const showKitchenSendStatusInCart = parkedOrderStatus === EOrderStatus.PARKED && Boolean(parkedOrderId);
@@ -1238,7 +1061,7 @@ export const Checkout = () => {
                     }
                     // else: AskToPrintParkedOrderReceipts modal lets the user decide
                 } else {
-                    await printReceipts(newOrder, { treatAsPreviouslyParked: wasEditingParkedOrder });
+                    await printReceipts(newOrder, { trackKitchenQuantities: wasEditingParkedOrder });
                 }
             }
 

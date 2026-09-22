@@ -25,6 +25,7 @@ import {
     ICartModifier,
     ICartModifierGroup,
     ICartProduct,
+    IOrderReceipt,
     ICartPromotion,
 } from "../model/model";
 
@@ -1088,3 +1089,117 @@ export const printedQuantitiesListToMap = (printedQuantities: IGET_RESTAURANT_OR
         },
         {} as Record<string, number>,
     );
+
+// Builds a lineKey -> quantity map from order products.
+export const getProductQuantities = (products: IGET_RESTAURANT_ORDER_FRAGMENT["products"]) =>
+    (products || []).reduce(
+        (productQuantities, product) => {
+            const key = getOrderLineSignature(product);
+            productQuantities[key] = (productQuantities[key] || 0) + product.quantity;
+
+            return productQuantities;
+        },
+        {} as Record<string, number>,
+    );
+
+// Merges product quantities into a target map using add or max strategy.
+export const mergeProductQuantities = (target: Record<string, number>, source: Record<string, number>, strategy: "add" | "max") => {
+    Object.entries(source).forEach(([lineKey, quantity]) => {
+        target[lineKey] = strategy === "add" ? (target[lineKey] || 0) + quantity : Math.max(target[lineKey] || 0, quantity);
+    });
+};
+
+// Returns only quantities that have not been sent to kitchen yet.
+export const getUnprintedKitchenProducts = (order: IGET_RESTAURANT_ORDER_FRAGMENT, printedProductQuantities: Record<string, number>) => {
+    const remainingPrintedProductQuantities = { ...printedProductQuantities };
+
+    return order.products.reduce(
+        (productsToPrint, product) => {
+            const key = getOrderLineSignature(product);
+            const printedQuantity = remainingPrintedProductQuantities[key] || 0;
+            const quantityToPrint = Math.max(product.quantity - printedQuantity, 0);
+
+            remainingPrintedProductQuantities[key] = Math.max(printedQuantity - product.quantity, 0);
+
+            if (quantityToPrint > 0) productsToPrint.push({ ...product, quantity: quantityToPrint });
+
+            return productsToPrint;
+        },
+        [] as IGET_RESTAURANT_ORDER_FRAGMENT["products"],
+    );
+};
+
+export const isKitchenReceiptPrinter = (printer: IGET_RESTAURANT_REGISTER_PRINTER) =>
+    printer.kitchenPrinter === true || printer.kitchenPrinterSmall === true || printer.kitchenPrinterLarge === true;
+
+export const getReceiptPrinter = (printer: IGET_RESTAURANT_REGISTER_PRINTER, receiptType: "customer" | "kitchen"): IGET_RESTAURANT_REGISTER_PRINTER => ({
+    ...printer,
+    customerPrinter: receiptType === "customer",
+    kitchenPrinter: receiptType === "kitchen" ? printer.kitchenPrinter : false,
+    kitchenPrinterSmall: receiptType === "kitchen" ? printer.kitchenPrinterSmall : false,
+    kitchenPrinterLarge: receiptType === "kitchen" ? printer.kitchenPrinterLarge : false,
+});
+
+export const buildOrderReceipt = (
+    order: IGET_RESTAURANT_ORDER_FRAGMENT,
+    printer: IGET_RESTAURANT_REGISTER_PRINTER,
+    context: Pick<IOrderReceipt, "restaurant" | "restaurantLogoBase64" | "hideOrderType" | "preparationTimeInMinutes" | "enableLoyalty">,
+    overrides: Partial<IOrderReceipt> = {},
+): IOrderReceipt => ({
+    orderId: order.id,
+    country: order.country,
+    futureOrder: false,
+    orderReminder: false,
+    status: order.status,
+    printerType: printer.type,
+    printerAddress: printer.address,
+    receiptFooterText: printer.receiptFooterText,
+    customerPrinter: printer.customerPrinter,
+    kitchenPrinter: printer.kitchenPrinter,
+    kitchenPrinterSmall: printer.kitchenPrinterSmall,
+    kitchenPrinterLarge: printer.kitchenPrinterLarge,
+    hidePreparationTime: printer.hidePreparationTime,
+    hideModifierGroupName: printer.hideModifierGroupName,
+    skipReceiptCutCommand: printer.skipReceiptCutCommand,
+    printReceiptForEachProduct: printer.printReceiptForEachProduct,
+    hideModifierGroupsForCustomer: false,
+    customerInformation: order.customerInformation
+        ? {
+              firstName: order.customerInformation.firstName,
+              email: order.customerInformation.email,
+              phoneNumber: order.customerInformation.phoneNumber,
+              signatureBase64: null,
+              customFields: order.customerInformation.customFields,
+          }
+        : null,
+    notes: order.notes,
+    products: convertProductTypesForPrint(order.products),
+    eftposReceipt: order.eftposReceipt,
+    paymentAmounts: order.paymentAmounts,
+    deliveryProvider: order.deliveryProvider,
+    deliveryAddress: order.deliveryAddress,
+    deliveryNotes: order.deliveryNotes,
+    deliveryDistanceMeters: order.deliveryDistanceMeters,
+    deliveryFeeDiscount: order.deliveryFeeDiscount,
+    deliveryFee: order.deliveryFee,
+    deliveryTrackingUrl: order.deliveryTrackingUrl,
+    total: order.total,
+    surcharge: order.surcharge,
+    orderTypeSurcharge: order.orderTypeSurcharge,
+    eftposSurcharge: order.eftposSurcharge,
+    eftposTip: order.eftposTip,
+    cashChangeAmount: order.cashChangeAmount,
+    discount: order.discount || null,
+    tax: order.tax,
+    subTotal: order.subTotal,
+    paid: order.paid,
+    displayPaymentRequiredMessage: !order.paid,
+    type: order.type,
+    number: order.number,
+    table: order.table,
+    buzzer: order.buzzer,
+    placedAt: order.placedAt,
+    orderScheduledAt: order.orderScheduledAt,
+    ...context,
+    ...overrides,
+});

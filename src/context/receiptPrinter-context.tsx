@@ -1,11 +1,12 @@
 import axios from "axios";
 import { format } from "date-fns";
-import { useEffect, createContext, useContext } from "react";
+import { useEffect, useRef, createContext, useContext } from "react";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
 import { useGetRestaurantOnlineOrdersByBeginWithPlacedAtLazyQuery } from "../hooks/useGetRestaurantOnlineOrdersByBeginWithPlacedAtLazyQuery";
 import {
     IPrintReceiptDataOutput,
     IOrderReceipt,
+    EReceiptPrinterPrinterType,
     IPrintCashUpDataInput,
     IPrintSalesDataInput,
     IOrderLabel,
@@ -13,15 +14,47 @@ import {
     IPrintNoSaleReceiptDataInput,
 } from "../model/model";
 import { toast } from "../tabin/components/toast";
-import { convertProductTypesForPrint, filterPrintProducts, toLocalISOString } from "../util/util";
+import {
+    buildOrderReceipt,
+    convertProductTypesForPrint,
+    filterPrintProducts,
+    toLocalISOString,
+    getProductQuantities,
+    mergeProductQuantities,
+    getUnprintedKitchenProducts,
+    getReceiptPrinter,
+    isKitchenReceiptPrinter,
+    printedQuantitiesListToMap,
+    printedQuantitiesToList,
+} from "../util/util";
+import { useLazyQuery, useMutation } from "@apollo/client";
+import { GET_ORDER, IGET_RESTAURANT_REGISTER_PRINTER } from "../graphql/customQueries";
+import { UPDATE_ORDER_PRINTED_QUANTITIES } from "../graphql/customMutations";
 import { useErrorLogging } from "./errorLogging-context";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
 import { IEftposReceiptOutput } from "../../electron/model";
 import { useElectron } from "./electron-context";
 
+interface IKitchenPrintOptions {
+    printers?: IGET_RESTAURANT_REGISTER_PRINTER[];
+    receiptOverrides?: Partial<IOrderReceipt>;
+    markUnroutedAsSent?: boolean;
+    refreshOrder?: boolean;
+}
+
+interface IReceiptPrintResult extends IPrintReceiptDataOutput {
+    queued?: boolean;
+}
+
 type ContextProps = {
-    printReceipt: (payload: IOrderReceipt) => Promise<any>;
+    printOrderReceipt: (
+        order: IGET_RESTAURANT_ORDER_FRAGMENT,
+        printer: IGET_RESTAURANT_REGISTER_PRINTER,
+        overrides?: Partial<IOrderReceipt>,
+    ) => Promise<boolean>;
+    printUnprintedKitchenItems: (order: IGET_RESTAURANT_ORDER_FRAGMENT, options?: IKitchenPrintOptions) => Promise<Record<string, number>>;
+    printReceipt: (payload: IOrderReceipt) => Promise<IReceiptPrintResult>;
     printEftposReceipt: (eftposReceipt: IPrintReceiptDataInput) => Promise<any>;
     printLabel: (payload: IOrderLabel) => Promise<any>;
     printNoSaleReceipt: (noSaleReceipt: IPrintNoSaleReceiptDataInput) => Promise<any>;
@@ -30,6 +63,12 @@ type ContextProps = {
 };
 
 const ReceiptPrinterContext = createContext<ContextProps>({
+    printOrderReceipt: () => {
+        return new Promise(() => {});
+    },
+    printUnprintedKitchenItems: () => {
+        return new Promise(() => {});
+    },
     printReceipt: (payload: IOrderReceipt) => {
         return new Promise(() => {});
     },
@@ -56,6 +95,15 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
     const { logError } = useErrorLogging();
     const { checkParentView, sendParentAsync } = useElectron();
 
+    const [getOrder] = useLazyQuery(GET_ORDER, { fetchPolicy: "network-only" });
+    const [updateOrderPrintedQuantitiesMutation] = useMutation(UPDATE_ORDER_PRINTED_QUANTITIES);
+
+    const kitchenPrintTasks = useRef<Record<string, Promise<Record<string, number>>>>({});
+    // Retain accepted counts if a backend write fails; the next call retries persistence without printing again.
+    const pendingPrintedQuantities = useRef<Record<string, Record<string, number>>>({});
+    const isPollingOnlineOrders = useRef(false);
+    const isRetryingReceipts = useRef(false);
+
     const { getRestaurantOnlineOrdersByBeginWithPlacedAt } = useGetRestaurantOnlineOrdersByBeginWithPlacedAtLazyQuery(); //Skip the first iteration. Get new orders from refetch.
     // const { getRestaurantOrdersByBetweenPlacedAt } = useGetRestaurantOrdersByBetweenPlacedAtLazyQuery(); //Skip the first iteration. Get new orders from refetch.
 
@@ -75,6 +123,8 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         if (!enableOnlineOrderPrinting) return;
 
         const ordersFetchTimer = setInterval(async () => {
+            if (isPollingOnlineOrders.current) return;
+            isPollingOnlineOrders.current = true;
             try {
                 let showOnlineOrderPromot = false;
                 const newOrderInfoList: {
@@ -88,7 +138,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 }[] = [];
                 const storedPrintedOrders = localStorage.getItem("printedOnlineOrders");
                 const printedOrders: {
-                    [orderId: string]: boolean;
+                    [orderId: string]: boolean | "quantity-tracked";
                 } = storedPrintedOrders ? JSON.parse(storedPrintedOrders) : {};
 
                 const res = await getRestaurantOnlineOrdersByBeginWithPlacedAt({
@@ -110,110 +160,58 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 for (var i = 0; i < ordersToPrint.length; i++) {
                     const order = ordersToPrint[i];
 
-                    if (printedOrders[order.id] !== undefined) continue;
+                    const alreadyNotified = printedOrders[order.id] !== undefined;
+                    // Older versions saved no item snapshot. Preserve their one-time behaviour rather than
+                    // guessing which current items were printed before this version was installed.
+                    if (alreadyNotified && printedOrders[order.id] !== "quantity-tracked" && !order.printedQuantities?.length) continue;
 
                     if (order.status === "CANCELLED" || order.status === "REFUNDED") continue;
 
                     if (order.cancellationReason?.includes("ONLINE_PAYMENT_FAILED")) continue;
 
-                    for (var j = 0; j < register.printers.items.length; j++) {
-                        const printer = register.printers.items[j];
-
-                        if (!printer.printOnlineOrderReceipts) continue;
-
-                        const productsToPrint = filterPrintProducts(order.products, printer);
-
-                        if (productsToPrint.length === 0) continue;
-
-                        showOnlineOrderPromot = true;
-                        newOrderInfoList.push({
-                            number: order.number,
-                            total: order.total,
-                            customerFirstName: order.customerInformation?.firstName || null,
-                            customerPhoneNumber: order.customerInformation?.phoneNumber || null,
-                            type: order.type,
-                            placedAt: order.placedAt,
-                            orderScheduledAt: order.orderScheduledAt,
-                        });
-
-                        await printReceipt({
-                            orderId: order.id,
-                            country: order.country,
-                            futureOrder: false,
-                            orderReminder: false,
-                            status: order.status,
-                            printerType: printer.type,
-                            printerAddress: printer.address,
-                            receiptFooterText: printer.receiptFooterText,
-                            customerPrinter: printer.customerPrinter,
-                            kitchenPrinter: printer.kitchenPrinter,
-                            kitchenPrinterSmall: printer.kitchenPrinterSmall,
-                            kitchenPrinterLarge: printer.kitchenPrinterLarge,
-                            hidePreparationTime: printer.hidePreparationTime,
-                            hideModifierGroupName: printer.hideModifierGroupName,
-                            skipReceiptCutCommand: printer.skipReceiptCutCommand,
-                            printReceiptForEachProduct: printer.printReceiptForEachProduct,
-                            hideOrderType: register.availableOrderTypes.length === 0,
-                            eftposReceipt: order.eftposReceipt || null,
-                            hideModifierGroupsForCustomer: false,
-                            restaurant: {
-                                name: restaurant.name,
-                                address: restaurant.address.receiptAddress || restaurant.address.formattedAddress,
-                                gstNumber: restaurant.gstNumber,
-                            },
-                            restaurantLogoBase64: restaurantBase64Logo,
-                            customerInformation: order.customerInformation
-                                ? {
-                                      firstName: order.customerInformation.firstName,
-                                      email: order.customerInformation.email,
-                                      phoneNumber: order.customerInformation.phoneNumber,
-                                      signatureBase64: null,
-                                      customFields: order.customerInformation.customFields,
-                                  }
-                                : null,
-                            notes: order.notes,
-                            products: convertProductTypesForPrint(productsToPrint),
-                            paymentAmounts: order.paymentAmounts,
-                            deliveryProvider: order.deliveryProvider,
-                            deliveryAddress: order.deliveryAddress,
-                            deliveryNotes: order.deliveryNotes,
-                            deliveryDistanceMeters: order.deliveryDistanceMeters,
-                            deliveryFeeDiscount: order.deliveryFeeDiscount,
-                            deliveryFee: order.deliveryFee,
-                            deliveryTrackingUrl: order.deliveryTrackingUrl,
-                            total: order.total,
-                            surcharge: order.surcharge,
-                            orderTypeSurcharge: order.orderTypeSurcharge,
-                            eftposSurcharge: order.eftposSurcharge,
-                            eftposTip: order.eftposTip,
-                            discount: order.discount || null,
-                            tax: order.tax,
-                            subTotal: order.subTotal,
-                            paid: order.paid,
-                            displayPaymentRequiredMessage: !order.paid,
-                            type: order.type,
-                            number: order.number,
-                            table: order.table,
-                            buzzer: order.buzzer,
-                            placedAt: order.placedAt,
-                            orderScheduledAt: order.orderScheduledAt,
-                            preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
-                            enableLoyalty: restaurant.enableLoyalty,
-                        });
+                    const printers = register.printers.items.filter((printer) => printer.printOnlineOrderReceipts);
+                    const unprintedProducts = getUnprintedKitchenProducts(order, printedQuantitiesListToMap(order.printedQuantities));
+                    const hasUnprintedKitchenItems = printers.some(
+                        (printer) => isKitchenReceiptPrinter(printer) && filterPrintProducts(unprintedProducts, printer).length > 0,
+                    );
+                    if (pendingPrintedQuantities.current[order.id] || hasUnprintedKitchenItems) {
+                        await printUnprintedKitchenItems(order, { printers, refreshOrder: true });
                     }
 
-                    printedOrders[order.id] = true;
+                    if (!alreadyNotified) {
+                        for (const printer of printers) {
+                            if (printer.customerPrinter) {
+                                await printOrderReceipt(order, getReceiptPrinter(printer, "customer"));
+                            }
+                        }
+
+                        if (printers.some((printer) => filterPrintProducts(order.products, printer).length > 0)) {
+                            showOnlineOrderPromot = true;
+                            newOrderInfoList.push({
+                                number: order.number,
+                                total: order.total,
+                                customerFirstName: order.customerInformation?.firstName || null,
+                                customerPhoneNumber: order.customerInformation?.phoneNumber || null,
+                                type: order.type,
+                                placedAt: order.placedAt,
+                                orderScheduledAt: order.orderScheduledAt,
+                            });
+                        }
+                    }
+
+                    printedOrders[order.id] = "quantity-tracked";
+                    localStorage.setItem("printedOnlineOrders", JSON.stringify(printedOrders));
                 }
 
                 if (showOnlineOrderPromot) {
                     setNewOnlineOrderInfo(newOrderInfoList);
                     setIsShownNewOnlineOrderReceivedModal(true);
                 }
-
-                localStorage.setItem("printedOnlineOrders", JSON.stringify(printedOrders));
             } catch (e) {
                 console.error("Error", e);
                 await toast.error("Error polling for new online orders");
+            } finally {
+                isPollingOnlineOrders.current = false;
             }
         }, fetchOrdersLoopTime);
 
@@ -225,6 +223,8 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
         if (!register) return;
 
         const retryFailedPrintQueueTimer = setInterval(async () => {
+            if (isRetryingReceipts.current) return;
+            isRetryingReceipts.current = true;
             try {
                 const storedFiledPrintQueue = localStorage.getItem("failedPrintQueue");
 
@@ -247,35 +247,156 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                 //     "Error reprinting failed orders",
                 //     JSON.stringify({ error: e, failedPrintQueue: localStorage.getItem("failedPrintQueue") })
                 // );
+            } finally {
+                isRetryingReceipts.current = false;
             }
         }, retryPrintLoopTime);
 
         return () => clearInterval(retryFailedPrintQueueTimer);
     }, [restaurant, register]);
 
-    const printReceipt = async (order: IOrderReceipt, isRetry?: boolean) => {
-        if (checkParentView()) {
+    const printReceipt = async (order: IOrderReceipt, isRetry = false): Promise<IReceiptPrintResult> => {
+        if (!checkParentView()) return { error: "Printer connection unavailable", order };
+
+        let result: IPrintReceiptDataOutput;
+        try {
+            result = await sendParentAsync("RECEIPT_PRINTER_DATA", order);
+        } catch (e) {
+            result = { error: e, order: order };
+        }
+
+        if (result.error) {
+            if (isRetry) return result;
+            toast.error("There was an error printing your order");
+            // A durably queued job owns this quantity until retry succeeds. Polling must not send it again.
             try {
-                const result: IPrintReceiptDataOutput = await sendParentAsync("RECEIPT_PRINTER_DATA", order);
-
-                console.log("result", result);
-
-                if (result.error && isRetry) {
-                    //If retry don't readd same order into failedPrintQueue
-                    return;
-                } else if (result.error) {
-                    toast.error("There was an error printing your order");
-                    storeFailedPrint(result);
-                } else if (isRetry) {
-                    //We are retrying and the retry was successful, remove order from failedPrintQueue
-                    removeSuccessPrintFromFailedPrintQueue(result);
-                }
+                storeFailedPrint(result);
+                return { ...result, queued: true };
             } catch (e) {
-                console.error(e);
-                toast.error("There was an error printing your order");
-                // await logError("There was an error printing your order", JSON.stringify({ error: e, order: order }));
+                console.error("Unable to queue failed receipt", e);
+                return result;
             }
         }
+        if (isRetry) removeSuccessPrintFromFailedPrintQueue(result);
+        return result;
+    };
+
+    const printOrderReceipt = async (
+        order: IGET_RESTAURANT_ORDER_FRAGMENT,
+        printer: IGET_RESTAURANT_REGISTER_PRINTER,
+        overrides: Partial<IOrderReceipt> = {},
+    ): Promise<boolean> => {
+        if (!restaurant) return false;
+        if (!register) return false;
+
+        const products = filterPrintProducts(order.products, printer);
+        if (products.length === 0) return false;
+
+        if (printer.printerType === EReceiptPrinterPrinterType.LABEL) {
+            return printLabel({
+                orderId: order.id,
+                printerName: printer.name,
+                printerType: printer.type,
+                printerAddress: printer.address,
+                products: convertProductTypesForPrint(products),
+                number: order.number,
+                placedAt: format(new Date(order.placedAt), "dd/MM HH:mm"),
+            });
+        }
+
+        const result = await printReceipt(
+            buildOrderReceipt(
+                { ...order, products },
+                printer,
+                {
+                    restaurant: {
+                        name: restaurant.name,
+                        address: restaurant.address.receiptAddress || restaurant.address.formattedAddress,
+                        gstNumber: restaurant.gstNumber,
+                    },
+                    restaurantLogoBase64: restaurantBase64Logo,
+                    hideOrderType: register.availableOrderTypes.length === 1,
+                    preparationTimeInMinutes: restaurant.preparationTimeInMinutes,
+                    enableLoyalty: restaurant.enableLoyalty,
+                },
+                overrides,
+            ),
+        );
+        return !result.error || result.queued === true;
+    };
+
+    const printUnprintedKitchenItems = (
+        order: IGET_RESTAURANT_ORDER_FRAGMENT,
+        options: IKitchenPrintOptions = {},
+    ): Promise<Record<string, number>> => {
+        // Serialize checkout and polling for this order on this terminal, including after a failed call.
+        const previous = kitchenPrintTasks.current[order.id] || Promise.resolve({});
+        const task = previous.catch(() => ({})).then(async () => {
+            const latestOrderResult = await getOrder({ variables: { id: order.id } });
+            const latestOrder: IGET_RESTAURANT_ORDER_FRAGMENT | undefined = latestOrderResult.data?.getOrder;
+            if (!latestOrder) throw new Error("Unable to load kitchen print tracking");
+            const printedProductQuantities = printedQuantitiesListToMap(latestOrder.printedQuantities);
+            mergeProductQuantities(printedProductQuantities, pendingPrintedQuantities.current[order.id] || {}, "max");
+            const orderToPrint = options.refreshOrder ? latestOrder : order;
+            if (
+                options.refreshOrder &&
+                (latestOrder.status === "CANCELLED" ||
+                    latestOrder.status === "REFUNDED" ||
+                    latestOrder.paymentInProgress ||
+                    latestOrder.cancellationReason?.includes("ONLINE_PAYMENT_FAILED"))
+            ) {
+                return printedProductQuantities;
+            }
+
+            const unprintedProducts = getUnprintedKitchenProducts(orderToPrint, printedProductQuantities);
+            const printedProductQuantitiesThisRun: Record<string, number> = {};
+            const printers = (options.printers || register?.printers?.items || []).filter(isKitchenReceiptPrinter);
+            let hasApplicableKitchenPrinter = false;
+
+            for (const printer of printers) {
+                const products = filterPrintProducts(unprintedProducts, printer);
+                if (products.length === 0) continue;
+                hasApplicableKitchenPrinter = true;
+
+                try {
+                    const accepted = await printOrderReceipt(
+                        { ...orderToPrint, products },
+                        getReceiptPrinter(printer, "kitchen"),
+                        options.receiptOverrides,
+                    );
+                    if (accepted) mergeProductQuantities(printedProductQuantitiesThisRun, getProductQuantities(products), "max");
+                } catch (e) {
+                    console.error("Unable to send kitchen receipt", e);
+                }
+            }
+
+            // Preserve the existing parked-order behaviour for items with no kitchen destination.
+            if (!hasApplicableKitchenPrinter && options.markUnroutedAsSent) {
+                mergeProductQuantities(printedProductQuantitiesThisRun, getProductQuantities(unprintedProducts), "max");
+            }
+            mergeProductQuantities(printedProductQuantities, printedProductQuantitiesThisRun, "add");
+            if (Object.keys(printedProductQuantitiesThisRun).length || pendingPrintedQuantities.current[order.id]) {
+                pendingPrintedQuantities.current[order.id] = printedProductQuantities;
+                try {
+                    const latestResult = await getOrder({ variables: { id: order.id } });
+                    mergeProductQuantities(printedProductQuantities, printedQuantitiesListToMap(latestResult.data.getOrder.printedQuantities), "max");
+                    await updateOrderPrintedQuantitiesMutation({
+                        variables: { orderId: order.id, printedQuantities: printedQuantitiesToList(printedProductQuantities) },
+                    });
+                    delete pendingPrintedQuantities.current[order.id];
+                } catch (e) {
+                    console.error("Unable to save kitchen print tracking", e);
+                    toast.error("Kitchen items were sent, but their print tracking could not be saved.");
+                }
+            }
+            return printedProductQuantities;
+        });
+        kitchenPrintTasks.current[order.id] = task;
+        const release = () => {
+            if (kitchenPrintTasks.current[order.id] === task) delete kitchenPrintTasks.current[order.id];
+        };
+        void task.then(release, release);
+        return task;
     };
 
     const printEftposReceipt = async (eftposReceipt: IPrintReceiptDataInput) => {
@@ -442,10 +563,11 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                     await requestPrint(order.printerAddress, order.printerName, payload);
                 }
             }
+            return true;
         } catch (e) {
             console.error(e);
             toast.error("There was an error printing your order");
-            // await logError("There was an error printing your order", JSON.stringify({ error: e, order: order }));
+            return false;
         }
     };
 
@@ -499,14 +621,19 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
 
         const failedPrintQueue = JSON.parse(storedFiledPrintQueue) as IPrintReceiptDataOutput[];
 
-        const updatedFailedPrintQueue = failedPrintQueue.filter((o) => o.order.orderId != successPrintOrder.order.orderId);
+        const successfulIndex = failedPrintQueue.findIndex((entry) => JSON.stringify(entry.order) === JSON.stringify(successPrintOrder.order));
+        if (successfulIndex === -1) return;
+        // Identical payloads can represent separate additions of the same item. Remove only the job just retried.
+        failedPrintQueue.splice(successfulIndex, 1);
 
-        localStorage.setItem("failedPrintQueue", JSON.stringify(updatedFailedPrintQueue));
+        localStorage.setItem("failedPrintQueue", JSON.stringify(failedPrintQueue));
     };
 
     return (
         <ReceiptPrinterContext.Provider
             value={{
+                printOrderReceipt: printOrderReceipt,
+                printUnprintedKitchenItems: printUnprintedKitchenItems,
                 printReceipt: printReceipt,
                 printEftposReceipt: printEftposReceipt,
                 printLabel: printLabel,
