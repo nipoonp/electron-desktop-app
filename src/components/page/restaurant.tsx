@@ -825,7 +825,7 @@ const Restaurant = () => {
                         <div className="restaurant-container">
                             <div className="categories-wrapper">
                                 {/* {restaurant.logo && <RestaurantLogo image={restaurant.logo} />} */}
-                                {/* {menuSearchProduct} */}
+                                {menuSearchProduct}
                                 {register.enableSkuScanner && menuSkuSearchProduct}
                                 {/* {register.hideMostPopularCategory ? <></> : menuMostPopularCategory} */}
                                 {menuCategories}
