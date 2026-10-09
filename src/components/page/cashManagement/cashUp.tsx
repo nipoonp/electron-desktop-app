@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@apollo/client";
 import { FiAlertTriangle, FiArrowLeft, FiGrid, FiPlus, FiPrinter } from "react-icons/fi";
 import { useNavigate } from "react-router";
@@ -66,6 +66,13 @@ import {
 
 import "./cashUp.scss";
 
+type TCashupDraft = {
+    countMode: TCountMode;
+    countedPaymentInputs: TPaymentInputs;
+    denominationInputs: TDenominationInputs;
+    varianceReason: string;
+};
+
 export default () => {
     const navigate = useNavigate();
     const { restaurant } = useRestaurant();
@@ -84,6 +91,7 @@ export default () => {
         scopeId,
         effectiveCashUserName,
         currentSession,
+        staleOpenSession,
         cashupWindowStart,
         sessionHistory,
         businessDayMovements,
@@ -97,7 +105,6 @@ export default () => {
         savingMovement,
         ensureOpenSession,
         finaliseSession,
-        updateOpeningFloat,
         recordMoneyMovement,
         refetchAll,
         getUserDisplayName,
@@ -105,15 +112,10 @@ export default () => {
     } = useCashupSession({ skipMovements: view === "detail" });
 
     const scopeName =
-        scopeType === ECashupScopeType.REGISTER
-            ? register?.name || ""
-            : scopeType === ECashupScopeType.STAFF
-              ? effectiveCashUserName
-              : restaurant?.name || "";
+        scopeType === ECashupScopeType.REGISTER ? register?.name || "" : scopeType === ECashupScopeType.STAFF ? effectiveCashUserName : restaurant?.name || "";
 
     const [countMode, setCountMode] = useState<TCountMode>("counted");
     const [openingFloatInput, setOpeningFloatInput] = useState("");
-    const [savingOpeningFloat, setSavingOpeningFloat] = useState(false);
     const [countedPaymentInputs, setCountedPaymentInputs] = useState<TPaymentInputs>(createPaymentInputs());
     const [denominationInputs, setDenominationInputs] = useState<TDenominationInputs>(createDenominationInputs());
     const [draftDenominationInputs, setDraftDenominationInputs] = useState<TDenominationInputs>(createDenominationInputs());
@@ -127,17 +129,8 @@ export default () => {
     const [movementAmountInput, setMovementAmountInput] = useState("");
     const [movementReason, setMovementReason] = useState("");
 
-    const orderFetchRange = useMemo(() => {
-        // For open sessions, fetch from session opening onwards
-        if (currentSession?.status === ECashupSessionStatus.OPEN) {
-            return {
-                start: currentSession.openedAt,
-                end: new Date().toISOString(),
-            };
-        }
-        // Otherwise use the 2-day window (yesterday → today)
-        return getOrderFetchRange(businessDate);
-    }, [businessDate, currentSession]);
+    const orderFetchRange = useMemo(() => getOrderFetchRange(businessDate), [businessDate]);
+
     const {
         data: ordersData,
         loading: ordersLoading,
@@ -148,66 +141,47 @@ export default () => {
             placedAtStartDate: orderFetchRange.start,
             placedAtEndDate: orderFetchRange.end,
         },
-        skip: !restaurant?.id || view !== "entry" || !currentSession, // ✅ Only fetch if session exists
+        skip: !restaurant?.id || view !== "entry",
         fetchPolicy: "network-only",
     });
 
-    // ✅ CHANGED: Restore data from DATABASE (currentSession), not localStorage
+    // Restore or reset the entry form when the active session changes.
     useEffect(() => {
-        if (currentSession) {
-            // Restore opening float from DB session record
-            setOpeningFloatInput(currentSession.openingFloat ? convertCentsToDollars(currentSession.openingFloat) : "");
-            setCountMode("counted");
-            setCountedPaymentInputs(createPaymentInputs());
-            setDenominationInputs(createDenominationInputs());
-            setVarianceReason(currentSession.varianceReason || "");
-        } else {
-            // No session: reset form to empty
-            setOpeningFloatInput("");
-            setCountMode("counted");
-            setCountedPaymentInputs(createPaymentInputs());
-            setDenominationInputs(createDenominationInputs());
-            setVarianceReason("");
-        }
-    }, [currentSession?.id, currentSession?.openingFloat, currentSession?.varianceReason]);
+        // Only an already saved float is restored, so a fresh cash up starts with an empty field.
+        setOpeningFloatInput(currentSession?.openingFloat ? convertCentsToDollars(currentSession.openingFloat) : "");
 
-    // ✅ NEW: Save opening float to database without finalizing session
-    // ✅ NEW: Auto-save opening float silently when user leaves the field (onBlur)
-    // Note: This updates ONLY the opening float value, session status remains OPEN (not finalized)
-    const handleOpeningFloatBlur = useCallback(async () => {
-        if (!currentSession || !openingFloatInput) {
-            return;
+        const storedDraft = currentSession ? localStorage.getItem(buildCashupDraftStorageKey(currentSession.id)) : null;
+        if (storedDraft) {
+            try {
+                const draft = JSON.parse(storedDraft) as TCashupDraft;
+                setCountMode(draft.countMode);
+                setCountedPaymentInputs(draft.countedPaymentInputs);
+                setDenominationInputs(draft.denominationInputs);
+                setVarianceReason(draft.varianceReason);
+                return;
+            } catch (error) {
+                console.error(error);
+            }
         }
 
-        const cents = toCents(openingFloatInput);
+        setCountMode("counted");
+        setCountedPaymentInputs(createPaymentInputs());
+        setDenominationInputs(createDenominationInputs());
+        setVarianceReason("");
+    }, [currentSession?.id]);
 
-        // Only save if value is different from what's in DB
-        if (cents === currentSession.openingFloat) {
-            return;
-        }
+    useEffect(() => {
+        if (!currentSession) return;
 
-        try {
-            setSavingOpeningFloat(true);
-
-            // Update ONLY opening float - session status stays OPEN
-            await updateOpeningFloat(currentSession.id, cents);
-
-            // Silent save - no toast notification
-            console.log("Opening float saved silently:", cents);
-        } catch (error) {
-            console.error("Failed to save opening float:", error);
-            // Silent error - no toast notification shown to user
-        } finally {
-            setSavingOpeningFloat(false);
-        }
-    }, [currentSession, openingFloatInput, updateOpeningFloat]);
+        const draft: TCashupDraft = { countMode, countedPaymentInputs, denominationInputs, varianceReason };
+        localStorage.setItem(buildCashupDraftStorageKey(currentSession.id), JSON.stringify(draft));
+    }, [countMode, countedPaymentInputs, currentSession, denominationInputs, varianceReason]);
 
     const activeSessionOrders: IGET_CASHUP_ORDER[] = useMemo(
         () =>
             (ordersData?.getOrdersByRestaurantByPlacedAt?.items || []).filter(
                 (order: IGET_CASHUP_ORDER) =>
-                    orderMatchesCashupScope(order, scopeType || ECashupScopeType.SITE, scopeId) &&
-                    orderHasCashupActivityInSession(order, cashupWindowStart),
+                    orderMatchesCashupScope(order, scopeType || ECashupScopeType.SITE, scopeId) && orderHasCashupActivityInSession(order, cashupWindowStart),
             ),
         [ordersData, scopeId, scopeType, cashupWindowStart],
     );
@@ -244,7 +218,7 @@ export default () => {
     );
 
     const orderWarnings = useMemo(() => {
-        const counts = { parkedOrdersCount: 0, unpaidOrdersCount: 0 };
+        const counts = { openOrdersCount: 0, parkedOrdersCount: 0, unpaidOrdersCount: 0, paidOpenOrdersCount: 0 };
 
         activeSessionOrders.forEach((order) => {
             if (order.status === EOrderStatus.CANCELLED || order.status === EOrderStatus.REFUNDED) return;
@@ -255,28 +229,16 @@ export default () => {
             }
 
             if (!order.paid) {
-                counts.unpaidOrdersCount += 1;
+                if (order.status === EOrderStatus.NEW) counts.openOrdersCount += 1;
+                else counts.unpaidOrdersCount += 1;
+                return;
             }
+
+            if (order.status === EOrderStatus.NEW) counts.paidOpenOrdersCount += 1;
         });
 
         return counts;
     }, [activeSessionOrders]);
-
-    // DEBUG: Log warning counts
-    console.log("🔍 CASHUP DEBUG - Order Warnings:", {
-        parkedOrdersCount: orderWarnings.parkedOrdersCount,
-        unpaidOrdersCount: orderWarnings.unpaidOrdersCount,
-        activeSessionOrdersCount: activeSessionOrders.length,
-        activeSessionOrders: activeSessionOrders.map(o => ({
-            id: o.id,
-            status: o.status,
-            paid: o.paid,
-            placedAt: o.placedAt,
-            parkedAt: o.parkedAt,
-        })),
-        orderFetchRange,
-        cashupWindowStart,
-    });
 
     const countedCashFromDenominationsCents = DENOMINATIONS.reduce(
         (total, denomination) => total + denomination * toWholeNumber(denominationInputs[String(denomination)]),
@@ -308,7 +270,7 @@ export default () => {
         return accumulator;
     }, {} as TPaymentSummarySnapshot);
 
-    const unresolvedOrdersCount = orderWarnings.parkedOrdersCount + orderWarnings.unpaidOrdersCount;
+    const unresolvedOrdersCount = orderWarnings.openOrdersCount + orderWarnings.parkedOrdersCount + orderWarnings.unpaidOrdersCount;
     const varianceThresholdCents = restaurant?.cashupVarianceReasonThreshold ?? 5000;
     const requiresVarianceReason = Math.abs(totalVarianceCents) > varianceThresholdCents;
 
@@ -327,55 +289,15 @@ export default () => {
     const getMovementAmountLabel = (movement: IGET_MONEY_MOVEMENT) =>
         `${movement.type === EMoneyMovementType.MONEY_IN ? "+" : "−"}${getDollarString(movement.amount)}`;
 
-    // ✅ NEW: Create session lazily when user enters data (only if needed)
-    const ensureSessionForData = async () => {
-        if (currentSession) {
-            // Session already exists
-            return currentSession;
-        }
-
-        // Create session only when user has entered data
-        try {
-            const session = await ensureOpenSession();
-            if (session) {
-                return session;
-            }
-        } catch (error) {
-            console.error("Error creating session:", error);
-        }
-        return null;
-    };
-
     const goToList = () => {
         setView("list");
         setSelectedHistorySessionId(null);
         setSelectedMovementId(null);
     };
 
-    const goToNewCashup = async () => {
-        // ✅ OPTION A: Make async to create session immediately
+    const goToNewCashup = () => {
         if (!restaurant?.enableCashup || !isPOS) return;
-
-        if (currentSession) {
-            toast.error("Finalise the previous cash up session before starting a new one.");
-            setView("list");
-            return;
-        }
-
-        // Create session immediately when user clicks "New Cashup"
-        // Session created immediately so no orders get lost
-        try {
-            const session = await ensureOpenSession();
-            if (session) {
-                console.log("Session created immediately at:", session.openedAt);
-                setView("entry"); // Only open form after session is created
-            } else {
-                toast.error("Unable to create cashup session.");
-            }
-        } catch (error) {
-            console.error("Failed to create session:", error);
-            toast.error("Error creating cashup session.");
-        }
+        setView("entry");
     };
 
     const handleHistoryRowClick = (session: IGET_CASHUP_SESSION) => {
@@ -386,13 +308,7 @@ export default () => {
             return;
         }
 
-        // OPEN sessions restored from DATABASE only (not localStorage)
-        if (session.status === ECashupSessionStatus.OPEN) {
-            // Data will be restored from currentSession via the useEffect
-            // Just open the entry view to display the session
-            setView("entry");
-            return;
-        }
+        goToNewCashup();
     };
 
     const goToNewMovement = () => {
@@ -408,6 +324,11 @@ export default () => {
     const saveMoneyMovement = async () => {
         if (!restaurant?.enableCashup || !register || !isPOS) return;
         if (savingMovement || creatingSession) return;
+
+        if (staleOpenSession) {
+            toast.error("Finalise the previous cash up session before recording money in or out for today.");
+            return;
+        }
 
         if (toCents(movementAmountInput) <= 0) {
             toast.error("Enter a valid amount before saving.");
@@ -439,39 +360,17 @@ export default () => {
     };
 
     const handleOpenFinaliseModal = () => {
-        console.log("🎯 handleOpenFinaliseModal clicked");
-        console.log("unresolvedOrdersCount:", unresolvedOrdersCount);
-        console.log("orderWarnings:", orderWarnings);
-        console.log("restaurant.enableCashup:", restaurant?.enableCashup);
-        console.log("isPOS:", isPOS);
-
-        if (!restaurant?.enableCashup || !isPOS) {
-            console.log("❌ Cancelled: enableCashup or isPOS check failed");
-            return;
-        }
+        if (!restaurant?.enableCashup || !isPOS || staleOpenSession) return;
 
         if (unresolvedOrdersCount > 0) {
-            console.log("✅ Showing warning modal (unresolvedOrdersCount > 0)");
             setShowWarningModal(true);
             return;
         }
 
-        console.log("✅ Showing finalize modal (no unresolved orders)");
         setShowFinaliseModal(true);
     };
 
     const handleFinaliseSession = async (): Promise<string | null> => {
-        // Validate orders before finalizing
-        if (orderWarnings.unpaidOrdersCount > 0) {
-            toast.error(`Cannot finalize with ${orderWarnings.unpaidOrdersCount} unpaid order(s). Collect payment first.`);
-            return null;
-        }
-
-        if (orderWarnings.parkedOrdersCount > 0) {
-            toast.error(`Cannot finalize with ${orderWarnings.parkedOrdersCount} parked order(s). Unpark orders first.`);
-            return null;
-        }
-
         if (requiresVarianceReason && !varianceReason.trim()) {
             toast.error("Variance reason is required.");
             return null;
@@ -481,7 +380,9 @@ export default () => {
             const session = await ensureOpenSession({ openingFloatCents, skipRefetchAfterCreate: true });
 
             if (!session) {
-                toast.error("Unable to start the cash up session.");
+                toast.error(
+                    staleOpenSession ? "Finalise the previous cash up session before starting today's cash up." : "Unable to start the cash up session.",
+                );
                 return null;
             }
 
@@ -526,8 +427,6 @@ export default () => {
     };
 
     const updateCountedPaymentInput = (key: TPaymentKey, value: string) => {
-        // ✅ OPTION A: Session already exists (created when user clicked "New Cashup")
-        // Just update the payment input value
         setCountedPaymentInputs((previous) => ({ ...previous, [key]: value }));
     };
 
@@ -537,8 +436,6 @@ export default () => {
     };
 
     const applyCashDenominations = () => {
-        // ✅ OPTION A: Session already exists (created when user clicked "New Cashup")
-        // Just apply the denominations without creating session
         setDenominationInputs(draftDenominationInputs);
         setCountMode("denominations");
         setShowDenominationModal(false);
@@ -564,14 +461,15 @@ export default () => {
         const isActiveOpenSession = currentSession?.id === session.id;
         const snapshot = isActiveOpenSession ? paymentSummary : getPaymentSummarySnapshot(session);
 
-        const rows: { key: TPaymentKey | "total"; label: string; countedCents: number; recordedCents: number; differenceCents: number }[] =
-            PAYMENT_KEYS.map((key) => ({
+        const rows: { key: TPaymentKey | "total"; label: string; countedCents: number; recordedCents: number; differenceCents: number }[] = PAYMENT_KEYS.map(
+            (key) => ({
                 key,
                 label: getPaymentLabel(key),
                 countedCents: snapshot?.[key]?.countedCents || 0,
                 recordedCents: snapshot?.[key]?.recordedCents || 0,
                 differenceCents: snapshot?.[key]?.differenceCents || 0,
-            }));
+            }),
+        );
 
         rows.push({
             key: "total",
@@ -652,14 +550,14 @@ export default () => {
                             placeholder="0.00"
                             value={usesDenominations ? convertCentsToDollars(countedCashFromDenominationsCents) : countedPaymentInputs[key]}
                             onChange={(event) => updateCountedPaymentInput(key, event.target.value)}
-                            disabled={usesDenominations}
+                            disabled={!!staleOpenSession || usesDenominations}
                         />
                         {key === "cash" && (
                             <button
                                 type="button"
                                 className={`cashup-denomination-toggle ${usesDenominations ? "active" : ""}`}
                                 onClick={openCashDenominations}
-                                disabled={false}
+                                disabled={!!staleOpenSession}
                                 title={usesDenominations ? "Use total cash amount" : "Count cash by denomination"}
                                 aria-label={usesDenominations ? "Use total cash amount" : "Count cash by denomination"}
                             >
@@ -691,6 +589,18 @@ export default () => {
                     </div>
                 </Card>
             )}
+
+            {staleOpenSession && (
+                <Card className="cashup-banner">
+                    <div className="content">
+                        <FiAlertTriangle />
+                        <div>
+                            An earlier cash up session for {staleOpenSession.cashupSessionDate} is still open. Finalise that session before starting
+                            today&apos;s cash up.
+                        </div>
+                    </div>
+                </Card>
+            )}
         </>
     );
 
@@ -699,18 +609,13 @@ export default () => {
     return (
         <PageWrapper>
             <div className="cashup">
-                {showWarningModal && (() => {
-                    console.log("⚠️ WARNING MODAL DISPLAYED - parkedOrdersCount:", orderWarnings.parkedOrdersCount);
-                    return null;
-                })()}
                 <ModalV2 width="500px" isOpen={showWarningModal} disableClose={false} onRequestClose={() => setShowWarningModal(false)}>
                     <div className="cashup-warning-title mb-4">
                         <FiAlertTriangle />
                         <div className="h3">Open orders need attention</div>
                     </div>
                     <div className="text-grey mb-4">
-                        Review parked or unpaid orders before finalising cash up. If you continue, those orders may sit outside the final
-                        reconciliation.
+                        Review parked or unpaid orders before finalising cash up. If you continue, those orders may sit outside the final reconciliation.
                     </div>
 
                     <div className="cashup-warning-grid mb-4">
@@ -727,6 +632,12 @@ export default () => {
                     <div className="text-grey mb-2">
                         You can continue to count cash up, but finalising means you accept these unresolved order warnings.
                     </div>
+                    {orderWarnings.paidOpenOrdersCount > 0 && (
+                        <div className="text-grey mb-2">
+                            {orderWarnings.paidOpenOrdersCount} paid order{orderWarnings.paidOpenOrdersCount === 1 ? "" : "s"} still remain open. They are
+                            already included in recorded cash up, but staff should still complete them operationally.
+                        </div>
+                    )}
 
                     <div className="cashup-modal-actions mt-6">
                         <Button className="cashup-ghost-button" onClick={() => navigate(ordersPath)}>
@@ -845,7 +756,6 @@ export default () => {
                                         <th className="text-left">Date</th>
                                         <th className="text-left">User</th>
                                         <th className="text-left">Register</th>
-                                        <th className="text-left">Status</th>
                                         <th className="text-right">Variance</th>
                                     </tr>
                                 </thead>
@@ -861,26 +771,17 @@ export default () => {
                                                         {formatCashupHistoryDate(getSessionDisplayTimestamp(session))}
                                                     </Link>
                                                 </td>
-                                                <td className="text-left">{getUserDisplayName(session.finalisedUserId, session.finalisedByName)}</td>
-                                                <td className="text-left">{scopeName || "-"}</td>
                                                 <td className="text-left">
-                                                    {isFinalised ? (
-                                                        <span className="text-bold" style={{ color: "#28a745" }}>
-                                                            Completed
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-bold" style={{ color: "#ffc107" }}>
-                                                            Open
-                                                        </span>
-                                                    )}
+                                                    {getUserDisplayName(session.finalisedUserId, session.finalisedByName)}
                                                 </td>
+                                                <td className="text-left">{scopeName || "-"}</td>
                                                 <td className="text-right">
                                                     {isFinalised ? (
                                                         <span className={varianceCents < 0 ? "text-error text-bold" : "text-bold"}>
                                                             {getDollarString(varianceCents)}
                                                         </span>
                                                     ) : (
-                                                        <span className="text-grey">-</span>
+                                                        <span className="text-grey">In progress</span>
                                                     )}
                                                 </td>
                                             </tr>
@@ -924,17 +825,13 @@ export default () => {
                                     {businessDayMovements.map((movement) => (
                                         <tr key={movement.id}>
                                             <td className="text-left">
-                                                <Link onClick={() => handleMovementRowClick(movement)}>
-                                                    {formatCashupHistoryDate(movement.recordedAt)}
-                                                </Link>
+                                                <Link onClick={() => handleMovementRowClick(movement)}>{formatCashupHistoryDate(movement.recordedAt)}</Link>
                                             </td>
                                             <td className="text-left">{getMovementUserLabel(movement)}</td>
                                             <td className="text-left">{getMovementTypeLabel(movement.type)}</td>
                                             <td className="text-left">{movement.reason || "-"}</td>
                                             <td className="text-right">
-                                                <span
-                                                    className={movement.type === EMoneyMovementType.MONEY_OUT ? "text-error text-bold" : "text-bold"}
-                                                >
+                                                <span className={movement.type === EMoneyMovementType.MONEY_OUT ? "text-error text-bold" : "text-bold"}>
                                                     {getMovementAmountLabel(movement)}
                                                 </span>
                                             </td>
@@ -944,9 +841,7 @@ export default () => {
                             </Table>
 
                             {movementsError && <div className="text-error mt-4">Unable to load money movements. Please try again.</div>}
-                            {movementsLoading && businessDayMovements.length === 0 && (
-                                <div className="text-grey mt-4">Loading money movements...</div>
-                            )}
+                            {movementsLoading && businessDayMovements.length === 0 && <div className="text-grey mt-4">Loading money movements...</div>}
                             {!movementsError && !movementsLoading && businessDayMovements.length === 0 && (
                                 <div className="text-grey mt-4">No money movements have been recorded today.</div>
                             )}
@@ -1058,13 +953,8 @@ export default () => {
                                     min="0"
                                     placeholder="0.00"
                                     value={openingFloatInput}
-                                    onChange={(event) => {
-                                        // ✅ Session already exists (created when user clicked "New Cashup")
-                                        // Just update the opening float value
-                                        setOpeningFloatInput(event.target.value);
-                                    }}
-                                    onBlur={handleOpeningFloatBlur}
-                                    disabled={savingOpeningFloat}
+                                    onChange={(event) => setOpeningFloatInput(event.target.value)}
+                                    disabled={!!staleOpenSession}
                                 />
                             </div>
 
@@ -1088,9 +978,7 @@ export default () => {
 
                             <div className="cashup-difference mt-4">
                                 <span className="text-bold">Difference</span>
-                                <span className={`text-bold ${totalVarianceCents < 0 ? "text-error" : ""}`}>
-                                    {getDollarString(totalVarianceCents)}
-                                </span>
+                                <span className={`text-bold ${totalVarianceCents < 0 ? "text-error" : ""}`}>{getDollarString(totalVarianceCents)}</span>
                             </div>
 
                             {requiresVarianceReason && (
@@ -1099,7 +987,7 @@ export default () => {
                                         label="Variance Reason (Required)"
                                         value={varianceReason}
                                         onChange={(event) => setVarianceReason(event.target.value)}
-                                        disabled={false}
+                                        disabled={!!staleOpenSession}
                                     />
                                 </div>
                             )}
@@ -1108,7 +996,7 @@ export default () => {
                                 <Button
                                     onClick={handleOpenFinaliseModal}
                                     loading={creatingSession || finalisingSession}
-                                    disabled={creatingSession || finalisingSession || !restaurant.enableCashup || !isPOS}
+                                    disabled={!!staleOpenSession || creatingSession || finalisingSession || !restaurant.enableCashup || !isPOS}
                                 >
                                     Finalise Cash Up
                                 </Button>
@@ -1147,11 +1035,7 @@ export default () => {
                                     />
                                 </div>
                                 <div>
-                                    <Input
-                                        label="Reason (optional)"
-                                        value={movementReason}
-                                        onChange={(event) => setMovementReason(event.target.value)}
-                                    />
+                                    <Input label="Reason (optional)" value={movementReason} onChange={(event) => setMovementReason(event.target.value)} />
                                 </div>
                             </div>
 
