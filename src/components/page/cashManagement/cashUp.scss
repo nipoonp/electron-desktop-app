@@ -148,6 +148,38 @@
     border: 1px solid var(--primary-color);
 }
 
+.tag {
+    font-size: 10px;
+    background-color: var(--primary-color);
+    color: #ffffff;
+    padding: 4px 6px;
+    border-radius: 6px;
+}
+
+.tag-green {
+    font-size: 10px;
+    background-color: #28a745;
+    color: #ffffff;
+    padding: 4px 6px;
+    border-radius: 6px;
+}
+
+.tag-orange {
+    font-size: 10px;
+    background-color: #fd7e14;
+    color: #ffffff;
+    padding: 4px 6px;
+    border-radius: 6px;
+}
+
+.tag-grey {
+    font-size: 10px;
+    background-color: #6c757d;
+    color: #ffffff;
+    padding: 4px 6px;
+    border-radius: 6px;
+}
+
 .cashup-warning-title {
     display: flex;
     align-items: center;
