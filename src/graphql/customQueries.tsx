@@ -21,6 +21,7 @@ export enum ERegisterType {
     KIOSK = "KIOSK",
     POS = "POS",
     ONLINE = "ONLINE",
+    KDS = "KDS",
 }
 
 export enum ECashupScopeType {
@@ -264,6 +265,7 @@ export const GET_RESTAURANT = gql`
             autoCompleteOrders
             enableLoyalty
             onlinePaymentGatewayProvider
+            pauseReservationsUntil
             preparationTimeInMinutes
             delayBetweenOrdersInSeconds
             orderThresholdMessage
@@ -1111,6 +1113,7 @@ export interface IGET_RESTAURANT {
     autoCompleteOrders: boolean | null;
     enableLoyalty: boolean | null;
     onlinePaymentGatewayProvider?: string | null;
+    pauseReservationsUntil?: string | null;
     preparationTimeInMinutes: number | null;
     delayBetweenOrdersInSeconds: number | null;
     orderThresholdMessage: string | null;
@@ -2005,6 +2008,23 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
     }
 `;
 
+export const GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
+    ${ORDER_FIELDS_FRAGMENT}
+    query GetPrintableOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAt: String!) {
+        getOrdersByRestaurantByPlacedAt(
+            limit: 1000000
+            sortDirection: DESC
+            orderRestaurantId: $orderRestaurantId
+            placedAt: { beginsWith: $placedAt }
+            filter: { and: [{ paymentInProgress: { ne: true } }, { status: { ne: CANCELLED } }] }
+        ) {
+            items {
+                ...OrderFieldsFragment
+            }
+        }
+    }
+`;
+
 export const GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
     ${ORDER_FIELDS_FRAGMENT}
     query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAtStartDate: String!, $placedAtEndDate: String!) {
@@ -2059,40 +2079,6 @@ export const GET_CASHUP_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
                     doordash
                     delivereasy
                 }
-            }
-        }
-    }
-`;
-
-export const GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
-    ${ORDER_FIELDS_FRAGMENT}
-    query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAt: String!) {
-        getOrdersByRestaurantByPlacedAt(
-            limit: 1000000
-            sortDirection: DESC
-            orderRestaurantId: $orderRestaurantId
-            placedAt: { beginsWith: $placedAt }
-            filter: { and: [{ onlineOrder: { eq: true } }, { paymentInProgress: { ne: true } }] }
-        ) {
-            items {
-                ...OrderFieldsFragment
-            }
-        }
-    }
-`;
-
-export const GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_ORDERSCHEDULEDAT = gql`
-    ${ORDER_FIELDS_FRAGMENT}
-    query GetOrdersByRestaurantByOrderScheduledAt($orderRestaurantId: ID!, $orderscheduledAt: String!) {
-        getOrdersByRestaurantByOrderScheduledAt(
-            limit: 1000000
-            sortDirection: DESC
-            orderRestaurantId: $orderRestaurantId
-            orderscheduledAt: { beginsWith: $orderscheduledAt }
-            filter: { and: [{ onlineOrder: { eq: true } }, { paymentInProgress: { ne: true } }] }
-        ) {
-            items {
-                ...OrderFieldsFragment
             }
         }
     }
@@ -2464,9 +2450,7 @@ export interface IGET_FEEDBACK_BY_RESTAURANT_COMMENT {
 
 export const UPDATE_RESTAURANT_PREPARATION_TIME = gql`
     mutation UpdateRestaurant($id: ID!, $preparationTimeInMinutes: Int, $delayBetweenOrdersInSeconds: Int) {
-        updateRestaurant(
-            input: { id: $id, preparationTimeInMinutes: $preparationTimeInMinutes, delayBetweenOrdersInSeconds: $delayBetweenOrdersInSeconds }
-        ) {
+        updateRestaurant(input: { id: $id, preparationTimeInMinutes: $preparationTimeInMinutes, delayBetweenOrdersInSeconds: $delayBetweenOrdersInSeconds }) {
             id
             preparationTimeInMinutes
             delayBetweenOrdersInSeconds
@@ -2508,6 +2492,15 @@ export interface IGET_RESERVATION_FOR_TABLE {
 }
 
 // Slim query for floor plan overlay — only fetches the fields needed to derive reserved table status.
+export const GET_RESERVATION_PAUSE_STATUS = gql`
+    query GetReservationPauseStatus($restaurantId: ID!) {
+        getRestaurant(id: $restaurantId) {
+            id
+            pauseReservationsUntil
+        }
+    }
+`;
+
 export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE = gql`
     query GetReservationsByRestaurantByDate($restaurantId: ID!, $date: ModelStringKeyConditionInput, $limit: Int) {
         getReservationsByRestaurantByDate(restaurantId: $restaurantId, date: $date, limit: $limit) {

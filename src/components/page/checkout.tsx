@@ -350,6 +350,15 @@ export const Checkout = () => {
     const [productsWrapperElement, setProductsWrapperElement] = useState<HTMLDivElement | null>(null);
 
     useEffect(() => {
+        if (productsWrapperElement && productsWrapperElement.scrollHeight > productsWrapperElement.clientHeight) {
+            productsWrapperElement.scrollTo({
+                top: productsWrapperElement.scrollHeight,
+                behavior: "smooth",
+            });
+        }
+    }, [products, productsWrapperElement]);
+
+    useEffect(() => {
         const handleScroll = () => {
             const scrollableDiv = document.getElementById("productsWrapperScroll");
             const arrowContainer = document.querySelector(".arrow-container");
@@ -1173,10 +1182,10 @@ export const Checkout = () => {
         cashChangeAmount?: number | null,
     ) => {
         const wasEditingParkedOrder = Boolean(parkedOrderId);
-        const keepParkedStatus = wasEditingParkedOrder && parkOrder && Boolean(parkedOrderStatus);
+        const keepExistingStatus = wasEditingParkedOrder && parkedOrderStatus && (parkOrder || parkedOrderStatus !== EOrderStatus.PARKED);
         //If parked order do not generate order number
         const orderNumber = parkedOrderId && parkedOrderNumber ? parkedOrderNumber : getOrderNumber(register.orderNumberSuffix, register.orderNumberStart);
-        const orderStatus = keepParkedStatus ? parkedOrderStatus! : EOrderStatus.NEW;
+        const orderStatus = keepExistingStatus ? parkedOrderStatus! : EOrderStatus.NEW;
 
         setPaymentOutcomeOrderNumber(orderNumber);
 
@@ -1404,6 +1413,8 @@ export const Checkout = () => {
                 variables.discount = undefined;
                 variables.promotionId = undefined;
                 variables.subTotal = total; //Set subTotal to total because we do not want to add any discount or promotions. Also product.discount is set to 0 in dashboard.tsx
+            } else if (orderStatus !== EOrderStatus.NEW) {
+                // Keep existing status and completedAt
             } else if (restaurant.autoCompleteOrders) {
                 variables.status = "COMPLETED";
                 variables.completedAt = toLocalISOString(now);
@@ -2527,7 +2538,7 @@ export const Checkout = () => {
                 </div>
                 {parkedOrderNumber && <div className="parked-order-banner">Updating Parked Order #{parkedOrderNumber}</div>}
                 <div className="order-wrapper">
-                    <div ref={(ref) => setProductsWrapperElement(ref)} className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`} id="productsWrapperScroll">
+                    <div ref={setProductsWrapperElement} className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`} id="productsWrapperScroll">
                         {(!products || products.length == 0) && cartEmptyDisplay}
                         {products && products.length > 0 && order}
                         {isScrollable ? (

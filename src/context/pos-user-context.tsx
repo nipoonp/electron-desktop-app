@@ -401,7 +401,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
 
     const idleTimeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Re-locks the register after the configured idle timeout instead of staying unlocked forever.
+    // Returns to the full user list after the configured idle timeout.
     useEffect(() => {
         const posUserPinTimeoutInSeconds = register?.posUserPinTimeoutInSeconds;
 
@@ -414,7 +414,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
 
         const resetIdleTimeout = () => {
             if (idleTimeoutIdRef.current) clearTimeout(idleTimeoutIdRef.current);
-            idleTimeoutIdRef.current = setTimeout(lockPosUser, timeoutMs);
+            idleTimeoutIdRef.current = setTimeout(() => clearSelectedPosUser(), timeoutMs);
         };
 
         activityEvents.forEach((eventName) => document.addEventListener(eventName, resetIdleTimeout));
