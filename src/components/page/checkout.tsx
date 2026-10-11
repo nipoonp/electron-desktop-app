@@ -350,6 +350,15 @@ export const Checkout = () => {
     const [productsWrapperElement, setProductsWrapperElement] = useState<HTMLDivElement | null>(null);
 
     useEffect(() => {
+        if (productsWrapperElement && productsWrapperElement.scrollHeight > productsWrapperElement.clientHeight) {
+            productsWrapperElement.scrollTo({
+                top: productsWrapperElement.scrollHeight,
+                behavior: "smooth",
+            });
+        }
+    }, [products, productsWrapperElement]);
+
+    useEffect(() => {
         const handleScroll = () => {
             const scrollableDiv = document.getElementById("productsWrapperScroll");
             const arrowContainer = document.querySelector(".arrow-container");
@@ -2529,7 +2538,7 @@ export const Checkout = () => {
                 </div>
                 {parkedOrderNumber && <div className="parked-order-banner">Updating Parked Order #{parkedOrderNumber}</div>}
                 <div className="order-wrapper">
-                    <div ref={(ref) => setProductsWrapperElement(ref)} className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`} id="productsWrapperScroll">
+                    <div ref={setProductsWrapperElement} className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`} id="productsWrapperScroll">
                         {(!products || products.length == 0) && cartEmptyDisplay}
                         {products && products.length > 0 && order}
                         {isScrollable ? (
