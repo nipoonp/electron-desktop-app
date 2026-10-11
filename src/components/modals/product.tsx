@@ -1509,15 +1509,17 @@ const Modifier = (props: {
             {selectedModifier && selectedModifier.productModifiers && (
                 <div className="mb-2">
                     {selectedModifier.productModifiers.map((productModifier, index) => (
-                        <>
-                            <div className="mt-2"></div>
+                        <div key={index}>
                             <ProductModifier
-                                key={productModifier.id}
+                                selectionIndex={selectedModifier.productModifiers && selectedModifier.productModifiers.length > 1 ? index + 1 : undefined}
                                 product={productModifier}
-                                showNoExtraSelectionsMade={selectedModifier.productModifiers?.some((pm) => pm.modifierGroups?.length) || false}
+                                showNoExtraSelectionsMade={
+                                    !!modifier.productModifier?.modifierGroups?.items.length ||
+                                    selectedModifier.productModifiers?.some((pm) => pm.modifierGroups?.length) || false
+                                }
                                 onEditSelections={() => onEditSelectionsProductModifier(index)}
                             />
-                        </>
+                        </div>
                     ))}
                 </div>
             )}
@@ -1535,7 +1537,7 @@ const Modifier = (props: {
 
                 {showCheckbox && checkbox}
 
-                {/* {selectedModifier && selectedModifier.productModifiers && !currentSelectedProductModifier && productModifiers} */}
+                {selectedModifier && selectedModifier.productModifiers && !currentSelectedProductModifier && productModifiers}
             </div>
         </>
     );

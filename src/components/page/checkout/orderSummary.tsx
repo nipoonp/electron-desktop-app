@@ -321,11 +321,10 @@ const OrderItemDetails = (props: {
                                     <div key={m.id} className="mt-1">
                                         {modifierString(m.preSelectedQuantity, m.quantity, m.name, m.price)}
                                     </div>
-                                    {/* {m.productModifiers && (
+                                    {m.productModifiers && (
                                         <div className="mb-2">
                                             {m.productModifiers.map((productModifier, index) => (
-                                                <div>
-                                                    <div className="mt-2"></div>
+                                                <div key={index}>
                                                     <ProductModifier
                                                         selectionIndex={m.productModifiers && m.productModifiers.length > 1 ? index + 1 : undefined}
                                                         showNoExtraSelectionsMade={
@@ -336,7 +335,7 @@ const OrderItemDetails = (props: {
                                                 </div>
                                             ))}
                                         </div>
-                                    )} */}
+                                    )}
                                 </>
                             ))}
                         </>
