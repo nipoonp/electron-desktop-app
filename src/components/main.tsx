@@ -314,9 +314,7 @@ const PosUserPrivateRoute = ({ element }) => {
         isAttendanceFeatureEnabled,
     } = usePosUser();
 
-    // With the register-level PIN off, staff never unlock/select through this page automatically —
-    // but attendance still has to be satisfied for whichever user (if any) is currently selected,
-    // e.g. after picking themselves from the Timeclock menu tab.
+    // PIN-free registers still enforce attendance for staff selected through Timeclock.
     if (!isPosPinFeatureEnabled) {
         if (isAttendanceFeatureEnabled && selectedPosUser?.attendanceEnabled) {
             if (attendanceLoading) return <FullScreenSpinner show={true} text="Loading shift..." />;

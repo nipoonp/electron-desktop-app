@@ -14,6 +14,7 @@ import {
 } from "../graphql/customQueries";
 
 export type TShiftStatus = { isActive: boolean; isOnBreak: boolean };
+type TAttendanceAdjustment = NonNullable<IGET_ATTENDANCE["adjustmentHistory"]>[number];
 
 export type TPosUser = {
     id: string;
@@ -42,7 +43,6 @@ type ContextProps = {
     attendanceActionLoading: boolean;
     // True if this unlock is just resuming after an idle re-lock, not a fresh user selection.
     isResumedFromIdleLock: boolean;
-    // Who's currently on shift across the restaurant, keyed by userId. Used to badge the user grid.
     attendanceStatusByUserId: Record<string, TShiftStatus>;
     refetchAttendance: () => Promise<void>;
     selectPosUser: (posUserId: string) => void;
@@ -82,15 +82,12 @@ const PosUserContext = createContext<ContextProps>({
     resumeShift: async () => false,
 });
 
-// Storage key for the currently selected POS user.
 const buildSelectedUserStorageKey = (restaurantId?: string | null, registerId?: string | null) =>
     `selectedPosUserId:${restaurantId || "none"}:${registerId || "none"}`;
 
-// Storage key for whether the selected user has passed the PIN check.
 const buildUnlockedStorageKey = (restaurantId?: string | null, registerId?: string | null) =>
     `selectedPosUserUnlocked:${restaurantId || "none"}:${registerId || "none"}`;
 
-// Storage key for whether the operator skipped user selection (no active staff).
 const buildSkippedSelectionStorageKey = (restaurantId?: string | null, registerId?: string | null) =>
     `selectedPosUserSkipped:${restaurantId || "none"}:${registerId || "none"}`;
 
@@ -106,25 +103,28 @@ export const calculateDurationMinutes = (startTime?: string | null, endTime = ne
     return Math.max(0, Math.round((end - start) / 60000));
 };
 
-// Picks the rostered shift closest to "now" if an employee has more than one that day.
-// Returns null if they have no rostered shift (an unscheduled clock-in).
+const toAttendanceBreakInput = (attendanceBreak: IGET_ATTENDANCE_BREAK) => ({
+    breakStart: attendanceBreak.breakStart,
+    breakEnd: attendanceBreak.breakEnd ?? null,
+    durationMinutes: attendanceBreak.durationMinutes ?? null,
+});
+
 export const findClosestScheduledShift = (shifts: IGET_ROSTER_SHIFT[], employeeUserId: string, now: Date): IGET_ROSTER_SHIFT | null => {
     const matches = shifts.filter((shift) => shift.employeeUserId === employeeUserId);
     if (matches.length === 0) return null;
     if (matches.length === 1) return matches[0];
 
-    return matches.reduce((closest, shift) => {
-        const startOf = (s: IGET_ROSTER_SHIFT) => {
-            const [hours, minutes] = s.startTime.split(":").map(Number);
-            const scheduledStart = new Date(now);
-            scheduledStart.setHours(hours, minutes, 0, 0);
-            return Math.abs(now.getTime() - scheduledStart.getTime());
-        };
-        return startOf(shift) < startOf(closest) ? shift : closest;
-    });
+    const getStartTimeDifference = (shift: IGET_ROSTER_SHIFT) => {
+        const [hours, minutes] = shift.startTime.split(":").map(Number);
+        const scheduledStart = new Date(now);
+        scheduledStart.setHours(hours, minutes, 0, 0);
+        return Math.abs(now.getTime() - scheduledStart.getTime());
+    };
+
+    return matches.reduce((closest, shift) => (getStartTimeDifference(shift) < getStartTimeDifference(closest) ? shift : closest));
 };
 
-export const toAttendanceAdjustmentInput = (adjustment: any) => ({
+export const toAttendanceAdjustmentInput = (adjustment: TAttendanceAdjustment) => ({
     status: adjustment.status,
     changedByUserId: adjustment.changedByUserId || null,
     changedByUserName: adjustment.changedByUserName || null,
@@ -132,7 +132,7 @@ export const toAttendanceAdjustmentInput = (adjustment: any) => ({
 });
 
 export const getAdjustmentHistoryForUpdate = (
-    existingHistory: any[] | null | undefined,
+    existingHistory: IGET_ATTENDANCE["adjustmentHistory"],
     status: EAttendanceAdjustmentStatus,
     userId: string,
     userName: string,
@@ -157,14 +157,13 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
     const [isUnlocked, setIsUnlocked] = useState(false);
     const [hasSkippedPosUserSelection, setHasSkippedPosUserSelection] = useState(false);
     const [isResumedFromIdleLock, setIsResumedFromIdleLock] = useState(false);
+    const selectedPosUserName = selectedPosUser ? `${selectedPosUser.firstName} ${selectedPosUser.lastName}`.trim() : "";
 
-    // Builds the flat POS user list from restaurant staff links.
     const availableUsers = useMemo<TPosUser[]>(
         () =>
             !isPOS
                 ? []
                 : (restaurant?.users?.items || [])
-                      // Use UserRestaurantLink so each user carries their restaurant access and PIN fields.
                       .filter((userLink) => !!userLink?.id && !!userLink?.user?.id)
                       .map((userLink) => ({
                           id: userLink.id,
@@ -252,11 +251,11 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
             );
 
             if (cancelled) return;
-            const map: Record<string, TShiftStatus> = {};
+            const statusesByUserId: Record<string, TShiftStatus> = {};
             entries.forEach((entry) => {
-                if (entry) map[entry[0]] = entry[1];
+                if (entry) statusesByUserId[entry[0]] = entry[1];
             });
-            setAttendanceStatusByUserId(map);
+            setAttendanceStatusByUserId(statusesByUserId);
         };
 
         void fetchStatuses();
@@ -299,7 +298,6 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
         await refetchAttendanceQuery();
     }, [refetchAttendanceQuery, selectedPosUser?.attendanceEnabled]);
 
-    // Restores the selected cashier and unlock state when restaurant/register context changes.
     // Runs even with PIN disabled, since attendance-only registers still need the selection to persist.
     useEffect(() => {
         if (!isPOS || !restaurant?.id || !register?.id) {
@@ -335,7 +333,6 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
         unlockedStorageKey,
     ]);
 
-    // Selects a cashier, skipping the PIN step if PIN is disabled or not required for this user.
     const selectPosUser = (posUserId: string) => {
         const matchedUser = availableUsers.find((availableUser) => availableUser.id === posUserId) || null;
         const shouldUnlockWithoutPin = !!matchedUser && (!isPosPinFeatureEnabled || !matchedUser.enablePosPin);
@@ -365,7 +362,6 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
         }
     };
 
-    // Lets the POS flow continue when user selection is required but no active users exist.
     const skipPosUserSelection = () => {
         setSelectedPosUser(null);
         setIsUnlocked(false);
@@ -375,7 +371,6 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
         localStorage.setItem(skippedSelectionStorageKey, "true");
     };
 
-    // Verifies the entered PIN and marks the register session as unlocked.
     const unlockPosUser = async (pin: string) => {
         if (!selectedPosUser) return false;
 
@@ -392,12 +387,21 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
         return true;
     };
 
-    // Locks the current cashier without clearing the selection, and flags the next unlock as a resume.
     const lockPosUser = () => {
         setIsUnlocked(false);
         setIsResumedFromIdleLock(true);
         localStorage.removeItem(unlockedStorageKey);
     };
+
+    const clearSelectedPosUser = useCallback(() => {
+        setSelectedPosUser(null);
+        setIsUnlocked(false);
+        setHasSkippedPosUserSelection(false);
+        setIsResumedFromIdleLock(false);
+        localStorage.removeItem(selectedUserStorageKey);
+        localStorage.removeItem(unlockedStorageKey);
+        localStorage.removeItem(skippedSelectionStorageKey);
+    }, [selectedUserStorageKey, skippedSelectionStorageKey, unlockedStorageKey]);
 
     const idleTimeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -427,34 +431,22 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
                 idleTimeoutIdRef.current = null;
             }
         };
-    }, [isPOS, isPosPinFeatureEnabled, isUnlocked, register?.posUserPinTimeoutInSeconds]);
-
-    // Clears the cashier selection completely and resets the saved unlock state.
-    const clearSelectedPosUser = () => {
-        setSelectedPosUser(null);
-        setIsUnlocked(false);
-        setHasSkippedPosUserSelection(false);
-        setIsResumedFromIdleLock(false);
-        localStorage.removeItem(selectedUserStorageKey);
-        localStorage.removeItem(unlockedStorageKey);
-        localStorage.removeItem(skippedSelectionStorageKey);
-    };
+    }, [clearSelectedPosUser, isPOS, isPosPinFeatureEnabled, isUnlocked, register?.posUserPinTimeoutInSeconds]);
 
     const startShift = async () => {
         if (!restaurant?.id || !selectedPosUser || activeAttendance) return false;
 
         const now = new Date();
         const timestamp = now.toISOString();
-        const userName = `${selectedPosUser.firstName} ${selectedPosUser.lastName}`.trim();
         const businessDate = getBusinessDate();
 
         // Best-effort link to today's rostered shift; failures just leave it null, never block clock-in.
         let scheduledShiftId: string | null = null;
         try {
-            const shiftsRes = await fetchRosterShifts({
+            const result = await fetchRosterShifts({
                 variables: { rosterRestaurantId: restaurant.id, shiftDate: businessDate },
             });
-            const shifts = (shiftsRes.data?.listRosterShiftsByRestaurantId?.items || []) as IGET_ROSTER_SHIFT[];
+            const shifts: IGET_ROSTER_SHIFT[] = result.data?.listRosterShiftsByRestaurantId?.items || [];
             scheduledShiftId = findClosestScheduledShift(shifts, selectedPosUser.userId, now)?.id ?? null;
         } catch {
             scheduledShiftId = null;
@@ -462,7 +454,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
 
         await createAttendance({
             variables: {
-                employeeName: userName,
+                employeeName: selectedPosUserName,
                 employeeUserId: selectedPosUser.userId,
                 status: EAttendanceRecordStatus.ACTIVE,
                 businessDate,
@@ -472,7 +464,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
                     toAttendanceAdjustmentInput({
                         status: EAttendanceAdjustmentStatus.CREATED,
                         changedByUserId: selectedPosUser.userId,
-                        changedByUserName: userName,
+                        changedByUserName: selectedPosUserName,
                         changedAt: timestamp,
                     }),
                 ],
@@ -490,13 +482,16 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
 
         const endedAt = new Date().toISOString();
 
-        const updatedBreaks = (activeAttendance.breaks || []).map((b) =>
-            b.breakEnd
-                ? { breakStart: b.breakStart, breakEnd: b.breakEnd, durationMinutes: b.durationMinutes ?? null }
-                : { breakStart: b.breakStart, breakEnd: endedAt, durationMinutes: calculateDurationMinutes(b.breakStart, endedAt) },
+        const updatedBreaks = (activeAttendance.breaks || []).map((attendanceBreak) =>
+            attendanceBreak.breakEnd
+                ? toAttendanceBreakInput(attendanceBreak)
+                : {
+                      breakStart: attendanceBreak.breakStart,
+                      breakEnd: endedAt,
+                      durationMinutes: calculateDurationMinutes(attendanceBreak.breakStart, endedAt),
+                  },
         );
 
-        const userName = selectedPosUser ? `${selectedPosUser.firstName} ${selectedPosUser.lastName}`.trim() : "";
         await updateAttendance({
             variables: {
                 id: activeAttendance.id,
@@ -507,7 +502,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
                     activeAttendance.adjustmentHistory,
                     EAttendanceAdjustmentStatus.UPDATED,
                     selectedPosUser?.userId || "",
-                    userName,
+                    selectedPosUserName,
                     endedAt,
                 ),
             },
@@ -520,12 +515,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
         if (!activeAttendance || activeAttendanceBreak) return false;
 
         const startedAt = new Date().toISOString();
-        const userName = selectedPosUser ? `${selectedPosUser.firstName} ${selectedPosUser.lastName}`.trim() : "";
-        const existingBreaks = (activeAttendance.breaks || []).map((b) => ({
-            breakStart: b.breakStart,
-            breakEnd: b.breakEnd ?? null,
-            durationMinutes: b.durationMinutes ?? null,
-        }));
+        const existingBreaks = (activeAttendance.breaks || []).map(toAttendanceBreakInput);
         await updateAttendance({
             variables: {
                 id: activeAttendance.id,
@@ -535,7 +525,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
                     activeAttendance.adjustmentHistory,
                     EAttendanceAdjustmentStatus.UPDATED,
                     selectedPosUser?.userId || "",
-                    userName,
+                    selectedPosUserName,
                     startedAt,
                 ),
             },
@@ -549,13 +539,12 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
 
         const resumedAt = new Date().toISOString();
         const breakDurationMinutes = calculateDurationMinutes(activeAttendanceBreak.breakStart, resumedAt);
-        const updatedBreaks = (activeAttendance.breaks || []).map((b) =>
-            b.breakEnd
-                ? { breakStart: b.breakStart, breakEnd: b.breakEnd, durationMinutes: b.durationMinutes ?? null }
-                : { breakStart: b.breakStart, breakEnd: resumedAt, durationMinutes: breakDurationMinutes },
+        const updatedBreaks = (activeAttendance.breaks || []).map((attendanceBreak) =>
+            attendanceBreak.breakEnd
+                ? toAttendanceBreakInput(attendanceBreak)
+                : { breakStart: attendanceBreak.breakStart, breakEnd: resumedAt, durationMinutes: breakDurationMinutes },
         );
 
-        const userName = selectedPosUser ? `${selectedPosUser.firstName} ${selectedPosUser.lastName}`.trim() : "";
         await updateAttendance({
             variables: {
                 id: activeAttendance.id,
@@ -565,7 +554,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
                     activeAttendance.adjustmentHistory,
                     EAttendanceAdjustmentStatus.UPDATED,
                     selectedPosUser?.userId || "",
-                    userName,
+                    selectedPosUserName,
                     resumedAt,
                 ),
             },

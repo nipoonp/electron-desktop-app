@@ -78,7 +78,6 @@ export default () => {
     // Orders are only needed for cash up entry. Money movements also power the history section
     // on the main screen, so they stay loaded everywhere except a finalised cash up detail.
     const {
-        businessDate,
         scopeType,
         scopeId,
         effectiveCashUserName,
@@ -127,13 +126,7 @@ export default () => {
     const [movementReason, setMovementReason] = useState("");
 
     const orderFetchRange = useMemo(() => {
-        // Multi-day sessions: fetch from session opening onwards
-        // This fixes the issue where sessions spanning multiple calendar days would lose orders
-        // when the businessDate changed at midnight.
-        // Example: Session from 2026-10-08 23:00 to 2026-10-09 07:00
-        // Uses session.openedAt as start, ensuring all orders since session opened are fetched
-        // Uses toLocalISOString for both dates to maintain timezone consistency
-        // (start is stored as toLocalISOString, so end must also use it for correct comparisons)
+        // Use the session opening time across midnight; both bounds must use local ISO timestamps.
         return {
             start: currentSession?.openedAt || "",
             end: toLocalISOString(new Date()),
@@ -154,28 +147,18 @@ export default () => {
         fetchPolicy: "network-only",
     });
 
-    // Restore data from DATABASE (currentSession), not localStorage
-    useEffect(() => {
-        if (currentSession) {
-            // Restore opening float from DB session record
-            setOpeningFloatInput(currentSession.openingFloat ? convertCentsToDollars(currentSession.openingFloat) : "");
-            setCountMode("counted");
-            setCountedPaymentInputs(createPaymentInputs());
-            setDenominationInputs(createDenominationInputs());
-            setVarianceReason(currentSession.varianceReason || "");
-        } else {
-            // No session: reset form to empty
-            setOpeningFloatInput("");
-            setCountMode("counted");
-            setCountedPaymentInputs(createPaymentInputs());
-            setDenominationInputs(createDenominationInputs());
-            setVarianceReason("");
-        }
-    }, [currentSession?.id, currentSession?.openingFloat, currentSession?.varianceReason]);
+    const currentSessionId = currentSession?.id;
+    const currentSessionOpeningFloat = currentSession?.openingFloat;
+    const currentSessionVarianceReason = currentSession?.varianceReason;
 
-    // Save opening float to database without finalizing session
-    // Auto-save opening float silently when user leaves the field (onBlur)
-    // Note: This updates ONLY the opening float value, session status remains OPEN (not finalized)
+    useEffect(() => {
+        setOpeningFloatInput(currentSessionOpeningFloat ? convertCentsToDollars(currentSessionOpeningFloat) : "");
+        setCountMode("counted");
+        setCountedPaymentInputs(createPaymentInputs());
+        setDenominationInputs(createDenominationInputs());
+        setVarianceReason(currentSessionVarianceReason || "");
+    }, [currentSessionId, currentSessionOpeningFloat, currentSessionVarianceReason]);
+
     const handleOpeningFloatBlur = useCallback(async () => {
         if (!currentSession || !openingFloatInput) {
             return;
@@ -183,7 +166,6 @@ export default () => {
 
         const cents = toCents(openingFloatInput);
 
-        // Only save if value is different from what's in DB
         if (cents === currentSession.openingFloat) {
             return;
         }
@@ -191,11 +173,9 @@ export default () => {
         try {
             setSavingOpeningFloat(true);
 
-            // Update ONLY opening float - session status stays OPEN
             await updateOpeningFloat(currentSession.id, cents);
         } catch (error) {
             console.error("Failed to save opening float:", error);
-            // Silent error - no toast notification shown to user
         } finally {
             setSavingOpeningFloat(false);
         }
@@ -325,12 +305,11 @@ export default () => {
             return;
         }
 
-        // Create session immediately when user clicks "New Cashup"
-        // Session created immediately so no orders get lost
+        // Create the session before entering counts so its order window is established.
         try {
             const session = await ensureOpenSession();
             if (session) {
-                setView("entry"); // Only open form after session is created
+                setView("entry");
             } else {
                 toast.error("Unable to create cashup session.");
             }
@@ -411,14 +390,13 @@ export default () => {
     };
 
     const handleFinaliseSession = async (): Promise<string | null> => {
-        // Validate orders before finalizing
         if (orderWarnings.unpaidOrdersCount > 0) {
-            toast.error(`Cannot finalize with ${orderWarnings.unpaidOrdersCount} unpaid order(s). Collect payment first.`);
+            toast.error(`Cannot finalise with ${orderWarnings.unpaidOrdersCount} unpaid order(s). Collect payment first.`);
             return null;
         }
 
         if (orderWarnings.parkedOrdersCount > 0) {
-            toast.error(`Cannot finalize with ${orderWarnings.parkedOrdersCount} parked order(s). Unpark orders first.`);
+            toast.error(`Cannot finalise with ${orderWarnings.parkedOrdersCount} parked order(s). Unpark orders first.`);
             return null;
         }
 
@@ -471,7 +449,6 @@ export default () => {
     };
 
     const updateCountedPaymentInput = (key: TPaymentKey, value: string) => {
-        // update the payment input value
         setCountedPaymentInputs((previous) => ({ ...previous, [key]: value }));
     };
 
@@ -481,7 +458,6 @@ export default () => {
     };
 
     const applyCashDenominations = () => {
-        // apply the denominations
         setDenominationInputs(draftDenominationInputs);
         setCountMode("denominations");
         setShowDenominationModal(false);
@@ -602,7 +578,6 @@ export default () => {
                                 type="button"
                                 className={`cashup-denomination-toggle ${usesDenominations ? "active" : ""}`}
                                 onClick={openCashDenominations}
-                                disabled={false}
                                 title={usesDenominations ? "Use total cash amount" : "Count cash by denomination"}
                                 aria-label={usesDenominations ? "Use total cash amount" : "Count cash by denomination"}
                             >
@@ -795,7 +770,7 @@ export default () => {
                                                 <td className="text-left">{getUserDisplayName(session.finalisedUserId, session.finalisedByName)}</td>
                                                 <td className="text-left">{scopeName || "-"}</td>
                                                 <td className="text-left">
-                                                    <span className={`tag ${isFinalised ? "tag-green" : "tag-orange"}`}>
+                                                    <span className={`tag ${isFinalised ? "tag-green" : "tag-red"}`}>
                                                         {isFinalised ? "Completed" : "Open"}
                                                     </span>
                                                 </td>
@@ -983,11 +958,7 @@ export default () => {
                                     min="0"
                                     placeholder="0.00"
                                     value={openingFloatInput}
-                                    onChange={(event) => {
-                                        // Session already exists (created when user clicked "New Cashup")
-                                        // Just update the opening float value
-                                        setOpeningFloatInput(event.target.value);
-                                    }}
+                                    onChange={(event) => setOpeningFloatInput(event.target.value)}
                                     onBlur={handleOpeningFloatBlur}
                                     disabled={savingOpeningFloat}
                                 />
@@ -1024,7 +995,6 @@ export default () => {
                                         label="Variance Reason (Required)"
                                         value={varianceReason}
                                         onChange={(event) => setVarianceReason(event.target.value)}
-                                        disabled={false}
                                     />
                                 </div>
                             )}
@@ -1040,7 +1010,6 @@ export default () => {
                             </div>
                         </Card>
 
-                        {/* Session Summary: All movements since session opened (used for calculation) */}
                         {currentSession && (
                             <Card title="Session Summary - All Movements" className="mt-4">
                                 <div className="text-grey mb-3">All money movements recorded since session opened (used in calculation)</div>
@@ -1050,8 +1019,8 @@ export default () => {
                                         <span className="text-bold">
                                             {getDollarString(
                                                 paymentMovementTotals.moneyInTotals.cash +
-                                                    (paymentMovementTotals.moneyInTotals as any).eftpos +
-                                                    (paymentMovementTotals.moneyInTotals as any).online,
+                                                    paymentMovementTotals.moneyInTotals.eftpos +
+                                                    paymentMovementTotals.moneyInTotals.online,
                                             )}
                                         </span>
                                     </div>
@@ -1060,8 +1029,8 @@ export default () => {
                                         <span className="text-bold text-error">
                                             {getDollarString(
                                                 paymentMovementTotals.moneyOutTotals.cash +
-                                                    (paymentMovementTotals.moneyOutTotals as any).eftpos +
-                                                    (paymentMovementTotals.moneyOutTotals as any).online,
+                                                    paymentMovementTotals.moneyOutTotals.eftpos +
+                                                    paymentMovementTotals.moneyOutTotals.online,
                                             )}
                                         </span>
                                     </div>
@@ -1069,7 +1038,6 @@ export default () => {
                             </Card>
                         )}
 
-                        {/* Audit Trail: Detailed list of all movements with timestamps */}
                         {currentSession && currentSessionMovements.length > 0 && (
                             <Card title="Drawer & Money Movements (Audit Trail)" className="mt-4">
                                 <div className="text-grey mb-3">Complete history of all movements in this session</div>
