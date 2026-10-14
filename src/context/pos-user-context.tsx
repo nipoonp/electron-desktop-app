@@ -45,6 +45,7 @@ type ContextProps = {
     isResumedFromIdleLock: boolean;
     attendanceStatusByUserId: Record<string, TShiftStatus>;
     refetchAttendance: () => Promise<void>;
+    refetchAllUserStatuses: () => Promise<void>;
     selectPosUser: (posUserId: string) => void;
     skipPosUserSelection: () => void;
     unlockPosUser: (pin: string) => Promise<boolean>;
@@ -71,6 +72,7 @@ const PosUserContext = createContext<ContextProps>({
     isResumedFromIdleLock: false,
     attendanceStatusByUserId: {},
     refetchAttendance: async () => {},
+    refetchAllUserStatuses: async () => {},
     selectPosUser: () => {},
     skipPosUserSelection: () => {},
     unlockPosUser: async () => false,
@@ -198,37 +200,29 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
         fetchPolicy: "network-only",
     });
 
-    // Who's on shift right now, for badging the user grid. There's no restaurant-wide attendance
-    // query, so this polls the per-user query once for each attendance-enabled staff member instead.
+    // Who's on shift right now, for badging the user grid. Activity-driven fetching (no polling).
     const apolloClient = useApolloClient();
     const [attendanceStatusByUserId, setAttendanceStatusByUserId] = useState<Record<string, TShiftStatus>>({});
-    const attendanceEnabledUserIdsKey = useMemo(
-        () =>
-            availableUsers
-                .filter((user) => user.attendanceEnabled)
-                .map((user) => user.userId)
-                .join(","),
+    const attendanceEnabledUserIds = useMemo(
+        () => availableUsers.filter((user) => user.attendanceEnabled).map((user) => user.userId),
         [availableUsers],
     );
 
-    useEffect(() => {
+    const refetchAllUserStatuses = useCallback(async () => {
         const restaurantId = restaurant?.id;
-        const userIds = attendanceEnabledUserIdsKey ? attendanceEnabledUserIdsKey.split(",") : [];
 
-        if (!isPOS || !restaurantId || userIds.length === 0) {
+        if (!isPOS || !restaurantId || attendanceEnabledUserIds.length === 0) {
             setAttendanceStatusByUserId({});
             return;
         }
 
-        let cancelled = false;
-
-        const fetchStatuses = async () => {
+        try {
             const entries = await Promise.all(
-                userIds.map(async (employeeUserId): Promise<[string, TShiftStatus] | null> => {
+                attendanceEnabledUserIds.map(async (employeeUserId): Promise<[string, TShiftStatus] | null> => {
                     try {
                         const { data } = await apolloClient.query({
                             query: LIST_ATTENDANCES_BY_USER,
-                            variables: { employeeUserId, limit: 5 },
+                            variables: { employeeUserId, limit: 1 },
                             fetchPolicy: "network-only",
                         });
                         const items = (data?.listAttendancesByUserId?.items || []) as IGET_ATTENDANCE[];
@@ -250,22 +244,21 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
                 }),
             );
 
-            if (cancelled) return;
-            const statusesByUserId: Record<string, TShiftStatus> = {};
+            const map: Record<string, TShiftStatus> = {};
             entries.forEach((entry) => {
-                if (entry) statusesByUserId[entry[0]] = entry[1];
+                if (entry) map[entry[0]] = entry[1];
             });
-            setAttendanceStatusByUserId(statusesByUserId);
-        };
+            setAttendanceStatusByUserId(map);
+        } catch (error) {
+            console.error("Failed to refetch user statuses:", error);
+        }
+    }, [isPOS, restaurant?.id, attendanceEnabledUserIds, apolloClient]);
 
-        void fetchStatuses();
-        const intervalId = setInterval(fetchStatuses, 20000);
-
-        return () => {
-            cancelled = true;
-            clearInterval(intervalId);
-        };
-    }, [isPOS, restaurant?.id, attendanceEnabledUserIdsKey, apolloClient]);
+    useEffect(() => {
+        if (isPOS && restaurant?.id) {
+            refetchAllUserStatuses();
+        }
+    }, [isPOS, restaurant?.id, refetchAllUserStatuses]);
 
     const [createAttendance, { loading: creatingAttendance }] = useMutation(CREATE_ATTENDANCE);
     const [updateAttendance, { loading: updatingAttendance }] = useMutation(UPDATE_ATTENDANCE);
@@ -474,6 +467,10 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
             },
         });
         await refetchAttendance();
+        setAttendanceStatusByUserId((prev) => ({
+            ...prev,
+            [selectedPosUser.userId]: { isActive: true, isOnBreak: false },
+        }));
         return true;
     };
 
@@ -508,6 +505,10 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
             },
         });
         await refetchAttendance();
+        setAttendanceStatusByUserId((prev) => ({
+            ...prev,
+            [activeAttendance.employeeUserId]: { isActive: false, isOnBreak: false },
+        }));
         return true;
     };
 
@@ -531,6 +532,10 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
             },
         });
         await refetchAttendance();
+        setAttendanceStatusByUserId((prev) => ({
+            ...prev,
+            [activeAttendance.employeeUserId]: { isActive: true, isOnBreak: true },
+        }));
         return true;
     };
 
@@ -560,6 +565,10 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
             },
         });
         await refetchAttendance();
+        setAttendanceStatusByUserId((prev) => ({
+            ...prev,
+            [activeAttendance.employeeUserId]: { isActive: true, isOnBreak: false },
+        }));
         return true;
     };
 
@@ -580,6 +589,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
                 attendanceLoading,
                 attendanceActionLoading,
                 refetchAttendance,
+                refetchAllUserStatuses,
                 selectPosUser,
                 skipPosUserSelection,
                 unlockPosUser,
