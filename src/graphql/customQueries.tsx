@@ -1268,9 +1268,7 @@ export interface IGET_ROSTER_SHIFT {
     finishTime: string;
 }
 
-/** Used at clock-in to find the employee's rostered shift(s) for today, so the attendance record
- *  can link back to it. shiftDate is filtered server-side; employeeUserId is filtered client-side
- *  since RosterShift has no employee-scoped index of its own. */
+// RosterShift has no employee index, so filter by date here and by employee in the caller.
 export const LIST_ROSTER_SHIFTS_BY_RESTAURANT_AND_DATE = gql`
     query ListRosterShiftsByRestaurantId($rosterRestaurantId: ID!, $shiftDate: String) {
         listRosterShiftsByRestaurantId(rosterRestaurantId: $rosterRestaurantId, shiftDate: { eq: $shiftDate }, limit: 200) {

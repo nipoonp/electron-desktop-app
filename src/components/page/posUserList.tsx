@@ -14,7 +14,6 @@ import { beginOrderPath } from "../main";
 import "./posUserList.scss";
 
 const PIN_LENGTH = 4;
-// How long a success message stays on screen before the page moves on by itself.
 const CONFIRMATION_DELAY_MS = 900;
 
 export default () => {
@@ -44,56 +43,54 @@ export default () => {
     } = usePosUser();
     const numpadRef = useRef<HTMLInputElement>(null);
 
-    // Show all users when PIN or attendance is enabled at register level
     const usersToDisplay = useMemo(
         () => (isPosPinFeatureEnabled || isAttendanceFeatureEnabled ? availableUsers : []),
         [availableUsers, isPosPinFeatureEnabled, isAttendanceFeatureEnabled],
     );
 
     const isOnBreak = activeAttendance?.status === EAttendanceRecordStatus.ON_BREAK || !!activeAttendanceBreak;
-    // Page navigation depends on register-level features, not user-level features
     const isPinRequired = !!selectedPosUser && isPosPinFeatureEnabled && selectedPosUser.enablePosPin && !isUnlocked;
     const isAttendanceFlow = !!selectedPosUser && isUnlocked && isAttendanceFeatureEnabled && selectedPosUser.attendanceEnabled;
-
 
     // Idle-lock resume: same cashier re-authenticating mid-shift, so skip straight back in.
     useEffect(() => {
         if (isAttendanceFlow && isResumedFromIdleLock) {
             navigate(beginOrderPath, { replace: true });
         }
-    }, [isAttendanceFlow, isResumedFromIdleLock]);
+    }, [isAttendanceFlow, isResumedFromIdleLock, navigate]);
 
     // Refetch attendance on entering the flow, since the query doesn't auto-fire on isUnlocked change.
     useEffect(() => {
         if (isAttendanceFlow) {
             void refetchAttendance();
         }
-    }, [selectedPosUser?.id, isUnlocked]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [isAttendanceFlow, isUnlocked, refetchAttendance, selectedPosUser?.id]);
 
     useEffect(() => {
         if (!selectedPosUser?.enablePosPin || isUnlocked || !numpadRef.current) return;
 
         KioskBoard.run(numpadRef.current, {
             theme: "light",
-            keysArrayOfObjects: [{ "0": "7", "1": "8", "2": "9" }, { "0": "4", "1": "5", "2": "6" }, { "0": "1", "1": "2", "2": "3" }, { "0": "0" }],
+            keysArrayOfObjects: [
+                { "0": "7", "1": "8", "2": "9" },
+                { "0": "4", "1": "5", "2": "6" },
+                { "0": "1", "1": "2", "2": "3" },
+                { "0": "0" },
+            ],
         });
     }, [selectedPosUser?.id, selectedPosUser?.enablePosPin, isUnlocked]);
 
     const getInitials = (firstName: string, lastName: string) => `${firstName.slice(0, 1)}${lastName.slice(0, 1)}`.toUpperCase();
 
-    // Handle skip navigation
     useEffect(() => {
         if (hasSkippedPosUserSelection) {
             navigate(beginOrderPath, { replace: true });
         }
     }, [hasSkippedPosUserSelection, navigate]);
 
-    // Handle attendance-only mode with no users
     useEffect(() => {
-        if (!isPosPinFeatureEnabled && isAttendanceFeatureEnabled) {
-            if (usersToDisplay.length === 0 && !selectedPosUser) {
-                navigate(beginOrderPath, { replace: true });
-            }
+        if (!isPosPinFeatureEnabled && isAttendanceFeatureEnabled && usersToDisplay.length === 0 && !selectedPosUser) {
+            navigate(beginOrderPath, { replace: true });
         }
     }, [isPosPinFeatureEnabled, isAttendanceFeatureEnabled, usersToDisplay.length, selectedPosUser, navigate]);
 
@@ -101,7 +98,6 @@ export default () => {
         const selectedUser = availableUsers.find((availableUser) => availableUser.id === userId);
         selectPosUser(userId);
 
-        // Navigate to POS if user will not encounter PIN or attendance pages (both disabled at register level)
         const willShowPin = isPosPinFeatureEnabled && selectedUser?.enablePosPin;
         const willShowAttendance = isAttendanceFeatureEnabled && selectedUser?.attendanceEnabled;
         if (selectedUser && !willShowPin && !willShowAttendance) {
@@ -129,7 +125,6 @@ export default () => {
             return;
         }
 
-        // Navigate if no attendance feature, or if user doesn't have attendance enabled
         if (!isAttendanceFeatureEnabled || !selectedPosUser?.attendanceEnabled) {
             navigate(beginOrderPath, { replace: true });
         }
@@ -157,7 +152,6 @@ export default () => {
             return;
         }
         toast.success("Clocked out.");
-        // Done working — return to the grid for the next person, not into the POS.
         setTimeout(() => clearSelectedPosUser(), CONFIRMATION_DELAY_MS);
     };
 
@@ -168,7 +162,6 @@ export default () => {
             return;
         }
         toast.success("Break started.");
-        // Leaving the work area — return to the grid, not into the POS.
         setTimeout(() => clearSelectedPosUser(), CONFIRMATION_DELAY_MS);
     };
 
@@ -179,7 +172,6 @@ export default () => {
             return;
         }
         toast.success("Break ended.");
-        // Back to work — continue into the POS.
         setTimeout(() => navigate(beginOrderPath, { replace: true }), CONFIRMATION_DELAY_MS);
     };
 
@@ -282,7 +274,10 @@ export default () => {
                     ) : (
                         <div className="pos-user-list-grid">
                             {usersToDisplay.map((availableUser) => {
-                                const shiftStatus = isAttendanceFeatureEnabled && availableUser.attendanceEnabled ? attendanceStatusByUserId[availableUser.userId] : undefined;
+                                const shiftStatus =
+                                    isAttendanceFeatureEnabled && availableUser.attendanceEnabled
+                                        ? attendanceStatusByUserId[availableUser.userId]
+                                        : undefined;
                                 return (
                                     <div className="pos-user-card" key={availableUser.id} onClick={() => onSelectUser(availableUser.id)}>
                                         <div className="pos-user-card-avatar-wrapper">
