@@ -162,8 +162,24 @@ export const getSessionDisplayTimestamp = (session: IGET_CASHUP_SESSION) =>
 
 export const getSessionVarianceCents = (session: IGET_CASHUP_SESSION) => (session.countedTotal || 0) - (session.recordedTotal || 0);
 
+export const getPaymentSummarySnapshot = (session: IGET_CASHUP_SESSION): TPaymentSummarySnapshot | null => {
+    if (!session.paymentSummary) return null;
+
+    try {
+        return JSON.parse(session.paymentSummary) as TPaymentSummarySnapshot;
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+};
+
 export const sortSessions = (sessions: IGET_CASHUP_SESSION[]) =>
-    [...sessions].sort((left, right) => (getSessionDisplayTimestamp(right) > getSessionDisplayTimestamp(left) ? 1 : -1));
+    [...sessions].sort((left, right) => {
+        const statusOrder = Number(right.status === ECashupSessionStatus.OPEN) - Number(left.status === ECashupSessionStatus.OPEN);
+        if (statusOrder !== 0) return statusOrder;
+
+        return getSessionDisplayTimestamp(right).localeCompare(getSessionDisplayTimestamp(left));
+    });
 
 export const getPaymentLabel = (key: TPaymentKey) => {
     switch (key) {

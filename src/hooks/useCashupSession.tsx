@@ -19,6 +19,7 @@ import {
     buildCashupSessionId,
     getBusinessDate,
     getBusinessDayRange,
+    getPaymentSummarySnapshot,
     resolveCashupScope,
     sortSessions,
 } from "../components/page/cashManagement/cashManagementSupport";
@@ -143,38 +144,53 @@ export const useCashupSession = (options?: { skipMovements?: boolean }) => {
         await Promise.allSettled([refetchSessions(), ...(skipMovements ? [] : [refetchMovements()])]);
     }, [refetchMovements, refetchSessions, skipMovements]);
 
-    // Creates the open session for today on first use. The deterministic session id makes
+    // Creates or resumes the open session. The deterministic session id makes
     // concurrent creates from other registers collide, so the loser adopts the winner's session.
     const ensureOpenSession = useCallback(
-        async (options?: { openingFloatCents?: number; skipRefetchAfterCreate?: boolean }): Promise<IGET_CASHUP_SESSION | null> => {
+        async (options?: {
+            openingFloatCents?: number;
+            skipRefetchAfterCreate?: boolean;
+            previousSession?: IGET_CASHUP_SESSION;
+        }): Promise<IGET_CASHUP_SESSION | null> => {
             if (!restaurant?.enableCashup || !resolvedScope || !user || !effectiveCashUserId) return null;
 
             for (let attempt = 0; attempt < 3; attempt++) {
-                const result = attempt === 0 ? sessionsData : (await refetchSessions()).data;
+                const result = (await refetchSessions()).data;
                 const sessions: IGET_CASHUP_SESSION[] = (result?.getCashupSessionsByScopeKeyByOpenedAt?.items || []).filter(
                     (session: IGET_CASHUP_SESSION) => session.scopeKey === resolvedScope.scopeKey,
                 );
+                // The session index can lag behind the finalisation mutation.
+                if (options?.previousSession?.scopeKey === resolvedScope.scopeKey) {
+                    const previousIndex = sessions.findIndex((session) => session.id === options.previousSession?.id);
+                    if (previousIndex >= 0) sessions[previousIndex] = options.previousSession;
+                    else sessions.push(options.previousSession);
+                }
                 const openSession = sortSessions(sessions).find((session) => session.status === ECashupSessionStatus.OPEN);
 
                 if (openSession) {
                     return openSession;
                 }
 
+                const previousSession = sortSessions(sessions).find((session) => session.status === ECashupSessionStatus.FINALISED);
+                const openedAt = previousSession?.finalisedAt || toLocalISOString(new Date());
+                const sessionDate = openedAt.slice(0, 10);
+                const previousCountedCash = previousSession ? getPaymentSummarySnapshot(previousSession)?.cash?.countedCents ?? 0 : 0;
+
                 // The derived suffix allows multiple cashups per business day and keeps concurrent
                 // creates deterministic without persisting a separate sequence field.
-                const sessionSequence = sessions.filter((session) => session.cashupSessionDate === businessDate).length + 1;
+                const sessionSequence = sessions.filter((session) => session.cashupSessionDate === sessionDate).length + 1;
 
                 try {
                     const created = await createCashupSession({
                         variables: {
-                            id: buildCashupSessionId(resolvedScope.scopeKey, businessDate, sessionSequence),
+                            id: buildCashupSessionId(resolvedScope.scopeKey, sessionDate, sessionSequence),
                             cashupRestaurantId: restaurant.id,
-                            cashupSessionDate: businessDate,
+                            cashupSessionDate: sessionDate,
                             scopeType: resolvedScope.scopeType,
                             scopeKey: resolvedScope.scopeKey,
                             status: ECashupSessionStatus.OPEN,
-                            openedAt: toLocalISOString(new Date()),
-                            openingFloat: options?.openingFloatCents || 0,
+                            openedAt,
+                            openingFloat: options?.openingFloatCents ?? previousCountedCash,
                             owner: user.id,
                         },
                     });
@@ -189,13 +205,11 @@ export const useCashupSession = (options?: { skipMovements?: boolean }) => {
             return null;
         },
         [
-            businessDate,
             createCashupSession,
             effectiveCashUserId,
             refetchSessions,
             resolvedScope,
             restaurant,
-            sessionsData,
             user,
         ],
     );
@@ -220,7 +234,12 @@ export const useCashupSession = (options?: { skipMovements?: boolean }) => {
                 },
             });
 
-            await refetchSessions();
+            // Finalisation is saved even if refreshing the history fails.
+            try {
+                await refetchSessions();
+            } catch (error) {
+                console.error(error);
+            }
             return result.data?.updateCashupSession || null;
         },
         [effectiveCashUserId, effectiveCashUserName, finaliseCashupSession, refetchSessions],

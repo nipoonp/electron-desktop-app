@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@apollo/client";
 import { FiAlertTriangle, FiArrowLeft, FiGrid, FiPlus, FiPrinter } from "react-icons/fi";
 import { useNavigate } from "react-router";
@@ -52,6 +52,7 @@ import {
     getMovementPaymentLabel,
     getMovementTypeLabel,
     getPaymentLabel,
+    getPaymentSummarySnapshot,
     getSessionDisplayTimestamp,
     getSessionVarianceCents,
     getCashupScopeHistoryLabel,
@@ -73,13 +74,21 @@ export default () => {
 
     const [view, setView] = useState<TCashUpView>("list");
     const [selectedHistorySessionId, setSelectedHistorySessionId] = useState<string | null>(null);
+    const [lastFinalisedSession, setLastFinalisedSession] = useState<IGET_CASHUP_SESSION | null>(null);
     const [selectedMovementId, setSelectedMovementId] = useState<string | null>(null);
+    const [startingSession, setStartingSession] = useState(false);
+    const [closingSession, setClosingSession] = useState(false);
+    const [sessionStartError, setSessionStartError] = useState<{ scopeKey: string; previousSession?: IGET_CASHUP_SESSION } | null>(null);
+    const initialSessionScopeRef = useRef<string | null>(null);
+    const startingSessionRef = useRef(false);
 
     // Orders are only needed for cash up entry. Money movements also power the history section
     // on the main screen, so they stay loaded everywhere except a finalised cash up detail.
     const {
         scopeType,
         scopeId,
+        scopeKey,
+        effectiveCashUserId,
         effectiveCashUserName,
         currentSession,
         cashupWindowStart,
@@ -101,6 +110,45 @@ export default () => {
         getUserDisplayName,
         isConditionalCheckError,
     } = useCashupSession({ skipMovements: view === "detail" });
+
+    const startCashupSession = useCallback(
+        async (previousSession?: IGET_CASHUP_SESSION) => {
+            if (startingSessionRef.current) return;
+            startingSessionRef.current = true;
+            setStartingSession(true);
+            setSessionStartError(null);
+
+            try {
+                const session = await ensureOpenSession({ previousSession });
+                if (!session) throw new Error("Unable to start cash up session.");
+            } catch (error) {
+                console.error(error);
+                setSessionStartError({ scopeKey, previousSession });
+            } finally {
+                startingSessionRef.current = false;
+                setStartingSession(false);
+            }
+        },
+        [ensureOpenSession, scopeKey],
+    );
+
+    useEffect(() => {
+        if (!restaurant?.enableCashup || !isPOS || !scopeKey || !effectiveCashUserId || sessionsLoading || sessionsError) return;
+        if (initialSessionScopeRef.current === scopeKey || startingSessionRef.current) return;
+
+        initialSessionScopeRef.current = scopeKey;
+        if (!currentSession) void startCashupSession();
+    }, [
+        currentSession,
+        effectiveCashUserId,
+        isPOS,
+        restaurant?.enableCashup,
+        scopeKey,
+        sessionsError,
+        sessionsLoading,
+        startCashupSession,
+        startingSession,
+    ]);
 
     const scopeName =
         scopeType === ECashupScopeType.REGISTER
@@ -276,8 +324,11 @@ export default () => {
     const requiresVarianceReason = Math.abs(totalVarianceCents) > varianceThresholdCents;
 
     const selectedHistorySession = useMemo(
-        () => sessionHistory.find((session) => session.id === selectedHistorySessionId) || null,
-        [selectedHistorySessionId, sessionHistory],
+        () =>
+            lastFinalisedSession?.id === selectedHistorySessionId && lastFinalisedSession.scopeKey === scopeKey
+                ? lastFinalisedSession
+                : sessionHistory.find((session) => session.id === selectedHistorySessionId) || null,
+        [lastFinalisedSession, scopeKey, selectedHistorySessionId, sessionHistory],
     );
 
     const selectedMovement = useMemo(
@@ -294,29 +345,6 @@ export default () => {
         setView("list");
         setSelectedHistorySessionId(null);
         setSelectedMovementId(null);
-    };
-
-    const goToNewCashup = async () => {
-        if (!restaurant?.enableCashup || !isPOS) return;
-
-        if (currentSession) {
-            toast.error("Finalise the previous cash up session before starting a new one.");
-            setView("list");
-            return;
-        }
-
-        // Create the session before entering counts so its order window is established.
-        try {
-            const session = await ensureOpenSession();
-            if (session) {
-                setView("entry");
-            } else {
-                toast.error("Unable to create cashup session.");
-            }
-        } catch (error) {
-            console.error("Failed to create session:", error);
-            toast.error("Error creating cashup session.");
-        }
     };
 
     const handleHistoryRowClick = (session: IGET_CASHUP_SESSION) => {
@@ -390,6 +418,7 @@ export default () => {
     };
 
     const handleFinaliseSession = async (): Promise<string | null> => {
+        if (!currentSession || closingSession || startingSession || creatingSession || savingOpeningFloat) return null;
         if (orderWarnings.unpaidOrdersCount > 0) {
             toast.error(`Cannot finalise with ${orderWarnings.unpaidOrdersCount} unpaid order(s). Collect payment first.`);
             return null;
@@ -406,16 +435,24 @@ export default () => {
         }
 
         try {
+            setClosingSession(true);
             const session = await ensureOpenSession({ openingFloatCents, skipRefetchAfterCreate: true });
 
             if (!session) {
                 toast.error("Unable to start the cash up session.");
                 return null;
             }
+            if (session.id !== currentSession.id) {
+                toast.error("The cash up session has changed. Reopen the current session before finalising.");
+                await refetchAll();
+                setShowFinaliseModal(false);
+                goToList();
+                return null;
+            }
 
             const finalisedSessionId = session.id;
 
-            await finaliseSession({
+            const finalisedSession = await finaliseSession({
                 id: finalisedSessionId,
                 openingFloat: openingFloatCents,
                 recordedTotal: totalRecordedCents,
@@ -423,8 +460,11 @@ export default () => {
                 paymentSummary: JSON.stringify(paymentSummary),
                 varianceReason: varianceReason.trim() || null,
             });
+            if (!finalisedSession) throw new Error("Unable to finalise cash up session.");
+            setLastFinalisedSession(finalisedSession);
 
             localStorage.removeItem(buildCashupDraftStorageKey(finalisedSessionId));
+            await startCashupSession(finalisedSession);
             return finalisedSessionId;
         } catch (error) {
             console.error(error);
@@ -435,6 +475,8 @@ export default () => {
                 toast.error("Unable to finalise cash up.");
             }
             return null;
+        } finally {
+            setClosingSession(false);
         }
     };
 
@@ -468,19 +510,8 @@ export default () => {
         setShowDenominationModal(false);
     };
 
-    const getPaymentSummarySnapshot = (session: IGET_CASHUP_SESSION): TPaymentSummarySnapshot | null => {
-        if (!session.paymentSummary) return null;
-
-        try {
-            return JSON.parse(session.paymentSummary) as TPaymentSummarySnapshot;
-        } catch (error) {
-            console.error(error);
-            return null;
-        }
-    };
-
     const getHistorySummaryRows = (session: IGET_CASHUP_SESSION) => {
-        const isActiveOpenSession = currentSession?.id === session.id;
+        const isActiveOpenSession = session.status === ECashupSessionStatus.OPEN && currentSession?.id === session.id;
         const snapshot = isActiveOpenSession ? paymentSummary : getPaymentSummarySnapshot(session);
 
         const rows: { key: TPaymentKey | "total"; label: string; countedCents: number; recordedCents: number; differenceCents: number }[] =
@@ -504,7 +535,7 @@ export default () => {
     };
 
     const getHistoryDrawerRows = (session: IGET_CASHUP_SESSION) => {
-        const isActiveOpenSession = currentSession?.id === session.id;
+        const isActiveOpenSession = session.status === ECashupSessionStatus.OPEN && currentSession?.id === session.id;
         const snapshot = isActiveOpenSession ? paymentSummary : getPaymentSummarySnapshot(session);
 
         return [
@@ -698,9 +729,9 @@ export default () => {
 
                 <ModalV2
                     isOpen={showFinaliseModal}
-                    disableClose={creatingSession || finalisingSession}
+                    disableClose={closingSession || creatingSession || finalisingSession}
                     onRequestClose={() => {
-                        if (!creatingSession && !finalisingSession) setShowFinaliseModal(false);
+                        if (!closingSession && !creatingSession && !finalisingSession) setShowFinaliseModal(false);
                     }}
                 >
                     <div className="h2 mb-4">Finalise Cash Up</div>
@@ -709,8 +740,8 @@ export default () => {
                     <div className="cashup-modal-actions">
                         <Button
                             onClick={handleConfirmFinalise}
-                            loading={creatingSession || finalisingSession}
-                            disabled={creatingSession || finalisingSession}
+                            loading={closingSession || creatingSession || finalisingSession}
+                            disabled={closingSession || creatingSession || finalisingSession || savingOpeningFloat}
                         >
                             Finalise
                         </Button>
@@ -723,11 +754,6 @@ export default () => {
                             <FiArrowLeft />
                             <span>Back to POS</span>
                         </div>
-
-                        <Button onClick={goToNewCashup} disabled={!restaurant.enableCashup || !isPOS}>
-                            <FiPlus />
-                            <span>New Cashup</span>
-                        </Button>
                     </div>
                 ) : (
                     <div className="header">
@@ -739,6 +765,20 @@ export default () => {
                 )}
 
                 {view !== "detail" && view !== "movement-detail" && renderBanners()}
+
+                {startingSession && <div className="text-grey mt-4">Starting cash up session...</div>}
+                {sessionStartError?.scopeKey === scopeKey && (
+                    <Card className="cashup-banner mt-4">
+                        <div className="text-error mb-3">
+                            {sessionStartError.previousSession
+                                ? "Cash up was finalised, but the next session could not start. Please try again."
+                                : "Unable to start cash up. Please try again."}
+                        </div>
+                        <Button onClick={() => startCashupSession(sessionStartError.previousSession)} disabled={startingSession}>
+                            Retry
+                        </Button>
+                    </Card>
+                )}
 
                 {view === "list" && (
                     <div className="list">
@@ -791,7 +831,7 @@ export default () => {
                             {sessionsError && <div className="text-error mt-4">Unable to load cash up history. Please try again.</div>}
                             {sessionsLoading && sessionHistory.length === 0 && <div className="text-grey mt-4">Loading cash up history...</div>}
                             {!sessionsError && !sessionsLoading && sessionHistory.length === 0 && (
-                                <div className="text-grey mt-4">No cash ups have been done yet. Click New Cashup to get started.</div>
+                                <div className="text-grey mt-4">No cash ups have been done yet.</div>
                             )}
                         </div>
                     </div>
@@ -1002,8 +1042,16 @@ export default () => {
                             <div className="cashup-form-actions mt-6">
                                 <Button
                                     onClick={handleOpenFinaliseModal}
-                                    loading={creatingSession || finalisingSession}
-                                    disabled={creatingSession || finalisingSession || !restaurant.enableCashup || !isPOS}
+                                    loading={closingSession || creatingSession || finalisingSession}
+                                    disabled={
+                                        closingSession ||
+                                        startingSession ||
+                                        savingOpeningFloat ||
+                                        creatingSession ||
+                                        finalisingSession ||
+                                        !restaurant.enableCashup ||
+                                        !isPOS
+                                    }
                                 >
                                     Finalise Cash Up
                                 </Button>
