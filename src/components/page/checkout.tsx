@@ -315,7 +315,7 @@ export const Checkout = () => {
     const [showOrderThresholdMessageModal, setShowOrderThresholdMessageModal] = useState(false);
     const [showDiscountModal, setShowDiscountModal] = useState(false);
 
-    const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
+    const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timeout | undefined>();
     const [showModal, setShowModal] = useState<string>("");
     const [showFullScreenSpinner, setShowFullScreenSpinner] = useState(false);
     const [kitchenPrintTrackingVersion, setKitchenPrintTrackingVersion] = useState(0);
