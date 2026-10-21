@@ -382,7 +382,7 @@ const Orders = () => {
         }
     };
 
-    const getParkedOrderProducts = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[], invalidItemsFound: number) => {
+    const getParkedOrderProducts = (products: IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT[], invalidItemsFound: number, isProductModifier = false) => {
         const newCartProducts: ICartProduct[] = [];
 
         products.forEach((product) => {
@@ -395,14 +395,14 @@ const Orders = () => {
 
             const menuProductCategory = product.category ? menuCategories[product.category.id] : null;
 
-            if (!menuProductCategory) {
+            if ((!isProductModifier || product.category) && !menuProductCategory) {
                 invalidItemsFound++;
                 return;
             }
 
             const isProductSoldOut = isItemSoldOut(menuProduct.soldOut, menuProduct.soldOutDate);
             const isProductAvailable = isItemAvailable(menuProduct.availability);
-            const isProductCategoryAvailable = isItemAvailable(menuProductCategory.availability);
+            const isProductCategoryAvailable = !menuProductCategory || isItemAvailable(menuProductCategory.availability);
             const isProductQtyAvailable = isProductQuantityAvailable(product, cartProductQuantitiesById);
 
             const isProductValid = !isProductSoldOut && isProductAvailable && isProductCategoryAvailable && isProductQtyAvailable;
@@ -493,7 +493,7 @@ const Orders = () => {
                             }
 
                             const processedProductModifiers = modifier.productModifiers
-                                ? getParkedOrderProducts(modifier.productModifiers, invalidItemsFound)
+                                ? getParkedOrderProducts(modifier.productModifiers, 0, true)
                                 : null;
 
                             if (processedProductModifiers && processedProductModifiers.invalidItemsFound) {
