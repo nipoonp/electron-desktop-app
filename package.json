@@ -2,7 +2,7 @@
     "name": "Tabin",
     "description": "Tabin Self Service Kiosk",
     "author": "Tabin",
-    "version": "1.4.694",
+    "version": "1.4.710",
     "repository": "https://github.com/zeal-ltd/electron-desktop-app",
     "main": "build/electron.js",
     "dependencies": {
@@ -93,7 +93,10 @@
     },
     "build": {
         "extends": null,
-        "files": ["build/**/*", "package.json"],
+        "files": [
+            "build/**/*",
+            "package.json"
+        ],
         "appId": "com.tabin.desktop",
         "copyright": "Copyright 2021 Zeal Private Ltd",
         "publish": {
