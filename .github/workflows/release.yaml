@@ -37,6 +37,7 @@ jobs:
     windows:
         runs-on: windows-latest
         env:
+            GYP_MSVS_VERSION: 2022
             CI: false #Need this otherwise github actions will do this => "Treating warnings as errors because process.env.CI = true"
         steps:
             - uses: actions/checkout@v3.3.0
@@ -54,6 +55,13 @@ jobs:
               run: npm config set python "$(python -c 'import sys; print(sys.executable)')"
             - name: Install node-gyp
               run: npm install --global node-gyp@latest
+            - name: Load Visual Studio environment with MSVC 14.38
+              shell: pwsh
+              run: |
+                  $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+                  cmd /c "`"$vs\VC\Auxiliary\Build\vcvarsall.bat`" x64 -vcvars_ver=14.38 && set" | ForEach-Object {
+                      if ($_ -match '^([^=]+)=(.*)$') { Add-Content -Path $env:GITHUB_ENV -Value "$($matches[1])=$($matches[2])" }
+                  }
             - name: Install dependencies
               run: npm install --legacy-peer-deps
             - name: Build native dependencies
