@@ -2,7 +2,7 @@ name: Tabin CI/CD NEW
 
 on:
     push:
-        branches: [pos]
+        branches: [pos-node-update]
 
 jobs:
     slack_message_start:
@@ -40,24 +40,14 @@ jobs:
             CI: false #Need this otherwise github actions will do this => "Treating warnings as errors because process.env.CI = true"
         steps:
             - uses: actions/checkout@v3.3.0
-            - uses: actions/setup-node@v3.6.0
+            - uses: actions/setup-node@v4
               with:
-                  node-version: 16
+                  node-version-file: .nvmrc
             - uses: actions/setup-python@v5
               with:
                   python-version: "3.11"
-            - name: Install windows build tools
-              run: npm install --global --production windows-build-tools@4.0.0
-            - name: Set npm config set msvs_version 2019 --global
-              run: npm config set msvs_version 2019 --global
-            - name: Set npm config python 3.11
-              run: npm config set python "$(python -c 'import sys; print(sys.executable)')"
-            - name: Install node-gyp
-              run: npm install --global node-gyp@latest
             - name: Install dependencies
-              run: npm install --legacy-peer-deps
-            - name: Build native dependencies
-              run: ./node_modules/.bin/electron-rebuild
+              run: npm ci --legacy-peer-deps
             - name: Build web
               run: npm run build:web
             - name: Build desktop
