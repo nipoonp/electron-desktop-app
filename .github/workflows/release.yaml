@@ -64,8 +64,16 @@ jobs:
                   }
             - name: Install dependencies
               run: npm install --legacy-peer-deps
+            - name: Diagnose Visual Studio detection
+              shell: pwsh
+              run: |
+                  & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+                  npm config get msvs_version
+                  echo "GYP_MSVS_VERSION=$env:GYP_MSVS_VERSION"
             - name: Build native dependencies
               run: ./node_modules/.bin/electron-rebuild
+              env:
+                  DEBUG: electron-rebuild
             - name: Build web
               run: npm run build:web
             - name: Build desktop
