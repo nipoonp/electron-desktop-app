@@ -1,3 +1,10 @@
+## Desktop setup
+
+Use Node 26.12.1 (`nvm install && nvm use`) and run `npm ci --legacy-peer-deps`.
+Installation prepares `@lastapp/node-printer` for Electron 43 automatically.
+The scoped `node-abi` override enables downloading its Windows prebuilt binary.
+Test physical receipts, cutter, and cash drawer on a Windows kiosk before release.
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts

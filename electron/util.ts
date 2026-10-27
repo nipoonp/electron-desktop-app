@@ -12,7 +12,7 @@ import {
     IEftposReceipt,
     ECountry,
 } from "./model";
-import usbPrinter from "@thiagoelg/node-printer";
+import * as usbPrinter from "@lastapp/node-printer";
 import { format, isToday } from "date-fns";
 
 export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
