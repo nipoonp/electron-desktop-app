@@ -2,7 +2,7 @@
     "name": "Tabin",
     "description": "Tabin Self Service Kiosk",
     "author": "Tabin",
-    "version": "1.4.712",
+    "version": "1.4.714",
     "repository": "https://github.com/zeal-ltd/electron-desktop-app",
     "main": "build/electron.js",
     "dependencies": {
@@ -84,12 +84,13 @@
     "devDependencies": {
         "@types/node": "18.15.11",
         "concurrently": "^8.2.2",
-        "electron": "43.8.4",
+        "electron": "45.1.0",
         "electron-builder": "26.18.0",
         "wait-on": "^7.2.0"
     },
     "overrides": {
         "@lastapp/node-printer": {
+            "nan": "2.30.0",
             "node-abi": "3.101.0"
         }
     },

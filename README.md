@@ -1,8 +1,13 @@
 ## Desktop setup
 
 Use Node 26.12.1 (`nvm install 26.12.1 && nvm use 26.12.1`) and run `npm ci --legacy-peer-deps`.
-Installation prepares `@lastapp/node-printer` for Electron 43 automatically.
-The scoped `node-abi` override enables downloading its Windows prebuilt binary.
+Installation prepares `@lastapp/node-printer` for Electron 45 automatically.
+The scoped `node-abi` override identifies Electron's native module ABI.
+The scoped `nan` override supports Electron 45's V8 version when compiling the printer.
+The printer package currently has no Electron 45 prebuilt binary, so installation
+compiles it from source. Windows development requires Visual Studio Build Tools
+with the Desktop development with C++ workload and Python 3.11 (provided by CI).
+Electron 45 requires 64-bit Windows or macOS 13 and later for those platforms.
 Test physical receipts, cutter, and cash drawer on a Windows kiosk before release.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
