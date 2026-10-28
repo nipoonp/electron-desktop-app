@@ -36,6 +36,8 @@ type ContextProps = {
     user?: ICognitoUser;
     email?: string;
     isAdmin: boolean;
+    isSales: boolean;
+    isSupport: boolean;
 };
 
 // FACTORIES
@@ -90,6 +92,34 @@ const checkIfUserIsAdmin = (data: any) => {
     return admin;
 };
 
+const checkIfUserIsSales = (data: any) => {
+    let sales = false;
+
+    data.signInUserSession.idToken &&
+        data.signInUserSession.idToken.payload["cognito:groups"] &&
+        data.signInUserSession.idToken.payload["cognito:groups"].map((group: string) => {
+            if (group === "Sales") {
+                sales = true;
+            }
+        });
+
+    return sales;
+};
+
+const checkIfUserisSupport = (data: any) => {
+    let support = false;
+
+    data.signInUserSession.idToken &&
+        data.signInUserSession.idToken.payload["cognito:groups"] &&
+        data.signInUserSession.idToken.payload["cognito:groups"].map((group: string) => {
+            if (group === "Support") {
+                support = true;
+            }
+        });
+
+    return support;
+};
+
 // CONTEXT
 const AuthContext = createContext<ContextProps>({
     login: login,
@@ -132,6 +162,8 @@ const AuthContext = createContext<ContextProps>({
     status: AuthenticationStatus.Unauthenticated,
     resendCode: resendCode,
     isAdmin: false,
+    isSales: false,
+    isSupport: false,
 });
 
 // REDUCER
@@ -141,6 +173,8 @@ interface IState {
     email: string | null;
     password: string | null;
     isAdmin: boolean;
+    isSales: boolean;
+    isSupport: boolean;
 }
 const initialState: IState = {
     user: null,
@@ -148,11 +182,19 @@ const initialState: IState = {
     email: null,
     password: null,
     isAdmin: false,
+    isSales: false,
+    isSupport: false,
 };
 
 type Action =
     | { type: "loaded" }
-    | { type: "signIn"; user: ICognitoUser; isAdmin: boolean }
+    | {
+          type: "signIn";
+          user: ICognitoUser;
+          isAdmin: boolean;
+          isSales: boolean;
+          isSupport: boolean;
+      }
     | { type: "unconfirmedSignUp"; password: string; email: string }
     | { type: "signUp"; user: ICognitoUser }
     | { type: "signOut" }
@@ -185,6 +227,8 @@ const reducer = (state: IState, action: Action) => {
                 email: action.user.attributes.email,
                 password: null,
                 isAdmin: action.isAdmin,
+                isSales: action.isSales,
+                isSupport: action.isSupport,
             };
         case "unconfirmedSignUp":
             return {
@@ -207,6 +251,8 @@ const reducer = (state: IState, action: Action) => {
                 status: AuthenticationStatus.Unauthenticated,
                 email: null,
                 password: null,
+                isSales: false,
+                isSupport: false,
             };
         case "unconfirmedSignIn":
             return {
@@ -271,9 +317,17 @@ function AuthProvider(props: any) {
                 }
 
                 const isAdmin = checkIfUserIsAdmin(user);
+                const isSales = checkIfUserIsSales(user);
+                const isSupport = checkIfUserisSupport(user);
 
-                //@ts-ignore
-                dispatch({ type: "signIn", user: user, isAdmin: isAdmin });
+                dispatch({
+                    type: "signIn",
+                    //@ts-ignore
+                    user: user,
+                    isAdmin: isAdmin,
+                    isSales: isSales,
+                    isSupport: isSupport,
+                });
                 break;
             case "signUp":
                 logger.info("user signed up");
@@ -317,8 +371,16 @@ function AuthProvider(props: any) {
                 logger.info("User signed in");
 
                 const isAdmin = checkIfUserIsAdmin(data);
+                const isSales = checkIfUserIsSales(data);
+                const isSupport = checkIfUserisSupport(data);
 
-                dispatch({ type: "signIn", user: data, isAdmin: isAdmin });
+                dispatch({
+                    type: "signIn",
+                    user: data,
+                    isAdmin: isAdmin,
+                    isSales: isSales,
+                    isSupport: isSupport,
+                });
             } else {
                 logger.info("No user");
                 dispatch({ type: "loaded" });
@@ -421,6 +483,8 @@ function AuthProvider(props: any) {
                 user: state.user,
                 status: state.status,
                 isAdmin: state.isAdmin,
+                isSales: state.isSales,
+                isSupport: state.isSupport,
             }}
             {...props}
         />
