@@ -1,6 +1,6 @@
 ## Desktop setup
 
-Use Node 26.12.1 (`nvm install && nvm use`) and run `npm ci --legacy-peer-deps`.
+Use Node 26.12.1 (`nvm install 26.12.1 && nvm use 26.12.1`) and run `npm ci --legacy-peer-deps`.
 Installation prepares `@lastapp/node-printer` for Electron 43 automatically.
 The scoped `node-abi` override enables downloading its Windows prebuilt binary.
 Test physical receipts, cutter, and cash drawer on a Windows kiosk before release.
