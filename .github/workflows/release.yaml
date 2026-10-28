@@ -2,7 +2,7 @@ name: Tabin CI/CD NEW
 
 on:
     push:
-        branches: [master]
+        branches: [main]
 
 permissions:
     contents: write
