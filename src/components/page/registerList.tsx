@@ -14,7 +14,7 @@ import { ERegisterType } from "../../graphql/customQueries";
 
 export default () => {
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const { logout, isSales, isSupport } = useAuth();
     const { restaurant } = useRestaurant();
     const { register, connectRegister, disconnectRegister } = useRegister();
     const [showFullScreenSpinner, setShowFullScreenSpinner] = useState(false);
@@ -53,7 +53,7 @@ export default () => {
                 {showFullScreenSpinner && <FullScreenSpinner show={true} />}
                 <div className="register-list">
                     <>
-                        <div className="h2 mb-6">Select a register to use</div>
+                        <div className="h2 mb-6">Select a register to use{(isSales || isSupport) && " (logged in as Tabin user)"}</div>
                         {restaurant.registers.items
                             .filter((reg) => reg.type === ERegisterType.POS || reg.type === ERegisterType.KIOSK)
                             .map((reg, index) => (
@@ -74,12 +74,12 @@ export default () => {
                                         ) : (
                                             <>
                                                 <Button
-                                                    disabled={reg.active}
+                                                    disabled={!isSales && !isSupport && reg.active}
                                                     onClick={() => {
                                                         onConnect(reg.id);
                                                     }}
                                                 >
-                                                    {reg.active ? "Unavailable" : "Use"}
+                                                    {!isSales && !isSupport && reg.active ? "Unavailable" : "Use"}
                                                 </Button>
                                             </>
                                         )}
