@@ -343,7 +343,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
         if (!products) return;
 
         processPromotions(products, total);
-    }, [userAppliedPromotionCode]);
+    }, [availablePromotions]);
 
     //This function should be a useEffect hook. But cannot make this because it cause infinite state change loop issue
     const processPromotions = (products: ICartProduct[], newTotal: number, newOrderType?: EOrderType) => {
@@ -400,8 +400,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     const setUserAppliedPromotion = (promotion: IGET_RESTAURANT_PROMOTION): CheckIfPromotionValidResponse => {
         if (!products) return CheckIfPromotionValidResponse.UNAVAILABLE;
 
-        const status =
-            promotion.startDate == null || promotion.endDate == null ? CheckIfPromotionValidResponse.VALID : checkIfPromotionValid(promotion);
+        const status = checkIfPromotionValid(promotion);
 
         if (status !== CheckIfPromotionValidResponse.VALID) return status;
 

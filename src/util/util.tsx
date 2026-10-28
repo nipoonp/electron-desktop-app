@@ -425,7 +425,7 @@ export const checkIfPromotionValid = (promotion: IGET_RESTAURANT_PROMOTION): Che
     if (promotion.startDate != null && isBefore(now, new Date(promotion.startDate))) return CheckIfPromotionValidResponse.EXPIRED;
     if (promotion.endDate != null && isAfter(now, new Date(promotion.endDate))) return CheckIfPromotionValidResponse.EXPIRED;
 
-    const isAvailable = promotion.availability && isPromotionAvailable(promotion.availability);
+    const isAvailable = isPromotionAvailable(promotion.availability);
     if (!isAvailable) return CheckIfPromotionValidResponse.UNAVAILABLE;
 
     return CheckIfPromotionValidResponse.VALID;

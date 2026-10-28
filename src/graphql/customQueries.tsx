@@ -2628,3 +2628,19 @@ export const GET_MONEY_MOVEMENTS_BY_SCOPE_KEY_BY_RECORDED_AT = gql`
         }
     }
 `;
+
+export const GET_FAVOURITE_PROMOTIONS = gql`
+    query GetFavouritePromotions($restaurantId: ID!, $nextToken: String) {
+        getRestaurant(id: $restaurantId) {
+            id
+            promotions(filter: { favourite: { eq: true } }, limit: 200, nextToken: $nextToken) {
+                items {
+                    id
+                    name
+                    code
+                }
+                nextToken
+            }
+        }
+    }
+`;
