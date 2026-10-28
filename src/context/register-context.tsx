@@ -4,6 +4,7 @@ import { useMutation } from "@apollo/client";
 import { UPDATE_REGISTER_KEY } from "../graphql/customMutations";
 import { ERegisterType, IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { getCloudFrontDomainName } from "../private/aws-custom";
+import { useAuth } from "./auth-context";
 import { useRestaurant } from "./restaurant-context";
 import { getThemePreviewRegisterId, isThemePreviewMode } from "../util/util";
 
@@ -33,14 +34,14 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
     const [registerKey, _setRegisterKey] = useState<string | null>(null);
     const [register, setRegister] = useState<IGET_RESTAURANT_REGISTER | null>(null);
     const { restaurant } = useRestaurant();
+    const { isSales, isSupport } = useAuth();
 
     useEffect(() => {
         //In theme preview mode the register comes from the url and does not need to be actively connected.
         //Nothing is mutated so real kiosk connections are unaffected.
         if (isThemePreviewMode()) {
             const themePreviewRegisterId = getThemePreviewRegisterId();
-            const previewRegister =
-                restaurant?.registers.items.find((r) => r.id === themePreviewRegisterId) ?? restaurant?.registers.items[0] ?? null;
+            const previewRegister = restaurant?.registers.items.find((r) => r.id === themePreviewRegisterId) ?? restaurant?.registers.items[0] ?? null;
 
             setRegister(previewRegister);
             return;
@@ -48,7 +49,7 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
 
         const storedRegisterKey = localStorage.getItem("registerKey");
 
-        const matchingRegister = restaurant?.registers.items.find((r) => storedRegisterKey == r.id && r.active == true) ?? null;
+        const matchingRegister = restaurant?.registers.items.find((r) => storedRegisterKey == r.id && (isSales || isSupport || r.active == true)) ?? null;
 
         if (matchingRegister) {
             const key = `eftposMerchantMismatch:${matchingRegister.id}`;
@@ -59,7 +60,7 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
         }
 
         setRegister(matchingRegister);
-    }, [restaurant, registerKey]);
+    }, [restaurant, registerKey, isSales, isSupport]);
 
     const [updateRegisterKeyMutation, { data, loading, error }] = useMutation(UPDATE_REGISTER_KEY, {
         update: (proxy, mutationResult) => {},
@@ -70,7 +71,7 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
 
         restaurant &&
             restaurant.registers.items.forEach((register) => {
-                if (key == register.id && register.active == false) {
+                if (key == register.id && (isSales || isSupport || register.active == false)) {
                     keyValid = true;
                 }
             });
@@ -78,6 +79,8 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
         if (keyValid) {
             localStorage.setItem("registerKey", key);
             _setRegisterKey(key);
+
+            if (isSales || isSupport) return Promise.resolve();
 
             return updateRegisterKeyMutation({
                 variables: {
@@ -93,6 +96,8 @@ const RegisterProvider = (props: { children: React.ReactNode }) => {
     const disconnectRegister = (key: string) => {
         localStorage.removeItem("registerKey");
         _setRegisterKey(null);
+
+        if (isSales || isSupport) return Promise.resolve();
 
         return updateRegisterKeyMutation({
             variables: {
