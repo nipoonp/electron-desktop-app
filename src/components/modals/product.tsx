@@ -26,6 +26,9 @@ import { CachedImage } from "../../tabin/components/cachedImage";
 import { useCart } from "../../context/cart-context";
 import { FiChevronDown, FiChevronRight, FiPlusCircle } from "react-icons/fi";
 import { ProductModifier } from "../shared/productModifier";
+import { ItemStockModal } from "./itemStockModal";
+import { useStockHold } from "../../hooks/useStockHold";
+import { useRestaurant } from "../../context/restaurant-context";
 
 import "./product.scss";
 import { useRegister } from "../../context/register-context";
@@ -984,7 +987,6 @@ export const ModifierGroup = (props: {
     scrollToDiv;
 }) => {
     const {
-        modifierGroup,
         currentSelectedProductModifier,
         onCheckingModifier,
         onUnCheckingModifier,
@@ -998,11 +1000,14 @@ export const ModifierGroup = (props: {
     } = props;
     const { register, isPOS } = useRegister();
     const { cartProductQuantitiesById, cartModifierQuantitiesById } = useCart();
+    const { menuModifierGroups } = useRestaurant();
+    const modifierGroup = menuModifierGroups[props.modifierGroup.id] || props.modifierGroup;
 
     const [collapsed, setCollapsed] = useState<boolean>(modifierGroup.collapsedByDefault ? modifierGroup.collapsedByDefault : false);
     const [subModifierGroups, setSubModifierGroups] = useState<string[]>([]);
 
     const [selectedSubModifierGroup, setSelectedSubModifierGroup] = useState<string | null>();
+    const { stockTarget, closeStockModal, getHoldHandlers } = useStockHold(`${collapsed}:${selectedSubModifierGroup}`);
 
     useEffect(() => {
         const newSubModifierGroups: string[] = [];
@@ -1165,10 +1170,12 @@ export const ModifierGroup = (props: {
                                         return;
 
                                     const isValid = checkModifierIsValid(m.modifier);
-                                    const selectedModifier = selectedModifiers.find((modifier) => modifier.id == m.modifier.id);
+                                    const selectedModifier = selectedModifiers.find((selected) => selected.id === m.modifier.id);
 
                                     return (
                                         <Modifier
+                                            key={m.modifier.id}
+                                            stockHoldHandlers={getHoldHandlers}
                                             modifier={m.modifier}
                                             selectedModifier={selectedModifier}
                                             currentSelectedProductModifier={currentSelectedProductModifier}
@@ -1209,11 +1216,13 @@ export const ModifierGroup = (props: {
                     </div>
                 </>
             )}
+            {stockTarget && <ItemStockModal target={stockTarget} onClose={closeStockModal} />}
         </>
     );
 };
 
 const Modifier = (props: {
+    stockHoldHandlers: ReturnType<typeof useStockHold>["getHoldHandlers"];
     modifier: IGET_RESTAURANT_MODIFIER;
     selectedModifier?: ICartModifier;
     currentSelectedProductModifier?: ISelectedProductModifier;
@@ -1344,7 +1353,10 @@ const Modifier = (props: {
 
     const modifierChildren = (
         <>
-            <div className="modifier-item">
+            <div
+                className="modifier-item"
+                {...props.stockHoldHandlers({ item: modifier.productModifier || modifier, type: modifier.productModifier ? "product" : "modifier" })}
+            >
                 {/* {modifier.image && (
                     <CachedImage
                         url={`${getCloudFrontDomainName()}/protected/${modifier.image.identityPoolId}/${modifier.image.key}`}
