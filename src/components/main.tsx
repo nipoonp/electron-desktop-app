@@ -17,7 +17,7 @@ import { FiDollarSign, FiLock, FiMenu, FiCheckSquare, FiUsers } from "react-icon
 import RequireCustomerInformation from "./page/customerInformation";
 import { sendFailureNotification } from "../util/errorHandling";
 
-import "react-toastify/dist/ReactToastify.min.css";
+import "react-toastify/dist/ReactToastify.css";
 import { useElectron } from "../context/electron-context";
 
 const Login = lazy(() => import("./page/auth/login"));

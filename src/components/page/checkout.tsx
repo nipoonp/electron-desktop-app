@@ -111,7 +111,6 @@ import { useTyro } from "../../context/tyro-context";
 import { useMX51 } from "../../context/mx51-context";
 import { DiscountModal } from "../modals/discountModal";
 import { TbFlag2Filled } from "react-icons/tb";
-import { TbHexagon4Filled } from "react-icons/tb";
 import { MdAccountCircle, MdDiscount, MdFeaturedPlayList, MdSettings } from "react-icons/md";
 import { TiCancel } from "react-icons/ti";
 import { HiCurrencyDollar } from "react-icons/hi2";
@@ -315,7 +314,7 @@ export const Checkout = () => {
     const [showOrderThresholdMessageModal, setShowOrderThresholdMessageModal] = useState(false);
     const [showDiscountModal, setShowDiscountModal] = useState(false);
 
-    const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
+    const transactionCompleteTimeoutIntervalId = useRef<ReturnType<typeof setInterval> | undefined>();
     const [showModal, setShowModal] = useState<string>("");
     const [showFullScreenSpinner, setShowFullScreenSpinner] = useState(false);
     const [kitchenPrintTrackingVersion, setKitchenPrintTrackingVersion] = useState(0);
