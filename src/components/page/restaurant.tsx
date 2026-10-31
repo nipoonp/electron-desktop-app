@@ -22,8 +22,7 @@ import { Button } from "../../tabin/components/button";
 import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
 import { ICartProduct } from "../../model/model";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
-//@ts-ignore as it does not have the types
-import { Shake } from "reshake";
+import { Shake } from "../../tabin/components/shake";
 import { useRestaurant } from "../../context/restaurant-context";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { useAlert } from "../../tabin/components/alert";
@@ -628,7 +627,7 @@ const Restaurant = () => {
 
     const menuSearchProduct = (
         <>
-            <Shake active={isPOS ? false : isShakeAnimationActive} h={5} v={5} r={3} dur={300} int={10} max={100} fixed={true} fixedStop={false} freez={false}>
+            <Shake active={isPOS ? false : isShakeAnimationActive}>
                 <div
                     className="category search-product-button background-grey"
                     onClick={() => {
