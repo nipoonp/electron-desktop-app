@@ -2,7 +2,7 @@
     "name": "Tabin",
     "description": "Tabin Self Service Kiosk",
     "author": "Tabin",
-    "version": "1.4.726",
+    "version": "1.4.727",
     "repository": "https://github.com/zeal-ltd/electron-desktop-app",
     "main": "build/electron.js",
     "dependencies": {
@@ -49,7 +49,7 @@
         "react-scripts": "5.0.1",
         "react-signature-canvas": "1.0.6",
         "react-toastify": "11.1.0",
-        "recharts": "2.10.3",
+        "recharts": "3.10.1",
         "sass": "1.106.1",
         "save": "2.9.0",
         "socket.io": "4.8.4",
