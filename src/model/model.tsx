@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import {
     IGET_RESTAURANT_ORDER_CATEGORY_FRAGMENT,
     IGET_RESTAURANT_ORDER_FRAGMENT,

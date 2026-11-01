@@ -76,13 +76,13 @@ declare module "react-autosuggest" {
         multiSection?: boolean;
 
         /** Use your imagination to define how section titles are rendered. Required when multiSection={true}	 */
-        renderSectionTitle?(section: Section): string | JSX.Element;
+        renderSectionTitle?(section: Section): string | React.JSX.Element;
 
         /** Implement it to teach Autosuggest where to find the suggestions for every section. Required when multiSection={true} */
         getSectionSuggestions?(section: Section): Suggestion[];
 
         /** Use it only if you need to customize the rendering of the input element. */
-        renderInputComponent?(inputProps: ReactAutosuggest.ControlledInputProps): JSX.Element;
+        renderInputComponent?(inputProps: ReactAutosuggest.ControlledInputProps): React.JSX.Element;
 
         /** Use it if you want to customize things inside the suggestions container beyond rendering the suggestions themselves. */
         renderSuggestionsContainer?(payload: {
