@@ -45,7 +45,7 @@ export const useStockHold = (resetKey?: string) => {
                 cancel();
                 if (start === null || triggered.current) return;
                 const duration = Date.now() - start;
-                if (duration < 1100) return;
+                if (duration < 1000) return;
                 triggered.current = true;
                 if (duration >= 2000) {
                     setStockTarget(target);
