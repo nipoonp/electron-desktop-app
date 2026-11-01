@@ -116,12 +116,13 @@ const App = () => {
     const { user, status } = useAuth();
     const { restaurant } = useRestaurant();
 
-    const logFailureNotification = async (error: Error, info: ErrorInfo) => {
+    const logFailureNotification = (error: unknown, info: ErrorInfo) => {
         // Do something with the error, e.g. log to an external API
-        console.error("Error:", error.message, info.componentStack);
+        const message = error instanceof Error ? error.message : String(error);
+        console.error("Error:", message, info.componentStack);
 
-        await sendFailureNotification(
-            error.message,
+        void sendFailureNotification(
+            message,
             JSON.stringify({
                 page: "app.tsx",
                 context: { restaurantId: restaurant ? restaurant.id : "", restaurantName: restaurant ? restaurant.name : "" },
