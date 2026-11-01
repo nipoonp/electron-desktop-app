@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
+import { clearPromotionDiscountsForParking } from "./tableNumber/orderCartMappers";
 import { useNavigate } from "react-router-dom";
 import {
     calculateTaxAmount,
@@ -1407,11 +1408,12 @@ export const Checkout = () => {
             };
 
             if (parkOrder) {
+                clearPromotionDiscountsForParking(variables.products);
                 variables.status = "PARKED";
                 variables.parkedAt = toLocalISOString(now);
                 variables.discount = undefined;
                 variables.promotionId = undefined;
-                variables.subTotal = total; //Set subTotal to total because we do not want to add any discount or promotions. Also product.discount is set to 0 in dashboard.tsx
+                variables.subTotal = total; // Exclude order-level discounts and promotions while retaining manual line price overrides.
             } else if (orderStatus !== EOrderStatus.NEW) {
                 // Keep existing status and completedAt
             } else if (restaurant.autoCompleteOrders) {

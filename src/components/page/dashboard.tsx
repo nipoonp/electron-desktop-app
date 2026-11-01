@@ -147,7 +147,9 @@ export default () => {
                 kitchenName: product.kitchenName,
                 price: product.price,
                 totalPrice: product.totalPrice,
-                discount: 0, //Set discount to total because we do not want to add any discount or promotions to parked orders
+                // Manual price overrides are stored as a line discount; restore the cart flag so recalculation preserves them.
+                discount: product.discount,
+                isPriceEdited: product.discount !== 0,
                 isAgeRescricted: product.isAgeRescricted,
                 reportingGroup: product.reportingGroup,
                 image: product.image
