@@ -138,7 +138,7 @@ const MX51Provider = (props: { children: React.ReactNode }) => {
         customerReceiptHeader: "", // custom text to be added to customer receipt header
         customerReceiptFooter: "", // custom text to be added to customer receipt footer
     };
-    const spi = useRef<SpiClient>();
+    const spi = useRef<SpiClient | undefined>(undefined);
     const receiptOptions = new TransactionOptions();
 
     const configureAndStartSpi = (spiSecrets, newPairingInput: IMX51PairingInput = pairingInput) => {

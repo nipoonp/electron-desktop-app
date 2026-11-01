@@ -4,6 +4,7 @@ import { MinusIcon } from "./icons/minusIcon";
 import "./stepper.scss";
 
 export const Stepper = (props: IProps) => {
+    const stepAmount = props.stepAmount ?? 1;
     const iconHeight = String(props.size / 1.8) + "px";
     const borderHeight = String(props.size) + "px";
 
@@ -13,7 +14,7 @@ export const Stepper = (props: IProps) => {
         if (!props.allowNegative && props.count == 0) return;
         if (props.min == props.count) return;
 
-        let newCount = props.count - props.stepAmount;
+        let newCount = props.count - stepAmount;
 
         if (props.min && newCount < props.min) newCount = props.min;
 
@@ -26,7 +27,7 @@ export const Stepper = (props: IProps) => {
         if (props.disabled) return;
         if (props.max == props.count) return;
 
-        let newCount = props.count + props.stepAmount;
+        let newCount = props.count + stepAmount;
 
         if (props.max && newCount > props.max) newCount = props.max;
 
@@ -85,7 +86,7 @@ export interface IProps {
     children?: React.ReactNode;
     count: number;
     setCount?: (count: number) => void;
-    stepAmount: number;
+    stepAmount?: number; // default 1
     allowNegative?: boolean; // default false
     min?: number;
     max?: number;
@@ -97,7 +98,3 @@ export interface IProps {
     style?: React.CSSProperties;
     className?: string;
 }
-
-Stepper.defaultProps = {
-    stepAmount: 1,
-};

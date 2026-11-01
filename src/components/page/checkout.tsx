@@ -301,7 +301,7 @@ export const Checkout = () => {
     const [eftposTransactionOutcome, setEftposTransactionOutcome] = useState<IEftposTransactionOutcome | null>(null);
     const [cashTransactionChangeAmount, setCashTransactionChangeAmount] = useState<number | null>(null);
 
-    const createdOrder = useRef<IGET_RESTAURANT_ORDER_FRAGMENT | undefined>();
+    const createdOrder = useRef<IGET_RESTAURANT_ORDER_FRAGMENT | undefined>(undefined);
 
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
     const [paymentOutcomeOrderNumber, setPaymentOutcomeOrderNumber] = useState<string | null>(null);
@@ -314,7 +314,7 @@ export const Checkout = () => {
     const [showOrderThresholdMessageModal, setShowOrderThresholdMessageModal] = useState(false);
     const [showDiscountModal, setShowDiscountModal] = useState(false);
 
-    const transactionCompleteTimeoutIntervalId = useRef<ReturnType<typeof setInterval> | undefined>();
+    const transactionCompleteTimeoutIntervalId = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
     const [showModal, setShowModal] = useState<string>("");
     const [showFullScreenSpinner, setShowFullScreenSpinner] = useState(false);
     const [kitchenPrintTrackingVersion, setKitchenPrintTrackingVersion] = useState(0);
