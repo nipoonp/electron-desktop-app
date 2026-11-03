@@ -1,5 +1,6 @@
-import { gql } from "@apollo/client";
+import { gql, TypedDocumentNode } from "@apollo/client";
 import { ORDER_FIELDS_FRAGMENT } from "./customFragments";
+import { IGET_CASHUP_SESSION, IGET_FEEDBACK_BY_RESTAURANT, IGET_MONEY_MOVEMENT } from "./customQueries";
 
 export const CREATE_EFTPOS_TRANSACTION_LOG = gql`
     mutation createEftposTransactionLog(
@@ -305,7 +306,7 @@ export const CREATE_FEEDBACK = gql`
     }
 `;
 
-export const GET_FEEDBACK_BY_RESTAURANT = gql`
+export const GET_FEEDBACK_BY_RESTAURANT: TypedDocumentNode<{ getFeedbackByRestaurant: { items: IGET_FEEDBACK_BY_RESTAURANT[] } }> = gql`
     query GetFeedbackByRestaurant($feedbackRestaurantId: ID!) {
         getFeedbackByRestaurant(feedbackRestaurantId: $feedbackRestaurantId) {
             items {
@@ -416,7 +417,7 @@ export const CREATE_RESERVATION = gql`
     }
 `;
 
-export const CREATE_CASHUP_SESSION = gql`
+export const CREATE_CASHUP_SESSION: TypedDocumentNode<{ createCashupSession: IGET_CASHUP_SESSION }> = gql`
     mutation CreateCashupSession(
         $id: ID!
         $cashupRestaurantId: ID!
@@ -461,7 +462,7 @@ export const CREATE_CASHUP_SESSION = gql`
     }
 `;
 
-export const CREATE_MONEY_MOVEMENT = gql`
+export const CREATE_MONEY_MOVEMENT: TypedDocumentNode<{ createMoneyMovement: IGET_MONEY_MOVEMENT }> = gql`
     mutation CreateMoneyMovement($input: CreateMoneyMovementInput!) {
         createMoneyMovement(input: $input) {
             id
@@ -526,7 +527,7 @@ export const UPDATE_RESERVATION = gql`
     }
 `;
 
-export const UPDATE_CASHUP_SESSION = gql`
+export const UPDATE_CASHUP_SESSION: TypedDocumentNode<{ updateCashupSession: IGET_CASHUP_SESSION }> = gql`
     mutation UpdateCashupSession(
         $id: ID!
         $status: CashupSessionStatus

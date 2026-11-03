@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@apollo/client/react";
+import { skipToken, useQuery } from "@apollo/client/react";
 import { FiAlertTriangle, FiArrowLeft, FiGrid, FiPlus, FiPrinter } from "react-icons/fi";
 import { useNavigate } from "react-router";
 import { useReceiptPrinter } from "../../../context/receiptPrinter-context";
@@ -185,13 +185,12 @@ export default () => {
         data: ordersData,
         loading: ordersLoading,
         error: ordersError,
-    } = useQuery<{ getOrdersByRestaurantByPlacedAt: { items: IGET_CASHUP_ORDER[] } }>(GET_CASHUP_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT, {
+    } = useQuery(GET_CASHUP_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT, !restaurant?.id || view !== "entry" || !currentSession ? skipToken : {
         variables: {
             orderRestaurantId: restaurant?.id || "",
             placedAtStartDate: orderFetchRange.start,
             placedAtEndDate: orderFetchRange.end,
         },
-        skip: !restaurant?.id || view !== "entry" || !currentSession,
         fetchPolicy: "network-only",
     });
 

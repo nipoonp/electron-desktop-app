@@ -74,7 +74,7 @@ export enum ELOYALTY_ACTION {
     REDEEM = "REDEEM",
 }
 
-export const GET_USER = gql`
+export const GET_USER: TypedDocumentNode<{ getUser: IGET_USER }> = gql`
     query GetUser($userId: ID!) {
         getUser(id: $userId) {
             id
@@ -1227,7 +1227,7 @@ export interface IGET_ATTENDANCE {
     breaks?: IGET_ATTENDANCE_BREAK[] | null;
 }
 
-export const LIST_ATTENDANCES_BY_USER = gql`
+export const LIST_ATTENDANCES_BY_USER: TypedDocumentNode<{ listAttendancesByUserId: { items: IGET_ATTENDANCE[] } }> = gql`
     query ListAttendancesByUserId($employeeUserId: ID!, $limit: Int) {
         listAttendancesByUserId(employeeUserId: $employeeUserId, limit: $limit, sortDirection: DESC) {
             items {
@@ -1595,7 +1595,7 @@ export interface IGET_LOYALTIES_BY_GROUP_ID_ITEM {
     loyaltyRestaurantId: string;
 }
 
-export const GET_LOYALTY_USER_BALANCES = gql`
+export const GET_LOYALTY_USER_BALANCES: TypedDocumentNode<IGET_LOYALTY_USER_BALANCES> = gql`
     query GetLoyaltyUserBalances($loyaltyUserId: ID!) {
         getLoyaltyUser(id: $loyaltyUserId) {
             id
@@ -1614,7 +1614,7 @@ export interface IGET_LOYALTY_USER_BALANCES {
     } | null;
 }
 
-export const GET_LOYALTY_USER_LINKS_BY_RESTAURANT = gql`
+export const GET_LOYALTY_USER_LINKS_BY_RESTAURANT: TypedDocumentNode<IGET_LOYALTY_USER_LINKS_BY_RESTAURANT> = gql`
     query GetLoyaltyUserLinksByRestaurant($restaurantId: ID!, $nextToken: String, $limit: Int = 1000) {
         getRestaurant(id: $restaurantId) {
             id
@@ -1989,7 +1989,7 @@ export const GET_PROMOTION_BY_ID: TypedDocumentNode<{ getPromotion: IGET_RESTAUR
     }
 `;
 
-export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
+export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT: TypedDocumentNode<{ getOrdersByRestaurantByPlacedAt: { items: IGET_RESTAURANT_ORDER_FRAGMENT[] } }> = gql`
     ${ORDER_FIELDS_FRAGMENT}
     query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAt: String!) {
         getOrdersByRestaurantByPlacedAt(
@@ -2041,7 +2041,7 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
     }
 `;
 
-export const GET_CASHUP_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
+export const GET_CASHUP_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT: TypedDocumentNode<{ getOrdersByRestaurantByPlacedAt: { items: IGET_CASHUP_ORDER[] } }> = gql`
     query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAtStartDate: String!, $placedAtEndDate: String!) {
         getOrdersByRestaurantByPlacedAt(
             limit: 1000000
@@ -2386,7 +2386,7 @@ export const GET_RESTAURANT_PING_DATA: TypedDocumentNode<{ getRestaurant: IGET_R
     }
 `;
 
-export const GET_FLOOR_PLAN = gql`
+export const GET_FLOOR_PLAN: TypedDocumentNode<{ listTablePlansByRestaurantId?: { items?: (IGET_FLOOR_PLAN | null)[] | null } | null }> = gql`
     query GetFloorPlan($restaurantId: ID!) {
         listTablePlansByRestaurantId(restaurantId: $restaurantId, limit: 100) {
             items {
@@ -2501,7 +2501,7 @@ export const GET_RESERVATION_PAUSE_STATUS = gql`
     }
 `;
 
-export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE = gql`
+export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE: TypedDocumentNode<{ getReservationsByRestaurantByDate: { items: IGET_RESERVATION_FOR_TABLE[] } }> = gql`
     query GetReservationsByRestaurantByDate($restaurantId: ID!, $date: ModelStringKeyConditionInput, $limit: Int) {
         getReservationsByRestaurantByDate(restaurantId: $restaurantId, date: $date, limit: $limit) {
             items {
@@ -2541,7 +2541,7 @@ export const GET_LOYALTY_USER_BY_EMAIL = gql`
 `;
 
 // Full query used by the reservations management page.
-export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE_FULL = gql`
+export const GET_RESERVATIONS_BY_RESTAURANT_BY_DATE_FULL: TypedDocumentNode<{ getReservationsByRestaurantByDate: { items: IGET_RESERVATION[] } }> = gql`
     query GetReservationsByRestaurantByDateFull($restaurantId: ID!, $date: ModelStringKeyConditionInput, $limit: Int, $nextToken: String) {
         getReservationsByRestaurantByDate(restaurantId: $restaurantId, date: $date, limit: $limit, nextToken: $nextToken) {
             items {
@@ -2581,7 +2581,7 @@ export interface IGET_LOYALTY_USER_BY_PHONE_NUMBER_EMAIL {
     };
 }
 
-export const GET_CASHUP_SESSIONS_BY_SCOPE_KEY_BY_OPENED_AT = gql`
+export const GET_CASHUP_SESSIONS_BY_SCOPE_KEY_BY_OPENED_AT: TypedDocumentNode<{ getCashupSessionsByScopeKeyByOpenedAt: { items: IGET_CASHUP_SESSION[] } }> = gql`
     query GetCashupSessionsByScopeKeyByOpenedAt($scopeKey: String!, $openedAt: ModelStringKeyConditionInput, $limit: Int, $nextToken: String) {
         getCashupSessionsByScopeKeyByOpenedAt(scopeKey: $scopeKey, openedAt: $openedAt, sortDirection: DESC, limit: $limit, nextToken: $nextToken) {
             items {
@@ -2607,7 +2607,7 @@ export const GET_CASHUP_SESSIONS_BY_SCOPE_KEY_BY_OPENED_AT = gql`
     }
 `;
 
-export const GET_MONEY_MOVEMENTS_BY_SCOPE_KEY_BY_RECORDED_AT = gql`
+export const GET_MONEY_MOVEMENTS_BY_SCOPE_KEY_BY_RECORDED_AT: TypedDocumentNode<{ getMoneyMovementsByScopeKeyByRecordedAt: { items: IGET_MONEY_MOVEMENT[] } }> = gql`
     query GetMoneyMovementsByScopeKeyByRecordedAt($scopeKey: String!, $recordedAt: ModelStringKeyConditionInput, $limit: Int, $nextToken: String) {
         getMoneyMovementsByScopeKeyByRecordedAt(scopeKey: $scopeKey, recordedAt: $recordedAt, limit: $limit, nextToken: $nextToken) {
             items {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery } from "@apollo/client/react";
+import { skipToken, useMutation, useQuery } from "@apollo/client/react";
 import { format } from "date-fns";
 import { FiArrowLeft } from "react-icons/fi";
 import { useNavigate } from "react-router";
@@ -115,9 +115,8 @@ const Reservations = () => {
         variables: { restaurantId, date: { eq: date }, limit: 500 },
     };
 
-    const { data: reservationsData, loading } = useQuery<{ getReservationsByRestaurantByDate: { items: IGET_RESERVATION[] } }>(GET_RESERVATIONS_BY_RESTAURANT_BY_DATE_FULL, {
+    const { data: reservationsData, loading } = useQuery(GET_RESERVATIONS_BY_RESTAURANT_BY_DATE_FULL, !restaurantId ? skipToken : {
         variables: { restaurantId, date: { eq: date }, limit: 500 },
-        skip: !restaurantId,
         fetchPolicy: "network-only",
     });
 

@@ -1,5 +1,5 @@
 import { GET_USER, IGET_USER } from "../graphql/customQueries";
-import { useQuery } from "@apollo/client/react";
+import { skipToken, useQuery } from "@apollo/client/react";
 import { useEffect, useState } from "react";
 
 export const useGetUserQuery = (userId: string | null) => {
@@ -10,11 +10,10 @@ export const useGetUserQuery = (userId: string | null) => {
         loading,
         refetch,
         networkStatus,
-    } = useQuery<{ getUser: IGET_USER }>(GET_USER, {
+    } = useQuery(GET_USER, !userId ? skipToken : {
         variables: {
             userId: userId,
         },
-        skip: !userId,
         fetchPolicy: "network-only",
         notifyOnNetworkStatusChange: true,
     });

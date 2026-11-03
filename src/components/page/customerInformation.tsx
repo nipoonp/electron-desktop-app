@@ -123,10 +123,10 @@ const CustomerSearch = ({ onDisableSearchView }: { onDisableSearchView: () => vo
     const [updateLoyaltyUserFavourite] = useMutation(UPDATE_LOYALTY_USER_RESTAURANT_LINK);
 
     const { getLoyaltiesByGroupIdLazyQuery } = useGetLoyaltiesByGroupIdLazyQuery();
-    const [getLoyaltyUserLinksByRestaurantLazyQuery] = useLazyQuery<IGET_LOYALTY_USER_LINKS_BY_RESTAURANT>(GET_LOYALTY_USER_LINKS_BY_RESTAURANT, {
+    const [getLoyaltyUserLinksByRestaurantLazyQuery] = useLazyQuery(GET_LOYALTY_USER_LINKS_BY_RESTAURANT, {
         fetchPolicy: "network-only",
     });
-    const [getLoyaltyUserBalancesLazyQuery] = useLazyQuery<IGET_LOYALTY_USER_BALANCES>(GET_LOYALTY_USER_BALANCES, {
+    const [getLoyaltyUserBalancesLazyQuery] = useLazyQuery(GET_LOYALTY_USER_BALANCES, {
         fetchPolicy: "network-only",
     });
     const [isFetchingSelectedUserPoints, setIsFetchingSelectedUserPoints] = useState(false);

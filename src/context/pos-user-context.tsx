@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { useApolloClient, useLazyQuery, useMutation, useQuery } from "@apollo/client/react";
+import { skipToken, useApolloClient, useLazyQuery, useMutation, useQuery } from "@apollo/client/react";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
 import { CREATE_ATTENDANCE, UPDATE_ATTENDANCE } from "../graphql/customMutations";
@@ -191,12 +191,11 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
         data: attendanceData,
         loading: attendanceLoading,
         refetch: refetchAttendanceQuery,
-    } = useQuery<{ listAttendancesByUserId: { items: IGET_ATTENDANCE[] } }>(LIST_ATTENDANCES_BY_USER, {
+    } = useQuery(LIST_ATTENDANCES_BY_USER, !isPOS || !selectedPosUser?.attendanceEnabled || !selectedPosUser?.userId ? skipToken : {
         variables: {
             employeeUserId: selectedPosUser?.userId || "",
             limit: 20,
         },
-        skip: !isPOS || !selectedPosUser?.attendanceEnabled || !selectedPosUser?.userId,
         fetchPolicy: "network-only",
     });
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@apollo/client/react";
+import { skipToken, useQuery } from "@apollo/client/react";
 import { GET_RESTAURANT } from "../graphql/customQueries";
 
 import { Logger } from "aws-amplify";
@@ -20,11 +20,10 @@ export const useGetRestaurantQuery = (restaurantId: string, skip?: boolean) => {
         data: _data,
         error,
         loading,
-    } = useQuery<{ getRestaurant: IGET_RESTAURANT }>(GET_RESTAURANT, {
+    } = useQuery(GET_RESTAURANT, skip ? skipToken : {
         variables: {
             restaurantId: restaurantId,
         },
-        skip: skip,
         fetchPolicy: "cache-first",
         // notifyOnNetworkStatusChange: true,
     });
@@ -33,11 +32,10 @@ export const useGetRestaurantQuery = (restaurantId: string, skip?: boolean) => {
         data: _data1,
         error: error1,
         loading: loading1,
-    } = useQuery<{ getRestaurant: IGET_RESTAURANT }>(GET_RESTAURANT, {
+    } = useQuery(GET_RESTAURANT, skip ? skipToken : {
         variables: {
             restaurantId: restaurantId,
         },
-        skip: skip,
         fetchPolicy: "network-only",
         // notifyOnNetworkStatusChange: true,
     });

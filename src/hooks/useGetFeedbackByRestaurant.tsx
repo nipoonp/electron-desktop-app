@@ -1,4 +1,4 @@
-import { useQuery } from "@apollo/client/react";
+import { skipToken, useQuery } from "@apollo/client/react";
 import { useEffect, useState } from "react";
 import { IGET_FEEDBACK_BY_RESTAURANT } from "../graphql/customQueries";
 import { GET_FEEDBACK_BY_RESTAURANT } from "../graphql/customMutations";
@@ -10,12 +10,11 @@ export const useGetFeedbackByRestaurant = (feedbackRestaurantId: string, enabled
         loading,
         error,
         data: _data,
-    } = useQuery<{ getFeedbackByRestaurant: { items: IGET_FEEDBACK_BY_RESTAURANT[] } }>(GET_FEEDBACK_BY_RESTAURANT, {
+    } = useQuery(GET_FEEDBACK_BY_RESTAURANT, !enabled || !feedbackRestaurantId ? skipToken : {
         variables: {
             feedbackRestaurantId,
         },
         fetchPolicy: "network-only",
-        skip: !enabled || !feedbackRestaurantId,
     });
 
     useEffect(() => {

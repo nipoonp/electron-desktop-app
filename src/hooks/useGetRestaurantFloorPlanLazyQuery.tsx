@@ -1,16 +1,10 @@
 import { useLazyQuery } from "@apollo/client/react";
 import { GET_FLOOR_PLAN, IGET_FLOOR_PLAN } from "../graphql/customQueries";
 
-type GetFloorPlanResponse = {
-    listTablePlansByRestaurantId?: {
-        items?: (IGET_FLOOR_PLAN | null)[] | null;
-    } | null;
-};
-
 // Lazy floor-plan loader used by table-number flow:
 // fetches from network on demand and returns the most recently updated plan only.
 export const useGetRestaurantFloorPlanLazyQuery = () => {
-    const [getRestaurantFloorPlan, { loading, error, data }] = useLazyQuery<GetFloorPlanResponse>(GET_FLOOR_PLAN, {
+    const [getRestaurantFloorPlan, { loading, error, data }] = useLazyQuery(GET_FLOOR_PLAN, {
         fetchPolicy: "network-only",
     });
 
