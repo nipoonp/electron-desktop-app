@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { ICartModifier, IPreSelectedModifiers, ICartProduct, ICartModifierGroup } from "../../model/model";
-import { Logger } from "aws-amplify";
+import { ConsoleLogger } from "aws-amplify/utils";
 import { toast } from "../../tabin/components/toast";
 import {
     getModifierQuantityAvailable,
@@ -30,7 +30,7 @@ import { ProductModifier } from "../shared/productModifier";
 import "./product.scss";
 import { useRegister } from "../../context/register-context";
 
-const logger = new Logger("productModal");
+const logger = new ConsoleLogger("productModal");
 
 interface ISelectedProductModifier {
     selectedModifier: ICartModifier;

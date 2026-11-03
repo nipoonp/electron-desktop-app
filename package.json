@@ -2,7 +2,7 @@
     "name": "Tabin",
     "description": "Tabin Self Service Kiosk",
     "author": "Tabin",
-    "version": "1.4.745",
+    "version": "1.4.746",
     "repository": "https://github.com/zeal-ltd/electron-desktop-app",
     "main": "build/electron.js",
     "dependencies": {
@@ -16,8 +16,7 @@
         "@types/react-dom": "19.3.0",
         "@types/react-modal": "3.16.3",
         "@use-gesture/react": "10.3.1",
-        "aws-amplify": "4.3.30",
-        "aws-amplify-react": "5.1.43",
+        "aws-amplify": "6.22.2",
         "aws-appsync-auth-link": "4.0.2",
         "aws-appsync-subscription-link": "4.0.3",
         "axios": "1.21.0",

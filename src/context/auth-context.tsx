@@ -1,12 +1,24 @@
 import { createContext, useLayoutEffect, useContext, useState, useEffect, useReducer } from "react";
 import { useAsync } from "react-async";
-import { Auth } from "aws-amplify";
-import { Hub, Logger } from "aws-amplify";
-import { HubCapsule } from "@aws-amplify/core/lib/Hub";
+import {
+    confirmSignIn,
+    confirmSignUp,
+    fetchAuthSession,
+    fetchUserAttributes,
+    getCurrentUser,
+    resendSignUpCode,
+    resetPassword,
+    signIn,
+    signOut,
+    signUp,
+    updatePassword,
+    updateUserAttributes,
+} from "aws-amplify/auth";
+import { ConsoleLogger, Hub } from "aws-amplify/utils";
 import { ICognitoUser } from "../model/model";
 import { loginPath } from "../components/main";
 
-const logger = new Logger("AuthContext");
+const logger = new ConsoleLogger("AuthContext");
 
 // TYPES
 export enum AuthenticationStatus {
@@ -42,7 +54,7 @@ type ContextProps = {
 const confirmEmailFactory = (email: string, password: string) => {
     return (email: string, confirmationCode: string) => {
         logger.info("Checking verification code...");
-        return Auth.confirmSignUp(email, confirmationCode).then((data) => {
+        return confirmSignUp({ username: email, confirmationCode }).then((data) => {
             login(email, password);
         });
     };
@@ -52,42 +64,41 @@ const confirmEmailFactory = (email: string, password: string) => {
 const login = (email: string, password: string) => {
     logger.info("Logging in...");
 
-    return Auth.signIn(email, password);
+    return signIn({ username: email, password });
 };
 
 const logout = () => {
     logger.info("Logging out...");
     // window.analytics.reset();
-    return Auth.signOut().then((data) => {
+    return signOut().then((data) => {
         // need to clear cognitoIdentityId in localstorage after signing out
         localStorage.clear();
     });
 };
 
-const getUser = async () => {
+// Builds the user object the rest of the app reads (username, attributes and admin groups).
+const getUser = async (): Promise<ICognitoUser | null> => {
     logger.info("GetUser");
-    return Auth.currentAuthenticatedUser({
-        bypassCache: true, // Optional, By default is false. If set to true, this call will send a request to Cognito to get the latest user data
-    }).catch((err) => logger.error("Error: ", err));
+    try {
+        const { username } = await getCurrentUser();
+        const attributes = await fetchUserAttributes();
+        const { tokens } = await fetchAuthSession();
+        const groups = (tokens?.idToken?.payload["cognito:groups"] as string[] | undefined) || [];
+
+        return { username, attributes: attributes as unknown as ICognitoUser["attributes"], groups };
+    } catch (err) {
+        logger.error("Error: ", err);
+        return null;
+    }
 };
 
 const resendCode = (email: string) => {
     logger.info("Resending code ...");
-    return Auth.resendSignUp(email).catch((err) => logger.info("Error: ", err));
+    return resendSignUpCode({ username: email }).catch((err) => logger.info("Error: ", err));
 };
 
-const checkIfUserIsAdmin = (data: any) => {
-    let admin = false;
-
-    data.signInUserSession.idToken &&
-        data.signInUserSession.idToken.payload["cognito:groups"] &&
-        data.signInUserSession.idToken.payload["cognito:groups"].map((group: string) => {
-            if (group === "Admin") {
-                admin = true;
-            }
-        });
-
-    return admin;
+const checkIfUserIsAdmin = (data: ICognitoUser | null) => {
+    return !!data?.groups?.includes("Admin");
 };
 
 // CONTEXT
@@ -159,13 +170,11 @@ type Action =
     | { type: "unconfirmedSignIn"; email: string; password: string }
     | {
           type: "newInformationRequired";
-          user: ICognitoUser;
           email: string;
           password: string;
       }
-    // | { type: "signIn_failure"; code: string }
     | { type: "unconfirmedForgotPassword"; email: string }
-    | { type: "configured"; user: ICognitoUser };
+    | { type: "configured"; user: ICognitoUser | null };
 
 const reducer = (state: IState, action: Action) => {
     logger.info("Dispatching ", action.type);
@@ -179,9 +188,7 @@ const reducer = (state: IState, action: Action) => {
             return {
                 ...state,
                 user: action.user,
-                // user: user,
                 status: AuthenticationStatus.SignedIn,
-                // email: user.attributes.email,
                 email: action.user.attributes.email,
                 password: null,
                 isAdmin: action.isAdmin,
@@ -218,21 +225,10 @@ const reducer = (state: IState, action: Action) => {
         case "newInformationRequired":
             return {
                 ...state,
-                user: action.user,
                 email: action.email,
                 password: action.password,
                 status: AuthenticationStatus.NewInformationRequired,
             };
-
-        // case "signIn_failure":
-        //   if (action.code == "UserNotConfirmedException") {
-        //     return {
-        //       ...state,
-        //       status: AuthenticationStatus.NeedConfirmation
-        //     };
-        //   }
-        // return { ...state };
-
         case "unconfirmedForgotPassword":
             return {
                 ...state,
@@ -252,50 +248,36 @@ const reducer = (state: IState, action: Action) => {
 function AuthProvider(props: any) {
     const [state, dispatch] = useReducer(reducer, initialState);
 
-    const listener = async (data: HubCapsule) => {
+    const listener = async (data: { payload: { event: string } }) => {
         // TODO remove listener, use the methods' Promise
         // i.e. then(dispatch(...)).catch(dispatch(...))
         // then in login component, don't have to get status before routing
         // because .then will be instant
         // unlike logging in, waiting for listener, then dispatch, then update state
         switch (data.payload.event) {
-            case "signIn":
+            case "signedIn":
                 logger.info("User signed in"); //[INFO] My-Logger - user signed in
                 // need to get user to get the attributes
                 // when signed in via google/ facebook, Hub's data does not contain user attributes
-                let user = null;
+                let user: ICognitoUser | null = null;
                 try {
                     user = await getUser();
                 } catch (e) {
                     logger.error(e);
                 }
 
+                if (!user) {
+                    dispatch({ type: "loaded" });
+                    break;
+                }
+
                 const isAdmin = checkIfUserIsAdmin(user);
 
-                //@ts-ignore
                 dispatch({ type: "signIn", user: user, isAdmin: isAdmin });
                 break;
-            case "signUp":
-                logger.info("user signed up");
-                dispatch({ type: "signUp", user: data.payload.data.user });
-                break;
-            case "signOut":
+            case "signedOut":
                 logger.info("user signed out");
                 dispatch({ type: "signOut" });
-                break;
-            case "signIn_failure":
-                logger.info("user sign in failed");
-                // // TODO: SET EMAIL HERE
-                // if (data.payload.data.code === "UserNotConfirmedException") {
-                //   logger.debug("Data: ", data);
-                //   debugger;
-                //   dispatch({
-                //     type: "unconfirmedSignIn",
-                //     email: data,
-                //     password: data.payload
-                //   });
-                // }
-
                 break;
             case "configured":
                 logger.info("the Auth module is configured");
@@ -313,7 +295,7 @@ function AuthProvider(props: any) {
         logger.info("useLayoutEffect, isSettled: ", isSettled);
         if (isSettled) {
             setFirstAttemptFinished(true);
-            if (data && data.attributes && data.signInUserSession) {
+            if (data && data.attributes && data.groups) {
                 logger.info("User signed in");
 
                 const isAdmin = checkIfUserIsAdmin(data);
@@ -327,9 +309,10 @@ function AuthProvider(props: any) {
     }, [isSettled]);
 
     useEffect(() => {
-        Hub.listen("auth", listener);
+        // Hub.listen returns the unsubscribe function in Amplify v6
+        const unsubscribe = Hub.listen("auth", listener);
         return () => {
-            Hub.remove("auth", listener);
+            unsubscribe();
         };
     }, []);
 
@@ -354,19 +337,25 @@ function AuthProvider(props: any) {
         <AuthContext.Provider
             value={{
                 login: (email: string, password: string) => {
-                    return Auth.signIn(email, password)
-                        .then((data) => {
-                            if (data.challengeName === "NEW_PASSWORD_REQUIRED") {
+                    return signIn({ username: email, password })
+                        .then((result) => {
+                            if (result.nextStep.signInStep === "CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED") {
                                 dispatch({
-                                    user: data,
                                     type: "newInformationRequired",
+                                    email: email,
+                                    password: password,
+                                });
+                            } else if (result.nextStep.signInStep === "CONFIRM_SIGN_UP") {
+                                resendCode(email);
+                                dispatch({
+                                    type: "unconfirmedSignIn",
                                     email: email,
                                     password: password,
                                 });
                             }
                         })
                         .catch((error) => {
-                            if (error.code === "UserNotConfirmedException") {
+                            if (error.name === "UserNotConfirmedException") {
                                 resendCode(email);
                                 dispatch({
                                     type: "unconfirmedSignIn",
@@ -382,10 +371,10 @@ function AuthProvider(props: any) {
                 logout: logout,
                 register: (email, password, name: string, lastName: string) => {
                     logger.info("Registering...");
-                    return Auth.signUp({
+                    return signUp({
                         username: email,
                         password,
-                        attributes: { name: name, family_name: lastName },
+                        options: { userAttributes: { name: name, family_name: lastName } },
                     }).then(() => {
                         dispatch({
                             type: "unconfirmedSignUp",
@@ -395,15 +384,20 @@ function AuthProvider(props: any) {
                     });
                 },
                 completeNewPassword: (password: string, firstName: string, lastName: string) => {
-                    return Auth.completeNewPassword(state.user, password, {
-                        family_name: lastName,
-                        name: firstName,
+                    return confirmSignIn({
+                        challengeResponse: password,
+                        options: {
+                            userAttributes: {
+                                family_name: lastName,
+                                name: firstName,
+                            },
+                        },
                     });
                 },
                 // MAKE SURE CONFIRM EMAIL IS ONLY USED AFTER REGISTER
                 confirmEmail: confirmEmailFactory(state.email!, state.password!),
                 forgotPassword: (email) => {
-                    return Auth.forgotPassword(email).then(() => {
+                    return resetPassword({ username: email }).then(() => {
                         dispatch({
                             type: "unconfirmedForgotPassword",
                             email: email,
@@ -411,10 +405,10 @@ function AuthProvider(props: any) {
                     });
                 },
                 updateUserAttributes: (userAttributes: object) => {
-                    Auth.updateUserAttributes(state.user, userAttributes);
+                    return updateUserAttributes({ userAttributes: userAttributes as Record<string, string> });
                 },
                 changePassword: (oldPassword: string, newPassword: string) => {
-                    return Auth.changePassword(state.user, oldPassword, newPassword);
+                    return updatePassword({ oldPassword, newPassword });
                 },
                 resendCode: resendCode,
                 email: state.email,

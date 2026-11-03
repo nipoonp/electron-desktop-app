@@ -1,10 +1,10 @@
 import { useState, useEffect, createContext, useContext } from "react";
 
-import { Logger } from "aws-amplify";
+import { ConsoleLogger } from "aws-amplify/utils";
 import { IGET_USER } from "../graphql/customQueries";
 import { useGetUserQuery } from "../hooks/useGetUserQuery";
 
-const logger = new Logger("UserContext");
+const logger = new ConsoleLogger("UserContext");
 
 // Context
 type ContextProps = {

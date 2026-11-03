@@ -842,7 +842,7 @@ export const downloadFile = (blob: Blob, fileName: string, extention: string) =>
 };
 
 export const convertBase64ToFile = (base64Image, filename, mimeType) => {
-    return new Promise(async (resolve, reject) => {
+    return new Promise<File>(async (resolve, reject) => {
         const res = await fetch(base64Image);
         const buf = await res.arrayBuffer();
         const file = new File([buf], filename, { type: mimeType });

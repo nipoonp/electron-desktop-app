@@ -1,5 +1,5 @@
 import { useEffect, createContext, useContext, useRef } from "react";
-import { Logger } from "aws-amplify";
+import { ConsoleLogger } from "aws-amplify/utils";
 import { delay, getVerifoneSocketErrorMessage, getVerifoneTimeBasedTransactionId } from "../model/util";
 import { toLocalISOString } from "../util/util";
 import {
@@ -16,7 +16,7 @@ import { useRestaurant } from "./restaurant-context";
 import { toast } from "../tabin/components/toast";
 import { useElectron } from "./electron-context";
 
-const logger = new Logger("verifoneContext");
+const logger = new ConsoleLogger("verifoneContext");
 
 enum VMT {
     Purchase = "PR", //PR,txid,mid,amount

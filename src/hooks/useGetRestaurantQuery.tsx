@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { skipToken, useQuery } from "@apollo/client/react";
 import { GET_RESTAURANT } from "../graphql/customQueries";
 
-import { Logger } from "aws-amplify";
+import { ConsoleLogger } from "aws-amplify/utils";
 import { IGET_RESTAURANT } from "../graphql/customQueries";
 import { useGetRestaurantQueryFetchPolicy } from "./useGetRestaurantQueryFetchPolicy";
 
-const logger = new Logger("useGetRestaurantQuery");
+const logger = new ConsoleLogger("useGetRestaurantQuery");
 
 export const useGetRestaurantQuery = (restaurantId: string, skip?: boolean) => {
     // const fetchPolicy = useGetRestaurantQueryFetchPolicy();

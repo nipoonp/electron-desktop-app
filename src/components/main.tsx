@@ -2,7 +2,8 @@ import { useEffect, lazy, Suspense } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router";
 import { HashRouter } from "react-router-dom";
 import Modal from "react-modal";
-import { Auth, Logger } from "aws-amplify";
+import { fetchAuthSession } from "aws-amplify/auth";
+import { ConsoleLogger } from "aws-amplify/utils";
 import { AlertProvider } from "../tabin/components/alert";
 import { ToastContainer } from "../tabin/components/toast";
 import { FullScreenSpinner } from "../tabin/components/fullScreenSpinner";
@@ -48,7 +49,7 @@ const Unauthorised = lazy(() => import("./page/error/unauthorised"));
 //     window.scrollTo(0, 0);
 // });
 
-const logger = new Logger("Main");
+const logger = new ConsoleLogger("Main");
 
 Modal.setAppElement("#root");
 
@@ -162,13 +163,8 @@ export default () => {
                     //Also in AWS Dashboard under Cognito User Pools > App Integration > We set the 'Refresh token expiration' to 365 days.
                     //So monitor the next few weeks howmany of those errors we get rearing "NotAuthorizedException: Refresh Token has expired" issue.
                     //If we don't get such errors then we can try remove this code below.
-                    const cognitoUser = await Auth.currentAuthenticatedUser();
-                    const currentSession = await Auth.currentSession();
-
-                    cognitoUser.refreshSession(currentSession.getRefreshToken(), (err, session) => {
-                        console.log("New session", err, session);
-                        // const { idToken, refreshToken, accessToken } = session;
-                    });
+                    // Amplify v6 refreshes tokens automatically. Forcing a refresh here keeps the refresh token from expiring.
+                    await fetchAuthSession({ forceRefresh: true });
 
                     //If the above code doesn't refresh the refresh_token then uncomment the below lines and get the user to relog in again.
                     // const email = localStorage.getItem("current_e");

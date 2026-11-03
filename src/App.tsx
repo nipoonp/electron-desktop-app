@@ -1,4 +1,5 @@
-import { Amplify, Auth } from "aws-amplify";
+import { Amplify } from "aws-amplify";
+import { fetchAuthSession } from "aws-amplify/auth";
 import awsconfig from "./aws-exports";
 import Main from "./components/main";
 
@@ -28,7 +29,6 @@ import { ErrorInfo } from "react";
 import { MX51Provider } from "./context/mx51-context";
 
 Amplify.configure(awsconfig);
-Amplify.Logger.LOG_LEVEL = process.env.REACT_APP_LOG_LEVEL;
 
 const httpLink = new HttpLink({
     uri: awsconfig.aws_appsync_graphqlEndpoint,
@@ -40,7 +40,7 @@ const cognitoDetails = {
     url: awsconfig.aws_appsync_graphqlEndpoint,
     auth: {
         type: AUTH_TYPE.AMAZON_COGNITO_USER_POOLS,
-        jwtToken: async () => (await Auth.currentSession()).getIdToken().getJwtToken(),
+        jwtToken: async () => (await fetchAuthSession()).tokens?.idToken?.toString() ?? "",
     },
     region: awsconfig.aws_appsync_region,
 };
@@ -86,7 +86,7 @@ const iamDetails = {
     url: awsconfig.aws_appsync_graphqlEndpoint,
     auth: {
         type: AUTH_TYPE.AWS_IAM,
-        credentials: () => Auth.currentCredentials(),
+        credentials: async () => (await fetchAuthSession()).credentials,
     },
     region: awsconfig.aws_appsync_region,
 };

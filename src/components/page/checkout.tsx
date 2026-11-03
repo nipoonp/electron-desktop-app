@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Logger } from "aws-amplify";
+import { ConsoleLogger } from "aws-amplify/utils";
 import { useCart } from "../../context/cart-context";
 import { useNavigate } from "react-router-dom";
 import {
@@ -97,7 +97,7 @@ import { useAlert } from "../../tabin/components/alert";
 import { useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { simpleDateTimeFormatUTC } from "../../util/dateFormat";
-import { Storage } from "aws-amplify";
+import { uploadData } from "aws-amplify/storage";
 import awsconfig from "../../aws-exports";
 import { OrderScheduleDateTime } from "../../tabin/components/orderScheduleDateTime";
 import { useGetThirdPartyOrderResponseLazyQuery } from "../../hooks/useGetThirdPartyOrderResponseLazyQuery";
@@ -119,7 +119,7 @@ import { FaCashRegister } from "react-icons/fa";
 import { FaRectangleList } from "react-icons/fa6";
 import { FullScreenSpinner } from "../../tabin/components/fullScreenSpinner";
 
-const logger = new Logger("checkout");
+const logger = new ConsoleLogger("checkout");
 
 type AvailabilityCheckResult = {
     soldOutItems: string[];
@@ -1197,12 +1197,17 @@ export const Checkout = () => {
 
                 const signatureFile = await convertBase64ToFile(customerInformation.signatureBase64, `${filename}.${fileExtension}`, `image/${fileExtension}`);
 
-                const uploadedObject: any = await Storage.put(`${filename}.${fileExtension}`, signatureFile, {
-                    contentType: `image/${fileExtension}`, //signature image png, png required to print to receipt printer
-                });
+                // Stored under protected/{identityId}/ to match the order page's signature URL.
+                await uploadData({
+                    path: ({ identityId }) => `protected/${identityId}/${filename}.${fileExtension}`,
+                    data: signatureFile,
+                    options: {
+                        contentType: `image/${fileExtension}`, //signature image png, png required to print to receipt printer
+                    },
+                }).result;
 
                 signatureS3Object = {
-                    key: uploadedObject.key,
+                    key: `${filename}.${fileExtension}`,
                     bucket: awsconfig.aws_user_files_s3_bucket,
                     region: awsconfig.aws_project_region,
                     identityPoolId: user ? user.identityPoolId : "",

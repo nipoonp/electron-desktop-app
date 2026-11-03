@@ -55,6 +55,7 @@ export interface ICognitoUser {
         sub: string;
     };
     username: string;
+    groups?: string[];
 }
 
 export enum EEftposTransactionOutcome {

@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 
 import { useNavigate } from "react-router-dom";
 import { useAuth, AuthenticationStatus } from "../../../context/auth-context";
-import { Auth, Logger } from "aws-amplify";
+import { getCurrentUser } from "aws-amplify/auth";
+import { ConsoleLogger } from "aws-amplify/utils";
 import * as yup from "yup";
 import { beginOrderPath } from "../../main";
 import { Button } from "../../../tabin/components/button";
@@ -13,7 +14,7 @@ import "./login.scss";
 import { useErrorLogging } from "../../../context/errorLogging-context";
 import { useElectron } from "../../../context/electron-context";
 
-const logger = new Logger("Login");
+const logger = new ConsoleLogger("Login");
 
 const emailSchema = yup.string().email("Please enter a valid email address").required("Email is required");
 const passwordSchema = yup.string().min(8, "Password must be at least 8 characters long").required("Password is required");
@@ -43,9 +44,7 @@ const Login = () => {
     useEffect(() => {
         const timerId = setTimeout(async () => {
             try {
-                const user = await Auth.currentAuthenticatedUser({
-                    bypassCache: false, // Optional, By default is false. If set to true, this call will send a request to Cognito to get the latest user data
-                });
+                const user = await getCurrentUser();
 
                 await logError("Invalid user, rebooting app", JSON.stringify({ user: user }));
 
