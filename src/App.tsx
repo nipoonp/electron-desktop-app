@@ -16,7 +16,8 @@ import { RestaurantProvider, useRestaurant } from "./context/restaurant-context"
 import { WindcaveProvider } from "./context/windcave-context";
 import { ErrorLoggingProvider } from "./context/errorLogging-context";
 
-import { ApolloClient, ApolloProvider, defaultDataIdFromObject, from, HttpLink, InMemoryCache, split } from "@apollo/client";
+import { ApolloClient, ApolloLink, defaultDataIdFromObject, HttpLink, InMemoryCache } from "@apollo/client";
+import { ApolloProvider } from "@apollo/client/react";
 import { AUTH_TYPE, createAuthLink } from "aws-appsync-auth-link";
 import { createSubscriptionHandshakeLink } from "aws-appsync-subscription-link";
 
@@ -61,10 +62,10 @@ const cognitoClient = new ApolloClient({
             }
         },
     }),
-    link: from([
+    link: ApolloLink.from([
         //@ts-ignore
         createAuthLink(cognitoDetails),
-        split(
+        ApolloLink.split(
             (op) => {
                 const { operation } = op.query.definitions[0] as any;
 
@@ -92,10 +93,10 @@ const iamDetails = {
 
 const iamClient = new ApolloClient({
     cache: new InMemoryCache(),
-    link: from([
+    link: ApolloLink.from([
         //@ts-ignore
         createAuthLink(iamDetails),
-        split(
+        ApolloLink.split(
             (op) => {
                 const { operation } = op.query.definitions[0] as any;
 

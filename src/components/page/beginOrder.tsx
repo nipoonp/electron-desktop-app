@@ -45,17 +45,22 @@ const PreparationTime = () => {
         if (!restaurant) return;
         if (!restaurant.preparationTimeInMinutes) return;
 
-        const intervalId = setInterval(async () => {
-            const restaurantPreparationTimeRes = await getRestaurantPingData({
-                variables: {
-                    restaurantId: restaurant.id,
-                },
-            });
+        const intervalId = setInterval(
+            async () => {
+                const restaurantPreparationTimeRes = await getRestaurantPingData({
+                    variables: {
+                        restaurantId: restaurant.id,
+                    },
+                });
 
-            const preparationTimeResponse: IGET_RESTAURANT_PING_DATA = restaurantPreparationTimeRes.data.getRestaurant;
+                const preparationTimeResponse: IGET_RESTAURANT_PING_DATA | undefined = restaurantPreparationTimeRes.data?.getRestaurant;
 
-            setPreparationTimeInMinutes(preparationTimeResponse.preparationTimeInMinutes);
-        }, 2 * 60 * 1000); //2 mins
+                if (!preparationTimeResponse) return;
+
+                setPreparationTimeInMinutes(preparationTimeResponse.preparationTimeInMinutes);
+            },
+            2 * 60 * 1000,
+        ); //2 mins
 
         return () => clearInterval(intervalId);
     }, [restaurant]);

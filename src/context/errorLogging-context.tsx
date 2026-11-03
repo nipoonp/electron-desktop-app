@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 
-import { useMutation } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 import { CREATE_EFTPOS_TRANSACTION_LOG } from "../graphql/customMutations";
 import { useRestaurant } from "./restaurant-context";
 import { sendFailureNotification } from "../util/errorHandling";

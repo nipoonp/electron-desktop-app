@@ -1,10 +1,9 @@
-import { GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT } from "../graphql/customQueries";
-import { useLazyQuery } from "@apollo/client";
+import { GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT, IGET_RESTAURANT_PRODUCT } from "../graphql/customQueries";
+import { useLazyQuery } from "@apollo/client/react";
 import { useEffect, useState } from "react";
-import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
 
 export const useGetProductsBySKUCodeByRestaurantLazyQuery = () => {
-    const [data, setSavedData] = useState<IGET_RESTAURANT_ORDER_FRAGMENT[] | null>(null);
+    const [data, setSavedData] = useState<IGET_RESTAURANT_PRODUCT[] | null>(null);
 
     const [getProductsBySKUCodeByRestaurant, { loading, error, data: _data }] = useLazyQuery(GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT, {
         fetchPolicy: "network-only",

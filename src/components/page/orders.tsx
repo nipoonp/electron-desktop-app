@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLazyQuery, useMutation } from "@apollo/client";
+import { useLazyQuery, useMutation } from "@apollo/client/react";
 import axios from "axios";
 import { UPDATE_ORDER_PRINTED_QUANTITIES, UPDATE_ORDER_STATUS } from "../../graphql/customMutations";
 import {
@@ -790,6 +790,7 @@ const Orders = () => {
                 },
             });
 
+            if (!res.data) throw new Error("Restaurant data is missing");
             setRestaurant(res.data.getRestaurant);
 
             setShowFullScreenSpinner(false);

@@ -6,7 +6,7 @@ import { useTyro } from "../../../context/tyro-context";
 import { Button } from "../../../tabin/components/button";
 import { IEftposTransactionOutcome } from "../../../model/model";
 import { useRegister } from "../../../context/register-context";
-import { useMutation } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 import { UPDATE_REGISTER_TYRO } from "../../../graphql/customMutations";
 
 export const Tyro = () => {

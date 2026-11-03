@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { useLazyQuery, useMutation, useQuery } from "@apollo/client";
+import { useLazyQuery, useMutation, useQuery } from "@apollo/client/react";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { checkoutPath, restaurantPath } from "../main";
@@ -240,7 +240,7 @@ const TableNumberFeatureEnabledPage = () => {
     // After checkout saves an order, it refetches so this page gets updated data.
     const { data: activeOrders, refetch: refetchActiveOrders } = useGetRestaurantOrdersByBeginWithPlacedAt(restaurant?.id || "", todayOrderDateKey);
     // Fetch today's reservations to overlay "reserved" status on tables with upcoming bookings.
-    const { data: todayReservationsData } = useQuery(GET_RESERVATIONS_BY_RESTAURANT_BY_DATE, {
+    const { data: todayReservationsData } = useQuery<{ getReservationsByRestaurantByDate: { items: IGET_RESERVATION_FOR_TABLE[] } }>(GET_RESERVATIONS_BY_RESTAURANT_BY_DATE, {
         variables: { restaurantId: restaurant?.id, date: { eq: todayOrderDateKey }, limit: 500 },
         skip: !restaurant?.id,
         fetchPolicy: "network-only",

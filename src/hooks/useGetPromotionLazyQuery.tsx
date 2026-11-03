@@ -1,5 +1,5 @@
 import { GET_PROMOTION_BY_CODE, GET_USER, IGET_RESTAURANT_PROMOTION, IGET_USER } from "../graphql/customQueries";
-import { useLazyQuery } from "@apollo/client";
+import { useLazyQuery } from "@apollo/client/react";
 import { useEffect, useState } from "react";
 
 export const useGetPromotionLazyQuery = () => {

@@ -1,4 +1,4 @@
-import { useLazyQuery } from "@apollo/client";
+import { useLazyQuery } from "@apollo/client/react";
 import { GET_FLOOR_PLAN, IGET_FLOOR_PLAN } from "../graphql/customQueries";
 
 type GetFloorPlanResponse = {

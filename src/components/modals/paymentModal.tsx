@@ -1,7 +1,7 @@
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { FiArrowDown, FiX } from "react-icons/fi";
 import { useCart } from "../../context/cart-context";
-import { useMutation } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 import { useRegister } from "../../context/register-context";
 import { useRestaurant } from "../../context/restaurant-context";
 import {

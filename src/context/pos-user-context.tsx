@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { useApolloClient, useLazyQuery, useMutation, useQuery } from "@apollo/client";
+import { useApolloClient, useLazyQuery, useMutation, useQuery } from "@apollo/client/react";
 import { useRegister } from "./register-context";
 import { useRestaurant } from "./restaurant-context";
 import { CREATE_ATTENDANCE, UPDATE_ATTENDANCE } from "../graphql/customMutations";
@@ -191,7 +191,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
         data: attendanceData,
         loading: attendanceLoading,
         refetch: refetchAttendanceQuery,
-    } = useQuery(LIST_ATTENDANCES_BY_USER, {
+    } = useQuery<{ listAttendancesByUserId: { items: IGET_ATTENDANCE[] } }>(LIST_ATTENDANCES_BY_USER, {
         variables: {
             employeeUserId: selectedPosUser?.userId || "",
             limit: 20,
@@ -220,7 +220,7 @@ export const PosUserProvider = (props: { children: React.ReactNode }) => {
             const entries = await Promise.all(
                 attendanceEnabledUserIds.map(async (employeeUserId): Promise<[string, TShiftStatus] | null> => {
                     try {
-                        const { data } = await apolloClient.query({
+                        const { data } = await apolloClient.query<{ listAttendancesByUserId: { items: IGET_ATTENDANCE[] } }>({
                             query: LIST_ATTENDANCES_BY_USER,
                             variables: { employeeUserId, limit: 1 },
                             fetchPolicy: "network-only",

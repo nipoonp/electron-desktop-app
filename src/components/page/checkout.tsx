@@ -17,7 +17,7 @@ import {
     printedQuantitiesToList,
     toLocalISOString,
 } from "../../util/util";
-import { useLazyQuery, useMutation } from "@apollo/client";
+import { useLazyQuery, useMutation } from "@apollo/client/react";
 import { CREATE_ORDER, UPDATE_ORDER, UPDATE_ORDER_PRINTED_QUANTITIES } from "../../graphql/customMutations";
 import { FiArrowDownCircle } from "react-icons/fi";
 import {
@@ -813,7 +813,6 @@ export const Checkout = () => {
 
             const { data: restaurantData } = await getRestaurantDataAvailability({
                 variables: { restaurantId: restaurant.id },
-                fetchPolicy: "no-cache", //This is to stop the GetRestaurant API get double called. I think its somehting to do with useGetRestaurantQuery "cache-first" and "netowrk-first" fetchPolicy.
             });
             const { soldOutItems, productsToRemove, productsToUpdate } = checkConditionsBeforeCreateOrder(restaurantData?.getRestaurant, products);
 
@@ -1279,7 +1278,8 @@ export const Checkout = () => {
                     },
                 });
 
-                const thirdPartyOrderResponse: IGET_THIRD_PARTY_ORDER_RESPONSE = thirdPartyOrderResponseRes.data.getOrder;
+                const thirdPartyOrderResponse: IGET_THIRD_PARTY_ORDER_RESPONSE | undefined = thirdPartyOrderResponseRes.data?.getOrder;
+                if (!thirdPartyOrderResponse) throw new Error("Third party order response is missing");
 
                 if (thirdPartyOrderResponse.thirdPartyIntegrationResult) {
                     if (thirdPartyOrderResponse.thirdPartyIntegrationResult.isSuccess === true) {

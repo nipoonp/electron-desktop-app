@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { GET_RESTAURANT } from "../graphql/customQueries";
 
 import { Logger } from "aws-amplify";
@@ -20,7 +20,7 @@ export const useGetRestaurantQuery = (restaurantId: string, skip?: boolean) => {
         data: _data,
         error,
         loading,
-    } = useQuery(GET_RESTAURANT, {
+    } = useQuery<{ getRestaurant: IGET_RESTAURANT }>(GET_RESTAURANT, {
         variables: {
             restaurantId: restaurantId,
         },
@@ -33,7 +33,7 @@ export const useGetRestaurantQuery = (restaurantId: string, skip?: boolean) => {
         data: _data1,
         error: error1,
         loading: loading1,
-    } = useQuery(GET_RESTAURANT, {
+    } = useQuery<{ getRestaurant: IGET_RESTAURANT }>(GET_RESTAURANT, {
         variables: {
             restaurantId: restaurantId,
         },
@@ -43,8 +43,8 @@ export const useGetRestaurantQuery = (restaurantId: string, skip?: boolean) => {
     });
 
     let data: IGET_RESTAURANT | null = null;
-    if (!error && !loading) {
-        data = _data.getRestaurant as IGET_RESTAURANT;
+    if (!error && !loading && _data) {
+        data = _data.getRestaurant;
         cachedData.current = data;
     }
     logger.debug("RestaurantId: ", restaurantId);

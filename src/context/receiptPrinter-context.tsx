@@ -98,7 +98,7 @@ const ReceiptPrinterProvider = (props: { children: React.ReactNode }) => {
                     },
                 });
 
-                const newOrders: IGET_RESTAURANT_ORDER_FRAGMENT[] = res.data.getOrdersByRestaurantByPlacedAt.items;
+                const newOrders: IGET_RESTAURANT_ORDER_FRAGMENT[] = res.data?.getOrdersByRestaurantByPlacedAt.items ?? [];
 
                 const mergedOrderIds = new Set(newOrders.map((order) => order.orderMergeId).filter(Boolean));
 

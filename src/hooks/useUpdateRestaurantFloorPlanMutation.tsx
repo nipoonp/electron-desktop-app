@@ -1,4 +1,4 @@
-import { useMutation } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 import { ISection, ITableNodesAttributes } from "../model/model";
 import { CREATE_TABLE_PLAN, UPDATE_TABLE_PLAN } from "../graphql/customMutations";
 

@@ -1,6 +1,6 @@
 import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
-import { useLazyQuery, useMutation } from "@apollo/client";
+import { useLazyQuery, useMutation } from "@apollo/client/react";
 import { useNavigate } from "react-router";
 import { checkoutPath, restaurantPath } from "../main";
 import { useCart } from "../../context/cart-context";

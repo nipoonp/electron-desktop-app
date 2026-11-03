@@ -1,5 +1,5 @@
 import { GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT } from "../graphql/customQueries";
-import { useLazyQuery } from "@apollo/client";
+import { useLazyQuery } from "@apollo/client/react";
 import { useEffect, useState } from "react";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
 

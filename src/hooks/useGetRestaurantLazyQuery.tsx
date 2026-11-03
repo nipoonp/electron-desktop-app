@@ -1,4 +1,4 @@
-import { useLazyQuery } from "@apollo/client";
+import { useLazyQuery } from "@apollo/client/react";
 import { useEffect, useState } from "react";
 import { GET_RESTAURANT, IGET_RESTAURANT } from "../graphql/customQueries";
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext, useContext } from "react";
 
-import { useMutation } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 import { UPDATE_REGISTER_KEY } from "../graphql/customMutations";
 import { ERegisterType, IGET_RESTAURANT_REGISTER } from "../graphql/customQueries";
 import { getCloudFrontDomainName } from "../private/aws-custom";

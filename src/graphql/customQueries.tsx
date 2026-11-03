@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql, TypedDocumentNode } from "@apollo/client";
 import { EReceiptPrinterPrinterType, ISection, ITableNodesAttributes } from "../model/model";
 import { IGET_RESTAURANT_ORDER_FRAGMENT, ORDER_FIELDS_FRAGMENT } from "./customFragments";
 
@@ -200,7 +200,7 @@ export interface IGET_USER_REGISTER_PRINTER_IGNORE_PRODUCT {
     };
 }
 
-export const GET_RESTAURANT = gql`
+export const GET_RESTAURANT: TypedDocumentNode<{ getRestaurant: IGET_RESTAURANT }> = gql`
     query GetRestaurant($restaurantId: ID!) {
         getRestaurant(id: $restaurantId) {
             id
@@ -988,7 +988,7 @@ export const GET_RESTAURANT = gql`
     }
 `;
 
-export const GET_RESTAURANT_AVAILABILITY = gql`
+export const GET_RESTAURANT_AVAILABILITY: TypedDocumentNode<IGET_RESTAURANT_AVAILABILITY> = gql`
     query GetRestaurantAvailability($restaurantId: ID!) {
         getRestaurant(id: $restaurantId) {
             id
@@ -1269,7 +1269,7 @@ export interface IGET_ROSTER_SHIFT {
 }
 
 // RosterShift has no employee index, so filter by date here and by employee in the caller.
-export const LIST_ROSTER_SHIFTS_BY_RESTAURANT_AND_DATE = gql`
+export const LIST_ROSTER_SHIFTS_BY_RESTAURANT_AND_DATE: TypedDocumentNode<{ listRosterShiftsByRestaurantId: { items: IGET_ROSTER_SHIFT[] } }> = gql`
     query ListRosterShiftsByRestaurantId($rosterRestaurantId: ID!, $shiftDate: String) {
         listRosterShiftsByRestaurantId(rosterRestaurantId: $rosterRestaurantId, shiftDate: { eq: $shiftDate }, limit: 200) {
             items {
@@ -1578,7 +1578,7 @@ export interface IGET_RESTAURANT_LOYALTY_HISTORY {
     };
 }
 
-export const GET_LOYALTIES_BY_GROUP_ID = gql`
+export const GET_LOYALTIES_BY_GROUP_ID: TypedDocumentNode<{ getLoyaltiesByGroupId: { items: IGET_LOYALTIES_BY_GROUP_ID_ITEM[] } }> = gql`
     query GetLoyaltiesByGroupId($loyaltyGroupId: String!) {
         getLoyaltiesByGroupId(loyaltyGroupId: $loyaltyGroupId, limit: 10000) {
             items {
@@ -1837,7 +1837,7 @@ export interface IS3Object {
     identityPoolId: string;
 }
 
-export const GET_PROMOTION_BY_CODE = gql`
+export const GET_PROMOTION_BY_CODE: TypedDocumentNode<{ getPromotionsByCode: { items: IGET_RESTAURANT_PROMOTION[] } }> = gql`
     query getPromotionsByCode($code: String!, $promotionRestaurantId: ID!) {
         getPromotionsByCode(code: $code, promotionRestaurantId: { eq: $promotionRestaurantId }) {
             items {
@@ -1914,7 +1914,7 @@ export const GET_PROMOTION_BY_CODE = gql`
     }
 `;
 
-export const GET_PROMOTION_BY_ID = gql`
+export const GET_PROMOTION_BY_ID: TypedDocumentNode<{ getPromotion: IGET_RESTAURANT_PROMOTION }> = gql`
     query GetPromotion($id: ID!) {
         getPromotion(id: $id) {
             id
@@ -2006,7 +2006,9 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
     }
 `;
 
-export const GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
+export const GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT: TypedDocumentNode<{
+    getOrdersByRestaurantByPlacedAt: { items: IGET_RESTAURANT_ORDER_FRAGMENT[] };
+}> = gql`
     ${ORDER_FIELDS_FRAGMENT}
     query GetPrintableOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAt: String!) {
         getOrdersByRestaurantByPlacedAt(
@@ -2082,7 +2084,7 @@ export const GET_CASHUP_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
     }
 `;
 
-export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
+export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT: TypedDocumentNode<{ getProductsBySKUCodeByRestaurant: { items: IGET_RESTAURANT_PRODUCT[] } }> = gql`
     query GetProductsBySKUCodeByRestaurant($skuCode: String!, $productRestaurantId: ID!) {
         getProductsBySKUCodeByRestaurant(limit: 1, sortDirection: DESC, skuCode: $skuCode, productRestaurantId: { eq: $productRestaurantId }) {
             items {
@@ -2334,7 +2336,7 @@ export const GET_PRODUCTS_BY_SKUCODE_BY_EQ_RESTAURANT = gql`
     }
 `;
 
-export const GET_ORDER = gql`
+export const GET_ORDER: TypedDocumentNode<{ getOrder: IGET_RESTAURANT_ORDER_FRAGMENT }> = gql`
     ${ORDER_FIELDS_FRAGMENT}
     query getOrderById($id: ID!) {
         getOrder(id: $id) {
@@ -2343,7 +2345,7 @@ export const GET_ORDER = gql`
     }
 `;
 
-export const GET_THIRD_PARTY_ORDER_RESPONSE = gql`
+export const GET_THIRD_PARTY_ORDER_RESPONSE: TypedDocumentNode<{ getOrder: IGET_THIRD_PARTY_ORDER_RESPONSE }> = gql`
     query getOrder($id: ID!) {
         getOrder(id: $id) {
             id
@@ -2363,7 +2365,7 @@ export interface IGET_THIRD_PARTY_ORDER_RESPONSE {
     } | null;
 }
 
-export const GET_RESTAURANT_PING_DATA = gql`
+export const GET_RESTAURANT_PING_DATA: TypedDocumentNode<{ getRestaurant: IGET_RESTAURANT_PING_DATA }> = gql`
     query GetRestaurant($restaurantId: ID!) {
         getRestaurant(id: $restaurantId) {
             id

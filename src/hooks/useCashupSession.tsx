@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { useMutation, useQuery } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client/react";
 import { format, subDays } from "date-fns";
 import { usePosUser } from "../context/pos-user-context";
 import { useRegister } from "../context/register-context";
@@ -64,7 +64,7 @@ export const useCashupSession = (options?: { skipMovements?: boolean }) => {
         loading: sessionsLoading,
         error: sessionsError,
         refetch: refetchSessions,
-    } = useQuery(GET_CASHUP_SESSIONS_BY_SCOPE_KEY_BY_OPENED_AT, {
+    } = useQuery<{ getCashupSessionsByScopeKeyByOpenedAt: { items: IGET_CASHUP_SESSION[] } }>(GET_CASHUP_SESSIONS_BY_SCOPE_KEY_BY_OPENED_AT, {
         variables: {
             scopeKey,
             openedAt: { ge: format(subDays(new Date(), 35), "yyyy-MM-dd") },
@@ -87,7 +87,7 @@ export const useCashupSession = (options?: { skipMovements?: boolean }) => {
         loading: movementsLoading,
         error: movementsError,
         refetch: refetchMovements,
-    } = useQuery(GET_MONEY_MOVEMENTS_BY_SCOPE_KEY_BY_RECORDED_AT, {
+    } = useQuery<{ getMoneyMovementsByScopeKeyByRecordedAt: { items: IGET_MONEY_MOVEMENT[] } }>(GET_MONEY_MOVEMENTS_BY_SCOPE_KEY_BY_RECORDED_AT, {
         variables: {
             scopeKey,
             recordedAt: {
@@ -99,10 +99,10 @@ export const useCashupSession = (options?: { skipMovements?: boolean }) => {
         fetchPolicy: "network-only",
     });
 
-    const [createCashupSession, { loading: creatingSession }] = useMutation(CREATE_CASHUP_SESSION);
-    const [finaliseCashupSession, { loading: finalisingSession }] = useMutation(UPDATE_CASHUP_SESSION);
-    const [updateCashupSessionField] = useMutation(UPDATE_CASHUP_SESSION);
-    const [createMoneyMovement, { loading: savingMovement }] = useMutation(CREATE_MONEY_MOVEMENT);
+    const [createCashupSession, { loading: creatingSession }] = useMutation<{ createCashupSession: IGET_CASHUP_SESSION }>(CREATE_CASHUP_SESSION);
+    const [finaliseCashupSession, { loading: finalisingSession }] = useMutation<{ updateCashupSession: IGET_CASHUP_SESSION }>(UPDATE_CASHUP_SESSION);
+    const [updateCashupSessionField] = useMutation<{ updateCashupSession: IGET_CASHUP_SESSION }>(UPDATE_CASHUP_SESSION);
+    const [createMoneyMovement, { loading: savingMovement }] = useMutation<{ createMoneyMovement: IGET_MONEY_MOVEMENT }>(CREATE_MONEY_MOVEMENT);
 
     const allSessions: IGET_CASHUP_SESSION[] = useMemo(
         () => sortSessions((sessionsData?.getCashupSessionsByScopeKeyByOpenedAt?.items || []).filter((session) => session.scopeKey === scopeKey)),

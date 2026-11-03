@@ -1,4 +1,4 @@
-import { useLazyQuery } from "@apollo/client";
+import { useLazyQuery } from "@apollo/client/react";
 import { useEffect, useState } from "react";
 import { GET_LOYALTIES_BY_GROUP_ID, IGET_LOYALTIES_BY_GROUP_ID_ITEM } from "../graphql/customQueries";
 

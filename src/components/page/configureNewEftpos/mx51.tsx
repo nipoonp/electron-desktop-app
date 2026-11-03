@@ -6,7 +6,7 @@ import { useMX51 } from "../../../context/mx51-context";
 import { Button } from "../../../tabin/components/button";
 import { EMX51PairingStatus, IEftposTransactionOutcome, IMX51GetPaymentProviders, IMX51PairingInput } from "../../../model/model";
 import { useRegister } from "../../../context/register-context";
-import { useMutation } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 import { UPDATE_REGISTER_TYRO } from "../../../graphql/customMutations";
 import { Select } from "../../../tabin/components/select";
 import { Checkbox } from "../../../tabin/components/checkbox";

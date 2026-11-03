@@ -656,7 +656,7 @@ const Restaurant = () => {
                 },
             });
 
-            const products: IGET_RESTAURANT_PRODUCT[] = res.data.getProductsBySKUCodeByRestaurant.items;
+            const products: IGET_RESTAURANT_PRODUCT[] = res.data?.getProductsBySKUCodeByRestaurant.items ?? [];
 
             if (products.length > 0) {
                 const skuProduct = products[0];

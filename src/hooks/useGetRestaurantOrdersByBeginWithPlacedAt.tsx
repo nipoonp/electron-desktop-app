@@ -1,12 +1,12 @@
 import { GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT } from "../graphql/customQueries";
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { useEffect, useState } from "react";
 import { IGET_RESTAURANT_ORDER_FRAGMENT } from "../graphql/customFragments";
 
 export const useGetRestaurantOrdersByBeginWithPlacedAt = (orderRestaurantId: string, placedAt: string) => {
     const [data, setSavedData] = useState<IGET_RESTAURANT_ORDER_FRAGMENT[] | null>(null);
 
-    const { loading, error, data: _data, refetch } = useQuery(GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT, {
+    const { loading, error, data: _data, refetch } = useQuery<{ getOrdersByRestaurantByPlacedAt: { items: IGET_RESTAURANT_ORDER_FRAGMENT[] } }>(GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT, {
         variables: {
             orderRestaurantId: orderRestaurantId,
             placedAt: placedAt,

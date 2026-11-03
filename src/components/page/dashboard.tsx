@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useLazyQuery } from "@apollo/client";
+import { useLazyQuery } from "@apollo/client/react";
 import { FiArrowLeft, FiArrowRight, FiRotateCw, FiX } from "react-icons/fi";
 import { useNavigate } from "react-router";
 import {
