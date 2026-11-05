@@ -1,6 +1,5 @@
 import { IGET_RESTAURANT_ORDER_MODIFIER_GROUP_FRAGMENT, IGET_RESTAURANT_ORDER_PRODUCT_FRAGMENT } from "../../graphql/customFragments";
 import { ICartModifierGroup, ICartProduct } from "../../model/model";
-import { Link } from "../../tabin/components/link";
 import { convertCentsToDollars } from "../../util/util";
 
 import "./productModifier.scss";
@@ -16,31 +15,31 @@ export const ProductModifier = (props: {
     return (
         <>
             {product.modifierGroups && product.modifierGroups.length > 0 ? (
-                <div className="modifier-product-modifier-wrapper">
+                <div className="modifier-product-modifier-wrapper" onClick={onEditSelections}>
                     {selectionIndex && <div className="mb-2 text-underline">Selection {selectionIndex}</div>}
                     <OrderItemDetails modifierGroups={product.modifierGroups} />
-                    {onEditSelections && (
+                    {/* {onEditSelections && (
                         <>
                             <div className="separator-2"></div>
                             <Link className="product-modifier-edit-selections-link" onClick={onEditSelections}>
                                 Edit Selections
                             </Link>
                         </>
-                    )}
+                    )} */}
                 </div>
             ) : (
                 <>
                     {props.showNoExtraSelectionsMade && (
-                        <div className="modifier-product-modifier-wrapper">
+                        <div className="modifier-product-modifier-wrapper" onClick={onEditSelections}>
                             No extra selections made
-                            {onEditSelections && (
+                            {/* {onEditSelections && (
                                 <>
                                     <div className="separator-2"></div>
                                     <Link className="product-modifier-edit-selections-link" onClick={onEditSelections}>
                                         Edit Selections
                                     </Link>
                                 </>
-                            )}
+                            )} */}
                         </div>
                     )}
                 </>
@@ -73,14 +72,13 @@ const OrderItemDetails = (props: { modifierGroups: ICartModifierGroup[] | IGET_R
 
     const modifiersDisplay = (
         <>
-            {modifierGroups.map((mg, index) => (
+            {modifierGroups.map((mg) => (
                 <>
                     {!mg.hideForCustomer && (
                         <>
-                            {index !== 0 && <div className="mt-3"></div>}
-                            <div className="text-bold" key={mg.id}>
+                            {/* <div className="text-bold" key={mg.id}>
                                 {mg.name}
-                            </div>
+                            </div> */}
                             {mg.modifiers.map((m) => (
                                 <div key={m.id} className="mt-1">
                                     {modifierString(m.preSelectedQuantity, m.quantity, m.name, m.price)}

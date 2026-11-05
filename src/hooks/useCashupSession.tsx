@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useMutation, useQuery } from "@apollo/client";
+import { format, subDays } from "date-fns";
 import { usePosUser } from "../context/pos-user-context";
 import { useRegister } from "../context/register-context";
 import { useRestaurant } from "../context/restaurant-context";
@@ -18,11 +19,11 @@ import {
     buildCashupSessionId,
     getBusinessDate,
     getBusinessDayRange,
+    getPaymentSummarySnapshot,
     resolveCashupScope,
     sortSessions,
 } from "../components/page/cashManagement/cashManagementSupport";
 import { toLocalISOString } from "../util/util";
-import { format, subDays } from "date-fns";
 
 const SESSION_HISTORY_LIMIT = 8;
 
@@ -73,6 +74,14 @@ export const useCashupSession = (options?: { skipMovements?: boolean }) => {
         fetchPolicy: "network-only",
     });
 
+    const openSessionFromData = useMemo(
+        () =>
+            (sessionsData?.getCashupSessionsByScopeKeyByOpenedAt?.items || []).find(
+                (session: IGET_CASHUP_SESSION) => session.scopeKey === scopeKey && session.status === ECashupSessionStatus.OPEN,
+            ),
+        [scopeKey, sessionsData],
+    );
+
     const {
         data: movementsData,
         loading: movementsLoading,
@@ -81,7 +90,9 @@ export const useCashupSession = (options?: { skipMovements?: boolean }) => {
     } = useQuery(GET_MONEY_MOVEMENTS_BY_SCOPE_KEY_BY_RECORDED_AT, {
         variables: {
             scopeKey,
-            recordedAt: { between: [businessDayRange.start, businessDayRange.end] },
+            recordedAt: {
+                between: [openSessionFromData?.openedAt || businessDayRange.start, businessDayRange.end],
+            },
             limit: 500,
         },
         skip: !scopeKey || skipMovements,
@@ -90,6 +101,7 @@ export const useCashupSession = (options?: { skipMovements?: boolean }) => {
 
     const [createCashupSession, { loading: creatingSession }] = useMutation(CREATE_CASHUP_SESSION);
     const [finaliseCashupSession, { loading: finalisingSession }] = useMutation(UPDATE_CASHUP_SESSION);
+    const [updateCashupSessionField] = useMutation(UPDATE_CASHUP_SESSION);
     const [createMoneyMovement, { loading: savingMovement }] = useMutation(CREATE_MONEY_MOVEMENT);
 
     const allSessions: IGET_CASHUP_SESSION[] = useMemo(
@@ -97,23 +109,19 @@ export const useCashupSession = (options?: { skipMovements?: boolean }) => {
         [scopeKey, sessionsData],
     );
 
-    const currentOpenSession = useMemo(
-        () => allSessions.find((session) => session.status === ECashupSessionStatus.OPEN) || null,
-        [allSessions],
-    );
+    const currentSession = useMemo(() => allSessions.find((session) => session.status === ECashupSessionStatus.OPEN) || null, [allSessions]);
 
-    // An unfinalised session from a previous business date blocks today until it is finalised.
-    const isBlockedByStaleSession = !!currentOpenSession && currentOpenSession.cashupSessionDate !== businessDate;
-    const currentSession = currentOpenSession && !isBlockedByStaleSession ? currentOpenSession : null;
-
-    // Cash up covers everything since the last finalised session today (or start of the business day),
-    // not since the open session was created — orders settled before the float is saved still count.
+    // An open session keeps its original window across business dates.
     const cashupWindowStart = useMemo(() => {
+        if (currentSession) {
+            return currentSession.openedAt;
+        }
+
         const lastFinalisedToday = allSessions.find(
             (session) => session.status === ECashupSessionStatus.FINALISED && session.cashupSessionDate === businessDate,
         );
         return lastFinalisedToday?.finalisedAt || businessDayRange.start;
-    }, [allSessions, businessDate, businessDayRange.start]);
+    }, [allSessions, businessDate, businessDayRange.start, currentSession]);
 
     const sessionHistory = useMemo(() => allSessions.slice(0, SESSION_HISTORY_LIMIT), [allSessions]);
 
@@ -125,48 +133,64 @@ export const useCashupSession = (options?: { skipMovements?: boolean }) => {
         [businessDate, movementsData],
     );
 
-    const currentSessionMovements = useMemo(
-        () => (currentSession ? businessDayMovements.filter((movement) => movement.cashupSessionId === currentSession.id) : []),
-        [businessDayMovements, currentSession],
-    );
+    const currentSessionMovements = useMemo<IGET_MONEY_MOVEMENT[]>(() => {
+        if (!currentSession) return [];
+        return (movementsData?.getMoneyMovementsByScopeKeyByRecordedAt?.items || [])
+            .filter((movement) => movement.cashupSessionId === currentSession.id && movement.recordedAt >= currentSession.openedAt)
+            .sort((left, right) => (right.recordedAt > left.recordedAt ? 1 : -1));
+    }, [movementsData, currentSession]);
 
     const refetchAll = useCallback(async () => {
         await Promise.allSettled([refetchSessions(), ...(skipMovements ? [] : [refetchMovements()])]);
     }, [refetchMovements, refetchSessions, skipMovements]);
 
-    // Creates the open session for today on first use. The deterministic session id makes
+    // Creates or resumes the open session. The deterministic session id makes
     // concurrent creates from other registers collide, so the loser adopts the winner's session.
     const ensureOpenSession = useCallback(
-        async (options?: { openingFloatCents?: number; skipRefetchAfterCreate?: boolean }): Promise<IGET_CASHUP_SESSION | null> => {
+        async (options?: {
+            openingFloatCents?: number;
+            skipRefetchAfterCreate?: boolean;
+            previousSession?: IGET_CASHUP_SESSION;
+        }): Promise<IGET_CASHUP_SESSION | null> => {
             if (!restaurant?.enableCashup || !resolvedScope || !user || !effectiveCashUserId) return null;
 
             for (let attempt = 0; attempt < 3; attempt++) {
-                const result = attempt === 0 ? sessionsData : (await refetchSessions()).data;
+                const result = (await refetchSessions()).data;
                 const sessions: IGET_CASHUP_SESSION[] = (result?.getCashupSessionsByScopeKeyByOpenedAt?.items || []).filter(
                     (session: IGET_CASHUP_SESSION) => session.scopeKey === resolvedScope.scopeKey,
                 );
+                // The session index can lag behind the finalisation mutation.
+                if (options?.previousSession?.scopeKey === resolvedScope.scopeKey) {
+                    const previousIndex = sessions.findIndex((session) => session.id === options.previousSession?.id);
+                    if (previousIndex >= 0) sessions[previousIndex] = options.previousSession;
+                    else sessions.push(options.previousSession);
+                }
                 const openSession = sortSessions(sessions).find((session) => session.status === ECashupSessionStatus.OPEN);
 
                 if (openSession) {
-                    if (openSession.cashupSessionDate !== businessDate) return null;
                     return openSession;
                 }
 
+                const previousSession = sortSessions(sessions).find((session) => session.status === ECashupSessionStatus.FINALISED);
+                const openedAt = previousSession?.finalisedAt || toLocalISOString(new Date());
+                const sessionDate = openedAt.slice(0, 10);
+                const previousCountedCash = previousSession ? getPaymentSummarySnapshot(previousSession)?.cash?.countedCents ?? 0 : 0;
+
                 // The derived suffix allows multiple cashups per business day and keeps concurrent
                 // creates deterministic without persisting a separate sequence field.
-                const sessionSequence = sessions.filter((session) => session.cashupSessionDate === businessDate).length + 1;
+                const sessionSequence = sessions.filter((session) => session.cashupSessionDate === sessionDate).length + 1;
 
                 try {
                     const created = await createCashupSession({
                         variables: {
-                            id: buildCashupSessionId(resolvedScope.scopeKey, businessDate, sessionSequence),
+                            id: buildCashupSessionId(resolvedScope.scopeKey, sessionDate, sessionSequence),
                             cashupRestaurantId: restaurant.id,
-                            cashupSessionDate: businessDate,
+                            cashupSessionDate: sessionDate,
                             scopeType: resolvedScope.scopeType,
                             scopeKey: resolvedScope.scopeKey,
                             status: ECashupSessionStatus.OPEN,
-                            openedAt: toLocalISOString(new Date()),
-                            openingFloat: options?.openingFloatCents || 0,
+                            openedAt,
+                            openingFloat: options?.openingFloatCents ?? previousCountedCash,
                             owner: user.id,
                         },
                     });
@@ -180,7 +204,14 @@ export const useCashupSession = (options?: { skipMovements?: boolean }) => {
 
             return null;
         },
-        [businessDate, createCashupSession, effectiveCashUserId, effectiveCashUserName, refetchSessions, resolvedScope, restaurant, sessionsData, user],
+        [
+            createCashupSession,
+            effectiveCashUserId,
+            refetchSessions,
+            resolvedScope,
+            restaurant,
+            user,
+        ],
     );
 
     const finaliseSession = useCallback(
@@ -203,10 +234,30 @@ export const useCashupSession = (options?: { skipMovements?: boolean }) => {
                 },
             });
 
-            await refetchSessions();
+            // Finalisation is saved even if refreshing the history fails.
+            try {
+                await refetchSessions();
+            } catch (error) {
+                console.error(error);
+            }
             return result.data?.updateCashupSession || null;
         },
         [effectiveCashUserId, effectiveCashUserName, finaliseCashupSession, refetchSessions],
+    );
+
+    const updateOpeningFloat = useCallback(
+        async (sessionId: string, openingFloatCents: number) => {
+            const result = await updateCashupSessionField({
+                variables: {
+                    id: sessionId,
+                    openingFloat: openingFloatCents,
+                },
+            });
+
+            await refetchSessions();
+            return result.data?.updateCashupSession || null;
+        },
+        [updateCashupSessionField, refetchSessions],
     );
 
     const recordMoneyMovement = useCallback(
@@ -223,7 +274,7 @@ export const useCashupSession = (options?: { skipMovements?: boolean }) => {
                         moneyMovementRegisterId: register.id,
                         cashupSessionId: session.id,
                         scopeKey: session.scopeKey,
-                        moneyMovementDate: session.cashupSessionDate,
+                        moneyMovementDate: getBusinessDate(),
                         recordedAt: toLocalISOString(new Date()),
                         type: input.type,
                         paymentMethod: input.paymentMethod,
@@ -264,7 +315,6 @@ export const useCashupSession = (options?: { skipMovements?: boolean }) => {
         effectiveCashUserId,
         effectiveCashUserName,
         currentSession,
-        staleOpenSession: isBlockedByStaleSession ? currentOpenSession : null,
         cashupWindowStart,
         sessionHistory,
         businessDayMovements,
@@ -278,6 +328,7 @@ export const useCashupSession = (options?: { skipMovements?: boolean }) => {
         savingMovement,
         ensureOpenSession,
         finaliseSession,
+        updateOpeningFloat,
         recordMoneyMovement,
         refetchAll,
         getUserDisplayName,

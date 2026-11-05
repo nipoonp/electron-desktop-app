@@ -36,8 +36,7 @@
         border-radius: 12px;
     }
 
-    // Positioning anchor for the shift-status badge — kept separate from .pos-user-card-avatar
-    // because that element clips to a circle (overflow: hidden), which would clip the badge too.
+    // Keep the badge outside the avatar's overflow clipping.
     .pos-user-card-avatar-wrapper {
         position: relative;
         width: 104px;
@@ -59,7 +58,6 @@
         overflow: hidden;
     }
 
-    // Shows whether this staff member is currently clocked in / on break.
     .pos-user-card-shift-badge {
         position: absolute;
         right: -2px;
@@ -111,8 +109,6 @@
         }
     }
 }
-
-// ── Attendance actions panel (shown for attendance-enabled users after unlock) ──
 
 .pos-attendance {
     gap: 24px;

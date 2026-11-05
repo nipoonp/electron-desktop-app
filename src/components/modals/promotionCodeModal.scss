@@ -21,3 +21,25 @@
     flex: 1;
     text-align: left;
 }
+
+.promotion-favourites {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    max-height: 240px;
+    overflow-y: auto;
+
+    .button {
+        border-radius: 999px;
+        padding: 8px 16px;
+        font-size: 14px;
+        border: 1px solid var(--primary-color);
+        color: var(--primary-color);
+        background-color: transparent;
+
+        &.applied {
+            background-color: var(--primary-color);
+            color: white;
+        }
+    }
+}

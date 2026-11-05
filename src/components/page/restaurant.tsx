@@ -14,6 +14,8 @@ import {
     isItemSoldOut,
 } from "../../util/util";
 import { ProductModal } from "../modals/product";
+import { ItemStockModal } from "../modals/itemStockModal";
+import { useStockHold } from "../../hooks/useStockHold";
 import { SearchProductModal } from "../modals/searchProductModal";
 import { IGET_RESTAURANT_PRODUCT, IGET_RESTAURANT_CATEGORY, IS3Object, EOrderType } from "../../graphql/customQueries";
 import { useCart } from "../../context/cart-context";
@@ -22,8 +24,7 @@ import { Button } from "../../tabin/components/button";
 import { ItemAddedUpdatedModal } from "../modals/itemAddedUpdatedModal";
 import { ICartProduct } from "../../model/model";
 import { getCloudFrontDomainName, getPublicCloudFrontDomainName } from "../../private/aws-custom";
-//@ts-ignore as it does not have the types
-import { Shake } from "reshake";
+import { Shake } from "../../tabin/components/shake";
 import { useRestaurant } from "../../context/restaurant-context";
 import { CachedImage } from "../../tabin/components/cachedImage";
 import { useAlert } from "../../tabin/components/alert";
@@ -79,6 +80,7 @@ const Restaurant = () => {
     const shakeButtonDurationSeconds = 5;
     const userOnPageDuration: React.MutableRefObject<number> = useRef(1);
     const [isScrollable, setIsScrollable] = useState(false);
+    const { stockTarget, closeStockModal, getHoldHandlers } = useStockHold(selectedCategory?.id);
 
     // useEffect(() => {
     //     if (!register) return;
@@ -524,6 +526,7 @@ const Restaurant = () => {
             {productModal}
             {itemAddedModal}
             {searchProductModal}
+            {stockTarget && <ItemStockModal target={stockTarget} onClose={closeStockModal} />}
         </>
     );
 
@@ -549,6 +552,7 @@ const Restaurant = () => {
                         borderColor: product.borderColor ? product.borderColor : product.backgroundColor ? "unset" : undefined,
                         borderWidth: product.borderColor ? "2px" : undefined,
                     }}
+                    {...getHoldHandlers({ item: product, type: "product" })}
                     onClick={() => isValid && onClickProduct(category, product)}
                 >
                     <div className="product-quantity">{addToCart && addToCart.quantity}</div>
@@ -628,7 +632,7 @@ const Restaurant = () => {
 
     const menuSearchProduct = (
         <>
-            <Shake active={isPOS ? false : isShakeAnimationActive} h={5} v={5} r={3} dur={300} int={10} max={100} fixed={true} fixedStop={false} freez={false}>
+            <Shake active={isPOS ? false : isShakeAnimationActive}>
                 <div
                     className="category search-product-button background-grey"
                     onClick={() => {

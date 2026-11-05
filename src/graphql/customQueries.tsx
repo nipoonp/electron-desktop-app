@@ -1268,9 +1268,7 @@ export interface IGET_ROSTER_SHIFT {
     finishTime: string;
 }
 
-/** Used at clock-in to find the employee's rostered shift(s) for today, so the attendance record
- *  can link back to it. shiftDate is filtered server-side; employeeUserId is filtered client-side
- *  since RosterShift has no employee-scoped index of its own. */
+// RosterShift has no employee index, so filter by date here and by employee in the caller.
 export const LIST_ROSTER_SHIFTS_BY_RESTAURANT_AND_DATE = gql`
     query ListRosterShiftsByRestaurantId($rosterRestaurantId: ID!, $shiftDate: String) {
         listRosterShiftsByRestaurantId(rosterRestaurantId: $rosterRestaurantId, shiftDate: { eq: $shiftDate }, limit: 200) {
@@ -2008,6 +2006,23 @@ export const GET_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
     }
 `;
 
+export const GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
+    ${ORDER_FIELDS_FRAGMENT}
+    query GetPrintableOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAt: String!) {
+        getOrdersByRestaurantByPlacedAt(
+            limit: 1000000
+            sortDirection: DESC
+            orderRestaurantId: $orderRestaurantId
+            placedAt: { beginsWith: $placedAt }
+            filter: { and: [{ paymentInProgress: { ne: true } }, { status: { ne: CANCELLED } }] }
+        ) {
+            items {
+                ...OrderFieldsFragment
+            }
+        }
+    }
+`;
+
 export const GET_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
     ${ORDER_FIELDS_FRAGMENT}
     query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAtStartDate: String!, $placedAtEndDate: String!) {
@@ -2062,40 +2077,6 @@ export const GET_CASHUP_ORDERS_BY_RESTAURANT_BY_BETWEEN_PLACEDAT = gql`
                     doordash
                     delivereasy
                 }
-            }
-        }
-    }
-`;
-
-export const GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_PLACEDAT = gql`
-    ${ORDER_FIELDS_FRAGMENT}
-    query GetOrdersByRestaurantByPlacedAt($orderRestaurantId: ID!, $placedAt: String!) {
-        getOrdersByRestaurantByPlacedAt(
-            limit: 1000000
-            sortDirection: DESC
-            orderRestaurantId: $orderRestaurantId
-            placedAt: { beginsWith: $placedAt }
-            filter: { and: [{ onlineOrder: { eq: true } }, { paymentInProgress: { ne: true } }] }
-        ) {
-            items {
-                ...OrderFieldsFragment
-            }
-        }
-    }
-`;
-
-export const GET_ONLINE_ORDERS_BY_RESTAURANT_BY_BEGIN_WITH_ORDERSCHEDULEDAT = gql`
-    ${ORDER_FIELDS_FRAGMENT}
-    query GetOrdersByRestaurantByOrderScheduledAt($orderRestaurantId: ID!, $orderscheduledAt: String!) {
-        getOrdersByRestaurantByOrderScheduledAt(
-            limit: 1000000
-            sortDirection: DESC
-            orderRestaurantId: $orderRestaurantId
-            orderscheduledAt: { beginsWith: $orderscheduledAt }
-            filter: { and: [{ onlineOrder: { eq: true } }, { paymentInProgress: { ne: true } }] }
-        ) {
-            items {
-                ...OrderFieldsFragment
             }
         }
     }
@@ -2467,9 +2448,7 @@ export interface IGET_FEEDBACK_BY_RESTAURANT_COMMENT {
 
 export const UPDATE_RESTAURANT_PREPARATION_TIME = gql`
     mutation UpdateRestaurant($id: ID!, $preparationTimeInMinutes: Int, $delayBetweenOrdersInSeconds: Int) {
-        updateRestaurant(
-            input: { id: $id, preparationTimeInMinutes: $preparationTimeInMinutes, delayBetweenOrdersInSeconds: $delayBetweenOrdersInSeconds }
-        ) {
+        updateRestaurant(input: { id: $id, preparationTimeInMinutes: $preparationTimeInMinutes, delayBetweenOrdersInSeconds: $delayBetweenOrdersInSeconds }) {
             id
             preparationTimeInMinutes
             delayBetweenOrdersInSeconds
@@ -2646,6 +2625,22 @@ export const GET_MONEY_MOVEMENTS_BY_SCOPE_KEY_BY_RECORDED_AT = gql`
                 owner
             }
             nextToken
+        }
+    }
+`;
+
+export const GET_FAVOURITE_PROMOTIONS = gql`
+    query GetFavouritePromotions($restaurantId: ID!, $nextToken: String) {
+        getRestaurant(id: $restaurantId) {
+            id
+            promotions(filter: { favourite: { eq: true } }, limit: 200, nextToken: $nextToken) {
+                items {
+                    id
+                    name
+                    code
+                }
+                nextToken
+            }
         }
     }
 `;

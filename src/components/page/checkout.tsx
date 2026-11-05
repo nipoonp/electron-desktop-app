@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
+import { clearPromotionDiscountsForParking } from "./tableNumber/orderCartMappers";
 import { useNavigate } from "react-router-dom";
 import {
     calculateTaxAmount,
@@ -111,7 +112,6 @@ import { useTyro } from "../../context/tyro-context";
 import { useMX51 } from "../../context/mx51-context";
 import { DiscountModal } from "../modals/discountModal";
 import { TbFlag2Filled } from "react-icons/tb";
-import { TbHexagon4Filled } from "react-icons/tb";
 import { MdAccountCircle, MdDiscount, MdFeaturedPlayList, MdSettings } from "react-icons/md";
 import { TiCancel } from "react-icons/ti";
 import { HiCurrencyDollar } from "react-icons/hi2";
@@ -315,7 +315,7 @@ export const Checkout = () => {
     const [showOrderThresholdMessageModal, setShowOrderThresholdMessageModal] = useState(false);
     const [showDiscountModal, setShowDiscountModal] = useState(false);
 
-    const transactionCompleteTimeoutIntervalId = useRef<NodeJS.Timer | undefined>();
+    const transactionCompleteTimeoutIntervalId = useRef<ReturnType<typeof setInterval> | undefined>();
     const [showModal, setShowModal] = useState<string>("");
     const [showFullScreenSpinner, setShowFullScreenSpinner] = useState(false);
     const [kitchenPrintTrackingVersion, setKitchenPrintTrackingVersion] = useState(0);
@@ -348,6 +348,15 @@ export const Checkout = () => {
     }, []);
 
     const [productsWrapperElement, setProductsWrapperElement] = useState<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        if (productsWrapperElement && productsWrapperElement.scrollHeight > productsWrapperElement.clientHeight) {
+            productsWrapperElement.scrollTo({
+                top: productsWrapperElement.scrollHeight,
+                behavior: "smooth",
+            });
+        }
+    }, [products, productsWrapperElement]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -1399,11 +1408,12 @@ export const Checkout = () => {
             };
 
             if (parkOrder) {
+                clearPromotionDiscountsForParking(variables.products);
                 variables.status = "PARKED";
                 variables.parkedAt = toLocalISOString(now);
                 variables.discount = undefined;
                 variables.promotionId = undefined;
-                variables.subTotal = total; //Set subTotal to total because we do not want to add any discount or promotions. Also product.discount is set to 0 in dashboard.tsx
+                variables.subTotal = total; // Exclude order-level discounts and promotions while retaining manual line price overrides.
             } else if (orderStatus !== EOrderStatus.NEW) {
                 // Keep existing status and completedAt
             } else if (restaurant.autoCompleteOrders) {
@@ -2529,7 +2539,7 @@ export const Checkout = () => {
                 </div>
                 {parkedOrderNumber && <div className="parked-order-banner">Updating Parked Order #{parkedOrderNumber}</div>}
                 <div className="order-wrapper">
-                    <div ref={(ref) => setProductsWrapperElement(ref)} className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`} id="productsWrapperScroll">
+                    <div ref={setProductsWrapperElement} className={`order ${isPOS ? "mr-4 ml-4" : "mr-10 ml-10"}`} id="productsWrapperScroll">
                         {(!products || products.length == 0) && cartEmptyDisplay}
                         {products && products.length > 0 && order}
                         {isScrollable ? (

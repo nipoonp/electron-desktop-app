@@ -1,4 +1,4 @@
-import { format, subDays } from "date-fns";
+import { format } from "date-fns";
 import {
     EMoneyMovementPaymentMethod,
     EMoneyMovementType,
@@ -65,13 +65,6 @@ export const getBusinessDayRange = (businessDate: string) => ({
     start: `${businessDate}T00:00:00.00`,
     end: `${businessDate}T23:59:59.99`,
 });
-
-// Orders are fetched from one day earlier so orders placed yesterday but settled/refunded today
-// (e.g. parked overnight) still reach the cash up window filters.
-export const getOrderFetchRange = (businessDate: string) => {
-    const previousDay = format(subDays(new Date(`${businessDate}T00:00:00`), 1), "yyyy-MM-dd");
-    return { start: `${previousDay}T00:00:00.00`, end: `${businessDate}T23:59:59.99` };
-};
 
 // Deterministic id so concurrent creates for the same scope/date/number collide instead of duplicating.
 export const buildCashupSessionId = (scopeKey: string, businessDate: string, sessionSequence: number) => `${scopeKey}#${businessDate}#${sessionSequence}`;
@@ -169,8 +162,24 @@ export const getSessionDisplayTimestamp = (session: IGET_CASHUP_SESSION) =>
 
 export const getSessionVarianceCents = (session: IGET_CASHUP_SESSION) => (session.countedTotal || 0) - (session.recordedTotal || 0);
 
+export const getPaymentSummarySnapshot = (session: IGET_CASHUP_SESSION): TPaymentSummarySnapshot | null => {
+    if (!session.paymentSummary) return null;
+
+    try {
+        return JSON.parse(session.paymentSummary) as TPaymentSummarySnapshot;
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+};
+
 export const sortSessions = (sessions: IGET_CASHUP_SESSION[]) =>
-    [...sessions].sort((left, right) => (getSessionDisplayTimestamp(right) > getSessionDisplayTimestamp(left) ? 1 : -1));
+    [...sessions].sort((left, right) => {
+        const statusOrder = Number(right.status === ECashupSessionStatus.OPEN) - Number(left.status === ECashupSessionStatus.OPEN);
+        if (statusOrder !== 0) return statusOrder;
+
+        return getSessionDisplayTimestamp(right).localeCompare(getSessionDisplayTimestamp(left));
+    });
 
 export const getPaymentLabel = (key: TPaymentKey) => {
     switch (key) {
@@ -193,19 +202,8 @@ export const getPaymentLabel = (key: TPaymentKey) => {
     }
 };
 
-export const formatHistoryDate = (value: string) => {
-    const date = new Date(value);
-    const isToday = date.toDateString() === new Date().toDateString();
-
-    return `${format(date, "HH:mm")} ${isToday ? "Today" : format(date, "dd/MM/yy")}`;
-};
-
 // Matches the date style used across the project (e.g. the orders page "placed at"), e.g. "19 Jul 3:45 pm".
 export const formatCashupHistoryDate = (value?: string | null) => (value ? format(new Date(value), "dd MMM h:mm aa") : "-");
-
-export const formatCashupDateTime = (value?: string | null) => (value ? format(new Date(value), "dd MMM yyyy, HH:mm") : "-");
-
-export const formatCashupBusinessDate = (value?: string | null) => (value ? format(new Date(`${value}T00:00:00`), "dd MMM yyyy") : "-");
 
 export const getHistoryStatusLabel = (status: ECashupSessionStatus) => (status === ECashupSessionStatus.FINALISED ? "Finalised" : "Not yet finalised");
 
@@ -218,11 +216,6 @@ export const getCashupScopeHistoryLabel = (scopeType: ECashupScopeType, scopeNam
         default:
             return `Site: ${scopeName}`;
     }
-};
-
-export const getCashupScopeId = (scopeKey: string) => {
-    const separatorIndex = scopeKey.indexOf("#");
-    return separatorIndex === -1 ? "" : scopeKey.slice(separatorIndex + 1);
 };
 
 export const getCashupScopeTitle = (scopeType: ECashupScopeType, scopeName: string) => `Cash Up — ${getCashupScopeHistoryLabel(scopeType, scopeName)}`;

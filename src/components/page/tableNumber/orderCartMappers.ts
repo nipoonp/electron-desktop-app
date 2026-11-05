@@ -81,6 +81,20 @@ export const mapOrderProductsToCartProducts = (orderProducts: IGET_RESTAURANT_OR
         modifierGroups: mapOrderModifierGroupsToCartModifierGroups(product.modifierGroups),
     }));
 
+// Run on the cloned order payload before isPriceEdited is removed for GraphQL.
+// Only manual overrides should survive parking; promo discounts are recalculated on reopening.
+export const clearPromotionDiscountsForParking = (products: ICartProduct[]) => {
+    products.forEach((product) => {
+        if (!product.isPriceEdited) product.discount = 0;
+
+        (product.modifierGroups || []).forEach((group) => {
+            group.modifiers.forEach((modifier) => {
+                if (modifier.productModifiers) clearPromotionDiscountsForParking(modifier.productModifiers);
+            });
+        });
+    });
+};
+
 // Normalizes a cart product (and nested modifiers) to match GraphQL mutation input:
 // removes UI/derived fields and drops null/empty optional objects that the API rejects.
 export const sanitizeCartProductForMutationInput = (product: any) => {

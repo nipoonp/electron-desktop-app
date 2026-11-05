@@ -29,7 +29,7 @@ import {
 } from "./model";
 import path from "path";
 import net from "net";
-import * as Sentry from "@sentry/electron";
+import * as Sentry from "@sentry/electron/main";
 const { autoUpdater } = require("electron-updater");
 
 Sentry.init({ dsn: "https://43d342efd1534e1b80c9ab4251b385a6@o1087887.ingest.sentry.io/6102047" });

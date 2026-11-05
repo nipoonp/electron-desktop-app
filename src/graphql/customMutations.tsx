@@ -227,6 +227,9 @@ export const UPDATE_PRODUCT = gql`
     mutation UpdateProduct($id: ID!, $soldOut: Boolean, $soldOutDate: String, $totalQuantityAvailable: Int) {
         updateProduct(input: { id: $id, soldOut: $soldOut, soldOutDate: $soldOutDate, totalQuantityAvailable: $totalQuantityAvailable }) {
             id
+            soldOut
+            soldOutDate
+            totalQuantityAvailable
         }
     }
 `;
@@ -235,6 +238,9 @@ export const UPDATE_MODIFIER = gql`
     mutation UpdateModifier($id: ID!, $soldOut: Boolean, $soldOutDate: String, $totalQuantityAvailable: Int) {
         updateModifier(input: { id: $id, soldOut: $soldOut, soldOutDate: $soldOutDate, totalQuantityAvailable: $totalQuantityAvailable }) {
             id
+            soldOut
+            soldOutDate
+            totalQuantityAvailable
         }
     }
 `;
@@ -324,13 +330,7 @@ export const GET_FEEDBACK_BY_RESTAURANT = gql`
 `;
 
 export const UPDATE_FEEDBACK = gql`
-    mutation updateFeedback(
-        $id: ID!
-        $averageRating: Float
-        $totalNumberOfRatings: Int
-        $feedbackRestaurantId: ID
-        $comments: [FeedbackCommentInput!]
-    ) {
+    mutation updateFeedback($id: ID!, $averageRating: Float, $totalNumberOfRatings: Int, $feedbackRestaurantId: ID, $comments: [FeedbackCommentInput!]) {
         updateFeedback(
             input: {
                 id: $id
