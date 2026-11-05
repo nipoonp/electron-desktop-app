@@ -22,12 +22,17 @@ export const DiscountModal = (props: IPromotionCodeModalProps) => {
 
     const [type, setType] = useState<"static" | "percentage">(staticDiscount ? "static" : percentageDiscount ? "percentage" : "static");
     const [value, setValue] = useState<string>(
-        staticDiscount ? convertCentsToDollars(staticDiscount) : percentageDiscount ? ((percentageDiscount * 100) / total).toString() : ""
+        staticDiscount ? convertCentsToDollars(staticDiscount) : percentageDiscount ? ((percentageDiscount * 100) / total).toString() : "",
     );
     const [error, setError] = useState("");
 
     const onApply = () => {
         const floatValue = parseFloat(value);
+
+        if (!value) {
+            setError("Please enter a valid discount amount.");
+            return;
+        }
 
         if (type === "static") {
             setStaticDiscount(convertDollarsToCentsReturnInt(floatValue));

@@ -514,8 +514,7 @@ const CartProvider = (props: { children: React.ReactNode }) => {
                             m.productModifiers.forEach((productModifier) => {
                                 productModifier.modifierGroups.forEach((orderedProductModifierModifierGroup) => {
                                     orderedProductModifierModifierGroup.modifiers.forEach((orderedProductModifierModifier) => {
-                                        const changedQuantity =
-                                            orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
+                                        const changedQuantity = orderedProductModifierModifier.quantity - orderedProductModifierModifier.preSelectedQuantity;
 
                                         if (changedQuantity > 0) {
                                             price += orderedProductModifierModifier.price * changedQuantity;
@@ -546,7 +545,9 @@ const CartProvider = (props: { children: React.ReactNode }) => {
     };
 
     const setOrderType = (orderType: EOrderType) => {
-        const order_type_surcharge = register?.orderTypeSurcharge != null ? register?.orderTypeSurcharge[orderType.toLocaleLowerCase()] : 0;
+        let order_type_surcharge = 0;
+        if (register && register.orderTypeSurcharge) order_type_surcharge = register.orderTypeSurcharge[orderType.toLocaleLowerCase()] || 0;
+
         _setOrderType(orderType);
         _setOrderTypeSurcharge(order_type_surcharge);
 
