@@ -2,18 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 import { useLazyQuery } from "@apollo/client";
 import { FiArrowLeft, FiArrowRight, FiRotateCw, FiX } from "react-icons/fi";
 import { useNavigate } from "react-router";
-import {
-    EEftposProvider,
-    EEftposTransactionOutcome,
-    ICartModifier,
-    ICartModifierGroup,
-    ICartProduct,
-    IEftposTransactionOutcome,
-} from "../../model/model";
+import { EEftposProvider, EEftposTransactionOutcome, ICartModifier, ICartModifierGroup, ICartProduct, IEftposTransactionOutcome } from "../../model/model";
 import { useCart } from "../../context/cart-context";
 import { useReceiptPrinter } from "../../context/receiptPrinter-context";
 import { useRegister } from "../../context/register-context";
 import { useRestaurant } from "../../context/restaurant-context";
+import { useElectron } from "../../context/electron-context";
 import { useSmartpay } from "../../context/smartpay-context";
 import { useWindcave } from "../../context/windcave-context";
 import { useVerifone } from "../../context/verifone-context";
@@ -59,10 +53,16 @@ export default () => {
     const { refundTransaction: verifoneRefundTransaction } = useVerifone();
     const navigate = useNavigate();
     const [getOrder] = useLazyQuery(GET_ORDER, { fetchPolicy: "network-only" });
+    const { checkParentView, sendParent } = useElectron();
+    const isReactNativeView = checkParentView().reactNativeWebView;
 
     const [showSelectReceiptPrinterModal, setShowSelectReceiptPrinterModal] = useState(false);
     const [receiptPrinterModalPrintSalesData, setReceiptPrinterModalPrintSalesData] = useState<IPrintSalesData | null>(null);
     const [receiptPrinterModalPrintReorderData, setReceiptPrinterModalPrintReorderData] = useState<IOrderReceipt | null>(null);
+
+    useEffect(() => {
+        if (isReactNativeView) sendParent("DASHBOARD_PRINTER_MODAL", { visible: showSelectReceiptPrinterModal });
+    }, [isReactNativeView, showSelectReceiptPrinterModal]);
 
     const onPrintData = async (printData: IPrintSalesData) => {
         if (register) {
@@ -376,11 +376,17 @@ export default () => {
                 console.log("Amount", amount);
 
                 const iframe = document.querySelector("iframe");
+                const sendRefundResponse = (response: any, origin: string) => {
+                    if (isReactNativeView) {
+                        sendParent("DASHBOARD_RESPONSE", response);
+                    } else {
+                        iframe?.contentWindow?.postMessage(response, origin);
+                    }
+                };
 
                 if (refundOutcome?.transactionOutcome === EEftposTransactionOutcome.Success) {
                     //Only if refund was sucessful
-                    //@ts-ignore
-                    iframe.contentWindow.postMessage(
+                    sendRefundResponse(
                         {
                             action: "eftposRefundResponse",
                             success: true,
@@ -391,8 +397,7 @@ export default () => {
                     );
                 } else if (refundOutcome?.transactionOutcome === EEftposTransactionOutcome.Fail) {
                     //If refund was failed, cancelled or declined it will come here
-                    //@ts-ignore
-                    iframe.contentWindow.postMessage(
+                    sendRefundResponse(
                         {
                             action: "eftposRefundResponse",
                             success: false,
@@ -414,6 +419,10 @@ export default () => {
 
         return () => window.removeEventListener("message", onMessage, false);
     }, []);
+
+    useEffect(() => {
+        if (isReactNativeView && restaurant && register) sendParent("OPEN_DASHBOARD", { restaurantId: restaurant.id });
+    }, [isReactNativeView, restaurant?.id, register?.id]);
 
     if (!restaurant) return <>No Restaurant</>;
     if (!register) return <>No Register</>;
@@ -513,6 +522,8 @@ export default () => {
     };
 
     const modalsAndSpinners = <>{selectReceiptPrinterModal()}</>;
+
+    if (isReactNativeView) return modalsAndSpinners;
 
     return (
         <>
