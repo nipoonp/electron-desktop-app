@@ -19,6 +19,7 @@ import {
 } from "./model";
 import * as usbPrinter from "@lastapp/node-printer";
 import { format, isToday } from "date-fns";
+import { createReceiptImagePrinter } from "./receiptImagePrinter";
 
 export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
@@ -640,6 +641,9 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
         //Bluetooth
     }
 
+    const thermalPrinter = printer;
+    printer = createReceiptImagePrinter();
+
     // let isConnected = await printer.isPrinterConnected();
     // console.log("Printer connected:", isConnected);
     // if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
@@ -966,12 +970,15 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
     printer.setTypeFontB();
     printer.println("Order Placed on Tabin Kiosk (tabin.co.nz)");
 
-    if (order.skipReceiptCutCommand) {
-    } else {
-        printer.partialCut();
-    }
-
     try {
+        const images = await printer.render();
+        printer = thermalPrinter;
+        printer.alignLeft();
+        for (const image of images) {
+            await printer.printImageBuffer(image);
+        }
+        if (!order.skipReceiptCutCommand) printer.partialCut();
+
         if (order.printerType == ERegisterPrinterType.WIFI) {
             await printer.execute();
         } else if (order.printerType == ERegisterPrinterType.USB) {
