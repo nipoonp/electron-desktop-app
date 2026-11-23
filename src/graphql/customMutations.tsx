@@ -144,6 +144,7 @@ export const UPDATE_ORDER = gql`
         $total: Int!
         $discount: Int
         $promotionId: ID
+        $tax: Int
         $subTotal: Int!
         $preparationTimeInMinutes: Int
         $registerId: ID!
@@ -173,6 +174,7 @@ export const UPDATE_ORDER = gql`
                 total: $total
                 discount: $discount
                 promotionId: $promotionId
+                tax: $tax
                 subTotal: $subTotal
                 preparationTimeInMinutes: $preparationTimeInMinutes
                 registerId: $registerId
