@@ -1,4 +1,4 @@
-import { printer as ThermalPrinter, types as PrinterTypes } from "node-thermal-printer";
+import { breakLine, printer as ThermalPrinter, types as PrinterTypes } from "node-thermal-printer";
 import {
     IOrderReceipt,
     ICartProduct,
@@ -19,6 +19,7 @@ import {
 } from "./model";
 import * as usbPrinter from "@lastapp/node-printer";
 import { format, isToday } from "date-fns";
+import { encode } from "iconv-lite";
 
 export const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
@@ -96,6 +97,29 @@ const getProductTotal = (product: ICartProduct) => {
     return price;
 };
 
+const createReceiptPrinter = ({ printerType, printerAddress }: Pick<IOrderReceipt, "printerType" | "printerAddress">) => {
+    if (printerType !== ERegisterPrinterType.WIFI && printerType !== ERegisterPrinterType.USB) {
+        throw new Error(`Unsupported receipt printer connection: ${printerType}`);
+    }
+    const printer = new ThermalPrinter({
+        type: PrinterTypes.EPSON,
+        interface: printerType === ERegisterPrinterType.WIFI ? `tcp://${printerAddress}` : "",
+        breakLine: breakLine.NONE, // Let the printer wrap at the actual glyph widths.
+    });
+    printer.append(Buffer.from([0x1b, 0x40, 0x1c, 0x26])); // Initialize and enable Chinese character mode.
+    const append = printer.append.bind(printer);
+    // Text and table cells both use append. Printer commands and images arrive as buffers.
+    printer.append = (data) => {
+        if (typeof data !== "string") return append(data);
+        const printable = data
+            .replace(/\r\n?/g, "\n")
+            .replace(/\t/g, "    ")
+            .replace(/[\x00-\x09\x0b-\x1f\x7f]/g, "");
+        append(encode(printable, "gb18030"));
+    };
+    return printer;
+};
+
 const printDeliveryDetails = (printer, order: IOrderReceipt, options: { includeFee: boolean; includeTrackingQr: boolean }) => {
     if (order.type !== EOrderType.DELIVERY) return;
     const deliveryProviderLabel =
@@ -136,26 +160,7 @@ const printDeliveryDetails = (printer, order: IOrderReceipt, options: { includeF
 };
 
 export const printCustomerReceipt = async (order: IOrderReceipt, receiptIndex?: number, receiptTotalNumber?: number): Promise<IPrintReceiptOutput> => {
-    let printer;
-
-    if (order.printerType == ERegisterPrinterType.WIFI) {
-        //@ts-ignore
-        printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
-            interface: `tcp://${order.printerAddress}`,
-        });
-    } else if (order.printerType == ERegisterPrinterType.USB) {
-        //@ts-ignore
-        printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
-        });
-    } else {
-        //Bluetooth
-    }
-
-    // let isConnected = await printer.isPrinterConnected();
-    // console.log("Printer connected:", isConnected);
-    // if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
+    const printer = createReceiptPrinter(order);
 
     if (order.futureOrder) {
         printer.alignCenter();
@@ -623,26 +628,7 @@ export const printCustomerReceipt = async (order: IOrderReceipt, receiptIndex?: 
 };
 
 export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: number, receiptTotalNumber?: number): Promise<IPrintReceiptOutput> => {
-    let printer;
-
-    if (order.printerType == ERegisterPrinterType.WIFI) {
-        //@ts-ignore
-        printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
-            interface: `tcp://${order.printerAddress}`,
-        });
-    } else if (order.printerType == ERegisterPrinterType.USB) {
-        //@ts-ignore
-        printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
-        });
-    } else {
-        //Bluetooth
-    }
-
-    // let isConnected = await printer.isPrinterConnected();
-    // console.log("Printer connected:", isConnected);
-    // if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
+    const printer = createReceiptPrinter(order);
 
     if (order.futureOrder) {
         printer.alignCenter();
@@ -988,26 +974,7 @@ export const printKitchenReceipt = async (order: IOrderReceipt, receiptIndex?: n
 };
 
 export const printKitchenReceiptSmall = async (order: IOrderReceipt, receiptIndex?: number, receiptTotalNumber?: number): Promise<IPrintReceiptOutput> => {
-    let printer;
-
-    if (order.printerType == ERegisterPrinterType.WIFI) {
-        //@ts-ignore
-        printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
-            interface: `tcp://${order.printerAddress}`,
-        });
-    } else if (order.printerType == ERegisterPrinterType.USB) {
-        //@ts-ignore
-        printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
-        });
-    } else {
-        //Bluetooth
-    }
-
-    // let isConnected = await printer.isPrinterConnected();
-    // console.log("Printer connected:", isConnected);
-    // if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
+    const printer = createReceiptPrinter(order);
 
     if (order.futureOrder) {
         printer.alignCenter();
@@ -1373,27 +1340,7 @@ export const printKitchenReceiptSmall = async (order: IOrderReceipt, receiptInde
 };
 
 export const printKitchenReceiptLarge = async (order: IOrderReceipt, receiptIndex?: number, receiptTotalNumber?: number): Promise<IPrintReceiptOutput> => {
-    let printer;
-
-    if (order.printerType == ERegisterPrinterType.WIFI) {
-        //@ts-ignore
-        printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
-            interface: `tcp://${order.printerAddress}`,
-        });
-    } else if (order.printerType == ERegisterPrinterType.USB) {
-        //@ts-ignore
-        printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
-        });
-    } else {
-        //Bluetooth
-    }
-
-    // let isConnected = await printer.isPrinterConnected();
-    // console.log("Printer connected:", isConnected);
-
-    // if (order.paymentAmounts && order.paymentAmounts.cash > 0) printer.openCashDrawer();
+    const printer = createReceiptPrinter(order);
 
     if (order.futureOrder) {
         printer.alignCenter();
@@ -1768,28 +1715,13 @@ export const printKitchenReceiptLarge = async (order: IOrderReceipt, receiptInde
 };
 
 export const printEftposReceipt = async (receiptDataInput: IEftposReceipt) => {
-    let printer;
-
-    if (receiptDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
-        //@ts-ignore
-        printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
-            interface: `tcp://${receiptDataInput.printer.printerAddress}`,
-        });
-    } else if (receiptDataInput.printer.printerType == ERegisterPrinterType.USB) {
-        //@ts-ignore
-        printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
-        });
-    } else {
-        //Bluetooth
-    }
+    const printer = createReceiptPrinter(receiptDataInput.printer);
 
     printer.newLine();
     printer.alignCenter();
 
     if (receiptDataInput.eftposReceipt) {
-        const eftposReceiptArray = receiptDataInput.eftposReceipt.split("\n");
+        const eftposReceiptArray = receiptDataInput.eftposReceipt.split(/\r?\n/);
 
         eftposReceiptArray.forEach((line) => {
             printer.println(line);
@@ -2075,32 +2007,17 @@ const printSalesByProductReceipt = (printer: any, data: IPrintSalesDataInput) =>
 };
 
 export const printSalesDataReceipt = async (printSalesDataInput: IPrintSalesDataInput): Promise<IPrintReceiptOutput> => {
-    let printer;
-
-    if (printSalesDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
-        //@ts-ignore
-        printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
-            interface: `tcp://${printSalesDataInput.printer.printerAddress}`,
-        });
-    } else if (printSalesDataInput.printer.printerType == ERegisterPrinterType.USB) {
-        //@ts-ignore
-        printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
-        });
-    } else {
-        //Bluetooth
-    }
+    const printer = createReceiptPrinter(printSalesDataInput.printer);
 
     switch (printSalesDataInput.type) {
         case "DAY":
-            printer = printSalesByDayReceipt(printer, printSalesDataInput);
+            printSalesByDayReceipt(printer, printSalesDataInput);
             break;
         case "CATEGORY":
-            printer = printSalesByCategoryReceipt(printer, printSalesDataInput);
+            printSalesByCategoryReceipt(printer, printSalesDataInput);
             break;
         case "PRODUCT":
-            printer = printSalesByProductReceipt(printer, printSalesDataInput);
+            printSalesByProductReceipt(printer, printSalesDataInput);
             break;
         default:
             break;
@@ -2125,22 +2042,7 @@ export const printSalesDataReceipt = async (printSalesDataInput: IPrintSalesData
 };
 
 export const printCashUpDataReceipt = async (printCashUpDataInput: IPrintCashUpDataInput): Promise<IPrintReceiptOutput> => {
-    let printer;
-
-    if (printCashUpDataInput.printer.printerType == ERegisterPrinterType.WIFI) {
-        //@ts-ignore
-        printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
-            interface: `tcp://${printCashUpDataInput.printer.printerAddress}`,
-        });
-    } else if (printCashUpDataInput.printer.printerType == ERegisterPrinterType.USB) {
-        //@ts-ignore
-        printer = new ThermalPrinter({
-            type: PrinterTypes.EPSON, // 'star' or 'epson'
-        });
-    } else {
-        //Bluetooth
-    }
+    const printer = createReceiptPrinter(printCashUpDataInput.printer);
 
     printer.alignCenter();
     printer.bold(true);
