@@ -2,7 +2,7 @@ name: Tabin CI/CD NEW
 
 on:
     push:
-        branches: [pos-thermal-image-print]
+        branches: [pos]
 
 permissions:
     contents: write
