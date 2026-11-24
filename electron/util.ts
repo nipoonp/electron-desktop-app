@@ -1,4 +1,4 @@
-import { breakLine, printer as ThermalPrinter, types as PrinterTypes } from "node-thermal-printer";
+import { printer as ThermalPrinter, types as PrinterTypes } from "node-thermal-printer";
 import {
     IOrderReceipt,
     ICartProduct,
@@ -97,17 +97,21 @@ const getProductTotal = (product: ICartProduct) => {
     return price;
 };
 
-const createReceiptPrinter = ({ printerType, printerAddress }: Pick<IOrderReceipt, "printerType" | "printerAddress">) => {
-    if (printerType !== ERegisterPrinterType.WIFI && printerType !== ERegisterPrinterType.USB) {
-        throw new Error(`Unsupported receipt printer connection: ${printerType}`);
-    }
+interface ReceiptPrinterConnection {
+    printerType: ERegisterPrinterType;
+    printerAddress: string;
+}
+
+const createReceiptPrinter = ({ printerType, printerAddress }: ReceiptPrinterConnection) => {
     const printer = new ThermalPrinter({
         type: PrinterTypes.EPSON,
         interface: printerType === ERegisterPrinterType.WIFI ? `tcp://${printerAddress}` : "",
-        breakLine: breakLine.NONE, // Let the printer wrap at the actual glyph widths.
     });
+
     printer.append(Buffer.from([0x1b, 0x40, 0x1c, 0x26])); // Initialize and enable Chinese character mode.
+
     const append = printer.append.bind(printer);
+
     // Text and table cells both use append. Printer commands and images arrive as buffers.
     printer.append = (data) => {
         if (typeof data !== "string") return append(data);
@@ -115,8 +119,9 @@ const createReceiptPrinter = ({ printerType, printerAddress }: Pick<IOrderReceip
             .replace(/\r\n?/g, "\n")
             .replace(/\t/g, "    ")
             .replace(/[\x00-\x09\x0b-\x1f\x7f]/g, "");
-        append(encode(printable, "gb18030"));
+        append(encode(printable, "gb18030")); //Chinese language mode
     };
+
     return printer;
 };
 
@@ -1721,7 +1726,7 @@ export const printEftposReceipt = async (receiptDataInput: IEftposReceipt) => {
     printer.alignCenter();
 
     if (receiptDataInput.eftposReceipt) {
-        const eftposReceiptArray = receiptDataInput.eftposReceipt.split(/\r?\n/);
+        const eftposReceiptArray = receiptDataInput.eftposReceipt.split("\n");
 
         eftposReceiptArray.forEach((line) => {
             printer.println(line);
