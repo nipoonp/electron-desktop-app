@@ -1718,7 +1718,7 @@ export const Checkout = () => {
         if (outcome.transactionOutcome === EEftposTransactionOutcome.Success) {
             try {
                 const newEftposPaymentAmounts = paymentAmounts.eftpos + amount;
-                const newTotalPaymentAmounts = newEftposPaymentAmounts + paymentAmounts.cash;
+                const newTotalPaymentAmounts = paidSoFar + amount;
 
                 const newPaymentAmounts: ICartPaymentAmounts = {
                     ...paymentAmounts,

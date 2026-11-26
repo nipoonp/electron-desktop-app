@@ -495,9 +495,7 @@ const Orders = () => {
                                 return;
                             }
 
-                            const processedProductModifiers = modifier.productModifiers
-                                ? getParkedOrderProducts(modifier.productModifiers, 0, true)
-                                : null;
+                            const processedProductModifiers = modifier.productModifiers ? getParkedOrderProducts(modifier.productModifiers, 0, true) : null;
 
                             if (processedProductModifiers && processedProductModifiers.invalidItemsFound) {
                                 invalidItemsFound = invalidItemsFound + processedProductModifiers.invalidItemsFound;
@@ -543,6 +541,12 @@ const Orders = () => {
             // Fetch the single order fresh so printedQuantities is up to date across POS terminals.
             const freshResult = await getOrder({ variables: { id: parkedOrder.id } });
             const pOrder: IGET_RESTAURANT_ORDER_FRAGMENT = freshResult.data?.getOrder ?? parkedOrder;
+
+            if (!isUnpaidOrder(pOrder)) {
+                toast.error("This sale is no longer open for payment.");
+                await refetch();
+                return;
+            }
 
             const mergedPrintedProductQuantities = printedQuantitiesListToMap(pOrder.printedQuantities);
 
@@ -807,20 +811,6 @@ const Orders = () => {
         navigate(beginOrderPath);
     };
 
-    const isUnpaidOrder = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
-        return (
-            !!order.paymentAmounts &&
-            !order.paymentAmounts.cash &&
-            !order.paymentAmounts.eftpos &&
-            !order.paymentAmounts.online &&
-            !order.paymentAmounts.onAccount &&
-            !order.paymentAmounts.uberEats &&
-            !order.paymentAmounts.menulog &&
-            !order.paymentAmounts.doordash &&
-            !order.paymentAmounts.delivereasy
-        );
-    };
-
     const onToggleOrderMergeSelection = (orderId: string) => {
         setSelectedMergeOrderIds((prev) => {
             if (prev.includes(orderId)) return prev.filter((id) => id !== orderId);
@@ -953,8 +943,7 @@ const Orders = () => {
 
                         return displayOrders.map(
                             (order) =>
-                                ((order.status === eOrderStatus && !isUnpaidOrder(order)) ||
-                                    (eOrderStatus === EOrderStatus.PARKED && isUnpaidOrder(order))) && (
+                                (isUnpaidOrder(order) ? EOrderStatus.PARKED : order.status) === eOrderStatus && (
                                     <Order
                                         key={order.id}
                                         searchTerm={searchTerm}
@@ -980,6 +969,24 @@ const Orders = () => {
 };
 
 export default Orders;
+
+export const isUnpaidOrder = (order: IGET_RESTAURANT_ORDER_FRAGMENT) => {
+    if (order.status === EOrderStatus.CANCELLED || order.status === EOrderStatus.REFUNDED) return false;
+    if (order.status === EOrderStatus.PARKED) return true;
+    if (order.paid != null) return !order.paid;
+    if (!order.paymentAmounts) return false;
+
+    const tendered =
+        (order.paymentAmounts.cash || 0) +
+        (order.paymentAmounts.eftpos || 0) +
+        (order.paymentAmounts.online || 0) +
+        (order.paymentAmounts.onAccount || 0) +
+        (order.paymentAmounts.uberEats || 0) +
+        (order.paymentAmounts.menulog || 0) +
+        (order.paymentAmounts.doordash || 0) +
+        (order.paymentAmounts.delivereasy || 0);
+    return tendered === 0 || tendered < order.subTotal;
+};
 
 const Order = (props: {
     searchTerm: string;
@@ -1321,19 +1328,16 @@ const Order = (props: {
                     ) : (
                         <></>
                     )}
-                    {order.paymentAmounts &&
-                    !order.paymentAmounts.cash &&
-                    !order.paymentAmounts.eftpos &&
-                    !order.paymentAmounts.online &&
-                    !order.paymentAmounts.onAccount &&
-                    !order.paymentAmounts.uberEats &&
-                    !order.paymentAmounts.menulog &&
-                    !order.paymentAmounts.doordash &&
-                    !order.paymentAmounts.delivereasy ? (
-                        <div className="mt-1">Unpaid</div>
-                    ) : (
-                        <></>
-                    )}
+                    {!order.paid &&
+                        order.paymentAmounts &&
+                        !order.paymentAmounts.cash &&
+                        !order.paymentAmounts.eftpos &&
+                        !order.paymentAmounts.online &&
+                        !order.paymentAmounts.onAccount &&
+                        !order.paymentAmounts.uberEats &&
+                        !order.paymentAmounts.menulog &&
+                        !order.paymentAmounts.doordash &&
+                        !order.paymentAmounts.delivereasy && <div className="mt-1">Unpaid</div>}
 
                     {refundEntries.length > 0 && (
                         <>
@@ -1353,16 +1357,7 @@ const Order = (props: {
                             {order.status !== EOrderStatus.COMPLETED && <Button onClick={() => onOrderComplete(order)}>Complete</Button>}
                             {order.status !== EOrderStatus.REFUNDED && <Button onClick={onOpenRefundModal}>Refund</Button>}
                             {order.status !== EOrderStatus.CANCELLED && <Button onClick={() => onOrderCancel(order)}>Cancel</Button>}
-                            {(order.status === EOrderStatus.PARKED ||
-                                (order.paymentAmounts &&
-                                    !order.paymentAmounts.cash &&
-                                    !order.paymentAmounts.eftpos &&
-                                    !order.paymentAmounts.online &&
-                                    !order.paymentAmounts.onAccount &&
-                                    !order.paymentAmounts.uberEats &&
-                                    !order.paymentAmounts.menulog &&
-                                    !order.paymentAmounts.doordash &&
-                                    !order.paymentAmounts.delivereasy)) && <Button onClick={() => onOpenParkedOrder(order)}>Open Sale</Button>}
+                            {isUnpaidOrder(order) && <Button onClick={() => onOpenParkedOrder(order)}>Open Sale</Button>}
                             {<Button onClick={() => onOrderReprint(order)}>Reprint</Button>}
                         </div>
                     )}
