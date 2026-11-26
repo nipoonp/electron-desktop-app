@@ -134,6 +134,7 @@ const Orders = () => {
         setParkedOrderStatus,
         setOrderType,
         setTableNumber,
+        setCovers,
         setBuzzerNumber,
         setNotes,
         setProducts,
@@ -604,6 +605,7 @@ const Orders = () => {
                 delivereasy: pOrder.paymentAmounts?.delivereasy || 0,
             } as ICartPaymentAmounts);
             setPayments([]);
+            setCovers(pOrder.covers ?? null);
             if (pOrder.table) setTableNumber(pOrder.table);
             if (pOrder.buzzer) setBuzzerNumber(pOrder.buzzer);
             if (pOrder.notes) setNotes(pOrder.notes);

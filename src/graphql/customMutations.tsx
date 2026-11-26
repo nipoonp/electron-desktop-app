@@ -164,6 +164,7 @@ export const UPDATE_ORDER = gql`
         $paid: Boolean!
         $type: OrderType!
         $number: String!
+        $covers: Int
         $table: String
         $buzzer: String
         $notes: String
@@ -195,6 +196,7 @@ export const UPDATE_ORDER = gql`
                 paid: $paid
                 type: $type
                 number: $number
+                covers: $covers
                 table: $table
                 buzzer: $buzzer
                 notes: $notes

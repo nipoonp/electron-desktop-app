@@ -38,6 +38,7 @@ export default () => {
         setParkedOrderStatus,
         setOrderType,
         setTableNumber,
+        setCovers,
         setBuzzerNumber,
         setNotes,
         setCustomerInformation,
@@ -278,6 +279,7 @@ export default () => {
         setParkedOrderNumber(pOrder.number);
         setParkedOrderStatus(pOrder.status);
         setOrderType(pOrder.type);
+        setCovers(pOrder.covers ?? null);
         if (pOrder.table) setTableNumber(pOrder.table);
         if (pOrder.buzzer) setBuzzerNumber(pOrder.buzzer);
         if (pOrder.notes) setNotes(pOrder.notes);

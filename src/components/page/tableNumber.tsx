@@ -257,9 +257,7 @@ const TableNumberFeatureEnabledPage = () => {
     const [sections, setSections] = useState<ISection[]>([]);
     const [floorPlanId, setFloorPlanId] = useState<string | null>(null);
     const [activeSectionId, setActiveSectionId] = useState<string>("");
-    const [viewMode, setViewMode] = useState<"map" | "list">(() =>
-        localStorage.getItem(TABLE_VIEW_MODE_STORAGE_KEY) === "list" ? "list" : "map",
-    );
+    const [viewMode, setViewMode] = useState<"map" | "list">(() => (localStorage.getItem(TABLE_VIEW_MODE_STORAGE_KEY) === "list" ? "list" : "map"));
 
     // UI State
     const [selectedId, selectShape] = useState<string | null>(null);
@@ -614,8 +612,12 @@ const TableNumberFeatureEnabledPage = () => {
         }
         const runningOrder = activeRunningOrdersByTable.get(normalizedTable);
 
-        // If resuming an existing running order (or replacing an old parked binding), reset cart state first.
-        if (runningOrder || parkedOrderId) clearCart();
+        if (parkedOrderId && runningOrder && runningOrder.id !== parkedOrderId) {
+            toast.error("Target table already has a running order.");
+            return;
+        }
+
+        if (runningOrder && !parkedOrderId) clearCart();
 
         // Point 1: start a dine-in session for the selected table.
         // Keep current cart items when user selected items first and table later.
@@ -624,7 +626,7 @@ const TableNumberFeatureEnabledPage = () => {
         setTableNumber(normalizedTable);
         setCovers(coversNumber);
 
-        if (runningOrder) {
+        if (runningOrder && !parkedOrderId) {
             // Point 2: resume the already-open running order for this table instead of creating a new one.
             setParkedOrderId(runningOrder.id);
             setParkedOrderNumber(runningOrder.number);
@@ -646,12 +648,6 @@ const TableNumberFeatureEnabledPage = () => {
 
             // Point 3: cache backend print tracking in cart state for sent/unsent display.
             setPrintedProductQuantities(initializeRunningOrderPrintedProductTracking(runningOrder));
-            // Point 4: preserve round-based send tracking so each fire cycle prints only still-unsent items.
-        } else {
-            // Ensure this stays a fresh non-parked session when no running order exists on the selected table.
-            setParkedOrderId(null);
-            setParkedOrderNumber(null);
-            setParkedOrderStatus(null);
         }
 
         onClose();
@@ -1998,7 +1994,7 @@ const TableNumberFeatureEnabledPage = () => {
                                                         setTableError(false);
                                                         const liveState = liveTableStateByTable.get(`${tableAttr.number || ""}`.trim());
                                                         const nextCovers = liveState?.covers || tableAttr.seats;
-                                                        if (nextCovers) setCoversNumber(nextCovers);
+                                                        if (!parkedOrderId && nextCovers) setCoversNumber(nextCovers);
                                                     }
                                                 }}
                                                 onChange={(newAttrs) => {
@@ -2057,7 +2053,7 @@ const TableNumberFeatureEnabledPage = () => {
                                                         setTable(t.number);
                                                         setTableError(false);
                                                         const nextCovers = liveState?.covers || t.seats;
-                                                        if (nextCovers) setCoversNumber(nextCovers);
+                                                        if (!parkedOrderId && nextCovers) setCoversNumber(nextCovers);
                                                     }}
                                                 >
                                                     <div className="card-icon">{t.type === "circle" ? <FiCircle /> : <FiSquare />}</div>
@@ -2167,7 +2163,9 @@ const TableNumberFeatureEnabledPage = () => {
                                                                             (t.number || "").trim() === newVal,
                                                                     );
                                                                     if (newVal && isDuplicate) {
-                                                                        alert(`Table number '${newVal}' already exists. Table numbers must be unique across all sections.`);
+                                                                        alert(
+                                                                            `Table number '${newVal}' already exists. Table numbers must be unique across all sections.`,
+                                                                        );
                                                                         return;
                                                                     }
                                                                     updateTables((prev) =>

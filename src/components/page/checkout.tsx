@@ -1362,8 +1362,8 @@ export const Checkout = () => {
                 paid: paid,
                 type: selectedOrderType,
                 number: orderNumber,
-                covers: isDineInOrder ? covers : undefined,
-                table: isDineInOrder ? tableNumber : undefined,
+                covers: covers,
+                table: tableNumber,
                 buzzer: buzzerNumber,
                 orderScheduledAt: orderScheduledAt,
                 customerInformation: customerInformation
@@ -1431,8 +1431,8 @@ export const Checkout = () => {
                     paid: paid,
                     type: selectedOrderType,
                     number: orderNumber,
-                    covers: isDineInOrder ? covers : undefined,
-                    table: isDineInOrder ? tableNumber : undefined,
+                    covers: covers,
+                    table: tableNumber,
                     buzzer: buzzerNumber,
                     orderScheduledAt: orderScheduledAt,
                     customerInformation: customerInformation
@@ -1479,6 +1479,10 @@ export const Checkout = () => {
         try {
             if (tableNumber == null || tableNumber == "") {
                 delete variables.table;
+            }
+
+            if (covers == null) {
+                delete variables.covers;
             }
 
             if (buzzerNumber == null || buzzerNumber == "") {
