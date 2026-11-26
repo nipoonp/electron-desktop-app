@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Logger } from "aws-amplify";
 import { useCart } from "../../context/cart-context";
-import { clearPromotionDiscountsForParking } from "./tableNumber/orderCartMappers";
+import { clearPromotionDiscountsForParking, sanitizeCartProductForMutationInput } from "./tableNumber/orderCartMappers";
 import { useNavigate } from "react-router-dom";
 import {
     calculateTaxAmount,
@@ -305,6 +305,7 @@ export const Checkout = () => {
     const createdOrder = useRef<IGET_RESTAURANT_ORDER_FRAGMENT | undefined>();
 
     const [createOrderError, setCreateOrderError] = useState<string | null>(null);
+    const showCreateOrderError = (error: unknown) => setCreateOrderError(error instanceof Error ? error.message : String(error));
     const [paymentOutcomeOrderNumber, setPaymentOutcomeOrderNumber] = useState<string | null>(null);
     const [paymentOutcomeApprovedRedirectTimeLeft, setPaymentOutcomeApprovedRedirectTimeLeft] = useState(restaurant?.delayBetweenOrdersInSeconds || 10);
     let transactionCompleteRedirectTime = restaurant?.delayBetweenOrdersInSeconds || 10;
@@ -1493,34 +1494,7 @@ export const Checkout = () => {
                 delete variables.notes;
             }
 
-            variables.products.forEach((product) => {
-                if (product.modifierGroups.length == 0) {
-                    delete product.modifierGroups;
-                }
-
-                if (product.image == null) {
-                    delete product.image;
-                }
-
-                if (product.notes == null || product.notes == "") {
-                    delete product.notes;
-                }
-
-                if (product.category.image == null) {
-                    delete product.category.image;
-                }
-
-                if (product.reportingGroup == null || product.reportingGroup === "") {
-                    delete product.reportingGroup;
-                }
-
-                // if (product.isAgeRescricted == null) {
-                delete product.isAgeRescricted;
-                // }
-
-                //isPriceEdited is cart-only state (marks a manual price override); not part of OrderProductInput
-                delete product.isPriceEdited;
-            });
+            variables.products.forEach(sanitizeCartProductForMutationInput);
 
             console.log("Order variables: ", variables);
 
@@ -1739,7 +1713,7 @@ export const Checkout = () => {
                     if (isPOS) setPaymentModalState(EPaymentModalState.POSScreen);
                 }
             } catch (e) {
-                setCreateOrderError(e);
+                showCreateOrderError(e);
             }
         } else if (outcome.transactionOutcome === EEftposTransactionOutcome.Fail) {
             setPaymentModalState(EPaymentModalState.EftposResult);
@@ -1782,7 +1756,7 @@ export const Checkout = () => {
                 setPaymentModalState(EPaymentModalState.CashResult);
             }
         } catch (e) {
-            setCreateOrderError(e);
+            showCreateOrderError(e);
         }
     };
 
@@ -1809,7 +1783,7 @@ export const Checkout = () => {
                 setPaymentModalState(EPaymentModalState.OnAccountResult);
             }
         } catch (e) {
-            setCreateOrderError(e);
+            showCreateOrderError(e);
         }
     };
 
@@ -1836,7 +1810,7 @@ export const Checkout = () => {
                 setPaymentModalState(EPaymentModalState.UberEatsResult);
             }
         } catch (e) {
-            setCreateOrderError(e);
+            showCreateOrderError(e);
         }
     };
 
@@ -1863,7 +1837,7 @@ export const Checkout = () => {
                 setPaymentModalState(EPaymentModalState.MenulogResult);
             }
         } catch (e) {
-            setCreateOrderError(e);
+            showCreateOrderError(e);
         }
     };
 
@@ -1890,7 +1864,7 @@ export const Checkout = () => {
                 setPaymentModalState(EPaymentModalState.DoordashResult);
             }
         } catch (e) {
-            setCreateOrderError(e);
+            showCreateOrderError(e);
         }
     };
 
@@ -1917,7 +1891,7 @@ export const Checkout = () => {
                 setPaymentModalState(EPaymentModalState.DelivereasyResult);
             }
         } catch (e) {
-            setCreateOrderError(e);
+            showCreateOrderError(e);
         }
     };
 
@@ -1949,7 +1923,7 @@ export const Checkout = () => {
 
             setPaymentModalState(EPaymentModalState.PayLater);
         } catch (e) {
-            setCreateOrderError(e);
+            showCreateOrderError(e);
         }
     };
 
@@ -1961,7 +1935,7 @@ export const Checkout = () => {
         try {
             await onSubmitOrder(false, true, paymentAmounts, payments);
         } catch (e) {
-            setCreateOrderError(e);
+            showCreateOrderError(e);
         }
     };
 
